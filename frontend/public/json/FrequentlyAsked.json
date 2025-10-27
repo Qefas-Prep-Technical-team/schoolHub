@@ -1,0 +1,14 @@
+[
+  {
+    "question": "Can I import existing student data?",
+    "answer": "Yes, you can easily import your existing student data into SchoolHub using our intuitive import tool. We support various file formats like CSV and Excel, and our support team is available to assist you in ensuring a smooth and seamless data transition."
+  },
+  {
+    "question": "How does the payment system work?",
+    "answer": " Our platform integrates with secure payment gateways to handle tuition fees, event payments, and other financial transactions. Parents can pay online, and the school administration can track payments and generate financial reports effortlessly."
+  },
+  {
+    "question": "Is there a mobile app available for parents and teachers?",
+    "answer": "Absolutely! SchoolHub offers dedicated mobile apps for both iOS and Android. This allows teachers to manage their classes on the go and keeps parents updated with real-time notifications about their child's progress, attendance, and school announcements."
+  }
+]

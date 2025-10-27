@@ -1,0 +1,20 @@
+[
+  {
+    "image": "/image/user-1.jpg",
+    "comment": "SchoolHub has transformed our school's administrative processes. It's intuitive and saves us so much time. ",
+    "name": "Sarah Chen",
+    "role": "Principal at Lakeside High"
+  },
+  {
+    "image": "/image/user-2.jpg",
+    "comment": "The attendance tracking feature is a game-changer. We can easily monitor student attendance and identify trends. ",
+    "name": "David Lee",
+    "role": "Administrator at Green Valley School"
+  },
+  {
+    "image": "/image/user-3.jpg",
+    "comment": "Generating reports used to be a tedious task. With SchoolHub, it's now quick and effortless. ",
+    "name": "Emily Wong,",
+    "role": "Head of Academics at Riverdale Academy"
+  }
+]

@@ -1,0 +1,14 @@
+[
+    {
+    "question": "What payment methods do you accept?",
+    "answer": "We accept all major credit cards, including Visa, Mastercard, and American Express. We also support payments through PayPal."
+  },
+  {
+    "question": "Can I upgrade or downgrade my plan?",
+    "answer": "Yes, you can upgrade or downgrade your plan at any time from your account dashboard. Changes will be prorated."
+  },
+  {
+    "question": "Is there a free trial available?",
+    "answer": "Absolutely! We offer a 14-day free trial on our Basic plan. No credit card is required to get started."
+  }
+]

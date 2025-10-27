@@ -1,0 +1,173 @@
+[
+  {
+    "category": "individuals",
+    "tabs": [
+      {
+        "type": "student",
+        "name": "Student Basic",
+        "pricing": {
+          "monthly": 1000,
+          "yearly": 10000
+        },
+        "description": "Access to courses, assignments, and results tracking",
+        "features": [
+          "Student dashboard",
+          "Up to 3 courses",
+          "Result and performance tracking"
+        ],
+        "hasTrial": true,
+        "trialDays": 7,
+        "isPopular": true
+      },
+      {
+        "type": "parent Basic",
+        "name": "Parent One",
+        "pricing": {
+          "monthly": 1500,
+          "yearly": 15000
+        },
+        "description": "Monitor one child's academic activities",
+        "features": [
+          "Link 1 child",
+          "Result analysis",
+          "Activity review"
+        ],
+        "hasTrial": true,
+        "trialDays": 14,
+        "isPopular": false
+      },
+      {
+        "type": "parent Pro",
+        "name": "Parent Two",
+        "pricing": {
+          "monthly": 2000,
+          "yearly": 20000
+        },
+        "description": "Track multiple children's progress",
+        "features": [
+          "Link up to 3 children",
+          "Weekly performance reports",
+          "Class & exam reviews"
+        ],
+        "hasTrial": true,
+        "trialDays": 14,
+        "isPopular": true
+      }
+    ]
+  },
+  {
+    "category": "schools",
+    "tabs": [
+      {
+        "type": "starter",
+        "name": "School Starter",
+        "pricing": {
+          "monthly": 5000,
+          "yearly": 50000
+        },
+        "description": "Ideal for small schools with basic needs",
+        "features": [
+          "Admin dashboard",
+          "2 admins",
+          "Up to 100 students",
+          "Basic analytics"
+        ],
+        "hasTrial": true,
+        "trialDays": 14,
+        "isPopular": false
+      },
+      {
+        "type": "growth",
+        "name": "School Growth",
+        "pricing": {
+          "monthly": 10000,
+          "yearly": 100000
+        },
+        "description": "Designed for mid-sized growing schools",
+        "features": [
+          "Unlimited admins",
+          "Up to 500 students",
+          "Email notifications",
+          "Basic integrations"
+        ],
+        "hasTrial": true,
+        "trialDays": 21,
+        "isPopular": true
+      },
+      {
+        "type": "pro",
+        "name": "School Pro",
+        "pricing": {
+          "monthly": 20000,
+          "yearly": 200000
+        },
+        "description": "Advanced tools for large institutions",
+        "features": [
+          "Full access",
+          "Advanced reporting",
+          "Custom domain",
+          "Integration with LMS"
+        ],
+        "hasTrial": true,
+        "trialDays": 30,
+        "isPopular": true
+      }
+    ]
+  },
+  {
+    "category": "teachers",
+    "tabs": [
+      {
+        "type": "basic",
+        "name": "Teacher Basic",
+        "pricing": {
+          "monthly": 2000,
+          "yearly": 20000
+        },
+        "description": "Essential tools for teaching online",
+        "features": [
+          "Upload lessons",
+          "Quiz generator",
+          "Track student progress"
+        ],
+        "hasTrial": true,
+        "trialDays": 7,
+        "isPopular": false
+      },
+      {
+        "type": "pro",
+        "name": "Teacher Pro",
+        "pricing": {
+          "monthly": 3000,
+          "yearly": 30000
+        },
+        "description": "Professional tools for private tutors",
+        "features": [
+          "Custom teacher profile",
+          "Multiple class support",
+          "Certificate generator"
+        ],
+        "hasTrial": true,
+        "trialDays": 14,
+        "isPopular": true
+      },
+      {
+        "type": "enterprise",
+        "name": "Teacher Enterprise",
+        "pricing": {
+          "monthly": 5000,
+          "yearly": 50000
+        },
+        "description": "Collaborate with other educators and manage a team",
+        "features": [
+          "Team collaboration",
+          "Live class scheduling",
+          "Earnings dashboard"
+        ],
+        "hasTrial": true,
+        "trialDays": 21,
+        "isPopular": true
+      }
+    ]
+  }
+]

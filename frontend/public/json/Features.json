@@ -1,0 +1,17 @@
+[
+  {
+    "image": "/image/Student Management.png",
+    "title": "Student Management",
+    "description": "Manage student records, admissions, and communication efficiently."
+  },
+  {
+    "image": "/image/Attendance Tracking.png",
+    "title": "Attendance Tracking",
+    "description": "Track student attendance with ease and accuracy."
+  },
+  {
+    "image": "/image/Automated Reporting.png",
+    "title": "Automated Reporting",
+    "description": "Generate reports and analyze student performance with a single click."
+  }
+]
