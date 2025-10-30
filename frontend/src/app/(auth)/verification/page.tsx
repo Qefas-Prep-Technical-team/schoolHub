@@ -1,11 +1,14 @@
-import React, { FC } from 'react';
+import LogoTitle from "./components/LogoTitle";
+import VerificationCard from "./components/VerificationCard";
 
-const page: FC = () => {
-    return (
-        <div>
-            verification page
-        </div>
-    );
-};
 
-export default page;
+export default function VerifyPage() {
+  return (
+    <div className="relative flex min-h-screen w-full flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <LogoTitle />
+        <VerificationCard />
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,11 @@
+import StepperMain from "./components/Stepper";
+
+// app/(auth)/layout.tsx
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <main >
+            {/* <StepperMain/> */}
+            {children}
+        </main>
+    );
+}
