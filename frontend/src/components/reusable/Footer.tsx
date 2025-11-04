@@ -1,9 +1,13 @@
+"use client";
 import Box from '@mui/material/Box';
+import { usePathname } from 'next/navigation';
 import React, { FC } from 'react';
 
 const Footer: FC = () => {
+    const pathname = usePathname()
+    const isDashboard = pathname.startsWith("/dashboard") // for example
     return (
-        <Box
+        !isDashboard && <Box
             className='bg-slate-900 text-white py-16'
             component="footer"
             sx={{

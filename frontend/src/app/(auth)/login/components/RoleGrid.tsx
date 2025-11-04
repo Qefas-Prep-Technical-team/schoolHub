@@ -3,6 +3,13 @@ import RoleCard from "./RoleCard";
 export default function RoleGrid() {
   const roles = [
     {
+      href: "/login/school-admin",
+      icon: "shield_person",
+      color: "orange",
+      title: "school",
+      description: "Login for management",
+    },
+    {
       href: "/login/teacher",
       icon: "school",
       color: "green",
@@ -15,13 +22,6 @@ export default function RoleGrid() {
       color: "blue",
       title: "Student",
       description: "Login for students",
-    },
-    {
-      href: "/login/school-admin",
-      icon: "shield_person",
-      color: "orange",
-      title: "school",
-      description: "Login for management",
     },
     {
       href: "/login/parent",

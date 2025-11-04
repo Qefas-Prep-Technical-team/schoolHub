@@ -19,6 +19,7 @@ import Image from 'next/image';
 import BigNavBar from './BigNavBar';
 import { MiniNav } from './MiniNav';
 import NextTopLoader from 'nextjs-toploader';
+import { usePathname } from 'next/navigation';
 
 const pages = ['Feature', 'Pricing', 'About Us'];
 const settings = ['Feature', 'Pricing', 'About Us', 'contact'];
@@ -26,6 +27,8 @@ const settings = ['Feature', 'Pricing', 'About Us', 'contact'];
 function NavBar() {
     const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
     const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+    const pathname = usePathname()
+    const isDashboard = pathname.startsWith("/dashboard") // for example
     const pages = [
         {
             name: 'Features',
@@ -39,10 +42,10 @@ function NavBar() {
             name: 'About Us',
             href: '/about'
         },
-        // {
-        //     name: 'Contact',
-        //     href: '/contact'
-        // }
+        {
+            name: 'Contact Us',
+            href: '/contact'
+        }
     ]
 
     const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -54,7 +57,7 @@ function NavBar() {
     };
     const { theme } = useTheme();
     return (
-        <>
+        !isDashboard && <>
             <AppBar position="static" sx={{ backgroundColor: theme === "dark" ? 'black' : "white", color: theme === "dark" ? 'white' : "black", padding: 0 }}>
                 <Toolbar className='justify-between flex p-0' disableGutters >
                     <BigNavBar pages={pages} handleCloseNavMenu={handleCloseNavMenu} />
@@ -67,6 +70,7 @@ function NavBar() {
             </AppBar>
             <NextTopLoader showSpinner={false} />
         </>
+
     );
 }
 export default NavBar;
