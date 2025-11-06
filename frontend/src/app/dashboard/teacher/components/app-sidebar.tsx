@@ -20,24 +20,22 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {
   LayoutDashboard,
-  Users,
-  GraduationCap,
-  Award,
-  CalendarDays,
-  CheckSquare,
-  CreditCard,
-  BarChart3,
-  MessageSquare,
-  LibraryBig,
-  BrainCircuit,
-  Settings,
   BookOpenCheck,
-  Landmark,
-  Workflow,
-  Building2,
+  ClipboardList,
+  CalendarDays,
+  BarChart3,
+  Users,
+  MessageSquare,
+  BellRing,
+  Settings,
+  UserCircle,
+  LifeBuoy,
   FileCheck2,
-  School,
-  WalletCards,
+  BookMarked,
+  Brain,
+  CalendarClock,
+  Award,
+   School,
   User2,
   ChevronUp,
   ChevronDown
@@ -47,34 +45,22 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 export const menuItems = [
-  // === CORE MANAGEMENT ===
-  { icon: LayoutDashboard, label: "Overview", href: "/dashboard/school" },
-  { icon: Building2, label: "School Profile", href: "/school/profile" },
-  { icon: Users, label: "Teachers", href: "/school/teachers" },
-  { icon: GraduationCap, label: "Students", href: "/school/students" },
-  { icon: CalendarDays, label: "Classes & Timetable", href: "/school/classes" },
-
-  // === ACADEMICS ===
-  { icon: Award, label: "Grades", href: "/school/grades" },
-  { icon: BookOpenCheck, label: "Exams & Quizzes", href: "/school/exams" },
-  { icon: CheckSquare, label: "Attendance", href: "/school/attendance" },
-  { icon: LibraryBig, label: "Library", href: "/school/library" },
-
-  // === ADMINISTRATION ===
-  { icon: CreditCard, label: "Finance & Billing", href: "/school/finance" },
-  { icon: WalletCards, label: "Payments", href: "/school/payments" },
-  { icon: BarChart3, label: "Reports & Analytics", href: "/school/reports" },
-
-  // === COMMUNICATION ===
-  { icon: MessageSquare, label: "Communication", href: "/school/chat" },
-  { icon: Landmark, label: "Gallery & Media", href: "/school/gallery" },
-
-  // === ADVANCED TOOLS ===
-  { icon: BrainCircuit, label: "Artificial Intelligence", href: "/school/ai-tools" },
-  { icon: Workflow, label: "Simulations", href: "/school/simulations" },
-
-  // === SETTINGS ===
-  { icon: Settings, label: "Settings", href: "/school/settings" },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/teacher/dashboard" },
+  { icon: BookOpenCheck, label: "My Classes", href: "/teacher/classes" },
+  { icon: ClipboardList, label: "Assignments", href: "/teacher/assignments" },
+  { icon: FileCheck2, label: "Exams/Quizzes", href: "/teacher/exams" },
+  { icon: CalendarDays, label: "Attendance", href: "/teacher/attendance" },
+  { icon: Award, label: "Grades", href: "/teacher/grades" },
+  { icon: Users, label: "Students", href: "/teacher/students" },
+  { icon: MessageSquare, label: "Messages", href: "/teacher/messages" },
+  { icon: BellRing, label: "Notifications", href: "/teacher/notifications" },
+  { icon: BarChart3, label: "Reports", href: "/teacher/reports" },
+  { icon: BookMarked, label: "Resources", href: "/teacher/resources" },
+  { icon: Brain, label: "AI Assistant", href: "/teacher/ai-tools" },
+  { icon: CalendarClock, label: "Timetable", href: "/teacher/timetable" },
+  { icon: UserCircle, label: "Profile", href: "/teacher/profile" },
+  { icon: Settings, label: "Settings", href: "/teacher/settings" },
+  { icon: LifeBuoy, label: "Support", href: "/teacher/support" },
 ];
 
 export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (collapsed: boolean) => void }) {
