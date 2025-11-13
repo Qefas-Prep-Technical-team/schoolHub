@@ -6,6 +6,7 @@ import { Bell, ChevronDown, Search, ChevronLeft, ChevronRight } from "lucide-rea
 import { useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
+import { ThemeToggle } from "@/app/theme-toggle";
 
 export default function TopNavBar({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => void, isCollapsed?: boolean }) {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -40,6 +41,7 @@ export default function TopNavBar({ onToggleSidebar, isCollapsed }: { onToggleSi
 
             {/* Right Section */}
             <div className="flex items-center gap-4">
+                <ThemeToggle />
                 <Button
                     variant="ghost"
                     size="icon"

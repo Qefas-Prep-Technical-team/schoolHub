@@ -86,7 +86,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boole
         <Sidebar
             collapsible="icon"
             className={cn(
-                "transition-all duration-300 ease-in-out bg-red-600",
+                "transition-all duration-300 ease-in-out",
                 isCollapsed ? "w-[80px]" : "w-[260px]"
             )}
         >

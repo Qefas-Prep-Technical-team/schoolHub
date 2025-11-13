@@ -1,0 +1,52 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("")
+}
+
+// Add your data models here
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+model Admin {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  role      Role      @default(admin)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  schools   School[]  @relation("SchoolAdmins") // Many-to-many with School
+}
+
+// School model (for relation)
+model School {
+  id          Int      @id @default(autoincrement())
+  name        String
+  subdomain   String?  @unique
+  schoolEmail String?  @unique
+  tenantId    String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  admins      Admin[]  @relation("SchoolAdmins") // Multiple admins per school
+}
+
+// Role enum
+enum Role {
+  superadmin
+  admin
+}
