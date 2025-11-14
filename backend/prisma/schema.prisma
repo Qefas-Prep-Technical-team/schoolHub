@@ -1,52 +1,34 @@
-// prisma/schema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("")
+  url      = env("DATABASE_URL")
 }
 
-// Add your data models here
-model User {
+model School {
+  id          Int     @id @default(autoincrement())
+  name        String
+  subdomain   String?
+  schoolEmail String?
+  tenantId    String  @unique
+  admins      Admin[] @relation("SchoolAdmins")
+}
+
+model Admin {
   id        Int      @id @default(autoincrement())
-  name      String?
+  name      String
   email     String   @unique
   password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("users")
-}
-model Admin {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  password  String
-  role      Role      @default(admin)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  // Relations
-  schools   School[]  @relation("SchoolAdmins") // Many-to-many with School
-}
-
-// School model (for relation)
-model School {
-  id          Int      @id @default(autoincrement())
-  name        String
-  subdomain   String?  @unique
-  schoolEmail String?  @unique
-  tenantId    String   @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  admins      Admin[]  @relation("SchoolAdmins") // Multiple admins per school
-}
-
-// Role enum
-enum Role {
-  superadmin
-  admin
+  role      String
+  tenantIds String[]
+  schools   School[] @relation("SchoolAdmins")
 }

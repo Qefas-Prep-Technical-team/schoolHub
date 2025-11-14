@@ -1,65 +1,71 @@
 import { Request, Response } from "express";
-
-import { SchoolModel } from "../school/school.model";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
-import { AdminModel } from "modules/admin/admin.model";
+import { PrismaClient } from "@prisma/client";
 
 export const registerSchool = async (req: Request, res: Response) => {
+  const prisma = new PrismaClient();
   try {
     const { schoolName, adminName, email, password, subdomain } = req.body;
-
-    // Check if email already exists
-    const existingAdmin = await AdminModel.findOne({ email });
-    if (existingAdmin) {
-      return res.status(400).json({ success: false, message: "Email already exists" });
+    if (!schoolName || !adminName || !email || !password) {
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
-
-    // Create unique tenant ID for the new school
+    // Check if admin email already exists
+    const existingAdmin = await prisma.admin.findUnique({ where: { email } });
+    if (existingAdmin) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already exists" });
+    }
+    // Generate unique tenantId
     const tenantId = uuidv4();
-
-    // Create new school
-    const newSchool = await SchoolModel.create({
-      name: schoolName,
-      subdomain: subdomain || schoolName.toLowerCase().replace(/\s+/g, "-"),
-      schoolEmail: email,
-      tenantId,
-      admins: [],
-    });
-
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create admin
-    const newAdmin = await AdminModel.create({
-      name: adminName,
-      email,
-      password: hashedPassword,
-      role: "superadmin",
-      tenantIds: [tenantId],
+    // Create school and superadmin in a single transaction
+    const result = await prisma.$transaction(async (prisma: any) => {
+      const school = await prisma.school.create({
+        data: {
+          name: schoolName,
+          subdomain: subdomain || schoolName.toLowerCase().replace(/\s+/g, "-"),
+          schoolEmail: email,
+          tenantId,
+        },
+      });
+      const admin = await prisma.admin.create({
+        data: {
+          name: adminName,
+          email,
+          password: hashedPassword,
+          role: "superadmin",
+          schools: { connect: { id: school.id } }, // Link admin to school
+        },
+      });
+      return { school, admin };
     });
-
-    // Link admin to school
-    newSchool.admins.push(newAdmin._id);
-    await newSchool.save();
-
     return res.status(201).json({
       success: true,
       message: "School and admin registered successfully",
       data: {
         school: {
-          name: newSchool.name,
-          tenantId: newSchool.tenantId,
-          subdomain: newSchool.subdomain,
+          name: result.school.name,
+          tenantId: result.school.tenantId,
+          subdomain: result.school.subdomain,
         },
         admin: {
-          name: newAdmin.name,
-          email: newAdmin.email,
+          name: result.admin.name,
+          email: result.admin.email,
         },
       },
     });
   } catch (error: any) {
     console.error(error);
+    if (error.code === "P2002") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Unique constraint failed" });
+    }
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
