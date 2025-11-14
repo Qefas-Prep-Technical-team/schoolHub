@@ -1,5 +1,5 @@
 // ...existing code...
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../generated/prisma";
 
 declare global {
   // allow global var for dev hot-reload (Next/ts-node/etc.)

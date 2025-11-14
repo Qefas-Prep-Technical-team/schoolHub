@@ -1,49 +1,80 @@
 import { Request, Response } from "express";
-import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/database";
 
 export const registerSchool = async (req: Request, res: Response) => {
-  const prisma = new PrismaClient();
   try {
     const { schoolName, adminName, email, password, subdomain } = req.body;
+    console.log("here")
+
     if (!schoolName || !adminName || !email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields are required" });
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
     }
+
     // Check if admin email already exists
-    const existingAdmin = await prisma.admin.findUnique({ where: { email } });
+    const existingAdmin = await prisma.admin.findUnique({
+      where: { email },
+    });
+
     if (existingAdmin) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email already exists" });
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists",
+      });
     }
-    // Generate unique tenantId
-    const tenantId = uuidv4();
+
+    // Generate a unique 6-digit numeric tenantId (string)
+    const generateSixDigit = () =>
+      Math.floor(100000 + Math.random() * 900000).toString();
+
+    let tenantId: string | undefined;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const candidate = generateSixDigit();
+      const exists = await prisma.school.findFirst({ where: { tenantId: candidate } });
+      if (!exists) {
+        tenantId = candidate;
+        break;
+      }
+    }
+
+    if (!tenantId) {
+      return res.status(500).json({ success: false, message: "Could not generate unique tenantId, try again" });
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    // Create school and superadmin in a single transaction
-    const result = await prisma.$transaction(async (prisma: any) => {
-      const school = await prisma.school.create({
+
+    // Prisma transaction
+    const result = await prisma.$transaction(async (tx) => {
+      const school = await tx.school.create({
         data: {
           name: schoolName,
-          subdomain: subdomain || schoolName.toLowerCase().replace(/\s+/g, "-"),
+          subdomain:
+            subdomain || schoolName.toLowerCase().replace(/\s+/g, "-"),
           schoolEmail: email,
           tenantId,
         },
       });
-      const admin = await prisma.admin.create({
+
+      const admin = await tx.admin.create({
         data: {
           name: adminName,
           email,
           password: hashedPassword,
           role: "superadmin",
-          schools: { connect: { id: school.id } }, // Link admin to school
+          tenantIds: [tenantId], // ⭐ REQUIRED
+          schools: {
+            connect: { id: school.id },
+          },
         },
       });
+
       return { school, admin };
     });
+
     return res.status(201).json({
       success: true,
       message: "School and admin registered successfully",
@@ -61,11 +92,17 @@ export const registerSchool = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error(error);
+
     if (error.code === "P2002") {
-      return res
-        .status(400)
-        .json({ success: false, message: "Unique constraint failed" });
+      return res.status(400).json({
+        success: false,
+        message: "Unique constraint failed (duplicate email or tenantId)",
+      });
     }
-    return res.status(500).json({ success: false, message: "Server error" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };

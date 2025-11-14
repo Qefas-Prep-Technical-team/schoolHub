@@ -15,16 +15,16 @@ datasource db {
 }
 
 model School {
-  id          Int     @id @default(autoincrement())
+  id          String   @id @default(uuid())  // use UUID string
   name        String
   subdomain   String?
   schoolEmail String?
-  tenantId    String  @unique
-  admins      Admin[] @relation("SchoolAdmins")
+  tenantId    String   @unique
+  admins      Admin[]  @relation("SchoolAdmins")
 }
 
 model Admin {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())   // use UUID string
   name      String
   email     String   @unique
   password  String
@@ -32,3 +32,4 @@ model Admin {
   tenantIds String[]
   schools   School[] @relation("SchoolAdmins")
 }
+
