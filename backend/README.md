@@ -87,11 +87,12 @@ If you add environment variables, create a new section "Environment Setup" with 
 🧾 License
 MIT
 
-yaml
-Copy
-Edit
+prisma 
+1. make sure you have you DATABASE_URL stored in your .env file it is needed to run prisma 
+2. npx prisma migrate reset --- for complete schema reset
+3. npx prisma generate
+4.npx prisma studio -- start prisma studio
+5. npx prisma migrate dev --name add_tenantIds :--- add new schema to data base
 
----
 
-If you want, I can **add this README.md file directly into your current backend folder** so you can commit it with your code.  
-Do you want me to go ahead and write it into your project now?
+
