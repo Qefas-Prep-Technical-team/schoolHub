@@ -16,7 +16,7 @@ export default function SchoolCard() {
         </label>
 
         <p className="text-gray-500 dark:text-gray-400 text-sm font-normal pt-0">
-          Your school`&apos;`s web address will be: [schoolname].schoolhub.com
+          Your school&apos;s web address will be: [schoolname].schoolhub.com
         </p>
 
         <label className="flex flex-col gap-2">
