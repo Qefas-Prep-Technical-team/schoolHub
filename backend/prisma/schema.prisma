@@ -15,16 +15,18 @@ datasource db {
 }
 
 model School {
-  id          String   @id @default(uuid())  // use UUID string
+  id          String    @id @default(uuid()) // use UUID string
   name        String
   subdomain   String?
   schoolEmail String?
-  tenantId    String   @unique
-  admins      Admin[]  @relation("SchoolAdmins")
+  tenantId    String    @unique
+  admins      Admin[]   @relation("SchoolAdmins")
+  teachers    Teacher[] @relation("SchoolTeachers") // <-- ADD THIS
+  students    Student[] @relation("SchoolStudents")
 }
 
 model Admin {
-  id        String   @id @default(uuid())   // use UUID string
+  id        String   @id @default(uuid()) // use UUID string
   name      String
   email     String   @unique
   password  String
@@ -33,3 +35,53 @@ model Admin {
   schools   School[] @relation("SchoolAdmins")
 }
 
+model Teacher {
+  id          String    @id @default(uuid())
+  name        String
+  email       String    @unique
+  password    String
+  role        String
+  tenantIds   String[]
+  teacherCode String    @unique
+  schools     School[]  @relation("SchoolTeachers")
+  students    Student[] @relation("TeacherStudents")
+}
+
+model Student {
+  id          String    @id @default(uuid())
+  name        String
+  email       String    @unique
+  password    String
+  studentCode String    @unique // New field for parent linking
+  tenantIds   String[]
+  teacherCode String?
+  schools     School[]  @relation("SchoolStudents")
+  teachers    Teacher[] @relation("TeacherStudents")
+  createdAt   DateTime  @default(now())
+
+  // Add parent relationship
+  parentLinks ParentChildLink[]
+}
+
+model Parent {
+  id        String   @id @default(uuid())
+  fullName  String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  children ParentChildLink[]
+}
+
+model ParentChildLink {
+  id          String   @id @default(uuid())
+  parentId    String
+  studentCode String // Use student code for linking
+  status      String   @default("pending") // pending, linked, rejected
+  createdAt   DateTime @default(now())
+
+  parent  Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student Student? @relation(fields: [studentCode], references: [studentCode])
+}

@@ -1,7 +1,8 @@
 import express from "express";
-import { registerSchool } from "./auth.controller";
+import { registerSchool,registerTeacher,registerStudent, registerParent } from "./auth.controller";
 import { validateRequest } from "../../middleware/validateRequest";
-import { schoolRegistrationSchema } from "./auth.validation";
+import { schoolRegistrationSchema ,teacherRegistrationSchema,studentSchema, ParentRegisterSchema} from "./auth.validation";
+import { getStudentByCode, linkChildToParent } from "./auth.service";
 
 const router = express.Router();
 
@@ -15,8 +16,19 @@ router.post(
   validateRequest(schoolRegistrationSchema),
   registerSchool
 );
-router.get("/check", (req, res) => {
-  res.send("auth Template Running 🚀");
-});
 
+router.post("/register/teacher",
+  validateRequest(teacherRegistrationSchema),
+   registerTeacher
+  );
+
+  router.post(
+  "/register/student",
+  validateRequest(studentSchema),
+  registerStudent
+);
+
+router.post('/register/parents', validateRequest(ParentRegisterSchema), registerParent);
+router.get('/students/code/:studentCode', getStudentByCode);
+router.post('/parents/link-child', linkChildToParent);
 export default router;

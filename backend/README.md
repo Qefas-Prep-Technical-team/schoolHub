@@ -94,5 +94,9 @@ prisma
 4.npx prisma studio -- start prisma studio
 5. npx prisma migrate dev --name add_tenantIds :--- add new schema to data base
 
+# for consistent migration to db and changing the existing database structure
+1. npx prisma format
+2. npx prisma db push
+
 
 
