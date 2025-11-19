@@ -102,3 +102,17 @@ export const ParentRegisterSchema = yup.object({
       .transform((value) => value === "" ? null : value),
   }),
 });
+
+
+export const requestCodeSchema = yup.object({
+  body: yup.object({
+    email: yup.string().email("Invalid email").required("Email is required"),
+  }),
+});
+
+export const verifyCodeSchema = yup.object({
+  body: yup.object({
+    email: yup.string().email("Invalid email").required("Email is required"),
+    code: yup.string().length(6, "Code must be 6 digits").required("Code is required"),
+  }),
+});

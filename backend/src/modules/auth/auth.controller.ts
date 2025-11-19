@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../../config/database";
+import { loginUser, sendVerificationEmail } from "./auth.service";
+import { comparePassword, generateAccessToken, generateRefreshToken } from "@services/authService";
+import jwt from "jsonwebtoken";
 
 export const registerSchool = async (req: Request, res: Response) => {
   try {
@@ -540,5 +543,249 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
       success: false,
       message: "Internal server error. Please try again.",
     });
+  }
+};
+
+
+// 🔹 Generate 6-digit code
+const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+
+// ==============================
+// 1️⃣ Request Verification Code
+// ==============================
+export const requestVerificationCode = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    // Delete old unused codes for same email
+    await prisma.verificationCode.deleteMany({
+      where: { email, used: false },
+    });
+
+    const code = generateCode();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Save code
+    await prisma.verificationCode.create({
+      data: {
+        email,
+        code,
+        expiresAt,
+      },
+    });
+
+    // Send email via Resend
+    await sendVerificationEmail(email, code);
+
+    return res.status(200).json({
+      success: true,
+      message: "Verification code sent to email",
+    });
+  } catch (error) {
+    console.error("Error requesting verification code:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+// ==============================
+// 2️⃣ Verify Code & Update Verified Field
+// ==============================
+export const verifyEmailCode = async (req: Request, res: Response) => {
+  try {
+    const { email, code } = req.body;
+
+    // 1️⃣ Find the unused code
+    const found = await prisma.verificationCode.findFirst({
+      where: { email, code, used: false },
+    });
+
+    if (!found) {
+      return res.status(400).json({ success: false, message: "Invalid code" });
+    }
+
+    // 2️⃣ Check expiry
+    if (found.expiresAt < new Date()) {
+      return res.status(400).json({ success: false, message: "Code expired" });
+    }
+
+    // 3️⃣ Mark code as used
+    await prisma.verificationCode.update({
+      where: { id: found.id },
+      data: { used: true },
+    });
+
+    // 4️⃣ Find the user
+    const student = await prisma.student.findUnique({ where: { email } });
+    if (student) {
+      await prisma.student.update({
+        where: { email },
+        data: { verified: true },
+      });
+      return res.status(200).json({
+        success: true,
+        message: "Student email verified successfully",
+      });
+    }
+
+    const teacher = await prisma.teacher.findUnique({ where: { email } });
+    if (teacher) {
+      await prisma.teacher.update({
+        where: { email },
+        data: { verified: true },
+      });
+      return res.status(200).json({
+        success: true,
+        message: "Teacher email verified successfully",
+      });
+    }
+
+    const parent = await prisma.parent.findUnique({ where: { email } });
+    if (parent) {
+      await prisma.parent.update({
+        where: { email },
+        data: { verified: true },
+      });
+      return res.status(200).json({
+        success: true,
+        message: "Parent email verified successfully",
+      });
+    }
+    const admin = await prisma.admin.findUnique({ where: { email } });
+    if (admin) {
+      await prisma.admin.update({
+        where: { email },
+        data: { verified: true },
+      });
+      return res.status(200).json({
+        success: true,
+        message: "Parent email verified successfully",
+      });
+    }
+
+    // 5️⃣ Email does not belong to any known user
+    return res.status(404).json({
+      success: false,
+      message: "No user found for this email",
+    });
+  } catch (error) {
+    console.error("Error verifying code:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+
+// // =====================================================
+// LOGIN Begins
+// =======================================================
+
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password, userType } = req.body;
+
+    if (!email || !password || !userType) {
+      return res.status(400).json({ success: false, message: "Email, password and userType required" });
+    }
+
+    // Find user dynamically
+    let user: any;
+    switch (userType) {
+      case "ADMIN":
+        user = await prisma.admin.findUnique({ where: { email } });
+        break;
+      case "TEACHER":
+        user = await prisma.teacher.findUnique({ where: { email } });
+        break;
+      case "STUDENT":
+        user = await prisma.student.findUnique({ where: { email } });
+        break;
+      case "PARENT":
+        user = await prisma.parent.findUnique({ where: { email } });
+        break;
+      default:
+        return res.status(400).json({ success: false, message: "Invalid userType" });
+    }
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (!user.verified) {
+      return res.status(403).json({ success: false, message: "Email not verified" });
+    }
+
+    const validPassword = await comparePassword(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+
+    const accessToken = generateAccessToken(user.id, userType);
+    const refreshToken = await generateRefreshToken(user.id, userType);
+
+    // Send refresh token as httpOnly cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged in successfully",
+      data: {
+        accessToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role || null,
+        },
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+// src/controllers/auth.controller.ts (add below login function)
+export const refreshToken = async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies.refreshToken;
+    if (!token) return res.status(401).json({ success: false, message: "No refresh token" });
+
+    const payload: any = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
+
+    const dbToken = await prisma.refreshToken.findFirst({
+      where: { token, userId: payload.userId, userType: payload.userType },
+    });
+
+    if (!dbToken || dbToken.expiresAt < new Date()) {
+      return res.status(401).json({ success: false, message: "Invalid refresh token" });
+    }
+
+    const newAccessToken = generateAccessToken(payload.userId, payload.userType);
+    return res.status(200).json({ success: true, accessToken: newAccessToken });
+  } catch (error) {
+    console.error(error);
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
+};
+
+
+export const logout = async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies.refreshToken;
+    if (token) {
+      await prisma.refreshToken.deleteMany({ where: { token } });
+      res.clearCookie("refreshToken");
+    }
+    return res.status(200).json({ success: true, message: "Logged out" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };

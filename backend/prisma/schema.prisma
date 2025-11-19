@@ -15,24 +15,29 @@ datasource db {
 }
 
 model School {
-  id          String    @id @default(uuid()) // use UUID string
+  id          String    @id @default(uuid())
   name        String
   subdomain   String?
   schoolEmail String?
   tenantId    String    @unique
   admins      Admin[]   @relation("SchoolAdmins")
-  teachers    Teacher[] @relation("SchoolTeachers") // <-- ADD THIS
+  teachers    Teacher[] @relation("SchoolTeachers")
   students    Student[] @relation("SchoolStudents")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Admin {
-  id        String   @id @default(uuid()) // use UUID string
+  id        String   @id @default(uuid())
   name      String
   email     String   @unique
   password  String
   role      String
   tenantIds String[]
   schools   School[] @relation("SchoolAdmins")
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Teacher {
@@ -45,6 +50,9 @@ model Teacher {
   teacherCode String    @unique
   schools     School[]  @relation("SchoolTeachers")
   students    Student[] @relation("TeacherStudents")
+  verified    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Student {
@@ -52,15 +60,16 @@ model Student {
   name        String
   email       String    @unique
   password    String
-  studentCode String    @unique // New field for parent linking
+  studentCode String    @unique
   tenantIds   String[]
   teacherCode String?
   schools     School[]  @relation("SchoolStudents")
   teachers    Teacher[] @relation("TeacherStudents")
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  // Add parent relationship
   parentLinks ParentChildLink[]
+  verified    Boolean           @default(false)
 }
 
 model Parent {
@@ -71,17 +80,50 @@ model Parent {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relationships
   children ParentChildLink[]
+  verified Boolean           @default(false)
 }
 
 model ParentChildLink {
   id          String   @id @default(uuid())
   parentId    String
-  studentCode String // Use student code for linking
-  status      String   @default("pending") // pending, linked, rejected
+  studentCode String
+  status      String   @default("pending")
   createdAt   DateTime @default(now())
 
   parent  Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
   student Student? @relation(fields: [studentCode], references: [studentCode])
+}
+
+model VerificationCode {
+  id        String   @id @default(uuid())
+  email     String
+  code      String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  used      Boolean  @default(false)
+
+  @@index([email])
+  @@index([code])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  userType  UserType
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Simple indexes for querying - no complex relations
+  @@index([userId])
+  @@index([userType])
+  @@index([userId, userType])
+}
+
+enum UserType {
+  ADMIN
+  TEACHER
+  STUDENT
+  PARENT
 }

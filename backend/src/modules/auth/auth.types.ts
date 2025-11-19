@@ -16,3 +16,5 @@ export interface ParentRegisterDTO {
   confirmPassword: string;
   studentCodeOrEmail?: string; // optional
 }
+
+export type UserType = "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";

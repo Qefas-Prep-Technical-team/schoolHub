@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
 import prisma from "../../config/database";
+import { Resend } from 'resend';
+
+import bcrypt from "bcrypt";
+import { generateToken } from "../../utils/generateToken";
+
 
 // Get student by code (for parent to verify before linking)
 export const getStudentByCode = async (req: Request, res: Response) => {
@@ -94,4 +99,204 @@ export const linkChildToParent = async (req: Request, res: Response) => {
       message: "Failed to link child",
     });
   }
+};
+
+
+
+
+
+
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export const sendVerificationEmail = async (email: string, code: string) => {
+  await resend.emails.send({
+    from: "SchoolHub <onboarding@resend.dev>",
+    to: email,
+    subject: "Your Verification Code",
+    html: `
+     <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f8ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .verification-card {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 120, 215, 0.15);
+            max-width: 480px;
+            width: 100%;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .verification-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 120, 215, 0.2);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4da8ff, #0078d7);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .code-container {
+            background-color: #f0f8ff;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+            border: 1px solid #d1ebff;
+        }
+        
+        .verification-code {
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: 8px;
+            color: #0078d7;
+            margin: 10px 0;
+            padding: 5px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 120, 215, 0.1);
+        }
+        
+        .instructions {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .expiry-notice {
+            background-color: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 25px;
+        }
+        
+        .expiry-notice b {
+            color: #e6a700;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 500px) {
+            .verification-code {
+                font-size: 32px;
+                letter-spacing: 6px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="verification-card">
+        <div class="header">
+            <h1>Email Verification</h1>
+            <p>Secure your account with verification</p>
+        </div>
+        
+        <div class="content">
+            <p class="instructions">Thank you for signing up! To complete your registration, please use the verification code below:</p>
+            
+            <div class="code-container">
+                <p>Your verification code is:</p>
+                <div class="verification-code">${code}</div>
+                <p>Enter this code on the verification page</p>
+            </div>
+            
+            <div class="expiry-notice">
+                <p>This code expires in <b>10 minutes</b>. Please verify your email address before it expires.</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>If you didn't request this code, you can safely ignore this email.</p>
+        </div>
+    </div>
+</body>
+</html>
+    `,
+  });
+};
+
+
+// Login function
+export const loginUser = async (email: string, password: string) => {
+  // Check student first
+  const student = await prisma.student.findUnique({ where: { email } });
+  if (student) {
+    const match = await bcrypt.compare(password, student.password);
+    if (!match) throw new Error("Invalid credentials");
+
+    const token = generateToken({ id: student.id, role: "student" });
+    return { user: student, token };
+  }
+
+  // Check teacher
+  const teacher = await prisma.teacher.findUnique({ where: { email } });
+  if (teacher) {
+    const match = await bcrypt.compare(password, teacher.password);
+    if (!match) throw new Error("Invalid credentials");
+
+    const token = generateToken({ id: teacher.id, role: "teacher" });
+    return { user: teacher, token };
+  }
+
+  // Check admin
+  const admin = await prisma.admin.findUnique({ where: { email } });
+  if (admin) {
+    const match = await bcrypt.compare(password, admin.password);
+    if (!match) throw new Error("Invalid credentials");
+
+    const token = generateToken({ id: admin.id, role: "admin" });
+    return { user: admin, token };
+  }
+
+  throw new Error("User not found");
 };
