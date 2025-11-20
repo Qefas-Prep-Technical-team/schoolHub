@@ -2,13 +2,17 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../../config/database";
 import { loginUser, sendVerificationEmail } from "./auth.service";
-import { comparePassword, generateAccessToken, generateRefreshToken } from "@services/authService";
+import {
+  comparePassword,
+  generateAccessToken,
+  generateRefreshToken,
+} from "@services/authService";
 import jwt from "jsonwebtoken";
 
 export const registerSchool = async (req: Request, res: Response) => {
   try {
     const { schoolName, adminName, email, password, subdomain } = req.body;
-    console.log("here")
+    console.log("here");
 
     if (!schoolName || !adminName || !email || !password) {
       return res.status(400).json({
@@ -36,7 +40,9 @@ export const registerSchool = async (req: Request, res: Response) => {
     let tenantId: string | undefined;
     for (let attempt = 0; attempt < 10; attempt++) {
       const candidate = generateSixDigit();
-      const exists = await prisma.school.findFirst({ where: { tenantId: candidate } });
+      const exists = await prisma.school.findFirst({
+        where: { tenantId: candidate },
+      });
       if (!exists) {
         tenantId = candidate;
         break;
@@ -44,7 +50,12 @@ export const registerSchool = async (req: Request, res: Response) => {
     }
 
     if (!tenantId) {
-      return res.status(500).json({ success: false, message: "Could not generate unique tenantId, try again" });
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: "Could not generate unique tenantId, try again",
+        });
     }
 
     // Hash password
@@ -55,8 +66,7 @@ export const registerSchool = async (req: Request, res: Response) => {
       const school = await tx.school.create({
         data: {
           name: schoolName,
-          subdomain:
-            subdomain || schoolName.toLowerCase().replace(/\s+/g, "-"),
+          subdomain: subdomain || schoolName.toLowerCase().replace(/\s+/g, "-"),
           schoolEmail: email,
           tenantId,
         },
@@ -109,7 +119,6 @@ export const registerSchool = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 //  registration for teachers
 export const registerTeacher = async (req: Request, res: Response) => {
@@ -278,9 +287,19 @@ const ensureUniqueStudentCode = async (): Promise<string> => {
   return studentCode;
 };
 
-export const registerStudent = async (req: Request<{}, {}, RegisterStudentBody>, res: Response) => {
+export const registerStudent = async (
+  req: Request<{}, {}, RegisterStudentBody>,
+  res: Response
+) => {
   try {
-    const { fullName, email, password, confirmPassword, tenantId, teacherCode } = req.body;
+    const {
+      fullName,
+      email,
+      password,
+      confirmPassword,
+      tenantId,
+      teacherCode,
+    } = req.body;
 
     // 1. Validate required fields
     if (!fullName || !email || !password || !confirmPassword) {
@@ -396,8 +415,6 @@ export const registerStudent = async (req: Request<{}, {}, RegisterStudentBody>,
   }
 };
 
-
-
 interface RegisterParentBody {
   fullName: string;
   email: string;
@@ -406,9 +423,13 @@ interface RegisterParentBody {
   studentCode?: string; // Changed from studentCodeOrEmail to studentCode only
 }
 
-export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, res: Response) => {
+export const registerParent = async (
+  req: Request<{}, {}, RegisterParentBody>,
+  res: Response
+) => {
   try {
-    const { fullName, email, password, confirmPassword, studentCode } = req.body;
+    const { fullName, email, password, confirmPassword, studentCode } =
+      req.body;
 
     // Validate required fields
     if (!fullName || !email || !password || !confirmPassword) {
@@ -509,12 +530,12 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
       };
     } else {
       response.data.linking = {
-        message: "You can link to your child's account later using their student code.",
+        message:
+          "You can link to your child's account later using their student code.",
       };
     }
 
     return res.status(201).json(response);
-
   } catch (error: any) {
     console.error("Parent registration error:", error);
 
@@ -546,10 +567,9 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
   }
 };
 
-
 // 🔹 Generate 6-digit code
-const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
-
+const generateCode = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
 
 // ==============================
 // 1️⃣ Request Verification Code
@@ -587,7 +607,6 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 // ==============================
 // 2️⃣ Verify Code & Update Verified Field
@@ -675,8 +694,6 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
   }
 };
 
-
-
 // // =====================================================
 // LOGIN Begins
 // =======================================================
@@ -684,12 +701,16 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password, userType } = req.body;
-console.log(email)
+
     if (!email || !password || !userType) {
-      return res.status(400).json({ success: false, message: "Email, password and userType required" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Email, password and userType required",
+        });
     }
 
-    // Find user dynamically
     let user: any;
     switch (userType) {
       case "ADMIN":
@@ -705,31 +726,45 @@ console.log(email)
         user = await prisma.parent.findUnique({ where: { email } });
         break;
       default:
-        return res.status(400).json({ success: false, message: "Invalid userType" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid userType" });
     }
 
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    if (!user.verified) {
-      return res.status(403).json({ success: false, message: "Email not verified" });
-    }
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    if (!user.verified)
+      return res
+        .status(403)
+        .json({ success: false, message: "Email not verified" });
 
     const validPassword = await comparePassword(password, user.password);
-    if (!validPassword) {
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
-    }
+    if (!validPassword)
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
 
     const accessToken = generateAccessToken(user.id, userType);
     const refreshToken = await generateRefreshToken(user.id, userType);
 
-    // Send refresh token as httpOnly cookie
+    // ⬇️ THE FIX: send access token cookie
+    res.cookie("token", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    // refresh token
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.status(200).json({
@@ -750,12 +785,14 @@ console.log(email)
   }
 };
 
-
 // src/controllers/auth.controller.ts (add below login function)
 export const refreshToken = async (req: Request, res: Response) => {
   try {
     const token = req.cookies.refreshToken;
-    if (!token) return res.status(401).json({ success: false, message: "No refresh token" });
+    if (!token)
+      return res
+        .status(401)
+        .json({ success: false, message: "No refresh token" });
 
     const payload: any = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
 
@@ -764,17 +801,21 @@ export const refreshToken = async (req: Request, res: Response) => {
     });
 
     if (!dbToken || dbToken.expiresAt < new Date()) {
-      return res.status(401).json({ success: false, message: "Invalid refresh token" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid refresh token" });
     }
 
-    const newAccessToken = generateAccessToken(payload.userId, payload.userType);
+    const newAccessToken = generateAccessToken(
+      payload.userId,
+      payload.userType
+    );
     return res.status(200).json({ success: true, accessToken: newAccessToken });
   } catch (error) {
     console.error(error);
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
 };
-
 
 export const logout = async (req: Request, res: Response) => {
   try {

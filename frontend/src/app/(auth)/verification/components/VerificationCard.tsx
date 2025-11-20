@@ -10,7 +10,8 @@ export default function VerificationCard() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const email = searchParams.get('email');
-  
+  console.log(email)
+
   const [verificationCode, setVerificationCode] = useState('');
   const [isCodeComplete, setIsCodeComplete] = useState(false);
 
@@ -38,7 +39,7 @@ export default function VerificationCard() {
           onSuccess: (response) => {
             // Redirect to login or dashboard after successful verification
             setTimeout(() => {
-              router.push('/login?message=email_verified');
+              router.push('/onboarding?type=parent');
             }, 2000);
           }
         }
@@ -95,8 +96,8 @@ export default function VerificationCard() {
         </p>
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
           Wrong email?{' '}
-          <a 
-            className="font-medium text-primary hover:underline" 
+          <a
+            className="font-medium text-primary hover:underline"
             href="/register/parent"
           >
             Go back to registration
@@ -105,21 +106,21 @@ export default function VerificationCard() {
       </div>
 
       <div className="mt-8">
-        <CodeInputGroup 
+        <CodeInputGroup
           email={email}
           onCodeComplete={handleCodeComplete}
         />
       </div>
 
       <div className="mt-8">
-        <VerifyButton 
+        <VerifyButton
           label={isVerifying ? "Verifying..." : "Verify Account"}
           disabled={!isCodeComplete || isVerifying}
           onClick={handleVerify}
         />
       </div>
 
-      <MetaText 
+      <MetaText
         initialSeconds={60}
         onResend={handleResendCode}
       />
