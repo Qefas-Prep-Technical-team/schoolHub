@@ -51,7 +51,7 @@ export default function MetaText({ initialSeconds = 45, onResend }: Props) {
     } catch (err) {
       // log error so lint/typecheck doesn't complain; consumers can handle errors via onResend
       // optionally add toast/error handling here
-  console.error(err);
+      console.error(err);
     } finally {
       setSending(false);
       // restart the timer
@@ -66,7 +66,7 @@ export default function MetaText({ initialSeconds = 45, onResend }: Props) {
   return (
     <div className="mt-6 text-center">
       <p className="text-sm text-gray-500 dark:text-gray-400">
-        Didn’t receive the code?{' '}
+        Didn't receive the code?{' '}
         <button
           type="button"
           disabled={seconds > 0 || sending}

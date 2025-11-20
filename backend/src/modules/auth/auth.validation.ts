@@ -116,3 +116,16 @@ export const verifyCodeSchema = yup.object({
     code: yup.string().length(6, "Code must be 6 digits").required("Code is required"),
   }),
 });
+
+export const loginSchema = yup.object({
+  body: yup.object({
+    email: yup.string()
+      .email("Invalid email format")
+      .required("Email is required"),
+    password: yup.string()
+      .required("Password is required"),
+    userType: yup.string()
+      .oneOf(["ADMIN", "TEACHER", "STUDENT", "PARENT"], "Invalid user type")
+      .required("User type is required")
+  }),
+})
