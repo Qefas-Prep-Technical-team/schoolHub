@@ -1,7 +1,7 @@
 import express from "express";
 import { registerSchool,registerTeacher,registerStudent, registerParent, verifyEmailCode, requestVerificationCode, login, refreshToken, logout } from "./auth.controller";
 import { validateRequest } from "../../middleware/validateRequest";
-import { schoolRegistrationSchema ,teacherRegistrationSchema,studentSchema, ParentRegisterSchema, requestCodeSchema, verifyCodeSchema} from "./auth.validation";
+import { schoolRegistrationSchema ,teacherRegistrationSchema,studentSchema, ParentRegisterSchema, requestCodeSchema, verifyCodeSchema, loginSchema} from "./auth.validation";
 import { getStudentByCode, linkChildToParent } from "./auth.service";
 
 const router = express.Router();
@@ -39,7 +39,7 @@ router.post("/request-code", validateRequest(requestCodeSchema), requestVerifica
 router.post("/verify-code", validateRequest(verifyCodeSchema), verifyEmailCode);
 
 // login 
-router.post("/login", login);
+router.post("/login", validateRequest(loginSchema),login);
 router.post("/refresh", refreshToken);
 router.post("/logout", logout);
 export default router;

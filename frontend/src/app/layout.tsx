@@ -6,6 +6,9 @@ import NavBar from "@/components/reusable/NavBar";
 import { ThemeClientProvider } from "@/context/ThemeClientProvider";
 import Footer from "@/components/reusable/Footer";
 import 'leaflet/dist/leaflet.css';
+import { QueryClientProvider } from "@tanstack/react-query";
+import queryClient from "@/lib/queryClient";
+import Providers from "@/utils/providers";
 
 
 const geistSans = Geist({
@@ -100,11 +103,16 @@ export default function RootLayout({
           antialiased
           `}
       >
+           <Providers>
+
         <ThemeClientProvider>
+         
           <NavBar />
           {children}
           <Footer />
+      
         </ThemeClientProvider>
+           </Providers>
       </body>
     </html>
   );
