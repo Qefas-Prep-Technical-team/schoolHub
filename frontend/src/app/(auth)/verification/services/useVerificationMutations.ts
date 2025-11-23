@@ -7,7 +7,8 @@ export const useRequestCode = () => {
   const { auth } = useToast();
 
   return useMutation({
-    mutationFn: verificationAPI.requestCode,
+    mutationFn: (data: { email: string; userType: string }) => 
+      verificationAPI.requestCode(data.email, data.userType),
     onSuccess: (response) => {
       auth.success(
         response.data?.message || "Verification code sent successfully!"
@@ -29,8 +30,15 @@ export const useVerifyCode = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ email, code }: { email: string; code: string }) =>
-      verificationAPI.verifyCode(email, code),
+    mutationFn: ({
+      email,
+      code,
+      userType,
+    }: {
+      email: string;
+      code: string;
+      userType: string;
+    }) => verificationAPI.verifyCode(email, code, userType),
     onSuccess: (response) => {
       auth.success(response.data?.message || "Email verified successfully!");
       queryClient.invalidateQueries({ queryKey: ["auth"] });

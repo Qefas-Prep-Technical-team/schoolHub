@@ -19,7 +19,7 @@ export default function StudentLoginPage() {
               Enter your credentials to access your dashboard.
             </p>
           </div>
-          <StreakCard />
+          {/* <StreakCard /> */}
           <LoginForm />
         </div>
       </div>

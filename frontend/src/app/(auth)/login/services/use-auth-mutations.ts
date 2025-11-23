@@ -1,40 +1,54 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "./auth-store";
+import { useAuthStore, UserType } from "./auth-store";
 import { useAuthToast, useErrorToast } from "@/lib/hooks/useToast";
 import { authAPI } from "./auth-api";
 
 export const useLoginMutation = () => {
   const queryClient = useQueryClient();
-  const setAuth = useAuthStore((state) => state.setAuth);
   const authToast = useAuthToast();
   const errorToast = useErrorToast();
+  const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   return useMutation({
-    mutationFn: (credentials: { email: string; password: string }) =>
-      authAPI.login({ ...credentials, userType: "PARENT" }),
-    onSuccess: (response) => {
+    mutationFn: (credentials: {
+      email: string;
+      password: string;
+      userType: UserType; // Use UserType instead of string
+    }) => authAPI.login({ ...credentials }),
+    onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
-      setAuth(response.data.user, response.data.accessToken);
-      const user = response.data.user.email;
 
-      authToast.loginSuccess(user);
-      console.log("Parent login successful:", response.data);
+      // Create user object with userType from the login credentials
+      const userWithType = {
+        ...response.data.user,
+        userType: variables.userType, // Use the userType from the login request
+      };
+
+      setAuth(userWithType, response.data.accessToken);
+      const userEmail = response.data.user.email;
+
+      authToast.loginSuccess(userEmail);
+
+      // Determine dashboard based on userType from credentials
+      const userDash = variables.userType.toLowerCase(); // "PARENT" -> "parent"
 
       // Use hard redirect to ensure middleware picks up the new cookie
       setTimeout(() => {
-        window.location.href = "/dashboard/parent";
+        router.push(`/dashboard/${userDash}`);
       }, 1000);
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || "Login failed";
       errorToast.show(errorMessage);
-      console.error("Parent login failed:", error);
+      console.error("Login failed:", error);
       throw error;
     },
   });
 };
+
 export const useLogoutMutation = () => {
   const queryClient = useQueryClient();
   const router = useRouter();

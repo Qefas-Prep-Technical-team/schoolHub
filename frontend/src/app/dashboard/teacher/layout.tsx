@@ -3,11 +3,12 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "./components/app-sidebar"
 import TopNavBar from "./components/TopNavBar"
 import { useState } from "react"
-
+import { ProtectedTeacherRoute } from "./components/ProtectedTeacherRoute"
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     const [isCollapsed, setIsCollapsed] = useState(false)
     return (
+        <ProtectedTeacherRoute>
         <SidebarProvider>
             <AppSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
             <main className="flex-1">
@@ -16,5 +17,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 {children}
             </main>
         </SidebarProvider>
+        </ProtectedTeacherRoute>
     )
 }

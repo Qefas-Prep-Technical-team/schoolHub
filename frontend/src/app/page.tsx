@@ -13,6 +13,7 @@ import { useState } from "react";
 
 export default function Home() {
   const [queryClient] = useState(() => new QueryClient());
+ 
   return (
     <QueryClientProvider client={queryClient}>
       <Box component={"main"} className="min-h-screen flex items-center flex-col justify-center bg-white dark:bg-black text-black dark:text-gray-200 transition-all duration-300">

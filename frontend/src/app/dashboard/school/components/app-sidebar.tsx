@@ -19,66 +19,68 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  LayoutDashboard,
-  Users,
-  GraduationCap,
-  Award,
-  CalendarDays,
-  CheckSquare,
-  CreditCard,
-  BarChart3,
-  MessageSquare,
-  LibraryBig,
-  BrainCircuit,
-  Settings,
-  BookOpenCheck,
-  Landmark,
-  Workflow,
-  Building2,
-  FileCheck2,
-  School,
-  WalletCards,
-  User2,
-  ChevronUp,
-  ChevronDown
+    LayoutDashboard,
+    Users,
+    GraduationCap,
+    Award,
+    CalendarDays,
+    CheckSquare,
+    CreditCard,
+    BarChart3,
+    MessageSquare,
+    LibraryBig,
+    BrainCircuit,
+    Settings,
+    BookOpenCheck,
+    Landmark,
+    Workflow,
+    Building2,
+    FileCheck2,
+    School,
+    WalletCards,
+    User2,
+    ChevronUp,
+    ChevronDown
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
+
 
 export const menuItems = [
-  // === CORE MANAGEMENT ===
-  { icon: LayoutDashboard, label: "Overview", href: "/dashboard/school" },
-  { icon: Building2, label: "School Profile", href: "/school/profile" },
-  { icon: Users, label: "Teachers", href: "/school/teachers" },
-  { icon: GraduationCap, label: "Students", href: "/school/students" },
-  { icon: CalendarDays, label: "Classes & Timetable", href: "/school/classes" },
+    // === CORE MANAGEMENT ===
+    { icon: LayoutDashboard, label: "Overview", href: "/dashboard/school" },
+    { icon: Building2, label: "School Profile", href: "/school/profile" },
+    { icon: Users, label: "Teachers", href: "/school/teachers" },
+    { icon: GraduationCap, label: "Students", href: "/school/students" },
+    { icon: CalendarDays, label: "Classes & Timetable", href: "/school/classes" },
 
-  // === ACADEMICS ===
-  { icon: Award, label: "Grades", href: "/school/grades" },
-  { icon: BookOpenCheck, label: "Exams & Quizzes", href: "/school/exams" },
-  { icon: CheckSquare, label: "Attendance", href: "/school/attendance" },
-  { icon: LibraryBig, label: "Library", href: "/school/library" },
+    // === ACADEMICS ===
+    { icon: Award, label: "Grades", href: "/school/grades" },
+    { icon: BookOpenCheck, label: "Exams & Quizzes", href: "/school/exams" },
+    { icon: CheckSquare, label: "Attendance", href: "/school/attendance" },
+    { icon: LibraryBig, label: "Library", href: "/school/library" },
 
-  // === ADMINISTRATION ===
-  { icon: CreditCard, label: "Finance & Billing", href: "/school/finance" },
-  { icon: WalletCards, label: "Payments", href: "/school/payments" },
-  { icon: BarChart3, label: "Reports & Analytics", href: "/school/reports" },
+    // === ADMINISTRATION ===
+    { icon: CreditCard, label: "Finance & Billing", href: "/school/finance" },
+    { icon: WalletCards, label: "Payments", href: "/school/payments" },
+    { icon: BarChart3, label: "Reports & Analytics", href: "/school/reports" },
 
-  // === COMMUNICATION ===
-  { icon: MessageSquare, label: "Communication", href: "/school/chat" },
-  { icon: Landmark, label: "Gallery & Media", href: "/school/gallery" },
+    // === COMMUNICATION ===
+    { icon: MessageSquare, label: "Communication", href: "/school/chat" },
+    { icon: Landmark, label: "Gallery & Media", href: "/school/gallery" },
 
-  // === ADVANCED TOOLS ===
-  { icon: BrainCircuit, label: "Artificial Intelligence", href: "/school/ai-tools" },
-  { icon: Workflow, label: "Simulations", href: "/school/simulations" },
+    // === ADVANCED TOOLS ===
+    { icon: BrainCircuit, label: "Artificial Intelligence", href: "/school/ai-tools" },
+    { icon: Workflow, label: "Simulations", href: "/school/simulations" },
 
-  // === SETTINGS ===
-  { icon: Settings, label: "Settings", href: "/school/settings" },
+    // === SETTINGS ===
+    { icon: Settings, label: "Settings", href: "/school/settings" },
 ];
 
 export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (collapsed: boolean) => void }) {
-
+    const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const pathname = usePathname()
 
@@ -208,7 +210,9 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boole
                                 <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
                                     Billing
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
+                                <DropdownMenuItem onClick={
+                                    () => logout()
+                                } className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
                                     Sign out
                                 </DropdownMenuItem>
                             </DropdownMenuContent>

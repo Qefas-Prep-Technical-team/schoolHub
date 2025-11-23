@@ -19,52 +19,53 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  LayoutDashboard,
-  BookOpenCheck,
-  ClipboardList,
-  BarChart3,
-  CalendarDays,
-  MessageCircle,
-  BellRing,
-  UserCircle,
-  Settings,
-  LifeBuoy,
-  FileCheck2,
-  BookMarked,
-  WalletCards,
-  Brain,
-  CalendarClock,
-  School,
-  User2,
-  ChevronUp,
-  ChevronDown
+    LayoutDashboard,
+    BookOpenCheck,
+    ClipboardList,
+    BarChart3,
+    CalendarDays,
+    MessageCircle,
+    BellRing,
+    UserCircle,
+    Settings,
+    LifeBuoy,
+    FileCheck2,
+    BookMarked,
+    WalletCards,
+    Brain,
+    CalendarClock,
+    School,
+    User2,
+    ChevronUp,
+    ChevronDown
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
 
 export const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/student/dashboard" },
-  { icon: BookOpenCheck, label: "Classes", href: "/student/classes" },
-  { icon: ClipboardList, label: "Assignments", href: "/student/assignments" },
-  { icon: BarChart3, label: "Results", href: "/student/results" },
-  { icon: CalendarDays, label: "Attendance", href: "/student/attendance" },
-  { icon: MessageCircle, label: "Messages", href: "/student/messages" },
-  { icon: BellRing, label: "Notifications", href: "/student/notifications" },
-  { icon: UserCircle, label: "Profile", href: "/student/profile" },
-  { icon: Settings, label: "Settings", href: "/student/settings" },
-  { icon: LifeBuoy, label: "Support", href: "/student/support" },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/student/dashboard" },
+    { icon: BookOpenCheck, label: "Classes", href: "/student/classes" },
+    { icon: ClipboardList, label: "Assignments", href: "/student/assignments" },
+    { icon: BarChart3, label: "Results", href: "/student/results" },
+    { icon: CalendarDays, label: "Attendance", href: "/student/attendance" },
+    { icon: MessageCircle, label: "Messages", href: "/student/messages" },
+    { icon: BellRing, label: "Notifications", href: "/student/notifications" },
+    { icon: UserCircle, label: "Profile", href: "/student/profile" },
+    { icon: Settings, label: "Settings", href: "/student/settings" },
+    { icon: LifeBuoy, label: "Support", href: "/student/support" },
 
-  // Optional/Advanced Routes
-  { icon: FileCheck2, label: "Exams", href: "/student/exams" },
-  { icon: BookMarked, label: "Library", href: "/student/library" },
-  { icon: WalletCards, label: "Payments", href: "/student/payments" },
-  { icon: Brain, label: "AI Study Assistant", href: "/student/ai-study" },
-  { icon: CalendarClock, label: "Timetable", href: "/student/timetable" },
+    // Optional/Advanced Routes
+    { icon: FileCheck2, label: "Exams", href: "/student/exams" },
+    { icon: BookMarked, label: "Library", href: "/student/library" },
+    { icon: WalletCards, label: "Payments", href: "/student/payments" },
+    { icon: Brain, label: "AI Study Assistant", href: "/student/ai-study" },
+    { icon: CalendarClock, label: "Timetable", href: "/student/timetable" },
 ];
 
 export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (collapsed: boolean) => void }) {
-
+    const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const pathname = usePathname()
 
@@ -194,7 +195,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boole
                                 <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
                                     Billing
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
+                                <DropdownMenuItem onClick={() => logout()} className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
                                     Sign out
                                 </DropdownMenuItem>
                             </DropdownMenuContent>

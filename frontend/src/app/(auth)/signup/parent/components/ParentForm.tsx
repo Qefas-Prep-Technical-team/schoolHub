@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-
+import { UserRole } from '@/lib/types/user.types';
 import { ParentFormData, parentSchema } from '../../services/regSchema';
 import { useParentRegistration } from '../../services/useRegistrationMutations';
 import { useRouter } from 'next/navigation';
@@ -119,7 +119,8 @@ export default function ParentRegistrationForm() {
           const email = response.data.data.parent.email
 
           setTimeout(() => {
-            router.push(`/verification?email=${encodeURIComponent(email)}`);
+            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}`);
+
           }, 2000);
         },
         onError: (error: any) => {
@@ -180,8 +181,8 @@ export default function ParentRegistrationForm() {
             {...register('fullName')}
             placeholder="Enter your full name"
             className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.fullName
-                ? 'border-red-500 dark:border-red-400'
-                : 'border-input-border-light dark:border-input-border-dark'
+              ? 'border-red-500 dark:border-red-400'
+              : 'border-input-border-light dark:border-input-border-dark'
               }`}
             disabled={isPending}
           />
@@ -198,8 +199,8 @@ export default function ParentRegistrationForm() {
             {...register('email')}
             placeholder="Enter your email"
             className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.email
-                ? 'border-red-500 dark:border-red-400'
-                : 'border-input-border-light dark:border-input-border-dark'
+              ? 'border-red-500 dark:border-red-400'
+              : 'border-input-border-light dark:border-input-border-dark'
               }`}
             disabled={isPending}
           />
@@ -217,8 +218,8 @@ export default function ParentRegistrationForm() {
               {...register('password')}
               placeholder="Enter your password (must contain letters and numbers)"
               className={`form-input h-14 w-full rounded-lg border bg-background-light dark:bg-background-dark p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.password
-                  ? 'border-red-500 dark:border-red-400'
-                  : 'border-input-border-light dark:border-input-border-dark'
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-input-border-light dark:border-input-border-dark'
                 }`}
               disabled={isPending}
             />
@@ -277,8 +278,8 @@ export default function ParentRegistrationForm() {
               {...register('confirmPassword')}
               placeholder="Confirm your password"
               className={`form-input h-14 w-full rounded-lg border bg-background-light dark:bg-background-dark p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.confirmPassword
-                  ? 'border-red-500 dark:border-red-400'
-                  : 'border-input-border-light dark:border-input-border-dark'
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-input-border-light dark:border-input-border-dark'
                 }`}
               disabled={isPending}
             />
@@ -309,8 +310,8 @@ export default function ParentRegistrationForm() {
             {...register('studentCode')}
             placeholder="Enter student code (format: stu-123456)"
             className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.studentCode
-                ? 'border-red-500 dark:border-red-400'
-                : 'border-input-border-light dark:border-input-border-dark'
+              ? 'border-red-500 dark:border-red-400'
+              : 'border-input-border-light dark:border-input-border-dark'
               }`}
             disabled={isPending}
           />

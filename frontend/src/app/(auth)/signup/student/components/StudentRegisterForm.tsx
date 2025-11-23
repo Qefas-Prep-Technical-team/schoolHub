@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-
+import { UserRole } from '@/lib/types/user.types';
 import { useRouter } from 'next/navigation';
 import { useStudentRegistration } from '../../services/useRegistrationMutations';
 import { StudentFormData, studentSchema } from '../../services/regSchema';
@@ -110,7 +110,7 @@ export default function StudentRegisterForm() {
           const email = response.data.data?.student?.email || data.email;
 
           setTimeout(() => {
-            router.push(`/verification?email=${encodeURIComponent(email)}`);
+            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}`);
           }, 2000);
         },
         onError: (error: any) => {
@@ -175,8 +175,8 @@ export default function StudentRegisterForm() {
               {...register('fullName')}
               placeholder="Enter your full name"
               className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.fullName
-                  ? 'border-red-500 dark:border-red-400'
-                  : 'border-gray-300 dark:border-gray-700'
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-gray-300 dark:border-gray-700'
                 }`}
               disabled={isPending}
             />
@@ -197,8 +197,8 @@ export default function StudentRegisterForm() {
               {...register('email')}
               placeholder="Enter your email"
               className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.email
-                  ? 'border-red-500 dark:border-red-400'
-                  : 'border-gray-300 dark:border-gray-700'
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-gray-300 dark:border-gray-700'
                 }`}
               disabled={isPending}
             />
@@ -218,8 +218,8 @@ export default function StudentRegisterForm() {
                 {...register('password')}
                 placeholder="Enter your password (must contain letters and numbers)"
                 className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 pr-12 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.password
-                    ? 'border-red-500 dark:border-red-400'
-                    : 'border-gray-300 dark:border-gray-700'
+                  ? 'border-red-500 dark:border-red-400'
+                  : 'border-gray-300 dark:border-gray-700'
                   }`}
                 disabled={isPending}
               />
@@ -280,8 +280,8 @@ export default function StudentRegisterForm() {
                 {...register('confirmPassword')}
                 placeholder="Confirm your password"
                 className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 pr-12 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.confirmPassword
-                    ? 'border-red-500 dark:border-red-400'
-                    : 'border-gray-300 dark:border-gray-700'
+                  ? 'border-red-500 dark:border-red-400'
+                  : 'border-gray-300 dark:border-gray-700'
                   }`}
                 disabled={isPending}
               />
@@ -321,8 +321,8 @@ export default function StudentRegisterForm() {
               {...register('tenantId')}
               placeholder="Enter your Tenant ID"
               className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.tenantId
-                  ? 'border-red-500 dark:border-red-400'
-                  : 'border-gray-300 dark:border-gray-700'
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-gray-300 dark:border-gray-700'
                 }`}
               disabled={isPending}
             />
@@ -351,8 +351,8 @@ export default function StudentRegisterForm() {
               {...register('teacherCode')}
               placeholder="Enter your Teacher Code (format: tch-123456)"
               className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.teacherCode
-                  ? 'border-red-500 dark:border-red-400'
-                  : 'border-gray-300 dark:border-gray-700'
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-gray-300 dark:border-gray-700'
                 }`}
               disabled={isPending}
             />

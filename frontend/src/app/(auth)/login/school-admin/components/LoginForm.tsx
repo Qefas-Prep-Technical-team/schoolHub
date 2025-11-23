@@ -1,4 +1,15 @@
+import { adminRoleOptions } from "@/lib/constants/adminOptions";
+import { useState } from "react";
+
+
 export default function LoginForm() {
+  const [selectedRole, setSelectedRole] = useState('');
+
+  const getBadgeColor = (roleValue: string) => {
+    const role = adminRoleOptions.find(r => r.value === roleValue);
+    return role?.badgeColor || 'gray';
+  };
+
   return (
     <form className="space-y-6">
       <div>
@@ -19,14 +30,32 @@ export default function LoginForm() {
           <p className="text-sm font-medium text-[#525F7F] dark:text-gray-300 pb-2">
             Role Type
           </p>
-          <select className="flex w-full rounded-lg border border-[#CFD8E3] dark:border-gray-600 bg-white dark:bg-[#101622] text-[#0A2540] dark:text-white h-12 px-4 focus:border-[#6B7FD7] focus:ring-2 focus:ring-[#6B7FD7]/30 outline-none transition-colors duration-200">
-            <option>Super Admin</option>
-            <option>School Admin</option>
-            <option>Department Admin</option>
+
+          {/* Select dropdown */}
+          <select
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+            className="flex w-full rounded-lg border border-[#CFD8E3] dark:border-gray-600 bg-white dark:bg-[#101622] text-[#0A2540] dark:text-white h-12 px-4 focus:border-[#6B7FD7] focus:ring-2 focus:ring-[#6B7FD7]/30 outline-none transition-colors duration-200"
+          >
+            <option value="">Select a role</option>
+            {adminRoleOptions.map(role => (
+              <option key={role.value} value={role.value}>
+                {role.label}
+              </option>
+            ))}
           </select>
         </label>
-      </div>
 
+        {/* Blinking badge that appears below the select */}
+        {selectedRole && (
+          <div className="mt-3 flex items-center space-x-2 animate-fade-in">
+            <div className={`w-3 h-3 rounded-full bg-${getBadgeColor(selectedRole)}-500 animate-pulse`}></div>
+            <span className={`px-3 py-1 rounded-full text-xs font-medium bg-${getBadgeColor(selectedRole)}-100 text-${getBadgeColor(selectedRole)}-800 dark:bg-${getBadgeColor(selectedRole)}-900 dark:text-${getBadgeColor(selectedRole)}-300 border border-${getBadgeColor(selectedRole)}-200 dark:border-${getBadgeColor(selectedRole)}-700`}>
+              {adminRoleOptions.find(role => role.value === selectedRole)?.label}
+            </span>
+          </div>
+        )}
+      </div>
       <div>
         <label className="flex flex-col">
           <div className="flex justify-between items-baseline">

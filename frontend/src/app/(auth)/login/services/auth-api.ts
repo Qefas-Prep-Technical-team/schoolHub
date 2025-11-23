@@ -16,6 +16,7 @@ interface LoginResponse {
       email: string;
       role: string | null;
     };
+    userRole: string;
   };
 }
 

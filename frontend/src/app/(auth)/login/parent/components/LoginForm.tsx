@@ -38,7 +38,7 @@ export default function LoginForm() {
         setServerError("");
         console.log("Form submitted with:", data);
         login(
-            { email: data.email, password: data.password },
+            { email: data.email, password: data.password, userType: "PARENT" },
             {
                 onError: (error) => {
                     setServerError(error.message);
@@ -63,7 +63,7 @@ export default function LoginForm() {
     };
 
     // Disable button when form is invalid or during submission
-    const isSubmitDisabled = isPending 
+    const isSubmitDisabled = isPending
 
     // Add this to debug
     console.log("Form state:", { isValid, isDirty, isSubmitDisabled, errors });

@@ -9,8 +9,11 @@ import MetaText from './MetaText';
 export default function VerificationCard() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
   const email = searchParams.get('email');
-  console.log(email)
+  const userType = searchParams.get('userType');
+
+
 
   const [verificationCode, setVerificationCode] = useState('');
   const [isCodeComplete, setIsCodeComplete] = useState(false);
@@ -21,10 +24,10 @@ export default function VerificationCard() {
 
   // Request verification code automatically when component mounts
   useEffect(() => {
-    if (email) {
-      requestCode(email);
+    if (email && userType) {
+      requestCode({ email, userType });
     }
-  }, [email, requestCode]);
+  }, [email, requestCode, userType]);
 
   const handleCodeComplete = (code: string) => {
     setVerificationCode(code);
@@ -32,9 +35,9 @@ export default function VerificationCard() {
   };
 
   const handleVerify = () => {
-    if (email && verificationCode.length === 6) {
+    if (email && verificationCode.length === 6 && userType) {
       verifyCode(
-        { email, code: verificationCode },
+        { email, code: verificationCode, userType },
         {
           onSuccess: (response) => {
             // Redirect to login or dashboard after successful verification

@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -14,116 +11,199 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model School {
-  id          String    @id @default(uuid())
-  name        String
-  subdomain   String?
-  schoolEmail String?
-  tenantId    String    @unique
-  admins      Admin[]   @relation("SchoolAdmins")
-  teachers    Teacher[] @relation("SchoolTeachers")
-  students    Student[] @relation("SchoolStudents")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+// ENUMS MUST BE DEFINED BEFORE THEY ARE USED
+enum UserRole {
+  ADMIN
+  TEACHER
+  STUDENT
+  PARENT
 }
 
+enum AdminRole {
+  SUPER_ADMIN
+  SCHOOL_OWNER
+  PRINCIPAL
+  REGISTRAR
+  ACCOUNTANT
+  SUPPORT
+}
+
+model School {
+  id          String  @id @default(uuid())
+  name        String
+  subdomain   String? @unique
+  schoolEmail String?
+  tenantId    String  @unique
+  address     String?
+  phone       String?
+
+  admins   SchoolAdmin[]
+  teachers Teacher[]
+  students Student[]
+  classes  Class[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SchoolAdmin {
+  id       String    @id @default(uuid())
+  schoolId String
+  adminId  String
+  role     AdminRole
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  admin  Admin  @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([schoolId, adminId])
+  @@map("school_admins")
+}
+
+// Add to your existing schema
 model Admin {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
   password  String
-  role      String
+  role      UserRole
   tenantIds String[]
-  schools   School[] @relation("SchoolAdmins")
   verified  Boolean  @default(false)
+  status    String   @default("PENDING") // ADD THIS: PENDING, APPROVED, REJECTED
+
+  schoolAdmins SchoolAdmin[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Teacher {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
-  email       String    @unique
+  email       String   @unique
   password    String
-  role        String
+  role        UserRole
   tenantIds   String[]
-  teacherCode String    @unique
-  schools     School[]  @relation("SchoolTeachers")
-  students    Student[] @relation("TeacherStudents")
-  verified    Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  teacherCode String   @unique
+  subject     String?
+  department  String?
+  school      School?  @relation(fields: [schoolId], references: [id])
+  schoolId    String?
+  classes     Class[]
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("teachers")
 }
 
 model Student {
-  id          String    @id @default(uuid())
+  id          String            @id @default(uuid())
   name        String
-  email       String    @unique
+  email       String            @unique
   password    String
-  studentCode String    @unique
-  tenantIds   String[]
+  studentCode String            @unique
   teacherCode String?
-  schools     School[]  @relation("SchoolStudents")
-  teachers    Teacher[] @relation("TeacherStudents")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
+  tenantIds   String[]
+  gradeLevel  String?
+  dateOfBirth DateTime?
+  role        UserRole
+  school      School?           @relation(fields: [schoolId], references: [id])
+  schoolId    String?
+  classes     ClassEnrollment[]
   parentLinks ParentChildLink[]
   verified    Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@map("students")
 }
 
 model Parent {
-  id        String   @id @default(uuid())
+  id        String            @id @default(uuid())
   fullName  String
-  email     String   @unique
+  email     String            @unique
   password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  phone     String?
+  role      UserRole
+  children  ParentChildLink[]
+  verified  Boolean           @default(false)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
-  children ParentChildLink[]
-  verified Boolean           @default(false)
+  @@map("parents")
 }
 
 model ParentChildLink {
-  id          String   @id @default(uuid())
-  parentId    String
-  studentCode String
-  status      String   @default("pending")
-  createdAt   DateTime @default(now())
+  id           String   @id @default(uuid())
+  parentId     String
+  studentId    String
+  relationship String   @default("parent")
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
 
-  parent  Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  student Student? @relation(fields: [studentCode], references: [studentCode])
+  parent  Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+  @@map("parent_child_links")
+}
+
+model Class {
+  id        String  @id @default(uuid())
+  name      String
+  subject   String
+  section   String?
+  schoolId  String
+  teacherId String?
+
+  school      School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher     Teacher?          @relation(fields: [teacherId], references: [id])
+  enrollments ClassEnrollment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, name, section])
+  @@map("classes")
+}
+
+model ClassEnrollment {
+  id        String @id @default(uuid())
+  classId   String
+  studentId String
+
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  enrolledAt DateTime @default(now())
+
+  @@unique([classId, studentId])
+  @@map("class_enrollments")
 }
 
 model VerificationCode {
   id        String   @id @default(uuid())
   email     String
   code      String
+  userType  UserRole // CHANGED: Use UserRole instead of UserType
   createdAt DateTime @default(now())
   expiresAt DateTime
   used      Boolean  @default(false)
 
   @@index([email])
   @@index([code])
+  @@map("verification_codes")
 }
 
 model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
   userId    String
-  userType  UserType
+  userType  UserRole // CHANGED: Use UserRole instead of UserType
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  // Simple indexes for querying - no complex relations
-  @@index([userId])
-  @@index([userType])
   @@index([userId, userType])
-}
-
-enum UserType {
-  ADMIN
-  TEACHER
-  STUDENT
-  PARENT
+  @@map("refresh_tokens")
 }

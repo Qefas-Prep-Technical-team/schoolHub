@@ -9,6 +9,7 @@ import SchoolImageSlider from "./SchoolSlider";
 import { useRouter } from 'next/navigation';
 import { useSchoolRegistration } from '../../services/useRegistrationMutations';
 import { SchoolFormData, schoolSchema } from '../../services/regSchema';
+import { UserRole } from '@/lib/types/user.types';
 
 // Password strength checker (same as others)
 const getPasswordStrength = (password: string) => {
@@ -129,9 +130,7 @@ export default function SchoolCard() {
 
           const email = response.data.data?.school?.email || data.email;
 
-          setTimeout(() => {
-            router.push(`/verification?email=${encodeURIComponent(email)}`);
-          }, 2000);
+          router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}`);
         },
         onError: (error: any) => {
           console.error('❌ School registration failed:', error);
@@ -181,8 +180,8 @@ export default function SchoolCard() {
             <input
               {...register('schoolName')}
               className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.schoolName
-                  ? 'border-red-500 dark:border-red-400'
-                  : 'border-gray-300 dark:border-gray-600'
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-gray-300 dark:border-gray-600'
                 }`}
               placeholder="Enter your school name"
               disabled={isPending}
@@ -202,8 +201,8 @@ export default function SchoolCard() {
             <input
               {...register('adminName')}
               className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.adminName
-                  ? 'border-red-500 dark:border-red-400'
-                  : 'border-gray-300 dark:border-gray-600'
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-gray-300 dark:border-gray-600'
                 }`}
               placeholder="Enter your name"
               disabled={isPending}
@@ -220,8 +219,8 @@ export default function SchoolCard() {
               type="email"
               {...register('email')}
               className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.email
-                  ? 'border-red-500 dark:border-red-400'
-                  : 'border-gray-300 dark:border-gray-600'
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-gray-300 dark:border-gray-600'
                 }`}
               placeholder="Enter your email address"
               disabled={isPending}
@@ -239,8 +238,8 @@ export default function SchoolCard() {
                 type={showPassword ? "text" : "password"}
                 {...register('password')}
                 className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 pr-12 ${errors.password
-                    ? 'border-red-500 dark:border-red-400'
-                    : 'border-gray-300 dark:border-gray-600'
+                  ? 'border-red-500 dark:border-red-400'
+                  : 'border-gray-300 dark:border-gray-600'
                   }`}
                 placeholder="Create a password (must contain letters and numbers)"
                 disabled={isPending}
@@ -299,8 +298,8 @@ export default function SchoolCard() {
                 type={showConfirmPassword ? "text" : "password"}
                 {...register('confirmPassword')}
                 className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 pr-12 ${errors.confirmPassword
-                    ? 'border-red-500 dark:border-red-400'
-                    : 'border-gray-300 dark:border-gray-600'
+                  ? 'border-red-500 dark:border-red-400'
+                  : 'border-gray-300 dark:border-gray-600'
                   }`}
                 placeholder="Confirm your password"
                 disabled={isPending}
@@ -333,8 +332,8 @@ export default function SchoolCard() {
               <input
                 {...register('subdomain')}
                 className={`form-input flex-1 w-full rounded-l-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.subdomain
-                    ? 'border-red-500 dark:border-red-400'
-                    : 'border-gray-300 dark:border-gray-600'
+                  ? 'border-red-500 dark:border-red-400'
+                  : 'border-gray-300 dark:border-gray-600'
                   }`}
                 placeholder="your-school"
                 disabled={isPending}

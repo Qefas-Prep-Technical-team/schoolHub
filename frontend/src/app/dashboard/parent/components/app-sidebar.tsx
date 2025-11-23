@@ -19,53 +19,54 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  LayoutDashboard,
-  Users,
-  ClipboardList,
-  FileCheck2,
-  BarChart3,
-  CalendarDays,
-  MessageSquare,
-  BellRing,
-  WalletCards,
-  UserCircle,
-  Settings,
-  LifeBuoy,
-  BookMarked,
-  Brain,
-  CalendarClock,
-  Award,
-   School,
-  User2,
-  ChevronUp,
-  ChevronDown
+    LayoutDashboard,
+    Users,
+    ClipboardList,
+    FileCheck2,
+    BarChart3,
+    CalendarDays,
+    MessageSquare,
+    BellRing,
+    WalletCards,
+    UserCircle,
+    Settings,
+    LifeBuoy,
+    BookMarked,
+    Brain,
+    CalendarClock,
+    Award,
+    School,
+    User2,
+    ChevronUp,
+    ChevronDown
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
 
 
 export const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/parent/dashboard" },
-  { icon: Users, label: "My Children", href: "/parent/children" },
-  { icon: ClipboardList, label: "Assignments", href: "/parent/assignments" },
-  { icon: FileCheck2, label: "Exams & Results", href: "/parent/results" },
-  { icon: BarChart3, label: "Performance", href: "/parent/performance" },
-  { icon: CalendarDays, label: "Attendance", href: "/parent/attendance" },
-  { icon: Award, label: "Behavior & Remarks", href: "/parent/behavior" },
-  { icon: MessageSquare, label: "Messages", href: "/parent/messages" },
-  { icon: BellRing, label: "Notifications", href: "/parent/notifications" },
-  { icon: WalletCards, label: "Payments", href: "/parent/payments" },
-  { icon: BookMarked, label: "Resources", href: "/parent/resources" },
-  { icon: Brain, label: "AI Insights", href: "/parent/ai-insights" },
-  { icon: CalendarClock, label: "Events & Timetable", href: "/parent/events" },
-  { icon: UserCircle, label: "Profile", href: "/parent/profile" },
-  { icon: Settings, label: "Settings", href: "/parent/settings" },
-  { icon: LifeBuoy, label: "Support", href: "/parent/support" },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/parent/dashboard" },
+    { icon: Users, label: "My Children", href: "/parent/children" },
+    { icon: ClipboardList, label: "Assignments", href: "/parent/assignments" },
+    { icon: FileCheck2, label: "Exams & Results", href: "/parent/results" },
+    { icon: BarChart3, label: "Performance", href: "/parent/performance" },
+    { icon: CalendarDays, label: "Attendance", href: "/parent/attendance" },
+    { icon: Award, label: "Behavior & Remarks", href: "/parent/behavior" },
+    { icon: MessageSquare, label: "Messages", href: "/parent/messages" },
+    { icon: BellRing, label: "Notifications", href: "/parent/notifications" },
+    { icon: WalletCards, label: "Payments", href: "/parent/payments" },
+    { icon: BookMarked, label: "Resources", href: "/parent/resources" },
+    { icon: Brain, label: "AI Insights", href: "/parent/ai-insights" },
+    { icon: CalendarClock, label: "Events & Timetable", href: "/parent/events" },
+    { icon: UserCircle, label: "Profile", href: "/parent/profile" },
+    { icon: Settings, label: "Settings", href: "/parent/settings" },
+    { icon: LifeBuoy, label: "Support", href: "/parent/support" },
 ];
 
 export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (collapsed: boolean) => void }) {
-
+    const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const pathname = usePathname()
 
@@ -195,7 +196,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boole
                                 <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
                                     Billing
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
+                                <DropdownMenuItem onClick={() => logout()} className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
                                     Sign out
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
