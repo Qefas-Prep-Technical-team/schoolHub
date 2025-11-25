@@ -2,8 +2,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import prisma from "../config/database";
-import { UserType } from "generated/prisma";
-
+import { UserType } from "modules/auth/auth.types";
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!;
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
@@ -20,8 +19,13 @@ export const generateAccessToken = (userId: string, userType: UserType) => {
   return jwt.sign({ userId, userType }, ACCESS_SECRET, { expiresIn: "15m" });
 };
 
-export const generateRefreshToken = async (userId: string, userType: UserType) => {
-  const token = jwt.sign({ userId, userType }, REFRESH_SECRET, { expiresIn: "7d" });
+export const generateRefreshToken = async (
+  userId: string,
+  userType: UserType
+) => {
+  const token = jwt.sign({ userId, userType }, REFRESH_SECRET, {
+    expiresIn: "7d",
+  });
 
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);

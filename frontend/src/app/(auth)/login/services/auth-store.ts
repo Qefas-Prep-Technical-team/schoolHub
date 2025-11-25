@@ -1,124 +1,115 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import Cookies from 'js-cookie'
+// services/auth-store.ts
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import Cookies from "js-cookie";
+
+// Define user types as a union for better TypeScript support
+export type UserType = "PARENT" | "TEACHER" | "ADMIN" | "STUDENT";
 
 interface User {
-  id: string
-  email: string
-  name: string
-  role?: string
-  tenantIds?: string[]
+  id: string;
+  email: string;
+  role: string | null;
+  userType: UserType; // Add userType here
 }
 
 interface AuthState {
-  user: User | null
-  token: string | null
-  isLoading: boolean
-  error: string | null
-  isAuthenticated: boolean
-  
-  // Actions
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
-  clearError: () => void
-  checkAuth: () => void
+  user: User | null;
+  accessToken: string | null;
+  isAuthenticated: boolean;
+  isInitialized: boolean;
+  userType: UserType | null; // Also store it separately for easy access
+  setAuth: (user: User, token: string) => void;
+  setUserType: (userType: UserType) => void;
+  clearAuth: () => void;
+  initialize: () => void;
+  // Helper selectors
+  isParent: () => boolean;
+  isTeacher: () => boolean;
+  isAdmin: () => boolean;
+  isStudent: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      token: null,
-      isLoading: false,
-      error: null,
+      accessToken: null,
       isAuthenticated: false,
+      isInitialized: false,
+      userType: null,
 
-      login: async (email: string, password: string) => {
-        set({ isLoading: true, error: null })
-        
-        try {
-          // For now, we'll simulate a login since you don't have the backend yet
-          // Replace this with your actual login API call when ready
-          console.log('Attempting login with:', { email, password })
-          
-          // Simulate API call delay
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          
-          // Mock successful login response
-          // In a real app, this would come from your backend
-          const mockUser: User = {
-            id: '1',
-            email: email,
-            name: email.split('@')[0], // Simple name from email
-            role: 'user'
-          }
-          
-          const mockToken = 'mock-jwt-token-' + Date.now()
-          
-          // Set token in cookies for SSR
-          Cookies.set('token', mockToken, { expires: 7 })
-          
-          set({
-            user: mockUser,
-            token: mockToken,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null
-          })
-          
-          console.log('Login successful')
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.message || 'Login failed'
-          set({
-            error: errorMessage,
-            isLoading: false,
-            isAuthenticated: false
-          })
-          throw error
-        }
+      setAuth: (user: User, token: string) => {
+        Cookies.set("token", token, {
+          expires: 1,
+          path: "/",
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+        });
+        set({
+          user,
+          accessToken: token,
+          isAuthenticated: true,
+          userType: user.userType, // Set userType from user object
+        });
       },
 
-      logout: () => {
-        Cookies.remove('token')
+      setUserType: (userType: UserType) => {
+        const state = get();
+        // Update both the user object and the separate userType field
+        const updatedUser = state.user ? { ...state.user, userType } : null;
+        set({
+          user: updatedUser,
+          userType,
+        });
+      },
+
+      clearAuth: () => {
+        Cookies.remove("token", { path: "/" });
         set({
           user: null,
-          token: null,
+          accessToken: null,
           isAuthenticated: false,
-          error: null
-        })
+          userType: null,
+        });
       },
 
-      clearError: () => {
-        set({ error: null })
-      },
+      initialize: () => {
+        const token = Cookies.get("token");
+        const state = get();
 
-      checkAuth: () => {
-        const token = Cookies.get('token')
-        
-        if (token) {
-          set({ 
-            token,
-            isAuthenticated: true,
-            // Note: In a real app, you'd validate the token with your backend
-            user: get().user // Keep existing user or fetch new one
-          })
-        } else {
-          set({ 
-            isAuthenticated: false, 
-            user: null, 
-            token: null 
-          })
+        if (token && !state.isAuthenticated) {
+          // Token exists but state isn't authenticated - this can happen on page refresh
+          // You might want to validate the token with your API here
+          console.log("🔄 Re-initializing auth state from token");
         }
-      }
+
+        set({ isInitialized: true });
+      },
+
+      // Helper methods to check user type
+      isParent: () => {
+        const state = get();
+        return state.userType === "PARENT";
+      },
+
+      isTeacher: () => {
+        const state = get();
+        return state.userType === "TEACHER";
+      },
+
+      isAdmin: () => {
+        const state = get();
+        return state.userType === "ADMIN";
+      },
+
+      isStudent: () => {
+        const state = get();
+        return state.userType === "STUDENT";
+      },
     }),
     {
-      name: 'auth-storage',
-      partialize: (state) => ({ 
-        user: state.user, 
-        token: state.token,
-        isAuthenticated: state.isAuthenticated 
-      })
+      name: "auth-storage",
     }
   )
-)
+);

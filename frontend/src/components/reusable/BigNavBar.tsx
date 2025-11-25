@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Image from 'next/image';
-import React, { FC } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { Button as Button2 } from "@/components/ui/button";
 import { mainTab } from '../Types/Nav';
 import Link from 'next/link';
@@ -12,6 +12,19 @@ interface BigNavBarProps {
     handleCloseNavMenu: () => void
 }
 const BigNavBar: FC<BigNavBarProps> = ({ pages, handleCloseNavMenu }) => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+
+    useEffect(() => {
+        // Check if user is authenticated
+        const token = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('token='))
+            ?.split('=')[1]
+
+        if (token) setIsAuthenticated(true)
+
+    }, [])
 
 
     return (
@@ -60,12 +73,19 @@ const BigNavBar: FC<BigNavBarProps> = ({ pages, handleCloseNavMenu }) => {
             {/* Right: Actions */}
             <Box className="flex items-center justify-end space-x-4">
                 <ThemeToggle />
-                <Link href="/login" passHref>
-                    <Button2 className='bg-grey-500 text-black dark:text-white hover:text-white cursor-pointer'>Log in</Button2>
-                </Link>
-                <Link href="/signup" passHref>
-                    <Button2 className='cursor-pointer'>Get Started</Button2>
-                </Link>
+                {!isAuthenticated ?
+                    <>
+                        <Link href="/login" passHref>
+                            <Button2 className='bg-grey-500 text-black dark:text-white hover:text-white cursor-pointer'>Log in</Button2>
+                        </Link>
+                        <Link href="/signup" passHref>
+                            <Button2 className='cursor-pointer'>Get Started</Button2>
+                        </Link>
+                    </> :
+                    <Link href="/dashboard" passHref>
+                        <Button2 className='cursor-pointer'>dashboard</Button2>
+                    </Link>
+                }
             </Box>
         </Box>
     );

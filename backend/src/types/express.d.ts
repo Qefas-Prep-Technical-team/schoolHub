@@ -4,7 +4,12 @@ import { Request } from "express";
 declare global {
   namespace Express {
     interface Request {
-      user?: any; // You can replace 'any' with a specific type later
+      user?: any;
+      school?: {
+        id: string;
+        name: string;
+        tenantId: string;
+      }; // You can replace 'any' with a specific type later
     }
   }
 }

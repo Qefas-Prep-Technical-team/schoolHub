@@ -2,13 +2,17 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../../config/database";
 import { loginUser, sendVerificationEmail } from "./auth.service";
-import { comparePassword, generateAccessToken, generateRefreshToken } from "@services/authService";
+import {
+  comparePassword,
+  generateAccessToken,
+  generateRefreshToken,
+} from "@services/authService";
 import jwt from "jsonwebtoken";
+import { AdminRole, UserRole } from "generated/prisma";
 
 export const registerSchool = async (req: Request, res: Response) => {
   try {
     const { schoolName, adminName, email, password, subdomain } = req.body;
-    console.log("here")
 
     if (!schoolName || !adminName || !email || !password) {
       return res.status(400).json({
@@ -29,14 +33,16 @@ export const registerSchool = async (req: Request, res: Response) => {
       });
     }
 
-    // Generate a unique 6-digit numeric tenantId (string)
+    // Generate unique tenantId
     const generateSixDigit = () =>
       Math.floor(100000 + Math.random() * 900000).toString();
 
     let tenantId: string | undefined;
     for (let attempt = 0; attempt < 10; attempt++) {
       const candidate = generateSixDigit();
-      const exists = await prisma.school.findFirst({ where: { tenantId: candidate } });
+      const exists = await prisma.school.findFirst({
+        where: { tenantId: candidate },
+      });
       if (!exists) {
         tenantId = candidate;
         break;
@@ -44,34 +50,43 @@ export const registerSchool = async (req: Request, res: Response) => {
     }
 
     if (!tenantId) {
-      return res.status(500).json({ success: false, message: "Could not generate unique tenantId, try again" });
+      return res.status(500).json({
+        success: false,
+        message: "Could not generate unique tenantId, try again",
+      });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Prisma transaction
     const result = await prisma.$transaction(async (tx) => {
+      // Create school
       const school = await tx.school.create({
         data: {
           name: schoolName,
-          subdomain:
-            subdomain || schoolName.toLowerCase().replace(/\s+/g, "-"),
+          subdomain: subdomain || schoolName.toLowerCase().replace(/\s+/g, "-"),
           schoolEmail: email,
           tenantId,
         },
       });
 
+      // Create admin user
       const admin = await tx.admin.create({
         data: {
           name: adminName,
           email,
           password: hashedPassword,
-          role: "superadmin",
-          tenantIds: [tenantId], // ⭐ REQUIRED
-          schools: {
-            connect: { id: school.id },
-          },
+          role: UserRole.ADMIN, // FIXED: Use enum
+          tenantIds: [tenantId],
+        },
+      });
+
+      // Create school admin relationship
+      await tx.schoolAdmin.create({
+        data: {
+          schoolId: school.id,
+          adminId: admin.id,
+          role: AdminRole.SCHOOL_OWNER, // FIXED: Use enum
         },
       });
 
@@ -88,21 +103,16 @@ export const registerSchool = async (req: Request, res: Response) => {
           subdomain: result.school.subdomain,
         },
         admin: {
+          id: result.admin.id,
           name: result.admin.name,
           email: result.admin.email,
+          role: result.admin.role, // RETURN ROLE
         },
+        userRole: result.admin.role, // ADDED: Explicit role for redirection
       },
     });
   } catch (error: any) {
     console.error(error);
-
-    if (error.code === "P2002") {
-      return res.status(400).json({
-        success: false,
-        message: "Unique constraint failed (duplicate email or tenantId)",
-      });
-    }
-
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -110,13 +120,10 @@ export const registerSchool = async (req: Request, res: Response) => {
   }
 };
 
-
-//  registration for teachers
 export const registerTeacher = async (req: Request, res: Response) => {
   try {
     const { fullName, email, password, confirmPassword, tenantId } = req.body;
 
-    // Required fields
     if (!fullName || !email || !password) {
       return res.status(400).json({
         success: false,
@@ -145,6 +152,7 @@ export const registerTeacher = async (req: Request, res: Response) => {
 
     // Verify school if tenantId is provided
     let schoolToConnect = null;
+    let schoolId = null;
 
     if (tenantId) {
       schoolToConnect = await prisma.school.findFirst({
@@ -157,22 +165,20 @@ export const registerTeacher = async (req: Request, res: Response) => {
           message: "Invalid Tenant ID. School not found",
         });
       }
+      schoolId = schoolToConnect.id;
     }
 
-    // Generate unique teacher code: "tch-123456"
+    // Generate unique teacher code
     const generateTeacherCode = () => {
-      const random = Math.floor(100000 + Math.random() * 900000); // 6 digits
+      const random = Math.floor(100000 + Math.random() * 900000);
       return `tch-${random}`;
     };
 
     let teacherCode = generateTeacherCode();
-
-    // Ensure teacherCode is unique
     let existingCode = await prisma.teacher.findFirst({
       where: { teacherCode },
     });
 
-    // Regenerate until unique
     while (existingCode) {
       teacherCode = generateTeacherCode();
       existingCode = await prisma.teacher.findFirst({
@@ -183,26 +189,16 @@ export const registerTeacher = async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Transaction
-    const result = await prisma.$transaction(async (tx) => {
-      const teacher = await tx.teacher.create({
-        data: {
-          name: fullName,
-          email,
-          password: hashedPassword,
-          role: tenantId ? "school_teacher" : "independent_teacher",
-          tenantIds: tenantId ? [tenantId] : [],
-          teacherCode,
-
-          schools: tenantId
-            ? {
-                connect: { id: schoolToConnect!.id },
-              }
-            : undefined,
-        },
-      });
-
-      return { teacher };
+    const teacher = await prisma.teacher.create({
+      data: {
+        name: fullName,
+        email,
+        password: hashedPassword,
+        role: UserRole.TEACHER, // FIXED: Use enum
+        tenantIds: tenantId ? [tenantId] : [],
+        teacherCode,
+        schoolId: schoolId,
+      },
     });
 
     return res.status(201).json({
@@ -212,25 +208,18 @@ export const registerTeacher = async (req: Request, res: Response) => {
         : "Independent teacher account created successfully",
       data: {
         teacher: {
-          id: result.teacher.id,
-          name: result.teacher.name,
-          email: result.teacher.email,
-          role: result.teacher.role,
-          tenantIds: result.teacher.tenantIds,
-          teacherCode: result.teacher.teacherCode,
+          id: teacher.id,
+          name: teacher.name,
+          email: teacher.email,
+          role: teacher.role, // RETURN ROLE
+          tenantIds: teacher.tenantIds,
+          teacherCode: teacher.teacherCode,
         },
+        userRole: teacher.role, // ADDED: Explicit role for redirection
       },
     });
   } catch (error: any) {
     console.error(error);
-
-    if (error.code === "P2002") {
-      return res.status(400).json({
-        success: false,
-        message: "Unique constraint failed (duplicate email or teacher code)",
-      });
-    }
-
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -247,13 +236,11 @@ interface RegisterStudentBody {
   teacherCode?: string;
 }
 
-// Utility function to generate student code
 const generateStudentCode = (): string => {
-  const random = Math.floor(100000 + Math.random() * 900000); // 6 digits
+  const random = Math.floor(100000 + Math.random() * 900000);
   return `stu-${random}`;
 };
 
-// Ensure unique student code
 const ensureUniqueStudentCode = async (): Promise<string> => {
   let studentCode = generateStudentCode();
   let attempts = 0;
@@ -278,11 +265,20 @@ const ensureUniqueStudentCode = async (): Promise<string> => {
   return studentCode;
 };
 
-export const registerStudent = async (req: Request<{}, {}, RegisterStudentBody>, res: Response) => {
+export const registerStudent = async (
+  req: Request<{}, {}, RegisterStudentBody>,
+  res: Response
+) => {
   try {
-    const { fullName, email, password, confirmPassword, tenantId, teacherCode } = req.body;
+    const {
+      fullName,
+      email,
+      password,
+      confirmPassword,
+      tenantId,
+      teacherCode,
+    } = req.body;
 
-    // 1. Validate required fields
     if (!fullName || !email || !password || !confirmPassword) {
       return res.status(400).json({
         success: false,
@@ -297,7 +293,7 @@ export const registerStudent = async (req: Request<{}, {}, RegisterStudentBody>,
       });
     }
 
-    // 2. Check if email exists
+    // Check if email exists
     const existingStudent = await prisma.student.findUnique({
       where: { email },
     });
@@ -309,11 +305,12 @@ export const registerStudent = async (req: Request<{}, {}, RegisterStudentBody>,
       });
     }
 
-    // 3. Generate unique student code
+    // Generate unique student code
     const studentCode = await ensureUniqueStudentCode();
 
-    // 4. If tenantId provided → verify school exists
+    // If tenantId provided → verify school exists
     let school = null;
+    let schoolId = null;
     if (tenantId) {
       school = await prisma.school.findFirst({
         where: { tenantId },
@@ -325,9 +322,10 @@ export const registerStudent = async (req: Request<{}, {}, RegisterStudentBody>,
           message: "School with this Tenant ID not found",
         });
       }
+      schoolId = school.id;
     }
 
-    // 5. If teacherCode provided → verify teacher exists
+    // If teacherCode provided → verify teacher exists
     let teacher = null;
     if (teacherCode) {
       teacher = await prisma.teacher.findFirst({
@@ -342,53 +340,39 @@ export const registerStudent = async (req: Request<{}, {}, RegisterStudentBody>,
       }
     }
 
-    // 6. Hash password
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 7. Create student with generated code
-    const student = await prisma.$transaction(async (tx) => {
-      return await tx.student.create({
-        data: {
-          name: fullName.trim(),
-          email: email.toLowerCase().trim(),
-          password: hashedPassword,
-          studentCode, // Add the generated code
-          teacherCode: teacherCode || null,
-          tenantIds: tenantId ? { set: [tenantId] } : { set: [] },
-          schools: school ? { connect: [{ id: school.id }] } : undefined,
-          teachers: teacher ? { connect: [{ id: teacher.id }] } : undefined,
-        },
-      });
+    const student = await prisma.student.create({
+      data: {
+        name: fullName.trim(),
+        email: email.toLowerCase().trim(),
+        password: hashedPassword,
+        studentCode,
+        teacherCode: teacherCode || null,
+        role: UserRole.STUDENT, // FIXED: Use enum
+        tenantIds: tenantId ? [tenantId] : [],
+        schoolId: schoolId,
+      },
     });
 
     return res.status(201).json({
       success: true,
       message: "Student registered successfully",
       data: {
-        id: student.id,
-        name: student.name,
-        email: student.email,
-        studentCode: student.studentCode, // Return the code to student
+        student: {
+          id: student.id,
+          name: student.name,
+          email: student.email,
+          role: student.role, // RETURN ROLE
+          studentCode: student.studentCode,
+        },
+        userRole: student.role, // ADDED: Explicit role for redirection
         message: "Save this student code to share with your parent for linking",
       },
     });
   } catch (error: any) {
     console.error("Register Student Error:", error);
-
-    if (error.message.includes("unique student code")) {
-      return res.status(500).json({
-        success: false,
-        message: "Could not generate unique student code. Please try again.",
-      });
-    }
-
-    if (error.code === "P2002") {
-      return res.status(400).json({
-        success: false,
-        message: "Email must be unique",
-      });
-    }
-
     return res.status(500).json({
       success: false,
       message: "Server Error",
@@ -396,21 +380,22 @@ export const registerStudent = async (req: Request<{}, {}, RegisterStudentBody>,
   }
 };
 
-
-
 interface RegisterParentBody {
   fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
-  studentCode?: string; // Changed from studentCodeOrEmail to studentCode only
+  studentCode?: string;
 }
 
-export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, res: Response) => {
+export const registerParent = async (
+  req: Request<{}, {}, RegisterParentBody>,
+  res: Response
+) => {
   try {
-    const { fullName, email, password, confirmPassword, studentCode } = req.body;
+    const { fullName, email, password, confirmPassword, studentCode } =
+      req.body;
 
-    // Validate required fields
     if (!fullName || !email || !password || !confirmPassword) {
       return res.status(400).json({
         success: false,
@@ -440,7 +425,6 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Process in transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create parent account
       const parent = await tx.parent.create({
@@ -448,6 +432,7 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
           fullName: fullName.trim(),
           email: email.toLowerCase().trim(),
           password: hashedPassword,
+          role: UserRole.PARENT, // FIXED: Use enum
         },
       });
 
@@ -455,7 +440,6 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
 
       // If student code provided, create link
       if (studentCode) {
-        // Verify student exists with this code
         const student = await tx.student.findFirst({
           where: { studentCode: studentCode.trim() },
         });
@@ -464,11 +448,10 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
           throw new Error("Invalid student code");
         }
 
-        // Check if link already exists
         const existingLink = await tx.parentChildLink.findFirst({
           where: {
             parentId: parent.id,
-            studentCode: studentCode.trim(),
+            studentId: student.id,
           },
         });
 
@@ -479,8 +462,8 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
         linkResult = await tx.parentChildLink.create({
           data: {
             parentId: parent.id,
-            studentCode: studentCode.trim(),
-            status: "linked", // Auto-link since we verified the code
+            studentId: student.id,
+            status: "linked",
           },
         });
       }
@@ -488,7 +471,6 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
       return { parent, link: linkResult };
     });
 
-    // Prepare response
     const response: any = {
       success: true,
       message: "Parent account created successfully",
@@ -497,11 +479,12 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
           id: result.parent.id,
           fullName: result.parent.fullName,
           email: result.parent.email,
+          role: result.parent.role, // RETURN ROLE
         },
+        userRole: result.parent.role, // ADDED: Explicit role for redirection
       },
     };
 
-    // Add linking info if applicable
     if (result.link) {
       response.data.linking = {
         status: "success",
@@ -509,36 +492,14 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
       };
     } else {
       response.data.linking = {
-        message: "You can link to your child's account later using their student code.",
+        message:
+          "You can link to your child's account later using their student code.",
       };
     }
 
     return res.status(201).json(response);
-
   } catch (error: any) {
     console.error("Parent registration error:", error);
-
-    if (error.code === "P2002") {
-      return res.status(400).json({
-        success: false,
-        message: "Email is already registered",
-      });
-    }
-
-    if (error.message === "Invalid student code") {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid student code. Please check the code and try again.",
-      });
-    }
-
-    if (error.message === "Link already exists") {
-      return res.status(400).json({
-        success: false,
-        message: "This student is already linked to a parent account.",
-      });
-    }
-
     return res.status(500).json({
       success: false,
       message: "Internal server error. Please try again.",
@@ -546,31 +507,42 @@ export const registerParent = async (req: Request<{}, {}, RegisterParentBody>, r
   }
 };
 
+const generateCode = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
 
-// 🔹 Generate 6-digit code
-const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
-
-
-// ==============================
-// 1️⃣ Request Verification Code
-// ==============================
 export const requestVerificationCode = async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const { email, userType } = req.body;
 
-    // Delete old unused codes for same email
+    if (!email || !userType) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and user type are required",
+      });
+    }
+
+    // Validate userType using UserRole enum
+    if (!Object.values(UserRole).includes(userType as UserRole)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user type",
+      });
+    }
+
+    // Delete old unused codes for same email and userType
     await prisma.verificationCode.deleteMany({
-      where: { email, used: false },
+      where: { email, userType: userType as UserRole, used: false },
     });
 
     const code = generateCode();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Save code
+    // Save code WITH userType
     await prisma.verificationCode.create({
       data: {
         email,
         code,
+        userType: userType as UserRole, // FIXED: Use enum
         expiresAt,
       },
     });
@@ -588,148 +560,351 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
   }
 };
 
-
-// ==============================
-// 2️⃣ Verify Code & Update Verified Field
-// ==============================
+// controllers/auth.controller.ts - Single verifyEmailCode function
 export const verifyEmailCode = async (req: Request, res: Response) => {
   try {
-    const { email, code } = req.body;
+    const { email, code, userType } = req.body;
 
-    // 1️⃣ Find the unused code
+    if (!email || !code || !userType) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, code and user type are required",
+      });
+    }
+
+    // Validate userType
+    if (!Object.values(UserRole).includes(userType as UserRole)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user type",
+      });
+    }
+
+    // Find the unused code WITH userType
     const found = await prisma.verificationCode.findFirst({
-      where: { email, code, used: false },
+      where: {
+        email,
+        code,
+        userType: userType as UserRole,
+        used: false,
+      },
     });
 
     if (!found) {
       return res.status(400).json({ success: false, message: "Invalid code" });
     }
 
-    // 2️⃣ Check expiry
     if (found.expiresAt < new Date()) {
       return res.status(400).json({ success: false, message: "Code expired" });
     }
 
-    // 3️⃣ Mark code as used
+    // Mark code as used
     await prisma.verificationCode.update({
       where: { id: found.id },
       data: { used: true },
     });
 
-    // 4️⃣ Find the user
-    const student = await prisma.student.findUnique({ where: { email } });
-    if (student) {
-      await prisma.student.update({
-        where: { email },
-        data: { verified: true },
-      });
-      return res.status(200).json({
-        success: true,
-        message: "Student email verified successfully",
-      });
+    // Handle all user types in one function
+    let user: any;
+    let isSchoolOwner = false;
+
+    switch (userType) {
+      case UserRole.ADMIN:
+        user = await prisma.admin.findUnique({
+          where: { email },
+          include: {
+            schoolAdmins: {
+              include: {
+                school: true,
+              },
+            },
+          },
+        });
+
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message: "Admin not found",
+          });
+        }
+
+        // Check if this admin is a SCHOOL_OWNER
+        isSchoolOwner = user.schoolAdmins.some(
+          (sa: { role: string }) => sa.role === AdminRole.SCHOOL_OWNER
+        );
+
+        // Update admin - auto-approve school owners
+        user = await prisma.admin.update({
+          where: { email },
+          data: {
+            verified: true,
+            status: isSchoolOwner ? "APPROVED" : "PENDING",
+          },
+          include: {
+            schoolAdmins: {
+              include: {
+                school: true,
+              },
+            },
+          },
+        });
+        break;
+
+      case UserRole.TEACHER:
+        user = await prisma.teacher.findUnique({
+          where: { email },
+          include: {
+            school: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        });
+
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message: "Teacher not found",
+          });
+        }
+
+        user = await prisma.teacher.update({
+          where: { email },
+          data: { verified: true },
+        });
+        break;
+
+      case UserRole.STUDENT:
+        user = await prisma.student.findUnique({
+          where: { email },
+          include: {
+            school: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        });
+
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message: "Student not found",
+          });
+        }
+
+        user = await prisma.student.update({
+          where: { email },
+          data: { verified: true },
+        });
+        break;
+
+      case UserRole.PARENT:
+        user = await prisma.parent.findUnique({
+          where: { email },
+          include: {
+            children: {
+              include: {
+                student: {
+                  select: {
+                    id: true,
+                    name: true,
+                    studentCode: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message: "Parent not found",
+          });
+        }
+
+        user = await prisma.parent.update({
+          where: { email },
+          data: { verified: true },
+        });
+        break;
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: "Invalid user type",
+        });
     }
 
-    const teacher = await prisma.teacher.findUnique({ where: { email } });
-    if (teacher) {
-      await prisma.teacher.update({
-        where: { email },
-        data: { verified: true },
-      });
-      return res.status(200).json({
-        success: true,
-        message: "Teacher email verified successfully",
-      });
+    // Prepare response based on user type
+    let message = "";
+    let responseData: any = {};
+
+    switch (userType) {
+      case UserRole.ADMIN:
+        message = isSchoolOwner
+          ? "School owner email verified and account approved successfully! You can now access your dashboard."
+          : "Admin email verified successfully! Waiting for approval from school owner.";
+
+        responseData = {
+          admin: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            status: user.status,
+            verified: user.verified,
+            isSchoolOwner: isSchoolOwner,
+          },
+          schools: user.schoolAdmins.map((sa: any) => ({
+            schoolId: sa.school.id,
+            schoolName: sa.school.name,
+            adminRole: sa.role,
+          })),
+        };
+        break;
+
+      case UserRole.TEACHER:
+        message = "Teacher email verified successfully! You can now log in.";
+        responseData = {
+          teacher: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            verified: user.verified,
+            teacherCode: user.teacherCode,
+            school: user.school,
+          },
+        };
+        break;
+
+      case UserRole.STUDENT:
+        message = "Student email verified successfully! You can now log in.";
+        responseData = {
+          student: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            verified: user.verified,
+            studentCode: user.studentCode,
+            school: user.school,
+          },
+        };
+        break;
+
+      case UserRole.PARENT:
+        message = "Parent email verified successfully! You can now log in.";
+        responseData = {
+          parent: {
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            verified: user.verified,
+          },
+          children: user.children.map((child: any) => ({
+            studentId: child.student.id,
+            studentName: child.student.name,
+            studentCode: child.student.studentCode,
+            linkStatus: child.status,
+          })),
+        };
+        break;
     }
 
-    const parent = await prisma.parent.findUnique({ where: { email } });
-    if (parent) {
-      await prisma.parent.update({
-        where: { email },
-        data: { verified: true },
-      });
-      return res.status(200).json({
-        success: true,
-        message: "Parent email verified successfully",
-      });
-    }
-    const admin = await prisma.admin.findUnique({ where: { email } });
-    if (admin) {
-      await prisma.admin.update({
-        where: { email },
-        data: { verified: true },
-      });
-      return res.status(200).json({
-        success: true,
-        message: "Parent email verified successfully",
-      });
-    }
-
-    // 5️⃣ Email does not belong to any known user
-    return res.status(404).json({
-      success: false,
-      message: "No user found for this email",
+    return res.status(200).json({
+      success: true,
+      message,
+      userRole: userType,
+      data: responseData,
     });
   } catch (error) {
     console.error("Error verifying code:", error);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
-
-
-// // =====================================================
-// LOGIN Begins
-// =======================================================
+// ====================================
+// login
+// =======================================
 
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password, userType } = req.body;
-console.log(email)
+
     if (!email || !password || !userType) {
-      return res.status(400).json({ success: false, message: "Email, password and userType required" });
+      return res.status(400).json({
+        success: false,
+        message: "Email and password  required",
+      });
     }
 
-    // Find user dynamically
+    // Validate userType
+    if (!Object.values(UserRole).includes(userType as UserRole)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user type",
+      });
+    }
+
     let user: any;
     switch (userType) {
-      case "ADMIN":
+      case UserRole.ADMIN:
         user = await prisma.admin.findUnique({ where: { email } });
         break;
-      case "TEACHER":
+      case UserRole.TEACHER:
         user = await prisma.teacher.findUnique({ where: { email } });
         break;
-      case "STUDENT":
+      case UserRole.STUDENT:
         user = await prisma.student.findUnique({ where: { email } });
         break;
-      case "PARENT":
+      case UserRole.PARENT:
         user = await prisma.parent.findUnique({ where: { email } });
         break;
       default:
-        return res.status(400).json({ success: false, message: "Invalid userType" });
+        return res.status(400).json({
+          success: false,
+          message: "email or password incorrect",
+        });
     }
 
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
+    if (!user)
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
 
-    if (!user.verified) {
-      return res.status(403).json({ success: false, message: "Email not verified" });
-    }
+    if (!user.verified)
+      return res.status(403).json({
+        success: false,
+        message: "Email not verified",
+      });
 
     const validPassword = await comparePassword(password, user.password);
-    if (!validPassword) {
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
-    }
+    if (!validPassword)
+      return res.status(404).json({
+        success: false,
+        message: "password incorrect",
+      });
 
     const accessToken = generateAccessToken(user.id, userType);
     const refreshToken = await generateRefreshToken(user.id, userType);
 
-    // Send refresh token as httpOnly cookie
+    res.cookie("token", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.status(200).json({
@@ -740,8 +915,10 @@ console.log(email)
         user: {
           id: user.id,
           email: user.email,
-          role: user.role || null,
+          name: user.name || user.fullName,
+          role: user.role, // RETURN ROLE
         },
+        userRole: user.role, // ADDED: Explicit role for redirection
       },
     });
   } catch (error) {
@@ -750,31 +927,48 @@ console.log(email)
   }
 };
 
-
-// src/controllers/auth.controller.ts (add below login function)
 export const refreshToken = async (req: Request, res: Response) => {
   try {
     const token = req.cookies.refreshToken;
-    if (!token) return res.status(401).json({ success: false, message: "No refresh token" });
+    if (!token)
+      return res.status(401).json({
+        success: false,
+        message: "No refresh token",
+      });
 
     const payload: any = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
 
     const dbToken = await prisma.refreshToken.findFirst({
-      where: { token, userId: payload.userId, userType: payload.userType },
+      where: {
+        token,
+        userId: payload.userId,
+        userType: payload.userType,
+      },
     });
 
     if (!dbToken || dbToken.expiresAt < new Date()) {
-      return res.status(401).json({ success: false, message: "Invalid refresh token" });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid refresh token",
+      });
     }
 
-    const newAccessToken = generateAccessToken(payload.userId, payload.userType);
-    return res.status(200).json({ success: true, accessToken: newAccessToken });
+    const newAccessToken = generateAccessToken(
+      payload.userId,
+      payload.userType
+    );
+    return res.status(200).json({
+      success: true,
+      accessToken: newAccessToken,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
   }
 };
-
 
 export const logout = async (req: Request, res: Response) => {
   try {
@@ -783,9 +977,15 @@ export const logout = async (req: Request, res: Response) => {
       await prisma.refreshToken.deleteMany({ where: { token } });
       res.clearCookie("refreshToken");
     }
-    return res.status(200).json({ success: true, message: "Logged out" });
+    return res.status(200).json({
+      success: true,
+      message: "Logged out",
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };

@@ -19,60 +19,85 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  LayoutDashboard,
-  BookOpenCheck,
-  ClipboardList,
-  CalendarDays,
-  BarChart3,
-  Users,
-  MessageSquare,
-  BellRing,
-  Settings,
-  UserCircle,
-  LifeBuoy,
-  FileCheck2,
-  BookMarked,
-  Brain,
-  CalendarClock,
-  Award,
-   School,
-  User2,
-  ChevronUp,
-  ChevronDown
+    LayoutDashboard,
+    BookOpenCheck,
+    ClipboardList,
+    CalendarDays,
+    BarChart3,
+    Users,
+    MessageSquare,
+    BellRing,
+    Settings,
+    UserCircle,
+    LifeBuoy,
+    FileCheck2,
+    BookMarked,
+    Brain,
+    CalendarClock,
+    Award,
+    School,
+    User2,
+    ChevronUp,
+    ChevronDown,
+    LucideIcon
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
+import { FEATURE_FLAGS_TEACHERS, FeatureTeacherFlagKey } from "@/lib/config/featureFlags"
 
-export const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/teacher/dashboard" },
-  { icon: BookOpenCheck, label: "My Classes", href: "/teacher/classes" },
-  { icon: ClipboardList, label: "Assignments", href: "/teacher/assignments" },
-  { icon: FileCheck2, label: "Exams/Quizzes", href: "/teacher/exams" },
-  { icon: CalendarDays, label: "Attendance", href: "/teacher/attendance" },
-  { icon: Award, label: "Grades", href: "/teacher/grades" },
-  { icon: Users, label: "Students", href: "/teacher/students" },
-  { icon: MessageSquare, label: "Messages", href: "/teacher/messages" },
-  { icon: BellRing, label: "Notifications", href: "/teacher/notifications" },
-  { icon: BarChart3, label: "Reports", href: "/teacher/reports" },
-  { icon: BookMarked, label: "Resources", href: "/teacher/resources" },
-  { icon: Brain, label: "AI Assistant", href: "/teacher/ai-tools" },
-  { icon: CalendarClock, label: "Timetable", href: "/teacher/timetable" },
-  { icon: UserCircle, label: "Profile", href: "/teacher/profile" },
-  { icon: Settings, label: "Settings", href: "/teacher/settings" },
-  { icon: LifeBuoy, label: "Support", href: "/teacher/support" },
+// Define the menu item type
+interface MenuItem {
+    icon: LucideIcon;
+    label: string;
+    href: string;
+    featureKey: FeatureTeacherFlagKey;
+}
+
+// Complete menu items with feature keys
+export const menuItems: MenuItem[] = [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/teacher/dashboard", featureKey: "dashboard" },
+    { icon: BookOpenCheck, label: "My Classes", href: "/teacher/classes", featureKey: "classes" },
+    { icon: ClipboardList, label: "Assignments", href: "/teacher/assignments", featureKey: "assignments" },
+    { icon: FileCheck2, label: "Exams/Quizzes", href: "/teacher/exams", featureKey: "exams" },
+    { icon: CalendarDays, label: "Attendance", href: "/teacher/attendance", featureKey: "attendance" },
+    { icon: Award, label: "Grades", href: "/teacher/grades", featureKey: "grades" },
+    { icon: Users, label: "Students", href: "/teacher/students", featureKey: "students" },
+    { icon: MessageSquare, label: "Messages", href: "/teacher/messages", featureKey: "messages" },
+    { icon: BellRing, label: "Notifications", href: "/teacher/notifications", featureKey: "notifications" },
+    { icon: BarChart3, label: "Reports", href: "/teacher/reports", featureKey: "reports" },
+    { icon: BookMarked, label: "Resources", href: "/teacher/resources", featureKey: "resources" },
+    { icon: Brain, label: "AI Assistant", href: "/teacher/ai-tools", featureKey: "aiTools" },
+    { icon: CalendarClock, label: "Timetable", href: "/teacher/timetable", featureKey: "timetable" },
+    { icon: UserCircle, label: "Profile", href: "/teacher/profile", featureKey: "profile" },
+    { icon: Settings, label: "Settings", href: "/teacher/settings", featureKey: "settings" },
+    { icon: LifeBuoy, label: "Support", href: "/teacher/support", featureKey: "support" },
 ];
 
-export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (collapsed: boolean) => void }) {
+// Filter menu items based on feature flags
+const getFilteredMenuItems = (): MenuItem[] => {
+    return menuItems.filter(item => FEATURE_FLAGS_TEACHERS[item.featureKey]);
+};
 
+interface AppSidebarProps {
+    isCollapsed: boolean;
+    setIsCollapsed: (collapsed: boolean) => void;
+}
+
+export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
+    const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const pathname = usePathname()
+
+    // Get filtered menu items based on feature flags
+    const filteredMenuItems = getFilteredMenuItems()
 
     return (
         <Sidebar
             collapsible="icon"
             className={cn(
-                "transition-all duration-300 ease-in-out bg-red-600",
+                "transition-all duration-300 ease-in-out",
                 isCollapsed ? "w-[80px]" : "w-[260px]"
             )}
         >
@@ -86,15 +111,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boole
                         >
                             <Box className="flex items-center justify-start">
                                 <Box className="flex items-center justify-center mr-3">
-                                    {/* <Image
-                                        src="/schoolhub.png"
-                                        alt="school hub logo"
-                                        width={35}
-                                        height={35}
-                                        className="rounded-md"
-                                    /> */}
                                     <School className="h-5 w-5 shrink-0 text-blue-500" />
-
                                 </Box>
                                 {!isCollapsed && (
                                     <Link href="/" passHref>
@@ -118,24 +135,12 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boole
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
-
-                {/* Retract Button */}
-                {/* <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="ml-auto flex items-center justify-center p-2 rounded-md hover:bg-accent/60 transition-colors"
-                >
-                    {isCollapsed ? (
-                        <ChevronRight className="h-5 w-5" />
-                    ) : (
-                        <ChevronLeft className="h-5 w-5" />
-                    )}
-                </button> */}
             </SidebarHeader>
 
             {/* Main Menu */}
             <SidebarContent className="mt-10">
                 <SidebarMenu>
-                    {menuItems.map(({ icon: Icon, label, href }) => {
+                    {filteredMenuItems.map(({ icon: Icon, label, href }) => {
                         const isActive = pathname === href
                         return (
                             <SidebarMenuItem key={label} className="my-2">
@@ -194,7 +199,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boole
                                 <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
                                     Billing
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
+                                <DropdownMenuItem onClick={() => logout()} className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
                                     Sign out
                                 </DropdownMenuItem>
                             </DropdownMenuContent>

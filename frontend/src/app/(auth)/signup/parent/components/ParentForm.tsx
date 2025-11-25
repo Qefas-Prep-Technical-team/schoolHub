@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-
+import { UserRole } from '@/lib/types/user.types';
 import { ParentFormData, parentSchema } from '../../services/regSchema';
 import { useParentRegistration } from '../../services/useRegistrationMutations';
 import { useRouter } from 'next/navigation';
@@ -12,19 +12,19 @@ import { useRouter } from 'next/navigation';
 // Password strength checker
 const getPasswordStrength = (password: string) => {
   if (!password) return { strength: 0, message: '' };
-  
+
   let strength = 0;
   const messages = [];
 
   // Length check
   if (password.length >= 6) strength += 1;
-  
+
   // Has letters check
   if (/[a-zA-Z]/.test(password)) strength += 1;
-  
+
   // Has numbers check
   if (/\d/.test(password)) strength += 1;
-  
+
   // Has special characters (optional)
   if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 1;
 
@@ -46,7 +46,7 @@ export default function ParentRegistrationForm() {
   const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
   const router = useRouter();
-  
+
   const { mutate: registerParent, isPending } = useParentRegistration();
 
   const {
@@ -105,34 +105,35 @@ export default function ParentRegistrationForm() {
       };
 
       await registerParent(backendData, {
-        onSuccess: (response:any) => {
+        onSuccess: (response: any) => {
           console.log('✅ Parent registration successful:', response.data);
-          
+
           // Show success message from backend
           const backendMessage = response.data.message || 'Registration successful!';
           setSuccessMessage(backendMessage);
-          
+
           // Reset form
           reset();
-          
+
           // Redirect to login after delay
           const email = response.data.data.parent.email
-        
+
           setTimeout(() => {
-            router.push(`/verification?email=${encodeURIComponent(email)}`);
+            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}`);
+
           }, 2000);
         },
         onError: (error: any) => {
           console.error('❌ Parent registration failed:', error);
-          
+
           // Handle different error types from your backend
-          const errorMessage = error.response?.data?.message || 
-                              error.message || 
-                              'Registration failed. Please try again.';
+          const errorMessage = error.response?.data?.message ||
+            error.message ||
+            'Registration failed. Please try again.';
           setServerError(errorMessage);
         }
       });
-      
+
     } catch (error) {
       console.error('❌ Unexpected error:', error);
       setServerError('An unexpected error occurred. Please try again.');
@@ -158,7 +159,7 @@ export default function ParentRegistrationForm() {
               <span className="material-symbols-outlined mr-2">check_circle</span>
               {successMessage}
             </div>
-            <p className="text-sm mt-1">Redirecting to login...</p>
+            <p className="text-sm mt-1">Redirecting to verification...</p>
           </div>
         )}
 
@@ -179,11 +180,10 @@ export default function ParentRegistrationForm() {
             type="text"
             {...register('fullName')}
             placeholder="Enter your full name"
-            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-              errors.fullName 
-                ? 'border-red-500 dark:border-red-400' 
-                : 'border-input-border-light dark:border-input-border-dark'
-            }`}
+            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.fullName
+              ? 'border-red-500 dark:border-red-400'
+              : 'border-input-border-light dark:border-input-border-dark'
+              }`}
             disabled={isPending}
           />
           {errors.fullName && (
@@ -198,11 +198,10 @@ export default function ParentRegistrationForm() {
             type="email"
             {...register('email')}
             placeholder="Enter your email"
-            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-              errors.email 
-                ? 'border-red-500 dark:border-red-400' 
-                : 'border-input-border-light dark:border-input-border-dark'
-            }`}
+            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.email
+              ? 'border-red-500 dark:border-red-400'
+              : 'border-input-border-light dark:border-input-border-dark'
+              }`}
             disabled={isPending}
           />
           {errors.email && (
@@ -218,15 +217,14 @@ export default function ParentRegistrationForm() {
               type={showPassword ? "text" : "password"}
               {...register('password')}
               placeholder="Enter your password (must contain letters and numbers)"
-              className={`form-input h-14 w-full rounded-lg border bg-background-light dark:bg-background-dark p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-                errors.password 
-                  ? 'border-red-500 dark:border-red-400' 
-                  : 'border-input-border-light dark:border-input-border-dark'
-              }`}
+              className={`form-input h-14 w-full rounded-lg border bg-background-light dark:bg-background-dark p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.password
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-input-border-light dark:border-input-border-dark'
+                }`}
               disabled={isPending}
             />
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-0 flex items-center pr-4 text-[#4c809a] dark:text-gray-400 hover:text-[#0d171b] dark:hover:text-white transition-colors"
               disabled={isPending}
@@ -236,7 +234,7 @@ export default function ParentRegistrationForm() {
               </span>
             </button>
           </div>
-          
+
           {/* Password Strength Indicator */}
           {passwordValue && (
             <div className="mt-3 space-y-2">
@@ -247,18 +245,18 @@ export default function ParentRegistrationForm() {
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className={`h-2 rounded-full transition-all duration-300 ${getStrengthColor(passwordStrength.strength)}`}
                   style={{ width: `${(passwordStrength.strength / 4) * 100}%` }}
                 ></div>
               </div>
             </div>
           )}
-          
+
           {errors.password && (
             <p className="text-red-500 text-sm mt-2">{errors.password.message}</p>
           )}
-          
+
           <div className="text-xs text-[#4c809a] dark:text-gray-500 mt-2 space-y-1">
             <p className="flex items-center">
               <span className="material-symbols-outlined text-xs mr-1">check</span>
@@ -279,15 +277,14 @@ export default function ParentRegistrationForm() {
               type={showConfirmPassword ? "text" : "password"}
               {...register('confirmPassword')}
               placeholder="Confirm your password"
-              className={`form-input h-14 w-full rounded-lg border bg-background-light dark:bg-background-dark p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-                errors.confirmPassword 
-                  ? 'border-red-500 dark:border-red-400' 
-                  : 'border-input-border-light dark:border-input-border-dark'
-              }`}
+              className={`form-input h-14 w-full rounded-lg border bg-background-light dark:bg-background-dark p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.confirmPassword
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-input-border-light dark:border-input-border-dark'
+                }`}
               disabled={isPending}
             />
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute inset-y-0 right-0 flex items-center pr-4 text-[#4c809a] dark:text-gray-400 hover:text-[#0d171b] dark:hover:text-white transition-colors"
               disabled={isPending}
@@ -312,11 +309,10 @@ export default function ParentRegistrationForm() {
             type="text"
             {...register('studentCode')}
             placeholder="Enter student code (format: stu-123456)"
-            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-              errors.studentCode 
-                ? 'border-red-500 dark:border-red-400' 
-                : 'border-input-border-light dark:border-input-border-dark'
-            }`}
+            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.studentCode
+              ? 'border-red-500 dark:border-red-400'
+              : 'border-input-border-light dark:border-input-border-dark'
+              }`}
             disabled={isPending}
           />
           {errors.studentCode && (
@@ -328,7 +324,7 @@ export default function ParentRegistrationForm() {
         </label>
 
         {/* Submit Button */}
-        <button 
+        <button
           type="submit"
           disabled={isPending}
           className="w-full h-14 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:focus:ring-offset-background-dark disabled:opacity-50 disabled:cursor-not-allowed"
@@ -345,8 +341,8 @@ export default function ParentRegistrationForm() {
 
         <p className="text-center text-sm text-[#4c809a] dark:text-gray-400">
           Already have an account?{" "}
-          <a 
-            className="font-medium text-primary hover:underline" 
+          <a
+            className="font-medium text-primary hover:underline"
             href="/login"
             onClick={(e) => {
               if (isPending) e.preventDefault();

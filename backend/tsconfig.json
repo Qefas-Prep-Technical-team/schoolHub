@@ -18,5 +18,5 @@
       "@services/*": ["services/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "../frontend/src/lib/config/featureFlags.ts"]
 }

@@ -6,6 +6,8 @@ import { Bell, ChevronDown, Search, ChevronLeft, ChevronRight } from "lucide-rea
 import { useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { ThemeToggle } from '@/app/theme-toggle';
 
 export default function TopNavBar({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => void, isCollapsed?: boolean }) {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -47,6 +49,7 @@ export default function TopNavBar({ onToggleSidebar, isCollapsed }: { onToggleSi
                 >
                     <Bell className="h-5 w-5" />
                 </Button>
+                 <ThemeToggle />
 
                 {/* Profile Section */}
                 <div
@@ -62,8 +65,8 @@ export default function TopNavBar({ onToggleSidebar, isCollapsed }: { onToggleSi
                         />
                     </div>
                     <div className="hidden sm:flex flex-col text-right">
-                        <p className="text-sm font-medium">Admin User</p>
-                        <p className="text-xs text-muted-foreground">System Administrator</p>
+                           <p className="text-sm font-medium">{user?.email}</p>
+                        <p className="text-xs text-muted-foreground">{userType}</p>
                     </div>
                     <ChevronDown
                         className={clsx("h-4 w-4 transition-transform", {

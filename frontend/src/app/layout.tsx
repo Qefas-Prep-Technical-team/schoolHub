@@ -9,7 +9,8 @@ import 'leaflet/dist/leaflet.css';
 import { QueryClientProvider } from "@tanstack/react-query";
 import queryClient from "@/lib/queryClient";
 import Providers from "@/utils/providers";
-
+import NextTopLoader from 'nextjs-toploader';
+import AppInitializer from "@/utils/AppInitializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,8 +26,8 @@ export const metadata: Metadata = {
   title: 'SchoolHub – Smart School Management',
   description: 'An all-in-one SaaS for modern schools, students, and parents.',
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: './favicon.ico',
+    apple: './apple-touch-icon.png',
   },
   openGraph: {
     title: 'SchoolHub – Empowering Schools',
@@ -78,18 +79,18 @@ export default function RootLayout({
 
 
         {/* <!-- Open Graph / Facebook --> */}
-        <meta property="og:type" content="website" />
+        {/* <meta property="og:type" content="website" />
         <meta property="og:url" content="https://school-hub-staging.vercel.app/" />
         <meta property="og:title" content="SchoolHub Landing Page" />
         <meta property="og:description" content="A landing page for SchoolHub" />
-        <meta property="og:image" content="/backImage.jpeg" />
+        <meta property="og:image" content="/backImage.jpeg" /> */}
 
         {/* <!-- X (Twitter) --> */}
-        <meta property="twitter:card" content="summary_large_image" />
+        {/* <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://school-hub-staging.vercel.app/" />
         <meta property="twitter:title" content="SchoolHub Landing Page" />
         <meta property="twitter:description" content="A landing page for SchoolHub" />
-        <meta property="twitter:image" content="/backImage.jpeg" />
+        <meta property="twitter:image" content="/backImage.jpeg" /> */}
 
         {/* <!-- Meta Tags Generated with https://metatags.io --> */}
       </head>
@@ -103,16 +104,20 @@ export default function RootLayout({
           antialiased
           `}
       >
-           <Providers>
+        <Providers>
 
-        <ThemeClientProvider>
-         
-          <NavBar />
-          {children}
-          <Footer />
-      
-        </ThemeClientProvider>
-           </Providers>
+          <ThemeClientProvider>
+            <AppInitializer>
+
+              <NavBar />
+              <NextTopLoader showSpinner={false} />
+              {children}
+              <Footer />
+            </AppInitializer>
+
+
+          </ThemeClientProvider>
+        </Providers>
       </body>
     </html>
   );
