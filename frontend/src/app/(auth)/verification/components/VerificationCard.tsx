@@ -23,11 +23,14 @@ export default function VerificationCard() {
   const { mutate: resendCode, isPending: isResending } = useResendCode();
 
   // Request verification code automatically when component mounts
+  const hasRequested = React.useRef(false);
+
   useEffect(() => {
-    if (email && userType) {
+    if (!hasRequested.current && email && userType) {
+      hasRequested.current = true;
       requestCode({ email, userType });
     }
-  }, [email, requestCode, userType]);
+  }, [email, userType]);
 
   const handleCodeComplete = (code: string) => {
     setVerificationCode(code);
@@ -42,7 +45,7 @@ export default function VerificationCard() {
           onSuccess: (response) => {
             // Redirect to login or dashboard after successful verification
             setTimeout(() => {
-              router.push('/onboarding?type=parent');
+              router.push(`/onboarding?type=${userType}`);
             }, 2000);
           }
         }
@@ -51,9 +54,9 @@ export default function VerificationCard() {
   };
 
   const handleResendCode = async () => {
-    if (email) {
+    if (email && userType) {
       try {
-        await resendCode(email);
+        await resendCode({ email, userType });
       } catch (error) {
         // Error is handled in the mutation
         console.error('Resend failed:', error);

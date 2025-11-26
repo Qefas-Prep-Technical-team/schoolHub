@@ -110,7 +110,7 @@ export default function StudentRegisterForm() {
           const email = response.data.data?.student?.email || data.email;
 
           setTimeout(() => {
-            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}`);
+            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.STUDENT}`);
           }, 2000);
         },
         onError: (error: any) => {

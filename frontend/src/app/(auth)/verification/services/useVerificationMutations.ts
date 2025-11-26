@@ -7,7 +7,7 @@ export const useRequestCode = () => {
   const { auth } = useToast();
 
   return useMutation({
-    mutationFn: (data: { email: string; userType: string }) => 
+    mutationFn: (data: { email: string; userType: string }) =>
       verificationAPI.requestCode(data.email, data.userType),
     onSuccess: (response) => {
       auth.success(
@@ -58,7 +58,8 @@ export const useResendCode = () => {
   const { auth } = useToast();
 
   return useMutation({
-    mutationFn: verificationAPI.resendCode,
+    mutationFn: (data: { email: string; userType: string }) =>
+      verificationAPI.resendCode(data.email, data.userType),
     onSuccess: (response) => {
       auth.success(response.data?.message || "New code sent successfully!");
       console.log("Code resent:", response.data);
