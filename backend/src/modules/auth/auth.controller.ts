@@ -561,274 +561,375 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
 };
 
 // controllers/auth.controller.ts - Single verifyEmailCode function
-export const verifyEmailCode = async (req: Request, res: Response) => {
-  try {
-    const { email, code, userType } = req.body;
+// export const verifyEmailCode = async (req: Request, res: Response) => {
+//   try {
+//     const { email, code, userType } = req.body;
 
-    if (!email || !code || !userType) {
-      return res.status(400).json({
-        success: false,
-        message: "Email, code and user type are required",
-      });
-    }
+//     if (!email || !code || !userType) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Email, code and user type are required",
+//       });
+//     }
 
-    // Validate userType
-    if (!Object.values(UserRole).includes(userType as UserRole)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user type",
-      });
-    }
+//     // Validate userType
+//     if (!Object.values(UserRole).includes(userType as UserRole)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid user type",
+//       });
+//     }
 
-    // Find the unused code WITH userType
-    const found = await prisma.verificationCode.findFirst({
-      where: {
-        email,
-        code,
-        userType: userType as UserRole,
-        used: false,
-      },
-    });
+//     // Find the unused code WITH userType
+//     const found = await prisma.verificationCode.findFirst({
+//       where: {
+//         email,
+//         code,
+//         userType: userType as UserRole,
+//         used: false,
+//       },
+//     });
 
-    if (!found) {
-      return res.status(400).json({ success: false, message: "Invalid code" });
-    }
+//     if (!found) {
+//       return res.status(400).json({ success: false, message: "Invalid code" });
+//     }
 
-    if (found.expiresAt < new Date()) {
-      return res.status(400).json({ success: false, message: "Code expired" });
-    }
+//     if (found.expiresAt < new Date()) {
+//       return res.status(400).json({ success: false, message: "Code expired" });
+//     }
 
-    // Mark code as used
-    await prisma.verificationCode.update({
-      where: { id: found.id },
-      data: { used: true },
-    });
+//     // Mark code as used
+//     await prisma.verificationCode.update({
+//       where: { id: found.id },
+//       data: { used: true },
+//     });
 
-    // Handle all user types in one function
-    let user: any;
-    let isSchoolOwner = false;
+//     // Handle all user types in one function
+//     let user: any;
+//     let isSchoolOwner = false;
 
-    switch (userType) {
-      case UserRole.ADMIN:
-        user = await prisma.admin.findUnique({
-          where: { email },
-          include: {
-            schoolAdmins: {
-              include: {
-                school: true,
-              },
-            },
-          },
-        });
+//     switch (userType) {
+//       case UserRole.ADMIN:
+//         user = await prisma.admin.findUnique({
+//           where: { email },
+//           include: {
+//             schoolAdmins: {
+//               include: {
+//                 school: true,
+//               },
+//             },
+//           },
+//         });
 
-        if (!user) {
-          return res.status(404).json({
-            success: false,
-            message: "Admin not found",
-          });
-        }
+//         if (!user) {
+//           return res.status(404).json({
+//             success: false,
+//             message: "Admin not found",
+//           });
+//         }
 
-        // Check if this admin is a SCHOOL_OWNER
-        isSchoolOwner = user.schoolAdmins.some(
-          (sa: { role: string }) => sa.role === AdminRole.SCHOOL_OWNER
-        );
+//         // Check if this admin is a SCHOOL_OWNER
+//         isSchoolOwner = user.schoolAdmins.some(
+//           (sa: { role: string }) => sa.role === AdminRole.SCHOOL_OWNER
+//         );
 
-        // Update admin - auto-approve school owners
-        user = await prisma.admin.update({
-          where: { email },
-          data: {
-            verified: true,
-            status: isSchoolOwner ? "APPROVED" : "PENDING",
-          },
-          include: {
-            schoolAdmins: {
-              include: {
-                school: true,
-              },
-            },
-          },
-        });
-        break;
+//         // Update admin - auto-approve school owners
+//         user = await prisma.admin.update({
+//           where: { email },
+//           data: {
+//             verified: true,
+//             status: isSchoolOwner ? "APPROVED" : "PENDING",
+//           },
+//           include: {
+//             schoolAdmins: {
+//               include: {
+//                 school: true,
+//               },
+//             },
+//           },
+//         });
+//         break;
 
-      case UserRole.TEACHER:
-        user = await prisma.teacher.findUnique({
-          where: { email },
-          include: {
-            school: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        });
+//       case UserRole.TEACHER:
+//         user = await prisma.teacher.findUnique({
+//           where: { email },
+//           include: {
+//             school: {
+//               select: {
+//                 id: true,
+//                 name: true,
+//               },
+//             },
+//           },
+//         });
 
-        if (!user) {
-          return res.status(404).json({
-            success: false,
-            message: "Teacher not found",
-          });
-        }
+//         if (!user) {
+//           return res.status(404).json({
+//             success: false,
+//             message: "Teacher not found",
+//           });
+//         }
 
-        user = await prisma.teacher.update({
-          where: { email },
-          data: { verified: true },
-        });
-        break;
+//         user = await prisma.teacher.update({
+//           where: { email },
+//           data: { verified: true },
+//         });
+//         break;
 
-      case UserRole.STUDENT:
-        user = await prisma.student.findUnique({
-          where: { email },
-          include: {
-            school: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        });
+//       case UserRole.STUDENT:
+//         user = await prisma.student.findUnique({
+//           where: { email },
+//           include: {
+//             school: {
+//               select: {
+//                 id: true,
+//                 name: true,
+//               },
+//             },
+//           },
+//         });
 
-        if (!user) {
-          return res.status(404).json({
-            success: false,
-            message: "Student not found",
-          });
-        }
+//         if (!user) {
+//           return res.status(404).json({
+//             success: false,
+//             message: "Student not found",
+//           });
+//         }
 
-        user = await prisma.student.update({
-          where: { email },
-          data: { verified: true },
-        });
-        break;
+//         user = await prisma.student.update({
+//           where: { email },
+//           data: { verified: true },
+//         });
+//         break;
 
-      case UserRole.PARENT:
-        user = await prisma.parent.findUnique({
-          where: { email },
-          include: {
-            children: {
-              include: {
-                student: {
-                  select: {
-                    id: true,
-                    name: true,
-                    studentCode: true,
-                  },
-                },
-              },
-            },
-          },
-        });
+//       case UserRole.PARENT:
+//         user = await prisma.parent.findUnique({
+//           where: { email },
+//           include: {
+//             children: {
+//               include: {
+//                 student: {
+//                   select: {
+//                     id: true,
+//                     name: true,
+//                     studentCode: true,
+//                   },
+//                 },
+//               },
+//             },
+//           },
+//         });
 
-        if (!user) {
-          return res.status(404).json({
-            success: false,
-            message: "Parent not found",
-          });
-        }
+//         if (!user) {
+//           return res.status(404).json({
+//             success: false,
+//             message: "Parent not found",
+//           });
+//         }
 
-        user = await prisma.parent.update({
-          where: { email },
-          data: { verified: true },
-        });
-        break;
+//         user = await prisma.parent.update({
+//           where: { email },
+//           data: { verified: true },
+//         });
+//         break;
 
-      default:
-        return res.status(400).json({
-          success: false,
-          message: "Invalid user type",
-        });
-    }
+//       default:
+//         return res.status(400).json({
+//           success: false,
+//           message: "Invalid user type",
+//         });
+//     }
 
-    // Prepare response based on user type
-    let message = "";
-    let responseData: any = {};
+//     // Prepare response based on user type
+//     let message = "";
+//     let responseData: any = {};
 
-    switch (userType) {
-      case UserRole.ADMIN:
-        message = isSchoolOwner
-          ? "School owner email verified and account approved successfully! You can now access your dashboard."
-          : "Admin email verified successfully! Waiting for approval from school owner.";
+//     switch (userType) {
+//       case UserRole.ADMIN:
+//         message = isSchoolOwner
+//           ? "School owner email verified and account approved successfully! You can now access your dashboard."
+//           : "Admin email verified successfully! Waiting for approval from school owner.";
 
-        responseData = {
-          admin: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            status: user.status,
-            verified: user.verified,
-            isSchoolOwner: isSchoolOwner,
-          },
-          schools: user.schoolAdmins.map((sa: any) => ({
-            schoolId: sa.school.id,
-            schoolName: sa.school.name,
-            adminRole: sa.role,
-          })),
-        };
-        break;
+//         responseData = {
+//           admin: {
+//             id: user.id,
+//             name: user.name,
+//             email: user.email,
+//             status: user.status,
+//             verified: user.verified,
+//             isSchoolOwner: isSchoolOwner,
+//           },
+//           schools: user.schoolAdmins.map((sa: any) => ({
+//             schoolId: sa.school.id,
+//             schoolName: sa.school.name,
+//             adminRole: sa.role,
+//           })),
+//         };
+//         break;
 
-      case UserRole.TEACHER:
-        message = "Teacher email verified successfully! You can now log in.";
-        responseData = {
-          teacher: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            verified: user.verified,
-            teacherCode: user.teacherCode,
-            school: user.school,
-          },
-        };
-        break;
+//       case UserRole.TEACHER:
+//         message = "Teacher email verified successfully! You can now log in.";
+//         responseData = {
+//           teacher: {
+//             id: user.id,
+//             name: user.name,
+//             email: user.email,
+//             verified: user.verified,
+//             teacherCode: user.teacherCode,
+//             school: user.school,
+//           },
+//         };
+//         break;
 
-      case UserRole.STUDENT:
-        message = "Student email verified successfully! You can now log in.";
-        responseData = {
-          student: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            verified: user.verified,
-            studentCode: user.studentCode,
-            school: user.school,
-          },
-        };
-        break;
+//       case UserRole.STUDENT:
+//         message = "Student email verified successfully! You can now log in.";
+//         responseData = {
+//           student: {
+//             id: user.id,
+//             name: user.name,
+//             email: user.email,
+//             verified: user.verified,
+//             studentCode: user.studentCode,
+//             school: user.school,
+//           },
+//         };
+//         break;
 
-      case UserRole.PARENT:
-        message = "Parent email verified successfully! You can now log in.";
-        responseData = {
-          parent: {
-            id: user.id,
-            fullName: user.fullName,
-            email: user.email,
-            verified: user.verified,
-          },
-          children: user.children.map((child: any) => ({
-            studentId: child.student.id,
-            studentName: child.student.name,
-            studentCode: child.student.studentCode,
-            linkStatus: child.status,
-          })),
-        };
-        break;
-    }
+//       case UserRole.PARENT:
+//         message = "Parent email verified successfully! You can now log in.";
+//         responseData = {
+//           parent: {
+//             id: user.id,
+//             fullName: user.fullName,
+//             email: user.email,
+//             verified: user.verified,
+//           },
+//           children: user.children.map((child: any) => ({
+//             studentId: child.student.id,
+//             studentName: child.student.name,
+//             studentCode: child.student.studentCode,
+//             linkStatus: child.status,
+//           })),
+//         };
+//         break;
+//     }
 
-    return res.status(200).json({
-      success: true,
-      message,
-      userRole: userType,
-      data: responseData,
-    });
-  } catch (error) {
-    console.error("Error verifying code:", error);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-};
+//     return res.status(200).json({
+//       success: true,
+//       message,
+//       userRole: userType,
+//       data: responseData,
+//     });
+//   } catch (error) {
+//     console.error("Error verifying code:", error);
+//     return res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
 // ====================================
 // login
 // =======================================
 
+// export const login = async (req: Request, res: Response) => {
+//   try {
+//     const { email, password, userType } = req.body;
+
+//     if (!email || !password || !userType) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Email and password  required",
+//       });
+//     }
+
+//     // Validate userType
+//     if (!Object.values(UserRole).includes(userType as UserRole)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid user type",
+//       });
+//     }
+
+//     let user: any;
+//     switch (userType) {
+//       case UserRole.ADMIN:
+//         user = await prisma.admin.findUnique({ where: { email } });
+//         break;
+//       case UserRole.TEACHER:
+//         user = await prisma.teacher.findUnique({ where: { email } });
+//         break;
+//       case UserRole.STUDENT:
+//         user = await prisma.student.findUnique({ where: { email } });
+//         break;
+//       case UserRole.PARENT:
+//         user = await prisma.parent.findUnique({ where: { email } });
+//         break;
+//       default:
+//         return res.status(400).json({
+//           success: false,
+//           message: "email or password incorrect",
+//         });
+//     }
+
+//     if (!user)
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found",
+//       });
+
+//     if (!user.verified)
+//       return res.status(403).json({
+//         success: false,
+//         message: "Email not verified",
+//       });
+
+//     const validPassword = await comparePassword(password, user.password);
+//     if (!validPassword)
+//       return res.status(404).json({
+//         success: false,
+//         message: "password incorrect",
+//       });
+
+//     const accessToken = generateAccessToken(user.id, userType);
+//     const refreshToken = await generateRefreshToken(user.id, userType);
+
+//     res.cookie("token", accessToken, {
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === "production",
+//       sameSite: "lax",
+//       path: "/",
+//       maxAge: 24 * 60 * 60 * 1000,
+//     });
+
+//     res.cookie("refreshToken", refreshToken, {
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === "production",
+//       sameSite: "strict",
+//       path: "/",
+//       maxAge: 7 * 24 * 60 * 60 * 1000,
+//     });
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Logged in successfully",
+//       data: {
+//         accessToken,
+//         user: {
+//           id: user.id,
+//           email: user.email,
+//           name: user.name || user.fullName,
+//           role: user.role, // RETURN ROLE
+//         },
+//         userRole: user.role, // ADDED: Explicit role for redirection
+//       },
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+
+// =========================
+// LOGIN
+// =========================
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password, userType } = req.body;
@@ -836,7 +937,7 @@ export const login = async (req: Request, res: Response) => {
     if (!email || !password || !userType) {
       return res.status(400).json({
         success: false,
-        message: "Email and password  required",
+        message: "Email, password, and user type required",
       });
     }
 
@@ -849,9 +950,15 @@ export const login = async (req: Request, res: Response) => {
     }
 
     let user: any;
+
     switch (userType) {
       case UserRole.ADMIN:
-        user = await prisma.admin.findUnique({ where: { email } });
+        user = await prisma.admin.findUnique({
+          where: { email },
+          include: {
+            schoolAdmins: { include: { school: true } },
+          },
+        });
         break;
       case UserRole.TEACHER:
         user = await prisma.teacher.findUnique({ where: { email } });
@@ -862,31 +969,23 @@ export const login = async (req: Request, res: Response) => {
       case UserRole.PARENT:
         user = await prisma.parent.findUnique({ where: { email } });
         break;
-      default:
-        return res.status(400).json({
-          success: false,
-          message: "email or password incorrect",
-        });
     }
 
     if (!user)
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
     if (!user.verified)
-      return res.status(403).json({
-        success: false,
-        message: "Email not verified",
-      });
+      return res
+        .status(403)
+        .json({ success: false, message: "Email not verified" });
 
     const validPassword = await comparePassword(password, user.password);
     if (!validPassword)
-      return res.status(404).json({
-        success: false,
-        message: "password incorrect",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Password incorrect" });
 
     const accessToken = generateAccessToken(user.id, userType);
     const refreshToken = await generateRefreshToken(user.id, userType);
@@ -907,20 +1006,213 @@ export const login = async (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.status(200).json({
-      success: true,
-      message: "Logged in successfully",
-      data: {
-        accessToken,
+    let responseData: any = {};
+    let message = "Logged in successfully";
+
+    if (userType === UserRole.ADMIN) {
+      const schools = user.schoolAdmins.map((sa: any) => ({
+        schoolId: sa.school.id,
+        schoolName: sa.school.name,
+        adminRole: sa.role,
+        approved:
+          sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
+      }));
+
+      responseData = {
         user: {
           id: user.id,
+          name: user.name,
           email: user.email,
-          name: user.name || user.fullName,
-          role: user.role, // RETURN ROLE
+          role: user.role,
+          schools,
         },
-        userRole: user.role, // ADDED: Explicit role for redirection
-      },
+        userRole: user.role,
+        accessToken,
+      };
+    } else if (userType === UserRole.TEACHER) {
+      responseData = {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          teacherCode: user.teacherCode,
+          school: user.school,
+        },
+        userRole: user.role,
+        accessToken,
+      };
+    } else if (userType === UserRole.STUDENT) {
+      responseData = {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          studentCode: user.studentCode,
+          school: user.school,
+        },
+        userRole: user.role,
+        accessToken,
+      };
+    } else if (userType === UserRole.PARENT) {
+      responseData = {
+        user: {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+        },
+        children: user.children?.map((child: any) => ({
+          studentId: child.student.id,
+          studentName: child.student.name,
+          studentCode: child.student.studentCode,
+          linkStatus: child.status,
+        })),
+        userRole: user.role,
+        accessToken,
+      };
+    }
+
+    return res.status(200).json({ success: true, message, data: responseData });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// =========================
+// VERIFY EMAIL CODE
+// =========================
+export const verifyEmailCode = async (req: Request, res: Response) => {
+  try {
+    const { email, code, userType } = req.body;
+
+    if (!email || !code || !userType) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Email, code, and user type are required",
+        });
+    }
+
+    if (!Object.values(UserRole).includes(userType as UserRole)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid user type" });
+    }
+
+    const found = await prisma.verificationCode.findFirst({
+      where: { email, code, userType: userType as UserRole, used: false },
     });
+
+    if (!found)
+      return res.status(400).json({ success: false, message: "Invalid code" });
+    if (found.expiresAt < new Date())
+      return res.status(400).json({ success: false, message: "Code expired" });
+
+    await prisma.verificationCode.update({
+      where: { id: found.id },
+      data: { used: true },
+    });
+
+    let user: any;
+    let isSchoolOwner = false;
+
+    switch (userType) {
+      case UserRole.ADMIN:
+        user = await prisma.admin.findUnique({
+          where: { email },
+          include: { schoolAdmins: { include: { school: true } } },
+        });
+
+        if (!user)
+          return res
+            .status(404)
+            .json({ success: false, message: "Admin not found" });
+
+        isSchoolOwner = user.schoolAdmins.some(
+          (sa: any) => sa.role === AdminRole.SCHOOL_OWNER
+        );
+
+        user = await prisma.admin.update({
+          where: { email },
+          data: {
+            verified: true,
+            status: isSchoolOwner ? "APPROVED" : "PENDING",
+          },
+          include: { schoolAdmins: { include: { school: true } } },
+        });
+
+        const schools = user.schoolAdmins.map((sa: any) => ({
+          schoolId: sa.school.id,
+          schoolName: sa.school.name,
+          adminRole: sa.role,
+          approved:
+            sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
+        }));
+
+        return res.status(200).json({
+          success: true,
+          message: isSchoolOwner
+            ? "School owner verified and account approved!"
+            : "Admin verified! Waiting for school owner approval.",
+          userRole: userType,
+          data: {
+            admin: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              status: user.status,
+              verified: user.verified,
+              isSchoolOwner,
+            },
+            schools,
+          },
+        });
+
+      case UserRole.TEACHER:
+        user = await prisma.teacher.update({
+          where: { email },
+          data: { verified: true },
+        });
+        return res.status(200).json({
+          success: true,
+          message: "Teacher verified successfully!",
+          userRole: userType,
+          data: { teacher: user },
+        });
+
+      case UserRole.STUDENT:
+        user = await prisma.student.update({
+          where: { email },
+          data: { verified: true },
+        });
+        return res.status(200).json({
+          success: true,
+          message: "Student verified successfully!",
+          userRole: userType,
+          data: { student: user },
+        });
+
+      case UserRole.PARENT:
+        user = await prisma.parent.update({
+          where: { email },
+          data: { verified: true },
+        });
+        return res.status(200).json({
+          success: true,
+          message: "Parent verified successfully!",
+          userRole: userType,
+          data: { parent: user },
+        });
+
+      default:
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid user type" });
+    }
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: "Server error" });

@@ -48,33 +48,36 @@ model School {
 
 model SchoolAdmin {
   id       String    @id @default(uuid())
-  schoolId String
   adminId  String
+  schoolId String
   role     AdminRole
+  active   Boolean   @default(true) // Track if admin still works at the school
 
-  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   admin  Admin  @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([schoolId, adminId])
+  @@unique([adminId, schoolId])
   @@map("school_admins")
 }
 
 // Add to your existing schema
 model Admin {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      UserRole
-  tenantIds String[]
-  verified  Boolean  @default(false)
-  status    String   @default("PENDING") // ADD THIS: PENDING, APPROVED, REJECTED
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password      String
+  role          UserRole
+  tenantIds     String[]
+  defaultTenant String? // Default school selected at login
+  verified      Boolean  @default(false)
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
 
   schoolAdmins SchoolAdmin[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model Teacher {
