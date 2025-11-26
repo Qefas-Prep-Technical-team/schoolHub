@@ -1,7 +1,11 @@
 import express from "express";
-import { registerSchool,registerTeacher,registerStudent, registerParent, verifyEmailCode, requestVerificationCode, login, refreshToken, logout } from "./auth.controller";
+import { registerSchool,registerTeacher,registerStudent, registerParent, verifyEmailCode, requestVerificationCode, login, refreshToken, logout, requestPasswordReset, 
+  validateResetToken,
+  verifyResetToken,
+  completePasswordReset
+} from "./auth.controller";
 import { validateRequest } from "../../middleware/validateRequest";
-import { schoolRegistrationSchema ,teacherRegistrationSchema,studentSchema, ParentRegisterSchema, requestCodeSchema, verifyCodeSchema, loginSchema} from "./auth.validation";
+import { schoolRegistrationSchema ,teacherRegistrationSchema,studentSchema, ParentRegisterSchema, requestCodeSchema, verifyCodeSchema, loginSchema, completePasswordResetSchema} from "./auth.validation";
 import { getStudentByCode, linkChildToParent } from "./auth.service";
 
 const router = express.Router();
@@ -42,4 +46,12 @@ router.post("/verify-code", validateRequest(verifyCodeSchema), verifyEmailCode);
 router.post("/login", validateRequest(loginSchema),login);
 router.post("/refresh", refreshToken);
 router.post("/logout", logout);
+
+// Reset password routes
+router.post('/password/reset/request', requestPasswordReset); // Send reset email
+router.get('/password/reset/validate/:token', validateResetToken); // Check if token is valid
+router.post('/password/reset/verify', verifyResetToken); // Verify token (optional step)
+router.post('/password/reset/complete',  validateRequest(completePasswordResetSchema),completePasswordReset); // Set new password
 export default router;
+
+

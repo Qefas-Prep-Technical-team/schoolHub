@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../../config/database";
-import { loginUser, sendVerificationEmail } from "./auth.service";
+import { loginUser, sendPasswordResetEmail, sendVerificationEmail } from "./auth.service";
 import {
   comparePassword,
   generateAccessToken,
@@ -39,7 +39,7 @@ export const registerSchool = async (req: Request, res: Response) => {
 
     let tenantId: string | undefined;
     for (let attempt = 0; attempt < 10; attempt++) {
-      const candidate = generateSixDigit();
+      const candidate ="sch-"+ generateSixDigit();
       const exists = await prisma.school.findFirst({
         where: { tenantId: candidate },
       });
@@ -941,7 +941,6 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // Validate userType
     if (!Object.values(UserRole).includes(userType as UserRole)) {
       return res.status(400).json({
         success: false,
@@ -951,13 +950,12 @@ export const login = async (req: Request, res: Response) => {
 
     let user: any;
 
+    // Fetch user based on type
     switch (userType) {
       case UserRole.ADMIN:
         user = await prisma.admin.findUnique({
           where: { email },
-          include: {
-            schoolAdmins: { include: { school: true } },
-          },
+          include: { schoolAdmins: { include: { school: true } } },
         });
         break;
       case UserRole.TEACHER:
@@ -971,21 +969,57 @@ export const login = async (req: Request, res: Response) => {
         break;
     }
 
-    if (!user)
+    if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
+    }
 
-    if (!user.verified)
+    if (!user.verified) {
       return res
         .status(403)
         .json({ success: false, message: "Email not verified" });
+    }
 
     const validPassword = await comparePassword(password, user.password);
-    if (!validPassword)
+    if (!validPassword) {
       return res
         .status(404)
         .json({ success: false, message: "Password incorrect" });
+    }
+
+    // ===== Set defaultTenantId if missing =====
+    if (user.defaultTenantId ==="default-tenant-id" && user.tenantIds && user.tenantIds.length > 0) {
+      user.defaultTenantId = user.tenantIds[0];
+      // Persist the update to DB
+      switch (userType) {
+        case UserRole.ADMIN:
+          await prisma.admin.update({
+            where: { id: user.id },
+            data: { defaultTenantId: user.defaultTenantId },
+          });
+          break;
+        case UserRole.TEACHER:
+          await prisma.teacher.update({
+            where: { id: user.id },
+            data: { defaultTenantId: user.defaultTenantId },
+          });
+          break;
+        case UserRole.STUDENT:
+          await prisma.student.update({
+            where: { id: user.id },
+            data: { defaultTenantId: user.defaultTenantId },
+          });
+          break;
+        case UserRole.PARENT:
+          await prisma.parent.update({
+            where: { id: user.id },
+            data: { defaultTenantId: user.defaultTenantId },
+          });
+          break;
+      }
+    }
+    // ========================================
 
     const accessToken = generateAccessToken(user.id, userType);
     const refreshToken = await generateRefreshToken(user.id, userType);
@@ -1006,8 +1040,11 @@ export const login = async (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
+    // ===== Build response data =====
     let responseData: any = {};
     let message = "Logged in successfully";
+
+    console.log(user.defaultTenantId)
 
     if (userType === UserRole.ADMIN) {
       const schools = user.schoolAdmins.map((sa: any) => ({
@@ -1025,6 +1062,7 @@ export const login = async (req: Request, res: Response) => {
           email: user.email,
           role: user.role,
           schools,
+          defaultTenantId: user.defaultTenantId,
         },
         userRole: user.role,
         accessToken,
@@ -1038,6 +1076,7 @@ export const login = async (req: Request, res: Response) => {
           role: user.role,
           teacherCode: user.teacherCode,
           school: user.school,
+          defaultTenantId: user.defaultTenantId,
         },
         userRole: user.role,
         accessToken,
@@ -1051,6 +1090,7 @@ export const login = async (req: Request, res: Response) => {
           role: user.role,
           studentCode: user.studentCode,
           school: user.school,
+          defaultTenantId: user.defaultTenantId,
         },
         userRole: user.role,
         accessToken,
@@ -1062,6 +1102,7 @@ export const login = async (req: Request, res: Response) => {
           fullName: user.fullName,
           email: user.email,
           role: user.role,
+          defaultTenantId: user.defaultTenantId,
         },
         children: user.children?.map((child: any) => ({
           studentId: child.student.id,
@@ -1275,6 +1316,417 @@ export const logout = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+
+// ====================
+// reset password 
+// ====================
+
+
+// Add to your auth.controller.ts
+
+export const requestPasswordReset = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email address is required",
+      });
+    }
+
+    // Find user across all types
+    const [admin, teacher, student, parent] = await Promise.all([
+      prisma.admin.findUnique({ where: { email } }),
+      prisma.teacher.findUnique({ where: { email } }),
+      prisma.student.findUnique({ where: { email } }),
+      prisma.parent.findUnique({ where: { email } }),
+    ]);
+
+    const user = admin || teacher || student || parent;
+
+    // Don't reveal if email exists for security - return generic message
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: "If an account with that email exists, a reset link has been sent.",
+      });
+    }
+
+    // Check if user is verified - provide specific feedback for unverified accounts
+    if (!user.verified) {
+      return res.status(400).json({
+        success: false,
+        message: "Please verify your email address before resetting your password. Check your inbox for the verification email.",
+      });
+    }
+
+    // Determine user type
+    let userType: UserRole;
+    if (admin) userType = UserRole.ADMIN;
+    else if (teacher) userType = UserRole.TEACHER;
+    else if (student) userType = UserRole.STUDENT;
+    else userType = UserRole.PARENT;
+
+    // Generate reset token (6-digit code like your verification)
+    const resetCode = generateCode();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Delete any existing reset tokens for this email
+    await prisma.passwordReset.deleteMany({
+      where: { email },
+    });
+
+    // Create new reset token
+    await prisma.passwordReset.create({
+      data: {
+        email,
+        code: resetCode,
+        userType,
+        expiresAt,
+      },
+    });
+
+    // Send reset email
+    await sendPasswordResetEmail(email, resetCode);
+
+    return res.status(200).json({
+      success: true,
+      message: `If an account with the email ${email}exists, a reset link has been sent.`,
+    });
+  } catch (error: any) {
+    console.error("Password reset request error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error. Please try again.",
+    });
+  }
+};
+
+export const verifyResetToken = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Reset token is required",
+      });
+    }
+
+    // Find the valid reset token
+    const resetRecord = await prisma.passwordReset.findFirst({
+      where: {
+        code: token,
+        used: false,
+      },
+    });
+
+    if (!resetRecord) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token",
+      });
+    }
+
+    if (resetRecord.expiresAt < new Date()) {
+      // Clean up expired token
+      await prisma.passwordReset.delete({ where: { id: resetRecord.id } });
+      return res.status(400).json({
+        success: false,
+        message: "Reset token has expired",
+      });
+    }
+
+    // Mark token as verified
+    await prisma.passwordReset.update({
+      where: { id: resetRecord.id },
+      data: { verified: true },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Reset token verified successfully",
+      data: {
+        email: resetRecord.email,
+        userType: resetRecord.userType,
+      },
+    });
+  } catch (error: any) {
+    console.error("Reset token verification error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword, confirmPassword } = req.body;
+
+    if (!token || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
+
+    // Find and validate the reset token
+    const resetRecord = await prisma.passwordReset.findFirst({
+      where: {
+        code: token,
+        verified: true,
+        used: false,
+      },
+    });
+
+    if (!resetRecord) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token",
+      });
+    }
+
+    if (resetRecord.expiresAt < new Date()) {
+      await prisma.passwordReset.delete({ where: { id: resetRecord.id } });
+      return res.status(400).json({
+        success: false,
+        message: "Reset token has expired",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update user password based on type
+    let updatedUser: any;
+    switch (resetRecord.userType) {
+      case UserRole.ADMIN:
+        updatedUser = await prisma.admin.update({
+          where: { email: resetRecord.email },
+          data: { password: hashedPassword },
+        });
+        break;
+      case UserRole.TEACHER:
+        updatedUser = await prisma.teacher.update({
+          where: { email: resetRecord.email },
+          data: { password: hashedPassword },
+        });
+        break;
+      case UserRole.STUDENT:
+        updatedUser = await prisma.student.update({
+          where: { email: resetRecord.email },
+          data: { password: hashedPassword },
+        });
+        break;
+      case UserRole.PARENT:
+        updatedUser = await prisma.parent.update({
+          where: { email: resetRecord.email },
+          data: { password: hashedPassword },
+        });
+        break;
+    }
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Mark reset token as used
+    await prisma.passwordReset.update({
+      where: { id: resetRecord.id },
+      data: { used: true },
+    });
+
+    // Delete any other reset tokens for this email
+    await prisma.passwordReset.deleteMany({
+      where: {
+        email: resetRecord.email,
+        used: false,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successfully. You can now login with your new password.",
+    });
+  } catch (error: any) {
+    console.error("Password reset error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+// Combined endpoint for the full reset flow
+export const completePasswordReset = async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword, confirmPassword } = req.body;
+
+    if (!token || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
+
+    // Find and validate the reset token
+    const resetRecord = await prisma.passwordReset.findFirst({
+      where: {
+        code: token,
+        used: false,
+      },
+    });
+
+    if (!resetRecord) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token",
+      });
+    }
+
+    if (resetRecord.expiresAt < new Date()) {
+      await prisma.passwordReset.delete({ where: { id: resetRecord.id } });
+      return res.status(400).json({
+        success: false,
+        message: "Reset token has expired. Please request a new one.",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update user password
+    let updatedUser: any;
+    switch (resetRecord.userType) {
+      case UserRole.ADMIN:
+        updatedUser = await prisma.admin.update({
+          where: { email: resetRecord.email },
+          data: { password: hashedPassword },
+        });
+        break;
+      case UserRole.TEACHER:
+        updatedUser = await prisma.teacher.update({
+          where: { email: resetRecord.email },
+          data: { password: hashedPassword },
+        });
+        break;
+      case UserRole.STUDENT:
+        updatedUser = await prisma.student.update({
+          where: { email: resetRecord.email },
+          data: { password: hashedPassword },
+        });
+        break;
+      case UserRole.PARENT:
+        updatedUser = await prisma.parent.update({
+          where: { email: resetRecord.email },
+          data: { password: hashedPassword },
+        });
+        break;
+    }
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Mark reset token as used
+    await prisma.passwordReset.update({
+      where: { id: resetRecord.id },
+      data: { used: true },
+    });
+
+    // Clean up any other unused reset tokens for this email
+    await prisma.passwordReset.deleteMany({
+      where: {
+        email: resetRecord.email,
+        used: false,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successfully. You can now login with your new password.",
+    });
+  } catch (error: any) {
+    console.error("Complete password reset error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error. Please try again.",
+    });
+  }
+};
+
+// Check if reset token is valid (for the reset page)
+export const validateResetToken = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Reset token is required",
+      });
+    }
+
+    const resetRecord = await prisma.passwordReset.findFirst({
+      where: {
+        code: token,
+        used: false,
+      },
+    });
+
+    if (!resetRecord) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid reset token",
+      });
+    }
+
+    if (resetRecord.expiresAt < new Date()) {
+      await prisma.passwordReset.delete({ where: { id: resetRecord.id } });
+      return res.status(400).json({
+        success: false,
+        message: "Reset token has expired",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Reset token is valid",
+      data: {
+        email: resetRecord.email,
+      },
+    });
+  } catch (error: any) {
+    console.error("Reset token validation error:", error);
     return res.status(500).json({
       success: false,
       message: "Server error",

@@ -33,7 +33,7 @@ export const useLoginMutation = () => {
       authToast.loginSuccess(userEmail);
 
       // Determine dashboard based on userType from credentials
-      const userDash = variables.userType.toLowerCase(); // "PARENT" -> "parent"
+      const userDash = variables.userType.toLowerCase()// "PARENT" -> "parent"
 
       // Use hard redirect to ensure middleware picks up the new cookie
       setTimeout(() => {

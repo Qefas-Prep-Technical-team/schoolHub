@@ -20,21 +20,22 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {
     LayoutDashboard,
+    Building2,
     Users,
-    ClipboardList,
-    FileCheck2,
-    BarChart3,
+    GraduationCap,
     CalendarDays,
-    MessageSquare,
-    BellRing,
-    WalletCards,
-    UserCircle,
-    Settings,
-    LifeBuoy,
-    BookMarked,
-    Brain,
-    CalendarClock,
     Award,
+    BookOpenCheck,
+    CheckSquare,
+    LibraryBig,
+    CreditCard,
+    WalletCards,
+    BarChart3,
+    MessageSquare,
+    Landmark,
+    BrainCircuit,
+    Workflow,
+    Settings,
     School,
     User2,
     ChevronUp,
@@ -44,83 +45,88 @@ import {
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
-import { PARENT_FEATURE_FLAGS, ParentFeatureFlagKey } from "./parentFeatureFlags"
+import { ADMIN_FEATURE_FLAGS, AdminFeatureFlagKey } from "./adminFeatureFlags"
 
 
 // Define the menu item type
-interface ParentMenuItem {
+interface AdminMenuItem {
   icon: LucideIcon;
   label: string;
   href: string;
-  featureKey: ParentFeatureFlagKey;
+  featureKey: AdminFeatureFlagKey;
   section?: string;
 }
 
-// Complete parent menu items with feature keys and sections
-export const parentMenuItems: ParentMenuItem[] = [
-    // === CORE FEATURES ===
-    { icon: LayoutDashboard, label: "Dashboard", href: "/parent/dashboard", featureKey: "dashboard", section: "core" },
-    { icon: Users, label: "My Children", href: "/parent/children", featureKey: "children", section: "core" },
-    { icon: ClipboardList, label: "Assignments", href: "/parent/assignments", featureKey: "assignments", section: "core" },
-    { icon: FileCheck2, label: "Exams & Results", href: "/parent/results", featureKey: "results", section: "core" },
-    { icon: BarChart3, label: "Performance", href: "/parent/performance", featureKey: "performance", section: "core" },
-    { icon: CalendarDays, label: "Attendance", href: "/parent/attendance", featureKey: "attendance", section: "core" },
-    
-    // === MONITORING & COMMUNICATION ===
-    { icon: Award, label: "Behavior & Remarks", href: "/parent/behavior", featureKey: "behavior", section: "monitoring" },
-    { icon: MessageSquare, label: "Messages", href: "/parent/messages", featureKey: "messages", section: "monitoring" },
-    { icon: BellRing, label: "Notifications", href: "/parent/notifications", featureKey: "notifications", section: "monitoring" },
-    
-    // === FINANCIAL & RESOURCES ===
-    { icon: WalletCards, label: "Payments", href: "/parent/payments", featureKey: "payments", section: "financial" },
-    { icon: BookMarked, label: "Resources", href: "/parent/resources", featureKey: "resources", section: "financial" },
-    
+// Complete admin menu items with feature keys and sections
+export const adminMenuItems: AdminMenuItem[] = [
+    // === CORE MANAGEMENT ===
+    { icon: LayoutDashboard, label: "Overview", href: "/dashboard/school", featureKey: "overview", section: "core" },
+    { icon: Building2, label: "School Profile", href: "/school/profile", featureKey: "schoolProfile", section: "core" },
+    { icon: Users, label: "Teachers", href: "/school/teachers", featureKey: "teachers", section: "core" },
+    { icon: GraduationCap, label: "Students", href: "/school/students", featureKey: "students", section: "core" },
+    { icon: CalendarDays, label: "Classes & Timetable", href: "/school/classes", featureKey: "classes", section: "core" },
+
+    // === ACADEMICS ===
+    { icon: Award, label: "Grades", href: "/school/grades", featureKey: "grades", section: "academics" },
+    { icon: BookOpenCheck, label: "Exams & Quizzes", href: "/school/exams", featureKey: "exams", section: "academics" },
+    { icon: CheckSquare, label: "Attendance", href: "/school/attendance", featureKey: "attendance", section: "academics" },
+    { icon: LibraryBig, label: "Library", href: "/school/library", featureKey: "library", section: "academics" },
+
+    // === ADMINISTRATION ===
+    { icon: CreditCard, label: "Finance & Billing", href: "/school/finance", featureKey: "finance", section: "administration" },
+    { icon: WalletCards, label: "Payments", href: "/school/payments", featureKey: "payments", section: "administration" },
+    { icon: BarChart3, label: "Reports & Analytics", href: "/school/reports", featureKey: "reports", section: "administration" },
+
+    // === COMMUNICATION ===
+    { icon: MessageSquare, label: "Communication", href: "/school/chat", featureKey: "communication", section: "communication" },
+    { icon: Landmark, label: "Gallery & Media", href: "/school/gallery", featureKey: "gallery", section: "communication" },
+
     // === ADVANCED TOOLS ===
-    { icon: Brain, label: "AI Insights", href: "/parent/ai-insights", featureKey: "aiInsights", section: "advanced" },
-    { icon: CalendarClock, label: "Events & Timetable", href: "/parent/events", featureKey: "events", section: "advanced" },
-    
-    // === PROFILE & SETTINGS ===
-    { icon: UserCircle, label: "Profile", href: "/parent/profile", featureKey: "profile", section: "profile" },
-    { icon: Settings, label: "Settings", href: "/parent/settings", featureKey: "settings", section: "profile" },
-    { icon: LifeBuoy, label: "Support", href: "/parent/support", featureKey: "support", section: "profile" },
+    { icon: BrainCircuit, label: "Artificial Intelligence", href: "/school/ai-tools", featureKey: "aiTools", section: "advanced" },
+    { icon: Workflow, label: "Simulations", href: "/school/simulations", featureKey: "simulations", section: "advanced" },
+
+    // === SETTINGS ===
+    { icon: Settings, label: "Settings", href: "/school/settings", featureKey: "settings", section: "settings" },
 ];
 
 // Filter menu items based on feature flags and group by section
-const getFilteredParentMenuItemsBySection = () => {
-  const filtered = parentMenuItems.filter(item => PARENT_FEATURE_FLAGS[item.featureKey]);
+const getFilteredMenuItemsBySection = () => {
+  const filtered = adminMenuItems.filter(item  => ADMIN_FEATURE_FLAGS[item.featureKey]);
   
   const sections = {
     core: filtered.filter(item => item.section === 'core'),
-    monitoring: filtered.filter(item => item.section === 'monitoring'),
-    financial: filtered.filter(item => item.section === 'financial'),
+    academics: filtered.filter(item => item.section === 'academics'),
+    administration: filtered.filter(item => item.section === 'administration'),
+    communication: filtered.filter(item => item.section === 'communication'),
     advanced: filtered.filter(item => item.section === 'advanced'),
-    profile: filtered.filter(item => item.section === 'profile'),
+    settings: filtered.filter(item => item.section === 'settings'),
   };
 
   return sections;
 };
 
 // Section titles
-const PARENT_SECTION_TITLES = {
-  core: "Children's Progress",
-  monitoring: "Monitoring & Communication", 
-  financial: "Financial & Resources",
+const SECTION_TITLES = {
+  core: "Core Management",
+  academics: "Academics", 
+  administration: "Administration",
+  communication: "Communication",
   advanced: "Advanced Tools",
-  profile: "Account Settings"
+  settings: "Settings"
 };
 
-interface ParentSidebarProps {
+interface AdminSidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
 }
 
-export function ParentSidebar({ isCollapsed, setIsCollapsed }: ParentSidebarProps) {
+export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps) {
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const pathname = usePathname()
     
     // Get filtered menu items grouped by section
-    const menuSections = getFilteredParentMenuItemsBySection()
+    const menuSections = getFilteredMenuItemsBySection()
 
     return (
         <Sidebar
@@ -182,7 +188,7 @@ export function ParentSidebar({ isCollapsed, setIsCollapsed }: ParentSidebarProp
                                             variant="caption"
                                             className="text-xs font-semibold text-gray-500 uppercase tracking-wide"
                                         >
-                                            {PARENT_SECTION_TITLES[sectionKey as keyof typeof PARENT_SECTION_TITLES]}
+                                            {SECTION_TITLES[sectionKey as keyof typeof SECTION_TITLES]}
                                         </Typography>
                                     </div>
                                 )}
@@ -190,7 +196,7 @@ export function ParentSidebar({ isCollapsed, setIsCollapsed }: ParentSidebarProp
                                 {/* Section Items */}
                                 {items.map(({ icon: Icon, label, href, featureKey }) => {
                                     const isActive = pathname === href;
-                                    const isDisabled = !PARENT_FEATURE_FLAGS[featureKey];
+                                    const isDisabled = !ADMIN_FEATURE_FLAGS[featureKey];
 
                                     return (
                                         <SidebarMenuItem key={label} className="my-1">
@@ -239,7 +245,7 @@ export function ParentSidebar({ isCollapsed, setIsCollapsed }: ParentSidebarProp
                                     <div className="flex items-center">
                                         <User2 className="mr-2 h-5 w-5" />
                                         {!isCollapsed && (
-                                            <span className="font-medium text-[1rem]">Parent</span>
+                                            <span className="font-medium text-[1rem]">Admin</span>
                                         )}
                                     </div>
                                     {!isCollapsed &&
@@ -257,13 +263,10 @@ export function ParentSidebar({ isCollapsed, setIsCollapsed }: ParentSidebarProp
                                 className="w-[220px] rounded-lg shadow-lg border border-border bg-background p-1"
                             >
                                 <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    Family Profile
+                                    Admin Account
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    Payment History
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    Notification Settings
+                                    System Settings
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => logout()} className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
                                     Sign out
