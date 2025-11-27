@@ -1,5 +1,7 @@
 // components/auth/ProtectedAdminRoute.tsx
-import ProtectedRoute from "@components/reuseables/ProtectedRoute"
+
+import ProtectedRoute from "@/components/reuseables/ProtectedRoute";
+
 export function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute userTypes={['ADMIN']}>

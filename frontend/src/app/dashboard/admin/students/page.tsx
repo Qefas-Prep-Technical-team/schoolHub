@@ -1,13 +1,10 @@
 "use client";
-
 import { useState } from "react";
 import PageHeader from "./components/PageHeader";
 import SearchBar from "./components/SearchBar";
 import FilterChips from "./components/FilterChips";
 import AddStudentDialog from "./components/AddStudentDialog";
 import StudentsTable from "./components/StudentsTable";
-
-
 
 
 export default function StudentsPage() {

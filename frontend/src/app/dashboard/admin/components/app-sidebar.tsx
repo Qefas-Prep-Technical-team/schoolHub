@@ -62,7 +62,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     // === CORE MANAGEMENT ===
     { icon: LayoutDashboard, label: "Overview", href: "/dashboard/admin", featureKey: "overview", section: "core" },
     { icon: Building2, label: "School Profile", href: "/school/profile", featureKey: "schoolProfile", section: "core" },
-    { icon: Users, label: "Teachers", href: "/school/teachers", featureKey: "teachers", section: "core" },
+    { icon: Users, label: "Teachers", href: "/dashboard/admin/teachers", featureKey: "teachers", section: "core" },
     { icon: GraduationCap, label: "Students", href: "/dashboard/admin/students", featureKey: "students", section: "core" },
     { icon: CalendarDays, label: "Classes & Timetable", href: "/school/classes", featureKey: "classes", section: "core" },
 
