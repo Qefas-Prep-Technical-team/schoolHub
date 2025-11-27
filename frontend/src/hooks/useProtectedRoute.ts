@@ -16,6 +16,7 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
   const pathname = usePathname();
   const { isAuthenticated, user } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
+  console.log("🔐 useProtectedRoute: isAuthenticated =", isAuthenticated);
 
   useEffect(() => {
     const checkAuth = async () => {

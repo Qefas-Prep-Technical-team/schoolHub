@@ -9,6 +9,8 @@ import ProfessionalInfoCard from './components/ProfessionalInfoCard'
 import StatisticsCard from './components/StatisticsCard'
 import TimetableToolbar from './schedule/TimetableToolbar'
 import SchedulePage from './schedule/SchedulePage'
+import AcademicPerformancePage from '../../students/profilePage/components/AcademicPerformance/AcademicPerformancePage'
+import PerformancePage from './performance/PerformancePage'
 
 
 const mockTeacherData = {
@@ -59,7 +61,7 @@ export default function TeacherProfilePage() {
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <Breadcrumbs items={breadcrumbItems} />
-          
+
           <TeacherProfileHeader
             teacher={{
               name: mockTeacherData.name,
@@ -69,7 +71,7 @@ export default function TeacherProfilePage() {
               status: mockTeacherData.status
             }}
           />
-          
+
           <TeacherTabs
             tabs={tabs}
             activeTab={activeTab}
@@ -83,15 +85,18 @@ export default function TeacherProfilePage() {
                 <PersonalInfoCard personalInfo={mockTeacherData.personalInfo} />
                 <ProfessionalInfoCard professionalInfo={mockTeacherData.professionalInfo} />
               </div>
-              
+
               {/* Right Column: Statistics Widgets */}
               <div className="lg:col-span-1 flex flex-col gap-6">
                 <StatisticsCard statistics={mockTeacherData.statistics} />
               </div>
             </div>
           )}
-{activeTab === 'schedule' && (
-            <SchedulePage/>
+          {activeTab === 'schedule' && (
+            <SchedulePage />
+          )}
+          {activeTab === 'performance' && (
+            <PerformancePage />
           )}
           {/* Add other tab content here */}
           {activeTab !== 'overview' && (

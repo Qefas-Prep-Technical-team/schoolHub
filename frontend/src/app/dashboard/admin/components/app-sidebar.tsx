@@ -50,11 +50,11 @@ import { ADMIN_FEATURE_FLAGS, AdminFeatureFlagKey } from "./adminFeatureFlags"
 
 // Define the menu item type
 interface AdminMenuItem {
-  icon: LucideIcon;
-  label: string;
-  href: string;
-  featureKey: AdminFeatureFlagKey;
-  section?: string;
+    icon: LucideIcon;
+    label: string;
+    href: string;
+    featureKey: AdminFeatureFlagKey;
+    section?: string;
 }
 
 // Complete admin menu items with feature keys and sections
@@ -68,7 +68,7 @@ export const adminMenuItems: AdminMenuItem[] = [
 
     // === ACADEMICS ===
     { icon: Award, label: "Grades", href: "/school/grades", featureKey: "grades", section: "academics" },
-    { icon: BookOpenCheck, label: "Exams & Quizzes", href: "/school/exams", featureKey: "exams", section: "academics" },
+    { icon: BookOpenCheck, label: "Exams & Quizzes", href: "/dashboard/admin/Exams&Quizzes", featureKey: "exams", section: "academics" },
     { icon: CheckSquare, label: "Attendance", href: "/school/attendance", featureKey: "attendance", section: "academics" },
     { icon: LibraryBig, label: "Library", href: "/school/library", featureKey: "library", section: "academics" },
 
@@ -91,40 +91,40 @@ export const adminMenuItems: AdminMenuItem[] = [
 
 // Filter menu items based on feature flags and group by section
 const getFilteredMenuItemsBySection = () => {
-  const filtered = adminMenuItems.filter(item  => ADMIN_FEATURE_FLAGS[item.featureKey]);
-  
-  const sections = {
-    core: filtered.filter(item => item.section === 'core'),
-    academics: filtered.filter(item => item.section === 'academics'),
-    administration: filtered.filter(item => item.section === 'administration'),
-    communication: filtered.filter(item => item.section === 'communication'),
-    advanced: filtered.filter(item => item.section === 'advanced'),
-    settings: filtered.filter(item => item.section === 'settings'),
-  };
+    const filtered = adminMenuItems.filter(item => ADMIN_FEATURE_FLAGS[item.featureKey]);
 
-  return sections;
+    const sections = {
+        core: filtered.filter(item => item.section === 'core'),
+        academics: filtered.filter(item => item.section === 'academics'),
+        administration: filtered.filter(item => item.section === 'administration'),
+        communication: filtered.filter(item => item.section === 'communication'),
+        advanced: filtered.filter(item => item.section === 'advanced'),
+        settings: filtered.filter(item => item.section === 'settings'),
+    };
+
+    return sections;
 };
 
 // Section titles
 const SECTION_TITLES = {
-  core: "Core Management",
-  academics: "Academics", 
-  administration: "Administration",
-  communication: "Communication",
-  advanced: "Advanced Tools",
-  settings: "Settings"
+    core: "Core Management",
+    academics: "Academics",
+    administration: "Administration",
+    communication: "Communication",
+    advanced: "Advanced Tools",
+    settings: "Settings"
 };
 
 interface AdminSidebarProps {
-  isCollapsed: boolean;
-  setIsCollapsed: (collapsed: boolean) => void;
+    isCollapsed: boolean;
+    setIsCollapsed: (collapsed: boolean) => void;
 }
 
 export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps) {
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const pathname = usePathname()
-    
+
     // Get filtered menu items grouped by section
     const menuSections = getFilteredMenuItemsBySection()
 
@@ -204,8 +204,8 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                                                 <SidebarMenuButton
                                                     className={cn(
                                                         "relative flex items-center gap-3 text-[1rem] font-medium rounded-lg px-4 py-3 transition-all",
-                                                        isDisabled 
-                                                            ? "text-gray-400 cursor-not-allowed opacity-60" 
+                                                        isDisabled
+                                                            ? "text-gray-400 cursor-not-allowed opacity-60"
                                                             : isActive
                                                                 ? "bg-accent text-accent-foreground shadow-sm cursor-pointer"
                                                                 : "hover:bg-accent/40 cursor-pointer"
