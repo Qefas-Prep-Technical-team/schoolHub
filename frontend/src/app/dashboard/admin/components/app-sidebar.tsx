@@ -67,26 +67,26 @@ export const adminMenuItems: AdminMenuItem[] = [
     { icon: CalendarDays, label: "Classes & Timetable", href: "/school/classes", featureKey: "classes", section: "core" },
 
     // === ACADEMICS ===
-    { icon: Award, label: "Grades", href: "/school/grades", featureKey: "grades", section: "academics" },
-    { icon: BookOpenCheck, label: "Exams & Quizzes", href: "/dashboard/admin/Exams&Quizzes", featureKey: "exams", section: "academics" },
-    { icon: CheckSquare, label: "Attendance", href: "/school/attendance", featureKey: "attendance", section: "academics" },
-    { icon: LibraryBig, label: "Library", href: "/school/library", featureKey: "library", section: "academics" },
+    { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },
+    { icon: BookOpenCheck, label: "Exams & Quizzes", href: "/dashboard/admin/exams-and-quizzes", featureKey: "exams", section: "academics" },
+    { icon: CheckSquare, label: "Attendance", href: "/dashboard/admin/attendance", featureKey: "attendance", section: "academics" },
+    { icon: LibraryBig, label: "Library", href: "/dashboard/admin/library", featureKey: "library", section: "academics" },
 
     // === ADMINISTRATION ===
-    { icon: CreditCard, label: "Finance & Billing", href: "/school/finance", featureKey: "finance", section: "administration" },
-    { icon: WalletCards, label: "Payments", href: "/school/payments", featureKey: "payments", section: "administration" },
-    { icon: BarChart3, label: "Reports & Analytics", href: "/school/reports", featureKey: "reports", section: "administration" },
+    { icon: CreditCard, label: "Finance & Billing", href: "/dashboard/admin/finance", featureKey: "finance", section: "administration" },
+    { icon: WalletCards, label: "Payments", href: "/dashboard/admin/payments", featureKey: "payments", section: "administration" },
+    { icon: BarChart3, label: "Reports & Analytics", href: "/dashboard/admin/reports", featureKey: "reports", section: "administration" },
 
     // === COMMUNICATION ===
-    { icon: MessageSquare, label: "Communication", href: "/school/chat", featureKey: "communication", section: "communication" },
-    { icon: Landmark, label: "Gallery & Media", href: "/school/gallery", featureKey: "gallery", section: "communication" },
+    { icon: MessageSquare, label: "Communication", href: "/dashboard/admin/chat", featureKey: "communication", section: "communication" },
+    { icon: Landmark, label: "Gallery & Media", href: "/dashboard/admin/gallery", featureKey: "gallery", section: "communication" },
 
     // === ADVANCED TOOLS ===
-    { icon: BrainCircuit, label: "Artificial Intelligence", href: "/school/ai-tools", featureKey: "aiTools", section: "advanced" },
-    { icon: Workflow, label: "Simulations", href: "/school/simulations", featureKey: "simulations", section: "advanced" },
+    { icon: BrainCircuit, label: "Artificial Intelligence", href: "/dashboard/admin/ai-tools", featureKey: "aiTools", section: "advanced" },
+    { icon: Workflow, label: "Simulations", href: "/dashboard/admin/simulations", featureKey: "simulations", section: "advanced" },
 
     // === SETTINGS ===
-    { icon: Settings, label: "Settings", href: "/school/settings", featureKey: "settings", section: "settings" },
+    { icon: Settings, label: "Settings", href: "/dashboard/admin/settings", featureKey: "settings", section: "settings" },
 ];
 
 // Filter menu items based on feature flags and group by section

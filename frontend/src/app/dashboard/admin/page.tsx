@@ -9,6 +9,7 @@ import StatCard from "./components/dashboard/StatCard";
 
 export default function DashboardPage() {
     return (
+
         <div className="p-6 space-y-6">
             <OverviewHeader />
 

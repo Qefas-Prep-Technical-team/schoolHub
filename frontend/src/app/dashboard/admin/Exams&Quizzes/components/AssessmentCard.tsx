@@ -9,6 +9,7 @@ import {
     MoreVertical
 } from 'lucide-react';
 import DropdownMenu from './ui/DropdownMenu';
+import Link from 'next/link';
 
 interface Assessment {
     id: string;
@@ -52,7 +53,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
     ];
 
     return (
-        <div className="flex flex-col bg-white dark:bg-background-dark rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+        <Link href={`/dashboard/admin/Exams&Quizzes/exam-preview`} className="flex flex-col bg-white dark:bg-background-dark rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
             <div className="p-5">
                 <div className="flex justify-between items-start">
                     <div>
@@ -97,6 +98,6 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                     {assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
                 </span>
             </div>
-        </div>
+        </Link>
     );
 }

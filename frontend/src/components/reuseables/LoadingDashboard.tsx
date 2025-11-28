@@ -19,9 +19,9 @@ export default function LoadingDashboard({
   const [currentStep, setCurrentStep] = useState(0);
 
   // Separate refs for progress animation
-  const progressAnimationRef = useRef<number>();
-  const stepAnimationRef = useRef<number>();
-  const startTimeRef = useRef<number>();
+  const progressAnimationRef = useRef<number | null>(null);
+  const stepAnimationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
   const loadingSteps = [
     { progress: 20, message: "Verifying your account..." },
@@ -86,13 +86,14 @@ export default function LoadingDashboard({
     };
   }, [duration]); // Only depend on duration
 
-  const getUserTypeDisplay = (type: string) => {
+  const getUserTypeDisplay = (type?: string | null) => {
     const types = {
       PARENT: "Parent",
       TEACHER: "Teacher",
       ADMIN: "Administrator",
       STUDENT: "Student"
     };
+    if (!type) return "User";
     return types[type as keyof typeof types] || type;
   };
 
@@ -154,8 +155,8 @@ export default function LoadingDashboard({
             <div
               key={index}
               className={`w-2 h-2 rounded-full transition-all duration-300 ${index <= currentStep
-                  ? 'bg-primary scale-125'
-                  : 'bg-gray-300 dark:bg-gray-600'
+                ? 'bg-primary scale-125'
+                : 'bg-gray-300 dark:bg-gray-600'
                 }`}
             />
           ))}
