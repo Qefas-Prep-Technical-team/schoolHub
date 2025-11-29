@@ -1,5 +1,6 @@
 import { ChevronsUpDown } from 'lucide-react';
 import Badge from './ui/Badge';
+import Link from 'next/link';
 
 interface Grade {
     id: string;
@@ -122,12 +123,14 @@ export default function GradesTable({ grades, onEdit }: GradesTableProps) {
                                 {grade.remarks}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button
-                                    onClick={() => onEdit(grade.id)}
-                                    className="text-primary dark:text-blue-400 hover:text-primary/80 dark:hover:text-blue-300 transition-colors"
-                                >
-                                    Edit
-                                </button>
+                                <Link href={`/dashboard/admin/grades/edit/${grade.id}`}>
+                                    <button
+                                        onClick={() => onEdit(grade.id)}
+                                        className="text-primary dark:text-blue-400 hover:text-primary/80 dark:hover:text-blue-300 transition-colors"
+                                    >
+                                        Edit
+                                    </button>
+                                </Link>
                             </td>
                         </tr>
                     ))}

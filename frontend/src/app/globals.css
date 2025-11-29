@@ -179,7 +179,6 @@
   animation: fadeIn 0.2s ease-in-out;
 }
 
-
 .btn-primary {
   @apply w-full h-10 rounded-lg bg-primary text-white font-bold hover:bg-primary/90;
 }
@@ -189,10 +188,22 @@
 
 /* Add this to your global CSS */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* Internet Explorer 10+ */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
 }
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Safari and Chrome */
+  display: none; /* Safari and Chrome */
 }
 
+@keyframes ios-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-ios-fade {
+  animation: ios-fade 1s linear infinite;
+}

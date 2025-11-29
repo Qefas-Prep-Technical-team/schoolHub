@@ -1,24 +1,23 @@
-// components/reuseables/LoadingDashboard.tsx
-"use client"
+"use client";
 import { UserType } from "@/app/(auth)/login/services/auth-store";
 import { useEffect, useState, useRef } from "react";
+import { School } from "lucide-react";
 
 interface LoadingDashboardProps {
   userType?: UserType | null;
   message?: string;
-  duration?: number; // Total loading duration in milliseconds
+  duration?: number;
 }
 
 export default function LoadingDashboard({
   userType = "PARENT",
   message = "Preparing your dashboard...",
-  duration = 2000 // Match your 2-second timeout
+  duration = 2000
 }: LoadingDashboardProps) {
   const [dots, setDots] = useState("");
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
 
-  // Separate refs for progress animation
   const progressAnimationRef = useRef<number | null>(null);
   const stepAnimationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
@@ -32,143 +31,122 @@ export default function LoadingDashboard({
   ];
 
   useEffect(() => {
-    // Dots animation
     const dotsInterval = setInterval(() => {
-      setDots(prev => prev.length >= 3 ? "" : prev + ".");
+      setDots(prev => (prev.length >= 3 ? "" : prev + "."));
     }, 500);
 
-    // Initialize progress animation
     startTimeRef.current = Date.now();
 
-    // Progress animation - completely separate from step updates
-    const updateProgress = () => {
+    const animateProgress = () => {
       if (!startTimeRef.current) return;
-
       const elapsed = Date.now() - startTimeRef.current;
       const newProgress = Math.min((elapsed / duration) * 100, 100);
-
       setProgress(newProgress);
 
       if (newProgress < 100) {
-        progressAnimationRef.current = requestAnimationFrame(updateProgress);
+        progressAnimationRef.current = requestAnimationFrame(animateProgress);
       }
     };
 
-    // Step animation - runs independently
-    const updateSteps = () => {
+    const animateSteps = () => {
       if (!startTimeRef.current) return;
-
       const elapsed = Date.now() - startTimeRef.current;
-      const currentProgress = Math.min((elapsed / duration) * 100, 100);
+      const pct = Math.min((elapsed / duration) * 100, 100);
 
-      const currentStepIndex = loadingSteps.findIndex(step => currentProgress <= step.progress);
-      if (currentStepIndex !== -1 && currentStepIndex !== currentStep) {
-        setCurrentStep(currentStepIndex);
+      const idx = loadingSteps.findIndex(step => pct <= step.progress);
+      if (idx !== -1 && idx !== currentStep) {
+        setCurrentStep(idx);
       }
 
-      if (currentProgress < 100) {
-        stepAnimationRef.current = requestAnimationFrame(updateSteps);
+      if (pct < 100) {
+        stepAnimationRef.current = requestAnimationFrame(animateSteps);
       }
     };
 
-    // Start both animations
-    progressAnimationRef.current = requestAnimationFrame(updateProgress);
-    stepAnimationRef.current = requestAnimationFrame(updateSteps);
+    progressAnimationRef.current = requestAnimationFrame(animateProgress);
+    stepAnimationRef.current = requestAnimationFrame(animateSteps);
 
     return () => {
       clearInterval(dotsInterval);
-      if (progressAnimationRef.current) {
-        cancelAnimationFrame(progressAnimationRef.current);
-      }
-      if (stepAnimationRef.current) {
-        cancelAnimationFrame(stepAnimationRef.current);
-      }
+      if (progressAnimationRef.current) cancelAnimationFrame(progressAnimationRef.current);
+      if (stepAnimationRef.current) cancelAnimationFrame(stepAnimationRef.current);
     };
-  }, [duration]); // Only depend on duration
+  }, [duration]);
 
-  const getUserTypeDisplay = (type?: string | null) => {
-    const types = {
-      PARENT: "Parent",
-      TEACHER: "Teacher",
-      ADMIN: "Administrator",
-      STUDENT: "Student"
-    };
-    if (!type) return "User";
-    return types[type as keyof typeof types] || type;
+  const typeDisplay = {
+    PARENT: "Parent",
+    TEACHER: "Teacher",
+    ADMIN: "Administrator",
+    STUDENT: "Student"
   };
 
   const currentMessage = loadingSteps[currentStep]?.message || message;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
-        {/* Logo/App Icon */}
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center">
-            <span className="material-symbols-outlined text-white text-2xl">
-              school
-            </span>
-          </div>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black p-4">
+      <div className="flex flex-col items-center space-y-8">
 
-        {/* Loading Animation */}
-        <div className="relative mb-6">
-          <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto"></div>
+        {/* ICON + SPINNER (Perfectly Centered) */}
+        <div className="relative w-20 h-20 flex items-center justify-center">
+
+          {/* iOS Spinner */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 bg-primary rounded-full animate-pulse"></div>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-1 h-4 bg-blue-600/40 dark:bg-blue-400/40 rounded-full animate-ios-fade"
+                style={{
+                  transform: `rotate(${i * 30}deg) translate(0, -14px)`,
+                  animationDelay: `${-i * 0.083}s`
+                }}
+              />
+            ))}
           </div>
+
+          {/* ICON */}
+          <School
+            className="text-blue-600 dark:text-blue-400"
+            size={36}
+            strokeWidth={1.8}
+          />
         </div>
 
-        {/* Text Content */}
-        <div className="space-y-3">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Welcome, {getUserTypeDisplay(userType)}!
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 text-lg">
+        {/* TEXT */}
+        <div className="text-center space-y-1">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Welcome, {typeDisplay[(userType ?? "PARENT") as keyof typeof typeDisplay]}!
+          </h2>
+
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             {currentMessage}{dots}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             {Math.round(progress)}% complete
           </p>
         </div>
 
-        {/* Real-time Progress Bar */}
-        <div className="mt-6 bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+        {/* PROGRESS BAR */}
+        <div className="w-56 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
-            className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-75 ease-linear"
-            style={{
-              width: `${progress}%`
-            }}
+            className="h-full bg-blue-600 dark:bg-blue-400 transition-all duration-75"
+            style={{ width: `${progress}%` }}
           />
         </div>
 
-        {/* Progress Percentage */}
-        <div className="mt-3 flex justify-between text-xs text-gray-500 dark:text-gray-400">
-          <span>0%</span>
-          <span className="font-medium">{Math.round(progress)}%</span>
-          <span>100%</span>
-        </div>
-
-        {/* Loading Steps Indicator */}
-        <div className="mt-4 flex justify-center space-x-1">
-          {loadingSteps.map((step, index) => (
+        {/* DOT STEPS */}
+        <div className="flex space-x-1">
+          {loadingSteps.map((_, i) => (
             <div
-              key={index}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${index <= currentStep
-                ? 'bg-primary scale-125'
-                : 'bg-gray-300 dark:bg-gray-600'
+              key={i}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${i <= currentStep
+                  ? "bg-blue-600 dark:bg-blue-400 scale-110"
+                  : "bg-gray-300 dark:bg-gray-600"
                 }`}
             />
           ))}
         </div>
 
-        {/* Additional Info */}
-        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            <span className="font-semibold">Tip:</span> You can access all your courses,
-            assignments, and progress from your dashboard.
-          </p>
-        </div>
       </div>
     </div>
   );

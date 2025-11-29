@@ -165,7 +165,7 @@ export default function GradesManagement() {
                                         <span className="truncate">Batch Add</span>
                                     </Button>
                                 </Link>
-                                <Link href="/dashboard/admin/grades/batch-upload">
+                                <Link href="/dashboard/admin/grades/add">
                                     <Button onClick={handleAddGrade}>
                                         <Plus size={16} />
                                         <span className="truncate">Add Grade</span>

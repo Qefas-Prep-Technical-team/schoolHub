@@ -68,7 +68,7 @@ export const adminMenuItems: AdminMenuItem[] = [
 
     // === ACADEMICS ===
     { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },
-    { icon: BookOpenCheck, label: "Exams & Quizzes", href: "/dashboard/admin/exams-and-quizzes", featureKey: "exams", section: "academics" },
+    { icon: BookOpenCheck, label: "Exams & Quizzes", href: "/dashboard/admin/Exams&Quizzes", featureKey: "exams", section: "academics" },
     { icon: CheckSquare, label: "Attendance", href: "/dashboard/admin/attendance", featureKey: "attendance", section: "academics" },
     { icon: LibraryBig, label: "Library", href: "/dashboard/admin/library", featureKey: "library", section: "academics" },
 

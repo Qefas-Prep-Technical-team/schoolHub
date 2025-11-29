@@ -2,6 +2,7 @@
 import { Plus, Upload } from 'lucide-react';
 import Button from './ui/Button';
 import Checkbox from './ui/Checkbox';
+import Link from 'next/link';
 
 interface CBTSettingsProps {
   settings: {
@@ -31,10 +32,13 @@ export default function CBTSettings({ settings, onChange }: CBTSettingsProps) {
             Question Management
           </h4>
           <div className="flex flex-wrap items-center gap-4">
-            <Button variant="outline">
-              <Plus size={16} />
-              Add Question
-            </Button>
+            <Link href="/dashboard/admin/Exams&Quizzes/Questions">
+              <Button variant="outline">
+                <Plus size={16} />
+                Add Question
+              </Button>
+            </Link>
+
             <Button variant="secondary">
               <Upload size={16} />
               Import Question Bank
