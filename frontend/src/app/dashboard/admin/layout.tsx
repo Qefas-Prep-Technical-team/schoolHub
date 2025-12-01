@@ -10,7 +10,7 @@ import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute"
 export default function Layout({ children }: { children: React.ReactNode }) {
     const [isCollapsed, setIsCollapsed] = useState(false)
     return (
-        // <ProtectedAdminRoute>
+        <ProtectedAdminRoute>
 
         <SidebarProvider>
             <AdminSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
@@ -20,6 +20,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 {children}
             </main>
         </SidebarProvider>
-        // </ProtectedAdminRoute>
+         </ProtectedAdminRoute>
     )
 }

@@ -10,8 +10,8 @@ interface LoadingDashboardProps {
 }
 
 export default function LoadingDashboard({
-  userType = "PARENT",
-  message = "Preparing your dashboard...",
+  userType = "user",
+  message = "confirming your login status ... ",
   duration = 2000
 }: LoadingDashboardProps) {
   const [dots, setDots] = useState("");
