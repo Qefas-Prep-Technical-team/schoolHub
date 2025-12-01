@@ -14,8 +14,6 @@ const TabsNavigation = () => (
       <Tab>Academics</Tab>
       <Tab>Attendance</Tab>
       <Tab>Behaviour</Tab>
-      <Tab>Assignments</Tab>
-      <Tab>Exams & Quizzes</Tab>
       <Tab>Documents</Tab>
       <Tab>Parent Contact</Tab>
     </TabList>
