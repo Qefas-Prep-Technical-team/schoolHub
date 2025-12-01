@@ -15,24 +15,23 @@ const TabsNavigation = () => (
       <Tab>Attendance</Tab>
       <Tab>Behaviour</Tab>
       <Tab>Documents</Tab>
-      <Tab>Parent Contact</Tab>
     </TabList>
 
     <TabPanel>
-       <StatsGrid />
-            <ChartsGrid />
+      <StatsGrid />
+      <ChartsGrid />
     </TabPanel>
     <TabPanel>
-      <AcademicsTabStandalone/>
+      <AcademicsTabStandalone />
     </TabPanel>
     <TabPanel>
-      <AttendanceTabStandalone/>
+      <AttendanceTabStandalone />
     </TabPanel>
     <TabPanel>
-      <BehaviourTabStandalone/>
+      <BehaviourTabStandalone />
     </TabPanel>
     <TabPanel>
-      <DocumentsPage/>
+      <DocumentsPage />
     </TabPanel>
     {/* Add remaining panels */}
   </Tabs>

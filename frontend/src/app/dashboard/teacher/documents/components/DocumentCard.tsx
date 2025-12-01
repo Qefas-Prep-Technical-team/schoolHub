@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ViewMode } from "./types";
 
 
+
 interface StudentDocument {
   id: number;
   title: string;
@@ -43,7 +44,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, viewMode }) => {
 
   // Grid view
   return (
-    <Link href={`/dashboard/teacher/${document.id}`} className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+    <Link href={`/dashboard/teacher/document-preview/${document.id}`} className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
       <div
         className="w-full bg-center bg-no-repeat aspect-[4/3] bg-cover rounded-lg"
         style={{ backgroundImage: `url("${document.thumbnailUrl}")` }}
