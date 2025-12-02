@@ -60,11 +60,11 @@ interface MenuItem {
 export const menuItems: MenuItem[] = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/teacher/dashboard", featureKey: "dashboard" },
     { icon: Users, label: "Students", href: "/dashboard/teacher/students", featureKey: "students" },
+    { icon: User2, label: "Parents", href: "/dashboard/teacher/parents", featureKey: "parents" },
+    { icon: Award, label: "Grades", href: "/dashboard/teacher/grades", featureKey: "grades" },
     { icon: BookOpenCheck, label: "My Classes", href: "/teacher/classes", featureKey: "classes" },
     { icon: ClipboardList, label: "Assignments", href: "/teacher/assignments", featureKey: "assignments" },
     { icon: FileCheck2, label: "Exams/Quizzes", href: "/teacher/exams", featureKey: "exams" },
-    { icon: Award, label: "Grades", href: "/teacher/grades", featureKey: "grades" },
-    { icon: User2, label: "Parents", href: "/teacher/parents", featureKey: "parents" },
     { icon: FileText, label: "Documents", href: "/dashboard/teacher/documents", featureKey: "documents" },
     { icon: MessageSquare, label: "Messages", href: "/teacher/messages", featureKey: "messages" },
     { icon: MessageSquare, label: "Messages", href: "/teacher/messages", featureKey: "messages" },
