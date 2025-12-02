@@ -63,7 +63,7 @@ export const menuItems: MenuItem[] = [
     { icon: User2, label: "Parents", href: "/dashboard/teacher/parents", featureKey: "parents" },
     { icon: Award, label: "Grades", href: "/dashboard/teacher/grades", featureKey: "grades" },
     { icon: BookOpenCheck, label: "My Classes", href: "/teacher/classes", featureKey: "classes" },
-    { icon: ClipboardList, label: "Assignments", href: "/teacher/assignments", featureKey: "assignments" },
+    { icon: ClipboardList, label: "Assignments", href: "/dashboard/teacher/assignments", featureKey: "assignments" },
     { icon: FileCheck2, label: "Exams/Quizzes", href: "/teacher/exams", featureKey: "exams" },
     { icon: FileText, label: "Documents", href: "/dashboard/teacher/documents", featureKey: "documents" },
     { icon: MessageSquare, label: "Messages", href: "/teacher/messages", featureKey: "messages" },
