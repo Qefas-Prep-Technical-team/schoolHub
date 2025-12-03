@@ -1,5 +1,6 @@
 'use client';
 
+import Link from "next/link";
 import Button from "../../components/ui/Button";
 import { SubmissionsOverviewT } from "./types";
 import ProgressBar from "./ui/ProgressBar";
@@ -51,12 +52,14 @@ export default function SubmissionsOverview({
             )}
 
             <div className="flex flex-col gap-3">
+                <Link  href={`/dashboard/teacher/assignments/bulk-grading/123`}>
                 <Button
                     icon="edit_document"
                     onClick={onGradeSubmissions}
                 >
                     Grade Submissions
                 </Button>
+                </Link>
 
                 <Button
                     variant="secondary"
@@ -65,6 +68,18 @@ export default function SubmissionsOverview({
                 >
                     Export Submissions
                 </Button>
+                 <Link 
+                 className="w-2/3 bg-red"
+                  href={`/dashboard/teacher/assignments/analytics`}>
+                <Button
+                    variant="secondary"
+                    icon="chart_data"
+                    onClick={onExportSubmissions}
+                    className="cursor-pointer"
+                >
+                    Assignment Analytics 
+                </Button>
+                </Link>
             </div>
         </div>
     );

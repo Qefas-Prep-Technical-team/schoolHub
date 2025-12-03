@@ -139,7 +139,7 @@ export default function AssignmentsPage() {
                             <Button
                                 onClick={handleCreateAssignment}
                                 icon="add_circle"
-                                className="hidden md:flex"
+                                className="hidden md:flex cursor-pointer"
                             >
                                 Create New Assignment
                             </Button>

@@ -58,13 +58,13 @@ interface MenuItem {
 
 // Complete menu items with feature keys
 export const menuItems: MenuItem[] = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/teacher/dashboard", featureKey: "dashboard" },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/teacher", featureKey: "dashboard" },
     { icon: Users, label: "Students", href: "/dashboard/teacher/students", featureKey: "students" },
     { icon: User2, label: "Parents", href: "/dashboard/teacher/parents", featureKey: "parents" },
     { icon: Award, label: "Grades", href: "/dashboard/teacher/grades", featureKey: "grades" },
     { icon: BookOpenCheck, label: "My Classes", href: "/teacher/classes", featureKey: "classes" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/teacher/assignments", featureKey: "assignments" },
-    { icon: FileCheck2, label: "Exams/Quizzes", href: "/teacher/exams", featureKey: "exams" },
+    { icon: FileCheck2, label: "Exams/Quizzes", href: "/dashboard/teacher/exams&quizzes", featureKey: "exams" },
     { icon: FileText, label: "Documents", href: "/dashboard/teacher/documents", featureKey: "documents" },
     { icon: MessageSquare, label: "Messages", href: "/teacher/messages", featureKey: "messages" },
     { icon: MessageSquare, label: "Messages", href: "/teacher/messages", featureKey: "messages" },

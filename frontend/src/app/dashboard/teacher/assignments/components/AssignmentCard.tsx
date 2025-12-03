@@ -107,6 +107,7 @@ export default function AssignmentCard({
                         variant="secondary"
                         size="sm"
                         onClick={() => onViewDetails?.(assignment.id)}
+                        className="cursor-pointer"
                     >
                         {getActionButtonText(assignment.status)}
                     </Button>

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import Button from '../../components/ui/Button';
 import { Assignment } from './types';
 import StatusBadge from './ui/StatusBadge';
@@ -41,12 +42,16 @@ export default function AssignmentHeader({
                 >
                     Edit Assignment
                 </Button>
+                <Link href={`/dashboard/teacher/assignments/preview-assignment/${assignment.id}`}>
+                
                 <Button
                     icon="grading"
                     onClick={onGradeAll}
+                    className="cursor-pointer"
                 >
                     Grade All
                 </Button>
+                </Link>
             </div>
         </div>
     );
