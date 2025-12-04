@@ -45,7 +45,6 @@ import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
 import { STUDENT_FEATURE_FLAGS, StudentFeatureFlagKey } from "./studentFeatureFlags"
 
-
 // Define the menu item type
 interface StudentMenuItem {
   icon: LucideIcon;
@@ -59,7 +58,7 @@ interface StudentMenuItem {
 export const studentMenuItems: StudentMenuItem[] = [
     // === CORE FEATURES ===
     { icon: LayoutDashboard, label: "Dashboard", href: "/student/dashboard", featureKey: "dashboard", section: "core" },
-    { icon: BookOpenCheck, label: "Classes", href: "/student/classes", featureKey: "classes", section: "core" },
+    { icon: BookOpenCheck, label: "Classes", href: "/dashboard/student/my-classes", featureKey: "classes", section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/student/assignments", featureKey: "assignments", section: "core" },
     { icon: BarChart3, label: "Results", href: "/student/results", featureKey: "results", section: "core" },
     { icon: CalendarDays, label: "Attendance", href: "/student/attendance", featureKey: "attendance", section: "core" },
@@ -83,6 +82,7 @@ export const studentMenuItems: StudentMenuItem[] = [
 
 // Filter menu items based on feature flags and group by section
 const getFilteredStudentMenuItemsBySection = () => {
+  // This filters out disabled items completely
   const filtered = studentMenuItems.filter(item => STUDENT_FEATURE_FLAGS[item.featureKey]);
   
   const sections = {
@@ -165,6 +165,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                 <SidebarMenu>
                     {/* Render each section */}
                     {Object.entries(menuSections).map(([sectionKey, items]) => {
+                        // This check ensures empty sections are not rendered
                         if (items.length === 0) return null;
 
                         return (
@@ -181,37 +182,31 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                                     </div>
                                 )}
 
-                                {/* Section Items */}
+                                {/* Section Items - ONLY filtered items appear here */}
                                 {items.map(({ icon: Icon, label, href, featureKey }) => {
                                     const isActive = pathname === href;
+                                    // Since items are already filtered, this should always be true
                                     const isDisabled = !STUDENT_FEATURE_FLAGS[featureKey];
 
                                     return (
                                         <SidebarMenuItem key={label} className="my-1">
-                                            <Link href={isDisabled ? "#" : href}>
+                                            <Link href={href}>
                                                 <SidebarMenuButton
                                                     className={cn(
                                                         "relative flex items-center gap-3 text-[1rem] font-medium rounded-lg px-4 py-3 transition-all",
-                                                        isDisabled 
-                                                            ? "text-gray-400 cursor-not-allowed opacity-60" 
-                                                            : isActive
-                                                                ? "bg-accent text-accent-foreground shadow-sm cursor-pointer"
-                                                                : "hover:bg-accent/40 cursor-pointer"
+                                                        isActive
+                                                            ? "bg-accent text-accent-foreground shadow-sm cursor-pointer"
+                                                            : "hover:bg-accent/40 cursor-pointer"
                                                     )}
-                                                    disabled={isDisabled}
                                                 >
-                                                    {isActive && !isDisabled && (
+                                                    {isActive && (
                                                         <span className="absolute left-0 top-0 h-full w-[4px] bg-primary rounded-r-md" />
                                                     )}
                                                     <Icon className="h-5 w-5 shrink-0" />
                                                     {!isCollapsed && (
                                                         <span className="flex-1">{label}</span>
                                                     )}
-                                                    {isDisabled && !isCollapsed && (
-                                                        <span className="text-xs bg-gray-200 text-gray-500 px-2 py-1 rounded">
-                                                            Soon
-                                                        </span>
-                                                    )}
+                                                    {/* "Soon" badge is removed since disabled items don't appear */}
                                                 </SidebarMenuButton>
                                             </Link>
                                         </SidebarMenuItem>

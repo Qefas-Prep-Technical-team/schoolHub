@@ -1,38 +1,54 @@
-"use client";
+'use client'
 
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    Tooltip,
-    ResponsiveContainer,
-} from "recharts";
+import { cn } from '@/lib/utils'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
-const data = [
-    { grade: "G6", avg: 80 },
-    { grade: "G7", avg: 85 },
-    { grade: "G8", avg: 88 },
-    { grade: "G9", avg: 90 },
-    { grade: "G10", avg: 84 },
-];
+interface PerformanceChartProps {
+  data: Array<{
+    date: string
+    score: number
+    average: number
+  }>
+  className?: string
+}
 
-export default function PerformanceChart() {
-    return (
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-            <div className="flex justify-between items-center mb-3">
-                <h2 className="text-base font-medium">Class Performance Overview</h2>
-                <p className="text-sm text-green-500">This Semester +3%</p>
-            </div>
-
-            <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={data}>
-                    <XAxis dataKey="grade" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="avg" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-                </BarChart>
-            </ResponsiveContainer>
-        </div>
-    );
+export function PerformanceChart({ data, className }: PerformanceChartProps) {
+  return (
+    <div className={cn("rounded-xl p-4 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700", className)}>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        Performance Trend
+      </h3>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="date" stroke="#9ca3af" />
+            <YAxis stroke="#9ca3af" />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '0.5rem'
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="score"
+              stroke="#3b82f6"
+              strokeWidth={2}
+              name="Your Score"
+            />
+            <Line
+              type="monotone"
+              dataKey="average"
+              stroke="#9ca3af"
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              name="Class Average"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
 }
