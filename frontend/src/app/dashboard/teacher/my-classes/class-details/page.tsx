@@ -1,5 +1,5 @@
-import ClassDetailPage from '@/components/classes/ClassDetailPage';
+import ClassDetails from "./components/ClassDetails";
 
-export default function ClassDetail() {
-  return <ClassDetailPage />;
+export default function ClassOverview() {
+  return <ClassDetails />;
 }

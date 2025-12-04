@@ -1,5 +1,6 @@
 import { Users, Calendar, FileText, GraduationCap, CheckSquare, TrendingUp } from 'lucide-react';
 import { Class } from './type';
+import Link from 'next/link';
 
 
 interface ClassCardProps {
@@ -21,7 +22,8 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
     };
 
     return (
-        <div
+        <Link
+        href={"/dashboard/teacher/my-classes/class-details"}
             onClick={onClick}
             className="flex flex-col overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer group"
         >
@@ -115,6 +117,6 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
                     </div>
                 </div>
             )}
-        </div>
+        </Link>
     );
 }

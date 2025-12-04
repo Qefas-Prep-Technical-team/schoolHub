@@ -1,30 +1,48 @@
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+'use client'
 
-interface BreadcrumbsProps {
-  className?: string;
+
+import { cn } from '@/lib/utils'
+
+interface BreadcrumbItem {
+  label: string
+  href?: string
+  active?: boolean
 }
 
-export default function Breadcrumbs({ className = '' }: BreadcrumbsProps) {
+interface BreadcrumbsProps {
+  items: BreadcrumbItem[]
+  className?: string
+}
+
+export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   return (
-    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      <Link
-        href="/dashboard"
-        className="text-gray-500 dark:text-gray-400 text-sm font-medium hover:text-primary transition-colors"
-      >
-        Dashboard
-      </Link>
-      <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-      <Link
-        href="/classes"
-        className="text-gray-500 dark:text-gray-400 text-sm font-medium hover:text-primary transition-colors"
-      >
-        My Classes
-      </Link>
-      <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-      <span className="text-sm font-medium text-gray-900 dark:text-white">
-        JSS 2A
-      </span>
+    <div className={cn("flex flex-wrap gap-2 mb-4", className)}>
+      {items.map((item, index) => (
+        <div key={index} className="flex items-center gap-2">
+          {index > 0 && (
+            <span className="text-[#506795] dark:text-gray-500 text-sm font-medium leading-normal">
+              /
+            </span>
+          )}
+          {item.href ? (
+            <a
+              href={item.href}
+              className="text-[#506795] dark:text-gray-400 text-sm font-medium leading-normal hover:text-primary transition-colors"
+            >
+              {item.label}
+            </a>
+          ) : (
+            <span className={cn(
+              "text-sm font-medium leading-normal",
+              item.active
+                ? "text-[#0e121b] dark:text-gray-200"
+                : "text-[#506795] dark:text-gray-400"
+            )}>
+              {item.label}
+            </span>
+          )}
+        </div>
+      ))}
     </div>
-  );
+  )
 }
