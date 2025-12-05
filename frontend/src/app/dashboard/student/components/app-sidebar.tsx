@@ -60,7 +60,7 @@ export const studentMenuItems: StudentMenuItem[] = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/student", featureKey: "dashboard", section: "core" },
     { icon: BookOpenCheck, label: "Classes", href: "/dashboard/student/my-classes", featureKey: "classes", section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/student/assignments", featureKey: "assignments", section: "core" },
-    { icon: BarChart3, label: "Results", href: "/student/results", featureKey: "results", section: "core" },
+    { icon: BarChart3, label: "Results", href: "/dashboard/student/result", featureKey: "results", section: "core" },
     { icon: CalendarDays, label: "Attendance", href: "/student/attendance", featureKey: "attendance", section: "core" },
     
     // === COMMUNICATION ===
