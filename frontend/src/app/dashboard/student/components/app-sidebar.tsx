@@ -57,9 +57,9 @@ interface StudentMenuItem {
 // Complete student menu items with feature keys and sections
 export const studentMenuItems: StudentMenuItem[] = [
     // === CORE FEATURES ===
-    { icon: LayoutDashboard, label: "Dashboard", href: "/student/dashboard", featureKey: "dashboard", section: "core" },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/student", featureKey: "dashboard", section: "core" },
     { icon: BookOpenCheck, label: "Classes", href: "/dashboard/student/my-classes", featureKey: "classes", section: "core" },
-    { icon: ClipboardList, label: "Assignments", href: "/student/assignments", featureKey: "assignments", section: "core" },
+    { icon: ClipboardList, label: "Assignments", href: "/dashboard/student/assignments", featureKey: "assignments", section: "core" },
     { icon: BarChart3, label: "Results", href: "/student/results", featureKey: "results", section: "core" },
     { icon: CalendarDays, label: "Attendance", href: "/student/attendance", featureKey: "attendance", section: "core" },
     
