@@ -5,6 +5,7 @@ import { ChartArea, ChevronDown, Filter } from 'lucide-react';
 import Button from './ui/Button';
 import SearchInput from './ui/SearchInput';
 import { FilterOption } from './types';
+import Link from 'next/link';
 
 interface FiltersProps {
   termOptions: FilterOption[];
@@ -87,10 +88,13 @@ export default function Filters({
         />
       </div>
       <div className="relative">
-        <Button variant="outline" className="shrink-0">
-        Analytics
-          <ChartArea/>
-        </Button>
+        <Link href={"/dashboard/student/result/analytics"}>
+
+          <Button variant="outline" className="shrink-0 cursor-pointer">
+            Analytics
+            <ChartArea />
+          </Button>
+        </Link>
       </div>
     </div>
   );

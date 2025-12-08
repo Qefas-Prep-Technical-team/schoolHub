@@ -6,18 +6,19 @@ export const STUDENT_FEATURE_FLAGS = {
   assignments: true,
   results: true,
   attendance: true,
-  
+  exams: true,
+  documents: true,
+
   // === COMMUNICATION ===
   messages: false,
   notifications: false,
-  
+
   // === PROFILE & SETTINGS ===
   profile: true,
   settings: true,
   support: false,
-  
+
   // === OPTIONAL/ADVANCED FEATURES ===
-  exams: false,
   library: false,
   payments: false,
   aiStudy: false,

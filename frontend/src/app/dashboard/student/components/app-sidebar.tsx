@@ -38,7 +38,8 @@ import {
     User2,
     ChevronUp,
     ChevronDown,
-    LucideIcon
+    LucideIcon,
+    FileText
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
@@ -47,11 +48,11 @@ import { STUDENT_FEATURE_FLAGS, StudentFeatureFlagKey } from "./studentFeatureFl
 
 // Define the menu item type
 interface StudentMenuItem {
-  icon: LucideIcon;
-  label: string;
-  href: string;
-  featureKey: StudentFeatureFlagKey;
-  section?: string;
+    icon: LucideIcon;
+    label: string;
+    href: string;
+    featureKey: StudentFeatureFlagKey;
+    section?: string;
 }
 
 // Complete student menu items with feature keys and sections
@@ -61,19 +62,21 @@ export const studentMenuItems: StudentMenuItem[] = [
     { icon: BookOpenCheck, label: "Classes", href: "/dashboard/student/my-classes", featureKey: "classes", section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/student/assignments", featureKey: "assignments", section: "core" },
     { icon: BarChart3, label: "Results", href: "/dashboard/student/result", featureKey: "results", section: "core" },
-    { icon: CalendarDays, label: "Attendance", href: "/student/attendance", featureKey: "attendance", section: "core" },
-    
+    { icon: FileCheck2, label: "Exams/Quizzes", href: "/dashboard/student/exams&quizzes", featureKey: "exams", section: "core" },
+    { icon: CalendarDays, label: "Attendance", href: "/dashboard/student/attendance", featureKey: "attendance", section: "core" },
+    { icon: FileText, label: "Documents", href: "/dashboard/teacher/documents", featureKey: "documents", section: "core" },
+
+
     // === COMMUNICATION ===
     { icon: MessageCircle, label: "Messages", href: "/student/messages", featureKey: "messages", section: "communication" },
     { icon: BellRing, label: "Notifications", href: "/student/notifications", featureKey: "notifications", section: "communication" },
-    
+
     // === PROFILE & SETTINGS ===
     { icon: UserCircle, label: "Profile", href: "/student/profile", featureKey: "profile", section: "profile" },
     { icon: Settings, label: "Settings", href: "/student/settings", featureKey: "settings", section: "profile" },
     { icon: LifeBuoy, label: "Support", href: "/student/support", featureKey: "support", section: "profile" },
 
     // === OPTIONAL/ADVANCED FEATURES ===
-    { icon: FileCheck2, label: "Exams", href: "/student/exams", featureKey: "exams", section: "advanced" },
     { icon: BookMarked, label: "Library", href: "/student/library", featureKey: "library", section: "advanced" },
     { icon: WalletCards, label: "Payments", href: "/student/payments", featureKey: "payments", section: "advanced" },
     { icon: Brain, label: "AI Study Assistant", href: "/student/ai-study", featureKey: "aiStudy", section: "advanced" },
@@ -82,37 +85,37 @@ export const studentMenuItems: StudentMenuItem[] = [
 
 // Filter menu items based on feature flags and group by section
 const getFilteredStudentMenuItemsBySection = () => {
-  // This filters out disabled items completely
-  const filtered = studentMenuItems.filter(item => STUDENT_FEATURE_FLAGS[item.featureKey]);
-  
-  const sections = {
-    core: filtered.filter(item => item.section === 'core'),
-    communication: filtered.filter(item => item.section === 'communication'),
-    profile: filtered.filter(item => item.section === 'profile'),
-    advanced: filtered.filter(item => item.section === 'advanced'),
-  };
+    // This filters out disabled items completely
+    const filtered = studentMenuItems.filter(item => STUDENT_FEATURE_FLAGS[item.featureKey]);
 
-  return sections;
+    const sections = {
+        core: filtered.filter(item => item.section === 'core'),
+        communication: filtered.filter(item => item.section === 'communication'),
+        profile: filtered.filter(item => item.section === 'profile'),
+        advanced: filtered.filter(item => item.section === 'advanced'),
+    };
+
+    return sections;
 };
 
 // Section titles
 const STUDENT_SECTION_TITLES = {
-  core: "Learning",
-  communication: "Communication", 
-  profile: "Account",
-  advanced: "More Tools"
+    core: "Learning",
+    communication: "Communication",
+    profile: "Account",
+    advanced: "More Tools"
 };
 
 interface StudentSidebarProps {
-  isCollapsed: boolean;
-  setIsCollapsed: (collapsed: boolean) => void;
+    isCollapsed: boolean;
+    setIsCollapsed: (collapsed: boolean) => void;
 }
 
 export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarProps) {
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const pathname = usePathname()
-    
+
     // Get filtered menu items grouped by section
     const menuSections = getFilteredStudentMenuItemsBySection()
 

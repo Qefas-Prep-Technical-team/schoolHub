@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Goal } from '@/types';
+import { Goal } from './types';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import { Plus } from 'lucide-react';
@@ -27,7 +27,7 @@ export default function ImprovementGoals({ goals }: ImprovementGoalsProps) {
   };
 
   const toggleGoalCompletion = (id: string) => {
-    setGoalList(goalList.map(goal => 
+    setGoalList(goalList.map(goal =>
       goal.id === id ? { ...goal, completed: !goal.completed } : goal
     ));
   };
@@ -49,21 +49,19 @@ export default function ImprovementGoals({ goals }: ImprovementGoalsProps) {
               onClick={() => toggleGoalCompletion(goal.id)}
               className="mt-1 focus:outline-none"
             >
-              <span className={`material-symbols-outlined ${
-                goal.completed ? 'text-green-500' : 'text-primary'
-              }`}>
+              <span className={`material-symbols-outlined ${goal.completed ? 'text-green-500' : 'text-primary'
+                }`}>
                 {goal.completed ? 'check_circle' : 'radio_button_unchecked'}
               </span>
             </button>
-            <p className={`text-sm text-gray-700 dark:text-gray-300 ${
-              goal.completed ? 'line-through opacity-60' : ''
-            }`}>
+            <p className={`text-sm text-gray-700 dark:text-gray-300 ${goal.completed ? 'line-through opacity-60' : ''
+              }`}>
               {goal.text}
             </p>
           </li>
         ))}
       </ul>
-      
+
       <div className="space-y-2">
         <input
           type="text"

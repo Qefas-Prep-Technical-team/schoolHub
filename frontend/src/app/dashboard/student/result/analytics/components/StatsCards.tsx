@@ -1,4 +1,4 @@
-import { StatCard } from '@/types';
+import { StatCard } from './types';
 import Card from './ui/Card';
 
 interface StatsCardsProps {

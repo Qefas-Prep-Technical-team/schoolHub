@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState } from 'react';
@@ -12,7 +13,8 @@ import {
   ResponsiveContainer,
   Dot,
 } from 'recharts';
-import { performanceData } from '@/lib/data';
+import { performanceData } from './data';
+
 
 export default function PerformanceChart() {
   const [viewType, setViewType] = useState<'trend' | 'detailed'>('trend');
@@ -39,23 +41,23 @@ export default function PerformanceChart() {
           Your average score term-over-term.
         </p>
       </div>
-      
+
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={performanceData}>
-            <CartesianGrid 
-              strokeDasharray="4 4" 
-              stroke="#9ca3af" 
+            <CartesianGrid
+              strokeDasharray="4 4"
+              stroke="#9ca3af"
               horizontal={true}
               vertical={false}
             />
-            <XAxis 
-              dataKey="term" 
+            <XAxis
+              dataKey="term"
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#6b7280', fontSize: 12 }}
             />
-            <YAxis 
+            <YAxis
               axisLine={false}
               tickLine={false}
               domain={[0, 100]}
@@ -69,12 +71,12 @@ export default function PerformanceChart() {
               strokeWidth={3}
               dot={({ cx, cy, payload }) => (
                 <g key={payload.term}>
-                  <circle 
-                    cx={cx} 
-                    cy={cy} 
-                    r="5" 
-                    fill="#3670e2" 
-                    stroke="white" 
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r="5"
+                    fill="#3670e2"
+                    stroke="white"
                     strokeWidth="2"
                   />
                 </g>

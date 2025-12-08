@@ -1,4 +1,4 @@
-import { SubjectPerformance } from '@/types';
+import { SubjectPerformance } from './types';
 import Card from './ui/Card';
 
 interface StrengthsWeaknessesProps {

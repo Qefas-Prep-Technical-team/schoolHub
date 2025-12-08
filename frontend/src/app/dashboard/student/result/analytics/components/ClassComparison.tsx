@@ -1,4 +1,4 @@
-import { ComparisonSubject } from '@/types';
+import { ComparisonSubject } from './types';
 import Card from './ui/Card';
 import ProgressBar from './ui/ProgressBar';
 
@@ -15,7 +15,7 @@ export default function ClassComparison({ subjects }: ClassComparisonProps) {
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
         How your scores compare to the class average in key subjects.
       </p>
-      
+
       <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 md:grid-cols-4">
         {subjects.map((subject) => (
           <div key={subject.name} className="space-y-2">
@@ -23,21 +23,21 @@ export default function ClassComparison({ subjects }: ClassComparisonProps) {
               {subject.name}
             </p>
             {/* Class Average Bar */}
-            <ProgressBar 
-              value={subject.classAverage} 
-              color="gray" 
+            <ProgressBar
+              value={subject.classAverage}
+              color="gray"
               variant="light"
             />
             {/* Your Score Bar */}
-            <ProgressBar 
-              value={subject.yourScore} 
-              color="primary" 
+            <ProgressBar
+              value={subject.yourScore}
+              color="primary"
               variant="light"
             />
           </div>
         ))}
       </div>
-      
+
       <div className="flex items-center gap-6 mt-6">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-primary"></div>

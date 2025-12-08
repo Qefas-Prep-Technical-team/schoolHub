@@ -1,4 +1,4 @@
-import ThemeToggle from './ThemeToggle';
+
 
 export default function PageHeader() {
   return (
@@ -11,7 +11,6 @@ export default function PageHeader() {
           Welcome back, Alex!
         </p>
       </div>
-      <ThemeToggle />
     </header>
   );
 }
