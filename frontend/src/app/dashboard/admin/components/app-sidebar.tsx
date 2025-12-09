@@ -64,7 +64,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     { icon: Building2, label: "School Profile", href: "/school/profile", featureKey: "schoolProfile", section: "core" },
     { icon: Users, label: "Teachers", href: "/dashboard/admin/teachers", featureKey: "teachers", section: "core" },
     { icon: GraduationCap, label: "Students", href: "/dashboard/admin/students", featureKey: "students", section: "core" },
-    { icon: CalendarDays, label: "Classes & Timetable", href: "/school/classes", featureKey: "classes", section: "core" },
+    { icon: CalendarDays, label: "Classes & Timetable", href: "/dashboard/admin/classes", featureKey: "classes", section: "core" },
 
     // === ACADEMICS ===
     { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },

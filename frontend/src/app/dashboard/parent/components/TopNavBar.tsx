@@ -65,8 +65,8 @@ export default function TopNavBar({ onToggleSidebar, isCollapsed }: { onToggleSi
                         />
                     </div>
                     <div className="hidden sm:flex flex-col text-right">
-                           <p className="text-sm font-medium">{user?.email}</p>
-                        <p className="text-xs text-muted-foreground">{userType}</p>
+                           {/* <p className="text-sm font-medium">{user?.email}</p>
+                        <p className="text-xs text-muted-foreground">{userType}</p> */}
                     </div>
                     <ChevronDown
                         className={clsx("h-4 w-4 transition-transform", {

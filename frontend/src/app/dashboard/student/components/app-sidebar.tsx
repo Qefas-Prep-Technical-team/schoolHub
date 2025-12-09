@@ -64,7 +64,7 @@ export const studentMenuItems: StudentMenuItem[] = [
     { icon: BarChart3, label: "Results", href: "/dashboard/student/result", featureKey: "results", section: "core" },
     { icon: FileCheck2, label: "Exams/Quizzes", href: "/dashboard/student/exams&quizzes", featureKey: "exams", section: "core" },
     { icon: CalendarDays, label: "Attendance", href: "/dashboard/student/attendance", featureKey: "attendance", section: "core" },
-    { icon: FileText, label: "Documents", href: "/dashboard/teacher/documents", featureKey: "documents", section: "core" },
+    { icon: FileText, label: "Documents", href: "/dashboard/student/documents", featureKey: "documents", section: "core" },
 
 
     // === COMMUNICATION ===
