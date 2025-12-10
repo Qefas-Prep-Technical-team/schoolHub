@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
@@ -31,17 +32,25 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+  asChild?: boolean,
+  link?:string
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
+  ({ className, variant, size,link= "", ...props }, ref) => {
     return (
+      <Link
+      href={link}
+
+      >
+
       <button
-        className={cn(buttonVariants({ variant, size, className }))}
+
+        className={cn(buttonVariants({ variant, size, className })),"cursor-pointer"}
         ref={ref}
         {...props}
       />
+      </Link>
     )
   }
 )

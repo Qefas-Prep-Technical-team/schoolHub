@@ -16,19 +16,17 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
       {items.map((item, index) => (
         <React.Fragment key={index}>
           {index > 0 && (
-            <span className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-normal">
-              /
-            </span>
+            <ChevronRight size={16} className="text-gray-500 dark:text-gray-400" />
           )}
           {item.href ? (
             <a
               href={item.href}
-              className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary"
+              className="text-gray-500 dark:text-gray-400 text-base font-medium leading-normal hover:text-primary transition-colors"
             >
               {item.label}
             </a>
           ) : (
-            <span className="text-slate-900 dark:text-slate-200 text-sm font-medium leading-normal">
+            <span className="text-gray-900 dark:text-white text-base font-medium leading-normal">
               {item.label}
             </span>
           )}

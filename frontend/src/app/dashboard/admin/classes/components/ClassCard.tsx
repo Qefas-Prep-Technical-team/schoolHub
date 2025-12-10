@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Clock,
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface ClassCardProps {
   classData: ClassData;
@@ -67,6 +68,7 @@ export default function ClassCard({
   };
 
   return (
+    <Link href="/dashboard/admin/classes/class-details">
     <Card className="hover:shadow-lg transition-shadow">
       <div className="p-6">
         {/* Header */}
@@ -143,5 +145,6 @@ export default function ClassCard({
         </div>
       </div>
     </Card>
+    </Link>
   );
 }

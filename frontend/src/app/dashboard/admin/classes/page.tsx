@@ -133,7 +133,7 @@ export default function ClassesOverviewPage() {
             
               
               <div className="flex items-center gap-3">
-                <Button onClick={handleCreateClass}>
+                <Button link="/dashboard/admin/classes/create" onClick={handleCreateClass}>
                   Create New Class
                 </Button>
                 
