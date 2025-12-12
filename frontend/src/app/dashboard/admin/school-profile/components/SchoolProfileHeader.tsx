@@ -2,6 +2,7 @@ import React from 'react';
 import { Edit2 } from 'lucide-react';
 import { SchoolProfile } from './types';
 import AccreditationBadge from './AccreditationBadge';
+import Link from 'next/link';
 
 interface SchoolProfileHeaderProps {
   school: SchoolProfile;
@@ -29,6 +30,7 @@ const SchoolProfileHeader: React.FC<SchoolProfileHeaderProps> = ({ school, onEdi
       
       <div className="flex items-center gap-4">
         <AccreditationBadge status={school.compliance.accreditationStatus} />
+        <Link href={"/dashboard/admin/school-profile/edit"}>
         
         <button
           onClick={onEdit}
@@ -37,6 +39,7 @@ const SchoolProfileHeader: React.FC<SchoolProfileHeaderProps> = ({ school, onEdi
           <Edit2 size={18} />
           <span className="truncate">Edit Profile</span>
         </button>
+        </Link>
       </div>
     </header>
   );

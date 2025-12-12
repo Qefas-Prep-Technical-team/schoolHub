@@ -59,8 +59,8 @@ interface ParentMenuItem {
 // Complete parent menu items with feature keys and sections
 export const parentMenuItems: ParentMenuItem[] = [
     // === CORE FEATURES ===
-    { icon: LayoutDashboard, label: "Dashboard", href: "/parent/dashboard", featureKey: "dashboard", section: "core" },
-    { icon: Users, label: "My Children", href: "/parent/children", featureKey: "children", section: "core" },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/parent", featureKey: "dashboard", section: "core" },
+    { icon: Users, label: "My Children", href: "/dashboard/parent/my-children", featureKey: "children", section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/parent/assignments", featureKey: "assignments", section: "core" },
     { icon: FileCheck2, label: "Exams & Results", href: "/parent/results", featureKey: "results", section: "core" },
     { icon: BarChart3, label: "Performance", href: "/parent/performance", featureKey: "performance", section: "core" },

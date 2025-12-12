@@ -42,6 +42,10 @@ export default function TopNavBar({ onToggleSidebar, isCollapsed }: { onToggleSi
 
             {/* Right Section */}
             <div className="flex items-center gap-4">
+             <select className="form-select w-full pl-10 pr-10 py-2.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl text-sm font-medium focus:ring-primary focus:border-primary cursor-pointer appearance-none">
+            <option>Emily Johnson</option>
+            <option>Michael Johnson</option>
+          </select>
                 <Button
                     variant="ghost"
                     size="icon"
