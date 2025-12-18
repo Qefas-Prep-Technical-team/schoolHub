@@ -57,7 +57,7 @@ export default function TeacherProfilePage() {
   ]
 
   return (
-    <ProtectedAdminRoute>
+    // <ProtectedAdminRoute>
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <Breadcrumbs items={breadcrumbItems} />
@@ -106,6 +106,6 @@ export default function TeacherProfilePage() {
           )}
         </div>
       </main>
-    </ProtectedAdminRoute>
+    // </ProtectedAdminRoute>
   )
 }

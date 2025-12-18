@@ -55,7 +55,7 @@ export default function ManageTeachersPage() {
   }
 
   return (
-    <ProtectedAdminRoute>
+    // <ProtectedAdminRoute>
       <div className="relative flex min-h-screen w-full">
         
         
@@ -92,6 +92,6 @@ export default function ManageTeachersPage() {
           </div>
         </main>
       </div>
-    </ProtectedAdminRoute>
+    // </ProtectedAdminRoute>
   )
 }

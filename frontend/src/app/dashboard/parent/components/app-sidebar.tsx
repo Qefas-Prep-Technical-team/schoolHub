@@ -49,11 +49,11 @@ import { PARENT_FEATURE_FLAGS, ParentFeatureFlagKey } from "./parentFeatureFlags
 
 // Define the menu item type
 interface ParentMenuItem {
-  icon: LucideIcon;
-  label: string;
-  href: string;
-  featureKey: ParentFeatureFlagKey;
-  section?: string;
+    icon: LucideIcon;
+    label: string;
+    href: string;
+    featureKey: ParentFeatureFlagKey;
+    section?: string;
 }
 
 // Complete parent menu items with feature keys and sections
@@ -63,22 +63,22 @@ export const parentMenuItems: ParentMenuItem[] = [
     { icon: Users, label: "My Children", href: "/dashboard/parent/my-children", featureKey: "children", section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/parent/assignments", featureKey: "assignments", section: "core" },
     { icon: FileCheck2, label: "Exams & Results", href: "/dashboard/parent/exams&results", featureKey: "results", section: "core" },
-    { icon: BarChart3, label: "Performance", href: "/parent/performance", featureKey: "performance", section: "core" },
+    { icon: BarChart3, label: "Performance", href: "/dashboard/parent/performance", featureKey: "performance", section: "core" },
     { icon: CalendarDays, label: "Attendance", href: "/parent/attendance", featureKey: "attendance", section: "core" },
-    
+
     // === MONITORING & COMMUNICATION ===
     { icon: Award, label: "Behavior & Remarks", href: "/parent/behavior", featureKey: "behavior", section: "monitoring" },
     { icon: MessageSquare, label: "Messages", href: "/parent/messages", featureKey: "messages", section: "monitoring" },
     { icon: BellRing, label: "Notifications", href: "/parent/notifications", featureKey: "notifications", section: "monitoring" },
-    
+
     // === FINANCIAL & RESOURCES ===
     { icon: WalletCards, label: "Payments", href: "/parent/payments", featureKey: "payments", section: "financial" },
     { icon: BookMarked, label: "Resources", href: "/parent/resources", featureKey: "resources", section: "financial" },
-    
+
     // === ADVANCED TOOLS ===
     { icon: Brain, label: "AI Insights", href: "/parent/ai-insights", featureKey: "aiInsights", section: "advanced" },
     { icon: CalendarClock, label: "Events & Timetable", href: "/parent/events", featureKey: "events", section: "advanced" },
-    
+
     // === PROFILE & SETTINGS ===
     { icon: UserCircle, label: "Profile", href: "/parent/profile", featureKey: "profile", section: "profile" },
     { icon: Settings, label: "Settings", href: "/parent/settings", featureKey: "settings", section: "profile" },
@@ -87,38 +87,38 @@ export const parentMenuItems: ParentMenuItem[] = [
 
 // Filter menu items based on feature flags and group by section
 const getFilteredParentMenuItemsBySection = () => {
-  const filtered = parentMenuItems.filter(item => PARENT_FEATURE_FLAGS[item.featureKey]);
-  
-  const sections = {
-    core: filtered.filter(item => item.section === 'core'),
-    monitoring: filtered.filter(item => item.section === 'monitoring'),
-    financial: filtered.filter(item => item.section === 'financial'),
-    advanced: filtered.filter(item => item.section === 'advanced'),
-    profile: filtered.filter(item => item.section === 'profile'),
-  };
+    const filtered = parentMenuItems.filter(item => PARENT_FEATURE_FLAGS[item.featureKey]);
 
-  return sections;
+    const sections = {
+        core: filtered.filter(item => item.section === 'core'),
+        monitoring: filtered.filter(item => item.section === 'monitoring'),
+        financial: filtered.filter(item => item.section === 'financial'),
+        advanced: filtered.filter(item => item.section === 'advanced'),
+        profile: filtered.filter(item => item.section === 'profile'),
+    };
+
+    return sections;
 };
 
 // Section titles
 const PARENT_SECTION_TITLES = {
-  core: "Children's Progress",
-  monitoring: "Monitoring & Communication", 
-  financial: "Financial & Resources",
-  advanced: "Advanced Tools",
-  profile: "Account Settings"
+    core: "Children's Progress",
+    monitoring: "Monitoring & Communication",
+    financial: "Financial & Resources",
+    advanced: "Advanced Tools",
+    profile: "Account Settings"
 };
 
 interface ParentSidebarProps {
-  isCollapsed: boolean;
-  setIsCollapsed: (collapsed: boolean) => void;
+    isCollapsed: boolean;
+    setIsCollapsed: (collapsed: boolean) => void;
 }
 
 export function ParentSidebar({ isCollapsed, setIsCollapsed }: ParentSidebarProps) {
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const pathname = usePathname()
-    
+
     // Get filtered menu items grouped by section
     const menuSections = getFilteredParentMenuItemsBySection()
 
@@ -198,8 +198,8 @@ export function ParentSidebar({ isCollapsed, setIsCollapsed }: ParentSidebarProp
                                                 <SidebarMenuButton
                                                     className={cn(
                                                         "relative flex items-center gap-3 text-[1rem] font-medium rounded-lg px-4 py-3 transition-all",
-                                                        isDisabled 
-                                                            ? "text-gray-400 cursor-not-allowed opacity-60" 
+                                                        isDisabled
+                                                            ? "text-gray-400 cursor-not-allowed opacity-60"
                                                             : isActive
                                                                 ? "bg-accent text-accent-foreground shadow-sm cursor-pointer"
                                                                 : "hover:bg-accent/40 cursor-pointer"
