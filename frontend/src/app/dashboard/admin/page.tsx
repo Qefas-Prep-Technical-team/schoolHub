@@ -1,42 +1,64 @@
-import ActivityFeed from "./components/dashboard/ActivityFeed";
-import Announcements from "./components/dashboard/Announcements";
-import EnrollmentChart from "./components/dashboard/EnrollmentChart";
-import FinanceOverview from "./components/dashboard/FinanceOverview";
-import OverviewHeader from "./components/dashboard/OverviewHeader";
-import PerformanceChart from "./components/dashboard/PerformanceChart";
-import StatCard from "./components/dashboard/StatCard";
+'use client';
 
+import { useState } from 'react';
+import DashboardLayout from './components/dashboard/DashboardLayout';
+import AcademicChart from './components/dashboard/AcademicChart';
+import AttendanceChart from './components/dashboard/AttendanceChart';
+import ExamStatus from './components/dashboard/ExamStatus';
+import StaffInsights from './components/dashboard/StaffInsights';
+import DateControls from './components/dashboard/DateControls';
+import AlertsPanel from './components/dashboard/AlertsPanel';
+import RecentActivity from './components/dashboard/RecentActivity';
+import QuickActions from './components/dashboard/QuickActions';
+import MetricsGrid from './components/dashboard/MetricsGrid';
 
-export default function DashboardPage() {
-    return (
+export default function AdminDashboard() {
+  const [session, setSession] = useState('2023/2024');
+  const [term, setTerm] = useState('Second Term');
 
-        <div className="p-6 space-y-6">
-            <OverviewHeader />
+  return (
+    <div className="min-h-screen bg-background-light dark:bg-background-dark flex flex-col overflow-x-hidden">
+      {/* <AdminHeader /> */}
+      
+      <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8">
+        {/* Page Header & Controls */}
+        <DateControls
+        //   session={session}
+        //   term={term}
+          onSessionChange={setSession}
+          onTermChange={setTerm}
+        />
 
-            {/* Stats Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                <StatCard title="Total Students" value="1,250" change="+1.5% this month" />
-                <StatCard title="Total Teachers" value="74" change="+2 new hires" />
-                <StatCard title="Active Classes" value="48" change="All classes running" />
-                <StatCard title="Attendance Rate" value="92.5%" change="-0.2% from yesterday" negative />
-            </div>
+        {/* Key Metrics Grid */}
+        <MetricsGrid  />
 
-            {/* Charts */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                <EnrollmentChart />
-                <PerformanceChart />
-            </div>
+        {/* Dashboard Layout */}
+        <DashboardLayout
+          leftColumn={
+            <>
+              {/* Performance & Attendance Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <AcademicChart />
+                <AttendanceChart />
+              </div>
 
-            {/* Bottom Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                <div className="space-y-4">
-                    <FinanceOverview />
-                    <Announcements />
-                </div>
-                <div className="xl:col-span-2">
-                    <ActivityFeed />
-                </div>
-            </div>
-        </div>
-    );
+              {/* Exam Status & Staff Insights */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ExamStatus />
+                <StaffInsights
+                 />
+              </div>
+            </>
+          }
+          rightColumn={
+            <>
+              <QuickActions />
+              <AlertsPanel />
+              <RecentActivity />
+            </>
+          }
+        />
+      </main>
+    </div>
+  );
 }
