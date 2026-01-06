@@ -64,7 +64,7 @@ export const parentMenuItems: ParentMenuItem[] = [
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/parent/assignments", featureKey: "assignments", section: "core" },
     { icon: FileCheck2, label: "Exams & Results", href: "/dashboard/parent/exams&results", featureKey: "results", section: "core" },
     { icon: BarChart3, label: "Performance", href: "/dashboard/parent/performance", featureKey: "performance", section: "core" },
-    { icon: CalendarDays, label: "Attendance", href: "/parent/attendance", featureKey: "attendance", section: "core" },
+    { icon: CalendarDays, label: "Attendance", href: "/dashboard/parent/attendance", featureKey: "attendance", section: "core" },
 
     // === MONITORING & COMMUNICATION ===
     { icon: Award, label: "Behavior & Remarks", href: "/parent/behavior", featureKey: "behavior", section: "monitoring" },
