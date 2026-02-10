@@ -8,7 +8,7 @@ export default function ExamSchedule() {
   // const startTime = new Date(Date.now() - 10_000); // started 10s ago (testing)
   // const endTime = new Date(Date.now() + 5 * 60_000); // ends in 5 minutes (testing)
 
-  const startTime = new Date("2025-12-13T09:00:00");
+  const startTime = new Date("2025-12-20T09:00:00");
   const endTime = new Date("2025-12-20T10:30:00");
   // ================================
 
@@ -70,8 +70,8 @@ export default function ExamSchedule() {
     status === "not_started"
       ? "bg-yellow-50 text-yellow-700 border-yellow-100"
       : status === "running"
-      ? "bg-green-50 text-green-700 border-green-100"
-      : "bg-red-50 text-red-700 border-red-100";
+        ? "bg-green-50 text-green-700 border-green-100"
+        : "bg-red-50 text-red-700 border-red-100";
 
   const statusLabel =
     status === "not_started" ? "Not Started" : status === "running" ? "In Progress" : "Completed";
