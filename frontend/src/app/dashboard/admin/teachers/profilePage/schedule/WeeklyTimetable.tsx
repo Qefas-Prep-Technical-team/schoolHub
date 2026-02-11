@@ -20,7 +20,7 @@ interface WeeklyTimetableProps {
 
 export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetableProps) {
   const timeSlots = [
-    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', 
+    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
     '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM'
   ]
 
@@ -35,11 +35,12 @@ export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetab
     }
 
     const [time, modifier] = startTime.split(' ')
-    let [hours, minutes] = time.split(':').map(Number)
-    
+    let [hours] = time.split(':').map(Number)
+    const [minutes] = time.split(':').map(Number)
+
     if (modifier === 'PM' && hours !== 12) hours += 12
     if (modifier === 'AM' && hours === 12) hours = 0
-    
+
     const timeKey = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
     const top = timeToPixels[timeKey] || 0
     const height = duration * 64 // 64px per hour
@@ -54,7 +55,7 @@ export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetab
         <div className="w-16">
           <div className="h-10"></div>
           {timeSlots.map((time, index) => (
-            <div 
+            <div
               key={time}
               className="h-16 text-right pr-4 text-xs text-gray-400 dark:text-gray-500 border-t border-gray-200 dark:border-gray-700 pt-1"
             >
@@ -71,7 +72,7 @@ export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetab
             </div>
             <div className="h-full border-l border-gray-200 dark:border-gray-700 space-y-px">
               {timeSlots.map((_, index) => (
-                <div 
+                <div
                   key={index}
                   className="h-16 border-t border-gray-200 dark:border-gray-700"
                 ></div>
@@ -101,7 +102,7 @@ export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetab
 
             {/* Special cases */}
             {day === 'Tuesday' && (
-              <AvailabilityIndicator 
+              <AvailabilityIndicator
                 message="Unavailable"
                 style={{ top: 314, height: 128 }}
               />
