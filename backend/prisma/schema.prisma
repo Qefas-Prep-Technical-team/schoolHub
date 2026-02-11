@@ -1,7 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,8 +10,6 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
-        
-
 
 // ENUMS MUST BE DEFINED BEFORE THEY ARE USED 
 enum UserRole {
@@ -141,9 +138,13 @@ model Parent {
 }
 
 model ParentChildLink {
-  id           String   @id @default(uuid())
-  parentId     String
-  studentId    String
+  id        String @id @default(uuid())
+  parentId  String
+  studentId String
+
+  // ✅ add this
+  studentCode String
+
   relationship String   @default("parent")
   status       String   @default("pending")
   createdAt    DateTime @default(now())
@@ -152,6 +153,7 @@ model ParentChildLink {
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([parentId, studentId])
+  @@index([studentCode])
   @@map("parent_child_links")
 }
 
@@ -213,7 +215,6 @@ model RefreshToken {
   @@index([userId, userType])
   @@map("refresh_tokens")
 }
-
 
 model PasswordReset {
   id        String   @id @default(cuid())

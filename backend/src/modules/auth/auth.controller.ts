@@ -1,14 +1,18 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../../config/database";
-import { loginUser, sendPasswordResetEmail, sendVerificationEmail } from "./auth.service";
+import {
+  loginUser,
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from "./auth.service";
 import {
   comparePassword,
   generateAccessToken,
   generateRefreshToken,
 } from "@services/authService";
 import jwt from "jsonwebtoken";
-import { AdminRole, UserRole } from "generated/prisma";
+import { AdminRole, UserRole } from "@prisma/client";
 
 export const registerSchool = async (req: Request, res: Response) => {
   try {
@@ -39,7 +43,7 @@ export const registerSchool = async (req: Request, res: Response) => {
 
     let tenantId: string | undefined;
     for (let attempt = 0; attempt < 10; attempt++) {
-      const candidate ="sch-"+ generateSixDigit();
+      const candidate = "sch-" + generateSixDigit();
       const exists = await prisma.school.findFirst({
         where: { tenantId: candidate },
       });
@@ -59,7 +63,7 @@ export const registerSchool = async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Create school
       const school = await tx.school.create({
         data: {
@@ -267,7 +271,7 @@ const ensureUniqueStudentCode = async (): Promise<string> => {
 
 export const registerStudent = async (
   req: Request<{}, {}, RegisterStudentBody>,
-  res: Response
+  res: Response,
 ) => {
   try {
     const {
@@ -390,7 +394,7 @@ interface RegisterParentBody {
 
 export const registerParent = async (
   req: Request<{}, {}, RegisterParentBody>,
-  res: Response
+  res: Response,
 ) => {
   try {
     const { fullName, email, password, confirmPassword, studentCode } =
@@ -425,7 +429,7 @@ export const registerParent = async (
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Create parent account
       const parent = await tx.parent.create({
         data: {
@@ -989,7 +993,11 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // ===== Set defaultTenantId if missing =====
-    if (user.defaultTenantId ==="default-tenant-id" && user.tenantIds && user.tenantIds.length > 0) {
+    if (
+      user.defaultTenantId === "default-tenant-id" &&
+      user.tenantIds &&
+      user.tenantIds.length > 0
+    ) {
       user.defaultTenantId = user.tenantIds[0];
       // Persist the update to DB
       switch (userType) {
@@ -1044,7 +1052,7 @@ export const login = async (req: Request, res: Response) => {
     let responseData: any = {};
     let message = "Logged in successfully";
 
-    console.log(user.defaultTenantId)
+    console.log(user.defaultTenantId);
 
     if (userType === UserRole.ADMIN) {
       const schools = user.schoolAdmins.map((sa: any) => ({
@@ -1130,12 +1138,10 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
     const { email, code, userType } = req.body;
 
     if (!email || !code || !userType) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Email, code, and user type are required",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Email, code, and user type are required",
+      });
     }
 
     if (!Object.values(UserRole).includes(userType as UserRole)) {
@@ -1174,7 +1180,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
             .json({ success: false, message: "Admin not found" });
 
         isSchoolOwner = user.schoolAdmins.some(
-          (sa: any) => sa.role === AdminRole.SCHOOL_OWNER
+          (sa: any) => sa.role === AdminRole.SCHOOL_OWNER,
         );
 
         user = await prisma.admin.update({
@@ -1288,7 +1294,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     const newAccessToken = generateAccessToken(
       payload.userId,
-      payload.userType
+      payload.userType,
     );
     return res.status(200).json({
       success: true,
@@ -1323,11 +1329,9 @@ export const logout = async (req: Request, res: Response) => {
   }
 };
 
-
 // ====================
-// reset password 
+// reset password
 // ====================
-
 
 // Add to your auth.controller.ts
 
@@ -1356,7 +1360,8 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(200).json({
         success: true,
-        message: "If an account with that email exists, a reset link has been sent.",
+        message:
+          "If an account with that email exists, a reset link has been sent.",
       });
     }
 
@@ -1364,7 +1369,8 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
     if (!user.verified) {
       return res.status(400).json({
         success: false,
-        message: "Please verify your email address before resetting your password. Check your inbox for the verification email.",
+        message:
+          "Please verify your email address before resetting your password. Check your inbox for the verification email.",
       });
     }
 
@@ -1565,7 +1571,8 @@ export const resetPassword = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: "Password reset successfully. You can now login with your new password.",
+      message:
+        "Password reset successfully. You can now login with your new password.",
     });
   } catch (error: any) {
     console.error("Password reset error:", error);
@@ -1673,7 +1680,8 @@ export const completePasswordReset = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: "Password reset successfully. You can now login with your new password.",
+      message:
+        "Password reset successfully. You can now login with your new password.",
     });
   } catch (error: any) {
     console.error("Complete password reset error:", error);

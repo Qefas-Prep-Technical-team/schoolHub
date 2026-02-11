@@ -1,6 +1,6 @@
 import prisma from "../../config/database";
 import { Request, Response } from "express";
-import { AdminRole, UserRole } from "generated/prisma";
+import { $Enums, AdminRole, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 // controllers/auth.controller.ts
@@ -68,7 +68,7 @@ interface AdminSelfRegisterBody {
 
 export const registerAdminSelf = async (
   req: Request<{}, {}, AdminSelfRegisterBody>,
-  res: Response
+  res: Response,
 ) => {
   try {
     const { name, email, password, confirmPassword, role, schoolId, tenantId } =
@@ -137,31 +137,52 @@ export const registerAdminSelf = async (
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create admin with PENDING status
-    const result = await prisma.$transaction(async (tx) => {
-      // Create admin user with PENDING status
-      const admin = await tx.admin.create({
-        data: {
-          name: name.trim(),
-          email: email.toLowerCase().trim(),
-          password: hashedPassword,
-          role: UserRole.ADMIN,
-          tenantIds: [tenantId],
-          verified: false, // Not verified yet
-          status: "PENDING", // Waiting for approval
-        },
-      });
+    const result = await prisma.$transaction(
+      async (tx: {
+        admin: {
+          create: (arg0: {
+            data: {
+              name: string;
+              email: string;
+              password: string;
+              role: "ADMIN";
+              tenantIds: string[];
+              verified: boolean; // Not verified yet
+              status: string;
+            };
+          }) => any;
+        };
+        schoolAdmin: {
+          create: (arg0: {
+            data: { schoolId: string; adminId: any; role: $Enums.AdminRole };
+          }) => any;
+        };
+      }) => {
+        // Create admin user with PENDING status
+        const admin = await tx.admin.create({
+          data: {
+            name: name.trim(),
+            email: email.toLowerCase().trim(),
+            password: hashedPassword,
+            role: UserRole.ADMIN,
+            tenantIds: [tenantId],
+            verified: false, // Not verified yet
+            status: "PENDING", // Waiting for approval
+          },
+        });
 
-      // Create school admin relationship (but admin is pending)
-      const schoolAdmin = await tx.schoolAdmin.create({
-        data: {
-          schoolId: schoolId,
-          adminId: admin.id,
-          role: role,
-        },
-      });
+        // Create school admin relationship (but admin is pending)
+        const schoolAdmin = await tx.schoolAdmin.create({
+          data: {
+            schoolId: schoolId,
+            adminId: admin.id,
+            role: role,
+          },
+        });
 
-      return { admin, schoolAdmin, school };
-    });
+        return { admin, schoolAdmin, school };
+      },
+    );
 
     // Send notification to school owner (you can implement email/notification service)
     await notifySchoolOwner(school.id, result.admin);
@@ -269,7 +290,7 @@ const notifySchoolOwner = async (schoolId: string, pendingAdmin: any) => {
     if (schoolOwner) {
       // Send email notification (implement your email service)
       console.log(
-        `Notification sent to ${schoolOwner.admin.email}: New admin registration from ${pendingAdmin.name} (${pendingAdmin.email}) for ${schoolOwner.school.name}`
+        `Notification sent to ${schoolOwner.admin.email}: New admin registration from ${pendingAdmin.name} (${pendingAdmin.email}) for ${schoolOwner.school.name}`,
       );
 
       // You can integrate with your email service here
@@ -388,7 +409,7 @@ export const rejectAdmin = async (req: Request, res: Response) => {
     await sendRejectionNotification(
       updatedAdmin.email,
       updatedAdmin.name,
-      reason
+      reason,
     );
 
     return res.status(200).json({
@@ -417,17 +438,17 @@ export const rejectAdmin = async (req: Request, res: Response) => {
 const sendApprovalNotification = async (email: string, name: string) => {
   // Implement your email service
   console.log(
-    `Approval email sent to ${email}: Welcome ${name}, your admin account has been approved!`
+    `Approval email sent to ${email}: Welcome ${name}, your admin account has been approved!`,
   );
 };
 
 const sendRejectionNotification = async (
   email: string,
   name: string,
-  reason?: string
+  reason?: string,
 ) => {
   // Implement your email service
   console.log(
-    `Rejection email sent to ${email}: Sorry ${name}, your admin registration was rejected. Reason: ${reason}`
+    `Rejection email sent to ${email}: Sorry ${name}, your admin registration was rejected. Reason: ${reason}`,
   );
 };

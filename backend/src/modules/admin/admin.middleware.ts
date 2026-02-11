@@ -1,6 +1,6 @@
 // middleware/adminMiddleware.ts
 import { Request, Response, NextFunction } from "express";
-import { AdminRole, UserRole } from "generated/prisma";
+import { AdminRole, UserRole } from "@prisma/client";
 import prisma from "../../config/database";
 
 // Extend Express Request type to include admin and school
@@ -28,7 +28,7 @@ declare global {
 export const requireAdmin = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     if (!req.user) {
@@ -117,7 +117,7 @@ export const requireAdminRole = (requiredRoles: AdminRole | AdminRole[]) => {
         return res.status(403).json({
           success: false,
           message: `Insufficient permissions. Required role: ${roles.join(
-            " or "
+            " or ",
           )}`,
         });
       }
@@ -143,7 +143,7 @@ export const requireAccountant = requireAdminRole(AdminRole.ACCOUNTANT);
 export const requireSuperAdmin = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     await requireAdmin(req, res, () => {}); // First check if user is admin
@@ -168,7 +168,7 @@ export const requireSuperAdmin = async (
 
     // Check if admin has SUPER_ADMIN role in any school
     const isSuperAdmin = admin.schoolAdmins.some(
-      (sa) => sa.role === AdminRole.SUPER_ADMIN
+      (sa: any) => sa.role === AdminRole.SUPER_ADMIN,
     );
 
     if (!isSuperAdmin) {
