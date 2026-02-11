@@ -8,16 +8,12 @@ import ActionsCard from '../components/ActionsCard'
 import UpcomingAssignments from '../components/UpcomingAssignments'
 import ParentTip from '../components/ParentTip'
 
-export default function AssignmentDetailPage({
-    params,
-}: {
-    params: { id: string };
-}) {
+export default function AssignmentDetailPage() {
     return (
         <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex overflow-hidden">
             <main className="flex-1 overflow-y-auto overflow-x-hidden h-full">
                 <div className="max-w-6xl mx-auto px-6 py-8 md:px-12 md:py-10 flex flex-col gap-8">
-                    <Breadcrumbs assignmentId={params.id} />
+                    {/* <Breadcrumbs assignmentId={params.id} /> */}
                     <PageHeader />
                     <StatsGrid />
 
