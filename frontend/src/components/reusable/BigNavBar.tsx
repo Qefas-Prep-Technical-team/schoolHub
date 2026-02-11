@@ -7,24 +7,15 @@ import React, { FC, useEffect, useState } from 'react';
 import { Button as Button2 } from "@/components/ui/button";
 import { mainTab } from '../Types/Nav';
 import Link from 'next/link';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 interface BigNavBarProps {
     pages: mainTab[];
     handleCloseNavMenu: () => void
 }
 const BigNavBar: FC<BigNavBarProps> = ({ pages, handleCloseNavMenu }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false)
+    const { isAuthenticated } = useAuthStore();
 
 
-    useEffect(() => {
-        // Check if user is authenticated
-        const token = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('token='))
-            ?.split('=')[1]
-
-        if (token) setIsAuthenticated(true)
-
-    }, [])
 
 
     return (

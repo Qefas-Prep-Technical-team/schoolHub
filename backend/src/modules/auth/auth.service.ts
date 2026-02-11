@@ -300,3 +300,60 @@ export const loginUser = async (email: string, password: string) => {
 
   throw new Error("User not found");
 };
+
+
+export const sendPasswordResetEmail = async (email: string, code: string) => {
+  try {
+    const resetLink = `${process.env.FRONTEND_URL}/forgotPassword/ResetPassword?token=${code}`;
+    
+    const data = await resend.emails.send({
+      from: "SchoolHub <onboarding@resend.dev>",
+      to: [email],
+      subject: "Reset Your SchoolHub Password",
+      html: `
+        <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0;">SchoolHub</h1>
+            <p style="color: #6b7280; margin: 5px 0 0 0;">Password Reset Request</p>
+          </div>
+          
+          <div style="background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #1f2937; margin-top: 0;">Reset Your Password</h2>
+            
+            <p>You requested to reset your password for your SchoolHub account. Click the button below to create a new password:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetLink}" 
+                 style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+                Reset Your Password
+              </a>
+            </div>
+
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">
+              Or copy and paste this link in your browser:
+            </p>
+            
+            <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; word-break: break-all; font-size: 14px; color: #374151;">
+              ${resetLink}
+            </div>
+            
+            <p style="color: #6b7280; font-size: 14px; text-align: center; margin-top: 25px;">
+              This reset link will expire in 15 minutes.<br>
+              If you didn't request this reset, please ignore this email.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+            <p>© 2025 SchoolHub. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+    });
+
+    console.log("Password reset email sent to:", email);
+    return data;
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
+    throw error;
+  }
+};

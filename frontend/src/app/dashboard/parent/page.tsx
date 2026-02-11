@@ -1,41 +1,39 @@
-import ActivityFeed from "./components/dashboard/ActivityFeed";
-import Announcements from "./components/dashboard/Announcements";
-import EnrollmentChart from "./components/dashboard/EnrollmentChart";
-import FinanceOverview from "./components/dashboard/FinanceOverview";
-import OverviewHeader from "./components/dashboard/OverviewHeader";
-import PerformanceChart from "./components/dashboard/PerformanceChart";
-import StatCard from "./components/dashboard/StatCard";
+import StudentHero from './components/dashboard/StudentHero'
+import InsightsGrid from './components/dashboard/InsightsGrid'
+import TeacherContact from './components/dashboard/TeacherContact'
+import QuickAccessGrid from './components/dashboard/QuickAccessGrid'
+import Announcements from './components/dashboard/Announcements'
 
+export default function Home() {
+  return (
 
-export default function DashboardPage() {
-    return (
-        <div className="p-6 space-y-6">
-            <OverviewHeader />
-
-            {/* Stats Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                <StatCard title="Total Students" value="1,250" change="+1.5% this month" />
-                <StatCard title="Total Teachers" value="74" change="+2 new hires" />
-                <StatCard title="Active Classes" value="48" change="All classes running" />
-                <StatCard title="Attendance Rate" value="92.5%" change="-0.2% from yesterday" negative />
+      
+        
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto flex flex-col gap-8">
+            {/* Mobile Child Selector */}
+            <div className="sm:hidden">
+              <select className="w-1/4 py-3 px-4 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark rounded-xl text-sm font-medium">
+                <option>Emily Johnson</option>
+                <option>Michael Johnson</option>
+              </select>
             </div>
 
-            {/* Charts */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                <EnrollmentChart />
-                <PerformanceChart />
+            <StudentHero />
+            
+            <InsightsGrid />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 flex flex-col gap-6">
+                <TeacherContact />
+                <QuickAccessGrid />
+              </div>
+              
+              <div className="lg:col-span-1">
+                <Announcements />
+              </div>
             </div>
-
-            {/* Bottom Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                <div className="space-y-4">
-                    <FinanceOverview />
-                    <Announcements />
-                </div>
-                <div className="xl:col-span-2">
-                    <ActivityFeed />
-                </div>
-            </div>
-        </div>
-    );
+          </div>
+        </main>
+  )
 }

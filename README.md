@@ -79,3 +79,8 @@ MIT
 Just copy that into a new file named `README.md` in your project root folder.
 
 If you want me to customize it further, just ask!
+
+# == task== 
+TODO: SET UP SCHOOL LOGIN PAGE
+TODO: setup other admin registration
+TODO: set up reset password

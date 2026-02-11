@@ -37,43 +37,93 @@ import {
     School,
     User2,
     ChevronUp,
-    ChevronDown
+    ChevronDown,
+    LucideIcon,
+    FileText
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
-import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
+import { STUDENT_FEATURE_FLAGS, StudentFeatureFlagKey } from "./studentFeatureFlags"
 
-export const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/student/dashboard" },
-    { icon: BookOpenCheck, label: "Classes", href: "/student/classes" },
-    { icon: ClipboardList, label: "Assignments", href: "/student/assignments" },
-    { icon: BarChart3, label: "Results", href: "/student/results" },
-    { icon: CalendarDays, label: "Attendance", href: "/student/attendance" },
-    { icon: MessageCircle, label: "Messages", href: "/student/messages" },
-    { icon: BellRing, label: "Notifications", href: "/student/notifications" },
-    { icon: UserCircle, label: "Profile", href: "/student/profile" },
-    { icon: Settings, label: "Settings", href: "/student/settings" },
-    { icon: LifeBuoy, label: "Support", href: "/student/support" },
+// Define the menu item type
+interface StudentMenuItem {
+    icon: LucideIcon;
+    label: string;
+    href: string;
+    featureKey: StudentFeatureFlagKey;
+    section?: string;
+}
 
-    // Optional/Advanced Routes
-    { icon: FileCheck2, label: "Exams", href: "/student/exams" },
-    { icon: BookMarked, label: "Library", href: "/student/library" },
-    { icon: WalletCards, label: "Payments", href: "/student/payments" },
-    { icon: Brain, label: "AI Study Assistant", href: "/student/ai-study" },
-    { icon: CalendarClock, label: "Timetable", href: "/student/timetable" },
+// Complete student menu items with feature keys and sections
+export const studentMenuItems: StudentMenuItem[] = [
+    // === CORE FEATURES ===
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/student", featureKey: "dashboard", section: "core" },
+    { icon: BookOpenCheck, label: "Classes", href: "/dashboard/student/my-classes", featureKey: "classes", section: "core" },
+    { icon: ClipboardList, label: "Assignments", href: "/dashboard/student/assignments", featureKey: "assignments", section: "core" },
+    { icon: BarChart3, label: "Results", href: "/dashboard/student/result", featureKey: "results", section: "core" },
+    { icon: FileCheck2, label: "Exams/Quizzes", href: "/dashboard/student/exams&quizzes", featureKey: "exams", section: "core" },
+    { icon: CalendarDays, label: "Attendance", href: "/dashboard/student/attendance", featureKey: "attendance", section: "core" },
+    { icon: FileText, label: "Documents", href: "/dashboard/student/documents", featureKey: "documents", section: "core" },
+
+
+    // === COMMUNICATION ===
+    { icon: MessageCircle, label: "Messages", href: "/student/messages", featureKey: "messages", section: "communication" },
+    { icon: BellRing, label: "Notifications", href: "/student/notifications", featureKey: "notifications", section: "communication" },
+
+    // === PROFILE & SETTINGS ===
+    { icon: UserCircle, label: "Profile", href: "/student/profile", featureKey: "profile", section: "profile" },
+    { icon: Settings, label: "Settings", href: "/student/settings", featureKey: "settings", section: "profile" },
+    { icon: LifeBuoy, label: "Support", href: "/student/support", featureKey: "support", section: "profile" },
+
+    // === OPTIONAL/ADVANCED FEATURES ===
+    { icon: BookMarked, label: "Library", href: "/student/library", featureKey: "library", section: "advanced" },
+    { icon: WalletCards, label: "Payments", href: "/student/payments", featureKey: "payments", section: "advanced" },
+    { icon: Brain, label: "AI Study Assistant", href: "/student/ai-study", featureKey: "aiStudy", section: "advanced" },
+    { icon: CalendarClock, label: "Timetable", href: "/student/timetable", featureKey: "timetable", section: "advanced" },
 ];
 
-export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (collapsed: boolean) => void }) {
+// Filter menu items based on feature flags and group by section
+const getFilteredStudentMenuItemsBySection = () => {
+    // This filters out disabled items completely
+    const filtered = studentMenuItems.filter(item => STUDENT_FEATURE_FLAGS[item.featureKey]);
+
+    const sections = {
+        core: filtered.filter(item => item.section === 'core'),
+        communication: filtered.filter(item => item.section === 'communication'),
+        profile: filtered.filter(item => item.section === 'profile'),
+        advanced: filtered.filter(item => item.section === 'advanced'),
+    };
+
+    return sections;
+};
+
+// Section titles
+const STUDENT_SECTION_TITLES = {
+    core: "Learning",
+    communication: "Communication",
+    profile: "Account",
+    advanced: "More Tools"
+};
+
+interface StudentSidebarProps {
+    isCollapsed: boolean;
+    setIsCollapsed: (collapsed: boolean) => void;
+}
+
+export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarProps) {
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const pathname = usePathname()
+
+    // Get filtered menu items grouped by section
+    const menuSections = getFilteredStudentMenuItemsBySection()
 
     return (
         <Sidebar
             collapsible="icon"
             className={cn(
-                "transition-all duration-300 ease-in-out bg-red-600",
+                "transition-all duration-300 ease-in-out",
                 isCollapsed ? "w-[80px]" : "w-[260px]"
             )}
         >
@@ -87,15 +137,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boole
                         >
                             <Box className="flex items-center justify-start">
                                 <Box className="flex items-center justify-center mr-3">
-                                    {/* <Image
-                                        src="/schoolhub.png"
-                                        alt="school hub logo"
-                                        width={35}
-                                        height={35}
-                                        className="rounded-md"
-                                    /> */}
                                     <School className="h-5 w-5 shrink-0 text-blue-500" />
-
                                 </Box>
                                 {!isCollapsed && (
                                     <Link href="/" passHref>
@@ -119,45 +161,62 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boole
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
-
-                {/* Retract Button */}
-                {/* <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="ml-auto flex items-center justify-center p-2 rounded-md hover:bg-accent/60 transition-colors"
-                >
-                    {isCollapsed ? (
-                        <ChevronRight className="h-5 w-5" />
-                    ) : (
-                        <ChevronLeft className="h-5 w-5" />
-                    )}
-                </button> */}
             </SidebarHeader>
 
             {/* Main Menu */}
             <SidebarContent className="mt-10">
                 <SidebarMenu>
-                    {menuItems.map(({ icon: Icon, label, href }) => {
-                        const isActive = pathname === href
+                    {/* Render each section */}
+                    {Object.entries(menuSections).map(([sectionKey, items]) => {
+                        // This check ensures empty sections are not rendered
+                        if (items.length === 0) return null;
+
                         return (
-                            <SidebarMenuItem key={label} className="my-2">
-                                <Link href={href}>
-                                    <SidebarMenuButton
-                                        className={cn(
-                                            "relative flex items-center gap-3 text-[1rem] font-medium rounded-lg px-4 py-3 transition-all cursor-pointer",
-                                            isActive
-                                                ? "bg-accent text-accent-foreground shadow-sm"
-                                                : "hover:bg-accent/40"
-                                        )}
-                                    >
-                                        {isActive && (
-                                            <span className="absolute left-0 top-0 h-full w-[4px] bg-primary rounded-r-md" />
-                                        )}
-                                        <Icon className="h-5 w-5 shrink-0" />
-                                        {!isCollapsed && <span>{label}</span>}
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                        )
+                            <div key={sectionKey} className="mb-6">
+                                {/* Section Header (only show when not collapsed) */}
+                                {!isCollapsed && (
+                                    <div className="px-4 mb-2">
+                                        <Typography
+                                            variant="caption"
+                                            className="text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                                        >
+                                            {STUDENT_SECTION_TITLES[sectionKey as keyof typeof STUDENT_SECTION_TITLES]}
+                                        </Typography>
+                                    </div>
+                                )}
+
+                                {/* Section Items - ONLY filtered items appear here */}
+                                {items.map(({ icon: Icon, label, href, featureKey }) => {
+                                    const isActive = pathname === href;
+                                    // Since items are already filtered, this should always be true
+                                    const isDisabled = !STUDENT_FEATURE_FLAGS[featureKey];
+
+                                    return (
+                                        <SidebarMenuItem key={label} className="my-1">
+                                            <Link href={href}>
+                                                <SidebarMenuButton
+                                                    className={cn(
+                                                        "relative flex items-center gap-3 text-[1rem] font-medium rounded-lg px-4 py-3 transition-all",
+                                                        isActive
+                                                            ? "bg-accent text-accent-foreground shadow-sm cursor-pointer"
+                                                            : "hover:bg-accent/40 cursor-pointer"
+                                                    )}
+                                                >
+                                                    {isActive && (
+                                                        <span className="absolute left-0 top-0 h-full w-[4px] bg-primary rounded-r-md" />
+                                                    )}
+                                                    <Icon className="h-5 w-5 shrink-0" />
+                                                    {!isCollapsed && (
+                                                        <span className="flex-1">{label}</span>
+                                                    )}
+                                                    {/* "Soon" badge is removed since disabled items don't appear */}
+                                                </SidebarMenuButton>
+                                            </Link>
+                                        </SidebarMenuItem>
+                                    );
+                                })}
+                            </div>
+                        );
                     })}
                 </SidebarMenu>
             </SidebarContent>
@@ -172,7 +231,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boole
                                     <div className="flex items-center">
                                         <User2 className="mr-2 h-5 w-5" />
                                         {!isCollapsed && (
-                                            <span className="font-medium text-[1rem]">Username</span>
+                                            <span className="font-medium text-[1rem]">Student</span>
                                         )}
                                     </div>
                                     {!isCollapsed &&
@@ -190,10 +249,10 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boole
                                 className="w-[220px] rounded-lg shadow-lg border border-border bg-background p-1"
                             >
                                 <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    Account
+                                    My Profile
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    Billing
+                                    Academic Progress
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => logout()} className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
                                     Sign out

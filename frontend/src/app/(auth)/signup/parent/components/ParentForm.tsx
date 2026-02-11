@@ -119,7 +119,7 @@ export default function ParentRegistrationForm() {
           const email = response.data.data.parent.email
 
           setTimeout(() => {
-            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}`);
+            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.PARENT}`);
 
           }, 2000);
         },

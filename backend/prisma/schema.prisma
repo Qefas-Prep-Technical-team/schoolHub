@@ -1,17 +1,20 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
+        
 
-// ENUMS MUST BE DEFINED BEFORE THEY ARE USED
+
+// ENUMS MUST BE DEFINED BEFORE THEY ARE USED 
 enum UserRole {
   ADMIN
   TEACHER
@@ -48,88 +51,91 @@ model School {
 
 model SchoolAdmin {
   id       String    @id @default(uuid())
-  schoolId String
   adminId  String
+  schoolId String
   role     AdminRole
+  active   Boolean   @default(true) // Track if admin still works at the school
 
-  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   admin  Admin  @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([schoolId, adminId])
+  @@unique([adminId, schoolId])
   @@map("school_admins")
 }
 
 // Add to your existing schema
 model Admin {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      UserRole
-  tenantIds String[]
-  verified  Boolean  @default(false)
-  status    String   @default("PENDING") // ADD THIS: PENDING, APPROVED, REJECTED
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  password        String
+  role            UserRole
+  tenantIds       String[] @default(["default-tenant-id"])
+  defaultTenantId String   @default("default-tenant-id") // <- new default field
+  verified        Boolean  @default(false)
+  status          String   @default("PENDING")
 
   schoolAdmins SchoolAdmin[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model Teacher {
-  id          String   @id @default(uuid())
-  name        String
-  email       String   @unique
-  password    String
-  role        UserRole
-  tenantIds   String[]
-  teacherCode String   @unique
-  subject     String?
-  department  String?
-  school      School?  @relation(fields: [schoolId], references: [id])
-  schoolId    String?
-  classes     Class[]
-  verified    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("teachers")
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  password        String
+  role            UserRole
+  tenantIds       String[] @default(["default-tenant-id"])
+  defaultTenantId String   @default("default-tenant-id") // <- new default field
+  teacherCode     String   @unique
+  subject         String?
+  department      String?
+  school          School?  @relation(fields: [schoolId], references: [id])
+  schoolId        String?
+  classes         Class[]
+  verified        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Student {
-  id          String            @id @default(uuid())
-  name        String
-  email       String            @unique
-  password    String
-  studentCode String            @unique
-  teacherCode String?
-  tenantIds   String[]
-  gradeLevel  String?
-  dateOfBirth DateTime?
-  role        UserRole
-  school      School?           @relation(fields: [schoolId], references: [id])
-  schoolId    String?
-  classes     ClassEnrollment[]
-  parentLinks ParentChildLink[]
-  verified    Boolean           @default(false)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  @@map("students")
+  id              String            @id @default(uuid())
+  name            String
+  email           String            @unique
+  password        String
+  studentCode     String            @unique
+  teacherCode     String?
+  tenantIds       String[]          @default(["default-tenant-id"])
+  defaultTenantId String            @default("default-tenant-id") // <- new default field
+  gradeLevel      String?
+  dateOfBirth     DateTime?
+  role            UserRole
+  school          School?           @relation(fields: [schoolId], references: [id])
+  schoolId        String?
+  classes         ClassEnrollment[]
+  parentLinks     ParentChildLink[]
+  verified        Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 }
 
 model Parent {
-  id        String            @id @default(uuid())
-  fullName  String
-  email     String            @unique
-  password  String
-  phone     String?
-  role      UserRole
-  children  ParentChildLink[]
-  verified  Boolean           @default(false)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id              String            @id @default(uuid())
+  fullName        String
+  email           String            @unique
+  password        String
+  phone           String?
+  role            UserRole
+  tenantIds       String[]          @default(["default-tenant-id"])
+  defaultTenantId String            @default("default-tenant-id") // <- new default field
+  children        ParentChildLink[]
+  verified        Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@map("parents")
 }
@@ -206,4 +212,21 @@ model RefreshToken {
 
   @@index([userId, userType])
   @@map("refresh_tokens")
+}
+
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  userType  UserRole
+  verified  Boolean  @default(false)
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([code])
+  @@index([expiresAt])
+  @@map("password_resets")
 }

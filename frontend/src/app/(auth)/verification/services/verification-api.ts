@@ -48,10 +48,10 @@ export const verificationAPI = {
   },
 
   // Resend verification code
-  resendCode: async (email: string) => {
+  resendCode: async (email: string, userType: string) => {
     const response = await apiClient.post<ApiResponse<RequestCodeResponse>>(
       "/auth/request-code",
-      { email }
+      { email, userType }
     );
     return response;
   },

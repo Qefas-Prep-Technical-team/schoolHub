@@ -10,7 +10,8 @@ interface User {
   id: string;
   email: string;
   role: string | null;
-  userType: UserType; // Add userType here
+  userType: UserType;
+  defaultTenantId?: string; // Add defaultTenantId to the user object
 }
 
 interface AuthState {
@@ -18,9 +19,11 @@ interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
-  userType: UserType | null; // Also store it separately for easy access
+  userType: UserType | null;
+  defaultTenantId: string | null; // Store separately for easy access
   setAuth: (user: User, token: string) => void;
   setUserType: (userType: UserType) => void;
+  setDefaultTenantId: (tenantId: string) => void; // New setter
   clearAuth: () => void;
   initialize: () => void;
   // Helper selectors
@@ -38,6 +41,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isInitialized: false,
       userType: null,
+      defaultTenantId: null,
 
       setAuth: (user: User, token: string) => {
         Cookies.set("token", token, {
@@ -46,21 +50,31 @@ export const useAuthStore = create<AuthState>()(
           sameSite: "lax",
           secure: process.env.NODE_ENV === "production",
         });
+
         set({
           user,
           accessToken: token,
           isAuthenticated: true,
-          userType: user.userType, // Set userType from user object
+          userType: user.userType,
+          defaultTenantId: user.defaultTenantId || null,
         });
       },
 
       setUserType: (userType: UserType) => {
         const state = get();
-        // Update both the user object and the separate userType field
         const updatedUser = state.user ? { ...state.user, userType } : null;
         set({
           user: updatedUser,
           userType,
+        });
+      },
+
+      setDefaultTenantId: (tenantId: string) => {
+        const state = get();
+        const updatedUser = state.user ? { ...state.user, defaultTenantId: tenantId } : null;
+        set({
+          user: updatedUser,
+          defaultTenantId: tenantId,
         });
       },
 
@@ -71,6 +85,7 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           isAuthenticated: false,
           userType: null,
+          defaultTenantId: null,
         });
       },
 
@@ -79,8 +94,6 @@ export const useAuthStore = create<AuthState>()(
         const state = get();
 
         if (token && !state.isAuthenticated) {
-          // Token exists but state isn't authenticated - this can happen on page refresh
-          // You might want to validate the token with your API here
           console.log("🔄 Re-initializing auth state from token");
         }
 
@@ -88,25 +101,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       // Helper methods to check user type
-      isParent: () => {
-        const state = get();
-        return state.userType === "PARENT";
-      },
-
-      isTeacher: () => {
-        const state = get();
-        return state.userType === "TEACHER";
-      },
-
-      isAdmin: () => {
-        const state = get();
-        return state.userType === "ADMIN";
-      },
-
-      isStudent: () => {
-        const state = get();
-        return state.userType === "STUDENT";
-      },
+      isParent: () => get().userType === "PARENT",
+      isTeacher: () => get().userType === "TEACHER",
+      isAdmin: () => get().userType === "ADMIN",
+      isStudent: () => get().userType === "STUDENT",
     }),
     {
       name: "auth-storage",

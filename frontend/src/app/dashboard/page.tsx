@@ -25,10 +25,12 @@ export default function DashboardPage() {
 
     if (user && userType) {
       setIsRedirecting(true);
-      console.log(`🔄 Redirecting to: /dashboard/${userType.toLowerCase()}`);
+           const userDash = userType.toLowerCase() // "PARENT" -> "parent"
+     
+      // console.log(`🔄 Redirecting to: /dashboard/${userType.toLowerCase()}`);
 
       // Use replace instead of push to avoid history stack issues
-      router.replace(`/dashboard/${userType.toLowerCase()}`);
+      router.replace(`/dashboard/${userDash}`);
     } else if (user) {
       // Fallback: use user.role if userType is not set
       setIsRedirecting(true);

@@ -40,6 +40,10 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-present: #10B981;
+  --color-absent: #EF4444;
+  --color-late: #F59E0B;
+  --color-excused: #3B82F6;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -178,3 +182,34 @@
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-in-out;
 }
+
+.btn-primary {
+  @apply w-full h-10 rounded-lg bg-primary text-white font-bold hover:bg-primary/90;
+}
+.btn-primary-outline {
+  @apply w-full h-10 rounded-lg bg-primary/20 text-primary font-bold hover:bg-primary/30;
+}
+
+/* Add this to your global CSS */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+@keyframes ios-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-ios-fade {
+  animation: ios-fade 1s linear infinite;
+}
+
+

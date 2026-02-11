@@ -39,7 +39,7 @@ export const teacherRegistrationSchema =  yup.object({
       .required("Confirm password is required"),
   tenantId: yup.string()
     .optional()
-    .matches(/^\d{6}$/, "Tenant ID must be a 6-digit code")
+    // .matches(/^\d{10}$/, "Tenant ID must be a 6-digit code")
     .nullable(),
   }),
 });
@@ -128,4 +128,27 @@ export const loginSchema = yup.object({
       .oneOf(["ADMIN", "TEACHER", "STUDENT", "PARENT"], "Invalid user type")
       .required("User type is required")
   }),
+})
+
+export const completePasswordResetSchema = yup.object({
+  body: yup.object({
+  token: yup
+    .string()
+    .required("Reset token is required"),
+
+  newPassword: yup
+    .string()
+    .required("New password is required")
+    .min(8, "Password must be at least 8 characters long")
+    .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+    .matches(/[0-9]/, "Password must contain at least one number")
+    .matches(/[@$!%*?&]/, "Password must contain at least one special character"),
+
+  confirmPassword: yup
+    .string()
+    .required("Confirm password is required")
+   .oneOf([yup.ref("newPassword")], "Passwords must match")
+
+})
 })

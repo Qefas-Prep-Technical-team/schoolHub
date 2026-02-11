@@ -6,6 +6,8 @@ export const FEATURE_FLAGS_TEACHERS = {
   assignments: true,
   exams: true,
   grades: true,
+  parents: true,
+  documents: true,
   students: true,
 
   // Feature Set 2: Daily Operations (DISABLE DURING DEVELOPMENT)

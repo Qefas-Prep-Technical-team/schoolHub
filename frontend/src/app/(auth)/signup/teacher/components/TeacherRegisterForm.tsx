@@ -120,7 +120,7 @@ export default function TeacherRegisterForm() {
           const email = response.data.data?.teacher?.email || data.email;
 
           setTimeout(() => {
-            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}`);
+            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.TEACHER}`);
 
           }, 2000);
         },

@@ -1,0 +1,103 @@
+.ios-loader-wrapper {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  display: grid;
+  place-items: center;
+}
+
+/* Center icon */
+.ios-loader-icon {
+  color: #0b66ff;
+  z-index: 2;
+}
+
+/* Spinner container */
+.ios-spinner {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+
+/* 12 fade bars like iOS spinner */
+.ios-spinner-line {
+  position: absolute;
+  width: 6px;
+  height: 18px;
+  background: #0b66ff;
+  border-radius: 6px;
+  opacity: 0;
+  animation: iosFade 1s linear infinite;
+  transform-origin: center 36px; /* distance from center */
+}
+
+.ios-spinner-line:nth-child(1) {
+  animation-delay: 0s;
+}
+.ios-spinner-line:nth-child(2) {
+  animation-delay: -0.083s;
+}
+.ios-spinner-line:nth-child(3) {
+  animation-delay: -0.166s;
+}
+.ios-spinner-line:nth-child(4) {
+  animation-delay: -0.249s;
+}
+.ios-spinner-line:nth-child(5) {
+  animation-delay: -0.332s;
+}
+.ios-spinner-line:nth-child(6) {
+  animation-delay: -0.415s;
+}
+.ios-spinner-line:nth-child(7) {
+  animation-delay: -0.498s;
+}
+.ios-spinner-line:nth-child(8) {
+  animation-delay: -0.581s;
+}
+.ios-spinner-line:nth-child(9) {
+  animation-delay: -0.664s;
+}
+.ios-spinner-line:nth-child(10) {
+  animation-delay: -0.747s;
+}
+.ios-spinner-line:nth-child(11) {
+  animation-delay: -0.83s;
+}
+.ios-spinner-line:nth-child(12) {
+  animation-delay: -0.913s;
+}
+
+/* Fade animation (like iOS) */
+@keyframes iosFade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .ios-spinner-line {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+@keyframes ios-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-ios-fade {
+  animation: ios-fade 1s linear infinite;
+}
