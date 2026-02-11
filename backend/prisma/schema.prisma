@@ -1,9 +1,9 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -11,8 +11,10 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+        
 
-// ENUMS MUST BE DEFINED BEFORE THEY ARE USED
+
+// ENUMS MUST BE DEFINED BEFORE THEY ARE USED 
 enum UserRole {
   ADMIN
   TEACHER
