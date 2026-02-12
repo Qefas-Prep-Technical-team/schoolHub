@@ -8,13 +8,9 @@ import SubmissionChecklist from './components/SubmissionChecklist'
 import InstructionsSummary from './components/InstructionsSummary'
 import ActionFooter from './components/ActionFooter'
 
-interface SubmissionPageProps {
-  params: {
-    id: string
-  }
-}
 
-export default function SubmissionPage({ params }: SubmissionPageProps) {
+
+export default function SubmissionPage(s) {
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark font-display antialiased transition-colors duration-200">
       <div className="layout-container flex h-full grow flex-col">
