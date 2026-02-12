@@ -101,13 +101,12 @@ export const linkChildToParent = async (req: Request, res: Response) => {
 };
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const resendTest = process.env.RESEND_TEST === "true" || false; // default to false if not set
+// default to false if not set
 
 export const sendVerificationEmail = async (email: string, code: string) => {
-  const mainEmail = resendTest ? "finixd531@gmail.com" : email;
   await resend.emails.send({
     from: "SchoolHub <onboarding@resend.dev>",
-    to: mainEmail,
+    to: email,
     subject: "Your Verification Code",
     html: `
      <!DOCTYPE html>
