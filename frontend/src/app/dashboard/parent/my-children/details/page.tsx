@@ -1,4 +1,3 @@
-import Header from './components/Header'
 import ProfileHeader from './components/ProfileHeader'
 import TabNavigation from './components/TabNavigation'
 import UpcomingAssignments from './components/UpcomingAssignments'
@@ -25,7 +24,11 @@ export default function DashboardPage() {
           </span>
         </div>
 
-        <ProfileHeader />
+        <ProfileHeader 
+          childName="Alex Johnson"
+          className=""
+          studentId=""
+          age={0} attendance={0} averageScore={0} rank={0} standing={''}        />
 
         <TabNavigation />
 

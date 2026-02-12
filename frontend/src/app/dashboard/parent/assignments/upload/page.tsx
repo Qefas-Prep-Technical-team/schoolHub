@@ -10,13 +10,13 @@ import ActionFooter from './components/ActionFooter'
 
 
 
-export default function SubmissionPage(s) {
+export default function SubmissionPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark font-display antialiased transition-colors duration-200">
       <div className="layout-container flex h-full grow flex-col">
         <div className="flex flex-1 justify-center py-5 px-4 sm:px-6 lg:px-8">
           <div className="layout-content-container flex flex-col max-w-[1200px] flex-1">
-            <Breadcrumbs assignmentId={params.id} />
+            {/* <Breadcrumbs assignmentId={params.id} /> */}
             <TimerHeader />
             
             {/* Main Content Grid */}

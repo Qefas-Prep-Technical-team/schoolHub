@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Save, ChevronLeft } from 'lucide-react';
@@ -9,7 +10,7 @@ import FormField from './FormField';
 import TimeInput from './TimeInput';
 import TeacherAvailabilityButton from './TeacherAvailabilityButton';
 import ConflictAlert from './ConflictAlert';
-import { Conflict } from './types';
+import { Conflict, PeriodFormData } from './types'; // ✅ use shared types
 
 const periodFormSchema = z.object({
   subject: z.string().min(1, 'Subject is required'),
@@ -20,17 +21,17 @@ const periodFormSchema = z.object({
   classroom: z.string().min(1, 'Classroom is required'),
   priority: z.string(),
   notes: z.string(),
+  status: z.string().min(1, 'Status is required'), // ✅ add
 });
-
-type PeriodFormData = z.infer<typeof periodFormSchema>;
 
 interface PeriodFormProps {
   initialData?: Partial<PeriodFormData>;
-  onSubmit: (data: PeriodFormData) => void;
+  onSubmit: (data: PeriodFormData) => void | Promise<void>; // ✅ allow async
   onCancel: () => void;
   onBack: () => void;
   mode?: 'add' | 'edit';
 }
+
 
 const PeriodForm: React.FC<PeriodFormProps> = ({
   initialData,
@@ -60,18 +61,20 @@ const PeriodForm: React.FC<PeriodFormProps> = ({
     classroom: initialData?.classroom || 'CR-201 (Science Lab)',
     priority: initialData?.priority || '',
     notes: initialData?.notes || '',
+    status: initialData?.status || 'available',
+
   };
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    watch,
-    setValue
-  } = useForm<PeriodFormData>({
-    resolver: zodResolver(periodFormSchema),
-    defaultValues,
-  });
+const {
+  control,
+  handleSubmit,
+  formState: { errors, isSubmitting },
+  watch,
+  setValue
+} = useForm<PeriodFormData>({
+  resolver: zodResolver(periodFormSchema) as any,
+  defaultValues,
+});
 
   const subjects = [
     'Select a subject',

@@ -1,6 +1,6 @@
 "use client"
 import React, { FC, useEffect, useState } from 'react';
-import * as motion from "motion/react-client"
+import * as motion from "framer-motion";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 // Import Swiper React components

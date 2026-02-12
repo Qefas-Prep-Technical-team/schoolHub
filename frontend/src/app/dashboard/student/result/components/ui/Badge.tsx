@@ -46,9 +46,11 @@ export default function Badge({
       outline: 'bg-transparent text-gray-700 dark:text-gray-300 ring-gray-700/30 dark:ring-gray-500/30',
     },
   };
+type Variant = "solid" | "outline" | "default";
 
+const resolvedVariant = variant === "default" ? "solid" : variant;
   return (
-    <span className={`${baseClasses} ${sizeClasses[size]} ${colorClasses[color][variant]} ${className}`}>
+   <span className={`${baseClasses} ${sizeClasses[size]} ${colorClasses[color][resolvedVariant]} ${className}`}>
       {children}
     </span>
   );

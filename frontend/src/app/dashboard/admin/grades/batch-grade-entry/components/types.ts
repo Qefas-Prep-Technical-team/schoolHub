@@ -19,4 +19,5 @@ export interface SaveStatus {
   isSaved: boolean;
   lastSaved?: Date;
   isSaving?: boolean;
+   error?: string;
 }

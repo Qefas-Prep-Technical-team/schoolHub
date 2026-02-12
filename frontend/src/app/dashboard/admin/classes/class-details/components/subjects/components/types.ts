@@ -6,7 +6,7 @@ export interface Subject {
   teacherId: string;
   teacherName: string;
   color?: string;
-  icon: string;
+ icon?: string;
   assignments: number;
   exams: number;
   averageScore: number;
@@ -32,4 +32,5 @@ export interface ClassInfo {
   totalStudents: number;
   teacherId: string;
   teacherName: string;
+  
 }

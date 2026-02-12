@@ -3,7 +3,7 @@ export type PublishStatus = "draft" | "publish-now" | "schedule-later";
 export interface AssignmentFormData {
   title: string;
   subject: string;
-  classes: string[];
+  classes:classes[];
   instructions: string;
   attachments: File[];
   dueDate: string;
@@ -12,7 +12,10 @@ export interface AssignmentFormData {
   maxScore: number;
   scheduledDate?: string;
 }
-
+interface classes {
+    id: string;
+    name: string;
+  }
 export interface ClassTag {
   id: string;
   name: string;

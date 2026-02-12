@@ -82,19 +82,18 @@ export default function MonthlyAttendancePage() {
                         <StatsOverview stats={stats} />
 
                         {/* Calendar Section */}
+                        <CalendarControls
+                            currentMonth={currentMonth}
+                            onPrevious={handlePreviousMonth}
+                            onNext={handleNextMonth}
+                            onToday={handleToday}
+                            showTodayButton
+                        />
                         <CalendarGrid
                             days={calendarDays}
                             onDayClick={handleDayClick}
                             selectedDate={selectedDate}
-                        >
-                            <CalendarControls
-                                currentMonth={currentMonth}
-                                onPrevious={handlePreviousMonth}
-                                onNext={handleNextMonth}
-                                onToday={handleToday}
-                                showTodayButton
-                            />
-                        </CalendarGrid>
+                        />
 
                         {/* Legend */}
                         <CalendarLegend />

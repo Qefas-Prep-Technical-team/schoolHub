@@ -10,6 +10,7 @@ interface AddSubjectModalProps {
   onSave: (subjectData: Partial<Subject>) => void;
   classId: string;
 }
+type Semester = Subject["semester"];
 
 const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ 
   isOpen, 
@@ -17,14 +18,22 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
   onSave,
   classId 
 }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    description: '',
-    credits: 3,
-    semester: 'fall',
-    academicYear: '2024-2025'
-  });
+const [formData, setFormData] = useState<{
+  name: string;
+  code: string;
+  description: string;
+  credits: number;
+  semester: Semester;
+  academicYear: string;
+}>({
+  name: '',
+  code: '',
+  description: '',
+  credits: 3,
+  semester: 'fall',
+  academicYear: '2024-2025'
+});
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +141,9 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
                 </label>
                 <select
                   value={formData.semester}
-                  onChange={(e) => setFormData({ ...formData, semester: e.target.value })}
+                onChange={(e) =>
+  setFormData({ ...formData, semester: e.target.value as Semester })
+}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-primary focus:border-primary"
                 >
                   <option value="fall">Fall</option>

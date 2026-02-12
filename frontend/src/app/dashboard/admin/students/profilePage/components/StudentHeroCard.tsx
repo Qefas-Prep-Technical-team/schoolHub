@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // StudentHeroCard.jsx
 import React from 'react'
 
-export default function StudentHeroCard({ student }) {
+export default function StudentHeroCard({ student }: { student: any }) {
   return (
     <div className="w-full lg:w-80 flex-shrink-0">
       <div className="sticky top-6 rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-4 lg:p-5 shadow-sm">
@@ -10,7 +11,6 @@ export default function StudentHeroCard({ student }) {
             <div 
               className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-24 h-24 lg:w-28 lg:h-28 mb-3"
               style={{ backgroundImage: `url(${student.profilePicture})` }}
-              alt={`Student profile picture of ${student.name}`}
             ></div>
             <span className="absolute bottom-1 right-1 flex items-center justify-center h-6 px-2 rounded-full text-xs font-bold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 ring-2 lg:ring-4 ring-card-light dark:ring-card-dark">
               {student.status}

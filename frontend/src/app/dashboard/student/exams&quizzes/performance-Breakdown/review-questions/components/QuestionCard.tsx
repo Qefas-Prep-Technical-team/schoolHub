@@ -9,7 +9,7 @@ interface QuestionCardProps {
 }
 
 export default function QuestionCard({ question, className = '' }: QuestionCardProps) {
-    const getAnswerBoxVariant = (status: Question['status']) => {
+    const getAnswerBoxVariant = (status: Question['status']): 'user' | 'correct' | 'explanation' => {
         switch (status) {
             case 'correct':
                 return 'user';

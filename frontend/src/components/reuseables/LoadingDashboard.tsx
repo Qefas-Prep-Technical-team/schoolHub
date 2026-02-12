@@ -10,7 +10,7 @@ interface LoadingDashboardProps {
 }
 
 export default function LoadingDashboard({
-  userType = "user",
+  userType = "STUDENT",
   message = "confirming your login status ... ",
   duration = 2000
 }: LoadingDashboardProps) {

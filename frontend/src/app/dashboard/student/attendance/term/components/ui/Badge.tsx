@@ -5,7 +5,7 @@ interface BadgeProps {
     status: 'present' | 'absent' | 'late' | 'excused';
 }
 
-const Badge: React.FC<BadgeProps> = ({ status }) => {
+const Badge: React.FC<BadgeProps> = ({ status }:{status:string}) => {
     const getConfig = () => {
         switch (status) {
             case 'present':
@@ -31,6 +31,12 @@ const Badge: React.FC<BadgeProps> = ({ status }) => {
                     text: 'Excused',
                     bgColor: 'bg-blue-100 dark:bg-blue-900',
                     textColor: 'text-blue-800 dark:text-blue-300',
+                };
+            default:
+                return {
+                    text: 'Unknown',
+                    bgColor: 'bg-gray-100 dark:bg-gray-900',
+                    textColor: 'text-gray-800 dark:text-gray-300',
                 };
         }
     };

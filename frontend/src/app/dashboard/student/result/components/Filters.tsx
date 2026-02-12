@@ -12,6 +12,7 @@ interface FiltersProps {
   examTypeOptions: FilterOption[];
   subjectOptions: FilterOption[];
   initialSearch?: string;
+  onSearch?: (searchTerm: string) => void;
 }
 
 export default function Filters({

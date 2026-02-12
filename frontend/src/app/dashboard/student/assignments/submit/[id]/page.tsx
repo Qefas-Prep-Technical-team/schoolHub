@@ -70,7 +70,7 @@ const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Calculate time remaining
   useEffect(() => {

@@ -65,11 +65,13 @@ const statusConfig = {
     bg: 'bg-gray-50/50 dark:bg-gray-800/50',
     border: 'border-gray-100 dark:border-gray-800',
     text: 'text-gray-400',
+    indicator: undefined,
   },
   inactive: {
     bg: 'transparent',
     border: 'border-transparent',
     text: 'text-gray-300 dark:text-gray-700',
+    indicator: undefined,
   },
 }
 
@@ -133,7 +135,7 @@ export default function Calendar() {
                 )}
                 
                 {/* Label for special statuses */}
-                {(day.status === 'absent' || day.status === 'late') && (
+                {(day.status === 'absent' || day.status === 'late') && 'label' in status && (
                   <div className="mt-auto mb-1 px-1.5 py-0.5 rounded text-[10px] font-bold hidden sm:block">
                     <span className={`${
                       day.status === 'absent'

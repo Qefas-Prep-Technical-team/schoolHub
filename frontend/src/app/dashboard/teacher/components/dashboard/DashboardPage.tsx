@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState } from 'react';
@@ -119,7 +120,7 @@ export default function DashboardPage() {
             <div className="lg:col-span-2 flex flex-col gap-6">
               {/* Assignments & Exams */}
               <AssignmentsExams   
-                assignments={assignments} 
+                assignments={assignments as any} 
                 onViewAll={() => handleViewAll('assignments')}
               />
 

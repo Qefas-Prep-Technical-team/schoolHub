@@ -25,9 +25,8 @@ export default function NavigationFooter({
         <div className={`mt-8 flex items-center justify-between border-t border-gray-200/80 pt-6 dark:border-gray-700/80 ${className}`}>
             <Button
                 variant="outline"
-                onClick={onPrevious}
+                onClick={canGoPrevious ? onPrevious : undefined}
                 icon={<ArrowLeft className="h-4 w-4" />}
-                disabled={!canGoPrevious}
             >
                 Previous Question
             </Button>
@@ -37,10 +36,9 @@ export default function NavigationFooter({
             </div>
 
             <Button
-                onClick={onNext}
+                onClick={canGoNext ? onNext : undefined}
                 icon={<ArrowRight className="h-4 w-4" />}
                 iconPosition="right"
-                disabled={!canGoNext}
             >
                 Next Question
             </Button>

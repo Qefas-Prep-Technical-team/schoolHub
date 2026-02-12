@@ -3,7 +3,7 @@
 
 import { Users, GraduationCap, Building, BookOpen, CalendarCheck, FileText, TrendingUp, TrendingDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import MetricCard from './MetricCard';
+import MetricCard, { MetricCardProps } from './MetricCard';
 
 interface Metric {
   id: string;
@@ -79,7 +79,7 @@ export default function MetricsGrid() {
   useEffect(() => {
     const interval = setInterval(() => {
       // Update attendance randomly
-      setMetrics(prev => prev.map(metric => 
+      setMetrics((prev: Metric[]) => prev.map((metric: Metric) => 
         metric.id === 'attendance' 
           ? { ...metric, value: `${Math.floor(Math.random() * 5) + 88}%` }
           : metric
@@ -91,8 +91,8 @@ export default function MetricsGrid() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      {metrics.map((metric) => (
-        <MetricCard key={metric.id} {...metric} />
+      {metrics.map((metric: MetricCardProps) => (
+        <MetricCard key={metric?.id} {...metric} />
       ))}
     </div>
   );

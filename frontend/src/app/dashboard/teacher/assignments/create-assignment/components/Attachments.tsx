@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useCallback } from 'react';
 import { Attachment } from './types';
 
 interface AttachmentsProps {
-    attachments: Attachment[];
+    attachments: any;
     onAttachmentsChange: (attachments: Attachment[]) => void;
 }
 
@@ -71,7 +72,7 @@ export default function Attachments({
     };
 
     const removeAttachment = (id: string) => {
-        onAttachmentsChange(attachments.filter(att => att.id !== id));
+        onAttachmentsChange(attachments.filter((att: any) => att.id !== id));
     };
 
     const formatFileSize = (bytes: number): string => {
@@ -126,7 +127,7 @@ export default function Attachments({
                 {/* Attachments List */}
                 {attachments.length > 0 && (
                     <div className="space-y-3">
-                        {attachments.map((attachment) => (
+                        {attachments.map((attachment: any   ) => (
                             <div
                                 key={attachment.id}
                                 className="flex items-center p-3 bg-background-light dark:bg-background-dark border border-[#E4E4E7] dark:border-[#2D2D2F] rounded-lg"

@@ -4,7 +4,9 @@ interface Props {
   onFileUpload: (files: File[]) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+fileInputRef: React.RefObject<HTMLInputElement | null>;
+
+
   acceptedFormats?: string;
   maxFileSize?: number;
 }

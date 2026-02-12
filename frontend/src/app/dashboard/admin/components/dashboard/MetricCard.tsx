@@ -1,7 +1,8 @@
 import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface MetricCardProps {
+export interface MetricCardProps {
+  id?: string;
   title: string;
   value: string | number;
   icon: LucideIcon;

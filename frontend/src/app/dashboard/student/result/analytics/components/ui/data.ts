@@ -6,7 +6,7 @@ import {
   PerformanceData,
   ComparisonSubject,
   Goal
-} from '@/types';
+} from '../types';
 
 export const navItems: NavItem[] = [
   { label: 'Dashboard', icon: 'dashboard', href: '#' },

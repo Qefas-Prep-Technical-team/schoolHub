@@ -17,8 +17,8 @@ const studentData = {
     balance: 250.0
   },
   behaviorNotes: [
-    { type: 'warning', title: 'Minor Disruption in Class', detail: 'Reported by Mr. Harrison on May 15, 2024. Action: Verbal warning.' },
-    { type: 'good', title: 'Excellent Peer Leadership', detail: 'Observed by Ms. Davis on May 10, 2024 during a group project.' }
+    { type: 'warning' as const, title: 'Minor Disruption in Class', detail: 'Reported by Mr. Harrison on May 15, 2024. Action: Verbal warning.' },
+    { type: 'positive' as const, title: 'Excellent Peer Leadership', detail: 'Observed by Ms. Davis on May 10, 2024 during a group project.' }
   ]
 }
 

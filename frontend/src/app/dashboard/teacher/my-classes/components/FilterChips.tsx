@@ -8,7 +8,7 @@ interface FilterChipsProps {
         class: string;
         subject: string;
     };
-    onFilterChange: (filterType: keyof typeof filters, value: string) => void;
+    onFilterChange: (filterType: keyof FilterChipsProps['filters'], value: string) => void;
     onClearFilters: () => void;
 }
 

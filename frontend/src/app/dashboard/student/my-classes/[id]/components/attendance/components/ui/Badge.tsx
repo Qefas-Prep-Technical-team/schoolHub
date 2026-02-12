@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { AttendanceStatsType } from "../types";
@@ -27,7 +28,7 @@ export default function Badge({ status, className = '' }: BadgeProps) {
             case 'late':
                 return {
                     bg: 'bg-amber-100 dark:bg-amber-900/50',
-                    text: 'text-amber-800 dark:text-amber-300',
+                    text: 'text-ambers-800 dark:text-amber-300',
                     label: 'Late'
                 };
             default:
@@ -39,7 +40,7 @@ export default function Badge({ status, className = '' }: BadgeProps) {
         }
     };
 
-    const config = getStatusConfig(status);
+    const config = getStatusConfig(status as any );
 
     return (
         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text} ${className}`}>

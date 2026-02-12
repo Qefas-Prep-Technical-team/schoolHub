@@ -74,7 +74,7 @@ export default function AssignmentsPage() {
                 !searchQuery ||
                 assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 assignment.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                assignment.className.toLowerCase().includes(searchQuery.toLowerCase());
+                assignment.className?.toLowerCase().includes(searchQuery.toLowerCase());
 
             // Status filter
             const matchesStatus = !filters.status || assignment.status === filters.status;

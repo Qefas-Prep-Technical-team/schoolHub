@@ -6,7 +6,7 @@ interface StatsCardsProps {
 }
 
 export default function StatsCards({ stats }: StatsCardsProps) {
-  const getTrendColor = (color: StatCard['trend']['color']) => {
+  const getTrendColor = (color: string) => {
     switch (color) {
       case 'green':
         return 'text-green-600 dark:text-green-500';

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import React, { FC, useState } from 'react';
 import PageHeader from './PageHeader';
@@ -43,7 +44,7 @@ const ClassDetails: FC = () => {
                   onTabChange={setActiveTab}
                 /> */}
       
-                <TabNavigation activeTab={activeTab} onTabChange={setActiveTab}>
+                <TabNavigation activeTab={activeTab} onTabChange={setActiveTab as any}>
         <TabPanel>
         < ClassOverviewTab/>
         </TabPanel>

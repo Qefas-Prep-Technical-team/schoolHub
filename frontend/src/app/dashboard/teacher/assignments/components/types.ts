@@ -1,15 +1,21 @@
+import { Attachment } from "../create-assignment/components/types";
+
 export type AssignmentStatus = "published" | "overdue" | "due-soon" | "draft";
 
 export interface Assignment {
   id: string;
   title: string;
   subject: string;
-  className: string;
+  className?: string;
   status: AssignmentStatus;
   dueDate: string;
-  submitted: number;
-  totalStudents: number;
-  progress: number;
+  submitted?: number;
+  totalStudents?: number;
+  progress?: number;
+  classes?:string[];
+  instructions?:string;
+attachments?: Attachment[];
+teacher?: {id: string; name: string; avatarUrl: string; };
 }
 
 export interface AssignmentCardProps {

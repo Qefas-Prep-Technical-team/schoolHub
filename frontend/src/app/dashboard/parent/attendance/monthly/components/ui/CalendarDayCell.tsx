@@ -11,7 +11,9 @@ interface CalendarDayCellProps {
 }
 
 export default function CalendarDayCell({ day, onClick, isSelected }: CalendarDayCellProps) {
-    const getStatusConfig = (status?: CalendarDay['attendance']['status']) => {
+type AttendanceStatus = NonNullable<CalendarDay['attendance']>['status'];
+
+const getStatusConfig = (status?: AttendanceStatus) => {
         switch (status) {
             case 'present':
                 return {

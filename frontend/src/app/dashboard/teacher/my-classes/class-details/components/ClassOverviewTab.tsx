@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState } from 'react';
@@ -140,7 +141,7 @@ export default function ClassOverviewTab() {
             {/* Left Column */}
             <div className="space-y-6">
               <UpcomingActivities 
-                activities={upcomingActivities}
+                activities={upcomingActivities as any}
                 onViewAll={() => handleViewAll('activities')}
               />
               
