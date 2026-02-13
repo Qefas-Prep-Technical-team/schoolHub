@@ -18,28 +18,28 @@ export const useLoginMutation = () => {
       password: string;
       userType: UserType; // Use UserType instead of string
     }) => authAPI.login({ ...credentials }),
-    onSuccess: (response, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["auth"] });
+  // useLoginMutation logic
+onSuccess: (response:any, variables) => {
+  queryClient.invalidateQueries({ queryKey: ["auth"] });
+console.log(response)
+  const userWithType = {
+    ...response.data.user,
+    // Ensure 'name' is populated. Fallback to 'fullName' if that's what backend sends
+    name: response.data.user.name || response.data.user.fullName || "User",
+    userType: variables.userType,
+  };
 
-      // Create user object with userType from the login credentials
-      const userWithType = {
-        ...response.data.user,
-        userType: variables.userType, // Use the userType from the login request
-      };
+  setAuth(userWithType, response.data.accessToken);
+  
+  // Use the name for the toast!
+  authToast.loginSuccess(userWithType.name); 
 
-      setAuth(userWithType, response.data.accessToken);
-      const userEmail = response.data.user.email;
+  const userDash = variables.userType.toLowerCase();
 
-      authToast.loginSuccess(userEmail);
-
-      // Determine dashboard based on userType from credentials
-      const userDash = variables.userType.toLowerCase()// "PARENT" -> "parent"
-
-      // Use hard redirect to ensure middleware picks up the new cookie
-      setTimeout(() => {
-        router.push(`/dashboard/${userDash}`);
-      }, 1000);
-    },
+  setTimeout(() => {
+    router.push(`/dashboard/${userDash}`);
+  }, 1000);
+},
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || "Login failed";
       errorToast.show(errorMessage);
@@ -62,7 +62,7 @@ export const useLogoutMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       clearAuth();
       authToast.logoutSuccess();
-      console.log("Logout successful");
+
 
       // Redirect to login after logout
       router.push("/login");
@@ -70,7 +70,6 @@ export const useLogoutMutation = () => {
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || "Logout failed";
       errorToast.show(errorMessage);
-      console.error("Logout failed:", error);
       // Clear auth even if API call fails and redirect
       clearAuth();
       router.push("/login");

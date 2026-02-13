@@ -250,9 +250,9 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                                     </div>
                                     {!isCollapsed &&
                                         (isUserOpen ? (
-                                            <ChevronDown className="ml-auto h-4 w-4 opacity-70" />
+                                            <ChevronDown className="ml-auto h-4 w-4 opacity-70 cursor-pointer" />
                                         ) : (
-                                            <ChevronUp className="ml-auto h-4 w-4 opacity-70" />
+                                            <ChevronUp className="ml-auto h-4 w-4 opacity-70 cursor-pointer" />
                                         ))}
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>

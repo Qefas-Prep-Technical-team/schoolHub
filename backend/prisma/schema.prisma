@@ -29,18 +29,18 @@ enum AdminRole {
 }
 
 model School {
-  id          String  @id @default(uuid())
+  id          String        @id @default(uuid())
   name        String
-  subdomain   String? @unique
+  subdomain   String?       @unique
   schoolEmail String?
-  tenantId    String  @unique
+  tenantId    String        @unique
   address     String?
   phone       String?
-
-  admins   SchoolAdmin[]
-  teachers Teacher[]
-  students Student[]
-  classes  Class[]
+  grades      Grade[]
+  admins      SchoolAdmin[]
+  teachers    Teacher[]
+  students    Student[]
+  classes     Class[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -81,10 +81,15 @@ model Admin {
 }
 
 model Teacher {
-  id              String   @id @default(uuid())
+  id              String  @id @default(uuid())
   name            String
-  email           String   @unique
-  password        String
+  email           String? @unique // Make optional for bulk uploads
+  password        String? // Make optional for bulk uploads
+  isClaimed       Boolean @default(false)
+  invitationToken String? @unique
+
+  // Back-relation for grades
+  grades          Grade[]
   role            UserRole
   tenantIds       String[] @default(["default-tenant-id"])
   defaultTenantId String   @default("default-tenant-id") // <- new default field
@@ -100,24 +105,27 @@ model Teacher {
 }
 
 model Student {
-  id              String            @id @default(uuid())
-  name            String
-  email           String            @unique
-  password        String
-  studentCode     String            @unique
-  teacherCode     String?
-  tenantIds       String[]          @default(["default-tenant-id"])
-  defaultTenantId String            @default("default-tenant-id") // <- new default field
-  gradeLevel      String?
-  dateOfBirth     DateTime?
-  role            UserRole
-  school          School?           @relation(fields: [schoolId], references: [id])
-  schoolId        String?
-  classes         ClassEnrollment[]
-  parentLinks     ParentChildLink[]
-  verified        Boolean           @default(false)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id               String            @id @default(uuid())
+  name             String
+  email            String            @unique
+  password         String
+  studentCode      String            @unique
+  teacherCode      String?
+  tenantIds        String[]          @default(["default-tenant-id"])
+  defaultTenantId  String            @default("default-tenant-id") // <- new default field
+  gradeLevel       String?
+  dateOfBirth      DateTime?
+  role             UserRole
+  school           School?           @relation(fields: [schoolId], references: [id])
+  schoolId         String? // Current school (can change)
+  originalSchoolId String? // The school that performed the first bulk upload/creation
+  grades           Grade[]
+  classes          ClassEnrollment[]
+  parentLinks      ParentChildLink[]
+
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Parent {
@@ -164,6 +172,7 @@ model Class {
   section   String?
   schoolId  String
   teacherId String?
+  grades    Grade[]
 
   school      School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacher     Teacher?          @relation(fields: [teacherId], references: [id])
@@ -230,4 +239,29 @@ model PasswordReset {
   @@index([code])
   @@index([expiresAt])
   @@map("password_resets")
+}
+
+model Grade {
+  id        String  @id @default(uuid())
+  studentId String
+  schoolId  String
+  teacherId String? // Add this to fix the Teacher error
+  classId   String?
+
+  // Relations
+  student Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  school  School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull) // Add this
+  class   Class?   @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  subject        String
+  assessmentType String
+  score          Float
+  maxMarks       Float
+  remarks        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("grades")
 }

@@ -121,7 +121,7 @@ export default function SchoolCard() {
 
       await registerSchool(backendData, {
         onSuccess: (response: any) => {
-          console.log('✅ School registration successful:', response.data);
+
 
           const backendMessage = response.data.message || 'Registration successful!';
           setSuccessMessage(backendMessage);

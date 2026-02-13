@@ -7,9 +7,11 @@ import { useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
 import { ThemeToggle } from "@/app/theme-toggle";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 export default function TopNavBar({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => void, isCollapsed?: boolean }) {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const user = useAuthStore((state) => state.user);
 
     return (
         <header className="flex items-center justify-between border-b border-border bg-background px-6 py-3 sticky top-0 z-50">
@@ -64,14 +66,9 @@ export default function TopNavBar({ onToggleSidebar, isCollapsed }: { onToggleSi
                         />
                     </div>
                     <div className="hidden sm:flex flex-col text-right">
-                        <p className="text-sm font-medium">Admin User</p>
+                        <p className="text-sm font-medium">{user?.name || "Admin User"}</p>
                         <p className="text-xs text-muted-foreground">System Administrator</p>
                     </div>
-                    <ChevronDown
-                        className={clsx("h-4 w-4 transition-transform", {
-                            "rotate-180": isProfileOpen,
-                        })}
-                    />
                 </div>
             </div>
         </header>

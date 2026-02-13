@@ -6,12 +6,15 @@ import Cookies from "js-cookie";
 // Define user types as a union for better TypeScript support
 export type UserType = "PARENT" | "TEACHER" | "ADMIN" | "STUDENT";
 
+// services/auth-store.ts
+
 interface User {
   id: string;
   email: string;
+  name: string; // Add this to store the "fullName"
   role: string | null;
   userType: UserType;
-  defaultTenantId?: string; // Add defaultTenantId to the user object
+  defaultTenantId?: string;
 }
 
 interface AuthState {

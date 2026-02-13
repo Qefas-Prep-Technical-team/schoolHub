@@ -42,19 +42,19 @@ export default function DashboardPage() {
 
   // Show loading while auth is initializing
   if (!isInitialized) {
-    return <LoadingDashboard message="Initializing..." />;
+    return <LoadingDashboard  />;
   }
 
   // Show loading while checking authentication
   if (!isAuthenticated) {
-    return <LoadingDashboard message="Checking authentication..." />;
+    return <LoadingDashboard />;
   }
 
   // Show loading while preparing redirect
   return (
     <LoadingDashboard
       userType={userType}
-      message="Setting up your dashboard..."
+     
     />
   );
 }
