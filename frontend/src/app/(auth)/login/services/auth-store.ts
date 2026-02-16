@@ -21,10 +21,13 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
+  hasCompletedOnboarding: boolean;
   isInitialized: boolean;
   userType: UserType | null;
   defaultTenantId: string | null; // Store separately for easy access
   setAuth: (user: User, token: string) => void;
+  setHasCompletedOnboarding: (value: boolean) => void;
+
   setUserType: (userType: UserType) => void;
   setDefaultTenantId: (tenantId: string) => void; // New setter
   clearAuth: () => void;
@@ -42,6 +45,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       isAuthenticated: false,
+      hasCompletedOnboarding: false,
       isInitialized: false,
       userType: null,
       defaultTenantId: null,
@@ -62,6 +66,9 @@ export const useAuthStore = create<AuthState>()(
           defaultTenantId: user.defaultTenantId || null,
         });
       },
+      setHasCompletedOnboarding: (value: boolean) => {
+        set({ hasCompletedOnboarding: value });
+      },
 
       setUserType: (userType: UserType) => {
         const state = get();
@@ -74,7 +81,9 @@ export const useAuthStore = create<AuthState>()(
 
       setDefaultTenantId: (tenantId: string) => {
         const state = get();
-        const updatedUser = state.user ? { ...state.user, defaultTenantId: tenantId } : null;
+        const updatedUser = state.user
+          ? { ...state.user, defaultTenantId: tenantId }
+          : null;
         set({
           user: updatedUser,
           defaultTenantId: tenantId,
@@ -87,6 +96,7 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           accessToken: null,
           isAuthenticated: false,
+          hasCompletedOnboarding: false,
           userType: null,
           defaultTenantId: null,
         });
@@ -111,6 +121,6 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-    }
-  )
+    },
+  ),
 );

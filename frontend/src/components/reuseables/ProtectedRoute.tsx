@@ -26,7 +26,7 @@ export default function ProtectedRoute({
   });
 
   if (isChecking) {
-    return fallback || <LoadingDashboard message="Checking access..." />;
+    return fallback || <LoadingDashboard />;
   }
 
   return <>{children}</>;

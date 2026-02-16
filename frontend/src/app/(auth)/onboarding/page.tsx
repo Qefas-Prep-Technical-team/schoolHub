@@ -37,13 +37,29 @@ export default function OnboardingPage() {
   const steps = useMemo(() => {
     switch (effectiveType) {
       case "ADMIN":
-        return [<Step1 key="step1" />, <SchoolSetup key="schoolSetup" />, <FeatureSection key="featureSection" />];
+        return [
+          <Step1 key="step1" />,
+          <SchoolSetup key="schoolSetup" />,
+          <FeatureSection key="featureSection" />,
+        ];
       case "TEACHER":
-        return [<Step1 key="step1" />, <SubjectSetup key="subjectSetup" />, <FeatureSection key="featureSection" />];
+        return [
+          <Step1 key="step1" />,
+          <SubjectSetup key="subjectSetup" />,
+          <FeatureSection key="featureSection" />,
+        ];
       case "STUDENT":
-        return [<Step1 key="step1" />, <ClassJoin key="classJoin" />, <FeatureSection key="featureSection" />];
+        return [
+          <Step1 key="step1" />,
+          <ClassJoin key="classJoin" />,
+          <FeatureSection key="featureSection" />,
+        ];
       case "PARENT":
-        return [<Step1 key="step1" />, <ChildLink key="childLink" />, <FeatureSection key="featureSection" />];
+        return [
+          <Step1 key="step1" />,
+          <ChildLink key="childLink" />,
+          <FeatureSection key="featureSection" />,
+        ];
       default:
         return [<Step1 key="step1" />];
     }
@@ -51,3 +67,4 @@ export default function OnboardingPage() {
 
   return <RoleBaseFlow steps={steps} />;
 }
+

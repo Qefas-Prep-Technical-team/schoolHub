@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "../../login/services/auth-store";
 
 export default function RoleBaseFlow({
   steps,
@@ -17,6 +18,7 @@ export default function RoleBaseFlow({
   const [active, setActive] = useState(initialIndex);
   const [direction, setDirection] = useState(0); // -1 for back, 1 for forward
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const { setHasCompletedOnboarding } = useAuthStore()
 
   const total = steps.length;
 
@@ -34,6 +36,7 @@ export default function RoleBaseFlow({
     } else {
       // last step -> redirect
       setIsRedirecting(true);
+      setHasCompletedOnboarding(true);
       onDone?.();
 
       // small delay so the UI communicates what's happening
@@ -170,8 +173,8 @@ export default function RoleBaseFlow({
               {isRedirecting
                 ? "Redirecting..."
                 : active === total - 1
-                ? "Complete Setup"
-                : "Continue"}
+                  ? "Complete Setup"
+                  : "Continue"}
             </motion.button>
           </div>
         </footer>
