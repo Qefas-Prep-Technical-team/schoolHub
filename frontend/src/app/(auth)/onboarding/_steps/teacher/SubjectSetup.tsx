@@ -1,82 +1,116 @@
 "use client";
 
 import React from "react";
-import { BookOpen, Award, GraduationCap, ChevronDown } from "lucide-react";
-import HeadlineText from "../../_components/HeadlineText";
+import {
+  LayoutDashboard,
+  BookOpen,
+  Users,
+  BarChart3,
+  Zap,
+  Settings,
+  Shield,
+} from "lucide-react";
 import ButtonGroup from "../../_components/ButtonGroup";
 
 export default function SubjectSetup() {
   return (
-    <div className="flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-xl space-y-8">
-        
-        {/* Header Section */}
-        <div className="text-center space-y-3">
-          <div className="mx-auto w-16 h-16 bg-blue-600 dark:bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200 dark:shadow-none mb-6">
-            <GraduationCap className="text-white" size={32} />
+    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
+      <div className="w-full max-w-2xl space-y-10">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-widest">
+            <Zap size={14} className="fill-current" />
+            Teaching Workspace Ready
           </div>
-          <HeadlineText 
-            title="What do you teach?" 
-            subtitle="Tell us your specialty. We'll use this to customize your dashboard and connect you with your students." 
-          />
+
+          <div className="space-y-2">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              How Your Teaching Dashboard Works
+            </h1>
+            <p className="text-sm md:text-base text-slate-500 dark:text-zinc-400 leading-relaxed">
+              Everything you need to manage classes, students, and academic performance is organized
+              inside your personal dashboard.
+            </p>
+          </div>
         </div>
 
-        {/* Card Container */}
-        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-8 rounded-[2.5rem] shadow-sm space-y-6">
-          
-          {/* Primary Subject */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 ml-1">
-              Primary Subject
-            </label>
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
-                <BookOpen size={20} />
-              </div>
-              <input 
-                className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950 focus:bg-white dark:focus:bg-black focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" 
-                placeholder="e.g. Advanced Mathematics" 
-              />
+        {/* Feature Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Card 1 */}
+          <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4">
+              <BookOpen size={20} />
             </div>
-          </div>
-
-          {/* Department Selection */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-500 ml-1">
-              Academic Department
-            </label>
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors z-10">
-                <Award size={20} />
-              </div>
-              <select className="w-full pl-12 pr-10 py-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950 focus:bg-white dark:focus:bg-black focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer">
-                <option disabled selected>Select your department</option>
-                <option>Science</option>
-                <option>Humanities</option>
-                <option>Arts</option>
-                <option>Physical Education</option>
-                <option>Technology & Engineering</option>
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                <ChevronDown size={18} />
-              </div>
-            </div>
-          </div>
-
-          {/* Helpful Tip */}
-          <div className="p-4 bg-blue-50/50 dark:bg-blue-500/5 rounded-2xl border border-blue-100 dark:border-blue-500/10 flex gap-4 items-start">
-            <div className="mt-1 p-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-lg">
-              <BookOpen className="text-blue-600 dark:text-blue-400" size={16} />
-            </div>
-            <p className="text-xs text-blue-800/80 dark:text-blue-300/80 leading-relaxed">
-              <strong>Tip:</strong> You can add secondary subjects and specific class sections later in your profile settings.
+            <h3 className="font-bold text-slate-900 dark:text-white">Your Assigned Classes</h3>
+            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
+              Access your subjects and class sections instantly. Upload materials, manage attendance,
+              and structure lessons efficiently.
             </p>
           </div>
 
-          <div className="pt-2">
-            <ButtonGroup nextLabel="Continue" />
+          {/* Card 2 */}
+          <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4">
+              <Users size={20} />
+            </div>
+            <h3 className="font-bold text-slate-900 dark:text-white">Student Management</h3>
+            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
+              View enrolled students, track participation, manage submissions, and communicate with
+              learners seamlessly.
+            </p>
+          </div>
+
+          {/* Card 3 */}
+          <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-4">
+              <BarChart3 size={20} />
+            </div>
+            <h3 className="font-bold text-slate-900 dark:text-white">Performance Insights</h3>
+            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
+              Monitor grades, assessment trends, and academic progress through structured
+              performance analytics.
+            </p>
+          </div>
+          <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-4">
+              <BarChart3 size={20} />
+            </div>
+            <h3 className="font-bold text-slate-900 dark:text-white">Performance Insights</h3>
+            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
+              Monitor grades, assessment trends, and academic progress through structured
+              performance analytics.
+            </p>
+          </div>
+
+          {/* Wide Card */}
+          <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md md:col-span-2 flex flex-col md:flex-row items-start md:items-center gap-6">
+            <div className="w-12 h-12 shrink-0 rounded-2xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-600 dark:text-orange-400">
+              <LayoutDashboard size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 dark:text-white">Centralized Control Panel</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
+                Attendance, grading, materials, and communication are all managed from one unified
+                dashboard — no switching tools, no confusion.
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-center gap-4 text-slate-400 dark:text-zinc-600 text-xs">
+          <div className="flex items-center gap-1">
+            <Settings size={14} />
+            Auto-configured
+          </div>
+          <div className="w-1 h-1 rounded-full bg-slate-300 dark:bg-zinc-800" />
+          <div className="flex items-center gap-1">
+            <Shield size={14} />
+            Secure & Private
+          </div>
+        </div>
+
+       
       </div>
     </div>
   );

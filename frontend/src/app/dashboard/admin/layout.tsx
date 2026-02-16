@@ -5,6 +5,7 @@ import TopNavBar from "./components/TopNavBar"
 import { useState } from "react"
 import { AdminSidebar } from "./components/app-sidebar"
 import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute"
+import { AdminMobileNav } from "./components/AdminMobileNav"
 
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -14,8 +15,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <SidebarProvider>
             <AdminSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+       
             <main className="flex-1">
-                <TopNavBar onToggleSidebar={() => setIsCollapsed(!isCollapsed)} isCollapsed={isCollapsed} />
+                <TopNavBar  />
                 {/* <SidebarTrigger /> */}
                 {children}
             </main>
