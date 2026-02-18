@@ -274,6 +274,10 @@ export const loginUser = async (email: string, password: string) => {
   // Check teacher
   const teacher = await prisma.teacher.findUnique({ where: { email } });
   if (teacher) {
+    // Guard: Ensure password exists
+    if (!teacher.password) {
+      throw new Error("Account is not set up with a password");
+    }
     const match = await bcrypt.compare(password, teacher.password);
     if (!match) throw new Error("Invalid credentials");
 
