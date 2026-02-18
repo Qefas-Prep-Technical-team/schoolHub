@@ -550,8 +550,9 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
         expiresAt,
       },
     });
+    const testEmail = process.env.TEST_EMAIL;
     const resendTest = process.env.RESEND_TEST === "true" || false; // default to false if not set
-    const mainEmail = resendTest ? "finixd531@gmail.com" : email;
+    const mainEmail = resendTest ? testEmail : email;
     // Send email via Resend
     await sendVerificationEmail(mainEmail, code);
 
