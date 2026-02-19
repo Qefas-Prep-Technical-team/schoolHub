@@ -15,7 +15,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <SidebarProvider>
             <AdminSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-            <AdminMobileNav />
+
             <main className="flex-1">
                 <TopNavBar />
                 {/* <SidebarTrigger /> */}
