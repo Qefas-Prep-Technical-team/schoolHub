@@ -23,12 +23,15 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 import PhoneCallbackOutlinedIcon from '@mui/icons-material/PhoneCallbackOutlined';
+import { LayoutDashboard, Rocket } from 'lucide-react';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
 
 interface NavBarDrawerProps {
     pages: mainTab[];
 }
 export default function NavBarDrawer(props: NavBarDrawerProps) {
+    const { isAuthenticated } = useAuthStore();
     const { theme } = useTheme();
     const { pages } = props;
     const [open, setOpen] = React.useState(false);
@@ -88,26 +91,55 @@ export default function NavBarDrawer(props: NavBarDrawerProps) {
                     </Link>
                 ))}
                 <Divider className='pt' sx={{ backgroundColor: theme == "dark" ? "white" : "black", mt: 10 }} />
-                <Link href={"/contact"} passHref>
-                    <ListItem disablePadding>
-                        <ListItemButton>
-                            <ListItemIcon sx={{ color: theme == "dark" ? "white" : "black" }}>
-                                <PhoneCallbackOutlinedIcon />
-                            </ListItemIcon>
-                            <ListItemText primary={"Contact Us"} />
-                        </ListItemButton>
-                    </ListItem>
-                </Link>
                 <Link href={"/signup"} passHref>
                     <ListItem disablePadding>
                         <ListItemButton>
                             <ListItemIcon sx={{ color: theme == "dark" ? "white" : "black" }}>
-                                <LoginOutlinedIcon />
+                                <Rocket />
                             </ListItemIcon>
                             <ListItemText primary={"Get Started"} />
                         </ListItemButton>
                     </ListItem>
                 </Link>
+                {
+                    !isAuthenticated ?
+                        <>
+
+                            <Link href={"/login"} passHref>
+                                <ListItem disablePadding>
+                                    <ListItemButton>
+                                        <ListItemIcon sx={{ color: theme == "dark" ? "white" : "black" }}>
+                                            <LoginOutlinedIcon />
+                                        </ListItemIcon>
+                                        <ListItemText primary={"Login"} />
+                                    </ListItemButton>
+                                </ListItem>
+                            </Link>
+                            <Link href={"/contact"} passHref>
+                                <ListItem disablePadding>
+                                    <ListItemButton>
+                                        <ListItemIcon sx={{ color: theme == "dark" ? "white" : "black" }}>
+                                            <PhoneCallbackOutlinedIcon />
+                                        </ListItemIcon>
+                                        <ListItemText primary={"Contact Us"} />
+                                    </ListItemButton>
+                                </ListItem>
+                            </Link>
+                        </>
+                        :
+                        <Link href={"/dashboard"} passHref>
+                            <ListItem disablePadding>
+                                <ListItemButton>
+                                    <ListItemIcon sx={{ color: theme == "dark" ? "white" : "black" }}>
+                                        <LayoutDashboard />
+                                    </ListItemIcon>
+                                    <ListItemText primary={"Dashboard"} />
+                                </ListItemButton>
+                            </ListItem>
+                        </Link>
+
+
+                }
             </List>
         </Box>
     );

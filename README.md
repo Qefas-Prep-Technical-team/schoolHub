@@ -142,3 +142,61 @@ npx prisma generate
 🤝 Contributing
 
 For updates, feature requests, or technical collaboration, contact the Qefas-Prep Technical Team.
+🌿 Branching Strategy
+
+This project follows a structured Git workflow using three primary branches:
+
+main
+staging
+development
+
+1️⃣ main
+
+Contains the stable, production-ready code
+
+Represents the final version of the project
+
+Only fully tested and approved features are merged here
+
+Used for live deployment
+
+⚠️ No direct development should be done on this branch.
+
+2️⃣ staging
+
+Used for review and live demo display
+
+Acts as a testing environment before production
+
+Features merged here are considered stable but not yet final
+
+Used for stakeholder review and QA testing
+
+3️⃣ development
+
+Used for active development
+
+All new features, bug fixes, and improvements start here
+
+May contain unstable or experimental code
+
+Developers should branch from this for feature work
+
+🔁 Workflow Summary
+development → staging → main
+
+Developers write code in development
+
+After testing, changes are merged into staging
+
+Once approved and verified, changes are merged into main
+
+✅ Best Practice Rules
+
+Never push directly to main
+
+Use Pull Requests for merging
+
+Always test in staging before merging to main
+
+Keep development updated with latest changes from main
