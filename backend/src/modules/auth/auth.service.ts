@@ -101,6 +101,7 @@ export const linkChildToParent = async (req: Request, res: Response) => {
 };
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+console.log(process.env.RESEND_API_KEY);
 // default to false if not set
 
 export const sendVerificationEmail = async (email: string, code: string) => {
