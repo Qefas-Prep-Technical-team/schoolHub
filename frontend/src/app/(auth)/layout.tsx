@@ -6,6 +6,7 @@ import { useAuthStore } from "./login/services/auth-store";
 import GenericLoader from "@/components/reuseables/GenericLoader";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import { ShieldCheck, GraduationCap, Users, UserCog, Lock } from "lucide-react";
+import { PingWrapper } from "@/utils/PingWrapper";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { userType, isInitialized, isAuthenticated, hasCompletedOnboarding } =
@@ -54,7 +55,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-950">
-      {children}
+      <PingWrapper>
+
+        {children}
+      </PingWrapper>
     </main>
   );
 }

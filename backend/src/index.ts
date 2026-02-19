@@ -19,6 +19,10 @@ app.get("/api", (req, res) => {
 });
 
 app.use("/api", route);
+// server.ts
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
