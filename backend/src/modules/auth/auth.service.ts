@@ -105,7 +105,8 @@ console.log(process.env.RESEND_API_KEY);
 // default to false if not set
 
 export const sendVerificationEmail = async (email: string, code: string) => {
-  await resend.emails.send({
+  // ADD 'return' and 'await' here
+  return await resend.emails.send({
     from: "SchoolHub <onboarding@resend.dev>",
     to: email,
     subject: "Your Verification Code",

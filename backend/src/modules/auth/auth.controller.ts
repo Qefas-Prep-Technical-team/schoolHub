@@ -551,10 +551,17 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
       },
     });
     const testEmail = process.env.TEST_EMAIL;
+    console.log(testEmail,"test email")
     const resendTest = process.env.RESEND_TEST === "true" || false; // default to false if not set
     const mainEmail = resendTest ? testEmail : email;
     // Send email via Resend
-    await sendVerificationEmail(mainEmail, code);
+   const result  = await sendVerificationEmail(mainEmail, code);
+if (result.error) {
+  // This will print the specific reason (e.g., "Missing required field", "Unauthorized")
+  console.log("RESEND ERROR:", result.error); 
+} else {
+  console.log("RESEND SUCCESS:", result.data);
+}
 
     return res.status(200).json({
       success: true,
