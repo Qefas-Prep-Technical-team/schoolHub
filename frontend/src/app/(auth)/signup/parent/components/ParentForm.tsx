@@ -8,36 +8,8 @@ import { UserRole } from '@/lib/types/user.types';
 import { ParentFormData, parentSchema } from '../../services/regSchema';
 import { useParentRegistration } from '../../services/useRegistrationMutations';
 import { useRouter } from 'next/navigation';
+import { getPasswordStrength } from '../../school/components/SchoolCard';
 
-// Password strength checker
-const getPasswordStrength = (password: string) => {
-  if (!password) return { strength: 0, message: '' };
-
-  let strength = 0;
-  const messages = [];
-
-  // Length check
-  if (password.length >= 6) strength += 1;
-
-  // Has letters check
-  if (/[a-zA-Z]/.test(password)) strength += 1;
-
-  // Has numbers check
-  if (/\d/.test(password)) strength += 1;
-
-  // Has special characters (optional)
-  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 1;
-
-  // Generate message based on strength
-  let message = '';
-  if (strength === 0) message = '';
-  else if (strength === 1) message = 'Very weak';
-  else if (strength === 2) message = 'Weak';
-  else if (strength === 3) message = 'Good';
-  else message = 'Strong';
-
-  return { strength, message };
-};
 
 export default function ParentRegistrationForm() {
   const [serverError, setServerError] = useState('');
@@ -256,15 +228,22 @@ export default function ParentRegistrationForm() {
           {errors.password && (
             <p className="text-red-500 text-sm mt-2">{errors.password.message}</p>
           )}
-
-          <div className="text-xs text-[#4c809a] dark:text-gray-500 mt-2 space-y-1">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-1">
             <p className="flex items-center">
               <span className="material-symbols-outlined text-xs mr-1">check</span>
-              At least 6 characters
+              At least 8 characters
             </p>
             <p className="flex items-center">
               <span className="material-symbols-outlined text-xs mr-1">check</span>
-              Contains both letters and numbers
+              One uppercase + one lowercase letter
+            </p>
+            <p className="flex items-center">
+              <span className="material-symbols-outlined text-xs mr-1">check</span>
+              One number + one special character
+            </p>
+            <p className="flex items-center">
+              <span className="material-symbols-outlined text-xs mr-1">check</span>
+              No spaces
             </p>
           </div>
         </label>

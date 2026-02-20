@@ -15,10 +15,15 @@ export const parentSchema = yup.object({
   password: yup
     .string()
     .required("Password is required")
-    .min(6, "Password must be at least 6 characters")
+    .min(8, "Password must be at least 8 characters")
+    .max(72, "Password must be less than 72 characters")
+    .matches(/^\S+$/, "Password must not contain spaces")
+    .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+    .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .matches(/\d/, "Password must contain at least one number")
     .matches(
-      /^(?=.*[a-zA-Z])(?=.*\d)/,
-      "Password must contain at least one letter and one number"
+      /[^A-Za-z0-9]/,
+      "Password must contain at least one special character",
     ),
 
   confirmPassword: yup
@@ -38,7 +43,7 @@ export const parentSchema = yup.object({
 
         // If value provided, validate the format
         return /^stu-\d{6}$/.test(value);
-      }
+      },
     ),
 });
 
@@ -61,10 +66,15 @@ export const teacherSchema = yup.object({
   password: yup
     .string()
     .required("Password is required")
-    .min(6, "Password must be at least 6 characters")
+    .min(8, "Password must be at least 8 characters")
+    .max(72, "Password must be less than 72 characters")
+    .matches(/^\S+$/, "Password must not contain spaces")
+    .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+    .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .matches(/\d/, "Password must contain at least one number")
     .matches(
-      /^(?=.*[a-zA-Z])(?=.*\d)/,
-      "Password must contain at least one letter and one number"
+      /[^A-Za-z0-9]/,
+      "Password must contain at least one special character",
     ),
 
   confirmPassword: yup
@@ -84,7 +94,7 @@ export const teacherSchema = yup.object({
 
         // If value provided, validate minimum length
         return value.trim().length >= 3;
-      }
+      },
     ),
 
   isIndependent: yup.boolean().default(false),
@@ -109,10 +119,15 @@ export const studentSchema = yup.object({
   password: yup
     .string()
     .required("Password is required")
-    .min(6, "Password must be at least 6 characters")
+    .min(8, "Password must be at least 8 characters")
+    .max(72, "Password must be less than 72 characters")
+    .matches(/^\S+$/, "Password must not contain spaces")
+    .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+    .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .matches(/\d/, "Password must contain at least one number")
     .matches(
-      /^(?=.*[a-zA-Z])(?=.*\d)/,
-      "Password must contain at least one letter and one number"
+      /[^A-Za-z0-9]/,
+      "Password must contain at least one special character",
     ),
 
   confirmPassword: yup
@@ -129,7 +144,7 @@ export const studentSchema = yup.object({
       (value) => {
         if (!value || value.trim() === "") return true;
         return value.trim().length >= 3;
-      }
+      },
     ),
 
   teacherCode: yup
@@ -141,7 +156,7 @@ export const studentSchema = yup.object({
       (value) => {
         if (!value || value.trim() === "") return true;
         return /^tch-\d{6}$/.test(value);
-      }
+      },
     ),
 });
 
@@ -170,10 +185,15 @@ export const schoolSchema = yup.object({
   password: yup
     .string()
     .required("Password is required")
-    .min(6, "Password must be at least 6 characters")
+    .min(8, "Password must be at least 8 characters")
+    .max(72, "Password must be less than 72 characters")
+    .matches(/^\S+$/, "Password must not contain spaces")
+    .matches(/[a-z]/, "Password must contain at least one lowercase letter")
+    .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .matches(/\d/, "Password must contain at least one number")
     .matches(
-      /^(?=.*[a-zA-Z])(?=.*\d)/,
-      "Password must contain at least one letter and one number"
+      /[^A-Za-z0-9]/,
+      "Password must contain at least one special character",
     ),
 
   confirmPassword: yup
@@ -190,7 +210,7 @@ export const schoolSchema = yup.object({
       (value) => {
         if (!value || value.trim() === "") return true;
         return /^[a-zA-Z0-9-]+$/.test(value);
-      }
+      },
     )
     .test(
       "subdomain-length",
@@ -198,7 +218,7 @@ export const schoolSchema = yup.object({
       (value) => {
         if (!value || value.trim() === "") return true;
         return value.length >= 3 && value.length <= 63;
-      }
+      },
     ),
 });
 

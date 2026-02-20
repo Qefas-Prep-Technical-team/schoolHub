@@ -12,25 +12,37 @@ import { SchoolFormData, schoolSchema } from '../../services/regSchema';
 import { UserRole } from '@/lib/types/user.types';
 
 // Password strength checker (same as others)
-const getPasswordStrength = (password: string) => {
-  if (!password) return { strength: 0, message: '' };
+export const getPasswordStrength = (password: string) => {
+  if (!password) return { strength: 0, message: "" };
 
-  let strength = 0;
-  const messages = [];
+  const hasMinLen = password.length >= 8;
+  const hasLower = /[a-z]/.test(password);
+  const hasUpper = /[A-Z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  const noSpaces = !/\s/.test(password);
 
-  if (password.length >= 6) strength += 1;
-  if (/[a-zA-Z]/.test(password)) strength += 1;
-  if (/\d/.test(password)) strength += 1;
-  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 1;
+  const meetsStrong =
+    hasMinLen &&
+    hasLower &&
+    hasUpper &&
+    hasSpecial &&
+    hasNumber &&
+    noSpaces;
 
-  let message = '';
-  if (strength === 0) message = '';
-  else if (strength === 1) message = 'Very weak';
-  else if (strength === 2) message = 'Weak';
-  else if (strength === 3) message = 'Good';
-  else message = 'Strong';
+  const meetsWeak =
+    password.length >= 6 &&
+    (hasLower || hasUpper);
 
-  return { strength, message };
+  if (meetsStrong) {
+    return { strength: 4, message: "Strong" };
+  }
+
+  if (meetsWeak) {
+    return { strength: 2, message: "Weak" };
+  }
+
+  return { strength: 1, message: "Very weak" };
 };
 
 export default function SchoolCard() {
@@ -241,7 +253,7 @@ export default function SchoolCard() {
                   ? 'border-red-500 dark:border-red-400'
                   : 'border-gray-300 dark:border-gray-600'
                   }`}
-                placeholder="Create a password (must contain letters and numbers)"
+                placeholder="Create a strong password (Upper, lower, number, special)"
                 disabled={isPending}
               />
               <button
@@ -281,11 +293,19 @@ export default function SchoolCard() {
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-1">
               <p className="flex items-center">
                 <span className="material-symbols-outlined text-xs mr-1">check</span>
-                At least 6 characters
+                At least 8 characters
               </p>
               <p className="flex items-center">
                 <span className="material-symbols-outlined text-xs mr-1">check</span>
-                Contains both letters and numbers
+                One uppercase + one lowercase letter
+              </p>
+              <p className="flex items-center">
+                <span className="material-symbols-outlined text-xs mr-1">check</span>
+                One number + one special character
+              </p>
+              <p className="flex items-center">
+                <span className="material-symbols-outlined text-xs mr-1">check</span>
+                No spaces
               </p>
             </div>
           </label>

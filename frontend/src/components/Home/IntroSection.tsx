@@ -4,6 +4,7 @@ import React, { FC } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import { useTheme } from 'next-themes';
+import Link from 'next/link';
 
 const IntroSection: FC = () => {
     const { theme, setTheme } = useTheme();
@@ -27,8 +28,12 @@ const IntroSection: FC = () => {
                 </div>
 
                 <Box className="flex items-center justify-between w-75  mt-10">
-                    <Button variant='contained' sx={{ backgroundColor: theme === "dark" ? 'black' : "white", color: theme === "dark" ? 'lightBlue' : "blue", }} className='bg-white dark:bg-black text-blue-400'> Try for Free </Button>
-                    <Button variant="outlined" sx={{ borderColor: theme === "dark" ? 'black' : "white", color: theme === "dark" ? 'black' : "white" }} className='bg-white dark:bg-black'> Request a Demo</Button>
+                    <Link href="/signup">
+                        <Button variant='contained' sx={{ backgroundColor: theme === "dark" ? 'black' : "white", color: theme === "dark" ? 'lightBlue' : "blue", }} className='bg-white dark:bg-black text-blue-400'> Try for Free </Button>
+                    </Link>
+                    <Link href="/contact">
+                        <Button variant="outlined" sx={{ borderColor: theme === "dark" ? 'black' : "white", color: theme === "dark" ? 'black' : "white" }} className='bg-white dark:bg-black'> Request a Demo</Button>
+                    </Link>
                 </Box>
 
             </Box>
