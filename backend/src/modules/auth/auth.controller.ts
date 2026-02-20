@@ -14,6 +14,15 @@ import {
 import jwt from "jsonwebtoken";
 import { AdminRole, UserRole } from "@prisma/client";
 
+// Simple slugify helper (no extra package)
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "") // remove special chars
+    .replace(/\s+/g, "-") // spaces to hyphen
+    .replace(/-+/g, "-"); // collapse multiple hyphens
+
 export const registerSchool = async (req: Request, res: Response) => {
   try {
     const { schoolName, adminName, email, password, subdomain } = req.body;
@@ -25,28 +34,56 @@ export const registerSchool = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if admin email already exists
+    // ✅ Normalize subdomain early
+    const rawSubdomain = subdomain?.trim() || schoolName;
+    const normalizedSubdomain = slugify(rawSubdomain);
+
+    if (!normalizedSubdomain) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid subdomain or school name",
+      });
+    }
+
+    // ✅ Check if admin email already exists
     const existingAdmin = await prisma.admin.findUnique({
       where: { email },
+      select: { id: true },
     });
 
     if (existingAdmin) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
         message: "Email already exists",
       });
     }
 
-    // Generate unique tenantId
+    // ✅ Check if subdomain already exists (early guard)
+    const existingSchool = await prisma.school.findFirst({
+      where: { subdomain: normalizedSubdomain },
+      select: { id: true },
+    });
+
+    if (existingSchool) {
+      return res.status(409).json({
+        success: false,
+        message: "Subdomain already taken. Please choose another.",
+      });
+    }
+
+    // ✅ Generate unique tenantId
     const generateSixDigit = () =>
       Math.floor(100000 + Math.random() * 900000).toString();
 
     let tenantId: string | undefined;
+
     for (let attempt = 0; attempt < 10; attempt++) {
       const candidate = "sch-" + generateSixDigit();
       const exists = await prisma.school.findFirst({
         where: { tenantId: candidate },
+        select: { id: true },
       });
+
       if (!exists) {
         tenantId = candidate;
         break;
@@ -60,27 +97,27 @@ export const registerSchool = async (req: Request, res: Response) => {
       });
     }
 
-    // Hash password
+    // ✅ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Create school
       const school = await tx.school.create({
         data: {
           name: schoolName,
-          subdomain: subdomain || schoolName.toLowerCase().replace(/\s+/g, "-"),
+          subdomain: normalizedSubdomain,
           schoolEmail: email,
           tenantId,
         },
       });
 
-      // Create admin user
+      // Create admin
       const admin = await tx.admin.create({
         data: {
           name: adminName,
           email,
           password: hashedPassword,
-          role: UserRole.ADMIN, // FIXED: Use enum
+          role: UserRole.ADMIN,
           tenantIds: [tenantId],
         },
       });
@@ -90,7 +127,7 @@ export const registerSchool = async (req: Request, res: Response) => {
         data: {
           schoolId: school.id,
           adminId: admin.id,
-          role: AdminRole.SCHOOL_OWNER, // FIXED: Use enum
+          role: AdminRole.SCHOOL_OWNER,
         },
       });
 
@@ -110,12 +147,27 @@ export const registerSchool = async (req: Request, res: Response) => {
           id: result.admin.id,
           name: result.admin.name,
           email: result.admin.email,
-          role: result.admin.role, // RETURN ROLE
+          role: result.admin.role,
         },
-        userRole: result.admin.role, // ADDED: Explicit role for redirection
+        userRole: result.admin.role,
       },
     });
   } catch (error: any) {
+    // ✅ Handle unique constraint error properly
+    if (error?.code === "P2002" && error?.meta?.target?.includes("subdomain")) {
+      return res.status(409).json({
+        success: false,
+        message: "Subdomain already taken. Please choose another.",
+      });
+    }
+
+    if (error?.code === "P2002" && error?.meta?.target?.includes("email")) {
+      return res.status(409).json({
+        success: false,
+        message: "Email already exists",
+      });
+    }
+
     console.error(error);
     return res.status(500).json({
       success: false,
@@ -551,17 +603,17 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
       },
     });
     const testEmail = process.env.TEST_EMAIL;
-    console.log(testEmail,"test email")
+    console.log(testEmail, "test email");
     const resendTest = process.env.RESEND_TEST === "true" || false; // default to false if not set
     const mainEmail = resendTest ? testEmail : email;
     // Send email via Resend
-   const result  = await sendVerificationEmail(mainEmail, code);
-if (result.error) {
-  // This will print the specific reason (e.g., "Missing required field", "Unauthorized")
-  console.log("RESEND ERROR:", result.error); 
-} else {
-  console.log("RESEND SUCCESS:", result.data);
-}
+    const result = await sendVerificationEmail(mainEmail, code);
+    if (result.error) {
+      // This will print the specific reason (e.g., "Missing required field", "Unauthorized")
+      console.log("RESEND ERROR:", result.error);
+    } else {
+      console.log("RESEND SUCCESS:", result.data);
+    }
 
     return res.status(200).json({
       success: true,
