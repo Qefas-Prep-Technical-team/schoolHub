@@ -3,6 +3,11 @@ import { Request } from "express";
 
 declare global {
   namespace Express {
+       interface User {
+      id: string;
+      userType: UserRole;
+    }
+
     interface Request {
       user?: any;
       school?: {

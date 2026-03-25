@@ -4,6 +4,11 @@ import { Resend } from "resend";
 
 import bcrypt from "bcrypt";
 import { generateToken } from "../../utils/generateToken";
+import { OAuth2Client } from "google-auth-library";
+import { generateUniqueCode } from "../../utils/code-generator";
+import { UserRole } from "@prisma/client";
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Get student by code (for parent to verify before linking)
 export const getStudentByCode = async (req: Request, res: Response) => {
@@ -266,6 +271,7 @@ export const loginUser = async (email: string, password: string) => {
   // Check student first
   const student = await prisma.student.findUnique({ where: { email } });
   if (student) {
+    if (!student.password) throw new Error("This account is linked to Google. Please use Google Login.");
     const match = await bcrypt.compare(password, student.password);
     if (!match) throw new Error("Invalid credentials");
 
@@ -290,11 +296,23 @@ export const loginUser = async (email: string, password: string) => {
   // Check admin
   const admin = await prisma.admin.findUnique({ where: { email } });
   if (admin) {
+    if (!admin.password) throw new Error("This account is linked to Google. Please use Google Login.");
     const match = await bcrypt.compare(password, admin.password);
     if (!match) throw new Error("Invalid credentials");
 
     const token = generateToken({ id: admin.id, role: "admin" });
     return { user: admin, token };
+  }
+
+  // Check parent
+  const parent = await prisma.parent.findUnique({ where: { email } });
+  if (parent) {
+    if (!parent.password) throw new Error("This account is linked to Google. Please use Google Login.");
+    const match = await bcrypt.compare(password, parent.password);
+    if (!match) throw new Error("Invalid credentials");
+
+    const token = generateToken({ id: parent.id, role: "parent" });
+    return { user: parent, token };
   }
 
   throw new Error("User not found");
@@ -357,4 +375,91 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
     console.error("Error sending password reset email:", error);
     throw error;
   }
+};
+
+export const googleAuthService = async (idToken: string, userRole: UserRole) => {
+  const ticket = await client.verifyIdToken({
+    idToken: idToken,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  const payload = ticket.getPayload();
+  if (!payload) throw new Error("Invalid Google token");
+
+  const { sub: googleId, email, name } = payload;
+  if (!email) throw new Error("Google account must have an email");
+
+  let user: any;
+  const roleStr = userRole.toLowerCase();
+
+  switch (userRole) {
+    case UserRole.STUDENT: {
+      user = await prisma.student.findUnique({ where: { googleId } });
+      if (!user) {
+        user = await prisma.student.findUnique({ where: { email } });
+        if (user) {
+          user = await prisma.student.update({
+            where: { email },
+            data: { googleId, authProvider: "GOOGLE" },
+          });
+        } else {
+          const studentCode = await generateUniqueCode(
+            prisma,
+            "student",
+            name || "Student"
+          );
+          user = await prisma.student.create({
+            data: {
+              name: name || "Google User",
+              email: email,
+              googleId,
+              authProvider: "GOOGLE",
+              studentCode,
+              role: UserRole.STUDENT,
+              verified: true,
+            },
+          });
+        }
+      }
+      break;
+    }
+
+    case UserRole.PARENT: {
+      user = await prisma.parent.findUnique({ where: { googleId } });
+      if (!user) {
+        user = await prisma.parent.findUnique({ where: { email } });
+        if (user) {
+          user = await prisma.parent.update({
+            where: { email },
+            data: { googleId, authProvider: "GOOGLE" },
+          });
+        } else {
+          const parentCode = await generateUniqueCode(
+            prisma,
+            "parent",
+            name || "Parent"
+          );
+          user = await prisma.parent.create({
+            data: {
+              fullName: name || "Google User",
+              email: email,
+              googleId,
+              authProvider: "GOOGLE",
+              parentCode,
+              role: UserRole.PARENT,
+            },
+          });
+        }
+      }
+      break;
+    }
+
+    default:
+      throw new Error(
+        "Google Login only supported for Students and Parents currently"
+      );
+  }
+
+  const token = generateToken({ id: user.id, role: roleStr });
+  return { user, token };
 };

@@ -5,6 +5,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// generator erd {
+//   provider = "prisma-erd-generator"
+//   output   = "./ERD.svg"
+// }
+
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
@@ -19,6 +24,43 @@ enum UserRole {
   PARENT
 }
 
+enum ClassScope {
+  PERSONAL
+  SCHOOL
+}
+
+enum ClassStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  ARCHIVED
+}
+
+enum AssessmentScope {
+  SCHOOL
+  DEPARTMENT
+  CLASS
+  PERSONAL
+}
+
+enum AssessmentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+}
+
+enum AssessmentCreationMode {
+  MANUAL
+  AI
+  HYBRID
+}
+
 enum AdminRole {
   SUPER_ADMIN
   SCHOOL_OWNER
@@ -28,22 +70,73 @@ enum AdminRole {
   SUPPORT
 }
 
+enum LinkEntityType {
+  SCHOOL
+  ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+  CLASS
+}
+
+enum LinkType {
+  SCHOOL_ADMIN
+  SCHOOL_TEACHER
+  SCHOOL_STUDENT
+  TEACHER_STUDENT
+  PARENT_STUDENT
+  TEACHER_CLASS
+  STUDENT_CLASS
+}
+
+enum LinkRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum LinkStatus {
+  ACTIVE
+  INACTIVE
+  REVOKED
+}
+
+enum AcademicOwnershipScope {
+  PERSONAL
+  SCHOOL
+}
+
 model School {
-  id          String        @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
-  subdomain   String?       @unique
+  subdomain   String? @unique
   schoolEmail String?
-  tenantId    String        @unique
+  tenantId    String  @unique
+  schoolCode  String  @unique
   address     String?
   phone       String?
-  grades      Grade[]
-  admins      SchoolAdmin[]
-  teachers    Teacher[]
+
+  grades Grade[]
+  admins SchoolAdmin[]
+
   students    Student[]
   classes     Class[]
+  departments Department[]
+  subjects    Subject[]
+
+  requesterLinkRequests LinkRequest[]      @relation("requesterSchool")
+  targetLinkRequests    LinkRequest[]      @relation("targetSchool")
+  relationshipLinks     RelationshipLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  quizzes   Quiz[]
+  exams     Exam[]
+
+  teachers        Teacher[] @relation("SchoolToTeacher")
+  currentTeachers Teacher[] @relation("TeacherCurrentSchool")
 }
 
 model SchoolAdmin {
@@ -68,60 +161,84 @@ model Admin {
   id              String   @id @default(uuid())
   name            String
   email           String   @unique
-  password        String
+  password        String?
   role            UserRole
+  adminCode       String   @unique
+  googleId        String?  @unique
+  authProvider    String   @default("EMAIL")
   tenantIds       String[] @default(["default-tenant-id"])
-  defaultTenantId String   @default("default-tenant-id") // <- new default field
+  defaultTenantId String   @default("default-tenant-id")
   verified        Boolean  @default(false)
   status          String   @default("PENDING")
 
   schoolAdmins SchoolAdmin[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+
+  requestedLinkRequests LinkRequest[]       @relation("requesterAdmin")
+  approvedLinkRequests  LinkRequest[]       @relation("approverAdmin")
+  relationshipAudits    RelationshipAudit[] @relation("AdminRelationshipAudits")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Teacher {
   id              String  @id @default(uuid())
   name            String
-  email           String? @unique // Make optional for bulk uploads
-  password        String? // Make optional for bulk uploads
+  email           String? @unique
+  password        String?
   isClaimed       Boolean @default(false)
   invitationToken String? @unique
 
-  // Back-relation for grades
   grades          Grade[]
   role            UserRole
   tenantIds       String[] @default(["default-tenant-id"])
-  defaultTenantId String   @default("default-tenant-id") // <- new default field
+  defaultTenantId String   @default("default-tenant-id")
   teacherCode     String   @unique
+  googleId        String?  @unique
+  authProvider    String   @default("EMAIL")
   subject         String?
   department      String?
-  school          School?  @relation(fields: [schoolId], references: [id])
+
   schoolId        String?
-  classes         Class[]
-  verified        Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  currentSchoolId String?
+
+  school        School? @relation("SchoolToTeacher", fields: [schoolId], references: [id])
+  currentSchool School? @relation("TeacherCurrentSchool", fields: [currentSchoolId], references: [id])
+
+  classes        Class[] @relation("AssignedTeacherClasses")
+  verified       Boolean @default(false)
+
+  outgoingLinkRequests LinkRequest[] @relation("requesterTeacher")
+  incomingLinkRequests LinkRequest[] @relation("targetTeacher")
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  subjects    Subject[]
+  departments Department[]
 }
 
 model Student {
   id               String            @id @default(uuid())
   name             String
   email            String            @unique
-  password         String
+  password         String?
   studentCode      String            @unique
-  teacherCode      String?
+  googleId         String?           @unique
+  authProvider     String            @default("EMAIL")
   tenantIds        String[]          @default(["default-tenant-id"])
-  defaultTenantId  String            @default("default-tenant-id") // <- new default field
+  defaultTenantId  String            @default("default-tenant-id")
   gradeLevel       String?
   dateOfBirth      DateTime?
   role             UserRole
   school           School?           @relation(fields: [schoolId], references: [id])
-  schoolId         String? // Current school (can change)
-  originalSchoolId String? // The school that performed the first bulk upload/creation
+  schoolId         String?
+  originalSchoolId String?
   grades           Grade[]
   classes          ClassEnrollment[]
   parentLinks      ParentChildLink[]
+
+  outgoingLinkRequests LinkRequest[] @relation("requesterStudent")
+  incomingLinkRequests LinkRequest[] @relation("targetStudent")
 
   verified  Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -132,15 +249,22 @@ model Parent {
   id              String            @id @default(uuid())
   fullName        String
   email           String            @unique
-  password        String
+  password        String?
+  parentCode      String            @unique
   phone           String?
+  googleId        String?           @unique
+  authProvider    String            @default("EMAIL")
   role            UserRole
   tenantIds       String[]          @default(["default-tenant-id"])
-  defaultTenantId String            @default("default-tenant-id") // <- new default field
+  defaultTenantId String            @default("default-tenant-id")
   children        ParentChildLink[]
   verified        Boolean           @default(false)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+
+  outgoingLinkRequests LinkRequest[] @relation("requesterParent")
+  incomingLinkRequests LinkRequest[] @relation("targetParent")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("parents")
 }
@@ -166,17 +290,28 @@ model ParentChildLink {
 }
 
 model Class {
-  id        String  @id @default(uuid())
+  id        String      @id @default(uuid())
   name      String
-  subject   String
   section   String?
-  schoolId  String
+  schoolId  String?
   teacherId String?
-  grades    Grade[]
+  classCode String      @unique
+  scope     ClassScope
+  status    ClassStatus @default(PENDING)
 
-  school      School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  teacher     Teacher?          @relation(fields: [teacherId], references: [id])
-  enrollments ClassEnrollment[]
+  createdById   String?
+  createdByType LinkEntityType?
+
+  grades Grade[]
+
+  school            School?            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher           Teacher?           @relation("AssignedTeacherClasses", fields: [teacherId], references: [id])
+  enrollments       ClassEnrollment[]
+  relationshipLinks RelationshipLink[]
+
+  subjects ClassSubject[]
+  exams    Exam[]
+  quizzes  Quiz[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -264,4 +399,367 @@ model Grade {
   updatedAt DateTime @updatedAt
 
   @@map("grades")
+}
+
+model LinkRequest {
+  id String @id @default(uuid())
+
+  linkType      LinkType
+  status        LinkRequestStatus @default(PENDING)
+  notifications Notification[]
+  requesterType LinkEntityType
+  requesterId   String
+  requesterCode String
+
+  targetType LinkEntityType
+  targetId   String?
+  targetCode String
+
+  requestedByAdminId String?
+  approvedByAdminId  String?
+
+  schoolId String?
+  classId  String?
+
+  note            String?
+  rejectionReason String?
+  expiresAt       DateTime?
+
+  requesterSchoolId  String?
+  targetSchoolId     String?
+  requesterTeacherId String?
+  targetTeacherId    String?
+  requesterStudentId String?
+  targetStudentId    String?
+  requesterParentId  String?
+  targetParentId     String?
+
+  relationshipLinkId String? @unique
+
+  requesterAdmin Admin? @relation("requesterAdmin", fields: [requestedByAdminId], references: [id], onDelete: SetNull)
+  approverAdmin  Admin? @relation("approverAdmin", fields: [approvedByAdminId], references: [id], onDelete: SetNull)
+
+  requesterSchool  School?  @relation("requesterSchool", fields: [requesterSchoolId], references: [id], onDelete: SetNull)
+  targetSchool     School?  @relation("targetSchool", fields: [targetSchoolId], references: [id], onDelete: SetNull)
+  requesterTeacher Teacher? @relation("requesterTeacher", fields: [requesterTeacherId], references: [id], onDelete: SetNull)
+  targetTeacher    Teacher? @relation("targetTeacher", fields: [targetTeacherId], references: [id], onDelete: SetNull)
+  requesterStudent Student? @relation("requesterStudent", fields: [requesterStudentId], references: [id], onDelete: SetNull)
+  targetStudent    Student? @relation("targetStudent", fields: [targetStudentId], references: [id], onDelete: SetNull)
+  requesterParent  Parent?  @relation("requesterParent", fields: [requesterParentId], references: [id], onDelete: SetNull)
+  targetParent     Parent?  @relation("targetParent", fields: [targetParentId], references: [id], onDelete: SetNull)
+
+  relationshipLink RelationshipLink? @relation("RelationshipFromRequest", fields: [relationshipLinkId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  respondedAt DateTime?
+
+  @@index([requesterType, requesterId])
+  @@index([targetType, targetCode])
+  @@index([status])
+  @@index([linkType])
+  @@map("link_requests")
+}
+
+model RelationshipLink {
+  id String @id @default(uuid())
+
+  linkType LinkType
+  status   LinkStatus @default(ACTIVE)
+
+  leftEntityType LinkEntityType
+  leftEntityId   String
+  leftCode       String
+
+  rightEntityType LinkEntityType
+  rightEntityId   String
+  rightCode       String
+
+  schoolId String?
+  classId  String?
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  school School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  class  Class?  @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  approvedFromRequest LinkRequest?        @relation("RelationshipFromRequest")
+  audits              RelationshipAudit[]
+
+  @@unique([linkType, leftEntityId, rightEntityId])
+  @@index([leftEntityType, leftEntityId, status])
+  @@index([rightEntityType, rightEntityId, status])
+  @@index([linkType, status])
+  @@map("relationship_links")
+}
+
+model RelationshipAudit {
+  id String @id @default(uuid())
+
+  relationshipLinkId String
+  action             String
+  actorAdminId       String?
+  note               String?
+
+  relationshipLink RelationshipLink @relation(fields: [relationshipLinkId], references: [id], onDelete: Cascade)
+  actorAdmin       Admin?           @relation("AdminRelationshipAudits", fields: [actorAdminId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([relationshipLinkId])
+  @@map("relationship_audits")
+}
+
+enum NotificationType {
+  LINK_REQUEST
+  LINK_ACCEPTED
+  LINK_REJECTED
+  GENERAL
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  recipientType LinkEntityType
+  recipientId   String
+
+  senderType LinkEntityType?
+  senderId   String?
+
+  type    NotificationType
+  title   String
+  message String
+
+  linkRequestId String?
+  linkRequest   LinkRequest? @relation(fields: [linkRequestId], references: [id], onDelete: Cascade)
+
+  status NotificationStatus @default(UNREAD)
+  meta   Json?
+
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  @@index([recipientType, recipientId, status])
+  @@index([recipientId])
+  @@map("notifications")
+}
+
+model Subject {
+  id          String                 @id @default(uuid())
+  name        String
+  code        String
+  description String?
+  schoolId    String?
+  teacherId   String?
+  scope       AcademicOwnershipScope
+  isArchived  Boolean                @default(false)
+
+  school      School?             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher     Teacher?            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  departments DepartmentSubject[]
+  classes     ClassSubject[]
+  exams       Exam[]
+  quizzes     Quiz[]
+  examLinks   ExamSubject[]
+  quizLinks   QuizSubject[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, code])
+  @@map("subjects")
+}
+
+model Department {
+  id          String                 @id @default(uuid())
+  name        String
+  code        String                 @unique
+  description String?
+  schoolId    String?
+  teacherId   String?
+  scope       AcademicOwnershipScope
+  isArchived  Boolean                @default(false)
+
+  school   School?             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher  Teacher?            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subjects DepartmentSubject[]
+  exams    Exam[]
+  quizzes  Quiz[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("departments")
+}
+
+model DepartmentSubject {
+  id           String @id @default(uuid())
+  departmentId String
+  subjectId    String
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  subject    Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([departmentId, subjectId])
+  @@map("department_subjects")
+}
+
+model ClassSubject {
+  id        String @id @default(uuid())
+  classId   String
+  subjectId String
+
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([classId, subjectId])
+  @@map("class_subjects")
+}
+
+model Quiz {
+  id           String                 @id @default(uuid())
+  title        String
+  description  String?
+  scope        AssessmentScope
+  status       AssessmentStatus       @default(DRAFT)
+  creationMode AssessmentCreationMode @default(MANUAL)
+
+  schoolId     String?
+  departmentId String?
+  classId      String?
+  subjectId    String?
+
+  durationMinutes Int?
+  totalMarks      Float? @default(0)
+
+  aiPrompt      String?
+  instructions  String?
+  generatedMeta Json?
+
+  school     School?     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  class      Class?      @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject    Subject?    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  includedSubjects QuizSubject[]
+  questions        QuizQuestion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("quizzes")
+}
+
+model QuizSubject {
+  id        String @id @default(uuid())
+  quizId    String
+  subjectId String
+
+  quiz    Quiz    @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([quizId, subjectId])
+  @@map("quiz_subjects")
+}
+
+model QuizQuestion {
+  id            String       @id @default(uuid())
+  quizId        String
+  type          QuestionType
+  question      String
+  optionA       String?
+  optionB       String?
+  optionC       String?
+  optionD       String?
+  correctAnswer String
+  marks         Float        @default(1)
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("quiz_questions")
+}
+
+model Exam {
+  id           String                 @id @default(uuid())
+  title        String
+  description  String?
+  scope        AssessmentScope
+  status       AssessmentStatus       @default(DRAFT)
+  creationMode AssessmentCreationMode @default(MANUAL)
+
+  schoolId     String?
+  departmentId String?
+  classId      String?
+  subjectId    String?
+
+  durationMinutes Int?
+  totalMarks      Float? @default(0)
+
+  aiPrompt      String?
+  instructions  String?
+  generatedMeta Json?
+
+  school     School?     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  class      Class?      @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject    Subject?    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  includedSubjects ExamSubject[]
+  questions        ExamQuestion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("exams")
+}
+
+model ExamSubject {
+  id        String @id @default(uuid())
+  examId    String
+  subjectId String
+
+  exam    Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([examId, subjectId])
+  @@map("exam_subjects")
+}
+
+model ExamQuestion {
+  id            String       @id @default(uuid())
+  examId        String
+  type          QuestionType
+  question      String
+  optionA       String?
+  optionB       String?
+  optionC       String?
+  optionD       String?
+  correctAnswer String
+  marks         Float        @default(1)
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("exam_questions")
 }

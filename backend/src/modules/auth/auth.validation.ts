@@ -222,3 +222,13 @@ export const completePasswordResetSchema = yup.object({
       .oneOf([yup.ref("newPassword")], "Passwords must match"),
   }),
 });
+
+export const googleAuthSchema = yup.object({
+  body: yup.object({
+    idToken: yup.string().required("Google ID Token is required"),
+    userRole: yup
+      .string()
+      .oneOf(["STUDENT", "PARENT"], "Invalid user role for Google Login")
+      .required("User role is required"),
+  }),
+});

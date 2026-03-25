@@ -1,10 +1,12 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../../config/database";
+import { generateUniqueCode } from "../../utils/code-generator";
 import {
   loginUser,
   sendPasswordResetEmail,
   sendVerificationEmail,
+  googleAuthService,
 } from "./auth.service";
 import {
   comparePassword,
@@ -34,7 +36,6 @@ export const registerSchool = async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ Normalize subdomain early
     const rawSubdomain = subdomain?.trim() || schoolName;
     const normalizedSubdomain = slugify(rawSubdomain);
 
@@ -45,7 +46,6 @@ export const registerSchool = async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ Check if admin email already exists
     const existingAdmin = await prisma.admin.findUnique({
       where: { email },
       select: { id: true },
@@ -58,7 +58,6 @@ export const registerSchool = async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ Check if subdomain already exists (early guard)
     const existingSchool = await prisma.school.findFirst({
       where: { subdomain: normalizedSubdomain },
       select: { id: true },
@@ -71,7 +70,6 @@ export const registerSchool = async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ Generate unique tenantId
     const generateSixDigit = () =>
       Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -97,32 +95,34 @@ export const registerSchool = async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ Hash password
+    const schoolCode = await generateUniqueCode(prisma,"school", schoolName);
+    const adminCode = await generateUniqueCode(prisma,"admin", adminName);
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await prisma.$transaction(async (tx) => {
-      // Create school
       const school = await tx.school.create({
         data: {
           name: schoolName,
           subdomain: normalizedSubdomain,
           schoolEmail: email,
           tenantId,
+          schoolCode,
         },
       });
 
-      // Create admin
       const admin = await tx.admin.create({
         data: {
           name: adminName,
           email,
           password: hashedPassword,
           role: UserRole.ADMIN,
+          adminCode,
           tenantIds: [tenantId],
+          defaultTenantId: tenantId,
         },
       });
 
-      // Create school admin relationship
       await tx.schoolAdmin.create({
         data: {
           schoolId: school.id,
@@ -142,18 +142,19 @@ export const registerSchool = async (req: Request, res: Response) => {
           name: result.school.name,
           tenantId: result.school.tenantId,
           subdomain: result.school.subdomain,
+          schoolCode: result.school.schoolCode,
         },
         admin: {
           id: result.admin.id,
           name: result.admin.name,
           email: result.admin.email,
           role: result.admin.role,
+          adminCode: result.admin.adminCode,
         },
         userRole: result.admin.role,
       },
     });
   } catch (error: any) {
-    // ✅ Handle unique constraint error properly
     if (error?.code === "P2002" && error?.meta?.target?.includes("subdomain")) {
       return res.status(409).json({
         success: false,
@@ -194,7 +195,6 @@ export const registerTeacher = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if email exists
     const existingTeacher = await prisma.teacher.findUnique({
       where: { email },
     });
@@ -206,7 +206,6 @@ export const registerTeacher = async (req: Request, res: Response) => {
       });
     }
 
-    // Verify school if tenantId is provided
     let schoolToConnect = null;
     let schoolId = null;
 
@@ -224,25 +223,7 @@ export const registerTeacher = async (req: Request, res: Response) => {
       schoolId = schoolToConnect.id;
     }
 
-    // Generate unique teacher code
-    const generateTeacherCode = () => {
-      const random = Math.floor(100000 + Math.random() * 900000);
-      return `tch-${random}`;
-    };
-
-    let teacherCode = generateTeacherCode();
-    let existingCode = await prisma.teacher.findFirst({
-      where: { teacherCode },
-    });
-
-    while (existingCode) {
-      teacherCode = generateTeacherCode();
-      existingCode = await prisma.teacher.findFirst({
-        where: { teacherCode },
-      });
-    }
-
-    // Hash password
+    const teacherCode = await generateUniqueCode(prisma, "teacher", fullName);
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const teacher = await prisma.teacher.create({
@@ -250,10 +231,11 @@ export const registerTeacher = async (req: Request, res: Response) => {
         name: fullName,
         email,
         password: hashedPassword,
-        role: UserRole.TEACHER, // FIXED: Use enum
+        role: UserRole.TEACHER,
         tenantIds: tenantId ? [tenantId] : [],
+        defaultTenantId: tenantId || "default-tenant-id",
         teacherCode,
-        schoolId: schoolId,
+        schoolId,
       },
     });
 
@@ -267,11 +249,11 @@ export const registerTeacher = async (req: Request, res: Response) => {
           id: teacher.id,
           name: teacher.name,
           email: teacher.email,
-          role: teacher.role, // RETURN ROLE
+          role: teacher.role,
           tenantIds: teacher.tenantIds,
           teacherCode: teacher.teacherCode,
         },
-        userRole: teacher.role, // ADDED: Explicit role for redirection
+        userRole: teacher.role,
       },
     });
   } catch (error: any) {
@@ -362,7 +344,7 @@ export const registerStudent = async (
     }
 
     // Generate unique student code
-    const studentCode = await ensureUniqueStudentCode();
+const studentCode = await generateUniqueCode(prisma,"student", fullName);
 
     // If tenantId provided → verify school exists
     let school = null;
@@ -399,18 +381,18 @@ export const registerStudent = async (
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const student = await prisma.student.create({
-      data: {
-        name: fullName.trim(),
-        email: email.toLowerCase().trim(),
-        password: hashedPassword,
-        studentCode,
-        teacherCode: teacherCode || null,
-        role: UserRole.STUDENT, // FIXED: Use enum
-        tenantIds: tenantId ? [tenantId] : [],
-        schoolId: schoolId,
-      },
-    });
+ const student = await prisma.student.create({
+  data: {
+    name: fullName.trim(),
+    email: email.toLowerCase().trim(),
+    password: hashedPassword,
+    studentCode,
+    role: UserRole.STUDENT,
+    tenantIds: tenantId ? [tenantId] : [],
+    defaultTenantId: tenantId || "default-tenant-id",
+    schoolId,
+  },
+});
 
     return res.status(201).json({
       success: true,
@@ -466,7 +448,6 @@ export const registerParent = async (
       });
     }
 
-    // Check if parent email exists
     const existingParent = await prisma.parent.findUnique({
       where: { email },
     });
@@ -478,23 +459,22 @@ export const registerParent = async (
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+    const parentCode = await generateUniqueCode(prisma,"parent", fullName);
 
     const result = await prisma.$transaction(async (tx: any) => {
-      // Create parent account
       const parent = await tx.parent.create({
         data: {
           fullName: fullName.trim(),
           email: email.toLowerCase().trim(),
           password: hashedPassword,
-          role: UserRole.PARENT, // FIXED: Use enum
+          role: UserRole.PARENT,
+          parentCode,
         },
       });
 
       let linkResult = null;
 
-      // If student code provided, create link
       if (studentCode) {
         const student = await tx.student.findFirst({
           where: { studentCode: studentCode.trim() },
@@ -519,7 +499,8 @@ export const registerParent = async (
           data: {
             parentId: parent.id,
             studentId: student.id,
-            status: "linked",
+            studentCode: student.studentCode,
+            status: "pending",
           },
         });
       }
@@ -535,16 +516,17 @@ export const registerParent = async (
           id: result.parent.id,
           fullName: result.parent.fullName,
           email: result.parent.email,
-          role: result.parent.role, // RETURN ROLE
+          role: result.parent.role,
+          parentCode: result.parent.parentCode,
         },
-        userRole: result.parent.role, // ADDED: Explicit role for redirection
+        userRole: result.parent.role,
       },
     };
 
     if (result.link) {
       response.data.linking = {
-        status: "success",
-        message: "Successfully linked to your child's account!",
+        status: "pending",
+        message: "Link request sent successfully",
       };
     } else {
       response.data.linking = {
@@ -558,11 +540,10 @@ export const registerParent = async (
     console.error("Parent registration error:", error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error. Please try again.",
+      message: error.message || "Internal server error. Please try again.",
     });
   }
 };
-
 const generateCode = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -1024,13 +1005,28 @@ export const login = async (req: Request, res: Response) => {
         });
         break;
       case UserRole.TEACHER:
-        user = await prisma.teacher.findUnique({ where: { email } });
+       user = await prisma.teacher.findUnique({
+  where: { email },
+  include: { school: true },
+});
         break;
       case UserRole.STUDENT:
-        user = await prisma.student.findUnique({ where: { email } });
+       user = await prisma.student.findUnique({
+  where: { email },
+  include: { school: true },
+});
         break;
       case UserRole.PARENT:
-        user = await prisma.parent.findUnique({ where: { email } });
+        user = await prisma.parent.findUnique({
+  where: { email },
+  include: {
+    children: {
+      include: {
+        student: true,
+      },
+    },
+  },
+});
         break;
     }
 
@@ -1116,26 +1112,30 @@ export const login = async (req: Request, res: Response) => {
     console.log(user.defaultTenantId);
 
     if (userType === UserRole.ADMIN) {
-      const schools = user.schoolAdmins.map((sa: any) => ({
-        schoolId: sa.school.id,
-        schoolName: sa.school.name,
-        adminRole: sa.role,
-        approved:
-          sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
-      }));
+     const schools = user.schoolAdmins.map((sa: any) => ({
+  schoolId: sa.school.id,
+  schoolName: sa.school.name,
+  schoolCode: sa.school.schoolCode,
+  adminRole: sa.role,
+  approved:
+    sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
+}));
+const primarySchool = user.schoolAdmins[0]?.school || null;
 
-      responseData = {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          schools,
-          defaultTenantId: user.defaultTenantId,
-        },
-        userRole: user.role,
-        accessToken,
-      };
+     responseData = {
+  user: {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    adminCode: user.adminCode,
+    schoolCode: primarySchool?.schoolCode || null,
+    schools,
+    defaultTenantId: user.defaultTenantId,
+  },
+  userRole: user.role,
+  accessToken,
+};
     } else if (userType === UserRole.TEACHER) {
       responseData = {
         user: {
@@ -1159,6 +1159,7 @@ export const login = async (req: Request, res: Response) => {
           role: user.role,
           studentCode: user.studentCode,
           school: user.school,
+          
           defaultTenantId: user.defaultTenantId,
         },
         userRole: user.role,
@@ -1260,13 +1261,18 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           approved:
             sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
         }));
+const ownerSchool = user.schoolAdmins.find(
+  (sa: any) => sa.role === AdminRole.SCHOOL_OWNER
+);
 
+const schoolCode = ownerSchool?.school?.schoolCode || null;
         return res.status(200).json({
           success: true,
           message: isSchoolOwner
             ? "School owner verified and account approved!"
             : "Admin verified! Waiting for school owner approval.",
           userRole: userType,
+        code: schoolCode,
           data: {
             admin: {
               id: user.id,
@@ -1289,6 +1295,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           success: true,
           message: "Teacher verified successfully!",
           userRole: userType,
+          code:user.teacherCode,
           data: { teacher: user },
         });
 
@@ -1301,6 +1308,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           success: true,
           message: "Student verified successfully!",
           userRole: userType,
+          code:user.studentCode,
           data: { student: user },
         });
 
@@ -1313,6 +1321,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           success: true,
           message: "Parent verified successfully!",
           userRole: userType,
+          code: user.parentCode,
           data: { parent: user },
         });
 
@@ -1799,6 +1808,44 @@ export const validateResetToken = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Server error",
+    });
+  }
+};
+
+export const googleAuth = async (req: Request, res: Response) => {
+  try {
+    const { idToken, userRole } = req.body;
+
+    if (!idToken || !userRole) {
+      return res.status(400).json({
+        success: false,
+        message: "Google ID Token and User Role are required",
+      });
+    }
+
+    const { user, token } = await googleAuthService(idToken, userRole as UserRole);
+
+    return res.status(200).json({
+      success: true,
+      message: "Google Authentication successful",
+      data: {
+        user: {
+          id: user.id,
+          name: user.name || user.fullName,
+          email: user.email,
+          role: user.role,
+          studentCode: user.studentCode || undefined,
+          parentCode: user.parentCode || undefined,
+        },
+        token,
+        userRole: user.role,
+      },
+    });
+  } catch (error: any) {
+    console.error("Google Auth Error:", error);
+    return res.status(error.message.includes("Token") ? 401 : 500).json({
+      success: false,
+      message: error.message || "Google Authentication failed",
     });
   }
 };
