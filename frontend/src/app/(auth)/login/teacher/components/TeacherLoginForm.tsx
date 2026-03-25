@@ -31,11 +31,12 @@ export default function TeacherLoginForm() {
     });
 
     const emailValue = watch("email");
+    console.log("Email value:", emailValue);
     const passwordValue = watch("password");
 
     const onSubmit = (data: LoginFormData) => {
         setServerError("");
-
+        console.log("Submitting login with data:", data);
         login(
             { email: data.email, password: data.password, userType: "TEACHER" },
             {

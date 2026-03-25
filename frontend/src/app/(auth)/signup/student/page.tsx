@@ -3,10 +3,12 @@ import StudentRegisterImageSlider from "./components/StudentRegisterImageSlider"
 
 export default function StudentRegisterPage() {
   return (
-    <div className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 lg:p-8">
-      <div className="flex w-full max-w-6xl flex-col lg:flex-row rounded-xl overflow-hidden shadow-lg bg-white dark:bg-gray-800">
-        <StudentRegisterImageSlider />
-        <StudentRegisterForm />
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-[95vw] lg:w-[80vw] mx-auto bg-white dark:bg-gray-900 md:rounded-[2.5rem] rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div className="flex flex-col lg:flex-row min-h-[700px]">
+          <StudentRegisterForm />
+          <StudentRegisterImageSlider />
+        </div>
       </div>
     </div>
   );

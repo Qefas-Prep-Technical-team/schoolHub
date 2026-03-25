@@ -8,44 +8,53 @@ import "swiper/css/pagination";
 
 export default function ParentImageSlider() {
   const images = [
-  "/image/signup/parent1.jpg",
-  "/image/signup/parent2.jpg",
-  "/image/signup/parent3.jpg",
-  "/image/signup/parent4.jpg",
+    "/image/signup/parent1.jpg",
+    "/image/signup/parent2.jpg",
+    "/image/signup/parent3.jpg",
+    "/image/signup/parent4.jpg",
   ];
 
   return (
-    <div className="hidden lg:flex items-center justify-center">
-      <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden shadow-lg">
-        {/* Aesthetic glow layers */}
-        <div className="absolute inset-0 bg-primary/10 dark:bg-primary/20 blur-3xl"></div>
-        <div className="absolute inset-8 bg-green-500/10 dark:bg-green-500/20 blur-3xl animate-pulse"></div>
-        <div className="absolute inset-16 bg-yellow-400/10 dark:bg-yellow-400/20 blur-3xl animate-pulse [animation-delay:1s]"></div>
+    <div className="hidden lg:block lg:w-[45%] xl:w-1/2 relative bg-gray-50 dark:bg-gray-800 p-2 lg:p-4">
+      <div className="relative w-full h-full min-h-[600px] overflow-hidden rounded-2xl shadow-2xl">
+        {/* Gradient Overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/20 to-transparent z-10 pointer-events-none" />
 
-        {/* Swiper Slider */}
-        <div className="relative z-10 w-full h-full">
+        {/* Swiper */}
+        <div className="absolute inset-0 z-0 w-full h-full">
           <Swiper
             modules={[Navigation, Pagination, Autoplay]}
-            // navigation
             pagination={{ clickable: true }}
-            autoplay={{ delay: 3000, disableOnInteraction: false }}
-            loop
-            slidesPerView={1}
+            autoplay={{ delay: 4000, disableOnInteraction: false }}
+            loop={true}
             className="w-full h-full"
           >
-            {images.map((src, index) => (
-              <SwiperSlide
-                key={index}
-                className="flex justify-center items-center bg-center bg-cover"
-              >
+            {images.map((src, i) => (
+              <SwiperSlide key={i} className="w-full h-full">
                 <img
                   src={src}
-                  alt={`Parent slide ${index + 1}`}
-                  className="w-full h-full object-cover rounded-xl"
+                  alt={`Parent involvement slide ${i + 1}`}
+                  className="w-full h-full object-cover"
                 />
               </SwiperSlide>
             ))}
           </Swiper>
+        </div>
+
+        {/* Floating Modern Information Card */}
+        <div className="absolute bottom-10 left-6 right-6 lg:left-10 lg:right-10 z-20 bg-white/10 dark:bg-black/20 backdrop-blur-xl border border-white/20 p-6 rounded-2xl shadow-2xl">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-12 h-12 rounded-full bg-primary/20 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/10">
+              <span className="material-symbols-outlined text-white text-2xl">family_restroom</span>
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-lg leading-tight">Stay Connected</h3>
+              <p className="text-white/80 text-sm font-medium">Be a part of their journey</p>
+            </div>
+          </div>
+          <p className="text-white/90 text-sm leading-relaxed font-light">
+            "Join thousands of parents actively tracking their children's progress, easily communicating with teachers, and actively monitoring assignments seamlessly."
+          </p>
         </div>
       </div>
     </div>

@@ -110,7 +110,7 @@ export default function StudentRegisterForm() {
   };
 
   return (
-    <div className="w-full lg:w-1/2 p-8 lg:p-12 flex flex-col justify-center">
+    <div className="flex-1 flex flex-col justify-center p-6 sm:p-10 lg:p-12 xl:p-16">
       <div className="max-w-md mx-auto w-full">
         <div className="mb-8">
           <h1 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-white">

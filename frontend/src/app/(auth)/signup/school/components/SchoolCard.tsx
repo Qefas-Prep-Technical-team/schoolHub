@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import SchoolImageSlider from "./SchoolSlider";
+import SchoolHeader from "./SchoolHeader";
 
 import { useRouter } from 'next/navigation';
 import { useSchoolRegistration } from '../../services/useRegistrationMutations';
@@ -161,10 +162,13 @@ export default function SchoolCard() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-10 items-start justify-between">
-      {/* Left Form */}
-      <div className="flex flex-col gap-4 flex-1">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <div className="w-[95vw] lg:w-[80vw] mx-auto bg-white dark:bg-gray-900 md:rounded-[2.5rem] rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-gray-100 dark:border-gray-800 overflow-hidden">
+      <div className="flex flex-col lg:flex-row min-h-[700px]">
+        {/* Left Form */}
+        <div className="flex-1 flex flex-col justify-center p-6 sm:p-10 lg:p-12 xl:p-16">
+          <SchoolHeader />
+          <div className="mt-2" />
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Success Message */}
           {successMessage && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
@@ -400,11 +404,12 @@ export default function SchoolCard() {
             </p>
           </div>
         </form>
-      </div>
+        </div>
 
-      {/* Right Image */}
-      <div className="hidden md:flex items-center justify-center flex-1">
-        <SchoolImageSlider />
+        {/* Right Image */}
+        <div className="hidden lg:block lg:w-[45%] xl:w-1/2 relative bg-gray-50 dark:bg-gray-800 p-2 lg:p-4">
+          <SchoolImageSlider />
+        </div>
       </div>
     </div>
   );

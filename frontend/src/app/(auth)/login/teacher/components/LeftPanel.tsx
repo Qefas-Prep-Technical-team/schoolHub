@@ -1,19 +1,22 @@
 export default function LeftPanel() {
     return (
-        <div className="hidden lg:flex lg:w-1/2 min-h-screen flex-col items-center justify-center bg-primary/10 dark:bg-primary/20 p-8 relative overflow-hidden">
-            <div className="absolute -bottom-20 -right-20 w-72 h-72 rounded-full bg-primary/20 dark:bg-primary/30"></div>
-            <div className="absolute -top-16 -left-16 w-60 h-60 rounded-full bg-primary/20 dark:bg-primary/30"></div>
-            <div className="flex flex-col max-w-md items-center text-center">
-                <img
-                    alt="Teacher illustration"
-                    className="mb-8 w-full max-w-sm"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzvdO9ECPmFHQy3uwKKMYpam_2unekYZ3bMS81UpFa3RTTN9QcbMXcrKA5hm18c5QDyAvDjZd4oiMmq1tOUa4J0UQpnLOr-8lZtPkNeW4EZIGoFk2Erd9uLrP0LGA9TQ3CKTke_m92IKPSLudyBiwN3i4ldaETHS6fFoLrUKGDHgcs5CSj8M1uRqY593iq6Q8MK-W-UFTFRhnh2xM8D_VSoJxoqaIP-3fZgsCNK00tXsuT2fHMcxbI78eV9Ee4qWpnsijpn-sT03Q"
-                />
-                <h1 className="text-[#0d1b19] dark:text-gray-200 text-[32px] font-bold leading-tight pb-3">
-                    Teacher Portal
-                </h1>
-                <p className="text-[#0d1b19] dark:text-gray-300 text-lg font-normal">
-                    Inspire, Teach, and Track Every Learner’s Journey.
+        <div className="relative w-full h-full min-h-[400px] overflow-hidden rounded-2xl shadow-xl flex flex-col items-center justify-center">
+            <div
+                className="absolute inset-0 z-0 bg-center bg-no-repeat bg-cover"
+                style={{
+                    backgroundImage: 'url("https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2069&auto=format&fit=crop")',
+                }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0A2540]/90 via-[#0A2540]/40 to-[#0A2540]/10 z-10 pointer-events-none" />
+            <div className="absolute bottom-8 left-6 right-6 z-20 bg-white/10 dark:bg-black/20 backdrop-blur-xl border border-white/20 p-5 rounded-2xl shadow-2xl">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm border border-white/10">
+                        <span className="material-symbols-outlined text-white">menu_book</span>
+                    </div>
+                    <h3 className="text-white font-bold text-lg leading-tight">Inspire Minds</h3>
+                </div>
+                <p className="text-white/90 text-sm font-light">
+                    "Empower your classroom with the tools and insights to shape the future."
                 </p>
             </div>
         </div>

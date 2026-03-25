@@ -18,28 +18,28 @@ export const useLoginMutation = () => {
       password: string;
       userType: UserType; // Use UserType instead of string
     }) => authAPI.login({ ...credentials }),
-  // useLoginMutation logic
-onSuccess: (response:any, variables) => {
-  queryClient.invalidateQueries({ queryKey: ["auth"] });
-console.log(response)
-  const userWithType = {
-    ...response.data.user,
-    // Ensure 'name' is populated. Fallback to 'fullName' if that's what backend sends
-    name: response.data.user.name || response.data.user.fullName || "User",
-    userType: variables.userType,
-  };
+    // useLoginMutation logic
+    onSuccess: (response: any, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["auth"] });
+      console.log("Login API response:", response);
+      const userWithType = {
+        ...response.data.user,
+        // Ensure 'name' is populated. Fallback to 'fullName' if that's what backend sends
+        name: response.data.user.name || response.data.user.fullName || "User",
+        userType: variables.userType,
+      };
 
-  setAuth(userWithType, response.data.accessToken);
-  
-  // Use the name for the toast!
-  authToast.loginSuccess(userWithType.name); 
+      setAuth(userWithType, response.data.accessToken);
 
-  const userDash = variables.userType.toLowerCase();
+      // Use the name for the toast!
+      authToast.loginSuccess(userWithType.name);
 
-  setTimeout(() => {
-    router.push(`/dashboard/${userDash}`);
-  }, 1000);
-},
+      const userDash = variables.userType.toLowerCase();
+
+      setTimeout(() => {
+        router.push(`/dashboard/${userDash}`);
+      }, 1000);
+    },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || "Login failed";
       errorToast.show(errorMessage);
@@ -62,7 +62,6 @@ export const useLogoutMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       clearAuth();
       authToast.logoutSuccess();
-
 
       // Redirect to login after logout
       router.push("/login");

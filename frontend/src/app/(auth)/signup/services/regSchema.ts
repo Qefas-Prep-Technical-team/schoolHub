@@ -9,6 +9,7 @@ export const parentSchema = yup.object({
 
   email: yup
     .string()
+    .lowercase()
     .email("Please enter a valid email address")
     .required("Email is required"),
 
@@ -60,6 +61,7 @@ export const teacherSchema = yup.object({
 
   email: yup
     .string()
+    .lowercase()
     .email("Please enter a valid email address")
     .required("Email is required"),
 
@@ -113,6 +115,7 @@ export const studentSchema = yup.object({
 
   email: yup
     .string()
+    .lowercase()
     .email("Please enter a valid email address")
     .required("Email is required"),
 
@@ -179,6 +182,7 @@ export const schoolSchema = yup.object({
 
   email: yup
     .string()
+    .lowercase()
     .email("Please enter a valid email address")
     .required("Email is required"),
 

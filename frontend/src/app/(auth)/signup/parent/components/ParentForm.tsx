@@ -113,7 +113,7 @@ export default function ParentRegistrationForm() {
   };
 
   return (
-    <div className="flex flex-col justify-center">
+    <div className="flex-1 flex flex-col justify-center p-6 sm:p-10 lg:p-12 xl:p-16">
       <div className="flex flex-col gap-3 p-4">
         <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] text-[#0d171b] dark:text-white">
           Join SchoolHub as a Parent
