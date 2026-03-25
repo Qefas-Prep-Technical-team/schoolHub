@@ -178,7 +178,11 @@ export const requestCodeSchema = yup.object({
 
 export const verifyCodeSchema = yup.object({
   body: yup.object({
-    email: yup.string().email("Invalid email").required("Email is required"),
+    email: yup
+      .string()
+      .lowercase()
+      .email("Invalid email")
+      .required("Email is required"),
     code: yup
       .string()
       .length(6, "Code must be 6 digits")

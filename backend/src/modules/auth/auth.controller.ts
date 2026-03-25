@@ -95,8 +95,8 @@ export const registerSchool = async (req: Request, res: Response) => {
       });
     }
 
-    const schoolCode = await generateUniqueCode(prisma,"school", schoolName);
-    const adminCode = await generateUniqueCode(prisma,"admin", adminName);
+    const schoolCode = await generateUniqueCode(prisma, "school", schoolName);
+    const adminCode = await generateUniqueCode(prisma, "admin", adminName);
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -344,7 +344,7 @@ export const registerStudent = async (
     }
 
     // Generate unique student code
-const studentCode = await generateUniqueCode(prisma,"student", fullName);
+    const studentCode = await generateUniqueCode(prisma, "student", fullName);
 
     // If tenantId provided → verify school exists
     let school = null;
@@ -381,18 +381,18 @@ const studentCode = await generateUniqueCode(prisma,"student", fullName);
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
- const student = await prisma.student.create({
-  data: {
-    name: fullName.trim(),
-    email: email.toLowerCase().trim(),
-    password: hashedPassword,
-    studentCode,
-    role: UserRole.STUDENT,
-    tenantIds: tenantId ? [tenantId] : [],
-    defaultTenantId: tenantId || "default-tenant-id",
-    schoolId,
-  },
-});
+    const student = await prisma.student.create({
+      data: {
+        name: fullName.trim(),
+        email: email.toLowerCase().trim(),
+        password: hashedPassword,
+        studentCode,
+        role: UserRole.STUDENT,
+        tenantIds: tenantId ? [tenantId] : [],
+        defaultTenantId: tenantId || "default-tenant-id",
+        schoolId,
+      },
+    });
 
     return res.status(201).json({
       success: true,
@@ -460,7 +460,7 @@ export const registerParent = async (
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const parentCode = await generateUniqueCode(prisma,"parent", fullName);
+    const parentCode = await generateUniqueCode(prisma, "parent", fullName);
 
     const result = await prisma.$transaction(async (tx: any) => {
       const parent = await tx.parent.create({
@@ -979,6 +979,7 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password, userType } = req.body;
+    console.log("Login attempt:", { email, userType });
 
     if (!email || !password || !userType) {
       return res.status(400).json({
@@ -1005,28 +1006,31 @@ export const login = async (req: Request, res: Response) => {
         });
         break;
       case UserRole.TEACHER:
-       user = await prisma.teacher.findUnique({
-  where: { email },
-  include: { school: true },
-});
+        console.log("Fetching teacher with email:", email);
+        user = await prisma.teacher.findUnique({
+          where: { email },
+          include: { school: true },
+        });
+        console.log("Fetched teacher:", user);
         break;
       case UserRole.STUDENT:
-       user = await prisma.student.findUnique({
-  where: { email },
-  include: { school: true },
-});
+        console.log("Fetching student with email:", email);
+        user = await prisma.student.findUnique({
+          where: { email },
+          // include: { school: true },
+        });
         break;
       case UserRole.PARENT:
         user = await prisma.parent.findUnique({
-  where: { email },
-  include: {
-    children: {
-      include: {
-        student: true,
-      },
-    },
-  },
-});
+          where: { email },
+          include: {
+            children: {
+              include: {
+                student: true,
+              },
+            },
+          },
+        });
         break;
     }
 
@@ -1112,30 +1116,30 @@ export const login = async (req: Request, res: Response) => {
     console.log(user.defaultTenantId);
 
     if (userType === UserRole.ADMIN) {
-     const schools = user.schoolAdmins.map((sa: any) => ({
-  schoolId: sa.school.id,
-  schoolName: sa.school.name,
-  schoolCode: sa.school.schoolCode,
-  adminRole: sa.role,
-  approved:
-    sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
-}));
-const primarySchool = user.schoolAdmins[0]?.school || null;
+      const schools = user.schoolAdmins.map((sa: any) => ({
+        schoolId: sa.school.id,
+        schoolName: sa.school.name,
+        schoolCode: sa.school.schoolCode,
+        adminRole: sa.role,
+        approved:
+          sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
+      }));
+      const primarySchool = user.schoolAdmins[0]?.school || null;
 
-     responseData = {
-  user: {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    adminCode: user.adminCode,
-    schoolCode: primarySchool?.schoolCode || null,
-    schools,
-    defaultTenantId: user.defaultTenantId,
-  },
-  userRole: user.role,
-  accessToken,
-};
+      responseData = {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          adminCode: user.adminCode,
+          schoolCode: primarySchool?.schoolCode || null,
+          schools,
+          defaultTenantId: user.defaultTenantId,
+        },
+        userRole: user.role,
+        accessToken,
+      };
     } else if (userType === UserRole.TEACHER) {
       responseData = {
         user: {
@@ -1159,7 +1163,7 @@ const primarySchool = user.schoolAdmins[0]?.school || null;
           role: user.role,
           studentCode: user.studentCode,
           school: user.school,
-          
+
           defaultTenantId: user.defaultTenantId,
         },
         userRole: user.role,
@@ -1198,6 +1202,7 @@ const primarySchool = user.schoolAdmins[0]?.school || null;
 export const verifyEmailCode = async (req: Request, res: Response) => {
   try {
     const { email, code, userType } = req.body;
+    console.log("Verifying code for:", { email, userType, code });
 
     if (!email || !code || !userType) {
       return res.status(400).json({
@@ -1211,7 +1216,10 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         .status(400)
         .json({ success: false, message: "Invalid user type" });
     }
-
+    const check = await prisma.verificationCode.findMany({
+      where: { email },
+    });
+    console.log("Existing codes for this email and type:", check);
     const found = await prisma.verificationCode.findFirst({
       where: { email, code, userType: userType as UserRole, used: false },
     });
@@ -1261,18 +1269,18 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           approved:
             sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
         }));
-const ownerSchool = user.schoolAdmins.find(
-  (sa: any) => sa.role === AdminRole.SCHOOL_OWNER
-);
+        const ownerSchool = user.schoolAdmins.find(
+          (sa: any) => sa.role === AdminRole.SCHOOL_OWNER,
+        );
 
-const schoolCode = ownerSchool?.school?.schoolCode || null;
+        const schoolCode = ownerSchool?.school?.schoolCode || null;
         return res.status(200).json({
           success: true,
           message: isSchoolOwner
             ? "School owner verified and account approved!"
             : "Admin verified! Waiting for school owner approval.",
           userRole: userType,
-        code: schoolCode,
+          code: schoolCode,
           data: {
             admin: {
               id: user.id,
@@ -1295,7 +1303,7 @@ const schoolCode = ownerSchool?.school?.schoolCode || null;
           success: true,
           message: "Teacher verified successfully!",
           userRole: userType,
-          code:user.teacherCode,
+          code: user.teacherCode,
           data: { teacher: user },
         });
 
@@ -1308,7 +1316,7 @@ const schoolCode = ownerSchool?.school?.schoolCode || null;
           success: true,
           message: "Student verified successfully!",
           userRole: userType,
-          code:user.studentCode,
+          code: user.studentCode,
           data: { student: user },
         });
 
@@ -1434,13 +1442,13 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
           "If an account with that email exists, a reset link has been sent.",
       });
     }
-
+    console.log(user, "user found for password reset");
     // Check if user is verified - provide specific feedback for unverified accounts
     if (!user.verified) {
       return res.status(400).json({
         success: false,
         message:
-          "Please verify your email address before resetting your password. Check your inbox for the verification email.",
+          "Please verify your email address before resetting your password. Check your inbox for the verification email ok.",
       });
     }
 
@@ -1469,9 +1477,12 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
         expiresAt,
       },
     });
-
+    const testEmail = process.env.TEST_EMAIL;
+    console.log(testEmail, "test email");
+    const resendTest = process.env.RESEND_TEST === "true" || false; // default to false if not set
+    const mainEmail = resendTest ? testEmail : email;
     // Send reset email
-    await sendPasswordResetEmail(email, resetCode);
+    await sendPasswordResetEmail(mainEmail, resetCode);
 
     return res.status(200).json({
       success: true,
@@ -1766,8 +1777,9 @@ export const completePasswordReset = async (req: Request, res: Response) => {
 export const validateResetToken = async (req: Request, res: Response) => {
   try {
     const { token } = req.params;
+    const tokenStr = Array.isArray(token) ? token[0] : (token as string);
 
-    if (!token) {
+    if (!tokenStr) {
       return res.status(400).json({
         success: false,
         message: "Reset token is required",
@@ -1776,7 +1788,7 @@ export const validateResetToken = async (req: Request, res: Response) => {
 
     const resetRecord = await prisma.passwordReset.findFirst({
       where: {
-        code: token,
+        code: tokenStr,
         used: false,
       },
     });
@@ -1823,7 +1835,10 @@ export const googleAuth = async (req: Request, res: Response) => {
       });
     }
 
-    const { user, token } = await googleAuthService(idToken, userRole as UserRole);
+    const { user, token } = await googleAuthService(
+      idToken,
+      userRole as UserRole,
+    );
 
     return res.status(200).json({
       success: true,

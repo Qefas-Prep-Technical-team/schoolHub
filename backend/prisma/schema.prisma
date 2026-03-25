@@ -49,6 +49,13 @@ enum AssessmentStatus {
   ARCHIVED
 }
 
+enum ExamAttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  SCORED
+  EXPIRED
+}
+
 enum QuestionType {
   MULTIPLE_CHOICE
   TRUE_FALSE
@@ -59,6 +66,24 @@ enum AssessmentCreationMode {
   MANUAL
   AI
   HYBRID
+}
+
+enum QuestionSource {
+  MANUAL
+  AI
+}
+
+enum ExamMode {
+  SINGLE_SUBJECT
+  COMBINED
+}
+
+enum SubjectPaperStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  REJECTED
+  PUBLISHED
 }
 
 enum AdminRole {
@@ -135,8 +160,10 @@ model School {
   quizzes   Quiz[]
   exams     Exam[]
 
-  teachers        Teacher[] @relation("SchoolToTeacher")
-  currentTeachers Teacher[] @relation("TeacherCurrentSchool")
+  teachers        Teacher[]        @relation("SchoolToTeacher")
+  currentTeachers Teacher[]        @relation("TeacherCurrentSchool")
+  sessions        Session[]
+  teacherSubjects TeacherSubject[]
 }
 
 model SchoolAdmin {
@@ -205,16 +232,18 @@ model Teacher {
   school        School? @relation("SchoolToTeacher", fields: [schoolId], references: [id])
   currentSchool School? @relation("TeacherCurrentSchool", fields: [currentSchoolId], references: [id])
 
-  classes        Class[] @relation("AssignedTeacherClasses")
-  verified       Boolean @default(false)
+  classes  Class[] @relation("AssignedTeacherClasses")
+  verified Boolean @default(false)
 
   outgoingLinkRequests LinkRequest[] @relation("requesterTeacher")
   incomingLinkRequests LinkRequest[] @relation("targetTeacher")
 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  subjects    Subject[]
-  departments Department[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  subjects          Subject[]
+  departments       Department[]
+  teacherSubjects   TeacherSubject[]
+  subjectExamPapers SubjectExamPaper[]
 }
 
 model Student {
@@ -240,9 +269,10 @@ model Student {
   outgoingLinkRequests LinkRequest[] @relation("requesterStudent")
   incomingLinkRequests LinkRequest[] @relation("targetStudent")
 
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  verified     Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  examAttempts ExamAttempt[]
 }
 
 model Parent {
@@ -562,17 +592,19 @@ model Subject {
   scope       AcademicOwnershipScope
   isArchived  Boolean                @default(false)
 
-  school      School?             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  teacher     Teacher?            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  departments DepartmentSubject[]
-  classes     ClassSubject[]
-  exams       Exam[]
-  quizzes     Quiz[]
-  examLinks   ExamSubject[]
-  quizLinks   QuizSubject[]
+  school          School?             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher         Teacher?            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  departments     DepartmentSubject[]
+  classes         ClassSubject[]
+  exams           Exam[]
+  quizzes         Quiz[]
+  examLinks       ExamSubject[]
+  quizLinks       QuizSubject[]
+  teacherSubjects TeacherSubject[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  subjectExamPapers SubjectExamPaper[]
 
   @@unique([schoolId, code])
   @@map("subjects")
@@ -703,29 +735,42 @@ model Exam {
   scope        AssessmentScope
   status       AssessmentStatus       @default(DRAFT)
   creationMode AssessmentCreationMode @default(MANUAL)
+  mode         ExamMode               @default(SINGLE_SUBJECT)
 
   schoolId     String?
   departmentId String?
   classId      String?
-  subjectId    String?
+  sessionId    String?
 
   durationMinutes Int?
   totalMarks      Float? @default(0)
+
+  allowImmediateResult Boolean   @default(true)
+  resultReleaseAt      DateTime?
 
   aiPrompt      String?
   instructions  String?
   generatedMeta Json?
 
+  validatedAt   DateTime?
+  validatedById String?
+  publishedAt   DateTime?
+  publishedById String?
+
   school     School?     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   class      Class?      @relation(fields: [classId], references: [id], onDelete: Cascade)
-  subject    Subject?    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  session    Session?    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   includedSubjects ExamSubject[]
-  questions        ExamQuestion[]
+  subjectPapers    SubjectExamPaper[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  subject   Subject? @relation(fields: [subjectId], references: [id])
+  subjectId String?
+
+  examAttempts ExamAttempt[]
 
   @@map("exams")
 }
@@ -744,22 +789,160 @@ model ExamSubject {
   @@map("exam_subjects")
 }
 
-model ExamQuestion {
-  id            String       @id @default(uuid())
-  examId        String
-  type          QuestionType
-  question      String
-  optionA       String?
-  optionB       String?
-  optionC       String?
-  optionD       String?
-  correctAnswer String
-  marks         Float        @default(1)
+model SubjectExamPaper {
+  id              String             @id @default(uuid())
+  examId          String
+  subjectId       String
+  teacherId       String?
+  title           String?
+  instructions    String?
+  durationMinutes Int?
+  totalMarks      Float              @default(0)
+  status          SubjectPaperStatus @default(DRAFT)
 
-  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  validatedAt   DateTime?
+  validatedById String?
+  publishedAt   DateTime?
+
+  exam    Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  subject Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+
+  questions    SubjectExamQuestion[]
+  examAttempts SubjectExamAttempt[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("exam_questions")
+  @@unique([examId, subjectId])
+  @@map("subject_exam_papers")
+}
+
+model SubjectExamQuestion {
+  id             String         @id @default(uuid())
+  subjectPaperId String
+  type           QuestionType
+  source         QuestionSource @default(MANUAL)
+  question       String
+  optionA        String?
+  optionB        String?
+  optionC        String?
+  optionD        String?
+  correctAnswer  String
+  explanation    String?
+  marks          Float          @default(1)
+
+  subjectPaper SubjectExamPaper    @relation(fields: [subjectPaperId], references: [id], onDelete: Cascade)
+  answers      SubjectExamAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subject_exam_questions")
+}
+
+model TeacherSubject {
+  id        String  @id @default(uuid())
+  teacherId String
+  subjectId String
+  schoolId  String?
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  school  School? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([teacherId, subjectId, schoolId])
+  @@map("teacher_subjects")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  name      String
+  schoolId  String?
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  isClosed  Boolean  @default(false)
+
+  school School? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  exams  Exam[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, name])
+  @@map("sessions")
+}
+
+model ExamAttempt {
+  id        String @id @default(uuid())
+  examId    String
+  studentId String
+
+  startedAt   DateTime          @default(now())
+  submittedAt DateTime?
+  expiresAt   DateTime?
+  status      ExamAttemptStatus @default(IN_PROGRESS)
+
+  totalScore  Float   @default(0)
+  totalMarks  Float   @default(0)
+  isSubmitted Boolean @default(false)
+
+  exam    Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  subjectAttempts SubjectExamAttempt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([examId, studentId])
+  @@map("exam_attempts")
+}
+
+model SubjectExamAttempt {
+  id             String @id @default(uuid())
+  examAttemptId  String
+  subjectPaperId String
+
+  score       Float     @default(0)
+  totalMarks  Float     @default(0)
+  submittedAt DateTime?
+
+  examAttempt  ExamAttempt      @relation(fields: [examAttemptId], references: [id], onDelete: Cascade)
+  subjectPaper SubjectExamPaper @relation(fields: [subjectPaperId], references: [id], onDelete: Cascade)
+
+  answers SubjectExamAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([examAttemptId, subjectPaperId])
+  @@map("subject_exam_attempts")
+}
+
+model SubjectExamAnswer {
+  id                   String @id @default(uuid())
+  subjectExamAttemptId String
+  questionId           String
+
+  answer               String
+  isCorrect            Boolean?
+  scoreAwarded         Float?
+  requiresManualReview Boolean   @default(false)
+  manuallyReviewed     Boolean   @default(false)
+  reviewedById         String?
+  reviewedAt           DateTime?
+  reviewNote           String?
+
+  subjectExamAttempt SubjectExamAttempt  @relation(fields: [subjectExamAttemptId], references: [id], onDelete: Cascade)
+  question           SubjectExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([subjectExamAttemptId, questionId])
+  @@map("subject_exam_answers")
 }

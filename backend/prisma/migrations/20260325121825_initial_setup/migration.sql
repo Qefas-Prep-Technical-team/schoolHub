@@ -20,6 +20,15 @@ CREATE TYPE "QuestionType" AS ENUM ('MULTIPLE_CHOICE', 'TRUE_FALSE', 'SHORT_ANSW
 CREATE TYPE "AssessmentCreationMode" AS ENUM ('MANUAL', 'AI', 'HYBRID');
 
 -- CreateEnum
+CREATE TYPE "QuestionSource" AS ENUM ('MANUAL', 'AI');
+
+-- CreateEnum
+CREATE TYPE "ExamMode" AS ENUM ('SINGLE_SUBJECT', 'COMBINED');
+
+-- CreateEnum
+CREATE TYPE "SubjectPaperStatus" AS ENUM ('DRAFT', 'REVIEW', 'APPROVED', 'REJECTED', 'PUBLISHED');
+
+-- CreateEnum
 CREATE TYPE "AdminRole" AS ENUM ('SUPER_ADMIN', 'SCHOOL_OWNER', 'PRINCIPAL', 'REGISTRAR', 'ACCOUNTANT', 'SUPPORT');
 
 -- CreateEnum
@@ -77,9 +86,11 @@ CREATE TABLE "Admin" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
     "role" "UserRole" NOT NULL,
     "adminCode" TEXT NOT NULL,
+    "googleId" TEXT,
+    "authProvider" TEXT NOT NULL DEFAULT 'EMAIL',
     "tenantIds" TEXT[] DEFAULT ARRAY['default-tenant-id']::TEXT[],
     "defaultTenantId" TEXT NOT NULL DEFAULT 'default-tenant-id',
     "verified" BOOLEAN NOT NULL DEFAULT false,
@@ -102,6 +113,8 @@ CREATE TABLE "Teacher" (
     "tenantIds" TEXT[] DEFAULT ARRAY['default-tenant-id']::TEXT[],
     "defaultTenantId" TEXT NOT NULL DEFAULT 'default-tenant-id',
     "teacherCode" TEXT NOT NULL,
+    "googleId" TEXT,
+    "authProvider" TEXT NOT NULL DEFAULT 'EMAIL',
     "subject" TEXT,
     "department" TEXT,
     "schoolId" TEXT,
@@ -118,8 +131,10 @@ CREATE TABLE "Student" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
     "studentCode" TEXT NOT NULL,
+    "googleId" TEXT,
+    "authProvider" TEXT NOT NULL DEFAULT 'EMAIL',
     "tenantIds" TEXT[] DEFAULT ARRAY['default-tenant-id']::TEXT[],
     "defaultTenantId" TEXT NOT NULL DEFAULT 'default-tenant-id',
     "gradeLevel" TEXT,
@@ -139,9 +154,11 @@ CREATE TABLE "parents" (
     "id" TEXT NOT NULL,
     "fullName" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
     "parentCode" TEXT NOT NULL,
     "phone" TEXT,
+    "googleId" TEXT,
+    "authProvider" TEXT NOT NULL DEFAULT 'EMAIL',
     "role" "UserRole" NOT NULL,
     "tenantIds" TEXT[] DEFAULT ARRAY['default-tenant-id']::TEXT[],
     "defaultTenantId" TEXT NOT NULL DEFAULT 'default-tenant-id',
@@ -171,7 +188,7 @@ CREATE TABLE "classes" (
     "name" TEXT NOT NULL,
     "section" TEXT,
     "schoolId" TEXT,
-    "teacherId" TEXT NOT NULL,
+    "teacherId" TEXT,
     "classCode" TEXT NOT NULL,
     "scope" "ClassScope" NOT NULL,
     "status" "ClassStatus" NOT NULL DEFAULT 'PENDING',
@@ -345,6 +362,7 @@ CREATE TABLE "subjects" (
     "schoolId" TEXT,
     "teacherId" TEXT,
     "scope" "AcademicOwnershipScope" NOT NULL,
+    "isArchived" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -360,6 +378,7 @@ CREATE TABLE "departments" (
     "schoolId" TEXT,
     "teacherId" TEXT,
     "scope" "AcademicOwnershipScope" NOT NULL,
+    "isArchived" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -445,17 +464,23 @@ CREATE TABLE "exams" (
     "scope" "AssessmentScope" NOT NULL,
     "status" "AssessmentStatus" NOT NULL DEFAULT 'DRAFT',
     "creationMode" "AssessmentCreationMode" NOT NULL DEFAULT 'MANUAL',
+    "mode" "ExamMode" NOT NULL DEFAULT 'SINGLE_SUBJECT',
     "schoolId" TEXT,
     "departmentId" TEXT,
     "classId" TEXT,
-    "subjectId" TEXT,
+    "sessionId" TEXT,
     "durationMinutes" INTEGER,
     "totalMarks" DOUBLE PRECISION DEFAULT 0,
     "aiPrompt" TEXT,
     "instructions" TEXT,
     "generatedMeta" JSONB,
+    "validatedAt" TIMESTAMP(3),
+    "validatedById" TEXT,
+    "publishedAt" TIMESTAMP(3),
+    "publishedById" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "subjectId" TEXT,
 
     CONSTRAINT "exams_pkey" PRIMARY KEY ("id")
 );
@@ -471,21 +496,69 @@ CREATE TABLE "exam_subjects" (
 );
 
 -- CreateTable
-CREATE TABLE "exam_questions" (
+CREATE TABLE "subject_exam_papers" (
     "id" TEXT NOT NULL,
     "examId" TEXT NOT NULL,
+    "subjectId" TEXT NOT NULL,
+    "teacherId" TEXT,
+    "title" TEXT,
+    "instructions" TEXT,
+    "durationMinutes" INTEGER,
+    "totalMarks" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "status" "SubjectPaperStatus" NOT NULL DEFAULT 'DRAFT',
+    "validatedAt" TIMESTAMP(3),
+    "validatedById" TEXT,
+    "publishedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "subject_exam_papers_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "subject_exam_questions" (
+    "id" TEXT NOT NULL,
+    "subjectPaperId" TEXT NOT NULL,
     "type" "QuestionType" NOT NULL,
+    "source" "QuestionSource" NOT NULL DEFAULT 'MANUAL',
     "question" TEXT NOT NULL,
     "optionA" TEXT,
     "optionB" TEXT,
     "optionC" TEXT,
     "optionD" TEXT,
     "correctAnswer" TEXT NOT NULL,
+    "explanation" TEXT,
     "marks" DOUBLE PRECISION NOT NULL DEFAULT 1,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "exam_questions_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "subject_exam_questions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "teacher_subjects" (
+    "id" TEXT NOT NULL,
+    "teacherId" TEXT NOT NULL,
+    "subjectId" TEXT NOT NULL,
+    "schoolId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "teacher_subjects_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "sessions" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "schoolId" TEXT,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT false,
+    "isClosed" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "sessions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -507,6 +580,9 @@ CREATE UNIQUE INDEX "Admin_email_key" ON "Admin"("email");
 CREATE UNIQUE INDEX "Admin_adminCode_key" ON "Admin"("adminCode");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Admin_googleId_key" ON "Admin"("googleId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Teacher_email_key" ON "Teacher"("email");
 
 -- CreateIndex
@@ -516,16 +592,25 @@ CREATE UNIQUE INDEX "Teacher_invitationToken_key" ON "Teacher"("invitationToken"
 CREATE UNIQUE INDEX "Teacher_teacherCode_key" ON "Teacher"("teacherCode");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Teacher_googleId_key" ON "Teacher"("googleId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Student_email_key" ON "Student"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Student_studentCode_key" ON "Student"("studentCode");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Student_googleId_key" ON "Student"("googleId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "parents_email_key" ON "parents"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "parents_parentCode_key" ON "parents"("parentCode");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "parents_googleId_key" ON "parents"("googleId");
 
 -- CreateIndex
 CREATE INDEX "parent_child_links_studentCode_idx" ON "parent_child_links"("studentCode");
@@ -600,6 +685,9 @@ CREATE INDEX "notifications_recipientType_recipientId_status_idx" ON "notificati
 CREATE INDEX "notifications_recipientId_idx" ON "notifications"("recipientId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "subjects_schoolId_code_key" ON "subjects"("schoolId", "code");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "departments_code_key" ON "departments"("code");
 
 -- CreateIndex
@@ -613,6 +701,15 @@ CREATE UNIQUE INDEX "quiz_subjects_quizId_subjectId_key" ON "quiz_subjects"("qui
 
 -- CreateIndex
 CREATE UNIQUE INDEX "exam_subjects_examId_subjectId_key" ON "exam_subjects"("examId", "subjectId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "subject_exam_papers_examId_subjectId_key" ON "subject_exam_papers"("examId", "subjectId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "teacher_subjects_teacherId_subjectId_schoolId_key" ON "teacher_subjects"("teacherId", "subjectId", "schoolId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "sessions_schoolId_name_key" ON "sessions"("schoolId", "name");
 
 -- AddForeignKey
 ALTER TABLE "school_admins" ADD CONSTRAINT "school_admins_adminId_fkey" FOREIGN KEY ("adminId") REFERENCES "Admin"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -639,10 +736,7 @@ ALTER TABLE "parent_child_links" ADD CONSTRAINT "parent_child_links_studentId_fk
 ALTER TABLE "classes" ADD CONSTRAINT "classes_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "classes" ADD CONSTRAINT "classes_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "classes" ADD CONSTRAINT "classes_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "Teacher"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "classes" ADD CONSTRAINT "classes_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "class_enrollments" ADD CONSTRAINT "class_enrollments_classId_fkey" FOREIGN KEY ("classId") REFERENCES "classes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -765,7 +859,10 @@ ALTER TABLE "exams" ADD CONSTRAINT "exams_departmentId_fkey" FOREIGN KEY ("depar
 ALTER TABLE "exams" ADD CONSTRAINT "exams_classId_fkey" FOREIGN KEY ("classId") REFERENCES "classes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "exams" ADD CONSTRAINT "exams_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "exams" ADD CONSTRAINT "exams_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "sessions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "exams" ADD CONSTRAINT "exams_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "subjects"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "exam_subjects" ADD CONSTRAINT "exam_subjects_examId_fkey" FOREIGN KEY ("examId") REFERENCES "exams"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -774,4 +871,25 @@ ALTER TABLE "exam_subjects" ADD CONSTRAINT "exam_subjects_examId_fkey" FOREIGN K
 ALTER TABLE "exam_subjects" ADD CONSTRAINT "exam_subjects_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "exam_questions" ADD CONSTRAINT "exam_questions_examId_fkey" FOREIGN KEY ("examId") REFERENCES "exams"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "subject_exam_papers" ADD CONSTRAINT "subject_exam_papers_examId_fkey" FOREIGN KEY ("examId") REFERENCES "exams"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "subject_exam_papers" ADD CONSTRAINT "subject_exam_papers_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "subject_exam_papers" ADD CONSTRAINT "subject_exam_papers_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "subject_exam_questions" ADD CONSTRAINT "subject_exam_questions_subjectPaperId_fkey" FOREIGN KEY ("subjectPaperId") REFERENCES "subject_exam_papers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "teacher_subjects" ADD CONSTRAINT "teacher_subjects_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "teacher_subjects" ADD CONSTRAINT "teacher_subjects_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "teacher_subjects" ADD CONSTRAINT "teacher_subjects_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_schoolId_fkey" FOREIGN KEY ("schoolId") REFERENCES "School"("id") ON DELETE CASCADE ON UPDATE CASCADE;

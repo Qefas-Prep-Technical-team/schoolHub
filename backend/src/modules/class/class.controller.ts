@@ -86,7 +86,10 @@ export const approveClass = async (req: Request, res: Response) => {
       });
     }
 
-    const updatedClass = await approveClassService(req.params.id, req.user.id);
+    const updatedClass = await approveClassService(
+      req.params.id as string,
+      req.user.id
+    );
 
     return res.status(200).json({
       success: true,
@@ -111,7 +114,10 @@ export const rejectClass = async (req: Request, res: Response) => {
       });
     }
 
-    const updatedClass = await rejectClassService(req.params.id, req.user.id);
+    const updatedClass = await rejectClassService(
+      req.params.id as string,
+      req.user.id
+    );
 
     return res.status(200).json({
       success: true,
@@ -160,7 +166,7 @@ export const getSingleClass = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const foundClass = await getSingleClassService(req.params.id);
+    const foundClass = await getSingleClassService(req.params.id as string);
 
     if (req.user.userType === UserRole.ADMIN) {
       if (!foundClass.schoolId) {
@@ -234,7 +240,9 @@ export const previewClassByCode = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const foundClass = await previewClassByCodeService(req.params.classCode);
+    const foundClass = await previewClassByCodeService(
+      req.params.classCode as string
+    );
 
     return res.status(200).json({
       success: true,
@@ -421,7 +429,7 @@ export const removeStudentFromClass = async (req: Request, res: Response) => {
     const allowed = await canManageClass({
       userId: req.user.id,
       userType: req.user.userType,
-      classId: id,
+      classId: id as string,
     });
 
     if (!allowed) {
@@ -431,7 +439,10 @@ export const removeStudentFromClass = async (req: Request, res: Response) => {
       });
     }
 
-    await removeStudentFromClassService({ classId: id, studentId });
+    await removeStudentFromClassService({
+      classId: id as string,
+      studentId: studentId as string,
+    });
 
     return res.status(200).json({
       success: true,
@@ -499,7 +510,7 @@ export const updateClass = async (req: Request, res: Response) => {
     const allowed = await canManageClass({
       userId: req.user.id,
       userType: req.user.userType,
-      classId: id,
+      classId: id as string,
     });
 
     if (!allowed) {
@@ -510,7 +521,7 @@ export const updateClass = async (req: Request, res: Response) => {
     }
 
     const updated = await updateClassService({
-      classId: id,
+      classId: id as string,
       name,
       section,
       teacherId,
@@ -544,7 +555,7 @@ export const changeClassStatus = async (req: Request, res: Response) => {
     }
 
     const updated = await changeClassStatusService({
-      classId: id,
+      classId: id as string,
       status,
     });
 
@@ -573,7 +584,7 @@ export const archiveClass = async (req: Request, res: Response) => {
     const allowed = await canManageClass({
       userId: req.user.id,
       userType: req.user.userType,
-      classId: id,
+      classId: id as string,
     });
 
     if (!allowed) {
@@ -583,7 +594,7 @@ export const archiveClass = async (req: Request, res: Response) => {
       });
     }
 
-    const archived = await archiveClassService(id);
+    const archived = await archiveClassService(id as string);
 
     return res.status(200).json({
       success: true,
@@ -651,7 +662,7 @@ export const removeSubjectFromClass = async (req: Request, res: Response) => {
     const allowed = await canManageClass({
       userId: req.user.id,
       userType: req.user.userType,
-      classId: id,
+      classId: id as string,
     });
 
     if (!allowed) {
@@ -662,8 +673,8 @@ export const removeSubjectFromClass = async (req: Request, res: Response) => {
     }
 
     await removeSubjectFromClassService({
-      classId: id,
-      subjectId,
+      classId: id as string,
+      subjectId: subjectId as string,
     });
 
     return res.status(200).json({

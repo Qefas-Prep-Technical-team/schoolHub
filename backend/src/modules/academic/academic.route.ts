@@ -22,6 +22,10 @@ import {
   getExams,
   getQuizzes,
 } from "./academic.controller";
+import {
+  assignTeacherToSubject,
+  getTeacherSubjects,
+} from "./teacher-subject.controller";
 
 const router = Router();
 
@@ -48,5 +52,9 @@ router.get("/quizzes", authenticateToken, getQuizzes);
 // Exam Routes
 router.post("/exams", authenticateToken, createExam);
 router.get("/exams", authenticateToken, getExams);
+
+// Teacher-Subject Routes
+router.post("/teacher-subjects/assign", authenticateToken, assignTeacherToSubject);
+router.get("/teacher-subjects", authenticateToken, getTeacherSubjects);
 
 export default router;

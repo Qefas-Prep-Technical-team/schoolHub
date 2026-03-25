@@ -13,7 +13,7 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Get student by code (for parent to verify before linking)
 export const getStudentByCode = async (req: Request, res: Response) => {
   try {
-    const { studentCode } = req.params;
+    const studentCode = req.params.studentCode as string;
 
     const student = await prisma.student.findFirst({
       where: { studentCode },
