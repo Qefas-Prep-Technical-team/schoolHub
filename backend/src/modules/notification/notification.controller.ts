@@ -1,0 +1,82 @@
+import { Request, Response } from "express";
+import prisma from "../../config/database";
+
+export const getMyNotifications = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.id;
+
+    const notifications = await prisma.notification.findMany({
+      where: { recipientId: userId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: notifications,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch notifications",
+    });
+  }
+};
+
+export const markNotificationAsRead = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    await prisma.notification.updateMany({
+      where: {
+        id,
+        recipientId: userId,
+      },
+      data: {
+        status: "READ",
+        readAt: new Date(),
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Notification marked as read",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update notification",
+    });
+  }
+};
+
+export const markAllNotificationsAsRead = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.id;
+
+    await prisma.notification.updateMany({
+      where: {
+        recipientId: userId,
+        status: "UNREAD",
+      },
+      data: {
+        status: "READ",
+        readAt: new Date(),
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "All notifications marked as read",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update notifications",
+    });
+  }
+};
