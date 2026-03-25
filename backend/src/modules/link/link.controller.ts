@@ -146,7 +146,7 @@ export const respondToLinkRequest = async (req: Request, res: Response) => {
     }
 
     const result = await respondToLinkRequestService({
-      requestId: id,
+      requestId: id as string,
       action,
       currentUserId: req.user.id,
       currentUserType,
@@ -302,7 +302,7 @@ export const getSingleLinkRequest = async (req: Request, res: Response) => {
     }
 
     const request = await getSingleLinkRequestService({
-      requestId: req.params.id,
+      requestId: req.params.id as string,
       currentUserId: req.user.id,
       currentUserType,
     });
@@ -333,7 +333,7 @@ export const cancelLinkRequest = async (req: Request, res: Response) => {
     }
 
     const cancelled = await cancelLinkRequestService({
-      requestId: req.params.id,
+      requestId: req.params.id as string,
       currentUserId: req.user.id,
       currentUserType,
     });
@@ -364,7 +364,7 @@ export const revokeActiveLink = async (req: Request, res: Response) => {
     }
 
     const revoked = await revokeActiveLinkService({
-      linkId: req.params.id,
+      linkId: req.params.id as string,
       currentUserId: req.user.id,
       currentUserType,
     });

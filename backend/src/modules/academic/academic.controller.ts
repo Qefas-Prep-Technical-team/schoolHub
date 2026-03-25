@@ -273,7 +273,6 @@ export const createExam = async (req: Request, res: Response) => {
       status,
       aiPrompt,
       instructions,
-      questions,
     } = req.body;
 
     if (
@@ -338,7 +337,6 @@ export const createExam = async (req: Request, res: Response) => {
       status,
       aiPrompt,
       instructions,
-      questions,
     });
 
     return res.status(201).json({

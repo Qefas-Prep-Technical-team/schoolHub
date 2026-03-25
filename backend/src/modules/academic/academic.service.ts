@@ -472,7 +472,6 @@ export const createExamService = async ({
   status,
   aiPrompt,
   instructions,
-  questions = [],
 }: {
   title: string;
   description?: string;
@@ -487,16 +486,6 @@ export const createExamService = async ({
   status?: AssessmentStatus;
   aiPrompt?: string;
   instructions?: string;
-  questions?: Array<{
-    type: QuestionType;
-    question: string;
-    optionA?: string;
-    optionB?: string;
-    optionC?: string;
-    optionD?: string;
-    correctAnswer: string;
-    marks?: number;
-  }>;
 }) => {
   const includedSubjectIds = await buildQuizIncludedSubjects({
     scope,
@@ -524,18 +513,6 @@ export const createExamService = async ({
           subjectId: id,
         })),
       },
-      questions: {
-        create: questions.map((q) => ({
-          type: q.type,
-          question: q.question,
-          optionA: q.optionA || null,
-          optionB: q.optionB || null,
-          optionC: q.optionC || null,
-          optionD: q.optionD || null,
-          correctAnswer: q.correctAnswer,
-          marks: q.marks || 1,
-        })),
-      },
     },
     include: {
       school: true,
@@ -543,7 +520,6 @@ export const createExamService = async ({
       class: true,
       subject: true,
       includedSubjects: { include: { subject: true } },
-      questions: true,
     },
   });
 };
@@ -685,7 +661,6 @@ export const getExamsService = async ({
       class: true,
       subject: true,
       includedSubjects: { include: { subject: true } },
-      questions: true,
     },
     orderBy: { createdAt: "desc" },
   });

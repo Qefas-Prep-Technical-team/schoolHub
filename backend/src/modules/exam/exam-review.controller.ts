@@ -43,7 +43,7 @@ export const markSubjectiveAnswer = async (req: Request, res: Response) => {
     const { scoreAwarded, reviewNote } = req.body;
 
     const data = await markSubjectiveAnswerService({
-      answerId: req.params.answerId,
+      answerId: req.params.answerId as string,
       scoreAwarded,
       reviewNote,
       reviewerId: req.user.id,

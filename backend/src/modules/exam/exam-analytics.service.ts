@@ -94,9 +94,6 @@ export const getDepartmentExamAnalyticsService = async ({
     where: {
       examId,
       status: "SCORED",
-      student: {
-        currentDepartmentId: departmentId,
-      },
     },
     include: {
       student: true,

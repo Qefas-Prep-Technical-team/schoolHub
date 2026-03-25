@@ -65,7 +65,7 @@ export const getSingleSubject = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const subjectId = req.params.id;
+    const subjectId = req.params.id as string;
     const subject = await getSingleSubjectService(subjectId);
 
     return res.status(200).json({
@@ -89,7 +89,7 @@ export const updateSubject = async (req: Request, res: Response) => {
     const hasPermission = await canManageSubject({
       userId: req.user.id,
       userType: req.user.userType as UserRole,
-      subjectId,
+      subjectId: subjectId as string,
     });
 
     if (!hasPermission) {
@@ -97,7 +97,7 @@ export const updateSubject = async (req: Request, res: Response) => {
     }
 
     const subject = await updateSubjectService({
-        subjectId,
+        subjectId: subjectId as string,
         name,
         code,
         description
@@ -123,14 +123,14 @@ export const archiveSubject = async (req: Request, res: Response) => {
     const hasPermission = await canManageSubject({
       userId: req.user.id,
       userType: req.user.userType as UserRole,
-      subjectId,
+      subjectId: subjectId as string,
     });
 
     if (!hasPermission) {
       return res.status(403).json({ success: false, message: "Permission denied" });
     }
 
-    const subject = await archiveSubjectService(subjectId);
+    const subject = await archiveSubjectService(subjectId as string);
 
     return res.status(200).json({
       success: true,

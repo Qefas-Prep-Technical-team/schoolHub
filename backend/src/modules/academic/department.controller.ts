@@ -67,7 +67,7 @@ export const getSingleDepartment = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const departmentId = req.params.id;
+    const departmentId = req.params.id as string;
     const department = await getSingleDepartmentService(departmentId);
 
     return res.status(200).json({
@@ -91,7 +91,7 @@ export const updateDepartment = async (req: Request, res: Response) => {
     const hasPermission = await canManageDepartment({
       userId: req.user.id,
       userType: req.user.userType as UserRole,
-      departmentId,
+      departmentId: departmentId as string,
     });
 
     if (!hasPermission) {
@@ -99,7 +99,7 @@ export const updateDepartment = async (req: Request, res: Response) => {
     }
 
     const department = await updateDepartmentService({
-      departmentId,
+      departmentId: departmentId as string,
       name,
       code,
       description,
@@ -125,14 +125,14 @@ export const archiveDepartment = async (req: Request, res: Response) => {
     const hasPermission = await canManageDepartment({
       userId: req.user.id,
       userType: req.user.userType as UserRole,
-      departmentId,
+      departmentId: departmentId as string,
     });
 
     if (!hasPermission) {
       return res.status(403).json({ success: false, message: "Permission denied" });
     }
 
-    const department = await archiveDepartmentService(departmentId);
+    const department = await archiveDepartmentService(departmentId as string);
 
     return res.status(200).json({
       success: true,
@@ -154,7 +154,7 @@ export const attachSubjectsToDepartment = async (req: Request, res: Response) =>
     const hasPermission = await canManageDepartment({
       userId: req.user.id,
       userType: req.user.userType as UserRole,
-      departmentId,
+      departmentId: departmentId as string,
     });
 
     if (!hasPermission) {
@@ -182,7 +182,8 @@ export const removeSubjectFromDepartment = async (req: Request, res: Response) =
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { id: departmentId, subjectId } = req.params;
+    const departmentId = req.params.id as string;
+    const subjectId = req.params.subjectId as string;
 
     const hasPermission = await canManageDepartment({
       userId: req.user.id,

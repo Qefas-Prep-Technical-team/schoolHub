@@ -55,7 +55,7 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
       const examAllowed = await canManageExam({
         userId: req.user.id,
         userType: req.user.userType,
-        examId: req.params.id,
+        examId: req.params.id as string,
       });
 
       if (!examAllowed) {
@@ -79,7 +79,7 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
     }
 
     const data = await createSubjectPaperService({
-      examId: req.params.id,
+      examId: req.params.id as string,
       subjectId,
       teacherId,
       title,
@@ -109,7 +109,7 @@ export const addManualQuestionsToPaper = async (req: Request, res: Response) => 
     const allowed = await canManageSubjectPaper({
       userId: req.user.id,
       userType: req.user.userType,
-      subjectPaperId: req.params.paperId,
+      subjectPaperId: req.params.paperId as string,
     });
 
     if (!allowed) {
@@ -120,7 +120,7 @@ export const addManualQuestionsToPaper = async (req: Request, res: Response) => 
     }
 
     const data = await addManualQuestionsToPaperService({
-      subjectPaperId: req.params.paperId,
+      subjectPaperId: req.params.paperId as string,
       questions: req.body.questions || [],
     });
 
@@ -146,7 +146,7 @@ export const addAIQuestionsToPaper = async (req: Request, res: Response) => {
     const allowed = await canManageSubjectPaper({
       userId: req.user.id,
       userType: req.user.userType,
-      subjectPaperId: req.params.paperId,
+      subjectPaperId: req.params.paperId as string,
     });
 
     if (!allowed) {
@@ -157,7 +157,7 @@ export const addAIQuestionsToPaper = async (req: Request, res: Response) => {
     }
 
     const data = await addAIQuestionsToPaperService({
-      subjectPaperId: req.params.paperId,
+      subjectPaperId: req.params.paperId as string,
       questions: req.body.questions || [],
     });
 
@@ -176,7 +176,7 @@ export const addAIQuestionsToPaper = async (req: Request, res: Response) => {
 
 export const validateSubjectPaper = async (req: Request, res: Response) => {
   try {
-    const data = await validateSubjectPaperService(req.params.paperId);
+    const data = await validateSubjectPaperService(req.params.paperId as string);
     return res.status(200).json({
       success: true,
       message: "Subject paper validated successfully",
@@ -192,7 +192,7 @@ export const validateSubjectPaper = async (req: Request, res: Response) => {
 
 export const publishSubjectPaper = async (req: Request, res: Response) => {
   try {
-    const data = await publishSubjectPaperService(req.params.paperId);
+    const data = await publishSubjectPaperService(req.params.paperId as string);
     return res.status(200).json({
       success: true,
       message: "Subject paper published successfully",
@@ -208,7 +208,7 @@ export const publishSubjectPaper = async (req: Request, res: Response) => {
 
 export const validateExam = async (req: Request, res: Response) => {
   try {
-    const data = await validateExamService(req.params.id);
+    const data = await validateExamService(req.params.id as string);
     return res.status(200).json({
       success: true,
       message: "Exam validated successfully",
@@ -224,7 +224,7 @@ export const validateExam = async (req: Request, res: Response) => {
 
 export const publishExam = async (req: Request, res: Response) => {
   try {
-    const data = await publishExamService(req.params.id);
+    const data = await publishExamService(req.params.id as string);
     return res.status(200).json({
       success: true,
       message: "Exam published successfully",

@@ -17,7 +17,7 @@ export const getExamRanking = async (req: Request, res: Response) => {
     }
 
     const data = await getExamRankingService({
-      examId: req.params.id,
+      examId: req.params.id as string,
     });
 
     return res.status(200).json({
@@ -36,7 +36,7 @@ export const getExamRanking = async (req: Request, res: Response) => {
 export const getClassExamAnalytics = async (req: Request, res: Response) => {
   try {
     const data = await getClassExamAnalyticsService({
-      examId: req.params.id,
+      examId: req.params.id as string,
       classId: String(req.query.classId || ""),
     });
 
@@ -55,7 +55,7 @@ export const getClassExamAnalytics = async (req: Request, res: Response) => {
 export const getDepartmentExamAnalytics = async (req: Request, res: Response) => {
   try {
     const data = await getDepartmentExamAnalyticsService({
-      examId: req.params.id,
+      examId: req.params.id as string,
       departmentId: String(req.query.departmentId || ""),
     });
 

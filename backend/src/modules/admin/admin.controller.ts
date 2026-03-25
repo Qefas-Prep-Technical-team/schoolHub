@@ -137,27 +137,7 @@ export const registerAdminSelf = async (
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create admin with PENDING status
-    const result = await prisma.$transaction(
-      async (tx: {
-        admin: {
-          create: (arg0: {
-            data: {
-              name: string;
-              email: string;
-              password: string;
-              role: "ADMIN";
-              tenantIds: string[];
-              verified: boolean; // Not verified yet
-              status: string;
-            };
-          }) => any;
-        };
-        schoolAdmin: {
-          create: (arg0: {
-            data: { schoolId: string; adminId: any; role: $Enums.AdminRole };
-          }) => any;
-        };
-      }) => {
+    const result = await prisma.$transaction(async (tx) => {
         // Create admin user with PENDING status
         const admin = await tx.admin.create({
           data: {
@@ -168,6 +148,7 @@ export const registerAdminSelf = async (
             tenantIds: [tenantId],
             verified: false, // Not verified yet
             status: "PENDING", // Waiting for approval
+            adminCode: `ADM${Math.floor(1000 + Math.random() * 9000)}`,
           },
         });
 
@@ -227,7 +208,7 @@ export const registerAdminSelf = async (
 // Step 3: Check registration status
 export const checkAdminStatus = async (req: Request, res: Response) => {
   try {
-    const { email } = req.params;
+    const email = req.params.email as string;
 
     const admin = await prisma.admin.findUnique({
       where: { email },
@@ -345,7 +326,7 @@ export const getPendingAdmins = async (req: Request, res: Response) => {
 
 export const approveAdmin = async (req: Request, res: Response) => {
   try {
-    const { adminId } = req.params;
+    const adminId = req.params.adminId as string;
 
     const updatedAdmin = await prisma.admin.update({
       where: { id: adminId },
@@ -389,7 +370,7 @@ export const approveAdmin = async (req: Request, res: Response) => {
 
 export const rejectAdmin = async (req: Request, res: Response) => {
   try {
-    const { adminId } = req.params;
+    const adminId = req.params.adminId as string;
     const { reason } = req.body;
 
     const updatedAdmin = await prisma.admin.update({

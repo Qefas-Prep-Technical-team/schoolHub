@@ -182,7 +182,7 @@ export const getExamReviewData = async (req: Request, res: Response) => {
     }
 
     const data = await getExamReviewDataService({
-      examId: req.params.id,
+      examId: req.params.id as string,
       studentId,
     });
 
