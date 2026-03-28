@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ArrowRight, Save, X } from 'lucide-react';
 import PageHeader from './PageHeader';
 import BasicInfoSection from './BasicInfoSection';
@@ -11,6 +12,7 @@ import Link from 'next/link';
 
 
 export default function CreateExamQuiz() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     // Basic Information
     title: '',
@@ -82,7 +84,7 @@ export default function CreateExamQuiz() {
     // Handle form submission here
     if (action === 'saveAndAddQuestions') {
       // Navigate to add questions page
-      window.location.href = '/create/questions';
+      router.push('/dashboard/teacher/exams&quizzes/question-list/1');
     } else {
       // Save draft and stay on page
       alert('Exam saved as draft!');
@@ -161,8 +163,6 @@ export default function CreateExamQuiz() {
                 <Save className="w-5 h-5" />
                 <span className="text-sm font-medium">Save as Draft</span>
               </button>
-              <Link href={"/dashboard/teacher/exams&quizzes/question-list/1"}>
-              
               <button
                 onClick={() => handleSubmit('saveAndAddQuestions')}
                 className="flex items-center justify-center cursor-pointer gap-2 h-12 px-8 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
@@ -170,7 +170,6 @@ export default function CreateExamQuiz() {
                 <span className="text-sm font-semibold">Create and Add Questions</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
-              </Link>
             </div>
           </div>
         </div>

@@ -13,7 +13,8 @@ export const FEATURE_FLAGS_TEACHERS = {
   // Feature Set 2: Daily Operations (DISABLE DURING DEVELOPMENT)
   attendance: false,
   messages: false,
-  notifications: false,
+  notifications: true,
+  linking: true,
 
   // Feature Set 3: Analytics & AI (DISABLE DURING DEVELOPMENT)
   reports: false,

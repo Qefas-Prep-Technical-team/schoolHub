@@ -7,6 +7,7 @@ export interface Student {
   status: "Active" | "Inactive";
   avatar: string;
   selected: boolean; // for checkbox
+  linkingCode?: string;
 }
 
 export const students: Student[] = [

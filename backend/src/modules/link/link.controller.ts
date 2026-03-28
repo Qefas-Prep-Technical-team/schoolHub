@@ -1,6 +1,7 @@
 // src/modules/link/link.controller.ts
 import { Request, Response } from "express";
 import { LinkEntityType, LinkType, UserRole } from "@prisma/client";
+import prisma from "../../config/database";
 import { createLinkRequestService } from "./link.service";
 import { createNotification } from "../notification/notification.service";
 import { respondToLinkRequestService } from "./link.respond.service";
@@ -8,6 +9,7 @@ import {
   getActiveLinksService,
   getIncomingPendingLinkRequestsService,
   getOutgoingLinkRequestsService,
+  getAllLinkRequestsService,
 } from "./link.query.service";
 import {
   batchRespondToRequestsService,
@@ -18,6 +20,9 @@ import {
   cancelLinkRequestService,
   revokeActiveLinkService,
 } from "./link.manage.service";
+
+const isClassLinkType = (type: string) =>
+  ["TEACHER_CLASS", "STUDENT_CLASS"].includes(type);
 
 const userRoleToEntityType = (role: UserRole): LinkEntityType | null => {
   switch (role) {
@@ -37,6 +42,13 @@ const userRoleToEntityType = (role: UserRole): LinkEntityType | null => {
 export const createLinkRequest = async (req: Request, res: Response) => {
   try {
     const { targetCode, linkType, note, schoolId, classId } = req.body;
+    console.log("createLinkRequest called with:", {
+      targetCode,
+      linkType,
+      note,
+      schoolId,
+      classId,
+    });
 
     if (!req.user) {
       return res.status(401).json({
@@ -183,7 +195,9 @@ export const getMySentLinkRequests = async (req: Request, res: Response) => {
 
     const currentUserType = userRoleToEntityType(req.user.userType);
     if (!currentUserType) {
-      return res.status(400).json({ success: false, message: "Unsupported user type" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Unsupported user type" });
     }
 
     const result = await getOutgoingLinkRequestsService(
@@ -196,7 +210,7 @@ export const getMySentLinkRequests = async (req: Request, res: Response) => {
         limit: Number(req.query.limit),
         status: req.query.status as string,
         linkType: req.query.linkType as string,
-      }
+      },
     );
 
     return res.status(200).json({
@@ -213,7 +227,6 @@ export const getMySentLinkRequests = async (req: Request, res: Response) => {
   }
 };
 
-
 export const getMyPendingLinkRequests = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
@@ -222,7 +235,9 @@ export const getMyPendingLinkRequests = async (req: Request, res: Response) => {
 
     const currentUserType = userRoleToEntityType(req.user.userType);
     if (!currentUserType) {
-      return res.status(400).json({ success: false, message: "Unsupported user type" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Unsupported user type" });
     }
 
     const result = await getIncomingPendingLinkRequestsService(
@@ -234,7 +249,7 @@ export const getMyPendingLinkRequests = async (req: Request, res: Response) => {
         page: Number(req.query.page),
         limit: Number(req.query.limit),
         linkType: req.query.linkType as string,
-      }
+      },
     );
 
     return res.status(200).json({
@@ -250,6 +265,47 @@ export const getMyPendingLinkRequests = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const getAllLinkRequests = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const currentUserType = userRoleToEntityType(req.user.userType);
+    if (!currentUserType) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Unsupported user type" });
+    }
+
+    const result = await getAllLinkRequestsService(
+      {
+        currentUserId: req.user.id,
+        currentUserType,
+      },
+      {
+        page: Number(req.query.page),
+        limit: Number(req.query.limit),
+        status: req.query.status as string,
+        linkType: req.query.linkType as string,
+      },
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Link requests fetched successfully",
+      ...result,
+    });
+  } catch (error: any) {
+    console.error("getAllLinkRequests error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch link requests",
+    });
+  }
+};
+
 export const getMyActiveLinks = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
@@ -258,7 +314,9 @@ export const getMyActiveLinks = async (req: Request, res: Response) => {
 
     const currentUserType = userRoleToEntityType(req.user.userType);
     if (!currentUserType) {
-      return res.status(400).json({ success: false, message: "Unsupported user type" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Unsupported user type" });
     }
 
     const result = await getActiveLinksService(
@@ -270,7 +328,7 @@ export const getMyActiveLinks = async (req: Request, res: Response) => {
         page: Number(req.query.page),
         limit: Number(req.query.limit),
         linkType: req.query.linkType as string,
-      }
+      },
     );
 
     return res.status(200).json({
@@ -287,18 +345,18 @@ export const getMyActiveLinks = async (req: Request, res: Response) => {
   }
 };
 
-
-
 export const getSingleLinkRequest = async (req: Request, res: Response) => {
   try {
-    console.log(req.params.id)
+    console.log(req.params.id);
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const currentUserType = userRoleToEntityType(req.user.userType);
     if (!currentUserType) {
-      return res.status(400).json({ success: false, message: "Unsupported user type" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Unsupported user type" });
     }
 
     const request = await getSingleLinkRequestService({
@@ -329,7 +387,9 @@ export const cancelLinkRequest = async (req: Request, res: Response) => {
 
     const currentUserType = userRoleToEntityType(req.user.userType);
     if (!currentUserType) {
-      return res.status(400).json({ success: false, message: "Unsupported user type" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Unsupported user type" });
     }
 
     const cancelled = await cancelLinkRequestService({
@@ -360,7 +420,9 @@ export const revokeActiveLink = async (req: Request, res: Response) => {
 
     const currentUserType = userRoleToEntityType(req.user.userType);
     if (!currentUserType) {
-      return res.status(400).json({ success: false, message: "Unsupported user type" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Unsupported user type" });
     }
 
     const revoked = await revokeActiveLinkService({
@@ -382,7 +444,6 @@ export const revokeActiveLink = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 export const batchRequestAction = async (req: Request, res: Response) => {
   try {
@@ -440,6 +501,83 @@ export const batchRequestAction = async (req: Request, res: Response) => {
   }
 };
 
+export const acceptAllRequestsByCategory = async (req: Request, res: Response) => {
+  try {
+    const { category } = req.body; // 'network' | 'classroom'
+
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const currentUserType = userRoleToEntityType(req.user.userType);
+    if (!currentUserType) {
+      return res.status(400).json({ success: false, message: "Unsupported user type" });
+    }
+
+    // 1. Get all pending requests for this user
+    const pendingRequests = await prisma.linkRequest.findMany({
+      where: {
+        targetId: req.user.id,
+        targetType: currentUserType,
+        status: "PENDING",
+      },
+      select: { id: true, linkType: true }
+    });
+
+    if (pendingRequests.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No pending requests to accept",
+        data: { total: 0, successCount: 0, failedCount: 0, results: [] }
+      });
+    }
+
+    // 2. Filter by category
+    let targetIds: string[] = [];
+    if (category === 'classroom') {
+      targetIds = pendingRequests
+        .filter(r => isClassLinkType(r.linkType))
+        .map(r => r.id);
+    } else if (category === 'network') {
+      targetIds = pendingRequests
+        .filter(r => !isClassLinkType(r.linkType))
+        .map(r => r.id);
+    } else {
+      // If no category specified, accept ALL
+      targetIds = pendingRequests.map(r => r.id);
+    }
+
+    if (targetIds.length === 0) {
+       return res.status(200).json({
+        success: true,
+        message: `No pending ${category} requests to accept`,
+        data: { total: 0, successCount: 0, failedCount: 0, results: [] }
+      });
+    }
+
+    // 3. Perform batch action
+    const result = await batchRespondToRequestsService({
+      ids: targetIds,
+      action: "ACCEPT",
+      currentUserId: req.user.id,
+      currentUserType,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Batch accept for ${category || 'all'} completed`,
+      data: result,
+    });
+
+  } catch (error: any) {
+    console.error("acceptAllRequestsByCategory error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Batch accept failed",
+    });
+  }
+};
+
 export const batchRevokeActiveLinks = async (req: Request, res: Response) => {
   try {
     const { ids } = req.body;
@@ -483,6 +621,102 @@ export const batchRevokeActiveLinks = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: error.message || "Batch revoke failed",
+    });
+  }
+};
+
+export const getMyProfile = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const { id, userType } = req.user;
+    let profileData: any = null;
+
+    switch (userType) {
+      case UserRole.ADMIN:
+        profileData = await prisma.admin.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            adminCode: true,
+            role: true,
+            schoolAdmins: {
+              where: { active: true },
+              include: { school: { select: { schoolCode: true } } },
+              take: 1,
+            },
+          },
+        });
+        break;
+      case UserRole.TEACHER:
+        profileData = await prisma.teacher.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            teacherCode: true,
+            role: true,
+          },
+        });
+        break;
+      case UserRole.STUDENT:
+        profileData = await prisma.student.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            studentCode: true,
+            role: true,
+          },
+        });
+        break;
+      case UserRole.PARENT:
+        profileData = await prisma.parent.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            parentCode: true,
+            role: true,
+          },
+        });
+        break;
+    }
+
+    if (!profileData) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Profile not found" });
+    }
+
+    // Standardize the code field name for frontend
+    const linkingCode =
+      profileData.adminCode ||
+      profileData.teacherCode ||
+      profileData.studentCode ||
+      profileData.parentCode;
+    const schoolCode = profileData.schoolAdmins?.[0]?.school?.schoolCode;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...profileData,
+        linkingCode,
+        schoolCode,
+      },
+    });
+  } catch (error: any) {
+    console.error("getMyProfile error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch profile",
     });
   }
 };

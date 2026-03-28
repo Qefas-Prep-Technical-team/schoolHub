@@ -35,16 +35,18 @@ import {
     Brain,
     CalendarClock,
     School,
-    User2,
-    ChevronUp,
-    ChevronDown,
     LucideIcon,
-    FileText
+    FileText,
+    Link2
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
 import { STUDENT_FEATURE_FLAGS, StudentFeatureFlagKey } from "./studentFeatureFlags"
+import { linkService } from "@/lib/api/services/linkService"
+import { toast } from "react-toastify"
+import { Copy, User2, ChevronUp, ChevronDown } from "lucide-react"
+import { useEffect } from "react"
 
 // Define the menu item type
 interface StudentMenuItem {
@@ -69,12 +71,13 @@ export const studentMenuItems: StudentMenuItem[] = [
 
     // === COMMUNICATION ===
     { icon: MessageCircle, label: "Messages", href: "/student/messages", featureKey: "messages", section: "communication" },
+    { icon: Link2, label: "Linking Hub", href: "/dashboard/student/linking", featureKey: "linking", section: "communication" },
     { icon: BellRing, label: "Notifications", href: "/student/notifications", featureKey: "notifications", section: "communication" },
 
     // === PROFILE & SETTINGS ===
-    { icon: UserCircle, label: "Profile", href: "/student/profile", featureKey: "profile", section: "profile" },
-    { icon: Settings, label: "Settings", href: "/student/settings", featureKey: "settings", section: "profile" },
-    { icon: LifeBuoy, label: "Support", href: "/student/support", featureKey: "support", section: "profile" },
+    { icon: UserCircle, label: "Profile", href: "/dashboard/student/profile", featureKey: "profile", section: "profile" },
+    { icon: Settings, label: "Settings", href: "/dashboard/student/settings", featureKey: "settings", section: "profile" },
+    { icon: LifeBuoy, label: "Support", href: "/dashboard/student/support", featureKey: "support", section: "profile" },
 
     // === OPTIONAL/ADVANCED FEATURES ===
     { icon: BookMarked, label: "Library", href: "/student/library", featureKey: "library", section: "advanced" },
@@ -114,7 +117,17 @@ interface StudentSidebarProps {
 export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarProps) {
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
+    const [profile, setProfile] = useState<any>(null)
     const pathname = usePathname()
+
+    useEffect(() => {
+        linkService.getProfile().then(setProfile).catch(() => {})
+    }, [])
+
+    const copyCode = (code: string) => {
+        navigator.clipboard.writeText(code)
+        toast.success("Code copied to clipboard")
+    }
 
     // Get filtered menu items grouped by section
     const menuSections = getFilteredStudentMenuItemsBySection()
@@ -231,7 +244,14 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                                     <div className="flex items-center">
                                         <User2 className="mr-2 h-5 w-5" />
                                         {!isCollapsed && (
-                                            <span className="font-medium text-[1rem]">Student</span>
+                                            <div className="flex flex-col items-start">
+                                                <span className="font-medium text-[0.9rem] leading-none mb-1">{profile?.name || 'Student'}</span>
+                                                {profile?.linkingCode && (
+                                                    <span className="text-[10px] font-black text-primary tracking-widest leading-none bg-primary/10 px-1.5 py-0.5 rounded uppercase">
+                                                        {profile.linkingCode}
+                                                    </span>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                     {!isCollapsed &&
@@ -248,6 +268,18 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                                 align="end"
                                 className="w-[220px] rounded-lg shadow-lg border border-border bg-background p-1"
                             >
+                                {profile?.linkingCode && (
+                                    <DropdownMenuItem 
+                                        onClick={() => copyCode(profile.linkingCode)}
+                                        className="cursor-pointer hover:bg-accent/60 rounded-md font-black text-xs p-3 justify-between"
+                                    >
+                                        <div className="flex flex-col">
+                                            <span className="text-gray-400 uppercase tracking-widest text-[10px]">Your Code</span>
+                                            <span className="text-primary tracking-widest">{profile.linkingCode}</span>
+                                        </div>
+                                        <Copy className="h-4 w-4 text-gray-400" />
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
                                     My Profile
                                 </DropdownMenuItem>

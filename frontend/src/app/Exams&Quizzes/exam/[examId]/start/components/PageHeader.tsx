@@ -3,12 +3,16 @@ import React from 'react';
 import Button from './ui/Button';
 import Breadcrumbs from './Breadcrumbs';
 
-const PageHeader: React.FC = () => {
+interface PageHeaderProps {
+    title: string;
+}
+
+const PageHeader: React.FC<PageHeaderProps> = ({ title }) => {
     return (
         <header className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <p className="text-3xl font-bold tracking-tight">
-                    Exam Preview: Algebra Fundamentals
+                    {title}
                 </p>
 
             </div>

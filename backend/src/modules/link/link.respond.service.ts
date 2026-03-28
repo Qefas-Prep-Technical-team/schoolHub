@@ -104,8 +104,11 @@ const canRespondToRequest = async ({
     return !!schoolAdmin;
   }
   if (request.targetType === LinkEntityType.CLASS) {
+    const classId = request.targetId || request.classId;
+    if (!classId) return false;
+
     const foundClass = await prisma.class.findUnique({
-      where: { id: request.targetId! },
+      where: { id: classId },
     });
 
     if (!foundClass) return false;
@@ -266,6 +269,17 @@ const applyDomainSideEffects = async (
           studentId,
         },
       });
+
+      // Also link student to the school if not already linked
+      const foundClass = await tx.class.findUnique({
+        where: { id: request.classId },
+      });
+      if (foundClass?.schoolId) {
+        await tx.student.update({
+          where: { id: studentId },
+          data: { schoolId: foundClass.schoolId },
+        });
+      }
       break;
     }
 
@@ -372,7 +386,7 @@ export const respondToLinkRequestService = async ({
         leftEntityId: request.requesterId,
         leftCode: request.requesterCode,
         rightEntityType: request.targetType,
-        rightEntityId: request.targetId!,
+        rightEntityId: request.targetId || request.classId || "",
         rightCode: request.targetCode,
         schoolId: resolvedSchoolId,
         classId: request.classId || undefined,

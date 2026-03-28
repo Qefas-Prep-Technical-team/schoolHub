@@ -68,15 +68,22 @@ export default function ClassCard({
   };
 
   return (
-    <Link href="/dashboard/admin/classes/class-details">
-    <Card className="hover:shadow-lg transition-shadow">
+    <Link href={`/dashboard/admin/classes/${classData.id}`}>
+    <Card className="hover:shadow-lg transition-shadow group">
       <div className="p-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              {classData.name}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                {classData.name}
+              </h3>
+              {classData.classCode && (
+                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4 font-mono">
+                  {classData.classCode}
+                </Badge>
+              )}
+            </div>
             <div className="flex items-center gap-2 mt-1">
               <Avatar
                 src={classData.teacher.avatarUrl}

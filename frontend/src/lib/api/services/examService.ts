@@ -1,0 +1,233 @@
+import { apiClient } from "../client";
+
+export interface Exam {
+  id: string;
+  title: string;
+  description?: string;
+  scope: "SCHOOL" | "CLASS" | "DEPARTMENT";
+  creationMode: "MANUAL" | "AI" | "OMR";
+  mode: "SINGLE_SUBJECT" | "BILINGUAL" | "MULTI_SUBJECT";
+  schoolId: string;
+  sessionId: string;
+  status: "DRAFT" | "PUBLISHED" | "ONGOING" | "COMPLETED";
+  category: "EXAM" | "QUIZ";
+  durationMinutes?: number;
+  startDate?: string;
+  resultReleaseAt?: string;
+  allowImmediateResult?: boolean;
+  classId?: string;
+  departmentId?: string;
+  createdAt: string;
+  updatedAt: string;
+  instructions?: string;
+  // New fields added based on linting/updates
+  totalMarks?: number;
+  totalQuestions?: number;
+  totalPapers?: number;
+  subjectPapers?: (SubjectPaper & { 
+    subject?: { name: string }, 
+    questions?: SubjectExamQuestion[] 
+  })[];
+}
+
+export interface SubjectPaper {
+  id: string;
+  examId: string;
+  subjectId: string;
+  teacherId: string;
+  title: string;
+  instructions: string;
+  durationMinutes: number;
+  totalMarks: number;
+  status: "DRAFT" | "REVIEW" | "APPROVED" | "REJECTED" | "PUBLISHED";
+  createdAt: string;
+  subject?: { name: string; schoolId: string };
+  _count?: { questions: number };
+}
+
+export interface SubjectExamQuestion {
+  id: string;
+  subjectPaperId: string;
+  type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER";
+  question: string;
+  optionA?: string;
+  optionB?: string;
+  optionC?: string;
+  optionD?: string;
+  correctAnswer: string;
+  explanation?: string;
+  marks: number;
+  order: number;
+}
+
+export interface CreateExamDTO {
+  title: string;
+  description: string;
+  scope: string;
+  creationMode: string;
+  category: string;
+  mode: string;
+  schoolId: string;
+  sessionId: string;
+  startDate?: string;
+  resultReleaseAt?: string;
+  allowImmediateResult?: boolean;
+  classId?: string;
+  departmentId?: string;
+}
+
+export interface CreatePaperDTO {
+  subjectId: string;
+  teacherId: string;
+  title: string;
+  instructions: string;
+  durationMinutes: number;
+}
+
+export const examService = {
+  getExams: async (params?: {
+    schoolId?: string;
+    sessionId?: string;
+    classId?: string;
+    departmentId?: string;
+    status?: string;
+  }) => {
+    const response = await apiClient.get<{ data: Exam[] }>("/exams", { params });
+    return response.data.data || [];
+  },
+
+  getExamById: async (id: string) => {
+    const response = await apiClient.get<{ data: Exam }>(`/exams/${id}`);
+    return response.data.data;
+  },
+
+  createExam: async (data: CreateExamDTO) => {
+    const response = await apiClient.post<{ data: Exam }>("/exams", data);
+    return response.data.data;
+  },
+
+  getExamPapers: async (examId: string) => {
+    const response = await apiClient.get<{ data: SubjectPaper[] }>(
+      `/exams/${examId}/papers`,
+    );
+    return response.data.data || [];
+  },
+
+  getPaperById: async (examId: string, paperId: string) => {
+    const response = await apiClient.get<{ data: SubjectPaper }>(
+      `/exams/${examId}/papers/${paperId}`,
+    );
+    return response.data.data;
+  },
+
+  createSubjectPaper: async (examId: string, data: CreatePaperDTO) => {
+    console.log("Creating subject paper with data:", data);
+    const response = await apiClient.post<{ data: SubjectPaper }>(
+      `/exams/${examId}/papers`,
+      data,
+    );
+    return response.data.data;
+  },
+
+  updateQuestion: async (questionId: string, data: any) => {
+    const response = await apiClient.patch(`/exams/questions/${questionId}`, data);
+    return response.data;
+  },
+
+  deleteQuestion: async (questionId: string) => {
+    const response = await apiClient.delete(`/exams/questions/${questionId}`);
+    return response.data;
+  },
+
+  validatePaper: async (examId: string, paperId: string) => {
+    const response = await apiClient.post(`/exams/${examId}/papers/${paperId}/validate`);
+    return response.data;
+  },
+
+  publishPaper: async (examId: string, paperId: string) => {
+    const response = await apiClient.post(`/exams/${examId}/papers/${paperId}/publish`);
+    return response.data;
+  },
+
+  validateExam: async (id: string) => {
+    const response = await apiClient.post(`/exams/${id}/validate`);
+    return response.data;
+  },
+
+  publishExam: async (id: string) => {
+    const response = await apiClient.post(`/exams/${id}/publish`);
+    return response.data;
+  },
+
+  unpublishExam: async (id: string) => {
+    const response = await apiClient.post(`/exams/${id}/unpublish`);
+    return response.data;
+  },
+
+  deleteExam: async (id: string) => {
+    const response = await apiClient.delete(`/exams/${id}`);
+    return response.data;
+  },
+
+  unpublishPaper: async (examId: string, paperId: string) => {
+    const response = await apiClient.post(`/exams/${examId}/papers/${paperId}/unpublish`);
+    return response.data;
+  },
+
+  deletePaper: async (examId: string, paperId: string) => {
+    const response = await apiClient.delete(`/exams/${examId}/papers/${paperId}`);
+    return response.data;
+  },
+
+  updateExam: async (id: string, data: Partial<CreateExamDTO>) => {
+    const response = await apiClient.patch<{ data: Exam }>(`/exams/${id}`, data);
+    return response.data.data;
+  },
+
+  // Student Attempt Endpoints
+  getExamAttempt: async (examId: string) => {
+    const response = await apiClient.get(`/exams/${examId}/attempt`);
+    return response.data.data;
+  },
+
+  startExamAttempt: async (examId: string) => {
+    const response = await apiClient.post(`/exams/${examId}/start`);
+    return response.data.data;
+  },
+
+  saveAnswer: async (examId: string, data: { subjectPaperId: string, questionId: string, answer: string }) => {
+    const response = await apiClient.post(`/exams/${examId}/answers`, data);
+    return response.data;
+  },
+
+  submitAttempt: async (examId: string) => {
+    const response = await apiClient.post(`/exams/${examId}/submit`);
+    return response.data.data;
+  },
+
+  getExamResult: async (examId: string, studentId?: string) => {
+    const url = studentId ? `/exams/${examId}/result?studentId=${studentId}` : `/exams/${examId}/result`;
+    const response = await apiClient.get(url);
+    return response.data.data;
+  },
+
+  getExamReview: async (examId: string, studentId?: string) => {
+    const url = studentId ? `/exams/${examId}/review?studentId=${studentId}` : `/exams/${examId}/review`;
+    const response = await apiClient.get(url);
+    return response.data.data;
+  },
+
+  getSubjectPapers: async (params?: { unlinkedOnly?: boolean }) => {
+    const response = await apiClient.get<{ data: SubjectPaper[] }>("/exams/papers/all", { params });
+    return response.data.data || [];
+  },
+
+  linkSubjectPaperToExam: async (paperId: string, examId: string) => {
+    const response = await apiClient.patch(`/exams/papers/${paperId}/link`, { examId });
+    return response.data;
+  },
+  unlinkSubjectPaper: async (paperId: string) => {
+    const response = await apiClient.patch(`/exams/papers/${paperId}/unlink`);
+    return response.data;
+  },
+};

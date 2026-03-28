@@ -1,22 +1,19 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-
 import StatsCard from './components/StatsCard';
 import SearchBar from './components/SearchBar';
 import FilterChip from './components/FilterChip';
 import ClassGrid from './components/ClassGrid';
 import { Button } from './components/ui/Button';
-import {
-  adminUser,
-  navItems,
-  statCards,
-  filterChips,
-  classData,
-} from './components/data';
+import { ClassData } from './components/types';
+import { classService, Class } from './services/classService';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { apiClient } from '@/lib/api/client';
+import { toast } from 'react-toastify';
+import ClassModal from './components/ClassModal';
 
 export default function ClassesOverviewPage() {
-  // State for filters
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({
     grade: 'all',
@@ -25,32 +22,71 @@ export default function ClassesOverviewPage() {
     sessionTerm: 'all',
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Real data state
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingClass, setEditingClass] = useState<Class | null>(null);
+  
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    fetchClasses();
+  }, [user]);
+
+  const fetchClasses = async () => {
+    setLoading(true);
+    try {
+      // We need schoolId. For admin, we get it from status check
+      const statusRes = await apiClient.get(`/admin/admin-status/${user?.email}`);
+      const schoolId = statusRes.data.data.schoolAdmins?.[0]?.schoolId;
+      
+      if (schoolId) {
+        const data = await classService.getClasses(schoolId);
+        setClasses(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch classes", error);
+      toast.error("Failed to load classes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Map real Class to ClassData for the UI components
+  const mappedClassData: ClassData[] = useMemo(() => {
+    return classes.map(c => ({
+      id: c.id,
+      name: c.name,
+      section: c.section || 'N/A',
+      teacher: {
+        name: c.teacher?.name || 'No Teacher Assigned',
+        avatarUrl: c.teacher?.avatarUrl || '',
+      },
+      studentCount: c._count?.enrollments || 0,
+      subjectCount: c._count?.subjects || 0,
+      timetableStatus: c.status === 'ACTIVE' ? 'complete' : 'pending',
+      classCode: c.classCode,
+    }));
+  }, [classes]);
 
   // Filter classes based on search and filters
   const filteredClasses = useMemo(() => {
-    return classData.filter((classItem) => {
-      // Search filter
+    return mappedClassData.filter((classItem) => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesSearch = 
           classItem.name.toLowerCase().includes(query) ||
-          classItem.teacher.name.toLowerCase().includes(query) ||
-          classItem.grade.toLowerCase().includes(query);
+          classItem.teacher.name.toLowerCase().includes(query);
         
         if (!matchesSearch) return false;
       }
 
-      // Grade filter
-      if (filters.grade !== 'all' && filters.grade !== classItem.grade) {
-        return false;
-      }
-
-      // Class arm filter
       if (filters.classArm !== 'all' && filters.classArm !== classItem.section) {
         return false;
       }
 
-      // Teacher filter
       if (filters.homeroomTeacher !== 'all' && 
           filters.homeroomTeacher !== classItem.teacher.name) {
         return false;
@@ -58,14 +94,28 @@ export default function ClassesOverviewPage() {
 
       return true;
     });
-  }, [searchQuery, filters, classData]);
+  }, [searchQuery, filters, mappedClassData]);
 
-  // Handle search
+  // Stats calculation
+  const stats = useMemo(() => {
+    const totalClasses = classes.length;
+    const teachersAssigned = classes.filter(c => c.teacherId).length;
+    const studentsTotal = classes.reduce((sum, c) => sum + (c._count?.enrollments || 0), 0);
+    const completeTimetables = mappedClassData.filter(c => c.timetableStatus === 'complete').length;
+    const completionRate = totalClasses > 0 ? Math.round((completeTimetables / totalClasses) * 100) : 0;
+
+    return [
+      { id: 'total-classes', title: 'Total Classes', value: totalClasses, change: 0, changeType: 'increase' as const },
+      { id: 'teachers-assigned', title: 'Teachers Assigned', value: teachersAssigned, change: 0, changeType: 'increase' as const },
+      { id: 'students-enrolled', title: 'Students Enrolled', value: studentsTotal, change: 0, changeType: 'increase' as const },
+      { id: 'timetable-completion', title: 'Timetable Completion', value: `${completionRate}%`, change: 0, changeType: 'increase' as const },
+    ];
+  }, [classes, mappedClassData]);
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
 
-  // Handle filter selection
   const handleFilterSelect = (filterId: string, value: string) => {
     setFilters(prev => ({
       ...prev,
@@ -73,30 +123,31 @@ export default function ClassesOverviewPage() {
     }));
   };
 
-  // Handle class actions
-  const handleViewClass = (classId: string) => {
-    console.log('View class:', classId);
-    // Navigate to class details
+  const handleCreateClass = () => {
+    setEditingClass(null);
+    setIsModalOpen(true);
   };
 
   const handleEditClass = (classId: string) => {
-    console.log('Edit class:', classId);
-    // Open edit modal
-  };
-
-  const handleDeleteClass = (classId: string) => {
-    if (confirm('Are you sure you want to delete this class?')) {
-      console.log('Delete class:', classId);
-      // Implement delete logic
+    const cls = classes.find(c => c.id === classId);
+    if (cls) {
+      setEditingClass(cls);
+      setIsModalOpen(true);
     }
   };
 
-  const handleCreateClass = () => {
-    console.log('Create new class');
-    // Open create class modal
+  const handleDeleteClass = async (classId: string) => {
+    if (confirm('Are you sure you want to archive this class?')) {
+      try {
+        await classService.archiveClass(classId);
+        toast.success("Class archived successfully");
+        fetchClasses();
+      } catch (error) {
+        toast.error("Failed to archive class");
+      }
+    }
   };
 
-  // Clear all filters
   const handleClearFilters = () => {
     setSearchQuery('');
     setFilters({
@@ -109,187 +160,64 @@ export default function ClassesOverviewPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="flex">
-        {/* Mobile sidebar overlay */}
-        {sidebarOpen && (
-          <div 
-            className="fixed inset-0 z-40 bg-black/50 md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
-        {/* Sidebar */}
-        <div className={`fixed md:relative z-50 transform transition-transform duration-300 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}>
-          
-        </div>
-
-        {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8">
-          <div className="mx-auto max-w-7xl">
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-6">
-            
-              
-              <div className="flex items-center gap-3">
-                <Button link="/dashboard/admin/classes/create" onClick={handleCreateClass}>
-                  Create New Class
-                </Button>
-                
-                <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="md:hidden p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
-                >
-                  <span className="sr-only">Toggle menu</span>
-                  <div className="w-6 h-0.5 bg-gray-600 dark:bg-gray-400 mb-1"></div>
-                  <div className="w-6 h-0.5 bg-gray-600 dark:bg-gray-400 mb-1"></div>
-                  <div className="w-6 h-0.5 bg-gray-600 dark:bg-gray-400"></div>
-                </button>
-              </div>
+      <main className="flex-1 p-6 lg:p-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Class Management</h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Manage your school's classes, teachers, and student enrollments</p>
             </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {statCards.map((stat) => (
-                <StatsCard
-                  key={stat.id}
-                  title={stat.title}
-                  value={stat.value}
-                  change={stat.change}
-                  changeType={stat.changeType}
-                />
-              ))}
-            </div>
-
-            {/* Toolbar */}
-            <div className="flex flex-col lg:flex-row gap-4 mb-8">
-              {/* Search Bar */}
-              <SearchBar
-                placeholder="Search by class, teacher, grade..."
-                onSearch={handleSearch}
-                className="flex-grow"
-              />
-
-              {/* Filter Chips */}
-              <div className="flex gap-3 overflow-x-auto pb-2">
-                {filterChips.map((chip) => (
-                  <FilterChip
-                    key={chip.id}
-                    label={chip.label}
-                    value={filters[chip.id] || 'all'}
-                    options={chip.options || []}
-                    onSelect={(value) => handleFilterSelect(chip.id, value)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Active Filters */}
-            {(searchQuery || Object.values(filters).some(v => v !== 'all')) && (
-              <div className="flex items-center justify-between mb-6 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Active filters:
-                  </span>
-                  
-                  {searchQuery && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-xs">
-                      <button
-                        onClick={() => setSearchQuery('')}
-                        className="text-blue-500 hover:text-blue-700"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
-                  
-                  {Object.entries(filters)
-                    .filter(([_, value]) => value !== 'all')
-                    .map(([key, value]) => (
-                      <span
-                        key={key}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs"
-                      >
-                        {key}: {value}
-                        <button
-                          onClick={() => handleFilterSelect(key, 'all')}
-                          className="text-gray-500 hover:text-gray-700"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                </div>
-                
-                <button
-                  onClick={handleClearFilters}
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  Clear all
-                </button>
-              </div>
-            )}
-
-            {/* Class Grid */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  All Classes ({filteredClasses.length})
-                </h3>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Showing {filteredClasses.length} of {classData.length} classes
-                </div>
-              </div>
-              
-              <ClassGrid
-                classes={filteredClasses}
-                onViewClass={handleViewClass}
-                onEditClass={handleEditClass}
-                onDeleteClass={handleDeleteClass}
-                onCreateClass={handleCreateClass}
-              />
-            </div>
-
-            {/* Summary Stats */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Summary Statistics
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Classes with Complete Timetable</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {filteredClasses.filter(c => c.timetableStatus === 'complete').length}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Average Students per Class</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {filteredClasses.length > 0 
-                      ? Math.round(filteredClasses.reduce((sum, c) => sum + c.studentCount, 0) / filteredClasses.length)
-                      : 0}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Students</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {filteredClasses.reduce((sum, c) => sum + c.studentCount, 0)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Average Subjects</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {filteredClasses.length > 0 
-                      ? Math.round(filteredClasses.reduce((sum, c) => sum + c.subjectCount, 0) / filteredClasses.length)
-                      : 0}
-                  </p>
-                </div>
-              </div>
+            <div className="flex items-center gap-3">
+              <Button onClick={handleCreateClass}>
+                Create New Class
+              </Button>
             </div>
           </div>
-        </main>
-      </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {stats.map((stat) => (
+              <StatsCard
+                key={stat.id}
+                title={stat.title}
+                value={stat.value}
+                change={stat.change}
+                changeType={stat.changeType}
+              />
+            ))}
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-4 mb-8">
+            <SearchBar
+              placeholder="Search by class or teacher..."
+              onSearch={handleSearch}
+              className="flex-grow"
+            />
+          </div>
+
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                All Classes ({filteredClasses.length})
+              </h3>
+            </div>
+            
+            <ClassGrid
+              classes={filteredClasses}
+              isLoading={loading}
+              onEditClass={handleEditClass}
+              onDeleteClass={handleDeleteClass}
+              onCreateClass={handleCreateClass}
+            />
+          </div>
+        </div>
+      </main>
+
+      <ClassModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchClasses}
+        classItem={editingClass}
+      />
     </div>
   );
 }

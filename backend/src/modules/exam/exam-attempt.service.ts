@@ -33,6 +33,10 @@ export const startExamAttemptService = async ({
     throw new Error("This exam is not available");
   }
 
+  if (exam.startDate && new Date() < new Date(exam.startDate)) {
+    throw new Error(`This exam is scheduled to start on ${new Date(exam.startDate).toLocaleString()}.`);
+  }
+
   const existing = await prisma.examAttempt.findUnique({
     where: {
       examId_studentId: {
@@ -225,10 +229,23 @@ export const getExamAttemptService = async ({
     throw new Error("Exam attempt not found after auto-submit");
   }
 
-  return {
+  const result = {
     ...attempt,
     remainingSeconds: getRemainingSeconds({ expiresAt: attempt.expiresAt }),
   };
+
+  // Scrub correct answers if exam is still in progress
+  if (attempt.status === "IN_PROGRESS") {
+    result.subjectAttempts.forEach(sa => {
+      sa.subjectPaper.questions = sa.subjectPaper.questions.map(q => ({
+        ...q,
+        correctAnswer: "",
+        explanation: ""
+      })) as any;
+    });
+  }
+
+  return result;
 };
 
 export const saveExamAnswerService = async ({
@@ -254,6 +271,7 @@ export const saveExamAnswerService = async ({
   });
 
   if (!attempt) {
+    console.error("Exam attempt not found for save:", { examId, studentId });
     throw new Error("Exam attempt not found. Start the exam first.");
   }
 
@@ -351,10 +369,10 @@ export const scoreExamAttemptService = async ({
       if (answer.question.type === "SHORT_ANSWER") {
         requiresManualReview = true;
       } else {
-        const expected = answer.question.correctAnswer.trim().toLowerCase();
-        const actual = answer.answer.trim().toLowerCase();
+        const expected = (answer.question.correctAnswer || "").trim().toLowerCase();
+        const actual = (answer.answer || "").trim().toLowerCase();
 
-        isCorrect = expected === actual;
+        isCorrect = expected !== "" && expected === actual;
         scoreAwarded = isCorrect ? Number(answer.question.marks || 0) : 0;
       }
 
@@ -390,6 +408,7 @@ export const scoreExamAttemptService = async ({
       status: ExamAttemptStatus.SCORED,
     },
     include: {
+      student: true,
       exam: true,
       subjectAttempts: {
         include: {
@@ -414,8 +433,30 @@ export const scoreExamAttemptService = async ({
     type: "GENERAL",
     title: "Exam Submitted",
     message: `Your attempt for "${updated.exam.title}" has been successfully recorded.`,
+    link: `/dashboard/student/exams/${attempt.examId}/result`,
     meta: { examAttemptId: attempt.id, examId: attempt.examId },
   }).catch((err) => console.error("Submission alert error:", err));
+
+  // Notify admins
+  prisma.admin.findMany({
+    where: {
+      schoolAdmins: {
+        some: { schoolId: updated.exam.schoolId || "" },
+      },
+    },
+  }).then((admins: any[]) => {
+    admins.forEach((admin: any) =>
+      createNotification({
+        recipientType: "ADMIN",
+        recipientId: admin.id,
+        type: "GENERAL",
+        title: "Student Submitted Exam",
+        message: `Student "${updated.student.name}" has submitted their attempt for exam "${updated.exam.title}".`,
+        link: `/dashboard/admin/exams/${attempt.examId}/results`,
+        meta: { examId: attempt.examId, studentId: attempt.studentId },
+      })
+    );
+  }).catch((err: any) => console.error("Admin submission notify error:", err));
 
   return updated;
 };

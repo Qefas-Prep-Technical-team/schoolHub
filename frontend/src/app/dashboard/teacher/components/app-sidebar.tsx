@@ -40,6 +40,8 @@ import {
     User2,
     ChevronUp,
     ChevronDown,
+    Share2,
+    Copy,
     LucideIcon
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
@@ -47,6 +49,9 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
 import { FEATURE_FLAGS_TEACHERS, FeatureTeacherFlagKey } from "@/lib/config/featureFlags"
+import { linkService } from "@/lib/api/services/linkService"
+import { toast } from "react-toastify"
+import { useEffect } from "react"
 
 // Define the menu item type
 interface MenuItem {
@@ -68,7 +73,8 @@ export const menuItems: MenuItem[] = [
     { icon: FileText, label: "Documents", href: "/dashboard/teacher/documents", featureKey: "documents" },
     { icon: MessageSquare, label: "Messages", href: "/teacher/messages", featureKey: "messages" },
     { icon: MessageSquare, label: "Messages", href: "/teacher/messages", featureKey: "messages" },
-    { icon: BellRing, label: "Notifications", href: "/teacher/notifications", featureKey: "notifications" },
+    { icon: BellRing, label: "Notifications", href: "/dashboard/teacher/notifications", featureKey: "notifications" },
+    { icon: Share2, label: "Linking Hub", href: "/dashboard/teacher/linking", featureKey: "linking" },
     { icon: BarChart3, label: "Reports", href: "/teacher/reports", featureKey: "reports" },
     { icon: BookMarked, label: "Resources", href: "/teacher/resources", featureKey: "resources" },
     { icon: Brain, label: "AI Assistant", href: "/teacher/ai-tools", featureKey: "aiTools" },
@@ -91,7 +97,17 @@ interface AppSidebarProps {
 export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
+    const [profile, setProfile] = useState<any>(null)
     const pathname = usePathname()
+
+    useEffect(() => {
+        linkService.getProfile().then(setProfile).catch(() => {})
+    }, [])
+
+    const copyCode = (code: string) => {
+        navigator.clipboard.writeText(code)
+        toast.success("Code copied to clipboard")
+    }
 
     // Get filtered menu items based on feature flags
     const filteredMenuItems = getFilteredMenuItems()
@@ -179,7 +195,14 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
                                     <div className="flex items-center">
                                         <User2 className="mr-2 h-5 w-5" />
                                         {!isCollapsed && (
-                                            <span className="font-medium text-[1rem]">Username</span>
+                                            <div className="flex flex-col items-start">
+                                                <span className="font-medium text-[0.9rem] leading-none mb-1">{profile?.name || 'Teacher'}</span>
+                                                {profile?.linkingCode && (
+                                                    <span className="text-[10px] font-black text-primary tracking-widest leading-none bg-primary/10 px-1.5 py-0.5 rounded uppercase">
+                                                        {profile.linkingCode}
+                                                    </span>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                     {!isCollapsed &&
@@ -196,6 +219,18 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
                                 align="end"
                                 className="w-[220px] rounded-lg shadow-lg border border-border bg-background p-1"
                             >
+                                {profile?.linkingCode && (
+                                    <DropdownMenuItem 
+                                        onClick={() => copyCode(profile.linkingCode)}
+                                        className="cursor-pointer hover:bg-accent/60 rounded-md font-black text-xs p-3 justify-between"
+                                    >
+                                        <div className="flex flex-col">
+                                            <span className="text-gray-400 uppercase tracking-widest text-[10px]">Your Code</span>
+                                            <span className="text-primary tracking-widest">{profile.linkingCode}</span>
+                                        </div>
+                                        <Copy className="h-4 w-4 text-gray-400" />
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
                                     Account
                                 </DropdownMenuItem>

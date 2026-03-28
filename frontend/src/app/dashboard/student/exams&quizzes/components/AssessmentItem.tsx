@@ -18,7 +18,7 @@ export default function AssessmentItem({ assessment }: AssessmentItemProps) {
     };
 
     return (
-        <Link href={"/dashboard/student/exams&quizzes/performance-Breakdown"} className="grid cursor-pointer grid-cols-2 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 md:grid-cols-5">
+        <Link href={`/dashboard/student/exams&quizzes/${assessment.id}`} className="grid cursor-pointer grid-cols-2 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 md:grid-cols-5">
             {/* Title and Subject */}
             <div className="col-span-2 md:col-span-2">
                 <p className="font-semibold text-slate-900 dark:text-white">{assessment.title}</p>
@@ -27,8 +27,13 @@ export default function AssessmentItem({ assessment }: AssessmentItemProps) {
 
             {/* Date */}
             <div className="text-left">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Date</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Date & Time</p>
                 <p className="font-medium text-slate-800 dark:text-slate-200">{assessment.date}</p>
+                {assessment.durationMinutes && (
+                    <p className="text-[10px] font-bold text-primary flex items-center gap-1 mt-0.5">
+                        {assessment.durationMinutes} Minutes
+                    </p>
+                )}
             </div>
 
             {/* Score */}
@@ -42,7 +47,9 @@ export default function AssessmentItem({ assessment }: AssessmentItemProps) {
             {/* Status Badge */}
             <div className="col-span-2 text-left md:col-span-1 md:text-right">
                 <Badge variant={assessment.status}>
-                    {assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
+                    {assessment.status === 'active' ? 'Ready to Start' : 
+                     assessment.status === 'taken' ? 'Completed' :
+                     assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
                 </Badge>
             </div>
         </Link>

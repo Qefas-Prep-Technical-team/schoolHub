@@ -6,6 +6,9 @@ import {
   rejectAdmin,
   verifyTenantId,
   registerAdminSelf,
+  getSchoolTeachers,
+  getSchoolStudents,
+  getSchoolMembers,
 } from "./admin.controller";
 import { authenticateToken } from "@middleware/authMiddleware";
 
@@ -25,6 +28,9 @@ router.get("/admin-status/:email", checkAdminStatus);
 router.use(authenticateToken);
 
 router.get("/pending", getPendingAdmins);
+router.get("/teachers", getSchoolTeachers);
+router.get("/students", getSchoolStudents);
+router.get("/members", getSchoolMembers);
 router.put("/:adminId/approve", approveAdmin);
 router.put("/:adminId/reject", rejectAdmin);
 

@@ -31,14 +31,15 @@ export interface FilterChip {
 export interface ClassData {
   id: string;
   name: string;
-  grade: string;
-  section: string;
+  grade?: string;
+  section?: string;
   teacher: {
     name: string;
-    avatarUrl: string;
+    avatarUrl?: string;
   };
   studentCount: number;
   subjectCount: number;
   timetableStatus: 'complete' | 'incomplete' | 'pending';
   color?: string;
+  classCode?: string;
 }

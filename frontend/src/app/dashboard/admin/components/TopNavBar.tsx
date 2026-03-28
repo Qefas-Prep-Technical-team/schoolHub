@@ -8,6 +8,7 @@ import Image from "next/image";
 import { ThemeToggle } from "@/app/theme-toggle";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { AdminMobileDrawer } from "./AdminMobileDrawer";
+import NotificationCenter from "./NotificationCenter";
 
 export default function TopNavBar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -32,9 +33,7 @@ export default function TopNavBar() {
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
           <ThemeToggle />
 
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent">
-            <Bell className="h-5 w-5" />
-          </Button>
+          <NotificationCenter />
 
           {/* Profile */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsProfileOpen(!isProfileOpen)}>

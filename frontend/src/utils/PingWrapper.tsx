@@ -7,7 +7,10 @@ export const PingWrapper = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         // Ping your backend health-check or a simple GET route
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/health`)
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        // If the URL ends with /api, the health check at root might be better reachable via base domain, 
+        // but adding it to /api is safer for this wrapper.
+        fetch(`${apiUrl}/health`)
             .then(() => setIsWaking(false))
             .catch(() => console.log("Backend is cold, starting up..."));
     }, []);

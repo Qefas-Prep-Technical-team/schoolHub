@@ -11,7 +11,8 @@ export const STUDENT_FEATURE_FLAGS = {
 
   // === COMMUNICATION ===
   messages: false,
-  notifications: false,
+  notifications: true,
+  linking: true,
 
   // === PROFILE & SETTINGS ===
   profile: true,

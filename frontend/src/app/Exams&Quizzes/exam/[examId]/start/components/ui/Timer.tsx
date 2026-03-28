@@ -4,35 +4,24 @@
 import React, { useState, useEffect } from 'react';
 
 interface TimerProps {
-  initialTime: number; // in seconds
+  seconds: number;
 }
 
-const Timer: React.FC<TimerProps> = ({ initialTime }) => {
-  const [timeLeft, setTimeLeft] = useState(initialTime);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 0) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+const Timer: React.FC<TimerProps> = ({ seconds }) => {
+  const formatTime = (totalSeconds: number): string => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const remainingSeconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   return (
-    <p className="mt-1 text-4xl font-bold tracking-tighter">
-      {formatTime(timeLeft)}
+    <p className="mt-1 text-4xl font-bold tracking-tighter tabular-nums">
+      {formatTime(seconds)}
     </p>
   );
 };

@@ -40,12 +40,18 @@ import {
     User2,
     ChevronUp,
     ChevronDown,
+    ChevronLeft,
+    ChevronRight,
     LucideIcon
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
 import { ADMIN_FEATURE_FLAGS, AdminFeatureFlagKey } from "./adminFeatureFlags"
+import { linkService } from "@/lib/api/services/linkService"
+import { toast } from "react-toastify"
+import { Copy } from "lucide-react"
+import { useEffect } from "react"
 
 
 // Define the menu item type
@@ -65,10 +71,14 @@ export const adminMenuItems: AdminMenuItem[] = [
     { icon: Users, label: "Teachers", href: "/dashboard/admin/teachers", featureKey: "teachers", section: "core" },
     { icon: GraduationCap, label: "Students", href: "/dashboard/admin/students", featureKey: "students", section: "core" },
     { icon: CalendarDays, label: "Classes & Timetable", href: "/dashboard/admin/classes", featureKey: "classes", section: "core" },
+    { icon: BrainCircuit, label: "Linking Hub", href: "/dashboard/admin/linking", featureKey: "linkingHub", section: "core" },
+    { icon: CalendarDays, label: "Session Management", href: "/dashboard/admin/sessions", featureKey: "sessions", section: "core" },
 
     // === ACADEMICS ===
     { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },
-    { icon: BookOpenCheck, label: "Exams & Quizzes", href: "/dashboard/admin/Exams&Quizzes", featureKey: "exams", section: "academics" },
+    { icon: BookOpenCheck, label: "Exam Setup", href: "/dashboard/admin/exams", featureKey: "exams", section: "academics" },
+    { icon: BookOpenCheck, label: "Subjects", href: "/dashboard/admin/subjects", featureKey: "subjects", section: "academics" },
+    { icon: Building2, label: "Departments", href: "/dashboard/admin/departments", featureKey: "departments", section: "academics" },
     { icon: CheckSquare, label: "Attendance", href: "/dashboard/admin/attendance", featureKey: "attendance", section: "academics" },
     { icon: LibraryBig, label: "Library", href: "/dashboard/admin/library", featureKey: "library", section: "academics" },
 
@@ -123,7 +133,17 @@ interface AdminSidebarProps {
 export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps) {
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
+    const [profile, setProfile] = useState<any>(null)
     const pathname = usePathname()
+
+    useEffect(() => {
+        linkService.getProfile().then(setProfile).catch(() => {})
+    }, [])
+
+    const copyCode = (code: string) => {
+        navigator.clipboard.writeText(code)
+        toast.success("Code copied to clipboard")
+    }
 
     // Get filtered menu items grouped by section
     const menuSections = getFilteredMenuItemsBySection()
@@ -137,8 +157,8 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
             )}
         >
             {/* Header */}
-            <SidebarHeader className="pt-8 flex items-center justify-between px-4">
-                <SidebarMenu>
+            <SidebarHeader className="pt-8 flex items-center justify-between px-4 relative group overflow-visible">
+                <SidebarMenu className="flex-1">
                     <SidebarMenuItem>
                         <SidebarMenuButton
                             className="flex items-center justify-between hover:bg-transparent cursor-default"
@@ -170,6 +190,22 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
+
+                {/* Retractable Toggle Button */}
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        setIsCollapsed(!isCollapsed);
+                    }}
+                    className="absolute -right-4 top-10 z-[100] h-8 w-8 rounded-full border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 flex items-center justify-center shadow-xl text-gray-600 hover:text-blue-600 hover:scale-110 active:scale-95 transition-all"
+                    title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                >
+                    {isCollapsed ? (
+                        <ChevronRight size={18} />
+                    ) : (
+                        <ChevronLeft size={18} />
+                    )}
+                </button>
             </SidebarHeader>
 
             {/* Main Menu */}
@@ -245,7 +281,14 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                                     <div className="flex items-center">
                                         <User2 className="mr-2 h-5 w-5" />
                                         {!isCollapsed && (
-                                            <span className="font-medium text-[1rem]">Admin</span>
+                                            <div className="flex flex-col items-start">
+                                                <span className="font-medium text-[0.9rem] leading-none mb-1">Admin</span>
+                                                {profile?.linkingCode && (
+                                                    <span className="text-[10px] font-black text-primary tracking-widest leading-none bg-primary/10 px-1.5 py-0.5 rounded uppercase">
+                                                        {profile.linkingCode}
+                                                    </span>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                     {!isCollapsed &&
@@ -262,6 +305,18 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                                 align="end"
                                 className="w-[220px] rounded-lg shadow-lg border border-border bg-background p-1"
                             >
+                                {profile?.linkingCode && (
+                                    <DropdownMenuItem 
+                                        onClick={() => copyCode(profile.linkingCode)}
+                                        className="cursor-pointer hover:bg-accent/60 rounded-md font-black text-xs p-3 justify-between"
+                                    >
+                                        <div className="flex flex-col">
+                                            <span className="text-gray-400 uppercase tracking-widest text-[10px]">Your Code</span>
+                                            <span className="text-primary tracking-widest">{profile.linkingCode}</span>
+                                        </div>
+                                        <Copy className="h-4 w-4 text-gray-400" />
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
                                     Admin Account
                                 </DropdownMenuItem>

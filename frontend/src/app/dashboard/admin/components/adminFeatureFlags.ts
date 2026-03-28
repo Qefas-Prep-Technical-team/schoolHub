@@ -6,12 +6,15 @@ export const ADMIN_FEATURE_FLAGS = {
   teachers: true,
   students: true,
   classes: true,
+  sessions: true,
 
   // === ACADEMICS ===
   grades: true,
   exams: true,
   attendance: true,
   library: false,
+  departments: true,
+  subjects: true,
 
   // === ADMINISTRATION ===
   finance: false,
@@ -21,6 +24,7 @@ export const ADMIN_FEATURE_FLAGS = {
   // === COMMUNICATION ===
   communication: false,
   gallery: false,
+  linkingHub: true,
 
   // === ADVANCED TOOLS ===
   aiTools: false,

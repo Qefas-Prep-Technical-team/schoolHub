@@ -69,6 +69,7 @@ export const parseRawExamTextToStructuredQuestions = async ({
               "You are an exam parser. Convert pasted exam text into structured exam questions. " +
               "Always include correct answers. Infer question type carefully. " +
               "For MCQ, map options into optionA-optionD when possible. " +
+              "IMPORTANT: For MULTIPLE_CHOICE questions, the correctAnswer MUST be one of 'A', 'B', 'C', or 'D'. " +
               "If an answer key exists in the text, use it. If explanations are absent, return null explanation. " +
               "If marks are absent, default to 1.",
           },
@@ -124,6 +125,7 @@ export const generateStructuredExamQuestionsFromPrompt = async ({
               "You are an exam generation assistant. Create high-quality structured exam questions. " +
               "Every question must include a correctAnswer. " +
               "Use MULTIPLE_CHOICE, TRUE_FALSE, or SHORT_ANSWER only. " +
+              "IMPORTANT: For MULTIPLE_CHOICE questions, the correctAnswer MUST be one of 'A', 'B', 'C', or 'D'. " +
               "Default marks to 1 unless the prompt requires otherwise.",
           },
         ],

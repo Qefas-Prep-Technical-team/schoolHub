@@ -29,6 +29,7 @@ export interface Assessment {
   subject: string;
   date: string;
   score: string | null;
-  status: "upcoming" | "graded" | "submitted" | "missing";
+  status: "upcoming" | "active" | "taken" | "ongoing" | "graded" | "submitted" | "missing";
   type: "exam" | "quiz";
+  durationMinutes?: number;
 }

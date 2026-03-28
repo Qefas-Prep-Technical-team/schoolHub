@@ -10,6 +10,7 @@ type CreateNotificationInput = {
   title: string;
   message: string;
   linkRequestId?: string;
+  link?: string;
   meta?: Record<string, any>;
 };
 
@@ -23,6 +24,7 @@ export const createNotification = async (input: CreateNotificationInput) => {
       type: input.type as any,
       title: input.title,
       message: input.message,
+      link: input.link,
       linkRequestId: input.linkRequestId,
       meta: input.meta,
     },

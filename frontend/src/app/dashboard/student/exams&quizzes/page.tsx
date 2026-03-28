@@ -1,53 +1,100 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-
+import { useState, useMemo } from 'react';
 import PageHeader from './components/PageHeader';
 import AssessmentTypeToggle from './components/AssessmentTypeToggle';
 import StatsCards from './components/StatsCards';
 import PerformanceChart from './components/PerformanceChart';
 import TimeFilter from './components/TimeFilter';
 import AssessmentList from './components/AssessmentList';
-import {
-    statCards,
-    timeFilters,
-    assessments as allAssessments,
+import { useExams } from '@/lib/api/hooks/useExams';
+import { Assessment } from './components/types';
+import { 
+    statCards, 
+    timeFilters 
 } from './components/data';
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
     const [assessmentType, setAssessmentType] = useState<'exams' | 'quizzes'>('exams');
     const [timeFilter, setTimeFilter] = useState('term');
-    const [filteredAssessments, setFilteredAssessments] = useState(allAssessments);
+
+    // Fetch all published assessments
+    const { data: assessments = [], isLoading, isError } = useExams({ status: 'PUBLISHED' });
+
+    // Map Backend Assessments to Frontend interface
+    const allAssessments: Assessment[] = useMemo(() => {
+        const now = new Date();
+        return assessments.map((item: any) => {
+            const startDate = item.startDate ? new Date(item.startDate) : null;
+            const attempt = item.attempts?.[0];
+
+            let status: Assessment['status'] = 'active';
+            if (startDate && now < startDate) {
+                status = 'upcoming';
+            } else if (attempt) {
+                if (attempt.status === 'IN_PROGRESS') {
+                    status = 'ongoing';
+                } else if (attempt.status === 'SUBMITTED' || attempt.status === 'SCORED') {
+                    status = 'taken';
+                }
+            }
+
+            return {
+                id: item.id,
+                title: item.title,
+                subject: item.subjectPapers?.[0]?.subject?.name || 'Multiple Subjects',
+                date: item.startDate ? new Date(item.startDate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                }) : 'TBD',
+                score: (item.allowImmediateResult || (item.resultReleaseAt && new Date() >= new Date(item.resultReleaseAt))) 
+                    ? (attempt?.score != null ? `${attempt.score}%` : null) 
+                    : null,
+                status,
+                type: item.category?.toLowerCase() === 'quiz' ? 'quiz' : 'exam',
+                durationMinutes: item.durationMinutes
+            };
+        });
+    }, [assessments]);
 
     // Filter assessments by type
-    useEffect(() => {
-        const filtered = allAssessments.filter(assessment =>
+    const filteredAssessments = useMemo(() => {
+        return allAssessments.filter(assessment =>
             assessmentType === 'exams' ? assessment.type === 'exam' : assessment.type === 'quiz'
         );
-        setFilteredAssessments(filtered);
-    }, [assessmentType]);
+    }, [allAssessments, assessmentType]);
 
-    // Further filter by time if needed (this is a simplified example)
-    const timeFilteredAssessments = useMemo(() => {
-        // In a real app, you would filter by actual dates
-        return filteredAssessments;
-    }, [filteredAssessments, timeFilter]);
+    if (isLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="flex h-screen flex-col items-center justify-center gap-4 text-center">
+                <p className="text-xl font-bold text-red-500">Failed to load assessments</p>
+                <p className="text-slate-500">Please check your connection and try again.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-h-screen">
             <main className="flex-1 p-6 lg:p-8">
-                <div className="mx-auto max-w-7xl">
+                <div className="mx-auto max-max-w-7xl">
                     <PageHeader />
                     <AssessmentTypeToggle onTypeChange={setAssessmentType} />
 
                     {/* Stats & Performance Grid */}
                     <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-                        {/* Stats Section */}
                         <div className="xl:col-span-2">
                             <StatsCards cards={statCards} />
                         </div>
-
-                        {/* Performance Chart */}
                         <PerformanceChart />
                     </div>
 
@@ -59,9 +106,9 @@ export default function Home() {
                         title={`Upcoming ${assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1)}`}
                     />
 
-                    <AssessmentList assessments={timeFilteredAssessments} />
+                    <AssessmentList assessments={filteredAssessments} />
                 </div>
             </main>
         </div>
     );
-}
+}

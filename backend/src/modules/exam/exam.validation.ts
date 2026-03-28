@@ -23,20 +23,33 @@ export const validateExamQuestionInput = (question: {
   }
 
   if (question.type === "MULTIPLE_CHOICE") {
-    const options = [
-      question.optionA,
-      question.optionB,
-      question.optionC,
-      question.optionD,
-    ].filter(Boolean);
+    // Check if correctAnswer is a label (A, B, C, D)
+    const labels = ["A", "B", "C", "D"];
+    const isLabel = labels.includes(question.correctAnswer.trim().toUpperCase());
 
-    if (options.length < 2) {
-      throw new Error("Multiple choice question must have at least 2 options");
-    }
+    if (isLabel) {
+      const label = question.correctAnswer.trim().toUpperCase();
+      const optionContent = (question as any)[`option${label}`];
+      if (!optionContent || !String(optionContent).trim()) {
+        throw new Error(`Correct answer is set to option ${label}, but that option is empty`);
+      }
+    } else {
+      // If not a label, check if it matches one of the option texts
+      const options = [
+        question.optionA,
+        question.optionB,
+        question.optionC,
+        question.optionD,
+      ].filter(Boolean);
 
-    const validAnswers = options.map((opt) => String(opt).trim());
-    if (!validAnswers.includes(question.correctAnswer.trim())) {
-      throw new Error("Correct answer must match one of the provided options");
+      if (options.length < 2) {
+        throw new Error("Multiple choice question must have at least 2 options");
+      }
+
+      const validAnswers = options.map((opt) => String(opt).trim());
+      if (!validAnswers.includes(question.correctAnswer.trim())) {
+        throw new Error("Correct answer must be A, B, C, D or match one of the provided option texts");
+      }
     }
   }
 

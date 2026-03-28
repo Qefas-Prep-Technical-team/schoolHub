@@ -188,18 +188,21 @@ export const getDepartmentsService = async ({
   }
 
   if (currentUserType === UserRole.STUDENT) {
-    return prisma.department.findMany({
-      where: {
-        isArchived: false,
-        subjects: {
-          some: {
-            subject: {
-              classes: {
-                some: {
-                  class: {
-                    enrollments: {
-                      some: {
-                        studentId: currentUserId,
+    if (!schoolId) {
+      // If no schoolId provided, return departments based on classes (fallback)
+      return prisma.department.findMany({
+        where: {
+          isArchived: false,
+          subjects: {
+            some: {
+              subject: {
+                classes: {
+                  some: {
+                    class: {
+                      enrollments: {
+                        some: {
+                          studentId: currentUserId,
+                        },
                       },
                     },
                   },
@@ -208,6 +211,19 @@ export const getDepartmentsService = async ({
             },
           },
         },
+        include: {
+          subjects: { include: { subject: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
+    // If schoolId provided, return all school departments (consistent with user request)
+    return prisma.department.findMany({
+      where: {
+        isArchived: false,
+        schoolId,
+        scope: AcademicOwnershipScope.SCHOOL,
       },
       include: {
         subjects: { include: { subject: true } },

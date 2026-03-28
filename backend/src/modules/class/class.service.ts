@@ -301,7 +301,18 @@ export const getSingleClassService = async (classId: string) => {
       teacher: true,
       subjects: { include: { subject: true } },
       enrollments: { include: { student: true } },
-      exams: true,
+      exams: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          status: true,
+          totalMarks: true,
+          durationMinutes: true,
+          createdAt: true,
+          updatedAt: true,
+        }
+      },
       quizzes: true,
     },
   });

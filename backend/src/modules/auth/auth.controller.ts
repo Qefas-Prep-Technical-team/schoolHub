@@ -1374,6 +1374,15 @@ export const refreshToken = async (req: Request, res: Response) => {
       payload.userId,
       payload.userType,
     );
+
+    res.cookie("token", newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     return res.status(200).json({
       success: true,
       accessToken: newAccessToken,

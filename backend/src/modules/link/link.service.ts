@@ -94,6 +94,20 @@ export const findEntityByCode = async (code: string): Promise<FindEntityResult |
     };
   }
 
+  const foundClass = await prisma.class.findUnique({
+    where: { classCode: code },
+  });
+  if (foundClass) {
+    return {
+      type: LinkEntityType.CLASS,
+      id: foundClass.id,
+      code: foundClass.classCode,
+      schoolId: foundClass.schoolId,
+      classId: foundClass.id,
+      data: foundClass,
+    };
+  }
+
   return null;
 };
 

@@ -2,12 +2,24 @@
 import React from 'react';
 import { ExamDetail } from './types';
 
-const ExamDetails: React.FC = () => {
+interface ExamDetailsProps {
+    className?: string;
+    durationMinutes: number;
+    subjectName: string;
+    totalQuestions: number;
+}
+
+const ExamDetails: React.FC<ExamDetailsProps> = ({ 
+    className = "Grade 10 - Section A", 
+    durationMinutes, 
+    subjectName, 
+    totalQuestions 
+}) => {
     const details: ExamDetail[] = [
-        { label: 'Class', value: 'Grade 10 - Section A' },
-        { label: 'Duration', value: '60 Minutes' },
-        { label: 'Subject', value: 'Mathematics' },
-        { label: 'Total Questions', value: '20' },
+        { label: 'Class', value: className },
+        { label: 'Duration', value: `${durationMinutes} Minutes` },
+        { label: 'Subject', value: subjectName },
+        { label: 'Total Questions', value: totalQuestions.toString() },
     ];
 
     return (

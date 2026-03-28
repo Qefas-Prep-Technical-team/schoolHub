@@ -24,6 +24,12 @@ enum UserRole {
   PARENT
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 enum ClassScope {
   PERSONAL
   SCHOOL
@@ -84,6 +90,11 @@ enum SubjectPaperStatus {
   APPROVED
   REJECTED
   PUBLISHED
+}
+
+enum ExamCategory {
+  EXAM
+  QUIZ
 }
 
 enum AdminRole {
@@ -206,6 +217,7 @@ model Admin {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  gender    Gender?
 }
 
 model Teacher {
@@ -240,6 +252,7 @@ model Teacher {
 
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+  gender            Gender?
   subjects          Subject[]
   departments       Department[]
   teacherSubjects   TeacherSubject[]
@@ -272,7 +285,11 @@ model Student {
   verified     Boolean       @default(false)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  gender       Gender?
   examAttempts ExamAttempt[]
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
 }
 
 model Parent {
@@ -295,6 +312,7 @@ model Parent {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  gender    Gender?
 
   @@map("parents")
 }
@@ -342,6 +360,7 @@ model Class {
   subjects ClassSubject[]
   exams    Exam[]
   quizzes  Quiz[]
+  linkRequests LinkRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -479,6 +498,7 @@ model LinkRequest {
   targetParent     Parent?  @relation("targetParent", fields: [targetParentId], references: [id], onDelete: SetNull)
 
   relationshipLink RelationshipLink? @relation("RelationshipFromRequest", fields: [relationshipLinkId], references: [id], onDelete: SetNull)
+  class            Class?            @relation(fields: [classId], references: [id], onDelete: SetNull)
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -571,6 +591,7 @@ model Notification {
   linkRequestId String?
   linkRequest   LinkRequest? @relation(fields: [linkRequestId], references: [id], onDelete: Cascade)
 
+  link           String?
   status NotificationStatus @default(UNREAD)
   meta   Json?
 
@@ -625,6 +646,7 @@ model Department {
   subjects DepartmentSubject[]
   exams    Exam[]
   quizzes  Quiz[]
+  students Student[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -735,6 +757,7 @@ model Exam {
   scope        AssessmentScope
   status       AssessmentStatus       @default(DRAFT)
   creationMode AssessmentCreationMode @default(MANUAL)
+  category     ExamCategory           @default(EXAM)
   mode         ExamMode               @default(SINGLE_SUBJECT)
 
   schoolId     String?
@@ -747,6 +770,7 @@ model Exam {
 
   allowImmediateResult Boolean   @default(true)
   resultReleaseAt      DateTime?
+  startDate            DateTime?
 
   aiPrompt      String?
   instructions  String?
@@ -791,7 +815,7 @@ model ExamSubject {
 
 model SubjectExamPaper {
   id              String             @id @default(uuid())
-  examId          String
+  examId          String?
   subjectId       String
   teacherId       String?
   title           String?
@@ -804,7 +828,7 @@ model SubjectExamPaper {
   validatedById String?
   publishedAt   DateTime?
 
-  exam    Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  exam    Exam?    @relation(fields: [examId], references: [id], onDelete: Cascade)
   subject Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
 
@@ -814,7 +838,7 @@ model SubjectExamPaper {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([examId, subjectId])
+  @@index([examId, subjectId])
   @@map("subject_exam_papers")
 }
 
@@ -831,6 +855,7 @@ model SubjectExamQuestion {
   correctAnswer  String
   explanation    String?
   marks          Float          @default(1)
+  order          Int            @default(0)
 
   subjectPaper SubjectExamPaper    @relation(fields: [subjectPaperId], references: [id], onDelete: Cascade)
   answers      SubjectExamAnswer[]

@@ -24,27 +24,27 @@ const getPagination = (page = 1, limit = 10) => {
   };
 };
 
-const buildIncomingWhere = ({
+const buildIncomingWhere = async ({
   currentUserId,
   currentUserType,
 }: CurrentUserInput) => {
   if (currentUserType === LinkEntityType.ADMIN) {
+    const schoolAdminLinks = await prisma.schoolAdmin.findMany({
+      where: { adminId: currentUserId, active: true },
+      select: { schoolId: true },
+    });
+    const schoolIds = schoolAdminLinks.map((s) => s.schoolId);
+
     return {
       status: LinkRequestStatus.PENDING,
       OR: [
-        {
-          targetType: LinkEntityType.ADMIN,
-          targetId: currentUserId,
-        },
+        { targetType: LinkEntityType.ADMIN, targetId: currentUserId },
+        { targetSchoolId: { in: schoolIds } },
+        { schoolId: { in: schoolIds } },
         {
           targetType: LinkEntityType.SCHOOL,
           targetSchool: {
-            admins: {
-              some: {
-                adminId: currentUserId,
-                active: true,
-              },
-            },
+            admins: { some: { adminId: currentUserId, active: true } },
           },
         },
       ],
@@ -92,6 +92,7 @@ export const getOutgoingLinkRequestsService = async (
         requesterParent: true,
         targetParent: true,
         relationshipLink: true,
+        class: true,
       },
       orderBy: { createdAt: "desc" },
       skip,
@@ -117,7 +118,7 @@ export const getIncomingPendingLinkRequestsService = async (
 ) => {
   const { page, limit, skip } = getPagination(options.page, options.limit);
 
-  const where: any = buildIncomingWhere({ currentUserId, currentUserType });
+  const where: any = await buildIncomingWhere({ currentUserId, currentUserType });
 
   if (options.linkType && Object.values(LinkType).includes(options.linkType as any)) {
     where.linkType = options.linkType;
@@ -138,6 +139,93 @@ export const getIncomingPendingLinkRequestsService = async (
         requesterParent: true,
         targetParent: true,
         relationshipLink: true,
+        class: true,
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.linkRequest.count({ where }),
+  ]);
+
+  return {
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+export const getAllLinkRequestsService = async (
+  { currentUserId, currentUserType }: CurrentUserInput,
+  options: QueryOptions = {}
+) => {
+  const { page, limit, skip } = getPagination(options.page, options.limit);
+
+  // Incoming logic (based on buildIncomingWhere but removing the PENDING restriction if needed)
+  // Actually, let's keep it flexible. If a status is passed, use it. 
+  // If no status is passed, we show everything relevant to the user.
+
+  const incomingWhere: any = {};
+  if (currentUserType === LinkEntityType.ADMIN) {
+    const schoolAdminLinks = await prisma.schoolAdmin.findMany({
+      where: { adminId: currentUserId, active: true },
+      select: { schoolId: true },
+    });
+    const schoolIds = schoolAdminLinks.map((s) => s.schoolId);
+
+    incomingWhere.OR = [
+      { targetType: LinkEntityType.ADMIN, targetId: currentUserId },
+      { targetSchoolId: { in: schoolIds } },
+      { schoolId: { in: schoolIds } },
+      {
+        targetType: LinkEntityType.SCHOOL,
+        targetSchool: {
+          admins: { some: { adminId: currentUserId, active: true } },
+        },
+      },
+    ];
+  } else {
+    incomingWhere.targetType = currentUserType;
+    incomingWhere.targetId = currentUserId;
+  }
+
+  const outgoingWhere = {
+    requesterType: currentUserType,
+    requesterId: currentUserId,
+  };
+
+  const where: any = {
+    OR: [incomingWhere, outgoingWhere],
+  };
+
+  if (options.status && Object.values(LinkRequestStatus).includes(options.status as any)) {
+    where.status = options.status;
+  }
+
+  if (options.linkType && Object.values(LinkType).includes(options.linkType as any)) {
+    where.linkType = options.linkType;
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.linkRequest.findMany({
+      where,
+      include: {
+        requesterAdmin: true,
+        approverAdmin: true,
+        requesterSchool: true,
+        targetSchool: true,
+        requesterTeacher: true,
+        targetTeacher: true,
+        requesterStudent: true,
+        targetStudent: true,
+        requesterParent: true,
+        targetParent: true,
+        relationshipLink: true,
+        class: true,
       },
       orderBy: { createdAt: "desc" },
       skip,
@@ -184,6 +272,7 @@ export const getActiveLinksService = async (
       OR: [
         { leftEntityType: currentUserType, leftEntityId: currentUserId },
         { rightEntityType: currentUserType, rightEntityId: currentUserId },
+        { schoolId: { in: schoolIds } },
         ...(schoolIds.length
           ? [
               { leftEntityType: LinkEntityType.SCHOOL, leftEntityId: { in: schoolIds } },
@@ -204,7 +293,19 @@ export const getActiveLinksService = async (
       include: {
         school: true,
         class: true,
-        approvedFromRequest: true,
+        approvedFromRequest: {
+          include: {
+            requesterTeacher: true,
+            targetTeacher: true,
+            requesterStudent: true,
+            targetStudent: true,
+            requesterParent: true,
+            targetParent: true,
+            requesterAdmin: true,
+            approverAdmin: true,
+            class: true,
+          }
+        },
         audits: true,
       },
       orderBy: { createdAt: "desc" },

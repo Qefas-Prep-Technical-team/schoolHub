@@ -1,6 +1,6 @@
 interface BadgeProps {
   children: React.ReactNode;
-  variant: 'upcoming' | 'graded' | 'submitted' | 'missing';
+  variant: 'upcoming' | 'active' | 'ongoing' | 'taken' | 'graded' | 'submitted' | 'missing';
   size?: 'sm' | 'md';
 }
 
@@ -18,8 +18,11 @@ export default function Badge({
 
   const variantClasses = {
     upcoming: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
+    active: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
+    ongoing: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
+    taken: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
     graded: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-    submitted: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
+    submitted: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
     missing: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
   };
 

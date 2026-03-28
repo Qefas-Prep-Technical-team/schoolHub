@@ -9,16 +9,27 @@ import StudentsTable from "./components/StudentsTable";
 
 export default function StudentsPage() {
   const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({
+    classId: "",
+    gender: "",
+    status: "",
+  });
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-8 max-w-[1600px] mx-auto">
       <PageHeader onAdd={() => setOpen(true)} />
 
-      <SearchBar />
+      <div className="space-y-4">
+        <SearchBar value={searchTerm} onChange={setSearchTerm} />
+        <FilterChips selectedFilters={filters} onFilterChange={handleFilterChange} />
+      </div>
 
-      <FilterChips />
-
-      <StudentsTable/>
+      <StudentsTable searchTerm={searchTerm} filters={filters} />
 
       <AddStudentDialog open={open} onOpenChange={setOpen} />
     </div>

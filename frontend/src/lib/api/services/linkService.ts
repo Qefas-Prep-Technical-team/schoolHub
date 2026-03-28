@@ -1,0 +1,116 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { apiClient } from "../client";
+
+export type LinkType =
+  | "PARENT_STUDENT"
+  | "TEACHER_CLASS"
+  | "STUDENT_CLASS"
+  | "SCHOOL_ADMIN"
+  | "SCHOOL_TEACHER"
+  | "SCHOOL_STUDENT";
+export type LinkStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
+
+export interface LinkRequest {
+  id: string;
+  requesterId: string;
+  requesterType: string;
+  targetId: string;
+  targetType: string;
+  linkType: LinkType;
+  status: LinkStatus;
+  note?: string;
+  rejectionReason?: string;
+  requesterCode?: string;
+  targetCode?: string;
+  expiresAt: string;
+  createdAt: string;
+  sender?: {
+    name: string;
+    email: string;
+    userType: string;
+  };
+  receiver?: {
+    name: string;
+    email: string;
+    userType: string;
+  };
+}
+
+export const linkService = {
+  // Get all link requests (sent and received)
+  getLinkRequests: async () => {
+    const response = await apiClient.get<any>("/links/requests");
+    console.log("response",response)
+    return response.data.items || [];
+  },
+  getPendingLinkRequests: async () => {
+    try {
+      const response = await apiClient.get<any>("/links/requests/pending");
+
+      // We use .items or default to an empty array to prevent "map of undefined" errors in UI
+      return response.data.items || response.data || [];
+    } catch (error) {
+      console.error("Error fetching pending requests:", error);
+      throw error;
+    }
+  },
+
+  // Initiate a new link request
+  createLinkRequest: async (data: {
+    targetCode?: string;
+    linkType: LinkType;
+    note?: string;
+  }) => {
+    const response = await apiClient.post<LinkRequest>("/links/request", data);
+    return response.data;
+  },
+
+  // Respond to a link request (ACCEPT/REJECT)
+  respondToLinkRequest: async (id: string, action: "ACCEPT" | "REJECT") => {
+    const response = await apiClient.patch<LinkRequest>(
+      `/links/request/${id}/respond`,
+      { action },
+    );
+    return response.data;
+  },
+
+  // Get active links for the current user
+  getActiveLinks: async () => {
+    const response = await apiClient.get<any>("/links/active");
+    return response.data.items || [];
+  },
+
+  // Cancel a sent link request
+  cancelLinkRequest: async (id: string) => {
+    const response = await apiClient.delete(`/links/requests/${id}`);
+    return response.data;
+  },
+
+  // Revoke an active link
+  revokeActiveLink: async (id: string) => {
+    const response = await apiClient.delete(`/links/active/${id}`);
+    return response.data;
+  },
+
+  // Search for entities to link with (students, teachers, etc.)
+  searchEntities: async (query: string, type: string) => {
+    const response = await apiClient.get(
+      `/links/search?q=${query}&type=${type}`,
+    );
+    return response.data;
+  },
+
+  // Get current user profile (to show linking code)
+  getProfile: async () => {
+    const response = await apiClient.get("/links/profile");
+    return response.data;
+  },
+
+  // Accept all requests by category (network | classroom)
+  acceptAllRequests: async (category?: "network" | "classroom") => {
+    const response = await apiClient.post("/links/requests/accept-all", {
+      category,
+    });
+    return response.data;
+  },
+};

@@ -2,13 +2,14 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Bell, ChevronDown, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { ThemeToggle } from "@/app/theme-toggle";
 import { TeacherMobileDrawer } from "./TeacherMobileDrawer";
+import NotificationCenter from "../../admin/components/NotificationCenter";
 
 export default function TopNavBar({
   onToggleSidebar,
@@ -49,9 +50,7 @@ export default function TopNavBar({
 
         {/* Right */}
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent">
-            <Bell className="h-5 w-5" />
-          </Button>
+          <NotificationCenter />
 
           <ThemeToggle />
 

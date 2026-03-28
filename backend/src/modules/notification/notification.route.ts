@@ -3,12 +3,15 @@ import {
   getMyNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
+  getUnreadCount,
 } from "./notification.controller";
+import { authenticateToken } from "../../middleware/authMiddleware";
 
 const router = Router();
 
-router.get("/", getMyNotifications);
-router.patch("/:id/read", markNotificationAsRead);
-router.patch("/read-all", markAllNotificationsAsRead);
+router.get("/", authenticateToken, getMyNotifications);
+router.get("/unread-count", authenticateToken, getUnreadCount);
+router.patch("/:id/read", authenticateToken, markNotificationAsRead);
+router.patch("/read-all", authenticateToken, markAllNotificationsAsRead);
 
 export default router;

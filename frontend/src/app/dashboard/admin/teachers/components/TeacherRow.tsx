@@ -11,6 +11,7 @@ export interface Teacher {
   assignedClasses: string[]
   status: 'active' | 'inactive'
   avatar: string
+  teacherCode?: string
 }
 
 interface TeacherRowProps {
@@ -46,6 +47,9 @@ export default function TeacherRow({ teacher, selected, onSelect }: TeacherRowPr
       </td>
       <td className="p-4 text-neutral-800 dark:text-neutral-200">
         {teacher.assignedClasses.join(', ')}
+      </td>
+      <td className="p-4 text-neutral-800 dark:text-neutral-200 font-mono font-bold text-xs tracking-widest">
+        {teacher.teacherCode || teacher.id.slice(0, 8)}
       </td>
       <td className="p-4">
         <Badge variant={teacher.status}>

@@ -9,6 +9,7 @@ import clsx from "clsx";
 import { ThemeToggle } from "@/app/theme-toggle";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { StudentMobileDrawer } from "./StudentMobileDrawer";
+import NotificationCenter from "../../admin/components/NotificationCenter";
 
 export default function TopNavBar({
   onToggleSidebar,
@@ -49,9 +50,7 @@ export default function TopNavBar({
 
         {/* Right */}
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent">
-            <Bell className="h-5 w-5" />
-          </Button>
+          <NotificationCenter />
 
           <ThemeToggle />
 

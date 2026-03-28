@@ -41,6 +41,9 @@ export default function TeacherTable({
                 Assigned Classes
               </th>
               <th className="p-4 text-sm font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                Linking Code
+              </th>
+              <th className="p-4 text-sm font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
                 Status
               </th>
               <th className="p-4 text-sm font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider text-right">

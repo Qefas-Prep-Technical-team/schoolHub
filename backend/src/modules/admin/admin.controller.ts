@@ -433,3 +433,187 @@ const sendRejectionNotification = async (
     `Rejection email sent to ${email}: Sorry ${name}, your admin registration was rejected. Reason: ${reason}`,
   );
 };
+
+export const getSchoolTeachers = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.query;
+
+    if (!schoolId) {
+      return res.status(400).json({
+        success: false,
+        message: "schoolId is required",
+      });
+    }
+
+    // Verify requesting admin belongs to this school
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: {
+        adminId: req.user!.id,
+        schoolId: schoolId as string,
+        active: true,
+      },
+    });
+
+    if (!schoolAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to view teachers for this school",
+      });
+    }
+
+    // Get all teachers linked to this school
+    const teachers = await prisma.teacher.findMany({
+      where: {
+        OR: [
+          { schoolId: schoolId as string },
+          { currentSchoolId: schoolId as string },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        teacherCode: true,
+        authProvider: true,
+        verified: true,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: teachers.length,
+      data: teachers,
+    });
+  } catch (error: any) {
+    console.error("getSchoolTeachers error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+export const getSchoolStudents = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.query;
+
+    if (!schoolId) {
+      return res.status(400).json({
+        success: false,
+        message: "schoolId is required",
+      });
+    }
+
+    // Verify requesting admin belongs to this school
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: {
+        adminId: req.user!.id,
+        schoolId: schoolId as string,
+        active: true,
+      },
+    });
+
+    if (!schoolAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to view students for this school",
+      });
+    }
+
+    // Get all students linked to this school
+    const students = await prisma.student.findMany({
+      where: { schoolId: schoolId as string },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        studentCode: true,
+        authProvider: true,
+        verified: true,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: students.length,
+      data: students,
+    });
+  } catch (error: any) {
+    console.error("getSchoolStudents error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+export const getSchoolMembers = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.query;
+
+    if (!schoolId) {
+      return res.status(400).json({
+        success: false,
+        message: "schoolId is required",
+      });
+    }
+
+    // Verify requesting admin belongs to this school
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: {
+        adminId: req.user!.id,
+        schoolId: schoolId as string,
+        active: true,
+      },
+    });
+
+    if (!schoolAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const [teachers, students] = await Promise.all([
+      prisma.teacher.findMany({
+        where: {
+          OR: [
+            { schoolId: schoolId as string },
+            { currentSchoolId: schoolId as string },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          teacherCode: true,
+          role: true,
+        },
+      }),
+      prisma.student.findMany({
+        where: { schoolId: schoolId as string },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          studentCode: true,
+          role: true,
+        },
+      }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        teachers,
+        students,
+      },
+    });
+  } catch (error: any) {
+    console.error("getSchoolMembers error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};

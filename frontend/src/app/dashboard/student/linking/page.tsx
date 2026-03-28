@@ -1,0 +1,418 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
+import React, { useState } from 'react';
+import {
+  Link2, Search, MoreVertical, X,
+  Clock, ShieldCheck, Copy, ArrowUpRight, Hash,
+  Zap, Globe, Shield, Loader2
+} from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
+import { useLinkRequests, useActiveLinks, useLinkProfile, useRespondToLinkRequest, useRevokeActiveLink, useCreateLinkRequest } from '@/lib/api/hooks/useLinks';
+import { useRequestToJoinClass } from '@/lib/api/hooks/useClasses';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { toast } from 'react-toastify';
+import { cn } from '@/lib/utils';
+
+export default function LinkingHub() {
+  const { data: requests = [] } = useLinkRequests();
+  const { data: activeLinks = [] } = useActiveLinks();
+  const { data: profileResponse } = useLinkProfile();
+  const profile = profileResponse?.data || {};
+
+  const respondMutation = useRespondToLinkRequest();
+  const revokeMutation = useRevokeActiveLink();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
+  const [subTab, setSubTab] = useState<'active' | 'pending'>('active');
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+  const { user } = useAuthStore();
+
+  const isClassLink = (type: string) => type === 'STUDENT_CLASS' || type === 'TEACHER_CLASS';
+
+  const filteredActiveLinks = activeLinks.filter((link: any) => {
+    const isClass = isClassLink(link.type || '');
+    const matchesTab = mainTab === 'classroom' ? isClass : !isClass;
+    const matchesSearch = (link.peerName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         link.peerEmail?.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesTab && matchesSearch;
+  });
+
+  const filteredRequests = requests.filter((req: any) => {
+    if (req.status !== 'PENDING') return false;
+    const isClass = isClassLink(req.linkType);
+    const matchesTab = mainTab === 'classroom' ? isClass : !isClass;
+    const matchesSearch = (req.sender?.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         req.receiver?.name?.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesTab && matchesSearch;
+  });
+
+  const networkPendingCount = requests.filter((r: any) => r.status === 'PENDING' && !isClassLink(r.linkType)).length;
+  const classroomPendingCount = requests.filter((r: any) => r.status === 'PENDING' && isClassLink(r.linkType)).length;
+
+  const copyToClipboard = (text: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success('Code copied to clipboard');
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-black/95 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+
+        {/* Modern Glass Header */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1.5 bg-blue-600 rounded-lg shadow-blue-200 shadow-lg">
+                <Zap size={16} className="text-white fill-current" />
+              </div>
+              <span className="text-[10px] font-black text-blue-600 tracking-widest uppercase">Network</span>
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              Linking Hub
+            </h1>
+            <p className="text-sm text-slate-500 font-medium">Connect and manage your academic ecosystem.</p>
+          </div>
+
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <Button
+              onClick={() => setIsConnectModalOpen(true)}
+              className="flex-1 md:flex-none h-11 px-5 rounded-xl bg-slate-900 dark:bg-white dark:text-black hover:opacity-90 transition-all shadow-xl font-bold text-sm"
+            >
+              <Link2 className="mr-2 h-4 w-4" /> New Connection
+            </Button>
+          </div>
+        </header>
+
+        {/* Profile Stats / Code Bento Card - SHRUNK */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="md:col-span-2 relative overflow-hidden border-none bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-2xl shadow-blue-200/50 rounded-[1.5rem]">
+            <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="space-y-3 text-center sm:text-left">
+                <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-wider">
+                  <Shield size={12} className="mr-1.5" /> Verified Profile
+                </div>
+                <h2 className="text-xl font-extrabold">Your Linking Code</h2>
+                <p className="text-blue-100/70 text-sm max-w-[280px]">Share this code with teachers or parents to link your accounts.</p>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-5 rounded-2xl flex flex-col items-center gap-3 min-w-[180px]">
+                <span className="text-3xl font-black tracking-widest leading-none">{profile.linkingCode || "---"}</span>
+                <Button
+                  onClick={() => copyToClipboard(profile.linkingCode)}
+                  variant="secondary"
+                  size="sm"
+                  className="w-full h-9 bg-white text-blue-600 hover:bg-blue-50 font-black text-[11px] uppercase tracking-widest rounded-lg"
+                >
+                  <Copy size={14} className="mr-2" /> Copy Code
+                </Button>
+              </div>
+            </CardContent>
+            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+          </Card>
+
+          <Card className="border-none bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-none rounded-[1.5rem] p-6 flex flex-col justify-center items-center text-center space-y-3">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+              <Globe className="text-slate-400 font-bold" size={24} />
+            </div>
+            <div>
+              <p className="text-2xl font-black">{activeLinks.length}</p>
+              <p className="text-slate-400 font-black text-[9px] uppercase tracking-[0.2em]">Active Links</p>
+            </div>
+          </Card>
+        </section>
+
+        {/* NEW Tab Structure & Search */}
+        <div className="space-y-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
+              {/* Main Categories */}
+              <div className="flex p-1 bg-slate-200/50 dark:bg-slate-800 rounded-xl w-full sm:w-auto">
+                <button
+                  onClick={() => setMainTab('network')}
+                  className={cn(
+                    "px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+                    mainTab === 'network' ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600" : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  Network
+                </button>
+                <button
+                  onClick={() => setMainTab('classroom')}
+                  className={cn(
+                    "px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+                    mainTab === 'classroom' ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600" : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  Classroom
+                </button>
+              </div>
+
+              {/* Sub Tabs (Active/Pending) */}
+              <div className="flex gap-2">
+                <Button
+                  variant={subTab === 'active' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setSubTab('active')}
+                  className={cn(
+                    "h-8 rounded-lg text-[10px] font-black uppercase tracking-widest",
+                    subTab === 'active' ? "bg-slate-900 text-white" : "text-slate-400"
+                  )}
+                >
+                  Connected
+                </Button>
+                <Button
+                  variant={subTab === 'pending' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setSubTab('pending')}
+                  className={cn(
+                    "h-8 rounded-lg text-[10px] font-black uppercase tracking-widest relative px-3",
+                    subTab === 'pending' ? "bg-orange-500 text-white" : "text-slate-400"
+                  )}
+                >
+                  Pending
+                  {(mainTab === 'network' ? networkPendingCount : classroomPendingCount) > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-white text-orange-600 text-[8px] font-black">
+                      {mainTab === 'network' ? networkPendingCount : classroomPendingCount}
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative w-full lg:w-72">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <Input
+                placeholder={`Search ${mainTab}...`}
+                className="pl-11 h-11 rounded-xl border-none bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-blue-500/20 text-xs font-medium"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Connection Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {subTab === 'active' ? (
+              filteredActiveLinks.length > 0 ? (
+                filteredActiveLinks.map((link: any) => (
+                  <ConnectionCard key={link.id} link={link} onRevoke={() => revokeMutation.mutate(link.id)} />
+                ))
+              ) : (
+                <EmptyState message={`No active ${mainTab} connections found.`} />
+              )
+            ) : (
+              filteredRequests.length > 0 ? (
+                filteredRequests.map((req: any) => (
+                  <PendingCard key={req.id} req={req} onRespond={(action: any) => respondMutation.mutate({ id: req.id, action })} userId={user?.id} />
+                ))
+              ) : (
+                <EmptyState message={`No pending ${mainTab} requests.`} />
+              )
+            )}
+          </div>
+        </div>
+      </div>
+
+      <ConnectModal isOpen={isConnectModalOpen} onClose={() => setIsConnectModalOpen(false)} />
+    </div>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="col-span-full py-12 flex flex-col items-center justify-center text-center space-y-3 opacity-50">
+       <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full">
+         <Shield size={32} className="text-slate-400" />
+       </div>
+       <p className="text-xs font-black uppercase tracking-widest text-slate-500">{message}</p>
+    </div>
+  );
+}
+
+// --- Sub-components for better organization ---
+
+function ConnectionCard({ link, onRevoke }: any) {
+  return (
+    <Card className="group border-none bg-white dark:bg-slate-900 shadow-lg shadow-slate-200/40 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] overflow-hidden">
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:scale-110 transition-transform">
+              <ShieldCheck size={24} className="text-blue-500" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{link.peerName || "User"}</h4>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{link.type?.replace('_', ' ')}</p>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full"><MoreVertical size={18} /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="rounded-xl">
+              <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={onRevoke}>
+                <X size={16} className="mr-2" /> Disconnect
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-400 font-medium">Email</span>
+            <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[140px]">{link.peerEmail}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-400 font-medium">Connected Since</span>
+            <span className="text-slate-700 dark:text-slate-300 font-semibold">{new Date(link.createdAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        <Button variant="outline" className="w-full rounded-xl border-slate-100 hover:bg-slate-50 dark:border-slate-800 font-bold group">
+          View Profile <ArrowUpRight size={16} className="ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function PendingCard({ req, onRespond, userId }: any) {
+  const isOutgoing = req.requesterId === userId;
+
+  return (
+    <Card className="border-none bg-white dark:bg-slate-900 shadow-lg shadow-orange-100/50 rounded-[1.5rem] relative overflow-hidden">
+      <div className={cn("h-1 w-full absolute top-0", isOutgoing ? "bg-slate-400" : "bg-orange-500")} />
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between">
+          <Badge variant="outline" className="rounded-lg border-slate-100 text-slate-500">{req.linkType}</Badge>
+          <div className="flex items-center gap-1 text-xs font-bold text-slate-400 uppercase">
+            <Clock size={12} /> {new Date(req.createdAt).toLocaleDateString()}
+          </div>
+        </div>
+
+        <div>
+          <h4 className="font-bold text-lg">{isOutgoing ? req.receiver?.name : req.sender?.name}</h4>
+          <p className="text-sm text-slate-400 font-medium">{isOutgoing ? "Sent Link Request" : "Received Link Request"}</p>
+        </div>
+
+        <div className="flex gap-2">
+          {!isOutgoing && (
+            <Button onClick={() => onRespond('ACCEPT')} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold">
+              Accept
+            </Button>
+          )}
+          <Button
+            onClick={() => onRespond(isOutgoing ? 'CANCEL' : 'REJECT')}
+            variant="outline"
+            className="flex-1 rounded-xl border-slate-100 font-bold text-slate-600"
+          >
+            {isOutgoing ? "Cancel" : "Decline"}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function ConnectModal({ isOpen, onClose }: any) {
+  const [code, setCode] = useState('');
+  const [note, setNote] = useState('');
+  const [linkType, setLinkType] = useState('STUDENT_CLASS');
+  const createMutation = useCreateLinkRequest();
+  const joinClassMutation = useRequestToJoinClass();
+
+  const handleConnect = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (linkType === 'STUDENT_CLASS') {
+      joinClassMutation.mutate(
+        { classCode: code, note },
+        { onSuccess: onClose }
+      );
+    } else {
+      createMutation.mutate(
+        { targetCode: code, linkType: linkType as any, note },
+        { onSuccess: onClose }
+      );
+    }
+  };
+
+  const isPending = createMutation.isPending || joinClassMutation.isPending;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[420px] rounded-[2rem] p-8 border-none bg-white dark:bg-slate-900">
+        <DialogHeader className="text-left space-y-3">
+          <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+            <Link2 size={28} />
+          </div>
+          <DialogTitle className="text-2xl font-extrabold">Join Community</DialogTitle>
+          <DialogDescription className="font-medium">
+            Enter a unique code to connect with your school, class, or parents.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleConnect} className="space-y-6 py-4">
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Connection Type</label>
+            <Select value={linkType} onValueChange={setLinkType}>
+              <SelectTrigger className="h-12 rounded-xl border-slate-100 bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="STUDENT_CLASS">🎓 Student to Class</SelectItem>
+                <SelectItem value="SCHOOL_STUDENT">🏫 Student to School</SelectItem>
+                <SelectItem value="PARENT_STUDENT">👪 Student to Parent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Secure Code</label>
+            <div className="relative">
+              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+              <Input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="EX: SCH-992-X"
+                className="pl-11 h-12 rounded-xl border-slate-100 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 font-bold uppercase tracking-widest placeholder:tracking-normal placeholder:font-medium text-slate-900 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Optional Note</label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add a message (optional)..."
+              className="w-full h-24 p-4 rounded-xl border-none bg-slate-50 dark:bg-slate-800 dark:border-slate-700 font-medium text-sm focus:ring-2 focus:ring-blue-500/20 resize-none placeholder:text-slate-400 text-slate-900 dark:text-white"
+            />
+          </div>
+
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base transition-all shadow-lg shadow-blue-200"
+          >
+            {isPending ? <Loader2 className="animate-spin" /> : "Request Connection"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

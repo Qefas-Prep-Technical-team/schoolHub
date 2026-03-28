@@ -423,11 +423,17 @@ export const getQuizzes = async (req: Request, res: Response) => {
 
 export const getExams = async (req: Request, res: Response) => {
   try {
-    const items = await getExamsService({
+    const filters: any = {
       schoolId: req.query.schoolId as string | undefined,
       departmentId: req.query.departmentId as string | undefined,
       classId: req.query.classId as string | undefined,
-    });
+    };
+
+    if (req.user?.userType === UserRole.STUDENT) {
+      filters.availableForStudentId = req.user.id;
+    }
+
+    const items = await getExamsService(filters);
 
     return res.status(200).json({
       success: true,
