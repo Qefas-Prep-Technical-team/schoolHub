@@ -9,7 +9,6 @@ import ProfessionalInfoCard from './components/ProfessionalInfoCard'
 import StatisticsCard from './components/StatisticsCard'
 import TimetableToolbar from './schedule/TimetableToolbar'
 import SchedulePage from './schedule/SchedulePage'
-import AcademicPerformancePage from '../../students/profilePage/components/AcademicPerformance/AcademicPerformancePage'
 import PerformancePage from './performance/PerformancePage'
 
 

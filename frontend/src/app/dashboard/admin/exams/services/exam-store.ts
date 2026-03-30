@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Exam, SubjectPaper } from '../../../../lib/api/services/examService';
+import { Exam, SubjectPaper } from "@/lib/api/services/examService";
 
 interface ExamState {
   currentExam: Exam | null;

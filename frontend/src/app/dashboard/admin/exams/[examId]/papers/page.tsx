@@ -32,7 +32,7 @@ import ConfirmationModal from "../../components/ui/ConfirmationModal";
 export default function ExamPapersPage() {
   const { user } = useAuthStore();
   const router = useRouter();
-  const schoolId = user?.schools[0].schoolId; // Assuming user is associated with at least one school
+  const schoolId = user?.schools?.[0]?.schoolId; // Assuming user is associated with at least one school
   const params = useParams();
   const examId = params.examId as string;
 
@@ -149,7 +149,7 @@ export default function ExamPapersPage() {
   });
 
   // Use the school ID associated with the exam for all contextual fetches
-  const activeSchoolId = user?.schools[0].schoolId|| schoolId;
+  const activeSchoolId = user?.schools?.[0]?.schoolId|| schoolId;
 
   // Fetch Classes for the selector
   const { data: classesData } = useQuery({
@@ -810,7 +810,7 @@ export default function ExamPapersPage() {
                         {paper.teacherId ? (paper.teacherId === user?.id ? "You (Assigned)" : "Assigned Teacher") : "Unassigned"}
                       </div>
                       <div className="ml-auto text-gray-400 font-medium">
-                        Modified {format(new Date(paper.updatedAt || new Date()), "MMM d, yyyy")}
+                          Updated {format(new Date((paper as any).updatedAt), "MMM d, yyyy")}
                       </div>
                     </div>
                   </div>

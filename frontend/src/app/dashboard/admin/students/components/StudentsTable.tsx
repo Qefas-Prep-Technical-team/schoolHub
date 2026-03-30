@@ -42,7 +42,7 @@ interface StudentsTableProps {
 
 export default function StudentsTable({ searchTerm, filters }: StudentsTableProps) {
   const { user } = useAuthStore();
-  const schoolId = user?.schools[0]?.schoolId;
+  const schoolId = user?.schools?.[0]?.schoolId;
   const [selectAll, setSelectAll] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 

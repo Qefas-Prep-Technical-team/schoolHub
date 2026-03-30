@@ -122,7 +122,7 @@ export default function AdminDashboard() {
               <h3 className="text-3xl font-black tracking-tighter">Institution <br/> Grade Health</h3>
               <div className="h-32 w-32 rounded-full border-8 border-emerald-500/30 flex items-center justify-center mx-auto bg-white/5 shadow-inner">
                 <span className="text-4xl font-black text-emerald-400">
-                  {analysisLoading ? ".." : (analysis?.letterGrade || "N/A")}
+                  {analysisLoading ? ".." : ((analysis as any)?.letterGrade || "N/A")}
                 </span>
               </div>
               <p className="text-sm font-medium text-slate-400 max-w-xs mx-auto leading-relaxed">

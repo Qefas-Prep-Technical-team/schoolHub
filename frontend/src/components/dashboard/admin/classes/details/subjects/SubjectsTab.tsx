@@ -7,12 +7,12 @@ import SubjectCard from './components/SubjectCard';
 import AddSubjectModal from './components/AddSubjectModal';
 import { Subject } from './components/types';
 
-interface ClassSubjectsPageProps {
+interface ClassSubjectsTabProps {
   classSubjects?: any[];
   className?: string;
 }
 
-export default function ClassSubjectsPage({ classSubjects = [], className = '' }: ClassSubjectsPageProps) {
+export default function ClassSubjectsTab({ classSubjects = [], className = '' }: ClassSubjectsTabProps) {
   const router = useRouter();
   const params = useParams();
   const classId = params.id as string;
@@ -32,7 +32,7 @@ export default function ClassSubjectsPage({ classSubjects = [], className = '' }
     classPerformance: 0,
     enrolledStudents: 0,
     credits: 0,
-    semester: '',
+    semester: 'fall',
     academicYear: ''
   }));
 
@@ -48,7 +48,6 @@ export default function ClassSubjectsPage({ classSubjects = [], className = '' }
   };
 
   const handleAddSubject = (subjectData: Partial<Subject>) => {
-    // In real app, this would refresh the parent class data or call an API
     console.log('Adding subject to class:', subjectData);
   };
 

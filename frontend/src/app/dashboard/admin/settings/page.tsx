@@ -150,7 +150,7 @@ export default function SettingsPage() {
                       description="Enable a 'Coming Soon' placeholder for features currently in development."
                       icon={Rocket}
                       checked={localSettings.showComingSoon}
-                      onCheckedChange={(val) => handleToggle('showComingSoon', val)}
+                      onCheckedChange={(val: boolean) => handleToggle('showComingSoon', val)}
                     />
                     
                     <div className="p-6 rounded-3xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 flex gap-4">

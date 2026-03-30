@@ -32,7 +32,7 @@ import {
 export default function SessionsPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const schoolId = user?.schools[0]?.schoolId || "";
+  const schoolId = user?.schools?.[0]?.schoolId || "";
 
   const { data: sessions = [], isLoading, isError } = useQuery({
     queryKey: ["sessions"],

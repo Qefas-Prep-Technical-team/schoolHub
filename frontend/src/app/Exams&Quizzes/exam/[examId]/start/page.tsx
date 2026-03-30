@@ -76,8 +76,12 @@ export default function Home() {
             <div className="flex min-h-screen w-full">
                 <main className="flex-1 overflow-y-auto p-6 lg:p-8">
                     <div className="mx-auto max-w-7xl">
-                        <PageHeader />
-                        <ExamDetails />
+                        <PageHeader title="Mathematics Final Examination" />
+                        <ExamDetails 
+                            durationMinutes={60} 
+                            subjectName="Mathematics" 
+                            totalQuestions={20} 
+                        />
 
                         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
                             {/* Left Content: Question */}
@@ -94,9 +98,12 @@ export default function Home() {
                                 <QuestionNavigation
                                     totalQuestions={20}
                                     currentQuestion={currentQuestion.number}
+                                    remainingSeconds={3600}
+                                    answeredQuestionIds={[]}
                                     onQuestionSelect={handleQuestionSelect}
                                     onNextQuestion={handleNextQuestion}
                                     onSubmit={handleSubmit}
+                                    onTimerExpire={() => alert('Time expired!')}
                                 />
                             </div>
                         </div>

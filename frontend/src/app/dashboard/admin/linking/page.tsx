@@ -26,7 +26,7 @@ import { PendingRequestsGrid } from './components/PendingRequestsGrid';
 import { ConnectModal } from './components/ConnectModal';
 import { getMemberDetails, isClassLink } from './components/LinkingUtils';
 
-export function LinkingHub() {
+function LinkingHub() {
   const { data: requests = [] } = useLinkRequests();
   const { data: pendingRequests = [] } = usePendingLinkRequests();
   const { data: activeLinks = [] } = useActiveLinks();

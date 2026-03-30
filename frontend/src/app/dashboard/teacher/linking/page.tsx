@@ -56,9 +56,9 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { linkService, LinkRequest, LinkType } from '@/lib/api/services/linkService';
-import { 
-  useLinkRequests, 
-  useActiveLinks, 
+import {
+  useLinkRequests,
+  useActiveLinks,
   useLinkProfile,
   useRespondToLinkRequest,
   useCancelLinkRequest,
@@ -69,7 +69,7 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
 
-export function LinkingHub() {
+function LinkingHub() {
   const { data: requests = [], isLoading: isLoadingRequests } = useLinkRequests();
   const { data: activeLinks = [], isLoading: isLoadingActive } = useActiveLinks();
   const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
@@ -96,7 +96,7 @@ export function LinkingHub() {
     toast.success('Link copied to clipboard');
   };
 
-  const pendingRequests = requests.filter(r => r.status === 'PENDING');
+  const pendingRequests = requests.filter((r: any) => r.status === 'PENDING');
 
   const handleCancel = async (id: string) => {
     cancelMutation.mutate(id);
@@ -260,7 +260,7 @@ export function LinkingHub() {
                   <p className="text-gray-500 max-w-sm mx-auto font-medium">Your connections will appear here once link requests are accepted.</p>
                 </div>
               ) : (
-                activeLinks.map((link) => (
+                activeLinks.map((link: any) => (
                   <Card key={link.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-md hover:shadow-xl transition-all group">
                     <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 p-6 flex flex-row items-center justify-between space-y-0">
                       <div className="flex items-center gap-4">
@@ -325,7 +325,7 @@ export function LinkingHub() {
                   <p className="text-gray-500 font-bold">No pending link requests found.</p>
                 </div>
               ) : (
-                pendingRequests.map((req) => (
+                pendingRequests.map((req: any) => (
                   <Card key={req.id} className="rounded-[2.5rem] overflow-hidden border-2 border-orange-100 dark:border-orange-500/20 shadow-lg shadow-orange-500/5">
                     <CardHeader className="p-6">
                       <div className="flex justify-between items-start">

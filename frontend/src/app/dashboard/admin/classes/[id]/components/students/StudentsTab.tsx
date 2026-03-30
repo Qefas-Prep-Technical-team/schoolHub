@@ -32,10 +32,16 @@ export default function ClassStudentsPage({ enrollments = [] }: ClassStudentsPag
     fullName: e.student.name,
     email: e.student.email,
     gender: 'other', // Not in current schema
+    dateOfBirth: e.student.dateOfBirth || '',
     profileImage: '',
     performance: 'good',
     attendance: 100,
+    lastScore: 0,
     averageScore: 0,
+    parentName: '',
+    parentEmail: '',
+    parentPhone: '',
+    address: '',
     joinedDate: new Date(e.enrolledAt).toLocaleDateString(),
   }));
 

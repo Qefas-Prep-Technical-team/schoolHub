@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, UserCog, AlertTriangle } from 'lucide-react';
 import CustomTabs from './components/Tabs';
 import Overview from './components/Overview';
-import TimetablePage from './components/timetable/page';
-import ClassStudentsPage from './components/students/page';
-import ClassSubjectsPage from './components/subjects/page';
-import ClassExamsPage from './components/exams/page';
-import ClassAttendancePage from './components/attendance/page';
+import TimetablePage from './components/timetable/TimetableTab';
+import ClassStudentsPage from './components/students/StudentsTab';
+import ClassSubjectsPage from './components/subjects/SubjectsTab';
+import ClassExamsPage from './components/exams/ExamsTab';
+import ClassAttendancePage from './components/attendance/AttendanceTab';
 
 import { classService, Class } from '../services/classService';
 import { useParams, useRouter } from 'next/navigation';

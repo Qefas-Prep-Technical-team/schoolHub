@@ -37,7 +37,7 @@ export function CreatePaperForm({
   const queryClient = useQueryClient();
   // console.log("Teachers in CreatePaperForm:", teachers);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<PaperFormValues>({
-    resolver: zodResolver(paperSchema),
+    resolver: zodResolver(paperSchema) as any,
     defaultValues: {
       subjectId: "",
       teacherId: "",
@@ -122,7 +122,7 @@ export function CreatePaperForm({
         <Label className="text-sm font-semibold flex items-center gap-2">
           <Clock size={14} /> Duration (Mins)
         </Label>
-        <Input type="number" {...register("durationMinutes")} className="rounded-xl" />
+        <Input type="number" {...register("durationMinutes", { valueAsNumber: true })} className="rounded-xl" />
       </div>
 
       <Button

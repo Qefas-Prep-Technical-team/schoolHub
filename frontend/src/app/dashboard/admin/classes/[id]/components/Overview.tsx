@@ -8,9 +8,10 @@ import UpcomingExams from "./UpcomingExams";
 interface OverviewProps {
   behaviourAlerts: any[];
   upcomingExams: any[];
+  classData: any;
 }
 
-const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, upcomingExams }) => {
+const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, upcomingExams, classData }) => {
   return (
     <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
       

@@ -8,7 +8,7 @@ export default function PersonalInformation({ student }: PersonalInformationProp
   const personalInfo = [
     { label: 'Full Name', value: student.name },
     { label: 'Student Code', value: student.studentCode },
-    { label: 'Grade Level', value: student.gradeLevel || "Not set" },
+    { label: 'Grade Level', value: (student as any).gradeLevel || "Not set" },
     { label: 'Gender', value: student.gender || "Not set" },
     { label: 'Email Address', value: student.email },
     { label: 'Role', value: student.role },

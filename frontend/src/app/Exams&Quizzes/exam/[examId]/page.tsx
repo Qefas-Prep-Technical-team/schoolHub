@@ -134,9 +134,11 @@ export default function UnifiedExamPage() {
       const currentSubjectIdx = exam?.subjectPapers?.findIndex(p => p.id === activeSubjectId) ?? -1;
       if (currentSubjectIdx < (exam?.subjectPapers?.length ?? 0) - 1) {
         const nextSubject = exam?.subjectPapers?.[currentSubjectIdx + 1];
-        setActiveSubjectId(nextSubject.id);
-        setActiveQuestionIndex(0);
-        toast.info(`Moving to next subject: ${nextSubject.subject?.name || nextSubject.title}`);
+        if (nextSubject) {
+          setActiveSubjectId(nextSubject.id);
+          setActiveQuestionIndex(0);
+          toast.info(`Moving to next subject: ${nextSubject.subject?.name || nextSubject.title}`);
+        }
       }
     }
   };
@@ -272,7 +274,7 @@ export default function UnifiedExamPage() {
                    Exam Structure
                 </h2>
                 <div className="grid grid-cols-1 gap-4">
-                  {exam.subjectPapers?.map((paper: any) => (
+                   {exam.subjectPapers?.map((paper: any) => (
                     <div key={paper.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1F2937] flex justify-between items-center shadow-sm">
                        <div className="flex flex-col">
                           <span className="font-bold">{paper.subject?.name || paper.title}</span>
@@ -311,10 +313,10 @@ export default function UnifiedExamPage() {
                          <p className="text-[10px] font-black uppercase">Current Session</p>
                          <p className="font-bold">
                             {(attempt?.status === "SUBMITTED" || attempt?.status === "SCORED")
-                              ? "Exam Submitted"
-                              : attempt?.status === "IN_PROGRESS"
-                              ? "Session Ongoing"
-                              : "New Attempt"}
+                               ? "Exam Submitted"
+                               : attempt?.status === "IN_PROGRESS"
+                               ? "Session Ongoing"
+                               : "New Attempt"}
                          </p>
                       </div>
                    </div>

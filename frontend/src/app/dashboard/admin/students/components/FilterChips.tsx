@@ -26,7 +26,7 @@ interface FilterChipsProps {
 
 export default function FilterChips({ selectedFilters, onFilterChange }: FilterChipsProps) {
   const { user } = useAuthStore();
-  const schoolId = user?.schools[0]?.schoolId;
+  const schoolId = user?.schools?.[0]?.schoolId;
 
   const { data: classes = [] } = useQuery({
     queryKey: ["school-classes", schoolId],

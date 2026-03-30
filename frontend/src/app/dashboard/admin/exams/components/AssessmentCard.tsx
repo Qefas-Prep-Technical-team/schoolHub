@@ -2,7 +2,6 @@
 
 import {
     School,
-    User,
     Laptop,
     Calendar,
     Clock,
@@ -51,8 +50,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
 
     menuItems.push({ 
         label: 'Delete', 
-        onClick: () => setIsDeleteDialogOpen(true),
-        destructive: true 
+        onClick: () => setIsDeleteDialogOpen(true)
     });
 
     return (
