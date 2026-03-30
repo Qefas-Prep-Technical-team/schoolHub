@@ -13,25 +13,12 @@ const app = express();
 // Render uses dynamic ports; fallback to 5000 for local development in Lagos
 const PORT = process.env.PORT || 5000;
 
-// 1. DYNAMIC CORS SETUP
-// Add your Vercel and custom domains here so the backend doesn't block them
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://schoolhub-frontend.vercel.app", // Replace with your actual Vercel URL
-  "https://flexitistudio.com",
-];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, Postman, or curl)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS policy blocked this origin"), false);
-      }
+      // Allow all origins
+      callback(null, true);
     },
     credentials: true,
   }),
