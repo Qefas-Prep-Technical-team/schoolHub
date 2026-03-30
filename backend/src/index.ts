@@ -16,10 +16,11 @@ const PORT = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow all origins
-      callback(null, true);
-    },
+    origin: [
+      "http://localhost:3000",
+      "https://schoolhub.flexitistudio.com",
+      "https://www.schoolhub.flexitistudio.com",
+    ],
     credentials: true,
   }),
 );
