@@ -20,7 +20,7 @@ const processQueue = (error: any, token: string | null = null) => {
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
+  baseURL: process.env.API_URL || "http://localhost:5000/api",
   timeout: 60000,
   withCredentials: true,
   headers: {
