@@ -355,10 +355,12 @@ export const createExam = async (req: Request, res: Response) => {
 
 export const getDepartments = async (req: Request, res: Response) => {
   try {
+    const schoolId = (req.query.schoolId as string) || req.user?.schoolId;
+
     const items = await getDepartmentsService({
       currentUserId: req.user!.id,
       currentUserType: req.user!.userType,
-      schoolId: req.query.schoolId as string | undefined,
+      schoolId: schoolId,
     });
     return res.status(200).json({
       success: true,
@@ -377,10 +379,12 @@ export const getDepartments = async (req: Request, res: Response) => {
 
 export const getSubjects = async (req: Request, res: Response) => {
   try {
-    const items = await getDepartmentsService({
+    const schoolId = (req.query.schoolId as string) || req.user?.schoolId;
+
+    const items = await getSubjectsService({
       currentUserId: req.user!.id,
       currentUserType: req.user!.userType,
-      schoolId: req.query.schoolId as string | undefined,
+      schoolId: schoolId,
     });
 
     return res.status(200).json({
@@ -400,8 +404,9 @@ export const getSubjects = async (req: Request, res: Response) => {
 
 export const getQuizzes = async (req: Request, res: Response) => {
   try {
+    const schoolId = (req.query.schoolId as string) || req.user?.schoolId;
     const items = await getQuizzesService({
-      schoolId: req.query.schoolId as string | undefined,
+      schoolId: schoolId,
       departmentId: req.query.departmentId as string | undefined,
       classId: req.query.classId as string | undefined,
     });
@@ -423,11 +428,18 @@ export const getQuizzes = async (req: Request, res: Response) => {
 
 export const getExams = async (req: Request, res: Response) => {
   try {
-    const filters: any = {
-      schoolId: req.query.schoolId as string | undefined,
-      departmentId: req.query.departmentId as string | undefined,
-      classId: req.query.classId as string | undefined,
-    };
+    const schoolIdFromQuery = req.query.schoolId as string | undefined;
+    const schoolId = schoolIdFromQuery || req.user?.schoolId;
+    const { sessionId, classId, departmentId, status, term, category } = req.query;
+
+    const filters: any = {};
+    if (schoolId) filters.schoolId = schoolId;
+    if (sessionId) filters.sessionId = sessionId as string;
+    if (classId) filters.classId = classId as string;
+    if (departmentId) filters.departmentId = departmentId as string;
+    if (status) filters.status = status as any;
+    if (term) filters.term = term as any;
+    if (category) filters.category = category as any;
 
     if (req.user?.userType === UserRole.STUDENT) {
       filters.availableForStudentId = req.user.id;

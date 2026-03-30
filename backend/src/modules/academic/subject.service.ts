@@ -146,12 +146,12 @@ export const getSubjectsService = async ({
   schoolId?: string;
 }) => {
   if (currentUserType === UserRole.ADMIN) {
+    if (!schoolId) return [];
     return prisma.subject.findMany({
       where: {
         isArchived: false,
-        ...(schoolId
-          ? { schoolId, scope: AcademicOwnershipScope.SCHOOL }
-          : { scope: AcademicOwnershipScope.SCHOOL }),
+        schoolId, 
+        scope: AcademicOwnershipScope.SCHOOL
       },
       include: {
         departments: { include: { department: true } },
@@ -217,7 +217,7 @@ export const getSubjectsService = async ({
       isArchived: false,
       ...(schoolId
         ? { schoolId, scope: AcademicOwnershipScope.SCHOOL }
-        : { scope: AcademicOwnershipScope.SCHOOL }),
+        : { id: 'none' }), // Fail closed if no schoolId
     },
     orderBy: { createdAt: "desc" },
   });

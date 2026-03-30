@@ -26,6 +26,11 @@ import {
   assignTeacherToSubject,
   getTeacherSubjects,
 } from "./teacher-subject.controller";
+import {
+  getStudentGrades,
+  getGradeById,
+  getAllGrades,
+} from "./grade.controller";
 
 const router = Router();
 
@@ -56,5 +61,10 @@ router.get("/exams", authenticateToken, getExams);
 // Teacher-Subject Routes
 router.post("/teacher-subjects/assign", authenticateToken, assignTeacherToSubject);
 router.get("/teacher-subjects", authenticateToken, getTeacherSubjects);
+
+// Grade Routes
+router.get("/grades", authenticateToken, getStudentGrades);
+router.get("/grades/admin", authenticateToken, getAllGrades);
+router.get("/grades/:id", authenticateToken, getGradeById);
 
 export default router;

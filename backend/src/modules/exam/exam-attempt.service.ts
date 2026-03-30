@@ -437,6 +437,64 @@ export const scoreExamAttemptService = async ({
     meta: { examAttemptId: attempt.id, examId: attempt.examId },
   }).catch((err) => console.error("Submission alert error:", err));
 
+  // --- Grade Integration ---
+  try {
+    for (const sa of updated.subjectAttempts) {
+      const subjectName = sa.subjectPaper?.subject?.name || "Unknown Subject";
+      await prisma.grade.upsert({
+        where: { id: `grade-sa-${sa.id}` },
+        update: {
+          score: sa.score,
+          maxMarks: sa.totalMarks,
+          updatedAt: new Date(),
+        },
+        create: {
+          id: `grade-sa-${sa.id}`,
+          studentId: updated.studentId,
+          schoolId: updated.exam.schoolId || "",
+          teacherId: sa.subjectPaper.teacherId || updated.exam.teacherId,
+          classId: updated.exam.classId,
+          subject: subjectName,
+          assessmentType: updated.exam.category || "EXAM",
+          score: sa.score,
+          maxMarks: sa.totalMarks,
+          remarks: `Subject results for ${updated.exam.title}`,
+          examId: updated.examId,
+          examAttemptId: updated.id,
+          subjectExamAttemptId: sa.id,
+        },
+      });
+    }
+
+    // If combined, also create a total summary entry
+    if (updated.subjectAttempts.length > 1) {
+      await prisma.grade.upsert({
+        where: { id: `grade-total-${updated.id}` },
+        update: {
+          score: updated.totalScore,
+          maxMarks: updated.totalMarks,
+          updatedAt: new Date(),
+        },
+        create: {
+          id: `grade-total-${updated.id}`,
+          studentId: updated.studentId,
+          schoolId: updated.exam.schoolId || "",
+          teacherId: updated.exam.teacherId,
+          classId: updated.exam.classId,
+          subject: `${updated.exam.title} (Total)`,
+          assessmentType: updated.exam.category || "EXAM",
+          score: updated.totalScore,
+          maxMarks: updated.totalMarks,
+          remarks: `Overall total for combined exam`,
+          examId: updated.examId,
+          examAttemptId: updated.id,
+        },
+      });
+    }
+  } catch (gradeError) {
+    console.error("Failed to sync detailed exam results to grades:", gradeError);
+  }
+
   // Notify admins
   prisma.admin.findMany({
     where: {
@@ -511,11 +569,8 @@ export const getExamResultService = async ({
   }
 
   if (requestingUserRole === UserRole.STUDENT) {
-    if (!attempt.exam.allowImmediateResult) {
-      if (
-        !attempt.exam.resultReleaseAt ||
-        new Date() < attempt.exam.resultReleaseAt
-      ) {
+    if (!attempt.exam.allowImmediateResult && attempt.exam.resultReleaseAt) {
+      if (new Date() < attempt.exam.resultReleaseAt) {
         throw new Error("Results are not yet available for this exam.");
       }
     }
@@ -530,13 +585,41 @@ export const getExamResultService = async ({
     submittedAt: subjectAttempt.submittedAt,
   }));
 
-  return {
+  const baseData = {
     examId: attempt.examId,
     studentId: attempt.studentId,
+    title: attempt.exam.title,
+    durationMinutes: attempt.exam.durationMinutes,
     totalScore: attempt.totalScore,
     totalMarks: attempt.totalMarks,
     submittedAt: attempt.submittedAt,
     subjects: subjectBreakdown,
+    startedAt: attempt.startedAt,
+  };
+
+  // Fetch class-wide statistics
+  const [stats, totalParticipants] = await Promise.all([
+    prisma.examAttempt.aggregate({
+      where: { 
+        examId,
+        isSubmitted: true 
+      },
+      _avg: {
+        totalScore: true,
+      },
+    }),
+    prisma.examAttempt.count({
+      where: { 
+        examId,
+        isSubmitted: true 
+      },
+    }),
+  ]);
+
+  return {
+    ...baseData,
+    classAverage: stats._avg.totalScore || 0,
+    totalParticipants,
   };
 };
 
@@ -587,7 +670,7 @@ export const getExamReviewDataService = async ({
     submittedAt: attempt.submittedAt,
     subjects: attempt.subjectAttempts.map((subjectAttempt) => ({
       subjectPaperId: subjectAttempt.subjectPaperId,
-      subjectName: subjectAttempt.subjectPaper.subject.name,
+      subjectName: subjectAttempt.subjectPaper?.subject?.name || "Unknown",
       score: subjectAttempt.score,
       totalMarks: subjectAttempt.totalMarks,
       questions: subjectAttempt.subjectPaper.questions.map((question) => {
@@ -617,4 +700,52 @@ export const getExamReviewDataService = async ({
       }),
     })),
   };
+};
+
+export const getExamAttemptsService = async ({
+  examId,
+  schoolId,
+}: {
+  examId: string;
+  schoolId?: string;
+}) => {
+  return prisma.examAttempt.findMany({
+    where: {
+      examId,
+      exam: schoolId ? { schoolId } : undefined,
+    },
+    include: {
+      student: true,
+      subjectAttempts: true,
+    },
+    orderBy: {
+      totalScore: "desc",
+    },
+  });
+};
+
+export const getStudentExamAttemptsService = async (studentId: string) => {
+  return prisma.examAttempt.findMany({
+    where: {
+      studentId,
+      status: {
+        in: [ExamAttemptStatus.SUBMITTED, ExamAttemptStatus.SCORED],
+      },
+    },
+    include: {
+      exam: true,
+      subjectAttempts: {
+        include: {
+          subjectPaper: {
+            include: {
+              subject: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      submittedAt: "desc",
+    },
+  });
 };

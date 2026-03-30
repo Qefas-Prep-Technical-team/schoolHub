@@ -146,12 +146,12 @@ export const getDepartmentsService = async ({
   schoolId?: string;
 }) => {
   if (currentUserType === UserRole.ADMIN) {
+    if (!schoolId) return [];
     return prisma.department.findMany({
       where: {
         isArchived: false,
-        ...(schoolId
-          ? { schoolId, scope: AcademicOwnershipScope.SCHOOL }
-          : { scope: AcademicOwnershipScope.SCHOOL }),
+        schoolId,
+        scope: AcademicOwnershipScope.SCHOOL
       },
       include: {
         subjects: { include: { subject: true } },
@@ -237,7 +237,7 @@ export const getDepartmentsService = async ({
       isArchived: false,
       ...(schoolId
         ? { schoolId, scope: AcademicOwnershipScope.SCHOOL }
-        : { scope: AcademicOwnershipScope.SCHOOL }),
+        : { id: 'none' }), // Fail closed
     },
     include: {
       subjects: { include: { subject: true } },

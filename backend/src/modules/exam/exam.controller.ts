@@ -34,14 +34,18 @@ import { canTeacherManageSubject } from "../academic/teacher-subject.permissions
 export const getExams = async (req: Request, res: Response) => {
   console.log("LOG: [getExams] Controller Reached", { query: req.query, user: req.user });
   try {
-    const { schoolId, sessionId, classId, departmentId, status } = req.query;
+    const { schoolId, sessionId, classId, departmentId, status, term, category } = req.query;
+
+    const effectiveSchoolId = (schoolId as string) || req.user?.schoolId;
 
     const filters: any = {};
-    if (schoolId) filters.schoolId = schoolId as string;
+    if (effectiveSchoolId) filters.schoolId = effectiveSchoolId;
     if (sessionId) filters.sessionId = sessionId as string;
     if (classId) filters.classId = classId as string;
     if (departmentId) filters.departmentId = departmentId as string;
     if (status) filters.status = status as any;
+    if (term) filters.term = term as any;
+    if (category) filters.category = category as any;
 
     if (req.user?.userType === UserRole.STUDENT) {
       filters.availableForStudentId = req.user.id;
@@ -92,7 +96,10 @@ export const getExamById = async (req: Request, res: Response) => {
 
 export const getExamPapers = async (req: Request, res: Response) => {
   try {
-    const data = await getExamPapersService(req.params.id as string);
+    const data = await getExamPapersService(
+      req.params.id as string,
+      req.user?.schoolId
+    );
 
     return res.status(200).json({
       success: true,
@@ -155,7 +162,12 @@ export const createExam = async (req: Request, res: Response) => {
 
 export const createSubjectPaper = async (req: Request, res: Response) => {
   try {
-    const { subjectId, teacherId, title, instructions, durationMinutes } = req.body;
+    const { subjectId, teacherId, title, instructions, durationMinutes, schoolId: bodySchoolId } = req.body;
+    const schoolId = bodySchoolId || req.user?.schoolId;
+
+    if (!req.params.id && !schoolId) {
+       throw new Error("schoolId is required for standalone papers");
+    }
 
     if (!req.user || ![UserRole.ADMIN, UserRole.TEACHER].includes(req.user.userType)) {
       return res.status(403).json({
@@ -178,22 +190,25 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
         });
       }
 
-      const canManageSubject = await canTeacherManageSubject({
-        teacherId: req.user.id,
-        subjectId,
-      });
-
-      if (!canManageSubject) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not allowed to create a paper for this subject",
+      if (subjectId) {
+        const canManageSubject = await canTeacherManageSubject({
+          teacherId: req.user.id,
+          subjectId,
         });
+
+        if (!canManageSubject) {
+          return res.status(403).json({
+            success: false,
+            message: "You are not allowed to create a paper for this subject",
+          });
+        }
       }
     }
 
     const data = await createSubjectPaperService({
-      examId: req.params.id as string,
+      examId: req.params.id === 'none' || !req.params.id ? null : req.params.id as string,
       subjectId,
+      schoolId,
       teacherId,
       title,
       instructions,

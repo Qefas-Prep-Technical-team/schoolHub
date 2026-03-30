@@ -42,12 +42,11 @@ export const getSubjects = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const schoolId = req.query.schoolId as string | undefined;
-
+    const schoolId = (req.query.schoolId as string) || req.user.schoolId;
     const subjects = await getSubjectsService({
       currentUserId: req.user.id,
       currentUserType: req.user.userType as UserRole,
-      schoolId,
+      schoolId: schoolId as string,
     });
 
     return res.status(200).json({
