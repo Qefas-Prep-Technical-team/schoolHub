@@ -68,7 +68,7 @@ export const usePublishExam = () => {
     mutationFn: (id: string) => examService.publishExam(id),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: examKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: examKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: examKeys.all });
       toast.success("Exam published successfully");
     },
     onError: (error: any) => {
@@ -83,7 +83,7 @@ export const useUnpublishExam = () => {
     mutationFn: (id: string) => examService.unpublishExam(id),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: examKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: examKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: examKeys.all });
       toast.success("Exam unpublished successfully");
     },
     onError: (error: any) => {
@@ -97,7 +97,7 @@ export const useDeleteExam = () => {
   return useMutation({
     mutationFn: (id: string) => examService.deleteExam(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: examKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: examKeys.all });
       toast.success("Exam deleted successfully");
     },
     onError: (error: any) => {
@@ -153,6 +153,14 @@ export const useExamAttempt = (examId: string) => {
   });
 };
 
+export const useExamAttempts = (examId: string) => {
+  return useQuery({
+    queryKey: [...examKeys.detail(examId), "attempts"],
+    queryFn: () => examService.getExamAttempts(examId),
+    enabled: !!examId,
+  });
+};
+
 export const useStartExamAttempt = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -199,8 +207,15 @@ export const useSubmitAttempt = () => {
 export const useExamResult = (examId: string, studentId?: string) => {
   return useQuery({
     queryKey: [...examKeys.detail(examId), "result", studentId || "me"],
-    queryFn: () => examService.getExamResult(examId, studentId),
+    queryFn: () => examService.getExamResult(examId, studentId || ""),
     enabled: !!examId,
+  });
+};
+
+export const useStudentExamAttempts = () => {
+  return useQuery({
+    queryKey: ["my-attempts"],
+    queryFn: () => examService.getMyExamAttempts(),
   });
 };
 

@@ -10,13 +10,13 @@ export default function AssessmentList({ assessments, title = 'Assessments' }: A
     console.log('assessments', assessments);
     return (
         <div className="mt-8">
-            <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {assessments.length > 0 ? (
                     assessments.map((assessment) => (
                         <AssessmentItem key={assessment.id} assessment={assessment} />
                     ))
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-20 px-4 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
+                    <div className="col-span-full flex flex-col items-center justify-center py-20 px-4 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
                         <div className="h-16 w-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-4">
                             <span className="material-symbols-outlined text-3xl">search_off</span>
                         </div>

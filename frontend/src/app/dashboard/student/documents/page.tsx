@@ -16,6 +16,7 @@ import {
 import { Document, FilterChip } from './components/types';
 import { Star } from 'lucide-react';
 import Link from 'next/link';
+import ComingSoonWrapper from '@/components/dashboard/ComingSoonWrapper';
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
@@ -102,69 +103,71 @@ export default function DocumentsPage() {
   ];
 
   return (
-    <div className="relative flex min-h-screen w-full">
-      <main className="flex-1 p-6 sm:p-8 lg:p-10">
-        <div className="mx-auto max-w-7xl">
-          {/* Breadcrumbs */}
-          <Breadcrumbs items={breadcrumbs} />
-          
-          {/* Page Heading */}
-<div className="mb-8 flex items-center justify-between">
-  <div>
-    <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
-      Documents
-    </h1>
-    <p className="text-base text-gray-500 dark:text-gray-400 mt-2">
-      Manage all your school-related files in one place.
-    </p>
-  </div>
+    <ComingSoonWrapper title="Documents" backLink="/dashboard/student">
+      <div className="relative flex min-h-screen w-full">
+        <main className="flex-1 p-6 sm:p-8 lg:p-10">
+          <div className="mx-auto max-w-7xl">
+            {/* Breadcrumbs */}
+            <Breadcrumbs items={breadcrumbs} />
+            
+            {/* Page Heading */}
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
+                  Documents
+                </h1>
+                <p className="text-base text-gray-500 dark:text-gray-400 mt-2">
+                  Manage all your school-related files in one place.
+                </p>
+              </div>
 
-  <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-    <Link href="/dashboard/student/documents/favorites">
-    
-    <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
-    </Link>
-  </button>
-</div>
+              <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                <Link href="/dashboard/student/documents/favorites">
+                
+                <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+                </Link>
+              </button>
+            </div>
 
-          {/* Filter Chips */}
-          <FilterChips
-            chips={filters}
-            activeFilter={activeFilter}
-            onFilterChange={handleFilterChange}
-          />
-
-          {/* Search and Sort Bar */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            <SearchBar
-              placeholder="Search documents..."
-              onSearch={handleSearch}
-              className="flex-grow"
+            {/* Filter Chips */}
+            <FilterChips
+              chips={filters}
+              activeFilter={activeFilter}
+              onFilterChange={handleFilterChange}
             />
-            <SortDropdown
-              options={sortOptions}
-              selectedOption={sortBy}
-              onSortChange={setSortBy}
-              className="w-full sm:w-48"
+
+            {/* Search and Sort Bar */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+              <SearchBar
+                placeholder="Search documents..."
+                onSearch={handleSearch}
+                className="flex-grow"
+              />
+              <SortDropdown
+                options={sortOptions}
+                selectedOption={sortBy}
+                onSortChange={setSortBy}
+                className="w-full sm:w-48"
+              />
+            </div>
+
+            {/* Documents Grid */}
+            <DocumentsGrid
+              documents={filteredDocuments}
+              onFavorite={handleFavorite}
+              onView={handleView}
+              onDownload={handleDownload}
             />
-          </div>
 
-          {/* Documents Grid */}
-          <DocumentsGrid
-            documents={filteredDocuments}
-            onFavorite={handleFavorite}
-            onView={handleView}
-            onDownload={handleDownload}
-          />
-
-          {/* Stats */}
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {filteredDocuments.length} of {documents.length} documents
-            </p>
+            {/* Stats */}
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Showing {filteredDocuments.length} of {documents.length} documents
+              </p>
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </ComingSoonWrapper>
   );
 }

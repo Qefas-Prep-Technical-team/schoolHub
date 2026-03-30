@@ -6,7 +6,7 @@ import { examService } from "@/lib/api/services/examService";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, FileText, Settings, Loader2, Check } from "lucide-react";
+import { ChevronLeft, FileText, Settings, Loader2, Check, Globe } from "lucide-react";
 import { toast } from "react-toastify";
 import QuestionManager from "./components/QuestionManager";
 import ConfirmationModal from "../../../components/ui/ConfirmationModal";
@@ -33,16 +33,7 @@ export default function PaperDetailPage() {
 
   const queryClient = useQueryClient();
 
-  const validatePaperMutation = useMutation({
-    mutationFn: () => examService.validatePaper(examId, paperId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
-      toast.success("Subject paper validated successfully!");
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Validation failed");
-    }
-  });
+
 
   const publishPaperMutation = useMutation({
     mutationFn: () => examService.publishPaper(examId, paperId),
@@ -69,6 +60,8 @@ export default function PaperDetailPage() {
   const deletePaperMutation = useMutation({
     mutationFn: () => examService.deletePaper(examId, paperId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exam-papers", examId] });
+      queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
       router.push(`/dashboard/admin/exams/${examId}/papers`);
       toast.success("Subject paper deleted!");
     },
@@ -164,80 +157,58 @@ export default function PaperDetailPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {paper.status === "PUBLISHED" ? (
               <div className="flex items-center gap-2">
-                <div className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-100 dark:border-emerald-500/20 flex items-center gap-1.5 mr-2">
-                  <Check size={14} /> Published
+                <div className="hidden md:flex bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] font-bold border border-emerald-100 dark:border-emerald-500/20 items-center gap-1.5 shadow-sm">
+                  <Check size={12} /> Published
                 </div>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="rounded-xl text-amber-600 border-amber-200 hover:bg-amber-50"
+                  className="h-8 rounded-lg text-amber-600 border-amber-200 hover:bg-amber-50 text-xs px-3 font-semibold"
                   onClick={() => openConfirmDialog({
                     title: "Unpublish Paper",
-                    description: `Are you sure you want to unpublish "${paper.title}"? It will be moved back to draft.`,
+                    description: `Move "${paper.title}" back to draft?`,
                     variant: "warning",
                     confirmText: "Unpublish",
-                    onConfirm: () => unpublishPaperMutation.mutate(undefined, {
-                      onSuccess: () => {
-                        setConfirmDialog({ ...confirmDialog, isOpen: false });
-                        toast.success("Subject paper unpublished!");
-                      },
-                      onError: (error: any) => {
-                        toast.error(error.response?.data?.message || "Failed to unpublish paper");
-                      }
-                    })
+                    onConfirm: () => unpublishPaperMutation.mutate()
                   })}
                   disabled={unpublishPaperMutation.isPending}
                 >
-                  {unpublishPaperMutation.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : "Unpublish"}
+                  {unpublishPaperMutation.isPending ? <Loader2 className="animate-spin h-3 w-3" /> : "Unpublish"}
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="rounded-xl"
-                  onClick={() => validatePaperMutation.mutate()}
-                  disabled={validatePaperMutation.isPending || paper.status === "APPROVED"}
-                >
-                  {validatePaperMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : paper.status === "APPROVED" ? "Validated" : "Validate"}
-                </Button>
-                <Button 
-                  size="sm" 
-                  className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200"
-                  onClick={() => publishPaperMutation.mutate()}
-                  disabled={publishPaperMutation.isPending || paper.status !== "APPROVED"}
-                >
-                  {publishPaperMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Publish Paper"}
-                </Button>
-              </div>
+              <Button 
+                size="sm" 
+                className="h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 px-4 text-xs font-bold"
+                onClick={() => publishPaperMutation.mutate()}
+                disabled={publishPaperMutation.isPending}
+              >
+                {publishPaperMutation.isPending ? (
+                  <Loader2 className="animate-spin h-3 w-3" />
+                ) : (
+                  <Globe size={12} className="mr-1.5" />
+                )}
+                Publish
+              </Button>
             )}
             
             <Button 
               variant="outline" 
               size="sm" 
-              className="rounded-xl text-red-600 border-red-200 hover:bg-red-50"
+              className="h-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50 text-xs px-3 font-semibold"
               onClick={() => openConfirmDialog({
                 title: "Delete Paper",
-                description: `This will permanently delete "${paper.title}" and all its questions. This action cannot be undone.`,
+                description: `Permanently delete "${paper.title}"?`,
                 variant: "danger",
-                confirmText: "Delete Paper",
-                onConfirm: () => deletePaperMutation.mutate(undefined, {
-                  onSuccess: () => {
-                    setConfirmDialog({ ...confirmDialog, isOpen: false });
-                    toast.success("Subject paper deleted!");
-                  },
-                  onError: (error: any) => {
-                    toast.error(error.response?.data?.message || "Failed to delete paper");
-                  }
-                })
+                confirmText: "Delete",
+                onConfirm: () => deletePaperMutation.mutate()
               })}
               disabled={deletePaperMutation.isPending}
             >
-              {deletePaperMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Delete Paper"}
+              {deletePaperMutation.isPending ? <Loader2 className="animate-spin h-3 w-3" /> : "Delete"}
             </Button>
             
             <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-800 hidden sm:block mx-1"></div>

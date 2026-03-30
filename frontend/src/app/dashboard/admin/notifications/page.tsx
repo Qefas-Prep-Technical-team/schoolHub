@@ -26,9 +26,13 @@ import {
 import { useRespondToLinkRequest, useAcceptAllLinkRequests } from '@/lib/api/hooks/useLinks';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import NotificationDetailModal from '@/components/notifications/NotificationDetailModal';
+import { Notification } from '@/lib/api/services/notificationService';
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const [selectedNotification, setSelectedNotification] = React.useState<Notification | null>(null);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
   const { data: notifications = [], isLoading, isError, refetch } = useNotifications();
   
   const markAsReadMutation = useMarkAsRead();
@@ -37,11 +41,19 @@ export default function NotificationsPage() {
   const respondMutation = useRespondToLinkRequest();
   const acceptAllMutation = useAcceptAllLinkRequests();
 
-  const unreadNotifications = notifications.filter(n => !n.isRead);
-  const linkRequests = unreadNotifications.filter(n => n.type === 'LINK_REQUEST');
+  const unreadNotifications = notifications.filter((n: Notification) => !n.isRead);
+  const linkRequests = unreadNotifications.filter((n: Notification) => n.type === 'LINK_REQUEST');
 
   const handleMarkAsRead = (id: string) => {
     markAsReadMutation.mutate(id);
+  };
+
+  const handleOpenModal = (notification: Notification) => {
+    setSelectedNotification(notification);
+    setIsModalOpen(true);
+    if (!notification.isRead) {
+      handleMarkAsRead(notification.id);
+    }
   };
 
   const handleLinkAction = (notificationId: string, linkId: string, action: 'ACCEPT' | 'REJECT') => {
@@ -138,15 +150,16 @@ export default function NotificationsPage() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {notifications.map((n: any) => (
+          {notifications.map((n: Notification) => (
             <Card 
               key={n.id} 
               className={cn(
-                "rounded-3xl border-none transition-all duration-300 group overflow-hidden",
+                "rounded-3xl border-none transition-all duration-300 group overflow-hidden cursor-pointer",
                 !n.isRead 
                   ? "bg-white dark:bg-gray-800 shadow-xl shadow-primary/5 ring-1 ring-primary/10" 
                   : "bg-gray-50/50 dark:bg-gray-900/50 opacity-80"
               )}
+              onClick={() => handleOpenModal(n)}
             >
               <CardContent className="p-6">
                 <div className="flex gap-6">
@@ -249,6 +262,14 @@ export default function NotificationsPage() {
           ))}
         </div>
       )}
+      <NotificationDetailModal 
+        notification={selectedNotification}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onMarkAsRead={handleMarkAsRead}
+        onRespondToLink={(notificationId, linkId, action) => handleLinkAction(notificationId, linkId, action)}
+        isResponding={respondMutation.isPending}
+      />
     </div>
   );
 }

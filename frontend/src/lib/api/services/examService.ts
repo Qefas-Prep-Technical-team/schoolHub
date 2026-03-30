@@ -8,7 +8,8 @@ export interface Exam {
   creationMode: "MANUAL" | "AI" | "OMR";
   mode: "SINGLE_SUBJECT" | "BILINGUAL" | "MULTI_SUBJECT";
   schoolId: string;
-  sessionId: string;
+  sessionId?: string;
+  term?: "FIRST" | "SECOND" | "THIRD";
   status: "DRAFT" | "PUBLISHED" | "ONGOING" | "COMPLETED";
   category: "EXAM" | "QUIZ";
   durationMinutes?: number;
@@ -17,6 +18,7 @@ export interface Exam {
   allowImmediateResult?: boolean;
   classId?: string;
   departmentId?: string;
+  teacherId?: string;
   createdAt: string;
   updatedAt: string;
   instructions?: string;
@@ -33,8 +35,8 @@ export interface Exam {
 export interface SubjectPaper {
   id: string;
   examId: string;
-  subjectId: string;
-  teacherId: string;
+  subjectId?: string;
+  teacherId?: string;
   title: string;
   instructions: string;
   durationMinutes: number;
@@ -68,7 +70,9 @@ export interface CreateExamDTO {
   category: string;
   mode: string;
   schoolId: string;
-  sessionId: string;
+  sessionId?: string;
+  term?: string;
+  teacherId?: string;
   startDate?: string;
   resultReleaseAt?: string;
   allowImmediateResult?: boolean;
@@ -77,8 +81,9 @@ export interface CreateExamDTO {
 }
 
 export interface CreatePaperDTO {
-  subjectId: string;
-  teacherId: string;
+  subjectId?: string | null;
+  teacherId?: string | null;
+  schoolId?: string | null;
   title: string;
   instructions: string;
   durationMinutes: number;
@@ -90,6 +95,9 @@ export const examService = {
     sessionId?: string;
     classId?: string;
     departmentId?: string;
+    term?: string;
+    teacherId?: string;
+    category?: string;
     status?: string;
   }) => {
     const response = await apiClient.get<{ data: Exam[] }>("/exams", { params });
@@ -120,12 +128,10 @@ export const examService = {
     return response.data.data;
   },
 
-  createSubjectPaper: async (examId: string, data: CreatePaperDTO) => {
-    console.log("Creating subject paper with data:", data);
-    const response = await apiClient.post<{ data: SubjectPaper }>(
-      `/exams/${examId}/papers`,
-      data,
-    );
+  createSubjectPaper: async (examId: string | null | undefined, data: CreatePaperDTO) => {
+   
+    const url = examId ? `/exams/${examId}/papers` : "/exams/papers";
+    const response = await apiClient.post<{ data: SubjectPaper }>(url, data);
     return response.data.data;
   },
 
@@ -186,8 +192,13 @@ export const examService = {
 
   // Student Attempt Endpoints
   getExamAttempt: async (examId: string) => {
-    const response = await apiClient.get(`/exams/${examId}/attempt`);
+    const response = await apiClient.get<{ data: any }>(`/exams/${examId}/attempt`);
     return response.data.data;
+  },
+
+  getExamAttempts: async (examId: string) => {
+    const response = await apiClient.get<{ data: any[] }>(`/exams/${examId}/attempts`);
+    return response.data.data || [];
   },
 
   startExamAttempt: async (examId: string) => {
@@ -229,5 +240,10 @@ export const examService = {
   unlinkSubjectPaper: async (paperId: string) => {
     const response = await apiClient.patch(`/exams/papers/${paperId}/unlink`);
     return response.data;
+  },
+
+  getMyExamAttempts: async () => {
+    const response = await apiClient.get('/exams/my/attempts');
+    return response.data.data;
   },
 };

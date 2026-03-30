@@ -10,12 +10,15 @@ import Link from "next/link";
 
 export default function CreateStandalonePaperPage() {
   const { user } = useAuthStore();
-  const schoolId = user?.defaultTenantId;
+  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId;
+  console.log("School ID:", schoolId);
+  console.log("User Schools:", user?.schools);
 
   const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery({
     queryKey: ["all-subjects"],
     queryFn: async () => {
-      const { data } = await apiClient.get("/academic/subjects");
+      const url = schoolId ? `/academic/subjects?schoolId=${schoolId}` : "/academic/subjects";
+      const { data } = await apiClient.get(url);
       return data.data || data;
     },
   });
@@ -52,14 +55,15 @@ export default function CreateStandalonePaperPage() {
         <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 p-8">
           <CardTitle className="text-xl">Paper Details</CardTitle>
           <CardDescription>
-            Fill in the information below to create a new subject assessment paper. 
+            Fill in the information below to create a new subject assessment paper.
             You can link this paper to an examination later.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-8">
-          <CreatePaperForm 
-            subjects={subjects} 
-            teachers={teachers} 
+          <CreatePaperForm
+            schoolId={schoolId as string}
+            subjects={subjects}
+            teachers={teachers}
             isLoadingData={isLoading}
             redirectOnSuccess="/dashboard/admin/exams/papers/[id]"
           />
@@ -73,7 +77,7 @@ export default function CreateStandalonePaperPage() {
         <div>
           <h4 className="font-bold text-amber-900 dark:text-amber-100 text-sm">Standalone Paper</h4>
           <p className="text-amber-700 dark:text-amber-300 text-xs mt-1 leading-relaxed">
-            Standalone papers are not immediately part of any multi-subject examination. 
+            Standalone papers are not immediately part of any multi-subject examination.
             They will appear as "Unlinked" in your dashboard tabs until you associate them with an exam.
           </p>
         </div>

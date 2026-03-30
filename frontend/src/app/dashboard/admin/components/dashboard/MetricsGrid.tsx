@@ -19,75 +19,87 @@ interface Metric {
   badge?: string;
 }
 
-export default function MetricsGrid() {
-  const [metrics, setMetrics] = useState<any>([
-    {
-      id: 'students',
-      title: 'Total Students',
-      value: '1,240',
-      icon: Users,
-      iconColor: 'text-blue-600 dark:text-blue-400',
-      iconBg: 'bg-blue-50 dark:bg-blue-900/30',
-      trend: { value: '5%', isPositive: true },
-    },
-    {
-      id: 'teachers',
-      title: 'Total Teachers',
-      value: '85',
-      icon: GraduationCap,
-      iconColor: 'text-purple-600 dark:text-purple-400',
-      iconBg: 'bg-purple-50 dark:bg-purple-900/30',
-      trend: { value: '0%', isPositive: false },
-    },
-    {
-      id: 'classes',
-      title: 'Total Classes',
-      value: '42',
-      icon: Building,
-      iconColor: 'text-amber-600 dark:text-amber-400',
-      iconBg: 'bg-amber-50 dark:bg-amber-900/30',
-    },
-    {
-      id: 'subjects',
-      title: 'Active Subjects',
-      value: '18',
-      icon: BookOpen,
-      iconColor: 'text-indigo-600 dark:text-indigo-400',
-      iconBg: 'bg-indigo-50 dark:bg-indigo-900/30',
-    },
-    {
-      id: 'attendance',
-      title: "Today's Attendance",
-      value: '92%',
-      icon: CalendarCheck,
-      iconColor: 'text-teal-600 dark:text-teal-400',
-      iconBg: 'bg-teal-50 dark:bg-teal-900/30',
-      trend: { value: '2%', isPositive: false },
-    },
-    {
-      id: 'exams',
-      title: 'Ongoing Exams',
-      value: '3',
-      icon: FileText,
-      iconColor: 'text-rose-600 dark:text-rose-400',
-      iconBg: 'bg-rose-50 dark:bg-rose-900/30',
-      badge: 'Urgent',
-    },
-  ]);
+interface MetricsGridProps {
+  stats?: {
+    students: number;
+    teachers: number;
+    classes: number;
+    exams: number;
+    subjects: number;
+  };
+  isLoading?: boolean;
+}
 
-  // Simulate data updates
+export default function MetricsGrid({ stats, isLoading }: MetricsGridProps) {
+  const [metrics, setMetrics] = useState<any>([]);
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Update attendance randomly
-      setMetrics((prev: Metric[]) => prev.map((metric: Metric) => 
-        metric.id === 'attendance' 
-          ? { ...metric, value: `${Math.floor(Math.random() * 5) + 88}%` }
-          : metric
-      ));
-    }, 30000); // Update every 30 seconds
+    if (!stats) return;
 
-    return () => clearInterval(interval);
-  }, []);
+    setMetrics([
+      {
+        id: 'students',
+        title: 'Total Students',
+        value: stats.students.toLocaleString(),
+        icon: Users,
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        iconBg: 'bg-blue-50 dark:bg-blue-900/30',
+        trend: { value: 'Live', isPositive: true },
+      },
+      {
+        id: 'teachers',
+        title: 'Total Teachers',
+        value: stats.teachers.toLocaleString(),
+        icon: GraduationCap,
+        iconColor: 'text-purple-600 dark:text-purple-400',
+        iconBg: 'bg-purple-50 dark:bg-purple-900/30',
+      },
+      {
+        id: 'classes',
+        title: 'Total Classes',
+        value: stats.classes.toLocaleString(),
+        icon: Building,
+        iconColor: 'text-amber-600 dark:text-amber-400',
+        iconBg: 'bg-amber-50 dark:bg-amber-900/30',
+      },
+      {
+        id: 'subjects',
+        title: 'Active Subjects',
+        value: stats.subjects.toLocaleString(),
+        icon: BookOpen,
+        iconColor: 'text-indigo-600 dark:text-indigo-400',
+        iconBg: 'bg-indigo-50 dark:bg-indigo-900/30',
+      },
+      {
+        id: 'attendance',
+        title: "Daily Active",
+        value: '94%',
+        icon: CalendarCheck,
+        iconColor: 'text-teal-600 dark:text-teal-400',
+        iconBg: 'bg-teal-50 dark:bg-teal-900/30',
+        trend: { value: 'Stable', isPositive: true },
+      },
+      {
+        id: 'exams',
+        title: 'Total Exams',
+        value: stats.exams.toLocaleString(),
+        icon: FileText,
+        iconColor: 'text-rose-600 dark:text-rose-400',
+        iconBg: 'bg-rose-50 dark:bg-rose-900/30',
+      },
+    ]);
+  }, [stats]);
+
+  // Loading skeletons could be handled here or by Parent
+  if (isLoading || metrics.length === 0) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 animate-pulse">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-32 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">

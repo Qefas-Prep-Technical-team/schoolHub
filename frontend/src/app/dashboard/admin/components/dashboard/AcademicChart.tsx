@@ -1,15 +1,39 @@
 'use client';
 
 import { BarChart3, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import DonutChart from './DonutChart';
 
-export default function AcademicChart() {
-  const [performanceData] = useState([
-    { name: 'Excellent (A- to A+)', value: 45, color: '#10B981' },
-    { name: 'Good (C+ to B+)', value: 35, color: '#3B82F6' },
-    { name: 'At Risk (< C)', value: 20, color: '#F87171' },
-  ]);
+interface AcademicChartProps {
+    analysis?: {
+        averageScore: number;
+        totalAssessments: number;
+        subjectBreakdown: { name: string; average: number }[];
+        insight: string;
+    };
+    isLoading?: boolean;
+}
+
+export default function AcademicChart({ analysis, isLoading }: AcademicChartProps) {
+  const chartData = useMemo(() => {
+    if (!analysis) return [
+        { name: 'Excellent (A- to A+)', value: 0, color: '#10B981' },
+        { name: 'Good (C+ to B+)', value: 0, color: '#3B82F6' },
+        { name: 'At Risk (< C)', value: 0, color: '#F87171' },
+    ];
+
+    // Map subject breakdown to chart slices (simplified for now)
+    const excellentCount = analysis.subjectBreakdown.filter(s => s.average >= 70).length;
+    const goodCount = analysis.subjectBreakdown.filter(s => s.average >= 50 && s.average < 70).length;
+    const atRiskCount = analysis.subjectBreakdown.filter(s => s.average < 50).length;
+    const total = excellentCount + goodCount + atRiskCount || 1;
+
+    return [
+      { name: 'Excellence Rank', value: Math.round((excellentCount / total) * 100), color: '#10B981' },
+      { name: 'Competency Rank', value: Math.round((goodCount / total) * 100), color: '#3B82F6' },
+      { name: 'Risk Assessment', value: Math.round((atRiskCount / total) * 100), color: '#F87171' },
+    ];
+  }, [analysis]);
 
   return (
     <div className="bg-surface-light dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 flex flex-col h-full">
@@ -27,29 +51,29 @@ export default function AcademicChart() {
         {/* Donut Chart */}
         <div className="flex-shrink-0">
           <DonutChart
-            data={performanceData}
+            data={chartData}
             innerRadius={40}
             outerRadius={60}
             centerLabel={{
-              title: 'Avg Grade',
-              value: 'B+',
+              title: 'Avg Score',
+              value: analysis ? `${analysis.averageScore}%` : '--',
             }}
           />
         </div>
 
         {/* Legend & Details */}
-        <div className="flex flex-col gap-3 flex-1">
-          {performanceData.map((item, index) => (
+        <div className="flex flex-col gap-3 flex-1 overflow-y-auto max-h-[160px]">
+          {chartData.map((item: any, index: number) => (
             <div
               key={index}
-              className="flex items-center justify-between text-sm p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors"
+              className="flex items-center justify-between text-xs p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors border border-transparent hover:border-slate-100"
             >
               <div className="flex items-center gap-3">
                 <div
-                  className="size-3 rounded-full"
+                  className="size-2.5 rounded-full"
                   style={{ backgroundColor: item.color }}
                 />
-                <span className="text-slate-600 dark:text-slate-300">
+                <span className="text-slate-600 dark:text-slate-300 font-medium">
                   {item.name}
                 </span>
               </div>

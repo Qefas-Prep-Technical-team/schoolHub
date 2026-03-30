@@ -27,7 +27,9 @@ export default function Home() {
         const now = new Date();
         return assessments.map((item: any) => {
             const startDate = item.startDate ? new Date(item.startDate) : null;
+            const endDate = item.endDate ? new Date(item.endDate) : null;
             const attempt = item.attempts?.[0];
+            const questionsCount = item.subjectPapers?.reduce((acc: number, paper: any) => acc + (paper.questionsCount || 0), 0) || 0;
 
             let status: Assessment['status'] = 'active';
             if (startDate && now < startDate) {
@@ -49,12 +51,15 @@ export default function Home() {
                     day: 'numeric',
                     year: 'numeric'
                 }) : 'TBD',
-                score: (item.allowImmediateResult || (item.resultReleaseAt && new Date() >= new Date(item.resultReleaseAt))) 
-                    ? (attempt?.score != null ? `${attempt.score}%` : null) 
+                startDate: startDate || undefined,
+                endDate: endDate || undefined,
+                score: (item.allowImmediateResult || (item.resultReleaseAt && now >= new Date(item.resultReleaseAt))) 
+                    ? (attempt?.totalScore != null ? `${Math.round((attempt.totalScore / (attempt.totalMarks || 1)) * 100)}%` : null) 
                     : null,
                 status,
                 type: item.category?.toLowerCase() === 'quiz' ? 'quiz' : 'exam',
-                durationMinutes: item.durationMinutes
+                durationMinutes: item.durationMinutes,
+                questionsCount,
             };
         });
     }, [assessments]);

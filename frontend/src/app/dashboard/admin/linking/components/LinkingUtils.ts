@@ -6,6 +6,7 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
   // Handling both LinkRequest and RelationshipLink
   const req = item.approvedFromRequest || item;
   
+  // Robust person identification
   const person = 
     req.requesterTeacher || req.targetTeacher ||
     req.requesterStudent || req.targetStudent ||
@@ -14,14 +15,20 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
     req.sender || req.receiver;
 
   const className = req.class ? (req.class.name + (req.class.section ? ` - ${req.class.section}` : '')) : undefined;
+  
+  // Determine peer identification (for logic where we need to know the 'other' side)
+  const isLeft = item.leftEntityId === currentUserId;
+  const peerCode = isLeft ? item.rightCode : item.leftCode;
+  const requestCode = (req.requesterId === currentUserId) ? (req.targetCode || item.targetCode) : (req.requesterCode || item.requesterCode);
+
+  const bestCode = peerCode || requestCode || '---';
 
   if (person) {
     return {
-      name: person.name || person.fullName || 'Unknown Member',
+      name: person.name || person.fullName || person.username || bestCode || 'Verified Member',
       email: person.email || 'No Email',
       className: className,
-      code: person.teacherCode || person.studentCode || person.parentCode || person.adminCode || 
-            item.peerCode || (item.leftEntityId === currentUserId ? item.rightCode : item.leftCode) || 'No Code'
+      code: person.teacherCode || person.studentCode || person.parentCode || person.adminCode || bestCode
     };
   }
 
@@ -30,13 +37,13 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
       name: className || 'Unknown Class',
       email: 'Classroom Entity',
       className: undefined,
-      code: req.class.classCode
+      code: req.class.classCode || bestCode
     };
   }
   
   return {
-    name: item.peerName || 'Linked Member',
+    name: item.peerName || bestCode || 'Linked Member',
     email: item.peerEmail || 'No Email',
-    code: item.peerCode || (item.leftEntityId === currentUserId ? item.rightCode : item.leftCode) || 'No Code'
+    code: bestCode
   };
 };

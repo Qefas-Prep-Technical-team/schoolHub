@@ -80,10 +80,10 @@ export default function AddExistingPaperModal({ examId, trigger }: AddExistingPa
               >
                 <div>
                   <h4 className="font-bold text-slate-900 dark:text-white truncate max-w-[250px]">
-                    {paper.title || `${paper.subject?.name} Paper`}
+                    {paper.title || `${paper.subject?.name || 'Untitled'} Paper`}
                   </h4>
                   <p className="text-xs text-slate-500">
-                    {paper.subject?.name} • {paper.durationMinutes} mins • {paper._count?.questions || 0} questions
+                    {paper.subject?.name || 'No Subject'} • {paper.durationMinutes} mins • {paper._count?.questions || 0} questions
                   </p>
                 </div>
                 <Button 

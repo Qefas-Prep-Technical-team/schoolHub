@@ -15,6 +15,7 @@ interface User {
   role: string | null;
   userType: UserType;
   defaultTenantId?: string;
+  schools?: { schoolId: string; name: string }[];
 }
 
 interface AuthState {

@@ -1,11 +1,14 @@
 "use client"
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { ProtectedAdminRoute } from '../components/ProtectedAdminRoute'
 import Header from './components/Header'
 import SearchFilters from './components/SearchFilters'
 import BulkActions from './components/BulkActions'
 import TeacherTable from './components/TeacherTable'
 import { Teacher } from './components/TeacherRow'
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
+import { useSchoolTeachers } from '@/lib/api/hooks/useSchool'
+import { Skeleton } from '@/components/ui/skeleton'
 
 
 
@@ -26,12 +29,32 @@ const mockTeachers: Teacher[] = [
 export default function ManageTeachersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTeachers, setSelectedTeachers] = useState<string[]>([])
+  
+  const { user } = useAuthStore()
+  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || ''
+  
+  const { data: teachersData, isLoading } = useSchoolTeachers(schoolId)
 
-  const filteredTeachers = mockTeachers.filter(teacher =>
-    teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teacher.subjects.some(subject => subject.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    teacher.id.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const teachersList: Teacher[] = useMemo(() => {
+    if (!teachersData || !Array.isArray(teachersData)) return []
+    return teachersData.map((t: any) => ({
+      id: t.teacherCode || t.id,
+      name: t.name,
+      email: t.email || '',
+      subjects: t.subjects?.map((s: any) => s.name) || ['General'],
+      assignedClasses: t.classes?.map((c: any) => c.name) || [],
+      status: t.verified ? 'active' : 'inactive',
+      avatar: t.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=random`
+    }))
+  }, [teachersData])
+
+  const filteredTeachers = useMemo(() => {
+    return teachersList.filter(teacher =>
+      teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      teacher.subjects.some(subject => subject.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      teacher.id.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [searchTerm, teachersList])
 
   const handleTeacherSelect = (teacherId: string) => {
     setSelectedTeachers(prev =>
@@ -83,12 +106,20 @@ export default function ManageTeachersPage() {
               onDelete={() => console.log('Delete teachers')}
             />
 
-            <TeacherTable
-              teachers={filteredTeachers}
-              selectedTeachers={selectedTeachers}
-              onSelectTeacher={handleTeacherSelect}
-              onSelectAll={handleSelectAll}
-            />
+            {isLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : (
+              <TeacherTable
+                teachers={filteredTeachers}
+                selectedTeachers={selectedTeachers}
+                onSelectTeacher={handleTeacherSelect}
+                onSelectAll={handleSelectAll}
+              />
+            )}
           </div>
         </main>
       </div>

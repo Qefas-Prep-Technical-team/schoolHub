@@ -29,7 +29,7 @@ const examSchema = z.object({
   category: z.enum(["EXAM", "QUIZ"]),
   mode: z.enum(["SINGLE_SUBJECT", "COMBINED"]),
   schoolId: z.string().min(1, "Please select a school"),
-  sessionId: z.string().min(1, "Please select an academic session"),
+  sessionId: z.string().optional(),
   startDate: z.string().optional(),
   classId: z.string().optional(),
   departmentId: z.string().optional(),
@@ -138,7 +138,7 @@ export default function CreateExamForm() {
     mutationFn: (data: CreateExamDTO) => examService.createExam(data),
     onSuccess: (data) => {
       toast.success("Exam created successfully!");
-      setExamContext(data.id, data.schoolId, data.sessionId);
+      setExamContext(data.id, data.schoolId, data.sessionId || "");
       router.push(`/dashboard/admin/exams/${data.id}/papers`);
     },
     onError: (error: any) => {
@@ -158,10 +158,10 @@ export default function CreateExamForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto space-y-8 pb-20">
       <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm space-y-8">
 
-        <div className="border-b border-slate-100 dark:border-slate-800 pb-6">
+        {/* <div className="border-b border-slate-100 dark:border-slate-800 pb-6">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Create New Exam</h2>
           <p className="text-sm text-slate-500">Initialize your examination settings and link a session.</p>
-        </div>
+        </div> */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
           {/* School Selector */}
@@ -186,13 +186,13 @@ export default function CreateExamForm() {
             {sessions && sessions.data?.length > 0 ? (
               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                 <Label className="text-sm font-bold flex items-center gap-2 text-emerald-600">
-                  <Calendar size={16} /> Active Session Found
+                  <Calendar size={16} /> Active Session Found (Optional)
                 </Label>
                 <select
                   {...register("sessionId")}
                   className="w-full h-12 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/30 dark:bg-emerald-900/10 px-4 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
                 >
-                  <option value="">Select the session</option>
+                  <option value="">No Session (Select to link)</option>
                   {sessions.data?.map((session: any) => (
                     <option key={session.id} value={session.id}>{session.name}</option>
                   ))}
@@ -208,8 +208,10 @@ export default function CreateExamForm() {
                   <span className="flex items-center gap-2 text-red-400">
                     <AlertCircle size={14} /> Error loading data
                   </span>
-                ) : (
+                ) : !watchedSchoolId ? (
                   "Waiting for school selection..."
+                ) : (
+                  "No sessions found for this school"
                 )}
               </div>
             )}
@@ -258,8 +260,8 @@ export default function CreateExamForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-500">
           <div className="space-y-2">
             <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400">Assessment Type</Label>
-            <select 
-              {...register("category")} 
+            <select
+              {...register("category")}
               className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 text-sm outline-none bg-transparent font-bold text-blue-600"
             >
               <option value="EXAM">Formal Examination</option>
@@ -362,7 +364,7 @@ export default function CreateExamForm() {
         </div>
         <Button
           type="submit"
-          disabled={isPending || !sessions || sessions.length === 0}
+          disabled={isPending || !watchedSchoolId}
           className="w-full sm:w-auto px-10 h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all flex gap-3 shadow-lg shadow-blue-200 dark:shadow-none"
         >
           {isPending ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}

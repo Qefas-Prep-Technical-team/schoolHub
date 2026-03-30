@@ -1,5 +1,6 @@
 // src/app/page.tsx
 import React from 'react';
+import ComingSoonWrapper from '@/components/dashboard/ComingSoonWrapper';
 import PageHeader from './components/PageHeader';
 import InfoBanner from './components/InfoBanner';
 import StatCard from './components/StatCard';
@@ -50,23 +51,25 @@ export default function Home() {
     ];
 
     return (
-        <div className="relative flex min-h-screen w-full">
-            <main className="flex-1 p-6 lg:p-8">
-                <div className="max-w-7xl mx-auto">
-                    <PageHeader />
-                    <InfoBanner />
+        <ComingSoonWrapper title="Attendance" backLink="/dashboard/student">
+            <div className="relative flex min-h-screen w-full">
+                <main className="flex-1 p-6 lg:p-8">
+                    <div className="max-w-7xl mx-auto">
+                        <PageHeader />
+                        <InfoBanner />
 
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        {stats.map((stat, index) => (
-                            <StatCard key={index} {...stat} />
-                        ))}
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            {stats.map((stat, index) => (
+                                <StatCard key={index} {...stat} />
+                            ))}
+                        </div>
+
+                        {/* Chart Section */}
+                        <AttendanceChart />
                     </div>
-
-                    {/* Chart Section */}
-                    <AttendanceChart />
-                </div>
-            </main>
-        </div>
+                </main>
+            </div>
+        </ComingSoonWrapper>
     );
 }

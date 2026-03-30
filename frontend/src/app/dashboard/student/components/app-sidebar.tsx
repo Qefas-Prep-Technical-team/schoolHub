@@ -63,7 +63,7 @@ export const studentMenuItems: StudentMenuItem[] = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/student", featureKey: "dashboard", section: "core" },
     { icon: BookOpenCheck, label: "Classes", href: "/dashboard/student/my-classes", featureKey: "classes", section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/student/assignments", featureKey: "assignments", section: "core" },
-    { icon: BarChart3, label: "Results", href: "/dashboard/student/result", featureKey: "results", section: "core" },
+    { icon: BarChart3, label: "Grades", href: "/dashboard/student/grades", featureKey: "results", section: "core" },
     { icon: FileCheck2, label: "Exams/Quizzes", href: "/dashboard/student/exams&quizzes", featureKey: "exams", section: "core" },
     { icon: CalendarDays, label: "Attendance", href: "/dashboard/student/attendance", featureKey: "attendance", section: "core" },
     { icon: FileText, label: "Documents", href: "/dashboard/student/documents", featureKey: "documents", section: "core" },
@@ -72,7 +72,7 @@ export const studentMenuItems: StudentMenuItem[] = [
     // === COMMUNICATION ===
     { icon: MessageCircle, label: "Messages", href: "/student/messages", featureKey: "messages", section: "communication" },
     { icon: Link2, label: "Linking Hub", href: "/dashboard/student/linking", featureKey: "linking", section: "communication" },
-    { icon: BellRing, label: "Notifications", href: "/student/notifications", featureKey: "notifications", section: "communication" },
+    { icon: BellRing, label: "Notifications", href: "/dashboard/student/notifications", featureKey: "notifications", section: "communication" },
 
     // === PROFILE & SETTINGS ===
     { icon: UserCircle, label: "Profile", href: "/dashboard/student/profile", featureKey: "profile", section: "profile" },

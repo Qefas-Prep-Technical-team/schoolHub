@@ -8,7 +8,7 @@ import Image from "next/image";
 import { ThemeToggle } from "@/app/theme-toggle";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { AdminMobileDrawer } from "./AdminMobileDrawer";
-import NotificationCenter from "./NotificationCenter";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 
 export default function TopNavBar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);

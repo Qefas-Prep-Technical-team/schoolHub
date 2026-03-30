@@ -54,35 +54,33 @@ export function ConnectionCard({
 
   if (type === 'active') {
     return (
-      <Card className="rounded-[2rem] overflow-hidden border-none bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-all group relative">
-        <div className={cn(
-          "absolute top-0 left-0 w-1.5 h-full transition-all group-hover:w-2",
-          isClass ? "bg-purple-500" : "bg-primary"
-        )} />
-        
+      <Card className={cn(
+        "rounded-[2rem] overflow-hidden border-none bg-white dark:bg-gray-800 shadow-lg hover:shadow-2xl transition-all group relative border-l-4",
+        isClass ? "border-l-purple-500 shadow-purple-100/50" : "border-l-blue-500 shadow-blue-100/50"
+      )}>
         <CardHeader className="p-6 flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-4">
             <div className={cn(
-              "w-11 h-11 rounded-xl flex items-center justify-center shadow-sm transition-all text-white",
-              isClass ? "bg-purple-500 shadow-purple-200" : "bg-primary shadow-primary/20"
+              "w-12 h-12 rounded-xl flex items-center justify-center shadow-sm transition-all text-white group-hover:scale-110",
+              isClass ? "bg-purple-500 shadow-purple-200" : "bg-blue-500 shadow-blue-200"
             )}>
               {isClass ? <Link2 size={24} /> : <UserPlus size={24} />}
             </div>
             <div>
-              <CardTitle className="text-lg font-black truncate max-w-[150px]">{details.name}</CardTitle>
-              <CardDescription className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+              <CardTitle className="text-xl font-black truncate max-w-[180px] text-slate-900 dark:text-white">{details.name}</CardTitle>
+              <CardDescription className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 {item?.linkType?.replace('_', ' ')}
               </CardDescription>
             </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full ring-offset-background transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
                 <MoreVertical size={18} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-xl p-2 border-none shadow-2xl">
-              <DropdownMenuItem className="p-3 font-semibold rounded-lg focus:bg-gray-100 dark:focus:bg-gray-700">
+              <DropdownMenuItem className="p-3 font-semibold rounded-lg focus:bg-slate-100 dark:focus:bg-slate-800">
                 <Info className="mr-3 h-4 w-4" /> View Details
               </DropdownMenuItem>
               <DropdownMenuItem 
@@ -97,33 +95,36 @@ export function ConnectionCard({
         <CardContent className="px-6 pb-6 pt-0 space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase text-gray-400 block tracking-tight">Identifier</span>
-              <span className="font-bold text-sm text-gray-900 dark:text-white truncate block">{details.email}</span>
+              <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">Identifier</span>
+              <span className="font-bold text-sm text-slate-900 dark:text-white truncate block">{details.email}</span>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase text-gray-400 block tracking-tight">Linked Date</span>
-              <span className="font-bold text-sm text-gray-900 dark:text-white block">{new Date(item.createdAt).toLocaleDateString()}</span>
+              <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">Linked Date</span>
+              <span className="font-bold text-sm text-slate-900 dark:text-white block">{new Date(item.createdAt).toLocaleDateString()}</span>
             </div>
           </div>
           
-          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-100 dark:border-gray-700/50 group/code h-14">
+          <div className={cn(
+            "flex items-center justify-between p-4 rounded-xl border group/code h-14",
+            isClass ? "bg-purple-50/50 border-purple-100 dark:bg-purple-900/10 dark:border-purple-800/50" : "bg-blue-50/50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-800/50"
+          )}>
             <div className="flex flex-col">
-              <span className="text-[8px] font-black uppercase text-gray-400 tracking-wider mb-0.5">Entity Code</span>
-              <span className={cn("font-black tracking-widest text-sm", isClass ? "text-purple-600" : "text-primary")}>{details.code}</span>
+              <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider mb-0.5">Entity Code</span>
+              <span className={cn("font-black tracking-widest text-sm", isClass ? "text-purple-600" : "text-blue-600")}>{details.code}</span>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-lg transition-all hover:bg-white dark:hover:bg-gray-800"
+              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-800"
               onClick={() => onCopy?.(details.code)}
             >
-              <Copy size={14} className="text-gray-400" />
+              <Copy size={14} className="text-slate-400" />
             </Button>
           </div>
 
-          <Button variant="outline" className="w-full justify-between h-11 rounded-xl border-gray-100 dark:border-gray-700 font-black text-[10px] uppercase tracking-widest hover:bg-primary/5 hover:text-primary transition-all">
-            <span>View Profile</span>
-            <ChevronRight size={14} />
+          <Button variant="outline" className="w-full justify-between h-12 rounded-xl border-slate-100 dark:border-slate-800 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all group/btn">
+            <span>View Full Profile</span>
+            <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
           </Button>
         </CardContent>
       </Card>
@@ -132,82 +133,88 @@ export function ConnectionCard({
 
   // Pending Request Card
   return (
-    <Card className="rounded-[2rem] overflow-hidden border-none bg-white dark:bg-gray-800 shadow-lg shadow-orange-500/5 transition-all hover:shadow-xl relative group">
-      <div className="absolute top-0 right-0 p-3 flex flex-col items-end gap-1.5 z-10">
+    <Card className={cn(
+      "rounded-[2rem] overflow-hidden border-none bg-white dark:bg-gray-800 shadow-lg transition-all hover:shadow-2xl relative group",
+      isClass ? "shadow-purple-100/50" : "shadow-orange-100/50"
+    )}>
+      <div className={cn(
+        "h-1.5 w-full absolute top-0 z-20", 
+        isOutgoing ? "bg-slate-300 shadow-sm" : (isClass ? "bg-purple-500 shadow-purple-500/20" : "bg-orange-500 shadow-orange-500/20")
+      )} />
+
+      <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5 z-10">
         <Badge className={cn(
-          "border-none px-2 py-0.5 font-black uppercase text-[8px] tracking-widest",
-          isClass ? "bg-purple-500 text-white" : "bg-orange-500 text-white"
+          "border-none px-3 py-1 font-black uppercase text-[8px] tracking-widest rounded-lg",
+          isClass ? "bg-purple-600 text-white" : "bg-orange-600 text-white"
         )}>
            {details.className || item.linkType.replace('_', ' ')}
         </Badge>
-        <span className="px-2 py-0.5 rounded-md bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm text-[8px] font-black tracking-widest border border-gray-100 dark:border-gray-700 shadow-sm">
-          {isOutgoing ? 'OUTGOING' : 'INCOMING'}
+        <span className="px-2 py-1 rounded-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-[8px] font-black tracking-widest border border-slate-100 dark:border-slate-800 shadow-sm text-slate-500">
+          {isOutgoing ? 'SENT' : 'INCOMING'}
         </span>
       </div>
 
-      <CardHeader className="p-6 pb-2">
-        <div className="flex items-center gap-3 mb-4">
+      <CardHeader className="p-6 pb-2 mt-2">
+        <div className="flex items-center gap-3 mb-5">
           <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center shadow-sm",
-            isClass ? "bg-purple-50 text-purple-500" : "bg-orange-50 text-orange-500"
+            "w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105",
+            isClass ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20" : "bg-orange-50 text-orange-600 dark:bg-orange-900/20"
           )}>
-            <Clock size={20} />
+            <Clock size={24} />
           </div>
-          <span className="text-[10px] text-gray-400 font-bold">
+          <span className="text-[11px] text-slate-400 font-black tracking-wider uppercase">
             {new Date(item.createdAt).toLocaleDateString()}
           </span>
         </div>
 
-        <CardTitle className="text-lg font-black truncate pr-16">{details.name}</CardTitle>
-        <CardDescription className="text-xs font-bold text-gray-400 truncate mt-0.5">
+        <CardTitle className="text-xl font-black truncate pr-20 text-slate-900 dark:text-white leading-tight">{details.name}</CardTitle>
+        <CardDescription className="text-xs font-bold text-slate-400 truncate mt-1">
           {details.email} {details.className ? `• ${details.className}` : ''}
         </CardDescription>
 
         {item.note && (
-          <div className="mt-4 p-3 bg-slate-50 dark:bg-gray-900/50 rounded-xl border border-slate-100 dark:border-gray-700/50 relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-1 h-full bg-blue-300 opacity-50" />
-            <p className="text-[11px] font-medium text-gray-600 dark:text-gray-400 italic line-clamp-2">"{item.note}"</p>
+          <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 relative overflow-hidden group/note">
+             <div className={cn("absolute top-0 left-0 w-1 h-full opacity-50 transition-opacity group-hover/note:opacity-100", isClass ? "bg-purple-300" : "bg-orange-300")} />
+            <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 italic line-clamp-2 leading-relaxed">"{item.note}"</p>
           </div>
         )}
         
-        <div className="mt-4 flex items-center gap-2 group/code-p">
-          <div className="px-3 py-1.5 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700/50 flex items-center gap-2 transition-colors group-hover/code-p:bg-white">
-            <Hash size={12} className="text-gray-400" />
-            <span className="text-xs font-black text-primary tracking-widest">
-              {isOutgoing ? item.targetCode : item.requesterCode}
-            </span>
-          </div>
+        <div className="mt-5 flex items-center gap-2">
+          <Badge variant="secondary" className="bg-slate-50 dark:bg-slate-900 text-[9px] font-black tracking-widest text-slate-500 border border-slate-100 dark:border-slate-800 px-3 py-1 rounded-lg">
+            CODE: {isOutgoing ? item.targetCode : item.requesterCode}
+          </Badge>
         </div>
       </CardHeader>
 
-      <CardContent className="p-6 pt-6 space-y-3">
-        <div className="flex gap-2">
-          {!isOutgoing ? (
-            <>
-              <Button
-                onClick={() => onRespond?.(item.id, 'ACCEPT')}
-                className="flex-[2] h-11 rounded-xl bg-orange-500 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-100 hover:scale-[1.02] transition-all"
-              >
-                Approve Request
-              </Button>
-              <Button
-                onClick={() => onRespond?.(item.id, 'REJECT')}
-                variant="outline"
-                className="flex-1 h-11 rounded-xl border-red-100 text-red-500 font-extrabold text-[10px] uppercase tracking-widest hover:bg-red-50 transition-all px-0"
-              >
-                Decline
-              </Button>
-            </>
-          ) : (
+      <CardContent className="p-6 pt-6 gap-3">
+        {!isOutgoing ? (
+          <div className="flex gap-2">
             <Button
-              onClick={() => onCancel?.(item.id)}
-              variant="outline"
-              className="w-full h-11 rounded-xl border-gray-200 text-gray-500 font-black text-[10px] uppercase tracking-widest hover:bg-gray-50 hover:text-red-500 hover:border-red-100 transition-all"
+              onClick={() => onRespond?.(item.id, 'ACCEPT')}
+              className={cn(
+                "flex-[3] h-12 rounded-xl text-white font-black text-[10px] uppercase tracking-widest shadow-lg transition-all hover:scale-[1.02] active:scale-95",
+                isClass ? "bg-purple-600 shadow-purple-200" : "bg-orange-500 shadow-orange-100"
+              )}
             >
-              Cancel Outgoing Request
+              Accept Request
             </Button>
-          )}
-        </div>
+            <Button
+              onClick={() => onRespond?.(item.id, 'REJECT')}
+              variant="outline"
+              className="flex-1 h-12 rounded-xl border-slate-100 text-red-500 font-extrabold text-[10px] uppercase tracking-widest hover:bg-red-50 dark:border-slate-800 dark:hover:bg-red-950/20 px-0 transition-colors"
+            >
+              Decline
+            </Button>
+          </div>
+        ) : (
+          <Button
+            onClick={() => onCancel?.(item.id)}
+            variant="outline"
+            className="w-full h-12 rounded-xl border-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 hover:text-red-600 hover:border-red-100 dark:border-slate-800 dark:hover:bg-slate-900 transition-all shadow-sm"
+          >
+            Cancel My Request
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

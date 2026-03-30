@@ -28,7 +28,55 @@ export const useMarkAsRead = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => notificationService.markAsRead(id),
-    onSuccess: () => {
+    onMutate: async (id: string) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: notificationKeys.all });
+
+      // Snapshot the previous values
+      const previousNotifications = queryClient.getQueryData(notificationKeys.all);
+      const previousUnreadCount = queryClient.getQueryData(notificationKeys.unreadCount());
+
+      // Optimistically update the unread count
+      queryClient.setQueryData(notificationKeys.unreadCount(), (old: any) => {
+        if (!old || old.count === 0) return old;
+        return { ...old, count: Math.max(0, old.count - 1) };
+      });
+
+      // Optimistically update the list(s)
+      queryClient.setQueriesData({ queryKey: notificationKeys.all }, (old: any) => {
+        if (!old) return old;
+        
+        // Handle list structure
+        if (Array.isArray(old)) {
+          return old.map((n: Notification) => 
+            n.id === id ? { ...n, isRead: true } : n
+          );
+        }
+        
+        // Handle paginated structure if exists
+        if (old.pages) {
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => 
+              Array.isArray(page) 
+                ? page.map((n: Notification) => n.id === id ? { ...n, isRead: true } : n)
+                : page
+            )
+          };
+        }
+        
+        return old;
+      });
+
+      return { previousNotifications, previousUnreadCount };
+    },
+    onError: (err, id, context: any) => {
+      if (context) {
+        queryClient.setQueryData(notificationKeys.all, context.previousNotifications);
+        queryClient.setQueryData(notificationKeys.unreadCount(), context.previousUnreadCount);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });

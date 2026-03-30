@@ -1,7 +1,28 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { classService, ClassJoinRequestData } from "../services/classService";
 import { toast } from "react-toastify";
 import { queryKeys as linkQueryKeys } from "./useLinks";
+
+export const classQueryKeys = {
+  all: ["classes"] as const,
+  list: (schoolId?: string) => [...classQueryKeys.all, "list", { schoolId }] as const,
+  detail: (id: string) => [...classQueryKeys.all, "detail", id] as const,
+};
+
+export const useClasses = (schoolId?: string) => {
+  return useQuery({
+    queryKey: classQueryKeys.list(schoolId),
+    queryFn: () => classService.getClasses(schoolId),
+  });
+};
+
+export const useSingleClass = (id: string) => {
+  return useQuery({
+    queryKey: classQueryKeys.detail(id),
+    queryFn: () => classService.getSingleClass(id),
+    enabled: !!id,
+  });
+};
 
 export const useRequestToJoinClass = () => {
   const queryClient = useQueryClient();

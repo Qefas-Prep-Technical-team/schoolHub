@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { examService } from "@/lib/api/services/examService";
 import AssessmentGrid from "./components/AssessmentGrid";
 import Header from "./components/Header";
@@ -9,12 +11,30 @@ import StatsCards from "./components/StatsCards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SubjectPaperGrid from "./components/SubjectPaperGrid";
-import { useSubjectPapers } from "@/lib/api/hooks/useExams";
+import { useSubjectPapers, useExams } from "@/lib/api/hooks/useExams";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 export default function Dashboard() {
-    const { data: exams = [], isLoading: isLoadingExams, isError: isErrorExams } = useQuery({
-        queryKey: ["exams"],
-        queryFn: () => examService.getExams(),
+    const { user } = useAuthStore();
+    const schoolId = user?.schools?.[0]?.schoolId; // Assuming user is associated with at least one school    
+
+    const [filters, setFilters] = useState({
+        sessionId: 'all',
+        term: 'all',
+        classId: 'all',
+        departmentId: 'all',
+        status: 'all',
+        category: 'all',
+    });
+
+    const { data: exams = [], isLoading: isLoadingExams, isError: isErrorExams } = useExams({
+        schoolId,
+        sessionId: filters.sessionId === 'all' ? undefined : filters.sessionId,
+        term: filters.term === 'all' ? undefined : filters.term,
+        classId: filters.classId === 'all' ? undefined : filters.classId,
+        departmentId: filters.departmentId === 'all' ? undefined : filters.departmentId,
+        status: filters.status === 'all' ? undefined : filters.status,
+        category: filters.category === 'all' ? undefined : filters.category as any,
     });
 
     const { data: papers = [], isLoading: isLoadingPapers, isError: isErrorPapers } = useSubjectPapers();
@@ -22,9 +42,12 @@ export default function Dashboard() {
     return (
         <main className="w-full max-w-7xl mx-auto p-4 md:p-6">
             <Header />
-            <StatsCards />
-            <SearchFilters />
-            
+            <StatsCards exams={exams} />
+            <SearchFilters
+                filters={filters}
+                onFilterChange={(newFilters: any) => setFilters(prev => ({ ...prev, ...newFilters }))}
+            />
+
             <div className="mt-8">
                 <Tabs defaultValue="exams" className="w-full">
                     <TabsList className="mb-6">

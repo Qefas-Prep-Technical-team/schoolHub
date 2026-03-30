@@ -43,25 +43,79 @@ export default function LinkingHub() {
 
   const isClassLink = (type: string) => type === 'STUDENT_CLASS' || type === 'TEACHER_CLASS';
 
-  const filteredActiveLinks = activeLinks.filter((link: any) => {
-    const isClass = isClassLink(link.type || '');
-    const matchesTab = mainTab === 'classroom' ? isClass : !isClass;
+  // Helper to pick the "other" person from a link or request
+  const getPeer = (item: any) => {
+    const r = item.approvedFromRequest || item;
+    // Collect all participants
+    const participants = [
+      r.targetStudent, r.targetTeacher, r.targetParent, r.targetSchool, r.approverAdmin,
+      r.requesterStudent, r.requesterTeacher, r.requesterParent, r.requesterSchool, r.requesterAdmin
+    ].filter(Boolean);
+
+    // Filter out the current user
+    const peer = participants.find((p: any) => p.id !== user?.id) || participants[0];
+    return peer;
+  };
+
+  // Normalize Active Links
+  const normalizedActiveLinks = activeLinks.map((link: any) => {
+    const peer = getPeer(link);
+    const isLeft = link.leftEntityId === user?.id;
+    const peerCode = isLeft ? link.rightCode : link.leftCode;
+    
+    let peerName = peer?.name || peer?.fullName || peer?.username || peerCode || "Verified Member";
+    let peerEmail = peer?.email || (link.school ? (link.school.email || "School Entity") : "---");
+    
+    // Classroom specific logic
+    if (link.linkType === 'STUDENT_CLASS' || link.linkType === 'TEACHER_CLASS') {
+      peerName = link.class?.name || link.class?.classCode || peerName;
+      peerEmail = "Classroom Entity";
+    }
+
+    const isClass = isClassLink(link.linkType);
+
+    return {
+      ...link,
+      peerName,
+      peerEmail,
+      variant: isClass ? 'classroom' : 'network'
+    };
+  });
+
+  // Normalize Requests
+  const normalizedRequests = requests.map((req: any) => {
+    const peer = getPeer(req);
+    const isOutgoing = req.requesterId === user?.id;
+    const peerCode = isOutgoing ? req.targetCode : req.requesterCode;
+
+    let peerName = peer?.name || peer?.fullName || peer?.username || peerCode || "Verified Member";
+    let peerEmail = peer?.email || "---";
+
+    return {
+      ...req,
+      peerName,
+      peerEmail,
+      variant: isClassLink(req.linkType) ? 'classroom' : 'network'
+    };
+  });
+
+  const filteredActiveLinks = normalizedActiveLinks.filter((link: any) => {
+    const matchesTab = link.variant === mainTab;
     const matchesSearch = (link.peerName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          link.peerEmail?.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesTab && matchesSearch;
   });
 
-  const filteredRequests = requests.filter((req: any) => {
+  const filteredRequests = normalizedRequests.filter((req: any) => {
     if (req.status !== 'PENDING') return false;
-    const isClass = isClassLink(req.linkType);
-    const matchesTab = mainTab === 'classroom' ? isClass : !isClass;
-    const matchesSearch = (req.sender?.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         req.receiver?.name?.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesTab = req.variant === mainTab;
+    const matchesSearch = (req.peerName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         req.peerEmail?.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesTab && matchesSearch;
   });
 
-  const networkPendingCount = requests.filter((r: any) => r.status === 'PENDING' && !isClassLink(r.linkType)).length;
-  const classroomPendingCount = requests.filter((r: any) => r.status === 'PENDING' && isClassLink(r.linkType)).length;
+  const networkPendingCount = normalizedRequests.filter((r: any) => r.status === 'PENDING' && !isClassLink(r.linkType)).length;
+  const classroomPendingCount = normalizedRequests.filter((r: any) => r.status === 'PENDING' && isClassLink(r.linkType)).length;
 
   const copyToClipboard = (text: string) => {
     if (!text) return;
@@ -155,7 +209,7 @@ export default function LinkingHub() {
                   onClick={() => setMainTab('classroom')}
                   className={cn(
                     "px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
-                    mainTab === 'classroom' ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600" : "text-slate-500 hover:text-slate-700"
+                    mainTab === 'classroom' ? "bg-white dark:bg-slate-700 shadow-sm text-purple-600" : "text-slate-500 hover:text-slate-700"
                   )}
                 >
                   Classroom
@@ -170,7 +224,7 @@ export default function LinkingHub() {
                   onClick={() => setSubTab('active')}
                   className={cn(
                     "h-8 rounded-lg text-[10px] font-black uppercase tracking-widest",
-                    subTab === 'active' ? "bg-slate-900 text-white" : "text-slate-400"
+                    subTab === 'active' ? (mainTab === 'classroom' ? "bg-purple-600 text-white" : "bg-slate-900 text-white") : "text-slate-400"
                   )}
                 >
                   Connected
@@ -181,7 +235,7 @@ export default function LinkingHub() {
                   onClick={() => setSubTab('pending')}
                   className={cn(
                     "h-8 rounded-lg text-[10px] font-black uppercase tracking-widest relative px-3",
-                    subTab === 'pending' ? "bg-orange-500 text-white" : "text-slate-400"
+                    subTab === 'pending' ? (mainTab === 'classroom' ? "bg-purple-600 text-white" : "bg-orange-500 text-white") : "text-slate-400"
                   )}
                 >
                   Pending
@@ -247,44 +301,76 @@ function EmptyState({ message }: { message: string }) {
 // --- Sub-components for better organization ---
 
 function ConnectionCard({ link, onRevoke }: any) {
+  const isClass = link.variant === 'classroom';
+
   return (
-    <Card className="group border-none bg-white dark:bg-slate-900 shadow-lg shadow-slate-200/40 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] overflow-hidden">
+    <Card className={cn(
+      "group border-none bg-white dark:bg-slate-900 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] overflow-hidden border-l-4",
+      isClass ? "border-l-purple-500 shadow-purple-100/50" : "border-l-blue-500 shadow-blue-100/50"
+    )}>
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:scale-110 transition-transform">
-              <ShieldCheck size={24} className="text-blue-500" />
+            <div className={cn(
+               "h-12 w-12 rounded-xl flex items-center justify-center border group-hover:scale-110 transition-transform",
+               isClass ? "bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800" : "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-700"
+            )}>
+              <ShieldCheck size={24} className={isClass ? "text-purple-500" : "text-blue-500"} />
             </div>
             <div>
-              <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{link.peerName || "User"}</h4>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{link.type?.replace('_', ' ')}</p>
+              <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{link.peerName}</h4>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{link.roleDisplay || link.type?.replace('_', ' ')}</p>
             </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full"><MoreVertical size={18} /></Button>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><MoreVertical size={18} /></Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-xl">
-              <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={onRevoke}>
-                <X size={16} className="mr-2" /> Disconnect
+            <DropdownMenuContent align="end" className="rounded-xl border-none shadow-2xl p-2 capitalize">
+              <DropdownMenuItem className="text-red-500 focus:text-red-500 font-black p-3 rounded-lg cursor-pointer" onClick={onRevoke}>
+                <X size={16} className="mr-2" /> Disconnect Entity
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        <div className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-400 font-medium">Email</span>
-            <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[140px]">{link.peerEmail}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-400 font-medium">Connected Since</span>
-            <span className="text-slate-700 dark:text-slate-300 font-semibold">{new Date(link.createdAt).toLocaleDateString()}</span>
-          </div>
+        <div className="grid grid-cols-2 gap-4">
+           <div className="space-y-1">
+             <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">Identifier</span>
+             <span className="font-bold text-xs text-slate-900 dark:text-white truncate block">{link.peerEmail}</span>
+           </div>
+           <div className="space-y-1">
+             <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">Connected Since</span>
+             <span className="font-bold text-xs text-slate-900 dark:text-white block">{new Date(link.createdAt).toLocaleDateString()}</span>
+           </div>
         </div>
 
-        <Button variant="outline" className="w-full rounded-xl border-slate-100 hover:bg-slate-50 dark:border-slate-800 font-bold group">
-          View Profile <ArrowUpRight size={16} className="ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+        <div className={cn(
+          "flex items-center justify-between p-4 rounded-xl border group/code h-14",
+          isClass ? "bg-purple-50/50 border-purple-100 dark:bg-purple-900/10 dark:border-purple-800/50" : "bg-blue-50/50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-800/50"
+        )}>
+          <div className="flex flex-col">
+            <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider mb-0.5">Entity Code</span>
+            <span className={cn("font-black tracking-widest text-sm", isClass ? "text-purple-600" : "text-blue-600")}>
+               {link.leftEntityId === link.userId ? link.rightCode : link.leftCode}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-800"
+            onClick={() => {
+              const code = link.leftEntityId === link.userId ? link.rightCode : link.leftCode;
+              navigator.clipboard.writeText(code);
+              toast.success('Code copied!');
+            }}
+          >
+            <Copy size={14} className="text-slate-400" />
+          </Button>
+        </div>
+
+        <Button variant="outline" className="w-full h-11 rounded-xl border-slate-100 dark:border-slate-800 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all group/btn">
+          View Profile <ArrowUpRight size={16} className="ml-2 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
         </Button>
       </div>
     </Card>
@@ -293,36 +379,87 @@ function ConnectionCard({ link, onRevoke }: any) {
 
 function PendingCard({ req, onRespond, userId }: any) {
   const isOutgoing = req.requesterId === userId;
+  const isClass = req.variant === 'classroom';
 
   return (
-    <Card className="border-none bg-white dark:bg-slate-900 shadow-lg shadow-orange-100/50 rounded-[1.5rem] relative overflow-hidden">
-      <div className={cn("h-1 w-full absolute top-0", isOutgoing ? "bg-slate-400" : "bg-orange-500")} />
-      <div className="p-6 space-y-6">
-        <div className="flex justify-between">
-          <Badge variant="outline" className="rounded-lg border-slate-100 text-slate-500">{req.linkType}</Badge>
-          <div className="flex items-center gap-1 text-xs font-bold text-slate-400 uppercase">
-            <Clock size={12} /> {new Date(req.createdAt).toLocaleDateString()}
+    <Card className={cn(
+      "border-none bg-white dark:bg-slate-900 shadow-xl rounded-[1.5rem] relative overflow-hidden transition-all hover:shadow-2xl",
+      isClass ? "shadow-purple-100/50" : "shadow-orange-100/50"
+    )}>
+      <div className={cn(
+        "h-1.5 w-full absolute top-0 z-20", 
+        isOutgoing ? "bg-slate-300 shadow-sm" : (isClass ? "bg-purple-600 shadow-purple-200" : "bg-orange-500 shadow-orange-200")
+      )} />
+
+      <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5 z-10">
+        <Badge className={cn(
+          "border-none px-3 py-1 font-black uppercase text-[8px] tracking-widest rounded-lg",
+          isClass ? "bg-purple-600 text-white" : "bg-orange-600 text-white"
+        )}>
+           {req.linkType?.replace('_', ' ')}
+        </Badge>
+        <span className="px-2 py-1 rounded-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-[8px] font-black tracking-widest border border-slate-100 dark:border-slate-800 shadow-sm text-slate-500">
+          {isOutgoing ? 'SENT' : 'INCOMING'}
+        </span>
+      </div>
+
+      <div className="p-6 space-y-6 pt-10">
+        <div className="flex items-center gap-4">
+          <div className={cn(
+             "h-12 w-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105",
+             isClass ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20" : "bg-orange-50 text-orange-600 dark:bg-orange-900/20"
+          )}>
+            <Clock size={24} />
+          </div>
+          <div>
+            <h4 className="font-extrabold text-lg text-slate-900 dark:text-white leading-tight">{req.peerName}</h4>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{isOutgoing ? "Outgoing Connection" : "Incoming Request"}</p>
           </div>
         </div>
 
-        <div>
-          <h4 className="font-bold text-lg">{isOutgoing ? req.receiver?.name : req.sender?.name}</h4>
-          <p className="text-sm text-slate-400 font-medium">{isOutgoing ? "Sent Link Request" : "Received Link Request"}</p>
+        <div className="grid grid-cols-2 gap-4">
+           <div className="space-y-1">
+             <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">Identifier</span>
+             <span className="font-bold text-xs text-slate-900 dark:text-white truncate block">{req.peerEmail}</span>
+           </div>
+           <div className="space-y-1">
+             <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">Date Requested</span>
+             <span className="font-bold text-xs text-slate-900 dark:text-white block">{new Date(req.createdAt).toLocaleDateString()}</span>
+           </div>
         </div>
 
+        {req.note && (
+          <div className={cn(
+            "p-4 rounded-2xl border relative overflow-hidden group/note",
+            isClass ? "bg-purple-50/30 border-purple-100 dark:bg-purple-900/10 dark:border-purple-800/50" : "bg-orange-50/30 border-orange-100 dark:bg-orange-900/10 dark:border-orange-800/50"
+          )}>
+             <div className={cn("absolute top-0 left-0 w-1 h-full opacity-50 transition-opacity group-hover/note:opacity-100", isClass ? "bg-purple-300" : "bg-orange-300")} />
+            <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 italic line-clamp-2 leading-relaxed">"{req.note}"</p>
+          </div>
+        )}
+
         <div className="flex gap-2">
-          {!isOutgoing && (
-            <Button onClick={() => onRespond('ACCEPT')} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold">
-              Accept
+          {!isOutgoing ? (
+            <>
+              <Button onClick={() => onRespond('ACCEPT')} className={cn(
+                  "flex-[3] h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-orange-100 transition-all active:scale-95",
+                  isClass ? "bg-purple-600 hover:bg-purple-700 shadow-purple-100" : "bg-orange-500 shadow-orange-100"
+              )}>
+                Approve
+              </Button>
+              <Button onClick={() => onRespond('REJECT')} variant="outline" className="flex-1 h-12 rounded-xl border-slate-100 font-bold uppercase text-[10px] tracking-widest text-red-500 hover:bg-red-50 dark:border-slate-800 dark:hover:bg-red-950/20">
+                Decline
+              </Button>
+            </>
+          ) : (
+            <Button
+              onClick={() => onRespond('CANCEL')}
+              variant="outline"
+              className="w-full h-12 rounded-xl border-slate-100 font-bold uppercase text-[10px] tracking-widest text-slate-500 hover:bg-slate-50 hover:text-red-600 hover:border-red-100 dark:border-slate-800 dark:hover:bg-slate-900 transition-all transition-all shadow-sm"
+            >
+              Cancel My Request
             </Button>
           )}
-          <Button
-            onClick={() => onRespond(isOutgoing ? 'CANCEL' : 'REJECT')}
-            variant="outline"
-            className="flex-1 rounded-xl border-slate-100 font-bold text-slate-600"
-          >
-            {isOutgoing ? "Cancel" : "Decline"}
-          </Button>
         </div>
       </div>
     </Card>

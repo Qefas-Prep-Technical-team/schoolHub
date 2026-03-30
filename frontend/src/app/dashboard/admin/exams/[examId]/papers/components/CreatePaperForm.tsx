@@ -14,8 +14,8 @@ import { toast } from "react-toastify";
 import { Loader2, BookOpen, Clock, FileText, UserCircle } from "lucide-react";
 
 const paperSchema = z.object({
-  subjectId: z.string().min(1, "Please select a subject"),
-  teacherId: z.string().min(1, "Please select a teacher"),
+  subjectId: z.string().optional(),
+  teacherId: z.string().optional(),
   title: z.string().min(3, "Title is too short"),
   instructions: z.string().min(5, "Please provide instructions"),
   durationMinutes: z.coerce.number().min(1, "Duration is required"),
@@ -35,7 +35,7 @@ export function CreatePaperForm({
   isLoadingData: boolean;
 }) {
   const queryClient = useQueryClient();
-  console.log("Teachers in CreatePaperForm:", teachers);
+  // console.log("Teachers in CreatePaperForm:", teachers);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<PaperFormValues>({
     resolver: zodResolver(paperSchema),
     defaultValues: {
@@ -65,14 +65,14 @@ export function CreatePaperForm({
       {/* Subject Selector */}
       <div className="space-y-2">
         <Label className="text-sm font-semibold flex items-center gap-2">
-          <BookOpen size={14} className="text-blue-500" /> Subject
+          <BookOpen size={14} className="text-blue-500" /> Subject (Optional)
         </Label>
         <select
           {...register("subjectId")}
           disabled={isLoadingData}
           className="w-full h-11 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-slate-900 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
         >
-          <option value="">Select a subject...</option>
+          <option value="">No Subject (Optional)</option>
           {subjects.map((s) => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
@@ -83,7 +83,7 @@ export function CreatePaperForm({
       {/* Teacher Selector */}
       <div className="space-y-2">
         <Label className="text-sm font-semibold flex items-center gap-2">
-          <UserCircle size={14} className="text-emerald-500" /> Assigned Teacher
+          <UserCircle size={14} className="text-emerald-500" /> Assigned Teacher (Optional)
         </Label>
         <select
           {...register("teacherId")}
@@ -94,7 +94,7 @@ export function CreatePaperForm({
             <option>Loading teachers...</option>
           ) : (
             <>
-              <option value="">Select a teacher...</option>
+              <option value="">No Teacher (Optional)</option>
               {teachers.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}

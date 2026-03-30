@@ -8,6 +8,7 @@ import FilterChips from './components/FilterChips';
 import ViewToggle from './components/ViewToggle';
 import { Assignment, AssignmentStatus, User } from './components/types';
 import Link from 'next/link';
+import ComingSoonWrapper from '@/components/dashboard/ComingSoonWrapper';
 
 // Mock data
 const mockUser: User = {
@@ -130,126 +131,123 @@ export default function AssignmentsPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full bg-background-light dark:bg-background-dark">  
-      <main className="flex-1 p-8 overflow-y-auto">
-        <div className="max-w-7xl mx-auto">
-          {/* Page Heading */}
-         <div className="max-w-7xl mx-auto">
-  {/* Page Heading */}
-  <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-    <h1 className="text-gray-900 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">
-      Assignments Overview
-    </h1>
-    
-    {/* Analytics Button */}
-    <Link href={'/dashboard/student/assignments/analytics'}>
-    <button
-      className="flex items-center gap-2 bg-blue-600 cursor-pointer hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
-      onClick={() => console.log('Analytics clicked')}
-    >
-      <span className="material-symbols-outlined">analytics</span>
-      Analytics
-    </button>
-    </Link>
-  </div>
-</div>
-
-
-          {/* Controls: Search, Filters, View Toggle */}
-          <div className="flex flex-col md:flex-row gap-4 items-center mb-6">
-            <div className="flex-grow w-full md:w-auto">
-              <SearchBar 
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Search assignments..."
-              />
+    <ComingSoonWrapper title="Assignments" backLink="/dashboard/student">
+      <div className="relative flex min-h-screen w-full bg-background-light dark:bg-background-dark">  
+        <main className="flex-1 p-8 overflow-y-auto">
+          <div className="max-w-7xl mx-auto">
+            {/* Page Heading */}
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+              <h1 className="text-gray-900 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">
+                Assignments Overview
+              </h1>
+              
+              {/* Analytics Button */}
+              <Link href={'/dashboard/student/assignments/analytics'}>
+                <button
+                  className="flex items-center gap-2 bg-blue-600 cursor-pointer hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+                >
+                  <span className="material-symbols-outlined">analytics</span>
+                  Analytics
+                </button>
+              </Link>
             </div>
 
-            <div className="flex gap-3 overflow-x-auto w-full md:w-auto pb-2">
-              <FilterChips
-                label="Subject"
-                options={subjects}
-                selected={selectedSubject}
-                onSelect={setSelectedSubject}
-              />
-              <FilterChips
-                label="Status"
-                options={statuses}
-                selected={selectedStatus}
-                onSelect={setSelectedStatus}
-              />
-              <FilterChips
-                label="Due Date"
-                options={dueDates}
-                selected={selectedDueDate}
-                onSelect={setSelectedDueDate}
-              />
-            </div>
-
-            <div className="hidden md:flex">
-              <ViewToggle 
-                value={viewMode}
-                onChange={setViewMode}
-              />
-            </div>
-          </div>
-
-          {/* Assignments Grid/List */}
-          {filteredAssignments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <span className="material-symbols-outlined text-6xl text-gray-400 dark:text-gray-600 mb-4">
-                assignment
-              </span>
-              <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                No assignments found
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 max-w-md">
-                No assignments match your current filters. Try adjusting your search or filters.
-              </p>
-            </div>
-          ) : (
-            <div className={`grid gap-6 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
-                : 'grid-cols-1'
-            }`}>
-              {filteredAssignments.map((assignment) => (
-                <AssignmentCard
-                  key={assignment.id}
-                  assignment={assignment}
-                  viewMode={viewMode}
+            {/* Controls: Search, Filters, View Toggle */}
+            <div className="flex flex-col md:flex-row gap-4 items-center mb-6">
+              <div className="flex-grow w-full md:w-auto">
+                <SearchBar 
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder="Search assignments..."
                 />
-              ))}
-            </div>
-          )}
+              </div>
 
-          {/* Stats Summary */}
-          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-gray-900/60 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Assignments</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{assignments.length}</p>
+              <div className="flex gap-3 overflow-x-auto w-full md:w-auto pb-2">
+                <FilterChips
+                  label="Subject"
+                  options={subjects}
+                  selected={selectedSubject}
+                  onSelect={setSelectedSubject}
+                />
+                <FilterChips
+                  label="Status"
+                  options={statuses}
+                  selected={selectedStatus}
+                  onSelect={setSelectedStatus}
+                />
+                <FilterChips
+                  label="Due Date"
+                  options={dueDates}
+                  selected={selectedDueDate}
+                  onSelect={setSelectedDueDate}
+                />
+              </div>
+
+              <div className="hidden md:flex">
+                <ViewToggle 
+                  value={viewMode}
+                  onChange={setViewMode}
+                />
+              </div>
             </div>
-            <div className="bg-white dark:bg-gray-900/60 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Completed</p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {assignments.filter(a => a.status === 'graded').length}
-              </p>
-            </div>
-            <div className="bg-white dark:bg-gray-900/60 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Pending</p>
-              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {assignments.filter(a => a.status === 'pending').length}
-              </p>
-            </div>
-            <div className="bg-white dark:bg-gray-900/60 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {assignments.filter(a => a.status === 'overdue').length}
-              </p>
+
+            {/* Assignments Grid/List */}
+            {filteredAssignments.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <span className="material-symbols-outlined text-6xl text-gray-400 dark:text-gray-600 mb-4">
+                  assignment
+                </span>
+                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  No assignments found
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 max-w-md">
+                  No assignments match your current filters. Try adjusting your search or filters.
+                </p>
+              </div>
+            ) : (
+              <div className={`grid gap-6 ${
+                viewMode === 'grid' 
+                  ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
+                  : 'grid-cols-1'
+              }`}>
+                {filteredAssignments.map((assignment) => (
+                  <AssignmentCard
+                    key={assignment.id}
+                    assignment={assignment}
+                    viewMode={viewMode}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Stats Summary */}
+            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white dark:bg-gray-900/60 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Total Assignments</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{assignments.length}</p>
+              </div>
+              <div className="bg-white dark:bg-gray-900/60 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Completed</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {assignments.filter(a => a.status === 'graded').length}
+                </p>
+              </div>
+              <div className="bg-white dark:bg-gray-900/60 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Pending</p>
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {assignments.filter(a => a.status === 'pending').length}
+                </p>
+              </div>
+              <div className="bg-white dark:bg-gray-900/60 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {assignments.filter(a => a.status === 'overdue').length}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </ComingSoonWrapper>
   );
 }

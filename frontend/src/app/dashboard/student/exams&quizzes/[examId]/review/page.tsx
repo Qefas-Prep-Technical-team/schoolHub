@@ -112,48 +112,87 @@ export default function ExamReviewPage() {
                       dangerouslySetInnerHTML={{ __html: q.question }}
                      />
 
-                     {/* Options for MCQ */}
-                     {q.options && typeof q.options === 'object' && (
+                     {/* Options for MCQ and TRUE_FALSE */}
+                     {(q.type === 'MULTIPLE_CHOICE' || q.type === 'TRUE_FALSE') && (
                         <div className="grid grid-cols-1 gap-3">
-                           {Object.entries(q.options).map(([key, option]: [string, any], oIdx: number) => {
-                              if (!option) return null;
-                              const label = key.replace('option', '');
-                              const isStudentAnswer = q.studentAnswer === label;
-                              const isCorrectAnswer = q.correctAnswer === label;
+                           {/* For TRUE_FALSE, if no options provided by backend, use True/False */}
+                           {(q.type === 'TRUE_FALSE' && (!q.options || !q.options.optionA)) ? (
+                             ['True', 'False'].map((optionValue, oIdx) => {
+                               const label = optionValue === 'True' ? 'A' : 'B';
+                               const isStudentAnswer = q.studentAnswer?.toLowerCase() === optionValue.toLowerCase() || q.studentAnswer === label;
+                               const isCorrectAnswer = q.correctAnswer?.toLowerCase() === optionValue.toLowerCase() || q.correctAnswer === label;
 
-                              return (
-                                <div
-                                  key={key}
-                                  className={cn(
-                                    "flex items-center gap-4 p-4 rounded-2xl border transition-all",
-                                    isCorrectAnswer 
-                                      ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/50" 
-                                      : isStudentAnswer 
-                                        ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900/50"
-                                        : "bg-white dark:bg-slate-950/50 border-slate-100 dark:border-slate-800"
-                                  )}
-                                >
-                                   <div className={cn(
-                                      "h-8 w-8 shrink-0 rounded-lg flex items-center justify-center font-bold text-sm",
-                                      isCorrectAnswer ? "bg-emerald-500 text-white" : isStudentAnswer ? "bg-red-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-                                   )}>
-                                      {label}
-                                   </div>
-                                   <span className={cn(
-                                      "text-sm font-medium flex-1",
-                                      isCorrectAnswer ? "text-emerald-900 dark:text-emerald-300" : isStudentAnswer ? "text-red-900 dark:text-red-300" : "text-slate-600 dark:text-slate-400"
-                                   )}>
-                                      {option}
-                                   </span>
-                                   {isCorrectAnswer && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
-                                   {!isCorrect && isStudentAnswer && <XCircle className="h-5 w-5 text-red-500" />}
-                                </div>
-                              );
-                           })}
+                               return (
+                                 <div
+                                   key={oIdx}
+                                   className={cn(
+                                     "flex items-center gap-4 p-4 rounded-2xl border transition-all",
+                                     isCorrectAnswer 
+                                       ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/50" 
+                                       : isStudentAnswer 
+                                         ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900/50"
+                                         : "bg-white dark:bg-slate-950/50 border-slate-100 dark:border-slate-800"
+                                   )}
+                                 >
+                                    <div className={cn(
+                                       "h-8 w-8 shrink-0 rounded-lg flex items-center justify-center font-bold text-sm",
+                                       isCorrectAnswer ? "bg-emerald-500 text-white" : isStudentAnswer ? "bg-red-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                                    )}>
+                                       {label}
+                                    </div>
+                                    <span className={cn(
+                                       "text-sm font-medium flex-1",
+                                       isCorrectAnswer ? "text-emerald-900 dark:text-emerald-300" : isStudentAnswer ? "text-red-900 dark:text-red-300" : "text-slate-600 dark:text-slate-400"
+                                    )}>
+                                       {optionValue}
+                                    </span>
+                                    {isCorrectAnswer && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
+                                    {!isCorrect && isStudentAnswer && <XCircle className="h-5 w-5 text-red-500" />}
+                                 </div>
+                               );
+                             })
+                           ) : (
+                             q.options && Object.entries(q.options).map(([key, option]: [string, any], oIdx: number) => {
+                                if (!option) return null;
+                                const label = key.replace('option', '');
+                                const isStudentAnswer = q.studentAnswer === label;
+                                const isCorrectAnswer = q.correctAnswer === label;
+
+                                return (
+                                  <div
+                                    key={key}
+                                    className={cn(
+                                      "flex items-center gap-4 p-4 rounded-2xl border transition-all",
+                                      isCorrectAnswer 
+                                        ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/50" 
+                                        : isStudentAnswer 
+                                          ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900/50"
+                                          : "bg-white dark:bg-slate-950/50 border-slate-100 dark:border-slate-800"
+                                    )}
+                                  >
+                                     <div className={cn(
+                                        "h-8 w-8 shrink-0 rounded-lg flex items-center justify-center font-bold text-sm",
+                                        isCorrectAnswer ? "bg-emerald-500 text-white" : isStudentAnswer ? "bg-red-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                                     )}>
+                                        {label}
+                                     </div>
+                                     <span className={cn(
+                                        "text-sm font-medium flex-1",
+                                        isCorrectAnswer ? "text-emerald-900 dark:text-emerald-300" : isStudentAnswer ? "text-red-900 dark:text-red-300" : "text-slate-600 dark:text-slate-400"
+                                     )}>
+                                        {option}
+                                     </span>
+                                     {isCorrectAnswer && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
+                                     {!isCorrect && isStudentAnswer && <XCircle className="h-5 w-5 text-red-500" />}
+                                  </div>
+                                );
+                             })
+                           )}
                         </div>
                      )}
 
-                     {!q.options && (
+                     {/* For SHORT_ANSWER or others without structured options */}
+                     {(q.type === 'SHORT_ANSWER' || (!q.options && q.type !== 'TRUE_FALSE')) && (
                         <div className="space-y-4">
                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Your Answer</p>

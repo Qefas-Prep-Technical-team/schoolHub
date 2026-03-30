@@ -15,23 +15,25 @@ import { Loader2, BookOpen, Clock, FileText, UserCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const paperSchema = z.object({
-  subjectId: z.string().min(1, "Please select a subject"),
-  teacherId: z.string().min(1, "Please select a teacher"),
+  subjectId: z.string().optional(),
+  teacherId: z.string().optional(),
   title: z.string().min(3, "Title is too short"),
   instructions: z.string().min(5, "Please provide instructions"),
-  durationMinutes: z.coerce.number().min(1, "Duration is required"),
+  durationMinutes: z.number().min(1, "Duration is required"),
 });
 
 type PaperFormValues = z.infer<typeof paperSchema>;
 
 export function CreatePaperForm({
   examId,
+  schoolId,
   subjects,
   teachers,
   isLoadingData,
   redirectOnSuccess
 }: {
   examId?: string;
+  schoolId?: string;
   subjects: any[];
   teachers: any[];
   isLoadingData: boolean;
@@ -39,9 +41,9 @@ export function CreatePaperForm({
 }) {
   const queryClient = useQueryClient();
   const router = useRouter();
-  
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<PaperFormValues>({
-    resolver: zodResolver(paperSchema),
+    resolver: zodResolver(paperSchema) as any,
     defaultValues: {
       subjectId: "",
       teacherId: "",
@@ -52,12 +54,12 @@ export function CreatePaperForm({
   });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: PaperFormValues) => examService.createSubjectPaper(examId || "", data),
+    mutationFn: (data: PaperFormValues) => examService.createSubjectPaper(examId || "", { ...data, schoolId } as any),
     onSuccess: (response: any) => {
       toast.success("Subject paper created!");
       queryClient.invalidateQueries({ queryKey: ["exam-papers", examId] });
       queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
-      
+
       if (redirectOnSuccess) {
         router.push(redirectOnSuccess.replace("[id]", response?.id || ""));
       } else {
@@ -70,12 +72,12 @@ export function CreatePaperForm({
   });
 
   return (
-    <form onSubmit={handleSubmit((data) => mutate(data))} className="space-y-6">
+    <form onSubmit={handleSubmit((data: PaperFormValues) => mutate(data))} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Subject Selector */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold flex items-center gap-2 text-gray-700 dark:text-gray-300">
-            <BookOpen size={16} className="text-blue-500" /> Subject
+            <BookOpen size={16} className="text-blue-500" /> Subject <span className="text-xs font-normal text-gray-400">(Optional)</span>
           </Label>
           <select
             {...register("subjectId")}
@@ -93,7 +95,7 @@ export function CreatePaperForm({
         {/* Teacher Selector */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold flex items-center gap-2 text-gray-700 dark:text-gray-300">
-            <UserCircle size={16} className="text-emerald-500" /> Assigned Teacher
+            <UserCircle size={16} className="text-emerald-500" /> Assigned Teacher <span className="text-xs font-normal text-gray-400">(Optional)</span>
           </Label>
           <select
             {...register("teacherId")}
@@ -119,20 +121,20 @@ export function CreatePaperForm({
 
       <div className="space-y-2">
         <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Paper Title</Label>
-        <Input 
-          {...register("title")} 
-          placeholder="e.g. Mathematics Midterm" 
-          className="h-12 rounded-xl border-gray-200 dark:border-gray-800 focus:ring-blue-500/20" 
+        <Input
+          {...register("title")}
+          placeholder="e.g. Mathematics Midterm"
+          className="h-12 rounded-xl border-gray-200 dark:border-gray-800 focus:ring-blue-500/20"
         />
         {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
       </div>
 
       <div className="space-y-2">
         <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Instructions</Label>
-        <Textarea 
-          {...register("instructions")} 
-          placeholder="Answer all questions..." 
-          className="rounded-xl min-h-[100px] border-gray-200 dark:border-gray-800 focus:ring-blue-500/20" 
+        <Textarea
+          {...register("instructions")}
+          placeholder="Answer all questions..."
+          className="rounded-xl min-h-[100px] border-gray-200 dark:border-gray-800 focus:ring-blue-500/20"
         />
         {errors.instructions && <p className="text-red-500 text-xs mt-1">{errors.instructions.message}</p>}
       </div>
@@ -141,10 +143,10 @@ export function CreatePaperForm({
         <Label className="text-sm font-semibold flex items-center gap-2 text-gray-700 dark:text-gray-300">
           <Clock size={16} className="text-orange-500" /> Duration (Minutes)
         </Label>
-        <Input 
-          type="number" 
-          {...register("durationMinutes")} 
-          className="h-12 rounded-xl border-gray-200 dark:border-gray-800 focus:ring-blue-500/20 w-32" 
+        <Input
+          type="number"
+          {...register("durationMinutes", { valueAsNumber: true })}
+          className="h-12 rounded-xl border-gray-200 dark:border-gray-800 focus:ring-blue-500/20 w-32"
         />
       </div>
 
@@ -152,7 +154,7 @@ export function CreatePaperForm({
         <Button
           type="submit"
           disabled={isPending || isLoadingData}
-          className="w-full h-14 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-100 dark:shadow-none flex items-center justify-center gap-3 text-lg"
+          className="w-full h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-100 dark:shadow-none flex items-center justify-center gap-2 text-sm"
         >
           {isPending ? (
             <Loader2 className="animate-spin" size={20} />

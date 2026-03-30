@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { examService } from "@/lib/api/services/examService";
 import { CreatePaperForm } from "./components/CreatePaperForm";
-import { Copy, FileText, Clock, Users, Check, Loader2, ShieldCheck, ChevronLeft, Settings2, Calendar, Trash2, Link as LinkIcon, Link2Off } from "lucide-react";
+import { sessionService } from "@/lib/api/services/sessionService";
+import { Copy, FileText, Clock, Users, Check, Loader2, ShieldCheck, ChevronLeft, Settings2, Calendar, Trash2, Link as LinkIcon, Link2Off, Globe, Lock, Unlock, AlertCircle } from "lucide-react";
 import { useUnlinkPaper } from "@/lib/api/hooks/useExams";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -31,7 +32,7 @@ import ConfirmationModal from "../../components/ui/ConfirmationModal";
 export default function ExamPapersPage() {
   const { user } = useAuthStore();
   const router = useRouter();
-  const schoolId = user?.defaultTenantId;
+  const schoolId = user?.schools[0].schoolId; // Assuming user is associated with at least one school
   const params = useParams();
   const examId = params.examId as string;
 
@@ -142,10 +143,13 @@ export default function ExamPapersPage() {
     classId: "",
     departmentId: "",
     durationMinutes: 0,
+    sessionId: "",
+    term: "",
+    teacherId: "",
   });
 
   // Use the school ID associated with the exam for all contextual fetches
-  const activeSchoolId = exam?.schoolId || schoolId;
+  const activeSchoolId = user?.schools[0].schoolId|| schoolId;
 
   // Fetch Classes for the selector
   const { data: classesData } = useQuery({
@@ -164,6 +168,13 @@ export default function ExamPapersPage() {
       const { data } = await apiClient.get(`/academic/departments?schoolId=${activeSchoolId}`);
       return data.data || [];
     },
+    enabled: isSettingsOpen && !!activeSchoolId,
+  });
+
+  // Fetch Sessions for the selector
+  const { data: sessionsData } = useQuery({
+    queryKey: ["school-sessions", activeSchoolId],
+    queryFn: () => sessionService.getSessions(),
     enabled: isSettingsOpen && !!activeSchoolId,
   });
 
@@ -188,6 +199,9 @@ export default function ExamPapersPage() {
         classId: exam.classId || "",
         departmentId: exam.departmentId || "",
         durationMinutes: exam.durationMinutes || 0,
+        sessionId: exam.sessionId || "",
+        term: exam.term || "",
+        teacherId: exam.teacherId || "",
       });
     }
   }, [exam]);
@@ -283,7 +297,7 @@ export default function ExamPapersPage() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-4 text-muted-foreground text-xs font-bold">
+              <div className="flex items-center gap-4 text-muted-foreground text-xs font-bold mt-1">
                 <div className="flex items-center gap-2">
                   <span>ID: <span className="font-mono">{examId}</span></span>
                   <button onClick={copyExamId} className="hover:text-primary transition-colors">
@@ -299,227 +313,22 @@ export default function ExamPapersPage() {
                 {exam?.durationMinutes && (
                   <div className="flex items-center gap-1 text-slate-500">
                     <Clock size={12} />
-                    Duration: {exam.durationMinutes} min
+                    {exam.durationMinutes} min
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {!isPublished && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-xl font-bold"
-                  onClick={() => validateExamMutation.mutate()}
-                  disabled={validateExamMutation.isPending}
-                >
-                  {validateExamMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Validate Exam"}
-                </Button>
-                <Button
-                  size="sm"
-                  className="rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20"
-                  onClick={() => publishExamMutation.mutate()}
-                  disabled={publishExamMutation.isPending || !allPapersPublished}
-                  title={!allPapersPublished ? "All subject papers must be published first" : ""}
-                >
-                  {publishExamMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Publish Exam"}
-                </Button>
-              </div>
-            )}
-
-            {isPublished && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl font-bold text-amber-600 border-amber-200 hover:bg-amber-50"
-                onClick={() => openConfirmDialog({
-                  title: "Unpublish Exam",
-                  description: `Are you sure you want to unpublish "${exam?.title}"? Student access will be restricted immediately.`,
-                  variant: "warning",
-                  confirmText: "Unpublish",
-                  onConfirm: () => unpublishExamMutation.mutate(undefined, {
-                    onSuccess: () => {
-                      setIsSettingsOpen(false);
-                      setConfirmDialog({ ...confirmDialog, isOpen: false });
-                    },
-                    onError: (error: any) => {
-                      toast.error(error.response?.data?.message || "Failed to unpublish exam");
-                    }
-                  })
-                })}
-                disabled={unpublishExamMutation.isPending}
-              >
-                {unpublishExamMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Unpublish Exam"}
-              </Button>
-            )}
-
-            {user?.userType === "ADMIN" && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl font-bold text-red-600 border-red-200 hover:bg-red-50"
-                onClick={() => openConfirmDialog({
-                  title: "Delete Exam",
-                  description: `This will permanently delete "${exam?.title}" and all its subject papers. This action cannot be undone.`,
-                  variant: "danger",
-                  confirmText: "Delete Exam",
-                  onConfirm: () => deleteExamMutation.mutate(undefined, {
-                    onSuccess: () => {
-                      setConfirmDialog({ ...confirmDialog, isOpen: false });
-                    },
-                    onError: (error: any) => {
-                      toast.error(error.response?.data?.message || "Failed to delete exam");
-                    }
-                  })
-                })}
-                disabled={deleteExamMutation.isPending}
-              >
-                {deleteExamMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Delete Exam"}
-              </Button>
-            )}
-
-            {!isPublished && (
-              <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="rounded-xl font-bold flex gap-2">
-                    <Settings2 size={14} /> Exam Settings
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px] rounded-3xl">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-bold">Edit Exam Settings</DialogTitle>
-                    <DialogDescription>
-                      Update global settings for this examination.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="space-y-6 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="title" className="text-sm font-bold">Exam Title</Label>
-                      <Input
-                        id="title"
-                        className="rounded-xl"
-                        value={examSettings.title}
-                        onChange={(e) => setExamSettings({ ...examSettings, title: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="description" className="text-sm font-bold">Instructions/Description</Label>
-                      <Textarea
-                        id="description"
-                        className="rounded-xl min-h-[100px]"
-                        value={examSettings.description}
-                        onChange={(e) => setExamSettings({ ...examSettings, description: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="startDate" className="text-sm font-bold flex items-center gap-2">
-                        <Calendar size={14} className="text-primary" /> Start Date & Time
-                      </Label>
-                      <Input
-                        id="startDate"
-                        type="datetime-local"
-                        className="rounded-xl"
-                        value={examSettings.startDate}
-                        onChange={(e) => setExamSettings({ ...examSettings, startDate: e.target.value })}
-                      />
-                      <p className="text-[10px] text-muted-foreground">Students cannot start the exam before this time.</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="duration" className="text-sm font-bold flex items-center gap-2">
-                        <Clock size={14} className="text-primary" /> Exam Duration (Minutes)
-                      </Label>
-                      <Input
-                        id="duration"
-                        type="number"
-                        className="rounded-xl"
-                        value={examSettings.durationMinutes}
-                        onChange={(e) => setExamSettings({ ...examSettings, durationMinutes: parseInt(e.target.value) || 0 })}
-                      />
-                      <p className="text-[10px] text-muted-foreground">Total time allowed for the full examination.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-                       <div className="space-y-2">
-                          <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Exam Scope</Label>
-                          <select 
-                            className="w-full h-10 rounded-xl border border-gray-200 dark:border-gray-800 px-3 text-sm bg-transparent outline-none focus:ring-2 focus:ring-primary/20"
-                            value={examSettings.scope}
-                            onChange={(e) => setExamSettings({ ...examSettings, scope: e.target.value as any })}
-                          >
-                            <option value="SCHOOL">Whole School</option>
-                            <option value="CLASS">By Class</option>
-                            <option value="DEPARTMENT">By Department</option>
-                          </select>
-                       </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-blue-500 uppercase tracking-wider">Target Class (Optional)</Label>
-                          <select 
-                            className="w-full h-10 rounded-xl border border-blue-100 dark:border-blue-900/30 bg-blue-50/20 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
-                            value={examSettings.classId}
-                            onChange={(e) => setExamSettings({ ...examSettings, classId: e.target.value })}
-                          >
-                            <option value="">No specific class</option>
-                            {classesData?.map((c: any) => (
-                              <option key={c.id} value={c.id}>{c.name} {c.section}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-purple-500 uppercase tracking-wider">Target Dept (Optional)</Label>
-                          <select 
-                            className="w-full h-10 rounded-xl border border-purple-100 dark:border-purple-900/30 bg-purple-50/20 px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500/20"
-                            value={examSettings.departmentId}
-                            onChange={(e) => setExamSettings({ ...examSettings, departmentId: e.target.value })}
-                          >
-                            <option value="">No specific department</option>
-                            {departmentsData?.map((d: any) => (
-                              <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
-                            ))}
-                          </select>
-                        </div>
-                    </div>
-                  </div>
-
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsSettingsOpen(false)}
-                      className="rounded-xl font-bold"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={() => updateExamMutation.mutate(examSettings)}
-                      disabled={updateExamMutation.isPending}
-                      className="rounded-xl font-bold bg-primary hover:bg-primary/90 text-white"
-                    >
-                      {updateExamMutation.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
-                      Save Changes
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
-
-            <div className="h-10 w-[1px] bg-gray-100 dark:bg-gray-800 mx-2 hidden md:block"></div>
-
-            <div className="flex gap-6">
-              <div className="flex flex-col">
+          <div className="flex items-center gap-4">
+            <div className="flex gap-6 pr-4 border-r border-gray-100 dark:border-gray-800 hidden sm:flex">
+              <div className="flex flex-col items-end">
                 <span className="text-xl font-black text-gray-900 dark:text-white leading-none">
                   {papers.reduce((sum, p) => sum + (p.totalMarks || 0), 0)}
                 </span>
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Total Marks</span>
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col items-end">
                 <span className="text-xl font-black text-gray-900 dark:text-white leading-none">
                   {papers.reduce((sum, p) => sum + (p.durationMinutes || 0), 0)}
                 </span>
@@ -531,54 +340,369 @@ export default function ExamPapersPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left Column: Create Form */}
-        <div className="lg:col-span-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 sticky top-24">
-          <h2 className="text-lg font-bold mb-4">Add Subject Paper</h2>
-          <CreatePaperForm
-            examId={examId}
-            subjects={Array.isArray(subjectResponse) ? subjectResponse : []}
-            isLoadingData={isLoadingSubjects || isLoadingTeachers}
-            teachers={Array.isArray(teacherResponse) ? teacherResponse : []}
-          />
-
-          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
-            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Fast Link</h3>
-            <AddExistingPaperModal 
-              examId={examId} 
-              trigger={
-                <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl border-dashed hover:border-primary hover:text-primary transition-all">
-                  <LinkIcon className="h-4 w-4" />
-                  Link Existing Subject Paper
-                </Button>
-              }
+        {/* Left Column: Administration & Create Form */}
+        {/* Left Column: Create Form & Administration */}
+        <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24">
+          {/* Create Subject Paper Form Card */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-sm overflow-hidden relative">
+            <h2 className="text-lg font-black tracking-tight mb-4 flex items-center gap-2">
+              <FileText size={18} className="text-primary" /> Add Subject Paper
+            </h2>
+            <CreatePaperForm
+              examId={examId}
+              subjects={Array.isArray(subjectResponse) ? subjectResponse : []}
+              isLoadingData={isLoadingSubjects || isLoadingTeachers}
+              teachers={Array.isArray(teacherResponse) ? teacherResponse : []}
             />
-            <p className="text-[10px] text-slate-400 mt-2 text-center">
-              Add papers you've already created for this or other terms.
-            </p>
+
+            <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Quick Link</h3>
+              <AddExistingPaperModal 
+                examId={examId} 
+                trigger={
+                  <Button variant="outline" className="w-full justify-start gap-3 h-12 rounded-2xl border-dashed border-slate-200 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all">
+                    <LinkIcon className="h-4 w-4" />
+                    <span className="text-sm font-bold">Link Existing Paper</span>
+                  </Button>
+                }
+              />
+              <p className="text-[10px] text-slate-400 mt-3 text-center font-medium">
+                Link papers from other exams or drafts.
+              </p>
+            </div>
+          </div>
+
+          {/* Exam Administration Card */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-sm overflow-hidden relative group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <ShieldCheck size={80} />
+            </div>
+            
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+              <Settings2 size={16} className="text-primary" /> Exam Administration
+            </h2>
+
+            <div className="space-y-4 relative z-10">
+              {!isPublished ? (
+                <Button
+                  onClick={() => publishExamMutation.mutate()}
+                  disabled={publishExamMutation.isPending || !allPapersPublished}
+                  className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-base shadow-xl shadow-primary/25 flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+                >
+                  {publishExamMutation.isPending ? (
+                    <Loader2 className="animate-spin h-5 w-5" />
+                  ) : (
+                    <>
+                      <Globe size={20} />
+                      Publish Examination
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => openConfirmDialog({
+                    title: "Unpublish Exam",
+                    description: `Are you sure you want to unpublish "${exam?.title}"? Student access will be restricted immediately.`,
+                    variant: "warning",
+                    confirmText: "Unpublish",
+                    onConfirm: () => unpublishExamMutation.mutate(undefined, {
+                      onSuccess: () => {
+                        setIsSettingsOpen(false);
+                        setConfirmDialog({ ...confirmDialog, isOpen: false });
+                      },
+                      onError: (error: any) => {
+                        toast.error(error.response?.data?.message || "Failed to unpublish exam");
+                      }
+                    })
+                  })}
+                  disabled={unpublishExamMutation.isPending}
+                  className="w-full h-14 rounded-2xl border-amber-200 text-amber-600 hover:bg-amber-50 font-black text-base flex items-center justify-center gap-3 active:scale-[0.98] transition-all"
+                >
+                  {unpublishExamMutation.isPending ? (
+                    <Loader2 className="animate-spin h-5 w-5" />
+                  ) : (
+                    <>
+                      <Lock size={20} />
+                      Unpublish Exam
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {!allPapersPublished && !isPublished && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-900/30 flex items-start gap-4">
+                  <AlertCircle size={18} className="text-amber-600 mt-0.5 shrink-0" />
+                  <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 leading-tight">
+                    All subject papers must be published before the full examination can be released.
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="h-12 rounded-2xl font-bold flex gap-2 border-slate-200 hover:border-primary/50 hover:text-primary transition-all">
+                      <Settings2 size={16} /> Settings
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-4xl w-[95vw] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl focus:outline-none">
+                    <div className="bg-gradient-to-br from-primary/5 via-transparent to-primary/5 p-8 pb-0">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                            <Settings2 size={20} />
+                          </div>
+                          Edit Exam Settings
+                        </DialogTitle>
+                        <DialogDescription className="text-gray-500 font-medium ml-11">
+                          Refine the global parameters and targeting for this examination.
+                        </DialogDescription>
+                      </DialogHeader>
+                    </div>
+
+                    <div className="p-8 pt-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="space-y-6">
+                          <div className="space-y-3">
+                            <Label htmlFor="title" className="text-xs font-black uppercase tracking-widest text-slate-400">General Information</Label>
+                            <div className="space-y-4">
+                              <div className="space-y-1.5">
+                                <Label htmlFor="title" className="text-xs font-bold text-slate-600">Exam Title</Label>
+                                <Input
+                                  id="title"
+                                  className="rounded-2xl border-slate-200 focus:ring-primary/20 h-12"
+                                  value={examSettings.title}
+                                  onChange={(e) => setExamSettings({ ...examSettings, title: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="description" className="text-xs font-bold text-slate-600">Instructions / Description</Label>
+                                <Textarea
+                                  id="description"
+                                  className="rounded-2xl border-slate-200 focus:ring-primary/20 min-h-[120px] resize-none"
+                                  value={examSettings.description}
+                                  onChange={(e) => setExamSettings({ ...examSettings, description: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Timing & Schedule</Label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <Label htmlFor="startDate" className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                                  <Calendar size={14} className="text-primary" /> Start Date
+                                </Label>
+                                <Input
+                                  id="startDate"
+                                  type="datetime-local"
+                                  className="rounded-2xl border-slate-200 h-12"
+                                  value={examSettings.startDate}
+                                  onChange={(e) => setExamSettings({ ...examSettings, startDate: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="duration" className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                                  <Clock size={14} className="text-primary" /> Duration (Mins)
+                                </Label>
+                                <Input
+                                  id="duration"
+                                  type="number"
+                                  className="rounded-2xl border-slate-200 h-12"
+                                  value={examSettings.durationMinutes}
+                                  onChange={(e) => setExamSettings({ ...examSettings, durationMinutes: parseInt(e.target.value) || 0 })}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-6">
+                          <div className="space-y-3 p-6 bg-slate-50 dark:bg-slate-900/50 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+                            <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Targeting & Scope</Label>
+                            <div className="space-y-4">
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-slate-600">Exam Scope</Label>
+                                <select 
+                                  className="w-full h-12 rounded-2xl border border-slate-200 bg-white dark:bg-slate-900 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                                  value={examSettings.scope}
+                                  onChange={(e) => setExamSettings({ ...examSettings, scope: e.target.value as any })}
+                                >
+                                  <option value="SCHOOL">Whole School</option>
+                                  <option value="CLASS">By Class Group</option>
+                                  <option value="DEPARTMENT">By Academic Department</option>
+                                </select>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                  <Label className="text-xs font-bold text-blue-600">Target Class</Label>
+                                  <select 
+                                    className="w-full h-12 rounded-2xl border border-blue-100 bg-white dark:bg-slate-900 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
+                                    value={examSettings.classId}
+                                    onChange={(e) => setExamSettings({ ...examSettings, classId: e.target.value })}
+                                  >
+                                    <option value="">No specific class</option>
+                                    {classesData?.map((c: any) => (
+                                      <option key={c.id} value={c.id}>{c.name} {c.section}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label className="text-xs font-bold text-purple-600">Target Dept</Label>
+                                  <select 
+                                    className="w-full h-12 rounded-2xl border border-purple-100 bg-white dark:bg-slate-900 px-4 text-sm outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer"
+                                    value={examSettings.departmentId}
+                                    onChange={(e) => setExamSettings({ ...examSettings, departmentId: e.target.value })}
+                                  >
+                                    <option value="">No specific department</option>
+                                    {departmentsData?.map((d: any) => (
+                                      <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Academic Context</Label>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                  <Label className="text-xs font-bold text-emerald-600">Session</Label>
+                                  <select 
+                                    className="w-full h-12 rounded-2xl border border-emerald-100 bg-white dark:bg-slate-900 px-4 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer"
+                                    value={examSettings.sessionId}
+                                    onChange={(e) => setExamSettings({ ...examSettings, sessionId: e.target.value })}
+                                  >
+                                    <option value="">No specific session</option>
+                                    {sessionsData?.map((s: any) => (
+                                      <option key={s.id} value={s.id}>{s.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label className="text-xs font-bold text-orange-600">Term</Label>
+                                  <select 
+                                    className="w-full h-12 rounded-2xl border border-orange-100 bg-white dark:bg-slate-900 px-4 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer"
+                                    value={examSettings.term}
+                                    onChange={(e) => setExamSettings({ ...examSettings, term: e.target.value as any })}
+                                  >
+                                    <option value="">No specific term</option>
+                                    <option value="FIRST">First Term</option>
+                                    <option value="SECOND">Second Term</option>
+                                    <option value="THIRD">Third Term</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-blue-600">Assigned Global Teacher</Label>
+                                <select 
+                                  className="w-full h-12 rounded-2xl border border-blue-100 bg-white dark:bg-slate-900 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
+                                  value={examSettings.teacherId}
+                                  onChange={(e) => setExamSettings({ ...examSettings, teacherId: e.target.value })}
+                                >
+                                  <option value="">No global teacher assigned</option>
+                                  {Array.isArray(teacherResponse) && teacherResponse.map((t: any) => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                  ))}
+                                  {Array.isArray(teacherResponse?.data) && teacherResponse.data.map((t: any) => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-8 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                      <DialogFooter className="w-full flex sm:justify-between items-center sm:gap-0 gap-4">
+                        <p className="text-[11px] text-slate-400 font-medium max-w-[300px] leading-tight hidden sm:block">
+                          Careful! Updating scope or targeting will immediately affect student visibility.
+                        </p>
+                        <div className="flex gap-3 ml-auto">
+                          <Button
+                            variant="outline"
+                            onClick={() => setIsSettingsOpen(false)}
+                            className="rounded-2xl font-bold h-12 px-6"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={() => updateExamMutation.mutate(examSettings)}
+                            disabled={updateExamMutation.isPending}
+                            className="rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25 h-12 px-8"
+                          >
+                            {updateExamMutation.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
+                            Save Changes
+                          </Button>
+                        </div>
+                      </DialogFooter>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {user?.userType === "ADMIN" && (
+                  <Button
+                    variant="outline"
+                    onClick={() => openConfirmDialog({
+                      title: "Delete Exam",
+                      description: `This will permanently delete "${exam?.title}" and all its subject papers. This action cannot be undone.`,
+                      variant: "danger",
+                      confirmText: "Delete Exam",
+                      onConfirm: () => deleteExamMutation.mutate(undefined, {
+                        onSuccess: () => {
+                          setConfirmDialog({ ...confirmDialog, isOpen: false });
+                        },
+                        onError: (error: any) => {
+                          toast.error(error.response?.data?.message || "Failed to delete exam");
+                        }
+                      })
+                    })}
+                    disabled={deleteExamMutation.isPending}
+                    className="h-12 rounded-2xl font-bold flex gap-2 border-red-100 text-red-600 hover:bg-red-50 transition-all"
+                  >
+                    <Trash2 size={16} /> Delete
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
+
         {/* Right Column: Papers List */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Existing Papers ({papers.length})</h2>
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-xl font-black tracking-tight text-gray-900 dark:text-white">
+              Subject Papers <span className="text-primary ml-1">({papers.length})</span>
+            </h2>
           </div>
 
           {isLoadingPapers ? (
-            <div className="space-y-4">
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
+            <div className="grid grid-cols-1 gap-4">
+              <Skeleton className="h-32 w-full rounded-3xl" />
+              <Skeleton className="h-32 w-full rounded-3xl" />
             </div>
           ) : isErrorPapers ? (
-            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm">
-              Failed to load existing papers.
+            <div className="bg-red-50 text-red-600 p-6 rounded-3xl border border-red-100 flex items-center gap-3">
+              <AlertCircle size={20} />
+              <p className="font-bold">Failed to load examination papers.</p>
             </div>
           ) : papers.length === 0 ? (
-            <div className="bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-12 text-center flex flex-col items-center">
-              <FileText className="h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No papers yet</h3>
-              <p className="text-gray-500 text-sm mt-1 max-w-sm">
-                Create the first subject paper using the form on the left. You can add as many papers as needed.
+            <div className="bg-gray-50 dark:bg-gray-800/50 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[2.5rem] p-16 text-center flex flex-col items-center">
+              <div className="h-16 w-16 rounded-3xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 mb-6">
+                <FileText size={32} />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 dark:text-white">No papers yet</h3>
+              <p className="text-gray-500 text-sm mt-2 max-w-sm font-medium">
+                Get started by creating a subject paper using the form on the left.
               </p>
             </div>
           ) : (
@@ -596,23 +720,35 @@ export default function ExamPapersPage() {
                       if (canAccess) {
                         router.push(`/dashboard/admin/exams/${examId}/papers/${paper.id}`);
                       } else {
-                        toast.info("Only the assigned teacher or an admin can manage this paper's questions.");
+                        toast.info("Only the assigned teacher or an admin can manage this paper.");
                       }
                     }}
-                    className={`bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 transition-all group ${canAccess ? "hover:border-primary/50 cursor-pointer hover:shadow-md" : "opacity-80 grayscale-[0.5]"
+                    className={`bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 transition-all group ${canAccess ? "hover:border-primary/50 cursor-pointer hover:shadow-xl hover:shadow-primary/5" : "opacity-80 grayscale-[0.5]"
                       }`}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className={`font-bold flex items-center gap-2 ${canAccess ? "text-gray-900 dark:text-white group-hover:text-primary" : "text-gray-500"}`}>
-                        <FileText className={`h-4 w-4 ${canAccess ? "text-primary" : "text-gray-400"}`} />
-                        {paper.title}
-                      </h3>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-colors ${canAccess ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white" : "bg-gray-100 text-gray-400"}`}>
+                          <FileText size={24} />
+                        </div>
+                        <div>
+                          <h3 className={`text-lg font-black tracking-tight ${canAccess ? "text-gray-900 dark:text-white" : "text-gray-500"}`}>
+                            {paper.title}
+                          </h3>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 uppercase">
+                              {paper.status}
+                            </span>
+                            {!canAccess && <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded font-black flex items-center gap-1 uppercase tracking-tighter border border-amber-100"><Lock size={10} /> Locked</span>}
+                          </div>
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2">
                         {canAccess && paper.status === "PUBLISHED" && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-full"
+                            className="h-9 w-9 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-xl"
                             onClick={(e) => {
                               e.stopPropagation();
                               openConfirmDialog({
@@ -621,63 +757,60 @@ export default function ExamPapersPage() {
                                 variant: "warning",
                                 confirmText: "Unpublish",
                                 onConfirm: () => unpublishPaperMutation.mutate(paper.id, {
-                      onSuccess: () => {
-                        setConfirmDialog({ ...confirmDialog, isOpen: false });
-                      },
-                      onError: (error: any) => {
-                        toast.error(error.response?.data?.message || "Failed to unpublish paper");
-                      }
-                    })
+                                  onSuccess: () => {
+                                    setConfirmDialog({ ...confirmDialog, isOpen: false });
+                                  },
+                                  onError: (error: any) => {
+                                    toast.error(error.response?.data?.message || "Failed to unpublish paper");
+                                  }
+                                })
                               });
                             }}
                           >
-                            {unpublishPaperMutation.isPending && unpublishPaperMutation.variables === paper.id ? <Loader2 className="animate-spin h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                            {unpublishPaperMutation.isPending && unpublishPaperMutation.variables === paper.id ? <Loader2 className="animate-spin h-4 w-4" /> : <Unlock size={18} />}
                           </Button>
                         )}
                         {canAccess && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-full"
+                            className="h-9 w-9 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl"
                             onClick={(e) => {
                               e.stopPropagation();
                               openConfirmDialog({
                                 title: "Unlink Paper",
-                                description: `This will remove "${paper.title}" from this exam. The paper will NOT be deleted and can be linked later.`,
+                                description: `This will remove "${paper.title}" from this exam. The paper can be linked later from the "Quick Link" section.`,
                                 variant: "warning",
                                 confirmText: "Unlink Paper",
                                 onConfirm: () => unlinkPaperMutation.mutate(paper.id, {
-                      onSuccess: () => {
-                        setConfirmDialog({ ...confirmDialog, isOpen: false });
-                      },
-                    })
+                                  onSuccess: () => {
+                                    setConfirmDialog({ ...confirmDialog, isOpen: false });
+                                  },
+                                })
                               });
                             }}
                           >
-                            {unlinkPaperMutation.isPending && unlinkPaperMutation.variables === paper.id ? <Loader2 className="animate-spin h-4 w-4" /> : <Link2Off className="h-4 w-4" />}
+                            {unlinkPaperMutation.isPending && unlinkPaperMutation.variables === paper.id ? <Loader2 className="animate-spin h-4 w-4" /> : <Link2Off size={18} />}
                           </Button>
                         )}
-                        {!canAccess && <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded font-bold">LOCKED</span>}
-                        <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">
-                          {paper.status}
-                        </span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-500 mb-4 line-clamp-2">
-                      {paper.instructions}
-                    </p>
 
-                    <div className="flex flex-wrap gap-4 text-xs text-gray-500">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5" />
+                    <div className="flex flex-wrap gap-6 text-xs font-bold text-gray-500">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700">
+                          <Clock size={12} className="text-primary" />
+                        </div>
                         {paper.durationMinutes} minutes
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5" />
-                        Teacher: {paper.teacherId === user?.id ? "You" : paper.teacherId.substring(0, 8) + "..."}
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-lg bg-blue-50 dark:bg-blue-800 flex items-center justify-center border border-blue-100 dark:border-blue-700">
+                          <Users size={12} className="text-blue-500" />
+                        </div>
+                        {paper.teacherId ? (paper.teacherId === user?.id ? "You (Assigned)" : "Assigned Teacher") : "Unassigned"}
                       </div>
-                      <div className="flex items-center gap-1.5 text-gray-400 ml-auto">
-                        Added {format(new Date(paper.createdAt || new Date()), "MMM d, yyyy")}
+                      <div className="ml-auto text-gray-400 font-medium">
+                        Modified {format(new Date(paper.updatedAt || new Date()), "MMM d, yyyy")}
                       </div>
                     </div>
                   </div>

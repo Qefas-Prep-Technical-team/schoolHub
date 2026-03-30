@@ -43,7 +43,7 @@ export function LinkingTabs({
             onClick={() => setMainTab('classroom')}
             className={cn(
               "px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
-              mainTab === 'classroom' ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 hover:text-gray-700"
+              mainTab === 'classroom' ? "bg-white dark:bg-slate-700 shadow-sm text-purple-600" : "text-gray-500 hover:text-gray-700"
             )}
           >
             Classroom
@@ -58,7 +58,7 @@ export function LinkingTabs({
             onClick={() => setSubTab('active')}
             className={cn(
               "h-9 rounded-xl text-[10px] font-black uppercase tracking-widest px-4",
-              subTab === 'active' ? "bg-slate-900 text-white shadow-lg" : "text-gray-400"
+              subTab === 'active' ? (mainTab === 'classroom' ? "bg-purple-600 text-white shadow-lg shadow-purple-200" : "bg-slate-900 text-white shadow-lg") : "text-gray-400"
             )}
           >
             Connected
@@ -69,7 +69,7 @@ export function LinkingTabs({
             onClick={() => setSubTab('pending')}
             className={cn(
               "h-9 rounded-xl text-[10px] font-black uppercase tracking-widest relative px-4",
-              subTab === 'pending' ? "bg-orange-500 text-white shadow-lg shadow-orange-200" : "text-gray-400"
+              subTab === 'pending' ? (mainTab === 'classroom' ? "bg-purple-600 text-white shadow-lg shadow-purple-200" : "bg-orange-500 text-white shadow-lg shadow-orange-200") : "text-gray-400"
             )}
           >
             Pending

@@ -9,7 +9,7 @@ import clsx from "clsx";
 import { ThemeToggle } from "@/app/theme-toggle";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { StudentMobileDrawer } from "./StudentMobileDrawer";
-import NotificationCenter from "../../admin/components/NotificationCenter";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 
 export default function TopNavBar({
   onToggleSidebar,
@@ -22,7 +22,7 @@ export default function TopNavBar({
   const { userType, user } = useAuthStore();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="flex items-center justify-between px-3 py-2 md:px-6 md:py-3 gap-3">
         {/* Left */}
         <div className="flex items-center gap-3 flex-1 min-w-0">

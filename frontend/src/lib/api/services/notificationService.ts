@@ -27,7 +27,13 @@ export const notificationService = {
     if (options?.isRead !== undefined) params.append('isRead', options.isRead.toString());
 
     const response = await apiClient.get<Notification[]>(`/notifications?${params.toString()}`);
-    return (response.data as any).data || [];
+    const data = (response.data as any).data || [];
+    
+    // Map backend status to frontend isRead
+    return data.map((n: any) => ({
+      ...n,
+      isRead: n.status === 'READ'
+    }));
   },
 
   // Mark a single notification as read
