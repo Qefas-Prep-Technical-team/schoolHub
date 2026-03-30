@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 
 import type { StudentGrade, SaveStatus as SaveStatusType, BatchGradeEntry } from './components/types';
-import Header from '../../Exams&Quizzes/components/Header';
+import Header from '../../../../Exams&Quizzes/components/Header';
 const HeaderAny = Header as any;
 import BatchGradeHeader from './components/BatchGradeHeader';
 import FilterChips from './components/FilterChips';
