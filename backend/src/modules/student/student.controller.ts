@@ -113,7 +113,7 @@ export const getStudentById = async (req: Request, res: Response) => {
       });
     }
 
-    const profile = await getStudentProfileService(studentId);
+    const profile = await getStudentProfileService(studentId as string);
 
     if (!profile) {
       return res.status(404).json({

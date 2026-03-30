@@ -78,7 +78,7 @@ export const canManageSubjectPaper = async ({
 
     return canTeacherManageSubject({
       teacherId: userId,
-      subjectId: paper.subjectId,
+      subjectId: paper.subjectId as string,
       schoolId: paper.exam?.schoolId || undefined,
     });
   }
