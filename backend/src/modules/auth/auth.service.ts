@@ -112,7 +112,7 @@ console.log(process.env.RESEND_API_KEY);
 export const sendVerificationEmail = async (email: string, code: string) => {
   // ADD 'return' and 'await' here
   return await resend.emails.send({
-    from: "SchoolHub <onboarding@resend.dev>",
+    from: process.env.MAIL_FROM as string,
     to: email,
     subject: "Your Verification Code",
     html: `
@@ -271,7 +271,10 @@ export const loginUser = async (email: string, password: string) => {
   // Check student first
   const student = await prisma.student.findUnique({ where: { email } });
   if (student) {
-    if (!student.password) throw new Error("This account is linked to Google. Please use Google Login.");
+    if (!student.password)
+      throw new Error(
+        "This account is linked to Google. Please use Google Login.",
+      );
     const match = await bcrypt.compare(password, student.password);
     if (!match) throw new Error("Invalid credentials");
 
@@ -296,7 +299,10 @@ export const loginUser = async (email: string, password: string) => {
   // Check admin
   const admin = await prisma.admin.findUnique({ where: { email } });
   if (admin) {
-    if (!admin.password) throw new Error("This account is linked to Google. Please use Google Login.");
+    if (!admin.password)
+      throw new Error(
+        "This account is linked to Google. Please use Google Login.",
+      );
     const match = await bcrypt.compare(password, admin.password);
     if (!match) throw new Error("Invalid credentials");
 
@@ -307,7 +313,10 @@ export const loginUser = async (email: string, password: string) => {
   // Check parent
   const parent = await prisma.parent.findUnique({ where: { email } });
   if (parent) {
-    if (!parent.password) throw new Error("This account is linked to Google. Please use Google Login.");
+    if (!parent.password)
+      throw new Error(
+        "This account is linked to Google. Please use Google Login.",
+      );
     const match = await bcrypt.compare(password, parent.password);
     if (!match) throw new Error("Invalid credentials");
 
@@ -326,7 +335,7 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
       throw new Error("Email is required to send reset link");
     }
     const data = await resend.emails.send({
-      from: "SchoolHub <onboarding@resend.dev>",
+      from: process.env.MAIL_FROM as string,
       to: [email],
       subject: "Reset Your SchoolHub Password",
       html: `
@@ -377,7 +386,10 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
   }
 };
 
-export const googleAuthService = async (idToken: string, userRole: UserRole) => {
+export const googleAuthService = async (
+  idToken: string,
+  userRole: UserRole,
+) => {
   const ticket = await client.verifyIdToken({
     idToken: idToken,
     audience: process.env.GOOGLE_CLIENT_ID,
@@ -406,7 +418,7 @@ export const googleAuthService = async (idToken: string, userRole: UserRole) => 
           const studentCode = await generateUniqueCode(
             prisma,
             "student",
-            name || "Student"
+            name || "Student",
           );
           user = await prisma.student.create({
             data: {
@@ -437,7 +449,7 @@ export const googleAuthService = async (idToken: string, userRole: UserRole) => 
           const parentCode = await generateUniqueCode(
             prisma,
             "parent",
-            name || "Parent"
+            name || "Parent",
           );
           user = await prisma.parent.create({
             data: {
@@ -456,7 +468,7 @@ export const googleAuthService = async (idToken: string, userRole: UserRole) => 
 
     default:
       throw new Error(
-        "Google Login only supported for Students and Parents currently"
+        "Google Login only supported for Students and Parents currently",
       );
   }
 
