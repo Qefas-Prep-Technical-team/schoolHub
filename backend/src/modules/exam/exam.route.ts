@@ -27,6 +27,8 @@ import {
 } from "./exam.controller";
 import {
   getExamAttempt,
+  getExamAttempts,
+  getMyExamAttempts,
   getExamResult,
   getExamReviewData,
   saveExamAnswer,
@@ -57,6 +59,7 @@ router.get("/review/queue", authenticateToken, getManualReviewQueue);
 router.patch("/review/answers/:answerId", authenticateToken, markSubjectiveAnswer);
 
 router.get("/papers/all", authenticateToken, getSubjectPapers);
+router.post("/papers", authenticateToken, createSubjectPaper);
 router.patch("/papers/:paperId/link", authenticateToken, linkSubjectPaperToExam);
 router.patch("/papers/:paperId/unlink", authenticateToken, unlinkSubjectPaper);
 
@@ -86,10 +89,13 @@ router.post("/:id/papers/:paperId/unpublish", authenticateToken, unpublishSubjec
 router.delete("/:id/papers/:paperId", authenticateToken, deleteSubjectPaper);
 
 router.post("/:id/start", authenticateToken, startExamAttempt);
+router.get("/my/attempts", authenticateToken, getMyExamAttempts);
 router.get("/:id/attempt", authenticateToken, getExamAttempt);
+router.get("/:id/attempts", authenticateToken, getExamAttempts);
 router.post("/:id/answers", authenticateToken, saveExamAnswer);
 router.post("/:id/submit", authenticateToken, submitExamAttempt);
 router.get("/:id/review", authenticateToken, getExamReviewData);
+router.get("/:id/result", authenticateToken, getExamResult);
 
 router.get("/:id/ranking", authenticateToken, getExamRanking);
 router.get("/:id/analytics/class", authenticateToken, getClassExamAnalytics);

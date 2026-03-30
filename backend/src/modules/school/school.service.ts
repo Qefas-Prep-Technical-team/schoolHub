@@ -151,3 +151,176 @@ export const getSchoolStudentsService = async (
     },
   });
 };
+
+/**
+ * Fetch high-level stats for a school
+ */
+export const getSchoolStatsService = async (schoolId: string) => {
+  const [students, teachers, classes, exams, subjects] = await Promise.all([
+    prisma.student.count({ where: { OR: [{ schoolId }, { originalSchoolId: schoolId }] } }),
+    prisma.teacher.count({ where: { OR: [{ schoolId }, { currentSchoolId: schoolId }] } }),
+    prisma.class.count({ where: { schoolId } }),
+    prisma.exam.count({ where: { schoolId } }),
+    prisma.subject.count({ where: { schoolId } }),
+  ]);
+
+  return {
+    students,
+    teachers,
+    classes,
+    exams,
+    subjects,
+  };
+};
+
+/**
+ * Fetch detailed school profile
+ */
+export const getSchoolProfileService = async (schoolId: string) => {
+  return await prisma.school.findUnique({
+    where: { id: schoolId },
+    include: {
+      admins: {
+        include: {
+          admin: true,
+        },
+      },
+      sessions: {
+        orderBy: {
+          startDate: "desc",
+        },
+        take: 1,
+      },
+    },
+  });
+};
+
+/**
+ * Update school profile
+ */
+export const updateSchoolProfileService = async (schoolId: string, data: any) => {
+  return await prisma.school.update({
+    where: { id: schoolId },
+    data,
+  });
+};
+
+/**
+ * Fetch school settings
+ */
+export const getSchoolSettingsService = async (schoolId: string) => {
+  let settings = await prisma.schoolSetting.findUnique({
+    where: { schoolId },
+  });
+
+  if (!settings) {
+    settings = await prisma.schoolSetting.create({
+      data: { schoolId },
+    });
+  }
+
+  return settings;
+};
+
+/**
+ * Update school settings
+ */
+export const updateSchoolSettingsService = async (schoolId: string, data: any) => {
+  return await prisma.schoolSetting.update({
+    where: { schoolId },
+    data,
+  });
+};
+
+/**
+ * Perform a high-level performance analysis for the entire school
+ */
+export const getSchoolPerformanceAnalysisService = async (schoolId: string) => {
+  const [grades, examAttempts] = await Promise.all([
+    prisma.grade.findMany({
+      where: { schoolId },
+      select: {
+        score: true,
+        maxMarks: true,
+        subject: true,
+      },
+    }),
+    prisma.examAttempt.findMany({
+      where: {
+        exam: { schoolId: schoolId },
+        status: 'SCORED',
+      },
+      select: {
+        totalScore: true,
+        totalMarks: true,
+      },
+    }),
+  ]);
+
+  const totalAssessments = grades.length + examAttempts.length;
+
+  if (totalAssessments === 0) {
+    return {
+      averageScore: 0,
+      totalAssessments: 0,
+      subjectBreakdown: [],
+      insight: "Gathering institutional metrics to generate strategic performance insights...",
+      letterGrade: "N/A",
+    };
+  }
+
+  // Calculate weighted average
+  let sumPercentage = 0;
+  grades.forEach(g => {
+      const gMax = g.maxMarks || 100;
+      sumPercentage += ((g.score || 0) / gMax) * 100;
+  });
+  examAttempts.forEach(e => {
+      const eMax = e.totalMarks || 100;
+      sumPercentage += ((e.totalScore || 0) / eMax) * 100;
+  });
+  
+  const averageScore = Math.round(sumPercentage / totalAssessments);
+
+  // Group by subject (Grades usually have subject, attempts don't in the top level but we'll use grades for breakdown)
+  const subjectMap: Record<string, { total: number; count: number }> = {};
+  grades.forEach((g) => {
+    if (!subjectMap[g.subject]) subjectMap[g.subject] = { total: 0, count: 0 };
+    subjectMap[g.subject].total += (g.score / g.maxMarks) * 100;
+    subjectMap[g.subject].count += 1;
+  });
+
+  const subjectBreakdown = Object.entries(subjectMap).map(([name, data]) => ({
+    name,
+    average: Math.round(data.total / data.count),
+  }));
+
+  // Determine Letter Grade
+  let letterGrade = "F";
+  if (averageScore >= 90) letterGrade = "A+";
+  else if (averageScore >= 80) letterGrade = "A";
+  else if (averageScore >= 70) letterGrade = "B+";
+  else if (averageScore >= 60) letterGrade = "B";
+  else if (averageScore >= 50) letterGrade = "C";
+  else if (averageScore >= 40) letterGrade = "D";
+
+  const strongestSubject = [...subjectBreakdown].sort((a, b) => b.average - a.average)[0];
+
+  let insight = `The institution is maintaining a solid ${letterGrade} standing with an average mastery of ${averageScore}%. `;
+  if (strongestSubject) {
+    insight += `Academic excellence is most prominent in ${strongestSubject.name}. `;
+  }
+  if (averageScore < 60) {
+    insight += "AI suggests immediate faculty review of current assessment methodologies to boost performance metrics.";
+  } else {
+    insight += "Current trajectory indicates consistent academic growth across all departments.";
+  }
+
+  return {
+    averageScore,
+    totalAssessments,
+    subjectBreakdown,
+    insight,
+    letterGrade,
+  };
+};

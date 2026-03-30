@@ -2,6 +2,7 @@ import prisma from "../../config/database";
 import { createNotification } from "../notification/notification.service";
 import {
   AssessmentStatus,
+  ExamCategory,
   ExamMode,
   QuestionSource,
   QuestionType,
@@ -26,6 +27,8 @@ export const createExamService = async ({
   startDate,
   allowImmediateResult,
   resultReleaseAt,
+  term,
+  teacherId,
 }: {
   title: string;
   description?: string;
@@ -37,12 +40,14 @@ export const createExamService = async ({
   departmentId?: string;
   classId?: string;
   sessionId?: string;
+  term?: any;
   durationMinutes?: number;
   aiPrompt?: string;
   instructions?: string;
   startDate?: Date | string;
   allowImmediateResult?: boolean;
   resultReleaseAt?: Date | string;
+  teacherId?: string;
 }) => {
   console.log("LOG: [createExamService] Data received:", { title, scope, schoolId });
   return prisma.exam.create({
@@ -63,12 +68,15 @@ export const createExamService = async ({
       startDate: startDate ? new Date(startDate) : null,
       allowImmediateResult: allowImmediateResult !== undefined ? allowImmediateResult : true,
       resultReleaseAt: resultReleaseAt ? new Date(resultReleaseAt) : null,
+      term: term || null,
+      teacherId: teacherId || null,
     },
     include: {
       school: true,
       department: true,
       class: true,
       session: true,
+      teacher: true,
       subjectPapers: true,
     },
   });
@@ -79,13 +87,17 @@ export const getExamsService = async (filters: {
   sessionId?: string;
   classId?: string;
   departmentId?: string;
+  term?: any;
   status?: AssessmentStatus;
+  category?: ExamCategory;
   availableForStudentId?: string;
 }) => {
   const where: any = {};
   const studentId = filters.availableForStudentId;
   if (filters.schoolId) where.schoolId = filters.schoolId;
   if (filters.sessionId) where.sessionId = filters.sessionId;
+  if (filters.term) where.term = filters.term;
+  if (filters.category) where.category = filters.category;
   
   // For students, we strictly enforce PUBLISHED status and multi-criteria targeting
   if (filters.availableForStudentId) {
@@ -206,9 +218,12 @@ export const getExamByIdService = async (id: string, excludeCorrectAnswers: bool
   return exam;
 };
 
-export const getExamPapersService = async (examId: string) => {
+export const getExamPapersService = async (examId: string, schoolId?: string) => {
   return prisma.subjectExamPaper.findMany({
-    where: { examId },
+    where: { 
+      examId,
+      exam: schoolId ? { schoolId } : undefined
+    },
     include: {
       subject: true,
       teacher: true,
@@ -229,7 +244,11 @@ export const getSubjectPapersService = async (filters: {
   const where: any = {};
   
   if (filters.schoolId) {
-    where.subject = { schoolId: filters.schoolId };
+    where.OR = [
+      { schoolId: filters.schoolId },
+      { subject: { schoolId: filters.schoolId } },
+      { exam: { schoolId: filters.schoolId } }
+    ];
   }
 
   if (filters.unlinkedOnly) {
@@ -293,12 +312,14 @@ export const createSubjectPaperService = async ({
   examId,
   subjectId,
   teacherId,
+  schoolId,
   title,
   instructions,
   durationMinutes,
 }: {
   examId?: string;
-  subjectId: string;
+  subjectId?: string;
+  schoolId?: string;
   teacherId?: string;
   title?: string;
   instructions?: string;
@@ -306,8 +327,9 @@ export const createSubjectPaperService = async ({
 }) => {
   return prisma.subjectExamPaper.create({
     data: {
-      examId,
-      subjectId,
+      examId: examId || null,
+      subjectId: subjectId || null,
+      schoolId: schoolId || null,
       teacherId: teacherId || null,
       title: title || null,
       instructions: instructions || null,
@@ -316,6 +338,7 @@ export const createSubjectPaperService = async ({
     include: {
       exam: true,
       subject: true,
+      school: true,
       teacher: true,
     },
   });
@@ -531,10 +554,25 @@ export const publishSubjectPaperService = async (subjectPaperId: string) => {
     throw new Error("Subject paper must have at least one question");
   }
 
+  // Perform validation checks before publishing
+  for (const q of paper.questions) {
+    validateExamQuestionInput({
+      type: q.type,
+      question: q.question,
+      optionA: q.optionA || undefined,
+      optionB: q.optionB || undefined,
+      optionC: q.optionC || undefined,
+      optionD: q.optionD || undefined,
+      correctAnswer: q.correctAnswer,
+      marks: Number(q.marks),
+    });
+  }
+
   return prisma.subjectExamPaper.update({
     where: { id: subjectPaperId },
     data: {
       status: SubjectPaperStatus.PUBLISHED,
+      validatedAt: paper.validatedAt || new Date(),
       publishedAt: new Date(),
     },
     include: { questions: true },
@@ -783,6 +821,9 @@ export const updateExamService = async (
     resultReleaseAt?: Date | string | null;
     classId?: string | null;
     departmentId?: string | null;
+    sessionId?: string | null;
+    term?: any | null;
+    teacherId?: string | null;
   }
 ) => {
   const existing = await prisma.exam.findUnique({
@@ -807,6 +848,15 @@ export const updateExamService = async (
   if (data.departmentId !== undefined) {
     updateData.departmentId = data.departmentId || null;
   }
+  if (data.sessionId !== undefined) {
+    updateData.sessionId = data.sessionId || null;
+  }
+  if (data.term !== undefined) {
+    updateData.term = data.term || null;
+  }
+  if (data.teacherId !== undefined) {
+    updateData.teacherId = data.teacherId || null;
+  }
 
   return prisma.exam.update({
     where: { id: examId },
@@ -816,6 +866,7 @@ export const updateExamService = async (
       department: true,
       class: true,
       session: true,
+      teacher: true,
     },
   });
 };

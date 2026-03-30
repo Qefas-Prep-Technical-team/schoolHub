@@ -11,9 +11,8 @@ generator client {
 // }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ENUMS MUST BE DEFINED BEFORE THEY ARE USED 
@@ -28,6 +27,12 @@ enum Gender {
   MALE
   FEMALE
   OTHER
+}
+
+enum Term {
+  FIRST
+  SECOND
+  THIRD
 }
 
 enum ClassScope {
@@ -148,11 +153,18 @@ model School {
   id          String  @id @default(uuid())
   name        String
   subdomain   String? @unique
-  schoolEmail String?
   tenantId    String  @unique
   schoolCode  String  @unique
   address     String?
   phone       String?
+  schoolEmail String?
+  motto       String?
+  logo        String?
+  foundedYear Int?
+  principal   String?
+  schoolType  String?
+  website     String?
+  description String? @db.Text
 
   grades Grade[]
   admins SchoolAdmin[]
@@ -175,6 +187,21 @@ model School {
   currentTeachers Teacher[]        @relation("TeacherCurrentSchool")
   sessions        Session[]
   teacherSubjects TeacherSubject[]
+  subjectPapers   SubjectExamPaper[]
+  settings        SchoolSetting?
+}
+
+model SchoolSetting {
+  id        String  @id @default(uuid())
+  schoolId  String  @unique
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  showComingSoon Boolean @default(false)
+  themeColor     String  @default("#3670e2")
+  defaultSession String?
+  defaultTerm    String?
+
+  updatedAt DateTime @updatedAt
 }
 
 model SchoolAdmin {
@@ -257,6 +284,7 @@ model Teacher {
   departments       Department[]
   teacherSubjects   TeacherSubject[]
   subjectExamPapers SubjectExamPaper[]
+  exams             Exam[]
 }
 
 model Student {
@@ -443,6 +471,15 @@ model Grade {
   score          Float
   maxMarks       Float
   remarks        String?
+
+  examId               String?
+  examAttemptId        String?
+  subjectExamAttemptId String?
+
+  // Relations
+  exam               Exam?               @relation(fields: [examId], references: [id], onDelete: SetNull)
+  examAttempt        ExamAttempt?        @relation(fields: [examAttemptId], references: [id], onDelete: SetNull)
+  subjectExamAttempt SubjectExamAttempt? @relation(fields: [subjectExamAttemptId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -764,6 +801,8 @@ model Exam {
   departmentId String?
   classId      String?
   sessionId    String?
+  term         Term?
+  teacherId    String?
 
   durationMinutes Int?
   totalMarks      Float? @default(0)
@@ -785,6 +824,7 @@ model Exam {
   department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   class      Class?      @relation(fields: [classId], references: [id], onDelete: Cascade)
   session    Session?    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  teacher    Teacher?    @relation(fields: [teacherId], references: [id], onDelete: SetNull)
 
   includedSubjects ExamSubject[]
   subjectPapers    SubjectExamPaper[]
@@ -795,6 +835,8 @@ model Exam {
   subjectId String?
 
   examAttempts ExamAttempt[]
+  grades       Grade[]
+
 
   @@map("exams")
 }
@@ -816,7 +858,8 @@ model ExamSubject {
 model SubjectExamPaper {
   id              String             @id @default(uuid())
   examId          String?
-  subjectId       String
+  subjectId       String?
+  schoolId        String?
   teacherId       String?
   title           String?
   instructions    String?
@@ -829,7 +872,8 @@ model SubjectExamPaper {
   publishedAt   DateTime?
 
   exam    Exam?    @relation(fields: [examId], references: [id], onDelete: Cascade)
-  subject Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  school  School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
 
   questions    SubjectExamQuestion[]
@@ -839,6 +883,7 @@ model SubjectExamPaper {
   updatedAt DateTime @updatedAt
 
   @@index([examId, subjectId])
+  @@index([schoolId, status])
   @@map("subject_exam_papers")
 }
 
@@ -890,6 +935,7 @@ model Session {
   endDate   DateTime
   isActive  Boolean  @default(false)
   isClosed  Boolean  @default(false)
+  currentTerm Term     @default(FIRST)
 
   school School? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   exams  Exam[]
@@ -922,6 +968,7 @@ model ExamAttempt {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  grades    Grade[]
 
   @@unique([examId, studentId])
   @@map("exam_attempts")
@@ -935,6 +982,7 @@ model SubjectExamAttempt {
   score       Float     @default(0)
   totalMarks  Float     @default(0)
   submittedAt DateTime?
+  grades      Grade[]
 
   examAttempt  ExamAttempt      @relation(fields: [examAttemptId], references: [id], onDelete: Cascade)
   subjectPaper SubjectExamPaper @relation(fields: [subjectPaperId], references: [id], onDelete: Cascade)

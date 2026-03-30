@@ -2,8 +2,10 @@ import { Request, Response } from "express";
 import { UserRole } from "@prisma/client";
 import {
   getExamAttemptService,
+  getExamAttemptsService,
   getExamResultService,
   getExamReviewDataService,
+  getStudentExamAttemptsService,
   saveExamAnswerService,
   startExamAttemptService,
   submitExamAttemptService,
@@ -194,6 +196,47 @@ export const getExamReviewData = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to fetch review data",
+    });
+  }
+};
+
+export const getMyExamAttempts = async (req: Request, res: Response) => {
+  try {
+    if (!req.user || req.user.userType !== UserRole.STUDENT) {
+      return res.status(403).json({
+        success: false,
+        message: "Only students can view their exam attempts",
+      });
+    }
+
+    const data = await getStudentExamAttemptsService(req.user.id);
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to fetch my exam attempts",
+    });
+  }
+};
+export const getExamAttempts = async (req: Request, res: Response) => {
+  try {
+    const data = await getExamAttemptsService({
+      examId: req.params.id as string,
+      schoolId: (req.user as any)?.schoolId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to fetch exam attempts",
     });
   }
 };

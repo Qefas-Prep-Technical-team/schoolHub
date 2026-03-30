@@ -624,7 +624,7 @@ export const getQuizzesService = async ({
 }) => {
   return prisma.quiz.findMany({
     where: {
-      ...(schoolId ? { schoolId } : {}),
+      ...(schoolId ? { schoolId } : { id: 'none' }),
       ...(departmentId ? { departmentId } : {}),
       ...(classId ? { classId } : {}),
     },
@@ -651,7 +651,7 @@ export const getExamsService = async ({
 }) => {
   return prisma.exam.findMany({
     where: {
-      ...(schoolId ? { schoolId } : {}),
+      ...(schoolId ? { schoolId } : { id: 'none' }),
       ...(departmentId ? { departmentId } : {}),
       ...(classId ? { classId } : {}),
     },

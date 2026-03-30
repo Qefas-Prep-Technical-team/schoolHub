@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/authMiddleware";
-import { getSchoolTeachers, getSchoolStudents } from "./school.controller";
+import { getSchoolTeachers, getSchoolStudents, getSchoolStats, getSchoolPerformanceAnalysis, getSchoolProfile, updateSchoolProfile, getSchoolSettings, updateSchoolSettings } from "./school.controller";
 
 const router = Router();
 
@@ -20,5 +20,47 @@ router.get("/:schoolId/teachers", getSchoolTeachers);
  * @access  Private
  */
 router.get("/:schoolId/students", getSchoolStudents);
+
+/**
+ * @route   GET /api/v1/schools/:schoolId/stats
+ * @desc    Get high-level statistics for a school
+ * @access  Private-Admin
+ */
+router.get("/:schoolId/stats", getSchoolStats);
+
+/**
+ * @route   GET /api/v1/schools/:schoolId/performance-analysis
+ * @desc    Get school-wide performance insights
+ * @access  Private-Admin
+ */
+router.get("/:schoolId/performance-analysis", getSchoolPerformanceAnalysis);
+
+/**
+ * @route   GET /api/v1/schools/:schoolId/profile
+ * @desc    Get detailed school profile
+ * @access  Private
+ */
+router.get("/:schoolId/profile", getSchoolProfile);
+
+/**
+ * @route   PATCH /api/v1/schools/:schoolId/profile
+ * @desc    Update school profile
+ * @access  Private-Admin
+ */
+router.patch("/:schoolId/profile", updateSchoolProfile);
+
+/**
+ * @route   GET /api/v1/schools/:schoolId/settings
+ * @desc    Get school-wide settings
+ * @access  Private-Admin
+ */
+router.get("/:schoolId/settings", getSchoolSettings);
+
+/**
+ * @route   PATCH /api/v1/schools/:schoolId/settings
+ * @desc    Update school-wide settings
+ * @access  Private-Admin
+ */
+router.patch("/:schoolId/settings", updateSchoolSettings);
 
 export default router;
