@@ -19,7 +19,7 @@ export const getStudentGrades = async (req: Request, res: Response) => {
 
 export const getGradeById = async (req: Request, res: Response) => {
   try {
-    const data = await getGradeByIdService(req.params.id);
+    const data = await getGradeByIdService(req.params.id as string);
     if (!data) {
       return res.status(404).json({ success: false, message: "Grade not found" });
     }

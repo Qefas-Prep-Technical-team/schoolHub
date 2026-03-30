@@ -6,6 +6,8 @@ import {
   updateSchoolProfileService,
   getSchoolSettingsService,
   updateSchoolSettingsService,
+  getSchoolStatsService,
+  getSchoolPerformanceAnalysisService,
 } from "./school.service";
 
 /**

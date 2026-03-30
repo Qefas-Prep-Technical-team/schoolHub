@@ -579,7 +579,7 @@ export const getExamResultService = async ({
   const subjectBreakdown = attempt.subjectAttempts.map((subjectAttempt) => ({
     subjectPaperId: subjectAttempt.subjectPaperId,
     subjectId: subjectAttempt.subjectPaper.subjectId,
-    subjectName: subjectAttempt.subjectPaper.subject.name,
+    subjectName: subjectAttempt.subjectPaper.subject?.name || "Unknown",
     score: subjectAttempt.score,
     totalMarks: subjectAttempt.totalMarks,
     submittedAt: subjectAttempt.submittedAt,

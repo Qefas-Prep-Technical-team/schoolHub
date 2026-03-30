@@ -56,8 +56,8 @@ export const updateStudentDepartmentByAdmin = async (req: Request, res: Response
     }
 
     const updatedStudent = await pickDepartmentService({
-      studentId,
-      departmentId,
+      studentId: studentId as string,
+      departmentId: departmentId as string,
       currentUserId,
       currentUserType: currentUserType as UserRole,
     });

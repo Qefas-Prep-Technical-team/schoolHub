@@ -532,7 +532,7 @@ export const validateSubjectPaperService = async (subjectPaperId: string) => {
           recipientId: sa.adminId, // Admin model ID
           type: "GENERAL",
           title: "Subject Paper Validated!",
-          message: `A subject paper for "${updated.subject.name}" in exam "${updated.exam.title}" has been validated and is ready for publishing.`,
+          message: `A subject paper for "${updated.subject?.name || "Unknown"}" in exam "${updated.exam?.title || "Unknown"}" has been validated and is ready for publishing.`,
           link: `/dashboard/admin/exams/${updated.examId}/papers/${updated.id}`,
           meta: { examId: updated.examId, paperId: updated.id },
         })

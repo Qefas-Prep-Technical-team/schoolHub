@@ -206,7 +206,7 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
     }
 
     const data = await createSubjectPaperService({
-      examId: req.params.id === 'none' || !req.params.id ? null : req.params.id as string,
+      examId: req.params.id === 'none' || !req.params.id ? undefined : req.params.id as string,
       subjectId,
       schoolId,
       teacherId,
@@ -642,7 +642,7 @@ export const linkSubjectPaperToExam = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "examId is required" });
     }
 
-    const data = await linkSubjectPaperToExamService(paperId, examId);
+    const data = await linkSubjectPaperToExamService(paperId as string, examId as string);
     res.status(200).json({ success: true, data });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -653,7 +653,7 @@ export const unlinkSubjectPaper = async (req: Request, res: Response) => {
   try {
     const { paperId } = req.params;
     console.log("LOG: [unlinkSubjectPaper] Unlinking paper:", paperId);
-    const data = await unlinkSubjectPaperService(paperId);
+    const data = await unlinkSubjectPaperService(paperId as string);
     res.status(200).json({ success: true, data });
   } catch (error: any) {
     console.error("ERROR: [unlinkSubjectPaper]", error);
