@@ -39,6 +39,7 @@ export interface SubjectPaper {
   examId: string;
   subjectId?: string;
   teacherId?: string;
+  schoolId?: string;
   title: string;
   instructions: string;
   durationMinutes: number;
