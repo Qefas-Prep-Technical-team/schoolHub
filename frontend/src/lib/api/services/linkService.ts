@@ -82,13 +82,13 @@ export const linkService = {
 
   // Cancel a sent link request
   cancelLinkRequest: async (id: string) => {
-    const response = await apiClient.delete(`/links/requests/${id}`);
+    const response = await apiClient.patch(`/links/request/${id}/cancel`);
     return response.data;
   },
 
   // Revoke an active link
   revokeActiveLink: async (id: string) => {
-    const response = await apiClient.delete(`/links/active/${id}`);
+    const response = await apiClient.patch(`/links/active/${id}/revoke`);
     return response.data;
   },
 

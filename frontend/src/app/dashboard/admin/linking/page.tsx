@@ -25,6 +25,7 @@ import { ActiveLinksGrid } from './components/ActiveLinksGrid';
 import { PendingRequestsGrid } from './components/PendingRequestsGrid';
 import { ConnectModal } from './components/ConnectModal';
 import QRCodeModal from './components/QRCodeModal';
+import { ConfirmationModal } from '@/components/reusable/ConfirmationModal';
 import { getMemberDetails, isClassLink } from './components/LinkingUtils';
 
 function LinkingHub() {
@@ -44,6 +45,22 @@ function LinkingHub() {
   const [subTab, setSubTab] = useState<'active' | 'pending' | 'history'>('active');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
+  
+  // Confirmation Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    variant: 'default' | 'destructive';
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+    variant: 'default'
+  });
+
   const { user } = useAuthStore();
 
   const filteredActiveLinks = activeLinks.filter((link: any) => {
@@ -70,9 +87,17 @@ function LinkingHub() {
 
   const handleAcceptAll = () => {
     const category = mainTab === 'classroom' ? 'classroom' : 'network';
-    if (window.confirm(`Are you sure you want to accept all pending ${category} requests?`)) {
-      acceptAllMutation.mutate(category);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: `Accept All ${category === 'classroom' ? 'Classroom' : 'Network'} Requests?`,
+      description: `This will automatically approve all pending ${category} link requests. This action cannot be undone.`,
+      variant: 'default',
+      onConfirm: () => {
+        acceptAllMutation.mutate(category, {
+          onSuccess: () => setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        });
+      }
+    });
   };
 
   const handleRespond = async (id: string, action: 'ACCEPT' | 'REJECT') => {
@@ -90,8 +115,17 @@ function LinkingHub() {
   };
 
   const handleRevoke = async (id: string) => {
-    if (!window.confirm('Are you sure you want to disconnect this member?')) return;
-    revokeMutation.mutate(id);
+    setConfirmModal({
+      isOpen: true,
+      title: 'Disconnect Member?',
+      description: 'Are you sure you want to revoke this connection? The member will lose access to school resources.',
+      variant: 'destructive',
+      onConfirm: () => {
+        revokeMutation.mutate(id, {
+          onSuccess: () => setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        });
+      }
+    });
   };
 
   return (
@@ -116,6 +150,16 @@ function LinkingHub() {
         isOpen={isQRCodeModalOpen}
         onClose={() => setIsQRCodeModalOpen(false)}
         schoolCode={profile?.schoolCode || ''}
+      />
+
+      <ConfirmationModal 
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        description={confirmModal.description}
+        variant={confirmModal.variant}
+        isLoading={acceptAllMutation.isPending || revokeMutation.isPending}
       />
 
       <LinkingCodeCards 
