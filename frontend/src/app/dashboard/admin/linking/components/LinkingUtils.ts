@@ -14,6 +14,8 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
     req.requesterAdmin || req.approverAdmin ||
     req.sender || req.receiver;
 
+  const school = req.targetSchool || req.requesterSchool;
+
   const className = req.class ? (req.class.name + (req.class.section ? ` - ${req.class.section}` : '')) : undefined;
   
   // Determine peer identification (for logic where we need to know the 'other' side)
@@ -29,6 +31,15 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
       email: person.email || 'No Email',
       className: className,
       code: person.teacherCode || person.studentCode || person.parentCode || person.adminCode || bestCode
+    };
+  }
+
+  if (school) {
+    return {
+      name: school.name || 'Unknown School',
+      email: school.schoolEmail || 'School Entity',
+      className: undefined,
+      code: school.schoolCode || bestCode
     };
   }
 

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { copyToClipboard } from "@/lib/utils/clipboard";
-import { Copy, User, Users } from "lucide-react";
+import { Copy, User, GraduationCap } from "lucide-react";
 
 interface QRCodeModalProps {
   isOpen: boolean;
@@ -24,10 +24,10 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, schoolCode }
   
   const links = [
     {
-      title: "Parent Signup",
-      role: "Parent",
-      icon: <Users className="w-5 h-5" />,
-      url: `${baseUrl}/signup/parent?schoolCode=${schoolCode}`,
+      title: "Student Signup",
+      role: "Student",
+      icon: <GraduationCap className="w-5 h-5" />,
+      url: `${baseUrl}/signup/student?schoolCode=${schoolCode}`,
       color: "blue",
     },
     {

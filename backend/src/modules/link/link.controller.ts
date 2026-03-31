@@ -558,12 +558,27 @@ export const acceptAllRequestsByCategory = async (req: Request, res: Response) =
       return res.status(400).json({ success: false, message: "Unsupported user type" });
     }
 
-    // 1. Get all pending requests for this user
+    // 1. Get all pending requests for this user (including school-targeted ones)
+    const schoolAdminLinks = await prisma.schoolAdmin.findMany({
+      where: { adminId: req.user.id, active: true },
+      select: { schoolId: true },
+    });
+    const schoolIds = schoolAdminLinks.map((s) => s.schoolId);
+
     const pendingRequests = await prisma.linkRequest.findMany({
       where: {
-        targetId: req.user.id,
-        targetType: currentUserType,
         status: "PENDING",
+        OR: [
+          { targetType: LinkEntityType.ADMIN, targetId: req.user.id },
+          { targetSchoolId: { in: schoolIds } },
+          { schoolId: { in: schoolIds } },
+          {
+            targetType: LinkEntityType.SCHOOL,
+            targetSchool: {
+              admins: { some: { adminId: req.user.id, active: true } },
+            },
+          },
+        ],
       },
       select: { id: true, linkType: true }
     });

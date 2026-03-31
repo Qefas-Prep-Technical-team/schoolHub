@@ -20,9 +20,10 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
-import { useLinkRequests, useActiveLinks, useLinkProfile, useRespondToLinkRequest, useRevokeActiveLink, useCreateLinkRequest } from '@/lib/api/hooks/useLinks';
+import { useLinkRequests, useActiveLinks, useLinkProfile, useRespondToLinkRequest, useRevokeActiveLink, useCreateLinkRequest, useCancelLinkRequest } from '@/lib/api/hooks/useLinks';
 import { useRequestToJoinClass } from '@/lib/api/hooks/useClasses';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { ConfirmationModal } from '@/components/reusable/ConfirmationModal';
 import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/utils/clipboard';
@@ -35,12 +36,28 @@ export default function LinkingHub() {
 
   const respondMutation = useRespondToLinkRequest();
   const revokeMutation = useRevokeActiveLink();
-  const createMutation = useCreateLinkRequest(); // Already in page but added for consistency
+  const cancelMutation = useCancelLinkRequest();
+  const createMutation = useCreateLinkRequest();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
   const [subTab, setSubTab] = useState<'active' | 'pending'>('active');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+
+  // Confirmation Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    variant: 'default' | 'destructive';
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+    variant: 'default'
+  });
   const { user } = useAuthStore();
 
   const isClassLink = (type: string) => type === 'STUDENT_CLASS' || type === 'TEACHER_CLASS';
@@ -269,7 +286,19 @@ export default function LinkingHub() {
                   <ConnectionCard 
                     key={link.id} 
                     link={link} 
-                    onRevoke={() => revokeMutation.mutate(link.id)}
+                    onRevoke={() => {
+                      setConfirmModal({
+                        isOpen: true,
+                        title: 'Disconnect Entity?',
+                        description: 'Are you sure you want to revoke this connection? This action will remove access to shared resources.',
+                        variant: 'destructive',
+                        onConfirm: () => {
+                          revokeMutation.mutate(link.id, {
+                            onSuccess: () => setConfirmModal(prev => ({ ...prev, isOpen: false }))
+                          });
+                        }
+                      });
+                    }}
                     isRevoking={revokeMutation.isPending && revokeMutation.variables === link.id}
                   />
                 ))
@@ -283,8 +312,22 @@ export default function LinkingHub() {
                     key={req.id} 
                     req={req} 
                     onRespond={(action: any) => respondMutation.mutate({ id: req.id, action })} 
+                    onCancel={(id: string) => {
+                      setConfirmModal({
+                        isOpen: true,
+                        title: 'Cancel Connection Request?',
+                        description: 'Are you sure you want to withdraw this request? You will need to resend it if you change your mind.',
+                        variant: 'destructive',
+                        onConfirm: () => {
+                          cancelMutation.mutate(id, {
+                            onSuccess: () => setConfirmModal(prev => ({ ...prev, isOpen: false }))
+                          });
+                        }
+                      });
+                    }}
                     userId={user?.id}
                     isResponding={respondMutation.isPending && (respondMutation.variables as any)?.id === req.id}
+                    isCancelling={cancelMutation.isPending && cancelMutation.variables === req.id}
                   />
                 ))
               ) : (
@@ -294,6 +337,16 @@ export default function LinkingHub() {
           </div>
         </div>
       </div>
+
+      <ConfirmationModal 
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        description={confirmModal.description}
+        variant={confirmModal.variant}
+        isLoading={revokeMutation.isPending || cancelMutation.isPending}
+      />
 
       <ConnectModal isOpen={isConnectModalOpen} onClose={() => setIsConnectModalOpen(false)} />
     </div>
@@ -394,7 +447,7 @@ function ConnectionCard({ link, onRevoke, isRevoking }: any) {
   );
 }
 
-function PendingCard({ req, onRespond, userId, isResponding }: any) {
+function PendingCard({ req, onRespond, onCancel, userId, isResponding, isCancelling }: any) {
   const isOutgoing = req.requesterId === userId;
   const isClass = req.variant === 'classroom';
 
@@ -480,11 +533,13 @@ function PendingCard({ req, onRespond, userId, isResponding }: any) {
             </>
           ) : (
             <Button
-              onClick={() => onRespond('CANCEL')}
+              onClick={() => onCancel(req.id)}
               variant="outline"
-              className="w-full h-12 rounded-xl border-slate-100 font-bold uppercase text-[10px] tracking-widest text-slate-500 hover:bg-slate-50 hover:text-red-600 hover:border-red-100 dark:border-slate-800 dark:hover:bg-slate-900 transition-all transition-all shadow-sm"
+              disabled={isCancelling}
+              className="w-full h-12 rounded-xl border-slate-100 font-bold uppercase text-[10px] tracking-widest text-slate-500 hover:bg-slate-50 hover:text-red-600 hover:border-red-100 dark:border-slate-800 dark:hover:bg-slate-900 transition-all shadow-sm"
             >
-              Cancel My Request
+              {isCancelling ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {isCancelling ? "Cancelling..." : "Cancel My Request"}
             </Button>
           )}
         </div>
@@ -502,14 +557,17 @@ function ConnectModal({ isOpen, onClose }: any) {
 
   const handleConnect = (e: React.FormEvent) => {
     e.preventDefault();
+    const formattedCode = linkType === 'STUDENT_CLASS' ? code.toUpperCase() : 
+                         (linkType === 'SCHOOL_STUDENT' ? code.toLowerCase() : code);
+    
     if (linkType === 'STUDENT_CLASS') {
       joinClassMutation.mutate(
-        { classCode: code, note },
+        { classCode: formattedCode, note },
         { onSuccess: onClose }
       );
     } else {
       createMutation.mutate(
-        { targetCode: code, linkType: linkType as any, note },
+        { targetCode: formattedCode, linkType: linkType as any, note },
         { onSuccess: onClose }
       );
     }
@@ -533,7 +591,10 @@ function ConnectModal({ isOpen, onClose }: any) {
         <form onSubmit={handleConnect} className="space-y-6 py-4">
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Connection Type</label>
-            <Select value={linkType} onValueChange={setLinkType}>
+            <Select value={linkType} onValueChange={(val) => {
+              setLinkType(val);
+              setCode(''); // Clear code when switching types to reset formatting
+            }}>
               <SelectTrigger className="h-12 rounded-xl border-slate-100 bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
                 <SelectValue />
               </SelectTrigger>
@@ -551,9 +612,17 @@ function ConnectModal({ isOpen, onClose }: any) {
               <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
               <Input
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="EX: SCH-992-X"
-                className="pl-11 h-12 rounded-xl border-slate-100 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 font-bold uppercase tracking-widest placeholder:tracking-normal placeholder:font-medium text-slate-900 dark:text-white"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (linkType === 'STUDENT_CLASS') setCode(val.toUpperCase());
+                  else if (linkType === 'SCHOOL_STUDENT') setCode(val.toLowerCase());
+                  else setCode(val);
+                }}
+                placeholder={linkType === 'STUDENT_CLASS' ? "EX: CLASS-99" : "EX: sch-qef-741"}
+                className={cn(
+                  "pl-11 h-12 rounded-xl border-slate-100 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 font-bold tracking-widest placeholder:tracking-normal placeholder:font-medium text-slate-900 dark:text-white",
+                  linkType === 'STUDENT_CLASS' ? "uppercase" : (linkType === 'SCHOOL_STUDENT' ? "lowercase" : "")
+                )}
               />
             </div>
           </div>

@@ -458,6 +458,7 @@ export const requestToJoinClassService = async ({
       requesterStudentId: student.id,
       classId: foundClass.id,
       schoolId: foundClass.schoolId,
+      targetSchoolId: foundClass.schoolId,
       note: note || null,
     },
   });
