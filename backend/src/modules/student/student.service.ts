@@ -20,7 +20,7 @@ export const pickDepartmentService = async ({
         include: {
           class: {
             include: {
-              teacher: true,
+              teachers: { include: { teacher: true } },
             },
           },
         },
@@ -63,7 +63,7 @@ export const pickDepartmentService = async ({
         include: {
           class: {
             include: {
-              teacher: true,
+              teachers: { include: { teacher: true } },
             },
           },
         },
@@ -128,7 +128,9 @@ export const pickDepartmentService = async ({
   // 4. Notify Teachers
   const teacherIds = new Set<string>();
   updatedStudent.classes.forEach((c) => {
-    if (c.class.teacherId) teacherIds.add(c.class.teacherId);
+    c.class.teachers.forEach((ct: any) => {
+      if (ct.teacherId) teacherIds.add(ct.teacherId);
+    });
   });
 
   for (const teacherId of teacherIds) {

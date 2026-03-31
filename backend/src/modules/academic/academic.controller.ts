@@ -265,7 +265,6 @@ export const createExam = async (req: Request, res: Response) => {
       scope,
       creationMode,
       schoolId,
-      departmentId,
       classId,
       subjectId,
       selectedSubjectIds,
@@ -273,6 +272,7 @@ export const createExam = async (req: Request, res: Response) => {
       status,
       aiPrompt,
       instructions,
+      departmentIds,
     } = req.body;
 
     if (
@@ -329,7 +329,7 @@ export const createExam = async (req: Request, res: Response) => {
       scope,
       creationMode,
       schoolId,
-      departmentId,
+      departmentIds: departmentIds || [],
       classId,
       subjectId,
       selectedSubjectIds,
@@ -356,11 +356,13 @@ export const createExam = async (req: Request, res: Response) => {
 export const getDepartments = async (req: Request, res: Response) => {
   try {
     const schoolId = (req.query.schoolId as string) || req.user?.schoolId;
+    const classId = req.query.classId as string | undefined;
 
     const items = await getDepartmentsService({
       currentUserId: req.user!.id,
       currentUserType: req.user!.userType,
       schoolId: schoolId,
+      classId: classId,
     });
     return res.status(200).json({
       success: true,
@@ -430,13 +432,20 @@ export const getExams = async (req: Request, res: Response) => {
   try {
     const schoolIdFromQuery = req.query.schoolId as string | undefined;
     const schoolId = schoolIdFromQuery || req.user?.schoolId;
-    const { sessionId, classId, departmentId, status, term, category } = req.query;
+    const { sessionId, classId, departmentId, departmentIds, status, term, category } = req.query;
 
     const filters: any = {};
     if (schoolId) filters.schoolId = schoolId;
     if (sessionId) filters.sessionId = sessionId as string;
     if (classId) filters.classId = classId as string;
-    if (departmentId) filters.departmentId = departmentId as string;
+    
+    // Support both single and multiple department selection in query
+    if (departmentIds) {
+      filters.departmentIds = Array.isArray(departmentIds) ? departmentIds : [departmentIds as string];
+    } else if (departmentId) {
+      filters.departmentIds = [departmentId as string];
+    }
+
     if (status) filters.status = status as any;
     if (term) filters.term = term as any;
     if (category) filters.category = category as any;

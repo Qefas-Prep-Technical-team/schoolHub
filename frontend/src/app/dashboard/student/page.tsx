@@ -26,14 +26,22 @@ import { motion } from 'framer-motion';
 import { useUserStore } from '@/store/useUserStore';
 import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
 import { useGrades } from '@/lib/api/hooks/useGrades';
+import { useLinkProfile } from '@/lib/api/hooks/useLinks';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { UserPlus } from 'lucide-react';
+import { StudentConnectionModal } from './components/StudentConnectionModal';
 
 export default function StudentHomeDashboard() {
   const { username } = useUserStore();
   const { data: attempts, isLoading: isLoadingExams } = useStudentExamAttempts();
   const { data: standaloneGrades, isLoading: isLoadingGrades } = useGrades();
+  const { data: profileResponse } = useLinkProfile();
+  const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
+
+  const studentCode = profileResponse?.data?.linkingCode || "";
 
   // AI Analysis Logic
   const analysis = useMemo(() => {
@@ -137,13 +145,25 @@ export default function StudentHomeDashboard() {
             <p className="text-slate-500 font-medium text-lg">Your academic journey is looking bright today.</p>
           </motion.div>
           
-          <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                <Calendar size={20} />
-            </div>
-            <div className="pr-4">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Term</p>
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Spring Semester 2026</p>
+          <div className="flex flex-wrap items-center gap-4">
+            <Button 
+              onClick={() => setIsConnectionModalOpen(true)}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl h-14 px-6 shadow-sm flex items-center gap-3 font-bold group transition-all"
+            >
+              <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                <UserPlus size={18} />
+              </div>
+              View Connection QR
+            </Button>
+
+            <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm h-14">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <Calendar size={20} />
+              </div>
+              <div className="pr-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Term</p>
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">Spring Semester 2026</p>
+              </div>
             </div>
           </div>
         </section>
@@ -352,6 +372,12 @@ export default function StudentHomeDashboard() {
         </section>
 
       </div>
+
+      <StudentConnectionModal 
+        isOpen={isConnectionModalOpen}
+        onClose={() => setIsConnectionModalOpen(false)}
+        studentCode={studentCode}
+      />
     </div>
   );
 }

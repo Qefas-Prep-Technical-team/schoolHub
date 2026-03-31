@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { apiClient } from "@/lib/api/client";
+import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 
 interface AIQuestion {
   type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER";
@@ -148,12 +149,15 @@ export default function AITools({
                 </span>
                 <span className="text-xs font-bold text-gray-400">{q.marks} pts</span>
               </div>
-              <p className="text-sm font-medium mb-3">{q.question}</p>
+              <div className="text-sm font-medium mb-3">
+                <LaTeXRenderer content={q.question} />
+              </div>
               {q.type === 'MULTIPLE_CHOICE' && (
                 <div className="grid grid-cols-2 gap-2 text-[10px]">
                   {['A', 'B', 'C', 'D'].map(opt => (
-                    <div key={opt} className={`p-1.5 rounded border ${(q as any)[`option${opt}`] ? 'bg-white dark:bg-gray-800' : 'opacity-50'} ${q.correctAnswer === opt ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-gray-100 dark:border-gray-700'}`}>
-                      <span className="font-bold mr-1">{opt}:</span> {(q as any)[`option${opt}`] || 'N/A'}
+                    <div key={opt} className={`p-1.5 rounded border ${(q as any)[`option${opt}`] ? 'bg-white dark:bg-gray-800 flex items-center gap-2' : 'opacity-50'} ${q.correctAnswer === opt ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-gray-100 dark:border-gray-700'}`}>
+                      <span className="font-bold mr-1 shrink-0">{opt}:</span> 
+                      <LaTeXRenderer content={(q as any)[`option${opt}`] || 'N/A'} className="text-[10px]" />
                     </div>
                   ))}
                 </div>

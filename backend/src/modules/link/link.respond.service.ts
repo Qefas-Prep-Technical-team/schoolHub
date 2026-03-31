@@ -113,11 +113,16 @@ const canRespondToRequest = async ({
 
     if (!foundClass) return false;
 
-    if (
-      currentUserType === LinkEntityType.TEACHER &&
-      foundClass.teacherId === currentUserId
-    ) {
-      return true;
+    if (currentUserType === LinkEntityType.TEACHER) {
+      const classTeacher = await prisma.classTeacher.findUnique({
+        where: {
+          classId_teacherId: {
+            classId,
+            teacherId: currentUserId,
+          },
+        },
+      });
+      return !!classTeacher;
     }
 
     if (currentUserType === LinkEntityType.ADMIN && foundClass.schoolId) {
@@ -239,9 +244,19 @@ const applyDomainSideEffects = async (
 
       if (!teacherId) break;
 
-      await tx.class.update({
-        where: { id: request.classId },
-        data: { teacherId },
+      await tx.classTeacher.upsert({
+        where: {
+          classId_teacherId: {
+            classId: request.classId,
+            teacherId,
+          },
+        },
+        update: { isLead: true },
+        create: {
+          classId: request.classId,
+          teacherId,
+          isLead: true,
+        },
       });
       break;
     }

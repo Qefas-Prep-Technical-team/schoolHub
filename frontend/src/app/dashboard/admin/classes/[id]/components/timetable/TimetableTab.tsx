@@ -7,7 +7,13 @@ import FilterButton from './components/FilterButton';
 import TimetableGrid from './components/TimetableGrid';
 import { Period, Subject } from './components/types';
 
+import { useClassTimetable } from '@/lib/api/hooks/useClasses';
+import { useParams } from 'next/navigation';
+
 export default function TimetablePage() {
+  const params = useParams();
+  const classId = params.id as string;
+  
   const [filters, setFilters] = useState({
     term: 'Term 1',
     week: 'This Week'
@@ -15,97 +21,37 @@ export default function TimetablePage() {
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
-  const [periods, setPeriods] = useState<Period[]>([
-    {
-      id: '1',
-      timeSlot: '09:00 - 10:00',
-      subjects: {
-        Monday: {
-          id: 'math-1',
-          name: 'Mathematics',
-          teacher: 'Mr. Smith',
-          room: 'Room 201'
-        },
-        Tuesday: {
-          id: 'english-1',
-          name: 'English',
-          teacher: 'Ms. Davis',
-          room: 'Room 105'
-        },
-        Wednesday: null,
-        Thursday: {
-          id: 'physics-1',
-          name: 'Physics',
-          teacher: 'Dr. Chen',
-          room: 'Lab A'
-        },
-        Friday: null
+  // Real Data Hook
+  const { data: rawPeriods = [], isLoading } = useClassTimetable(classId);
+
+  // Transform flat backend periods to the structure expected by TimetableGrid
+  const periods: Period[] = React.useMemo(() => {
+    if (rawPeriods.length === 0) return [];
+
+    // Group by time slot
+    const slots = new Map<string, Period>();
+
+    rawPeriods.forEach((rp: any) => {
+      const timeSlot = `${rp.startTime} - ${rp.endTime}`;
+      if (!slots.has(timeSlot)) {
+        slots.set(timeSlot, {
+          id: timeSlot,
+          timeSlot,
+          subjects: {}
+        });
       }
-    },
-    {
-      id: '2',
-      timeSlot: '10:00 - 11:00',
-      subjects: {
-        Monday: null,
-        Tuesday: null,
-        Wednesday: {
-          id: 'history-1',
-          name: 'History',
-          teacher: 'Mr. Moore',
-          room: 'Room 302'
-        },
-        Thursday: null,
-        Friday: {
-          id: 'art-1',
-          name: 'Art',
-          teacher: 'Mrs. Lee',
-          room: 'Art Studio'
-        }
-      }
-    },
-    {
-      id: 'break',
-      timeSlot: '11:00 - 12:00',
-      subjects: {}
-    },
-    {
-      id: '3',
-      timeSlot: '12:00 - 13:00',
-      subjects: {
-        Monday: {
-          id: 'geography-1',
-          name: 'Geography',
-          teacher: 'Ms. Kim',
-          room: 'Room 301'
-        },
-        Tuesday: null,
-        Wednesday: null,
-        Thursday: null,
-        Friday: null
-      }
-    },
-    {
-      id: '4',
-      timeSlot: '13:00 - 14:00',
-      subjects: {
-        Monday: null,
-        Tuesday: {
-          id: 'pe-1',
-          name: 'P.E.',
-          teacher: 'Mr. Jones',
-          room: 'Gym'
-        },
-        Wednesday: null,
-        Thursday: {
-          id: 'music-1',
-          name: 'Music',
-          teacher: 'Mr. Evans',
-          room: 'Music Room'
-        },
-        Friday: null
-      }
-    }
-  ]);
+
+      const slot = slots.get(timeSlot)!;
+      slot.subjects[rp.day] = {
+        id: rp.id,
+        name: rp.subject?.name || 'Unknown',
+        teacher: rp.teacher?.name || 'Staff',
+        room: rp.room || 'TBD'
+      };
+    });
+
+    return Array.from(slots.values()).sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
+  }, [rawPeriods]);
 
   const termOptions = ['Term 1', 'Term 2', 'Term 3'];
   const weekOptions = ['This Week', 'Next Week', 'Week 1', 'Week 2', 'Week 3', 'Week 4'];

@@ -300,6 +300,59 @@ export const attachSubjectToDepartmentService = async ({
   });
 };
 
+export const attachSubjectToDepartmentsService = async ({
+  subjectId,
+  departmentIds,
+}: {
+  subjectId: string;
+  departmentIds: string[];
+}) => {
+  const subject = await prisma.subject.findUnique({
+    where: { id: subjectId },
+  });
+
+  if (!subject) {
+    throw new Error("Subject not found");
+  }
+
+  const departments = await prisma.department.findMany({
+    where: {
+      id: { in: departmentIds },
+    },
+  });
+
+  if (departments.length !== departmentIds.length) {
+    throw new Error("Some departments were not found");
+  }
+
+  // Validate scope compatibility
+  if (subject.scope === "SCHOOL") {
+      const invalidDepts = departments.filter(d => d.scope !== "SCHOOL" || d.schoolId !== subject.schoolId);
+      if (invalidDepts.length) {
+          throw new Error("School subjects can only be attached to departments in the same school.");
+      }
+  }
+
+  await prisma.departmentSubject.createMany({
+    data: departmentIds.map((departmentId) => ({
+      subjectId,
+      departmentId,
+    })),
+    skipDuplicates: true,
+  });
+
+  return prisma.subject.findUnique({
+    where: { id: subjectId },
+    include: {
+      departments: {
+        include: {
+          department: true,
+        },
+      },
+    },
+  });
+};
+
 export const buildQuizIncludedSubjects = async ({
   scope,
   departmentId,
@@ -464,7 +517,6 @@ export const createExamService = async ({
   scope,
   creationMode,
   schoolId,
-  departmentId,
   classId,
   subjectId,
   selectedSubjectIds = [],
@@ -472,13 +524,14 @@ export const createExamService = async ({
   status,
   aiPrompt,
   instructions,
+  departmentIds = [],
 }: {
   title: string;
   description?: string;
   scope: AssessmentScope;
   creationMode: AssessmentCreationMode;
   schoolId?: string;
-  departmentId?: string;
+  departmentIds?: string[];
   classId?: string;
   subjectId?: string;
   selectedSubjectIds?: string[];
@@ -489,7 +542,7 @@ export const createExamService = async ({
 }) => {
   const includedSubjectIds = await buildQuizIncludedSubjects({
     scope,
-    departmentId,
+    departmentId: departmentIds[0], // Shortcut for included subjects logic
     classId,
     selectedSubjectIds,
   });
@@ -501,13 +554,15 @@ export const createExamService = async ({
       scope,
       creationMode,
       schoolId: schoolId || null,
-      departmentId: departmentId || null,
       classId: classId || null,
       subjectId: subjectId || null,
       durationMinutes: durationMinutes || null,
       status: status || AssessmentStatus.DRAFT,
       aiPrompt: aiPrompt || null,
       instructions: instructions || null,
+      departments: departmentIds.length > 0 ? {
+        create: departmentIds.map(id => ({ departmentId: id }))
+      } : undefined,
       includedSubjects: {
         create: includedSubjectIds.map((id) => ({
           subjectId: id,
@@ -516,7 +571,7 @@ export const createExamService = async ({
     },
     include: {
       school: true,
-      department: true,
+      departments: { include: { department: true } },
       class: true,
       subject: true,
       includedSubjects: { include: { subject: true } },
@@ -528,40 +583,36 @@ export const getDepartmentsService = async ({
   currentUserId,
   currentUserType,
   schoolId,
+  classId,
 }: {
   currentUserId: string;
   currentUserType: UserRole;
   schoolId?: string;
+  classId?: string;
 }) => {
+  const where: any = {};
+  
   if (currentUserType === UserRole.ADMIN) {
-    return prisma.department.findMany({
-      where: schoolId ? { schoolId, scope: "SCHOOL" } : { scope: "SCHOOL" },
-      include: {
-        subjects: { include: { subject: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    if (schoolId) where.schoolId = schoolId;
+    where.scope = "SCHOOL";
+  } else if (currentUserType === UserRole.TEACHER) {
+    where.OR = [
+      { scope: "PERSONAL", teacherId: currentUserId },
+      ...(schoolId ? [{ scope: "SCHOOL", schoolId }] : []),
+    ];
+  } else {
+    if (schoolId) where.schoolId = schoolId;
+    where.scope = "SCHOOL";
   }
 
-  if (currentUserType === UserRole.TEACHER) {
-    return prisma.department.findMany({
-      where: {
-        OR: [
-          { scope: "PERSONAL", teacherId: currentUserId },
-          ...(schoolId
-            ? [{ scope: AcademicOwnershipScope.SCHOOL, schoolId }]
-            : []),
-        ],
-      },
-      include: {
-        subjects: { include: { subject: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+  if (classId) {
+    where.classes = {
+      some: { classId }
+    };
   }
 
   return prisma.department.findMany({
-    where: schoolId ? { scope: "SCHOOL", schoolId } : { scope: "SCHOOL" },
+    where,
     include: {
       subjects: { include: { subject: true } },
     },
@@ -642,22 +693,26 @@ export const getQuizzesService = async ({
 
 export const getExamsService = async ({
   schoolId,
-  departmentId,
+  departmentIds,
   classId,
 }: {
   schoolId?: string;
-  departmentId?: string;
+  departmentIds?: string[];
   classId?: string;
 }) => {
   return prisma.exam.findMany({
     where: {
       ...(schoolId ? { schoolId } : { id: 'none' }),
-      ...(departmentId ? { departmentId } : {}),
+      ...(departmentIds && departmentIds.length > 0 ? {
+        departments: {
+          some: { departmentId: { in: departmentIds } }
+        }
+      } : {}),
       ...(classId ? { classId } : {}),
     },
     include: {
       school: true,
-      department: true,
+      departments: { include: { department: true } },
       class: true,
       subject: true,
       includedSubjects: { include: { subject: true } },

@@ -18,8 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Class, classService } from "../services/classService"
+import { classService, Class } from "../services/classService"
 import { subjectService, Subject } from "../../subjects/services/subjectService"
+import { departmentService, Department } from "../../departments/services/departmentService"
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
 import { apiClient } from "@/lib/api/client"
 import { toast } from "react-toastify"
@@ -46,11 +47,13 @@ const ClassModal: React.FC<ClassModalProps> = ({
   const [loading, setLoading] = useState(false)
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
+  const [departments, setDepartments] = useState<Department[]>([])
   const [formData, setFormData] = useState({
     name: "",
     section: "",
     teacherId: "",
     selectedSubjectIds: [] as string[],
+    selectedDepartmentIds: [] as string[],
   })
 
   const { user } = useAuthStore()
@@ -62,8 +65,9 @@ const ClassModal: React.FC<ClassModalProps> = ({
         setFormData({
           name: classItem.name,
           section: classItem.section || "",
-          teacherId: classItem.teacherId || "",
+          teacherId: classItem.teachers?.find(t => t.isLead)?.teacherId || classItem.teachers?.[0]?.teacherId || "",
           selectedSubjectIds: classItem.subjects?.map(s => s.subject.id) || [],
+          selectedDepartmentIds: classItem.departments?.map(d => d.department.id) || [],
         })
       } else {
         setFormData({
@@ -71,6 +75,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
           section: "",
           teacherId: "",
           selectedSubjectIds: [],
+          selectedDepartmentIds: [],
         })
       }
     }
@@ -82,12 +87,14 @@ const ClassModal: React.FC<ClassModalProps> = ({
       const schoolId = statusRes.data.data.schoolAdmins?.[0]?.schoolId;
       
       if (schoolId) {
-        const [teachersData, subjectsData] = await Promise.all([
+        const [teachersData, subjectsData, departmentsData] = await Promise.all([
           classService.getSchoolTeachers(schoolId),
-          subjectService.getSubjects(schoolId)
+          subjectService.getSubjects(schoolId),
+          departmentService.getDepartments(schoolId)
         ])
         setTeachers(teachersData)
         setSubjects(subjectsData)
+        setDepartments(departmentsData)
       }
     } catch (error) {
       console.error("Failed to fetch initial data", error)
@@ -112,7 +119,8 @@ const ClassModal: React.FC<ClassModalProps> = ({
         await classService.updateClass(classItem.id, {
           name: formData.name,
           section: formData.section,
-          teacherId: formData.teacherId || undefined,
+          teacherIds: formData.teacherId && formData.teacherId !== "none" ? [formData.teacherId] : [],
+          departmentIds: formData.selectedDepartmentIds,
         });
 
         // Update subjects (this is a separate call in our service, but let's assume updateClass handles it or we call it)
@@ -131,6 +139,8 @@ const ClassModal: React.FC<ClassModalProps> = ({
           scope: "SCHOOL",
           schoolId,
           subjectIds: formData.selectedSubjectIds,
+          departmentIds: formData.selectedDepartmentIds,
+          teacherIds: formData.teacherId && formData.teacherId !== "none" ? [formData.teacherId] : [],
         });
         toast.success("Class created successfully!");
       }
@@ -151,6 +161,15 @@ const ClassModal: React.FC<ClassModalProps> = ({
       selectedSubjectIds: prev.selectedSubjectIds.includes(subjectId)
         ? prev.selectedSubjectIds.filter(id => id !== subjectId)
         : [...prev.selectedSubjectIds, subjectId]
+    }))
+  }
+
+  const toggleDepartment = (departmentId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedDepartmentIds: prev.selectedDepartmentIds.includes(departmentId)
+        ? prev.selectedDepartmentIds.filter(id => id !== departmentId)
+        : [...prev.selectedDepartmentIds, departmentId]
     }))
   }
 
@@ -244,6 +263,41 @@ const ClassModal: React.FC<ClassModalProps> = ({
             </div>
             <p className="text-[10px] text-slate-400">
               Selected: {formData.selectedSubjectIds.length} subjects
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+              Assign Departments
+            </Label>
+            <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-900 dark:text-white">
+              {departments.map((dept) => (
+                <div 
+                  key={dept.id} 
+                  onClick={() => toggleDepartment(dept.id)}
+                  className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ${
+                    formData.selectedDepartmentIds.includes(dept.id) 
+                      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-medium' 
+                      : 'hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                    formData.selectedDepartmentIds.includes(dept.id) 
+                      ? 'bg-emerald-600 border-emerald-600 shadow-sm' 
+                      : 'border-slate-300 dark:border-slate-600'
+                  }`}>
+                    {formData.selectedDepartmentIds.includes(dept.id) && (
+                      <span className="material-symbols-outlined text-[12px] text-white font-bold leading-none">
+                        check
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm truncate">{dept.name}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-slate-400 font-medium">
+              Selected: {formData.selectedDepartmentIds.length} departments
             </p>
           </div>
 

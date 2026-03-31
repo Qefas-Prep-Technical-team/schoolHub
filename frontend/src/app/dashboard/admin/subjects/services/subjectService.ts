@@ -5,11 +5,11 @@ export interface Subject {
   name: string
   code: string
   description?: string
-  schoolId: string
-  scope: "SCHOOL" | "GLOBAL"
+  schoolId?: string
+  scope: "SCHOOL" | "PERSONAL"
   classesCount?: number
   teachersCount?: number
-  departmentId?: string
+  departments?: Array<{ departmentId: string; department: { name: string } }>
 }
 
 export interface CreateSubjectDTO {

@@ -7,7 +7,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { UserRole } from '@/lib/types/user.types';
 import { ParentFormData, parentSchema } from '../../services/regSchema';
 import { useParentRegistration } from '../../services/useRegistrationMutations';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
 
 
@@ -17,7 +17,7 @@ export default function ParentRegistrationForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
-  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const { mutate: registerParent, isPending } = useParentRegistration();
 
@@ -26,7 +26,8 @@ export default function ParentRegistrationForm() {
     handleSubmit,
     formState: { errors },
     reset,
-    watch
+    watch,
+    setValue
   } = useForm<ParentFormData>({
     resolver: yupResolver(parentSchema) as any,
     mode: 'onBlur',
@@ -35,9 +36,16 @@ export default function ParentRegistrationForm() {
       email: '',
       password: '',
       confirmPassword: '',
-      studentCode: ''
+      studentCode: searchParams.get('studentCode') || ''
     }
   });
+
+  const router = useRouter();
+
+  // Sync with search params if they change
+  useEffect(() => {
+    if (searchParams.get('studentCode')) setValue('studentCode', searchParams.get('studentCode') || '');
+  }, [searchParams, setValue]);
 
   // Watch password changes for strength indicator
   const passwordValue = watch('password');
@@ -91,8 +99,9 @@ export default function ParentRegistrationForm() {
           const email = response.data.data.parent.email
 
           setTimeout(() => {
-            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.PARENT}`);
-
+            router.push(
+              `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.PARENT}&requestCode=true`,
+            );
           }, 2000);
         },
         onError: (error: any) => {

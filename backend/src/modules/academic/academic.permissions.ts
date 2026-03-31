@@ -193,7 +193,15 @@ export const canManageClass = async ({
   }
 
   if (userType === UserRole.TEACHER) {
-    return foundClass.teacherId === userId;
+    const classTeacher = await prisma.classTeacher.findUnique({
+      where: {
+        classId_teacherId: {
+          classId,
+          teacherId: userId
+        }
+      }
+    });
+    return !!classTeacher;
   }
 
   return false;

@@ -18,6 +18,16 @@ import {
   editClassSubjects,
   removeSubjectFromClass,
 } from "./class.controller";
+import { 
+  getClassAttendance, 
+  submitAttendance, 
+  getClassAttendanceSummary 
+} from "./attendance.controller";
+import { 
+  getClassTimetable, 
+  upsertTimetablePeriod, 
+  deleteTimetablePeriod 
+} from "./timetable.controller";
 
 const router = Router();
 
@@ -43,6 +53,16 @@ router.delete(
 
 router.patch("/:id/approve", authenticateToken, approveClass);
 router.patch("/:id/reject", authenticateToken, rejectClass);
+
+// Attendance
+router.get("/:id/attendance", authenticateToken, getClassAttendance);
+router.post("/:id/attendance", authenticateToken, submitAttendance);
+router.get("/:id/attendance/summary", authenticateToken, getClassAttendanceSummary);
+
+// Timetable
+router.get("/:id/timetable", authenticateToken, getClassTimetable);
+router.post("/:id/timetable", authenticateToken, upsertTimetablePeriod);
+router.delete("/:id/timetable/:periodId", authenticateToken, deleteTimetablePeriod);
 
 router.get("/:id", authenticateToken, getSingleClass);
 

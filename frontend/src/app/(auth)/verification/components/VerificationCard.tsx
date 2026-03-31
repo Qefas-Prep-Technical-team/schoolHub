@@ -26,11 +26,19 @@ export default function VerificationCard() {
   const hasRequested = React.useRef(false);
 
   useEffect(() => {
-    if (!hasRequested.current && email && userType) {
+    const shouldRequest = searchParams.get('requestCode') === 'true';
+
+    if (shouldRequest && !hasRequested.current && email && userType) {
       hasRequested.current = true;
       requestCode({ email, userType });
+
+      // Clean up URL to prevent resending on manual refresh/reload
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.delete('requestCode');
+      const newUrl = `${window.location.pathname}?${newParams.toString()}`;
+      router.replace(newUrl);
     }
-  }, [email, userType]);
+  }, [email, userType, searchParams, router, requestCode]);
 
   const handleCodeComplete = (code: string) => {
     setVerificationCode(code);

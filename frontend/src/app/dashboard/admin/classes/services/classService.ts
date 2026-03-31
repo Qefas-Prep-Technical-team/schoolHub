@@ -8,17 +8,31 @@ export interface Class {
   scope: 'PERSONAL' | 'SCHOOL';
   status: 'PENDING' | 'ACTIVE' | 'REJECTED' | 'ARCHIVED';
   schoolId?: string;
-  teacherId?: string;
   teacher?: {
     id: string;
     name: string;
     avatarUrl?: string;
   };
+  teachers?: {
+    teacherId: string;
+    isLead: boolean;
+    teacher: {
+      id: string;
+      name: string;
+      avatarUrl?: string;
+    };
+  }[];
   subjects?: {
     subject: {
       id: string;
       name: string;
       code: string;
+    }
+  }[];
+  departments?: {
+    department: {
+      id: string;
+      name: string;
     }
   }[];
   enrollments?: any[];
@@ -47,6 +61,8 @@ export const classService = {
     scope: string;
     schoolId?: string;
     subjectIds?: string[];
+    departmentIds?: string[];
+    teacherIds?: string[];
   }) => {
     const response = await apiClient.post("/classes", data);
     return response.data.data;
@@ -55,7 +71,8 @@ export const classService = {
   updateClass: async (id: string, data: {
     name?: string;
     section?: string;
-    teacherId?: string;
+    teacherIds?: string[];
+    departmentIds?: string[];
   }) => {
     const response = await apiClient.patch(`/classes/${id}`, data);
     return response.data.data;
@@ -84,6 +101,40 @@ export const classService = {
     const response = await apiClient.get("/admin/teachers", {
       params: { schoolId },
     });
+    return response.data.data;
+  },
+
+  // Attendance
+  getAttendance: async (classId: string, date?: string) => {
+    const response = await apiClient.get(`/classes/${classId}/attendance`, {
+      params: { date },
+    });
+    return response.data.data;
+  },
+
+  submitAttendance: async (classId: string, records: any[]) => {
+    const response = await apiClient.post(`/classes/${classId}/attendance`, { records });
+    return response.data.data;
+  },
+
+  getAttendanceSummary: async (classId: string) => {
+    const response = await apiClient.get(`/classes/${classId}/attendance/summary`);
+    return response.data.data;
+  },
+
+  // Timetable
+  getTimetable: async (classId: string) => {
+    const response = await apiClient.get(`/classes/${classId}/timetable`);
+    return response.data.data;
+  },
+
+  upsertTimetablePeriod: async (classId: string, data: any) => {
+    const response = await apiClient.post(`/classes/${classId}/timetable`, data);
+    return response.data.data;
+  },
+
+  deleteTimetablePeriod: async (classId: string, periodId: string) => {
+    const response = await apiClient.delete(`/classes/${classId}/timetable/${periodId}`);
     return response.data.data;
   }
 };

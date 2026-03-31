@@ -7,6 +7,8 @@ import InputField from "./InputField";
 import LoginButton from "./LoginButton";
 import { useLoginMutation } from "../../services/use-auth-mutations";
 import { LoginFormData, loginSchema } from "../../services/auth-schema";
+import Link from "next/link";
+import { ROUTES } from "@/lib/constants/routes";
 
 const ENABLE_GOOGLE_AUTH = true; // Toggle this to false to disable Google Auth in the UI
 
@@ -159,9 +161,14 @@ export default function LoginForm() {
                     </>
                 )}
 
-                <p className="text-gray-500 dark:text-gray-400 text-sm text-center underline cursor-pointer hover:text-primary transition-colors duration-200 mt-2">
-                    Forgot Password?
-                </p>
+                <div className="flex justify-end mt-1">
+                    <Link 
+                        href={ROUTES.AUTH.FORGOT_PASSWORD} 
+                        className="text-xs font-medium text-blue-500 hover:underline transition-colors duration-200"
+                    >
+                        Forgot Password?
+                    </Link>
+                </div>
             </form>
         </div>
     );

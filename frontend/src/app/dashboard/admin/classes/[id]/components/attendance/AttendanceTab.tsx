@@ -105,15 +105,60 @@ const mockMonthlySummary: AttendanceSummary = {
   attendanceRate: 95
 };
 
+import { 
+  useClassAttendance, 
+  useClassAttendanceSummary, 
+  useSubmitAttendance 
+} from '@/lib/api/hooks/useClasses';
+
 export default function ClassAttendancePage() {
   const router = useRouter();
   const params = useParams();
   const classId = params.id as string;
 
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date('2023-10-26'));
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showModal, setShowModal] = useState(false);
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(mockAttendanceRecords);
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
+  
+  // Real Data Hooks
+  const { data: attendanceRecords = [], isLoading } = useClassAttendance(classId, selectedDate.toISOString().split('T')[0]);
+  const { data: attendanceSummary } = useClassAttendanceSummary(classId);
+  const submitMutation = useSubmitAttendance(classId);
+
+  useEffect(() => {
+    // Generate calendar days
+    const generateCalendarDays = () => {
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const days: CalendarDay[] = [];
+      const firstDayOfWeek = firstDay.getDay();
+      
+      // Pad previous month
+      for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+        days.push({
+          date: new Date(year, month, -i),
+          isCurrentMonth: false,
+          hasAttendance: false
+        });
+      }
+      
+      // Current month
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const date = new Date(year, month, d);
+        days.push({
+          date,
+          isCurrentMonth: true,
+          hasAttendance: false // Simplified for now
+        });
+      }
+      
+      return days;
+    };
+    
+    setCalendarDays(generateCalendarDays());
+  }, [selectedDate]);
 
   const breadcrumbItems = [
     { label: 'Dashboard', href: '/' },
@@ -122,102 +167,37 @@ export default function ClassAttendancePage() {
     { label: 'Attendance' }
   ];
 
-  useEffect(() => {
-    // Generate calendar days for October 2023
-    const generateCalendarDays = () => {
-      const year = 2023;
-      const month = 9; // October (0-indexed)
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      
-      const days: CalendarDay[] = [];
-      
-      // Add previous month's trailing days
-      const prevMonthLastDay = new Date(year, month, 0).getDate();
-      const firstDayOfWeek = firstDay.getDay();
-      
-      for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-        const date = new Date(year, month - 1, prevMonthLastDay - i);
-        days.push({
-          date,
-          isCurrentMonth: false,
-          hasAttendance: false
-        });
-      }
-      
-      // Add current month's days
-      for (let day = 1; day <= lastDay.getDate(); day++) {
-        const date = new Date(year, month, day);
-        const dateStr = date.toISOString().split('T')[0];
-        const hasAttendanceForDate = attendanceRecords.some(record => 
-          new Date(record.date).toDateString() === date.toDateString()
-        );
-        
-        // Simulate random attendance status for demo
-        const statuses = ['present', 'absent', 'late', undefined];
-        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)] as any;
-        
-        days.push({
-          date,
-          isCurrentMonth: true,
-          hasAttendance: hasAttendanceForDate,
-          status: hasAttendanceForDate ? randomStatus : undefined
-        });
-      }
-      
-      // Add next month's leading days
-      const totalCells = 42; // 6 weeks * 7 days
-      const remainingCells = totalCells - days.length;
-      
-      for (let day = 1; day <= remainingCells; day++) {
-        const date = new Date(year, month + 1, day);
-        days.push({
-          date,
-          isCurrentMonth: false,
-          hasAttendance: false
-        });
-      }
-      
-      return days;
-    };
-    
-    setCalendarDays(generateCalendarDays());
-  }, [attendanceRecords]);
-
   const handleStartAttendance = () => {
     setShowModal(true);
   };
 
   const handleDownloadReport = () => {
     console.log('Downloading attendance report for class:', classId);
-    // Implement download logic
   };
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
-    // In real app, fetch attendance records for selected date
-    console.log('Fetching attendance for:', date.toDateString());
   };
 
   const handleMonthChange = (month: string) => {
     console.log('Changing month to:', month);
-    // Implement month change logic
   };
 
   const handleEditRecord = (record: AttendanceRecord) => {
     console.log('Editing attendance record:', record);
-    // Implement edit logic
   };
 
   const handleSaveAttendance = (records: AttendanceRecord[]) => {
-    console.log('Saving attendance records:', records);
-    // In real app, make API call to save records
-    setAttendanceRecords(prev => [...prev, ...records]);
+    submitMutation.mutate(records, {
+      onSuccess: () => {
+        setShowModal(false);
+      }
+    });
   };
 
-  const filteredRecords = attendanceRecords.filter(record => 
-    new Date(record.date).toDateString() === selectedDate.toDateString()
-  );
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading Attendance...</div>;
+  }
 
   return (
     <div className="relative flex min-h-screen w-full">
@@ -258,7 +238,7 @@ export default function ClassAttendancePage() {
             {/* Left Column */}
             <div className="lg:col-span-1 flex flex-col gap-6">
               <AttendanceSummaryCard 
-                summary={mockMonthlySummary}
+                summary={attendanceSummary || mockMonthlySummary}
                 onMonthChange={handleMonthChange}
               />
               
@@ -271,7 +251,7 @@ export default function ClassAttendancePage() {
             
             {/* Right Column - Attendance Table */}
             <AttendanceTable 
-              records={filteredRecords}
+              records={attendanceRecords}
               date={selectedDate.toISOString()}
               onEdit={handleEditRecord}
             />

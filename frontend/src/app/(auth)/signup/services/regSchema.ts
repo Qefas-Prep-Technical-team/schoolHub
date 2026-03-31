@@ -84,12 +84,12 @@ export const teacherSchema = yup.object({
     .required("Please confirm your password")
     .oneOf([yup.ref("password")], "Passwords must match"),
 
-  tenantId: yup
+  schoolCode: yup
     .string()
     .optional()
     .test(
-      "tenantId-format",
-      "Tenant ID must be at least 3 characters",
+      "schoolCode-format",
+      "School code must be at least 3 characters",
       (value) => {
         // If no value provided, it's valid (optional field)
         if (!value || value.trim() === "") return true;
@@ -100,6 +100,17 @@ export const teacherSchema = yup.object({
     ),
 
   isIndependent: yup.boolean().default(false),
+  studentCode: yup
+    .string()
+    .optional()
+    .test(
+      "studentCode-format",
+      "Student code must be in format: stu-123456",
+      (value) => {
+        if (!value || value.trim() === "") return true;
+        return /^stu-\d{6}$/.test(value);
+      },
+    ),
 });
 
 export type TeacherFormData = yup.InferType<typeof teacherSchema>;
@@ -138,12 +149,12 @@ export const studentSchema = yup.object({
     .required("Please confirm your password")
     .oneOf([yup.ref("password")], "Passwords must match"),
 
-  tenantId: yup
+  schoolCode: yup
     .string()
     .optional()
     .test(
-      "tenantId-format",
-      "Tenant ID must be at least 3 characters",
+      "schoolCode-format",
+      "School code must be at least 3 characters",
       (value) => {
         if (!value || value.trim() === "") return true;
         return value.trim().length >= 3;
@@ -159,6 +170,18 @@ export const studentSchema = yup.object({
       (value) => {
         if (!value || value.trim() === "") return true;
         return /^tch-\d{6}$/.test(value);
+      },
+    ),
+
+  parentCode: yup
+    .string()
+    .optional()
+    .test(
+      "parentCode-format",
+      "Parent code must be at least 3 characters",
+      (value) => {
+        if (!value || value.trim() === "") return true;
+        return value.trim().length >= 3;
       },
     ),
 });

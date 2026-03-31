@@ -17,7 +17,7 @@ export interface Exam {
   resultReleaseAt?: string;
   allowImmediateResult?: boolean;
   classId?: string;
-  departmentId?: string;
+  departments?: { department: { id: string; name: string } }[];
   teacherId?: string;
   createdAt: string;
   updatedAt: string;
@@ -77,7 +77,7 @@ export interface CreateExamDTO {
   resultReleaseAt?: string;
   allowImmediateResult?: boolean;
   classId?: string;
-  departmentId?: string;
+  departmentIds?: string[];
 }
 
 export interface CreatePaperDTO {
@@ -94,7 +94,7 @@ export const examService = {
     schoolId?: string;
     sessionId?: string;
     classId?: string;
-    departmentId?: string;
+    departmentIds?: string[];
     term?: string;
     teacherId?: string;
     category?: string;

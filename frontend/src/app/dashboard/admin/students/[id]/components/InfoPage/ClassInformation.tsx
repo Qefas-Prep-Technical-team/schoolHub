@@ -30,7 +30,7 @@ export default function ClassInformation({ student }: ClassInformationProps) {
             Class Teacher
           </p>
           <p className="text-primary text-sm font-bold leading-normal cursor-pointer hover:underline">
-            {(enrollment?.class as any)?.teacherId ? "Teacher Assigned (View Profile)" : "No Teacher Assigned"}
+            {(enrollment?.class as any)?.teachers?.length > 0 ? "Teacher Assigned (View Profile)" : "No Teacher Assigned"}
           </p>
         </div>
       </div>

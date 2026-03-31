@@ -1,0 +1,14 @@
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(90,13): error TS2304: Cannot find name 'registerStudent'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(102,13): error TS2304: Cannot find name 'router'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(172,25): error TS2304: Cannot find name 'isPending'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(194,25): error TS2304: Cannot find name 'isPending'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(215,27): error TS2304: Cannot find name 'isPending'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(221,27): error TS2304: Cannot find name 'isPending'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(285,27): error TS2304: Cannot find name 'isPending'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(291,27): error TS2304: Cannot find name 'isPending'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(326,25): error TS2304: Cannot find name 'isPending'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(356,25): error TS2304: Cannot find name 'isPending'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(386,25): error TS2304: Cannot find name 'isPending'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(396,23): error TS2304: Cannot find name 'isPending'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(399,14): error TS2304: Cannot find name 'isPending'.
+src/app/(auth)/signup/student/components/StudentRegisterForm.tsx(416,19): error TS2304: Cannot find name 'isPending'.

@@ -86,13 +86,26 @@ export default function ClassCard({
             </div>
             <div className="flex items-center gap-2 mt-1">
               <Avatar
-                src={classData.teacher.avatarUrl}
-                alt={classData.teacher.name}
+                src={classData.teachers?.[0]?.teacher?.avatarUrl}
+                alt={classData.teachers?.[0]?.teacher?.name || "Teacher"}
                 size="sm"
               />
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {classData.teacher.name}
+                {classData.teachers?.[0]?.teacher?.name || "Not Assigned"}
+                {classData.teachers && classData.teachers.length > 1 && ` +${classData.teachers.length - 1}`}
               </p>
+            </div>
+            
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {classData.departments?.map((dept) => (
+                <Badge 
+                  key={dept.id} 
+                  variant="custom" 
+                  className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] py-0 px-2 border-emerald-100 dark:border-emerald-800"
+                >
+                  {dept.name}
+                </Badge>
+              ))}
             </div>
           </div>
           
@@ -114,25 +127,46 @@ export default function ClassCard({
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-4">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-gray-400" />
-            <span>{classData.studentCount} Students</span>
+            <span>{classData._count?.enrollments ?? classData.studentCount ?? 0} Students</span>
           </div>
           <div className="flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-gray-400" />
-            <span>{classData.subjectCount} Subjects</span>
+            <span>{classData._count?.subjects ?? classData.subjectCount ?? 0} Subjects</span>
           </div>
         </div>
 
-        {/* Footer with Status */}
-        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Badge
-            variant="custom"
-            className={`inline-flex items-center gap-2 ${statusClassName}`}
-          >
-            <div className={`w-2 h-2 rounded-full ${dotColor}`} />
-            <span className="text-sm font-medium">
-              {statusConfig[classData.timetableStatus].label}
-            </span>
-          </Badge>
+        {/* Footer with Status & Live Activity */}
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <Badge
+              variant="custom"
+              className={`inline-flex items-center gap-2 ${statusClassName}`}
+            >
+              <div className={`w-2 h-2 rounded-full ${dotColor}`} />
+              <span className="text-sm font-medium">
+                {statusConfig[classData.timetableStatus].label}
+              </span>
+            </Badge>
+
+            {classData.isLive && (
+              <Badge
+                variant="custom"
+                className="bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-100 dark:border-red-800 animate-pulse flex items-center gap-1.5"
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Live</span>
+              </Badge>
+            )}
+          </div>
+
+          {classData.currentActivity && (
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg border border-gray-100 dark:border-gray-700/50">
+              <Clock className="h-3.5 w-3.5 text-primary/70" />
+              <span className="font-medium truncate">
+                Current: <span className="text-gray-900 dark:text-white">{classData.currentActivity}</span>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons (Visible on Hover) */}

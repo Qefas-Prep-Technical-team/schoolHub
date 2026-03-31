@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Upload, PlusCircle } from 'lucide-react';
 import ExamCard from './components/ExamCard';
 import FilterButton from './components/FilterButton';
-import { Exam } from './components/types';
+import { Exam, ExamStatus } from './components/types';
 
 interface ClassExamsPageProps {
   exams?: any[];
@@ -16,27 +16,41 @@ export default function ClassExamsPage({ exams = [] }: ClassExamsPageProps) {
   const params = useParams();
   const classId = params.id as string;
 
+  const mapStatus = (status: string): ExamStatus => {
+    const s = status?.toUpperCase();
+    switch (s) {
+      case 'DRAFT': return 'draft';
+      case 'PUBLISHED': return 'scheduled';
+      case 'ONGOING': return 'active';
+      case 'COMPLETED': return 'completed';
+      default: return 'draft';
+    }
+  };
+
   // Map real exam data to Exam type
-  const mappedExams: Exam[] = exams.map(e => ({
-    id: e.id,
-    title: e.title,
-    type: e.type || e.scope.toLowerCase(), // fallbacks
-    status: e.status.toLowerCase() as any,
-    subjectId: e.subjectId,
-    subjectName: e.subject?.name || 'General',
-    classId: e.classId,
-    className: '',
-    totalMarks: e.totalMarks || 0,
-    duration: e.durationMinutes || 0,
-    date: new Date(e.createdAt).toLocaleDateString(),
-    questions: 0, // Need to fetch questions if we want this
-    totalStudents: 0,
-    completedStudents: 0,
-    averageScore: undefined,
-    createdBy: '',
-    createdAt: e.createdAt,
-    updatedAt: e.updatedAt
-  }));
+  const mappedExams: Exam[] = (exams || []).map(e => {
+    if (!e) return null as any;
+    return {
+      id: e.id,
+      title: e.title || 'Untitled Exam',
+      type: (e.type || e.scope?.toLowerCase() || 'exam') as any, 
+      status: mapStatus(e.status),
+      subjectId: e.subjectId,
+      subjectName: e.subject?.name || 'General',
+      classId: e.classId,
+      className: '',
+      totalMarks: e.totalMarks || 0,
+      duration: e.durationMinutes || 0,
+      date: e.createdAt ? new Date(e.createdAt).toLocaleDateString() : 'N/A',
+      questions: 0,
+      totalStudents: 0,
+      completedStudents: 0,
+      averageScore: undefined,
+      createdBy: '',
+      createdAt: e.createdAt,
+      updatedAt: e.updatedAt
+    };
+  }).filter(Boolean);
 
   const [filters, setFilters] = useState({
     examType: 'all',

@@ -5,6 +5,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import PasswordField from "./PasswordField";
 import { useLoginMutation } from "../../services/use-auth-mutations";
 import { LoginFormData, loginSchema } from "../../services/auth-schema";
+import Link from "next/link";
+import { ROUTES } from "@/lib/constants/routes";
 
 const ENABLE_GOOGLE_AUTH = true; // Toggle this to false to disable Google Auth in the UI
 
@@ -183,9 +185,14 @@ export default function LoginForm() {
                     </>
                 )}
 
-                <a href="#" className="text-center text-sm font-medium text-primary hover:underline mt-2">
-                    Forgot Password?
-                </a>
+                <div className="flex justify-end mt-1">
+                    <Link 
+                        href={ROUTES.AUTH.FORGOT_PASSWORD} 
+                        className="text-xs font-medium text-blue-500 hover:underline transition-colors duration-200"
+                    >
+                        Forgot Password?
+                    </Link>
+                </div>
             </div>
         </form>
     );

@@ -9,36 +9,28 @@ import ClassStudentsPage from './components/students/StudentsTab';
 import ClassSubjectsPage from './components/subjects/SubjectsTab';
 import ClassExamsPage from './components/exams/ExamsTab';
 import ClassAttendancePage from './components/attendance/AttendanceTab';
+import ManageClassModal from './components/ManageClassModal';
 
-import { classService, Class } from '../services/classService';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
+import { useSingleClass } from '@/lib/api/hooks/useClasses';
 
 export default function ClassDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
   
-  const [classData, setClassData] = useState<Class | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: classData, isLoading: loading, error } = useSingleClass(id);
   const [activeTab, setActiveTab] = React.useState("tab1");
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
 
+  // Handle errors from the hook
   useEffect(() => {
-    if (id) {
-      fetchClassDetails();
-    }
-  }, [id]);
-
-  const fetchClassDetails = async () => {
-    setLoading(true);
-    try {
-      const data = await classService.getSingleClass(id);
-      setClassData(data);
-    } catch (error: any) {
+    if (error) {
       console.error("Failed to fetch class details:", error);
       let message = "Failed to load class details";
       
-      const serverMessage = error.response?.data?.message;
+      const serverMessage = (error as any).response?.data?.message;
       if (serverMessage) {
         // Sanitize technical errors
         if (typeof serverMessage === 'string' && (
@@ -54,10 +46,8 @@ export default function ClassDetailsPage() {
       }
       
       toast.error(message);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [error]);
 
   const behaviourAlerts = [
     {
@@ -175,9 +165,15 @@ export default function ClassDetailsPage() {
                    Code: <span className="text-gray-900 dark:text-white font-bold">{classData.classCode}</span>
                 </span>
                 <span>|</span>
-                <span>Teacher: <span className="text-gray-900 dark:text-white font-bold">{classData.teacher?.name || "Not Assigned"}</span></span>
+                <span>
+                  Teachers: <span className="text-gray-900 dark:text-white font-bold">
+                    {classData.teachers && classData.teachers.length > 0 
+                      ? classData.teachers.map((t: any) => t.teacher.name).join(', ') 
+                      : "Not Assigned"}
+                  </span>
+                </span>
                 <span>|</span>
-                <span>Students: <span className="text-gray-900 dark:text-white font-bold">{classData._count?.enrollments || 0}</span></span>
+                <span>Students: <span className="text-gray-900 dark:text-white font-bold">{classData._count?.enrollments ?? classData.enrollments?.length ?? 0}</span></span>
               </div>
             </div>
             
@@ -187,7 +183,10 @@ export default function ClassDetailsPage() {
                 <span>Timetable</span>
               </button>
               
-              <button className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95">
+              <button 
+                onClick={() => setIsManageModalOpen(true)}
+                className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95"
+              >
                 <UserCog size={18} />
                 <span>Manage Class</span>
               </button>
@@ -204,6 +203,12 @@ export default function ClassDetailsPage() {
           </div>
         </div>
       </main>
+
+      <ManageClassModal 
+        isOpen={isManageModalOpen}
+        onClose={() => setIsManageModalOpen(false)}
+        classData={classData}
+      />
     </div>
   );
 }

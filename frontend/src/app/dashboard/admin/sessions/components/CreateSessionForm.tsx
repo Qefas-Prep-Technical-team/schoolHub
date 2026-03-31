@@ -32,7 +32,7 @@ export function CreateSessionForm({ schoolId, onSuccess }: { schoolId: string; o
     setValue,
     formState: { errors },
   } = useForm<SessionFormValues>({
-    resolver: zodResolver(sessionSchema),
+    resolver: zodResolver(sessionSchema) as any,
     defaultValues: {
       name: "",
       startDate: "",

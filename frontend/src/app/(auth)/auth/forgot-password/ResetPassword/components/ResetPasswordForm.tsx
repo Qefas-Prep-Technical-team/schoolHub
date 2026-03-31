@@ -3,6 +3,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { ROUTES } from "@/lib/constants/routes";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import PasswordField from "./PasswordField";
@@ -129,17 +131,17 @@ export default function ResetPasswordForm() {
           </p>
           <div className="flex flex-col gap-3 w-full mt-4">
             <button
-              onClick={() => router.push('/forgot-password')}
+              onClick={() => router.push(ROUTES.AUTH.FORGOT_PASSWORD)}
               className="flex items-center justify-center gap-2 h-12 px-6 text-base font-semibold text-white rounded-lg bg-primary hover:bg-primary/90 focus:ring-2 focus:ring-primary/50 focus:outline-none w-full"
             >
               Request New Reset Link
             </button>
-            <a
+            <Link
               href="/login"
               className="text-sm font-semibold text-center text-[#4d6599] dark:text-slate-400 hover:text-primary dark:hover:text-primary"
             >
               Back to Login
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -206,12 +208,12 @@ export default function ResetPasswordForm() {
               "Reset Password"
             )}
           </button>
-          <a
+          <Link
             href="/login"
             className="text-sm font-semibold text-center text-[#4d6599] dark:text-slate-400 hover:text-primary dark:hover:text-primary"
           >
             Back to Login
-          </a>
+          </Link>
         </div>
       </form>
     </div>

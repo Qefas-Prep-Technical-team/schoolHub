@@ -15,6 +15,7 @@ import {
 } from "@services/authService";
 import jwt from "jsonwebtoken";
 import { AdminRole, UserRole } from "@prisma/client";
+import { getIO } from "../../socket";
 
 // Simple slugify helper (no extra package)
 const slugify = (value: string) =>
@@ -179,7 +180,7 @@ export const registerSchool = async (req: Request, res: Response) => {
 
 export const registerTeacher = async (req: Request, res: Response) => {
   try {
-    const { fullName, email, password, confirmPassword, tenantId } = req.body;
+    const { fullName, email, password, confirmPassword, schoolCode, studentCode, isIndependent } = req.body;
 
     if (!fullName || !email || !password) {
       return res.status(400).json({
@@ -207,57 +208,122 @@ export const registerTeacher = async (req: Request, res: Response) => {
     }
 
     let schoolToConnect = null;
-    let schoolId = null;
+    let studentToConnect = null;
 
-    if (tenantId) {
+    if (schoolCode && !isIndependent) {
       schoolToConnect = await prisma.school.findFirst({
-        where: { tenantId },
+        where: { schoolCode },
       });
 
       if (!schoolToConnect) {
         return res.status(404).json({
           success: false,
-          message: "Invalid Tenant ID. School not found",
+          message: "Invalid School Code. School not found",
         });
       }
-      schoolId = schoolToConnect.id;
+    }
+
+    if (studentCode) {
+      studentToConnect = await prisma.student.findFirst({
+        where: { studentCode: studentCode.trim() },
+      });
+
+      if (!studentToConnect) {
+        return res.status(404).json({
+          success: false,
+          message: "Invalid Student Code. Student not found",
+        });
+      }
     }
 
     const teacherCode = await generateUniqueCode(prisma, "teacher", fullName);
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const teacher = await prisma.teacher.create({
-      data: {
-        name: fullName,
-        email,
-        password: hashedPassword,
-        role: UserRole.TEACHER,
-        tenantIds: tenantId ? [tenantId] : [],
-        defaultTenantId: tenantId || "default-tenant-id",
-        teacherCode,
-        schoolId,
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      const teacher = await tx.teacher.create({
+        data: {
+          name: fullName,
+          email,
+          password: hashedPassword,
+          role: UserRole.TEACHER,
+          tenantIds: schoolToConnect ? [schoolToConnect.tenantId] : [],
+          defaultTenantId: schoolToConnect ? schoolToConnect.tenantId : "default-tenant-id",
+          teacherCode,
+          schoolId: schoolToConnect ? schoolToConnect.id : null,
+        },
+      });
+
+      if (schoolToConnect) {
+        await tx.linkRequest.create({
+          data: {
+            linkType: "SCHOOL_TEACHER",
+            requesterType: "TEACHER",
+            requesterId: teacher.id,
+            requesterCode: teacher.teacherCode,
+            targetType: "SCHOOL",
+            targetId: schoolToConnect.id,
+            targetCode: schoolToConnect.schoolCode,
+            status: "PENDING",
+            note: "i would like to connect with you",
+          },
+        });
+      }
+
+      if (studentToConnect) {
+        await tx.linkRequest.create({
+          data: {
+            linkType: "TEACHER_STUDENT",
+            requesterType: "TEACHER",
+            requesterId: teacher.id,
+            requesterCode: teacher.teacherCode,
+            targetType: "STUDENT",
+            targetId: studentToConnect.id,
+            targetCode: studentToConnect.studentCode,
+            status: "PENDING",
+            note: "I would like to connect with you",
+            schoolId: studentToConnect.schoolId,
+          },
+        });
+      }
+
+      return { teacher, studentToConnect };
     });
+
+    if (schoolToConnect) {
+      getIO().to(`user:${schoolToConnect.id}`).emit("link:updated", {
+        type: "LINK_REQUEST_RECEIVED",
+        message: "A new teacher has requested to connect",
+      });
+    }
+
+    if (result.studentToConnect) {
+      getIO().to(`user:${result.studentToConnect.id}`).emit("link:updated", {
+        type: "LINK_REQUEST_RECEIVED",
+        message: "A teacher has requested to connect with you",
+      });
+    }
 
     return res.status(201).json({
       success: true,
-      message: tenantId
-        ? "Teacher registered and connected to school successfully"
+      message: result.studentToConnect
+        ? `Teacher registered and link requests sent to school and student ${result.studentToConnect.studentCode}`
+        : schoolToConnect
+        ? "Teacher registered and connection request sent successfully"
         : "Independent teacher account created successfully",
       data: {
         teacher: {
-          id: teacher.id,
-          name: teacher.name,
-          email: teacher.email,
-          role: teacher.role,
-          tenantIds: teacher.tenantIds,
-          teacherCode: teacher.teacherCode,
+          id: result.teacher.id,
+          name: result.teacher.name,
+          email: result.teacher.email,
+          role: result.teacher.role,
+          tenantIds: result.teacher.tenantIds,
+          teacherCode: result.teacher.teacherCode,
         },
-        userRole: teacher.role,
+        userRole: result.teacher.role,
       },
     });
   } catch (error: any) {
-    console.error(error);
+    console.error("Register Teacher Error:", error);
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -270,8 +336,9 @@ interface RegisterStudentBody {
   email: string;
   password: string;
   confirmPassword: string;
-  tenantId?: string;
+  schoolCode?: string;
   teacherCode?: string;
+  parentCode?: string;
 }
 
 const generateStudentCode = (): string => {
@@ -313,8 +380,9 @@ export const registerStudent = async (
       email,
       password,
       confirmPassword,
-      tenantId,
+      schoolCode,
       teacherCode,
+      parentCode,
     } = req.body;
 
     if (!fullName || !email || !password || !confirmPassword) {
@@ -346,34 +414,42 @@ export const registerStudent = async (
     // Generate unique student code
     const studentCode = await generateUniqueCode(prisma, "student", fullName);
 
-    // If tenantId provided → verify school exists
+    // Verify provided codes exist before proceeding
     let school = null;
-    let schoolId = null;
-    if (tenantId) {
+    if (schoolCode) {
       school = await prisma.school.findFirst({
-        where: { tenantId },
+        where: { schoolCode },
       });
-
       if (!school) {
         return res.status(404).json({
           success: false,
-          message: "School with this Tenant ID not found",
+          message: `School with code ${schoolCode} not found`,
         });
       }
-      schoolId = school.id;
     }
 
-    // If teacherCode provided → verify teacher exists
     let teacher = null;
     if (teacherCode) {
       teacher = await prisma.teacher.findFirst({
         where: { teacherCode },
       });
-
       if (!teacher) {
         return res.status(404).json({
           success: false,
-          message: "Invalid teacher code",
+          message: `Teacher with code ${teacherCode} not found`,
+        });
+      }
+    }
+
+    let parent = null;
+    if (parentCode) {
+      parent = await prisma.parent.findFirst({
+        where: { parentCode },
+      });
+      if (!parent) {
+        return res.status(404).json({
+          success: false,
+          message: `Parent with code ${parentCode} not found`,
         });
       }
     }
@@ -381,32 +457,113 @@ export const registerStudent = async (
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const student = await prisma.student.create({
-      data: {
-        name: fullName.trim(),
-        email: email.toLowerCase().trim(),
-        password: hashedPassword,
-        studentCode,
-        role: UserRole.STUDENT,
-        tenantIds: tenantId ? [tenantId] : [],
-        defaultTenantId: tenantId || "default-tenant-id",
-        schoolId,
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      // Create student
+      const student = await tx.student.create({
+        data: {
+          name: fullName.trim(),
+          email: email.toLowerCase().trim(),
+          password: hashedPassword,
+          studentCode,
+          role: UserRole.STUDENT,
+          tenantIds: school ? [school.tenantId] : [],
+          defaultTenantId: school ? school.tenantId : "default-tenant-id",
+          schoolId: school ? school.id : null,
+        },
+      });
+
+      const note = "i would like to connect with you";
+
+      // Auto-linking for School
+      if (school) {
+        await tx.linkRequest.create({
+          data: {
+            linkType: "SCHOOL_STUDENT",
+            requesterType: "STUDENT",
+            requesterId: student.id,
+            requesterStudentId: student.id,
+            requesterCode: student.studentCode,
+            targetType: "SCHOOL",
+            targetId: school.id,
+            targetCode: school.schoolCode,
+            status: "PENDING",
+            note,
+          },
+        });
+      }
+
+      // Auto-linking for Teacher
+      if (teacher) {
+        await tx.linkRequest.create({
+          data: {
+            linkType: "TEACHER_STUDENT",
+            requesterType: "STUDENT",
+            requesterId: student.id,
+            requesterStudentId: student.id,
+            requesterCode: student.studentCode,
+            targetType: "TEACHER",
+            targetId: teacher.id,
+            targetCode: teacher.teacherCode,
+            status: "PENDING",
+            note,
+          },
+        });
+      }
+
+      // Auto-linking for Parent
+      if (parent) {
+        await tx.linkRequest.create({
+          data: {
+            linkType: "PARENT_STUDENT",
+            requesterType: "STUDENT",
+            requesterId: student.id,
+            requesterStudentId: student.id,
+            requesterCode: student.studentCode,
+            targetType: "PARENT",
+            targetId: parent.id,
+            targetCode: parent.parentCode,
+            status: "PENDING",
+            note,
+          },
+        });
+      }
+
+      return student;
     });
+
+    const io = getIO();
+    if (school) {
+      io.to(`user:${school.id}`).emit("link:updated", {
+        type: "LINK_REQUEST_RECEIVED",
+        message: "A new student has requested to connect",
+      });
+    }
+    if (teacher) {
+      io.to(`user:${teacher.id}`).emit("link:updated", {
+        type: "LINK_REQUEST_RECEIVED",
+        message: "A student has requested to connect with you",
+      });
+    }
+    if (parent) {
+      io.to(`user:${parent.id}`).emit("link:updated", {
+        type: "LINK_REQUEST_RECEIVED",
+        message: "Your child has registered and requested a link",
+      });
+    }
 
     return res.status(201).json({
       success: true,
-      message: "Student registered successfully",
+      message: "Student registered successfully and link requests sent",
       data: {
         student: {
-          id: student.id,
-          name: student.name,
-          email: student.email,
-          role: student.role, // RETURN ROLE
-          studentCode: student.studentCode,
+          id: result.id,
+          name: result.name,
+          email: result.email,
+          role: result.role,
+          studentCode: result.studentCode,
         },
-        userRole: student.role, // ADDED: Explicit role for redirection
-        message: "Save this student code to share with your parent for linking",
+        userRole: result.role,
+        message: "Your registration is complete. We've sent connection requests to the specified school/teacher/parent.",
       },
     });
   } catch (error: any) {
@@ -474,6 +631,7 @@ export const registerParent = async (
       });
 
       let linkResult = null;
+      let studentData = null;
 
       if (studentCode) {
         const student = await tx.student.findFirst({
@@ -503,14 +661,40 @@ export const registerParent = async (
             status: "pending",
           },
         });
+
+        // Also create a standard LinkRequest for the linking hub
+        await tx.linkRequest.create({
+          data: {
+            linkType: "PARENT_STUDENT",
+            requesterType: "PARENT",
+            requesterId: parent.id,
+            requesterCode: parent.parentCode,
+            targetType: "STUDENT",
+            targetId: student.id,
+            targetCode: student.studentCode,
+            status: "PENDING",
+            note: "I have registered as your parent",
+          },
+        });
+
+        studentData = student;
       }
 
-      return { parent, link: linkResult };
+      return { parent, link: linkResult, studentData };
     });
+
+    if (result.studentData) {
+      getIO().to(`user:${result.studentData.id}`).emit("link:updated", {
+        type: "LINK_REQUEST_RECEIVED",
+        message: "A parent has registered and requested to link with your account",
+      });
+    }
 
     const response: any = {
       success: true,
-      message: "Parent account created successfully",
+      message: result.studentData 
+        ? `Parent account created and link request sent to student ${result.studentData.studentCode}`
+        : "Parent account created successfully",
       data: {
         parent: {
           id: result.parent.id,

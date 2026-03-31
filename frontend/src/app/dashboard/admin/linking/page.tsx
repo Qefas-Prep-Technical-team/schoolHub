@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
@@ -24,13 +24,14 @@ import { LinkingTabs } from './components/LinkingTabs';
 import { ActiveLinksGrid } from './components/ActiveLinksGrid';
 import { PendingRequestsGrid } from './components/PendingRequestsGrid';
 import { ConnectModal } from './components/ConnectModal';
+import QRCodeModal from './components/QRCodeModal';
 import { getMemberDetails, isClassLink } from './components/LinkingUtils';
 
 function LinkingHub() {
-  const { data: requests = [] } = useLinkRequests();
-  const { data: pendingRequests = [] } = usePendingLinkRequests();
-  const { data: activeLinks = [] } = useActiveLinks();
-  const { data: profileResponse } = useLinkProfile();
+  const { data: requests = [], isLoading: isLoadingRequests } = useLinkRequests();
+  const { data: pendingRequests = [], isLoading: isLoadingPending } = usePendingLinkRequests();
+  const { data: activeLinks = [], isLoading: isLoadingActive } = useActiveLinks();
+  const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
   const profile = profileResponse?.data || {};
 
   const respondMutation = useRespondToLinkRequest();
@@ -42,6 +43,7 @@ function LinkingHub() {
   const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
   const [subTab, setSubTab] = useState<'active' | 'pending' | 'history'>('active');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+  const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
   const { user } = useAuthStore();
 
   const filteredActiveLinks = activeLinks.filter((link: any) => {
@@ -67,8 +69,9 @@ function LinkingHub() {
   const classroomPendingCount = requests.filter((r: any) => r.status === 'PENDING' && isClassLink(r.linkType)).length;
 
   const handleAcceptAll = () => {
-    if (window.confirm(`Are you sure you want to accept all pending ${mainTab} requests?`)) {
-      acceptAllMutation.mutate(mainTab as any);
+    const category = mainTab === 'classroom' ? 'classroom' : 'network';
+    if (window.confirm(`Are you sure you want to accept all pending ${category} requests?`)) {
+      acceptAllMutation.mutate(category);
     }
   };
 
@@ -93,7 +96,10 @@ function LinkingHub() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-gray-50/30 dark:bg-transparent min-h-screen">
-      <LinkingHeader onConnectClick={() => setIsConnectModalOpen(true)} />
+      <LinkingHeader 
+        onConnectClick={() => setIsConnectModalOpen(true)} 
+        onShowQRCodeClick={() => setIsQRCodeModalOpen(true)}
+      />
 
       <LinkingStats 
         activeCount={activeLinks.length}
@@ -104,6 +110,12 @@ function LinkingHub() {
       <ConnectModal 
         isOpen={isConnectModalOpen} 
         onClose={() => setIsConnectModalOpen(false)} 
+      />
+
+      <QRCodeModal
+        isOpen={isQRCodeModalOpen}
+        onClose={() => setIsQRCodeModalOpen(false)}
+        schoolCode={profile?.schoolCode || ''}
       />
 
       <LinkingCodeCards 
@@ -124,17 +136,21 @@ function LinkingHub() {
           classroomPendingCount={classroomPendingCount}
         />
 
-        {subTab === 'active' && (
+        {isLoadingActive || isLoadingRequests ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border-2 border-dashed border-gray-100 dark:border-gray-700">
+            <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+            <p className="text-gray-500 font-medium">Fetching {subTab} {mainTab} connections...</p>
+          </div>
+        ) : subTab === 'active' ? (
           <ActiveLinksGrid 
             links={filteredActiveLinks}
             mainTab={mainTab}
             currentUserId={user?.id}
             onRevoke={handleRevoke}
             onCopy={copyToClipboard}
+            revokingId={revokeMutation.isPending ? (revokeMutation.variables as string) : null}
           />
-        )}
-
-        {subTab === 'pending' && (
+        ) : subTab === 'pending' ? (
           <PendingRequestsGrid 
             requests={filteredRequests}
             mainTab={mainTab}
@@ -144,10 +160,10 @@ function LinkingHub() {
             onRespond={handleRespond}
             onCancel={handleCancel}
             onCopy={copyToClipboard}
+            respondingId={respondMutation.isPending ? (respondMutation.variables as any)?.id : null}
+            cancellingId={cancelMutation.isPending ? (cancelMutation.variables as string) : null}
           />
-        )}
-
-        {subTab === 'history' && (
+        ) : (
           <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-100 dark:border-gray-700 rounded-[2.5rem] overflow-hidden shadow-sm">
             <div className="p-20 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center mb-4">

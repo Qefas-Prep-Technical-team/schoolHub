@@ -60,7 +60,8 @@ const SubjectsPage = () => {
         subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         subject.code.toLowerCase().includes(searchQuery.toLowerCase())
     
-    const matchesDepartment = selectedDepartment === "all" || subject.departmentId === selectedDepartment
+    const matchesDepartment = selectedDepartment === "all" || 
+        subject.departments?.some(d => d.departmentId === selectedDepartment);
     const matchesScope = selectedScope === "all" || subject.scope === selectedScope
     
     return matchesSearch && matchesDepartment && matchesScope
@@ -133,7 +134,7 @@ const SubjectsPage = () => {
               <SelectContent>
                 <SelectItem value="all">Scope: All</SelectItem>
                 <SelectItem value="SCHOOL">School-wide</SelectItem>
-                <SelectItem value="GLOBAL">Global</SelectItem>
+                <SelectItem value="PERSONAL">Personal</SelectItem>
               </SelectContent>
             </Select>
           </div>

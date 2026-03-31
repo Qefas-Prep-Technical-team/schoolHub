@@ -1,0 +1,4 @@
+src/app/dashboard/admin/subjects/components/SubjectCard.tsx(50,11): error TS2367: This comparison appears to be unintentional because the types '"SCHOOL" | "PERSONAL"' and '"GLOBAL"' have no overlap.
+src/app/dashboard/admin/subjects/components/SubjectCard.tsx(55,14): error TS2367: This comparison appears to be unintentional because the types '"SCHOOL" | "PERSONAL"' and '"GLOBAL"' have no overlap.
+src/app/dashboard/admin/subjects/components/SubjectCard.tsx(57,18): error TS2367: This comparison appears to be unintentional because the types '"SCHOOL" | "PERSONAL"' and '"GLOBAL"' have no overlap.
+src/app/dashboard/admin/subjects/page.tsx(63,71): error TS2551: Property 'departmentId' does not exist on type 'Subject'. Did you mean 'departments'?

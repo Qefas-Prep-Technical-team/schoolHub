@@ -44,8 +44,7 @@ export const useCreateLinkRequest = () => {
     mutationFn: (data: { targetCode?: string; linkType: LinkType; note?: string }) =>
       linkService.createLinkRequest(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.requests() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success("Link request sent successfully");
     },
     onError: (error: any) => {
@@ -60,10 +59,8 @@ export const useRespondToLinkRequest = () => {
     mutationFn: ({ id, action }: { id: string; action: "ACCEPT" | "REJECT" }) =>
       linkService.respondToLinkRequest(id, action),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.requests() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
       if (variables.action === "ACCEPT") {
-        queryClient.invalidateQueries({ queryKey: queryKeys.active() });
         toast.success("Link request accepted");
       } else {
         toast.success("Link request rejected");
@@ -80,8 +77,7 @@ export const useCancelLinkRequest = () => {
   return useMutation({
     mutationFn: (id: string) => linkService.cancelLinkRequest(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.requests() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success("Link request cancelled");
     },
     onError: (error: any) => {
@@ -95,7 +91,7 @@ export const useRevokeActiveLink = () => {
   return useMutation({
     mutationFn: (id: string) => linkService.revokeActiveLink(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.active() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success("Connection revoked");
     },
     onError: (error: any) => {
@@ -110,9 +106,7 @@ export const useAcceptAllLinkRequests = () => {
     mutationFn: (category: "network" | "classroom") =>
       linkService.acceptAllRequests(category),
     onSuccess: (_, category) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.requests() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pending() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.active() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success(`Successfully accepted all ${category} requests`);
     },
     onError: (error: any) => {

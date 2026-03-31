@@ -2,13 +2,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useAuthStore, UserType } from "./auth-store";
-import { useAuthToast, useErrorToast } from "@/lib/hooks/useToast";
+import { useAuthToast, useErrorToast, useToast } from "@/lib/hooks/useToast";
 import { authAPI } from "./auth-api";
 
 export const useLoginMutation = () => {
   const queryClient = useQueryClient();
   const authToast = useAuthToast();
   const errorToast = useErrorToast();
+  const { info } = useToast();
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
 
@@ -40,8 +41,22 @@ export const useLoginMutation = () => {
         router.push(`/dashboard/${userDash}`);
       }, 1000);
     },
-    onError: (error: any) => {
+    onError: (error: any, variables) => {
       const errorMessage = error.response?.data?.message || "Login failed";
+
+      // Redirect unverified users to verification page
+      if (
+        error.response?.status === 403 &&
+        (errorMessage.toLowerCase().includes("verified") ||
+          errorMessage.toLowerCase().includes("verification"))
+      ) {
+        info("Redirection to verification page for account verification.");
+        router.push(
+          `/verification?email=${encodeURIComponent(variables.email)}&userType=${variables.userType}&requestCode=true`,
+        );
+        return;
+      }
+
       errorToast.show(errorMessage);
       console.error("Login failed:", error);
       throw error;

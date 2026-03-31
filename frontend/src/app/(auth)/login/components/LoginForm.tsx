@@ -7,6 +7,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { LoginFormData, loginSchema } from "../services/auth-schema";
 import InputField from "../parent/components/InputField";
 import LoginButton from "./LoginButton";
+import Link from "next/link";
+import { ROUTES } from "@/lib/constants/routes";
 
 
 
@@ -155,12 +157,15 @@ export default function LoginForm({
                 />
 
                 {(forgotPasswordLink || onForgotPassword) && (
-                    <p
-                        className="text-gray-500 dark:text-gray-400 text-sm text-center underline cursor-pointer hover:text-primary transition-colors duration-200"
-                        onClick={onForgotPassword}
-                    >
-                        Forgot Password?
-                    </p>
+                    <div className="flex justify-end mt-1">
+                        <Link 
+                            href={forgotPasswordLink || ROUTES.AUTH.FORGOT_PASSWORD}
+                            className="text-xs font-medium text-blue-500 hover:underline transition-colors duration-200"
+                            onClick={onForgotPassword}
+                        >
+                            Forgot Password?
+                        </Link>
+                    </div>
                 )}
             </form>
         </div>

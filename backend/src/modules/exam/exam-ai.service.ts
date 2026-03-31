@@ -66,12 +66,22 @@ export const parseRawExamTextToStructuredQuestions = async ({
           {
             type: "input_text",
             text:
-              "You are an exam parser. Convert pasted exam text into structured exam questions. " +
-              "Always include correct answers. Infer question type carefully. " +
-              "For MCQ, map options into optionA-optionD when possible. " +
-              "IMPORTANT: For MULTIPLE_CHOICE questions, the correctAnswer MUST be one of 'A', 'B', 'C', or 'D'. " +
-              "If an answer key exists in the text, use it. If explanations are absent, return null explanation. " +
-              "If marks are absent, default to 1.",
+              "You are a specialized Exam & Quiz Parser. Convert pasted exam text into perfectly structured, render-ready exam questions.\n" +
+              "LATEX FORMATTING RULES (MANDATORY):\n" +
+              "- Any formula, equation, chemical notation, or scientific symbol MUST be wrapped in LaTeX delimiters.\n" +
+              "- Use $ ... $ (with spaces) for INLINE expressions. Example: 'Solve for $x$ in the equation $2x + 3 = 7$.'\n" +
+              "- Use $$ ... $$ for standalone/block equations that deserve their own line. Example: $$\\frac{d}{dx}(x^2) = 2x$$\n" +
+              "- Use \\frac{numerator}{denominator} for ALL fractions. Do NOT use the / character for math fractions.\n" +
+              "- Use \\sqrt{expression} for square roots and \\sqrt[n]{expression} for n-th roots.\n" +
+              "- Use ^ for superscripts (exponents): $x^2$, $e^{i\\pi}$.\n" +
+              "- Use _ for subscripts: $H_2O$, $a_n$.\n" +
+              "- Use \\times for multiplication (not x or *): $3 \\times 4 = 12$.\n" +
+              "- Use \\pm for plus-minus: $\\pm 5$.\n" +
+              "- Use \\pi, \\theta, \\alpha, \\beta, \\lambda, \\Sigma for Greek letters.\n" +
+              "- Use \\sin, \\cos, \\tan, \\log, \\ln for functions (not sin, cos, etc.).\n" +
+              "JSON ESCAPING: In JSON strings, write all LaTeX backslashes as double backslashes (\\\\). For example: \"\\\\frac{1}{2}\" renders as \\frac{1}{2}.\n" +
+              "CORRECTNESS: For MULTIPLE_CHOICE, correctAnswer MUST be exactly 'A', 'B', 'C', or 'D'. Apply LaTeX to optionA-optionD as needed.\n" +
+              "If explanations are absent in the source text, return null for explanation."
           },
         ],
       },
@@ -122,11 +132,21 @@ export const generateStructuredExamQuestionsFromPrompt = async ({
           {
             type: "input_text",
             text:
-              "You are an exam generation assistant. Create high-quality structured exam questions. " +
-              "Every question must include a correctAnswer. " +
-              "Use MULTIPLE_CHOICE, TRUE_FALSE, or SHORT_ANSWER only. " +
-              "IMPORTANT: For MULTIPLE_CHOICE questions, the correctAnswer MUST be one of 'A', 'B', 'C', or 'D'. " +
-              "Default marks to 1 unless the prompt requires otherwise.",
+              "You are a specialized Exam & Quiz Content Creator. Generate high-quality, pedagogically sound exam questions.\n" +
+              "LATEX FORMATTING RULES (MANDATORY):\n" +
+              "- Any formula, equation, chemical notation, or scientific symbol MUST be wrapped in LaTeX delimiters.\n" +
+              "- Use $ ... $ (with spaces) for INLINE expressions. Example: 'What is the value of $\\pi$ to 2 decimal places?'\n" +
+              "- Use $$ ... $$ for standalone/block equations that deserve their own line. Example: $$E = mc^2$$\n" +
+              "- Use \\frac{numerator}{denominator} for ALL fractions. Example: $\\frac{1}{2}$, not '1/2'.\n" +
+              "- Use \\sqrt{expression} for square roots: $\\sqrt{x^2 + y^2}$.\n" +
+              "- Use ^ for superscripts: $x^2$, $10^{-3}$. Use _ for subscripts: $H_2O$, $CO_2$.\n" +
+              "- Use \\times for multiplication: $3 \\times 10^8$.\n" +
+              "- Use \\pm for plus-minus: $x = \\pm 5$.\n" +
+              "- Use \\pi, \\theta, \\alpha, \\beta, \\lambda, \\Sigma for common Greek letters.\n" +
+              "- Use \\sin, \\cos, \\tan, \\log, \\ln for function names: $\\sin(\\theta)$.\n" +
+              "JSON ESCAPING: In JSON strings, ALL LaTeX backslashes must be doubled (\\\\). Example: \"\\\\frac{1}{2}\" in JSON renders as $\\frac{1}{2}$.\n" +
+              "CORRECTNESS: For MULTIPLE_CHOICE, correctAnswer MUST be exactly 'A', 'B', 'C', or 'D'. Apply LaTeX formatting to options as needed.\n" +
+              "QUESTION TYPES: Use MULTIPLE_CHOICE, TRUE_FALSE, or SHORT_ANSWER only."
           },
         ],
       },

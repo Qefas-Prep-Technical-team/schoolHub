@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { apiClient } from "@/lib/api/client";
 import { examService } from "@/lib/api/services/examService";
+import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 
 import { 
   DndContext, 
@@ -324,18 +325,20 @@ function SortableQuestionCard({ q, idx, onEdit, onDelete, isDeleting, isPublishe
               </div>
             </div>
             
-            <p className="text-gray-900 dark:text-gray-100 font-semibold mb-3 leading-relaxed">
-              {q.question}
-            </p>
+            <div className="text-gray-900 dark:text-gray-100 font-semibold mb-3 leading-relaxed">
+              <LaTeXRenderer content={q.question} />
+            </div>
             
             {q.type === 'MULTIPLE_CHOICE' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
                 {['A', 'B', 'C', 'D'].map(opt => (
                   <div key={opt} className={`group/opt flex items-center gap-3 text-sm p-3 rounded-xl border transition-all ${q.correctAnswer === opt ? 'bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-950/20 dark:border-emerald-800' : 'bg-gray-50/50 border-gray-100 text-gray-600 dark:bg-gray-900/50 dark:border-gray-800'}`}>
-                    <span className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${q.correctAnswer === opt ? 'bg-emerald-500 text-white' : 'bg-white border border-gray-200 text-gray-400'}`}>
+                    <span className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 ${q.correctAnswer === opt ? 'bg-emerald-500 text-white' : 'bg-white border border-gray-200 text-gray-400'}`}>
                       {opt}
                     </span>
-                    <span className="flex-1 line-clamp-1">{(q as any)[`option${opt}`]}</span>
+                    <div className="flex-1 line-clamp-1">
+                      <LaTeXRenderer content={(q as any)[`option${opt}`]} className="text-sm" />
+                    </div>
                     {q.correctAnswer === opt && <Check className="text-emerald-500 h-4 w-4" />}
                   </div>
                 ))}

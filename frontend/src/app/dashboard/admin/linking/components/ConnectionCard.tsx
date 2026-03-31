@@ -9,7 +9,8 @@ import {
   Copy, 
   Clock, 
   Hash, 
-  ChevronRight 
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ interface ConnectionCardProps {
   onRespond?: (id: string, action: 'ACCEPT' | 'REJECT') => void;
   onCancel?: (id: string) => void;
   onCopy?: (text: string) => void;
+  isLoading?: boolean;
 }
 
 export function ConnectionCard({
@@ -46,7 +48,8 @@ export function ConnectionCard({
   onRevoke,
   onRespond,
   onCancel,
-  onCopy
+  onCopy,
+  isLoading = false
 }: ConnectionCardProps) {
   const details = getMemberDetails(item, currentUserId);
   const isClass = isClassLink(item.linkType);
@@ -85,9 +88,10 @@ export function ConnectionCard({
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="p-3 font-semibold rounded-lg text-red-500 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer" 
-                onClick={() => onRevoke?.(item.id)}
+                onClick={() => !isLoading && onRevoke?.(item.id)}
+                disabled={isLoading}
               >
-                <X className="mr-3 h-4 w-4" /> Disconnect
+                {isLoading ? <Loader2 className="mr-3 h-4 w-4 animate-spin" /> : <X className="mr-3 h-4 w-4" />} Disconnect
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -191,28 +195,33 @@ export function ConnectionCard({
           <div className="flex gap-2">
             <Button
               onClick={() => onRespond?.(item.id, 'ACCEPT')}
+              disabled={isLoading}
               className={cn(
                 "flex-[3] h-12 rounded-xl text-white font-black text-[10px] uppercase tracking-widest shadow-lg transition-all hover:scale-[1.02] active:scale-95",
                 isClass ? "bg-purple-600 shadow-purple-200" : "bg-orange-500 shadow-orange-100"
               )}
             >
-              Accept Request
+              {isLoading ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
+              {isLoading ? "Processing..." : "Accept Request"}
             </Button>
             <Button
               onClick={() => onRespond?.(item.id, 'REJECT')}
+              disabled={isLoading}
               variant="outline"
               className="flex-1 h-12 rounded-xl border-slate-100 text-red-500 font-extrabold text-[10px] uppercase tracking-widest hover:bg-red-50 dark:border-slate-800 dark:hover:bg-red-950/20 px-0 transition-colors"
             >
-              Decline
+              {isLoading ? <Loader2 className="animate-spin" size={14} /> : "Decline"}
             </Button>
           </div>
         ) : (
           <Button
             onClick={() => onCancel?.(item.id)}
+            disabled={isLoading}
             variant="outline"
             className="w-full h-12 rounded-xl border-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 hover:text-red-600 hover:border-red-100 dark:border-slate-800 dark:hover:bg-slate-900 transition-all shadow-sm"
           >
-            Cancel My Request
+            {isLoading ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
+            {isLoading ? "Cancelling..." : "Cancel My Request"}
           </Button>
         )}
       </CardContent>

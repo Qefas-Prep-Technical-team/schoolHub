@@ -15,6 +15,7 @@ export const useExams = (filters?: any) => {
   return useQuery({
     queryKey: examKeys.list(filters || {}),
     queryFn: () => examService.getExams(filters),
+    refetchOnWindowFocus: true,
   });
 };
 

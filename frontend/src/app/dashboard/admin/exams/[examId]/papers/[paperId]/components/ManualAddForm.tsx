@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, Plus, Trash2, X, Loader2, Save } from "lucide-react";
+import { Check, Plus, Trash2, X, Loader2, Save, Eye, EyeOff } from "lucide-react";
+import FormulaToolbar from "../../../../Questions/components/FormulaToolbar";
+import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
+import { useRef } from "react";
 
 export default function ManualAddForm({ 
   paperId, 
@@ -32,6 +35,27 @@ export default function ManualAddForm({
     D: initialData?.optionD || ""
   });
   const [explanation, setExplanation] = useState(initialData?.explanation || "");
+  const [showPreview, setShowPreview] = useState(false);
+  const questionRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleInsert = (formula: string) => {
+    const textarea = questionRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? 0;
+    const text = textarea.value;
+    const before = text.substring(0, start);
+    const after = text.substring(end, text.length);
+
+    const newText = before + formula + after;
+    setQuestion(newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + formula.length, start + formula.length);
+    }, 0);
+  };
 
   const isEditing = !!initialData;
 
@@ -123,14 +147,41 @@ export default function ManualAddForm({
         </div>
 
         <div className="space-y-2">
-          <Label>Question Text</Label>
-          <Textarea 
-            placeholder="Enter the question here..." 
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            className="min-h-[100px]"
-            required
-          />
+          <div className="flex items-center justify-between">
+            <Label>Question Text</Label>
+            <button
+              type="button"
+              onClick={() => setShowPreview(!showPreview)}
+              className={`flex items-center gap-2 px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                showPreview
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              {showPreview ? <EyeOff size={12} /> : <Eye size={12} />}
+              {showPreview ? "Hide Preview" : "Show LaTeX Preview"}
+            </button>
+          </div>
+          
+          <div className="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+            <FormulaToolbar onInsert={handleInsert} />
+            <Textarea 
+              ref={questionRef}
+              placeholder="Enter the question here... Use $...$ for math." 
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              className="min-h-[120px] border-0 focus-visible:ring-0 rounded-none bg-white dark:bg-gray-950"
+              required
+            />
+            {showPreview && question && (
+              <div className="p-4 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="text-[10px] uppercase font-black tracking-widest text-primary mb-2">Live Preview</div>
+                <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
+                  <LaTeXRenderer content={question} />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {type === "MULTIPLE_CHOICE" && (
@@ -149,12 +200,19 @@ export default function ManualAddForm({
                   >
                     {correctAnswer === opt ? <Check size={18} /> : opt}
                   </div>
-                  <Input 
-                    placeholder={`Option ${opt}`} 
-                    value={(options as any)[opt]}
-                    onChange={(e) => setOptions({...options, [opt]: e.target.value})}
-                    className={correctAnswer === opt ? "border-emerald-200 ring-emerald-100" : ""}
-                  />
+                  <div className="flex-1 space-y-2">
+                    <Input 
+                      placeholder={`Option ${opt}`} 
+                      value={(options as any)[opt]}
+                      onChange={(e) => setOptions({...options, [opt]: e.target.value})}
+                      className={correctAnswer === opt ? "border-emerald-200 ring-emerald-100" : ""}
+                    />
+                    {showPreview && (options as any)[opt] && (options as any)[opt].includes('$') && (
+                      <div className="px-3 py-1.5 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-800 text-xs shadow-inner">
+                         <LaTeXRenderer content={(options as any)[opt]} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

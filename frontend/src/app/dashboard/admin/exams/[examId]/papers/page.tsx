@@ -66,6 +66,7 @@ export default function ExamPapersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exam", examId] });
       toast.success("Exam published successfully!");
+      setConfirmDialog({ ...confirmDialog, isOpen: false });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Exam publish failed");
@@ -141,7 +142,7 @@ export default function ExamPapersPage() {
     startDate: "",
     scope: "SCHOOL",
     classId: "",
-    departmentId: "",
+    departmentIds: [] as string[],
     durationMinutes: 0,
     sessionId: "",
     term: "",
@@ -183,7 +184,7 @@ export default function ExamPapersPage() {
     if (examSettings.scope === "SCHOOL") {
       // For school scope, class and department are optional filters
     } else if (examSettings.scope === "CLASS") {
-      setExamSettings(prev => ({ ...prev, departmentId: "" }));
+      setExamSettings(prev => ({ ...prev, departmentIds: [] }));
     } else if (examSettings.scope === "DEPARTMENT") {
       setExamSettings(prev => ({ ...prev, classId: "" }));
     }
@@ -197,7 +198,7 @@ export default function ExamPapersPage() {
         startDate: exam.startDate ? new Date(exam.startDate).toISOString().slice(0, 16) : "",
         scope: exam.scope || "SCHOOL",
         classId: exam.classId || "",
-        departmentId: exam.departmentId || "",
+        departmentIds: exam.departments?.map((d: any) => d.department.id) || [],
         durationMinutes: exam.durationMinutes || 0,
         sessionId: exam.sessionId || "",
         term: exam.term || "",
@@ -385,7 +386,13 @@ export default function ExamPapersPage() {
             <div className="space-y-4 relative z-10">
               {!isPublished ? (
                 <Button
-                  onClick={() => publishExamMutation.mutate()}
+                  onClick={() => openConfirmDialog({
+                    title: "Publish Examination",
+                    description: `Are you sure you want to publish "${exam?.title}"? Once published, eligible students will immediately gain access to the exam.`,
+                    variant: "warning",
+                    confirmText: "Publish Exam",
+                    onConfirm: () => publishExamMutation.mutate()
+                  })}
                   disabled={publishExamMutation.isPending || !allPapersPublished}
                   className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-base shadow-xl shadow-primary/25 flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
                 >
@@ -536,8 +543,8 @@ export default function ExamPapersPage() {
                                 </select>
                               </div>
 
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
+                              <div className="space-y-4">
+                                <div className="space-y-1.5 flex flex-col">
                                   <Label className="text-xs font-bold text-blue-600">Target Class</Label>
                                   <select 
                                     className="w-full h-12 rounded-2xl border border-blue-100 bg-white dark:bg-slate-900 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
@@ -550,18 +557,55 @@ export default function ExamPapersPage() {
                                     ))}
                                   </select>
                                 </div>
-                                <div className="space-y-1.5">
-                                  <Label className="text-xs font-bold text-purple-600">Target Dept</Label>
-                                  <select 
-                                    className="w-full h-12 rounded-2xl border border-purple-100 bg-white dark:bg-slate-900 px-4 text-sm outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer"
-                                    value={examSettings.departmentId}
-                                    onChange={(e) => setExamSettings({ ...examSettings, departmentId: e.target.value })}
-                                  >
-                                    <option value="">No specific department</option>
-                                    {departmentsData?.map((d: any) => (
-                                      <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
-                                    ))}
-                                  </select>
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="text-[10px] uppercase tracking-widest font-black text-purple-500">
+                                      Target Departments (Optional) {examSettings.classId && "for selected class"}
+                                    </Label>
+                                    <span className="text-[10px] font-bold text-slate-400">
+                                      {examSettings.departmentIds?.length || 0} Selected
+                                    </span>
+                                  </div>
+                                  
+                                  {departmentsData && departmentsData.length > 0 ? (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                      {departmentsData.map((d: any) => {
+                                        const isSelected = examSettings.departmentIds?.includes(d.id);
+                                        return (
+                                          <div 
+                                            key={d.id}
+                                            onClick={() => {
+                                              const current = examSettings.departmentIds || [];
+                                              const next = current.includes(d.id) 
+                                                ? current.filter((id) => id !== d.id)
+                                                : [...current, d.id];
+                                              setExamSettings({ ...examSettings, departmentIds: next });
+                                            }}
+                                            className={`cursor-pointer group flex items-center gap-2 p-2 rounded-2xl border-2 transition-all ${
+                                              isSelected 
+                                                ? "bg-purple-50 border-purple-500/50 text-purple-700 shadow-sm shadow-purple-100" 
+                                                : "bg-slate-50 shadow-none border-slate-100 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800"
+                                            }`}
+                                          >
+                                            <div className={`w-5 h-5 flex-shrink-0 rounded-lg flex items-center justify-center transition-colors ${
+                                              isSelected ? "bg-purple-600 text-white" : "bg-slate-200 dark:bg-slate-800 text-transparent"
+                                            }`}>
+                                              <Check size={12} strokeWidth={3} />
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                              <span className="text-xs font-bold truncate leading-tight">{d.name}</span>
+                                              <span className="text-[10px] uppercase font-black opacity-50 tracking-tighter">{d.code}</span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <div className="h-14 flex items-center px-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px] italic border border-dashed border-slate-200">
+                                      {activeSchoolId ? "No departments found for this selection" : "Select a school first"}
+                                    </div>
+                                  )}
+                                  <p className="text-[10px] text-slate-500 font-medium">Leave empty for a class-wide or school-wide general exam.</p>
                                 </div>
                               </div>
                             </div>
@@ -830,6 +874,7 @@ export default function ExamPapersPage() {
         variant={confirmDialog.variant}
         confirmText={confirmDialog.confirmText}
         isLoading={
+          publishExamMutation.isPending ||
           unpublishExamMutation.isPending || 
           deleteExamMutation.isPending || 
           unpublishPaperMutation.isPending || 

@@ -43,12 +43,12 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status, showDot = true }) => 
     graded: 'Graded'
   };
 
-  const { bg, text, dot } = config[status];
+  const { bg, text, dot } = config[status] || config.draft || { bg: '', text: '', dot: '' };
 
   return (
     <div className={`flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-full ${bg} ${text}`}>
       {showDot && <div className={`w-2 h-2 rounded-full ${dot}`}></div>}
-      <span>{statusText[status]}</span>
+      <span>{statusText[status] || status}</span>
     </div>
   );
 };

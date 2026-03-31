@@ -20,6 +20,8 @@ type CreateClassInput = {
   scope: ClassScope;
   schoolId?: string;
   subjectIds?: string[];
+  departmentIds?: string[];
+  teacherIds?: string[];
 };
 
 export const createClassService = async ({
@@ -30,6 +32,8 @@ export const createClassService = async ({
   scope,
   schoolId,
   subjectIds = [],
+  departmentIds = [],
+  teacherIds = [],
 }: CreateClassInput) => {
   const classCode = await generateUniqueClassCode(name);
 
@@ -59,7 +63,6 @@ export const createClassService = async ({
         name,
         section: section || null,
         schoolId,
-        teacherId: null, // Admins don't assign themselves as teacher
         classCode,
         scope,
         status: ClassStatus.ACTIVE,
@@ -68,11 +71,15 @@ export const createClassService = async ({
         subjects: {
           create: subjectIds.map((subjectId) => ({ subjectId })),
         },
+        departments: {
+          create: departmentIds.map((departmentId) => ({ departmentId })),
+        },
       },
       include: {
         school: true,
-        teacher: true,
+        teachers: { include: { teacher: true } },
         subjects: { include: { subject: true } },
+        departments: { include: { department: true } },
         enrollments: { include: { student: true } },
       },
     });
@@ -96,7 +103,9 @@ export const createClassService = async ({
         name,
         section: section || null,
         schoolId: null,
-        teacherId: teacher.id,
+        teachers: {
+          create: { teacherId: teacher.id, isLead: true }
+        },
         classCode,
         scope: ClassScope.PERSONAL,
         status: ClassStatus.ACTIVE,
@@ -105,11 +114,15 @@ export const createClassService = async ({
         subjects: {
           create: subjectIds.map((subjectId) => ({ subjectId })),
         },
+        departments: {
+          create: departmentIds.map((departmentId) => ({ departmentId })),
+        },
       },
       include: {
         school: true,
-        teacher: true,
+        teachers: { include: { teacher: true } },
         subjects: { include: { subject: true } },
+        departments: { include: { department: true } },
         enrollments: { include: { student: true } },
       },
     });
@@ -141,7 +154,9 @@ export const createClassService = async ({
       name,
       section: section || null,
       schoolId: teacher.schoolId,
-      teacherId: teacher.id,
+      teachers: {
+        create: { teacherId: teacher.id, isLead: true }
+      },
       classCode,
       scope: ClassScope.SCHOOL,
       status: ClassStatus.PENDING,
@@ -150,10 +165,13 @@ export const createClassService = async ({
       subjects: {
         create: subjectIds.map((subjectId) => ({ subjectId })),
       },
+      departments: {
+        create: departmentIds.map((departmentId) => ({ departmentId })),
+      },
     },
     include: {
       school: true,
-      teacher: true,
+      teachers: { include: { teacher: true } },
       subjects: { include: { subject: true } },
       enrollments: { include: { student: true } },
     },
@@ -252,8 +270,9 @@ export const getClassesService = async ({
       where: { schoolId },
       include: {
         school: true,
-        teacher: true,
+        teachers: { include: { teacher: true } },
         subjects: { include: { subject: true } },
+        departments: { include: { department: true } },
         enrollments: { include: { student: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -262,11 +281,12 @@ export const getClassesService = async ({
 
   if (currentUserType === UserRole.TEACHER) {
     return prisma.class.findMany({
-      where: { teacherId: currentUserId },
+      where: { teachers: { some: { teacherId: currentUserId } } },
       include: {
         school: true,
-        teacher: true,
+        teachers: { include: { teacher: true } },
         subjects: { include: { subject: true } },
+        departments: { include: { department: true } },
         enrollments: { include: { student: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -280,8 +300,9 @@ export const getClassesService = async ({
         class: {
           include: {
             school: true,
-            teacher: true,
+            teachers: { include: { teacher: true } },
             subjects: { include: { subject: true } },
+            departments: { include: { department: true } },
             enrollments: { include: { student: true } },
           },
         },
@@ -298,8 +319,9 @@ export const getSingleClassService = async (classId: string) => {
     where: { id: classId },
     include: {
       school: true,
-      teacher: true,
+      teachers: { include: { teacher: true } },
       subjects: { include: { subject: true } },
+      departments: { include: { department: true } },
       enrollments: { include: { student: true } },
       exams: {
         select: {
@@ -311,7 +333,7 @@ export const getSingleClassService = async (classId: string) => {
           durationMinutes: true,
           createdAt: true,
           updatedAt: true,
-        }
+        },
       },
       quizzes: true,
     },
@@ -329,8 +351,9 @@ export const previewClassByCodeService = async (classCode: string) => {
     where: { classCode },
     include: {
       school: true,
-      teacher: true,
+      teachers: { include: { teacher: true } },
       subjects: { include: { subject: true } },
+      departments: { include: { department: true } },
       enrollments: true,
     },
   });
@@ -367,7 +390,7 @@ export const requestToJoinClassService = async ({
     where: { classCode },
     include: {
       school: true,
-      teacher: true,
+      teachers: { include: { teacher: true } },
       subjects: { include: { subject: true } },
     },
   });
@@ -591,12 +614,14 @@ export const updateClassService = async ({
   classId,
   name,
   section,
-  teacherId,
+  teacherIds,
+  departmentIds,
 }: {
   classId: string;
   name?: string;
   section?: string;
-  teacherId?: string;
+  teacherIds?: string[];
+  departmentIds?: string[];
 }) => {
   const foundClass = await prisma.class.findUnique({
     where: { id: classId },
@@ -611,11 +636,18 @@ export const updateClassService = async ({
     data: {
       name: name ?? undefined,
       section: section ?? undefined,
-      teacherId: teacherId ?? undefined,
+      teachers: teacherIds ? {
+        deleteMany: {},
+        create: teacherIds.map(id => ({ teacherId: id }))
+      } : undefined,
+      departments: departmentIds ? {
+        deleteMany: {},
+        create: departmentIds.map(id => ({ departmentId: id }))
+      } : undefined
     },
     include: {
       school: true,
-      teacher: true,
+      teachers: { include: { teacher: true } },
       subjects: { include: { subject: true } },
       enrollments: { include: { student: true } },
     },
@@ -726,4 +758,3 @@ export const removeSubjectFromClassService = async ({
 
   return true;
 };
-

@@ -6,6 +6,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useLoginMutation } from "../../services/use-auth-mutations";
 import { LoginFormData, loginSchema } from "../../services/auth-schema";
 import PasswordField from "../../student/components/PasswordField";
+import Link from "next/link";
+import { ROUTES } from "@/lib/constants/routes";
 // import { adminRoleOptions } from "@/lib/constants/adminOptions"; // Commented out
 
 export default function LoginForm() {
@@ -122,12 +124,6 @@ export default function LoginForm() {
             <p className="text-sm font-medium text-[#525F7F] dark:text-gray-300 pb-2">
               Password
             </p>
-            <a
-              href="#"
-              className="text-sm font-medium text-[#6B7FD7] hover:text-[#0A2540] dark:hover:text-blue-400 transition-colors duration-200"
-            >
-              Forgot Password?
-            </a>
           </div>
 
           {/* Using your PasswordField component */}
@@ -139,6 +135,15 @@ export default function LoginForm() {
             onTogglePassword={togglePasswordVisibility}
             placeholder="Enter your password"
           />
+
+          <div className="flex justify-end mt-1">
+            <Link
+              href={ROUTES.AUTH.FORGOT_PASSWORD}
+              className="text-xs font-medium text-blue-500 hover:underline transition-colors duration-200"
+            >
+              Forgot Password?
+            </Link>
+          </div>
         </label>
         {errors.password && (
           <p className="text-red-500 text-xs mt-1 ml-1 animate-fadeIn">
