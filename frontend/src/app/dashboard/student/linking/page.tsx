@@ -27,11 +27,23 @@ import { ConfirmationModal } from '@/components/reusable/ConfirmationModal';
 import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/utils/clipboard';
+import Pagination from '@/components/ui/Pagination';
+import { useEffect } from 'react';
 
 export default function LinkingHub() {
-  const { data: requests = [], isLoading: isLoadingRequests } = useLinkRequests();
-  const { data: activeLinks = [], isLoading: isLoadingActive } = useActiveLinks();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
+  const [subTab, setSubTab] = useState<'active' | 'pending'>('active');
+
+  const { data: requestsData, isLoading: isLoadingRequests } = useLinkRequests({ page: currentPage, category: mainTab });
+  const { data: activeLinksData, isLoading: isLoadingActive } = useActiveLinks({ page: currentPage, category: mainTab });
   const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
+
+  const requests = requestsData?.items || [];
+  const activeLinks = activeLinksData?.items || [];
+  
+  const pagination = subTab === 'active' ? activeLinksData?.pagination : requestsData?.pagination;
+  
   const profile = profileResponse?.data || {};
 
   const respondMutation = useRespondToLinkRequest();
@@ -40,9 +52,12 @@ export default function LinkingHub() {
   const createMutation = useCreateLinkRequest();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
-  const [subTab, setSubTab] = useState<'active' | 'pending'>('active');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+
+  // Reset page when tabs change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [mainTab, subTab]);
 
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState<{
@@ -133,8 +148,8 @@ export default function LinkingHub() {
     return matchesTab && matchesSearch;
   });
 
-  const networkPendingCount = normalizedRequests.filter((r: any) => r.status === 'PENDING' && !isClassLink(r.linkType)).length;
-  const classroomPendingCount = normalizedRequests.filter((r: any) => r.status === 'PENDING' && isClassLink(r.linkType)).length;
+  const networkPendingCount = subTab === 'pending' && mainTab === 'network' ? (requestsData?.pagination?.total || 0) : 0;
+  const classroomPendingCount = subTab === 'pending' && mainTab === 'classroom' ? (requestsData?.pagination?.total || 0) : 0;
 
 
   return (
@@ -335,6 +350,16 @@ export default function LinkingHub() {
               )
             )}
           </div>
+
+          {pagination && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.total}
+              itemsPerPage={pagination.limit}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
       </div>
 

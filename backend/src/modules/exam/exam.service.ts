@@ -28,6 +28,7 @@ export const createExamService = async ({
   resultReleaseAt,
   term,
   teacherId,
+  endDate,
   departmentIds = [],
 }: {
   title: string;
@@ -47,6 +48,7 @@ export const createExamService = async ({
   startDate?: Date | string;
   allowImmediateResult?: boolean;
   resultReleaseAt?: Date | string;
+  endDate?: Date | string;
   teacherId?: string;
 }) => {
   console.log("LOG: [createExamService] Data received:", { title, scope, schoolId });
@@ -67,6 +69,7 @@ export const createExamService = async ({
       startDate: startDate ? new Date(startDate) : null,
       allowImmediateResult: allowImmediateResult !== undefined ? allowImmediateResult : true,
       resultReleaseAt: resultReleaseAt ? new Date(resultReleaseAt) : null,
+      endDate: endDate ? new Date(endDate) : null,
       term: term || null,
       teacherId: teacherId || null,
       departments: departmentIds.length > 0 ? {
@@ -105,37 +108,47 @@ export const getExamsService = async (filters: {
   
   // For students, we strictly enforce PUBLISHED status and multi-criteria targeting
   if (filters.availableForStudentId) {
+    console.log("LOG: [getExamsService] Fetching student info for filtering:", filters.availableForStudentId);
     const student = await prisma.student.findUnique({
       where: { id: filters.availableForStudentId },
       include: { classes: true },
     });
 
     if (!student) throw new Error("Student not found");
+    console.log("LOG: [getExamsService] Student found:", { 
+      id: student.id, 
+      schoolId: student.schoolId, 
+      departmentId: student.departmentId,
+      classesCount: student.classes.length 
+    });
 
     where.status = AssessmentStatus.PUBLISHED;
     
     const classIds = student.classes.map((c) => c.classId);
     
-    // Logic: 
-    // 1. Exams assigned to user's class AND matching department
-    // 2. Exams NOT assigned to any class BUT matching department
-    // 3. General exams NOT assigned to any class AND NOT assigned to any department
-    where.OR = [
-      { 
-        classId: { in: classIds },
-        departments: { some: { departmentId: student.departmentId } } 
-      },
-      {
-        schoolId: student.schoolId,
-        classId: null,
-        departments: { some: { departmentId: student.departmentId } },
-      },
+    const orConditions: any[] = [
+      // 1. General school-wide exams: No class restriction AND no department restriction
       {
         schoolId: student.schoolId,
         classId: null,
         departments: { none: {} },
       }
     ];
+
+    // 2. Specific targeted exams: MUST match BOTH class AND department (as requested by user)
+    if (classIds.length > 0 && student.departmentId) {
+      orConditions.push({
+        classId: { in: classIds },
+        departments: { some: { departmentId: student.departmentId } } 
+      });
+    }
+    
+    // Note: If an exam has a class but no department, or a department but no class, 
+    // it is NOT considered "General" and will not show up here unless it matches 
+    // the strict (Class + Dept) rule.
+
+    where.OR = orConditions;
+    console.log("LOG: [getExamsService] Generated OR conditions:", JSON.stringify(where.OR, null, 2));
   } else {
     // Admin/Teacher filters
     if (filters.status) where.status = filters.status;
@@ -335,6 +348,7 @@ export const createSubjectPaperService = async ({
   title,
   instructions,
   durationMinutes,
+  readingContent,
 }: {
   examId?: string;
   subjectId?: string;
@@ -343,6 +357,7 @@ export const createSubjectPaperService = async ({
   title?: string;
   instructions?: string;
   durationMinutes?: number;
+  readingContent?: string;
 }) => {
   return prisma.subjectExamPaper.create({
     data: {
@@ -353,12 +368,30 @@ export const createSubjectPaperService = async ({
       title: title || null,
       instructions: instructions || null,
       durationMinutes: durationMinutes || null,
+      readingContent: readingContent || null,
     },
     include: {
       exam: true,
       subject: true,
       school: true,
       teacher: true,
+    },
+  });
+};
+
+export const updateSubjectPaperService = async (paperId: string, data: {
+  title?: string;
+  instructions?: string;
+  durationMinutes?: number;
+  readingContent?: string;
+  subjectId?: string;
+  teacherId?: string;
+}) => {
+  return prisma.subjectExamPaper.update({
+    where: { id: paperId },
+    data: {
+      ...data,
+      updatedAt: new Date(),
     },
   });
 };
@@ -874,6 +907,7 @@ export const updateExamService = async (
     sessionId?: string | null;
     term?: any | null;
     teacherId?: string | null;
+    endDate?: Date | string | null;
   }
 ) => {
   const existing = await prisma.exam.findUnique({
@@ -890,6 +924,9 @@ export const updateExamService = async (
   }
   if (data.resultReleaseAt !== undefined) {
     updateData.resultReleaseAt = data.resultReleaseAt ? new Date(data.resultReleaseAt) : null;
+  }
+  if (data.endDate !== undefined) {
+    updateData.endDate = data.endDate ? new Date(data.endDate) : null;
   }
 
   // Ensure classId is handled if provided

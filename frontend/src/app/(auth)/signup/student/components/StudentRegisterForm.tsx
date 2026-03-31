@@ -4,6 +4,8 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import { UserRole } from '@/lib/types/user.types';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useStudentRegistration } from '../../services/useRegistrationMutations';
@@ -18,6 +20,7 @@ export default function StudentRegisterForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
+  const [showOptional, setShowOptional] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -303,95 +306,128 @@ export default function StudentRegisterForm() {
             )}
           </label>
 
-          {/* School Code */}
-          <label className="flex flex-col">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
-                School Code (optional)
-              </p>
-              <div className="relative group">
-                <span className="material-symbols-outlined text-gray-400 text-base cursor-pointer">
-                  info
-                </span>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                  Enter the code provided by your school.
-                </div>
-              </div>
+          {/* Optional Fields Toggle */}
+          <div className="pt-4 pb-2">
+            <div className="relative flex items-center justify-center">
+              <div className="flex-grow border-t border-gray-100 dark:border-gray-800"></div>
+              <button
+                type="button"
+                onClick={() => setShowOptional(!showOptional)}
+                className="flex items-center gap-2 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-primary transition-all duration-300 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-full shadow-sm hover:shadow-md z-10"
+              >
+                {showOptional ? 'Hide Referral Codes' : 'Have a Referral Code?'}
+                <motion.div
+                  animate={{ rotate: showOptional ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <ChevronDown size={14} />
+                </motion.div>
+              </button>
+              <div className="flex-grow border-t border-gray-100 dark:border-gray-800"></div>
             </div>
-            <input
-              type="text"
-              {...register('schoolCode')}
-              placeholder="Enter your School Code"
-              className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.schoolCode
-                ? 'border-red-500 dark:border-red-400'
-                : 'border-gray-300 dark:border-gray-700'
-                }`}
-              disabled={isPending}
-            />
-            {errors.schoolCode && (
-              <p className="text-red-500 text-sm mt-2">{errors.schoolCode.message}</p>
-            )}
-          </label>
+          </div>
 
-          {/* Teacher Code */}
-          <label className="flex flex-col">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
-                Teacher Code (optional)
-              </p>
-              <div className="relative group">
-                <span className="material-symbols-outlined text-gray-400 text-base cursor-pointer">
-                  info
-                </span>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                  Enter the code provided by your teacher to join their section.
-                </div>
-              </div>
-            </div>
-            <input
-              type="text"
-              {...register('teacherCode')}
-              placeholder="Enter your Teacher Code (format: tch-123456)"
-              className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.teacherCode
-                ? 'border-red-500 dark:border-red-400'
-                : 'border-gray-300 dark:border-gray-700'
-                }`}
-              disabled={isPending}
-            />
-            {errors.teacherCode && (
-              <p className="text-red-500 text-sm mt-2">{errors.teacherCode.message}</p>
-            )}
-          </label>
+          <AnimatePresence>
+            {showOptional && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                className="overflow-hidden space-y-6 pt-2"
+              >
+                {/* School Code */}
+                <label className="flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
+                      School Code (optional)
+                    </p>
+                    <div className="relative group">
+                      <span className="material-symbols-outlined text-gray-400 text-base cursor-pointer">
+                        info
+                      </span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                        Enter the code provided by your school.
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="text"
+                    {...register('schoolCode')}
+                    placeholder="Enter your School Code"
+                    className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.schoolCode
+                      ? 'border-red-500 dark:border-red-400'
+                      : 'border-gray-300 dark:border-gray-700'
+                      }`}
+                    disabled={isPending}
+                  />
+                  {errors.schoolCode && (
+                    <p className="text-red-500 text-sm mt-2">{errors.schoolCode.message}</p>
+                  )}
+                </label>
 
-          {/* Parent Code */}
-          <label className="flex flex-col">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
-                Parent Code (optional)
-              </p>
-              <div className="relative group">
-                <span className="material-symbols-outlined text-gray-400 text-base cursor-pointer">
-                  info
-                </span>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                  Enter the code provided by your parent to link your accounts.
-                </div>
-              </div>
-            </div>
-            <input
-              type="text"
-              {...register('parentCode')}
-              placeholder="Enter your Parent Code"
-              className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.parentCode
-                ? 'border-red-500 dark:border-red-400'
-                : 'border-gray-300 dark:border-gray-700'
-                }`}
-              disabled={isPending}
-            />
-            {errors.parentCode && (
-              <p className="text-red-500 text-sm mt-2">{errors.parentCode.message}</p>
+                {/* Teacher Code */}
+                <label className="flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
+                      Teacher Code (optional)
+                    </p>
+                    <div className="relative group">
+                      <span className="material-symbols-outlined text-gray-400 text-base cursor-pointer">
+                        info
+                      </span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                        Enter the code provided by your teacher to join their section.
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="text"
+                    {...register('teacherCode')}
+                    placeholder="Enter your Teacher Code (format: tch-123456)"
+                    className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.teacherCode
+                      ? 'border-red-500 dark:border-red-400'
+                      : 'border-gray-300 dark:border-gray-700'
+                      }`}
+                    disabled={isPending}
+                  />
+                  {errors.teacherCode && (
+                    <p className="text-red-500 text-sm mt-2">{errors.teacherCode.message}</p>
+                  )}
+                </label>
+
+                {/* Parent Code */}
+                <label className="flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
+                      Parent Code (optional)
+                    </p>
+                    <div className="relative group">
+                      <span className="material-symbols-outlined text-gray-400 text-base cursor-pointer">
+                        info
+                      </span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                        Enter the code provided by your parent to link your accounts.
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="text"
+                    {...register('parentCode')}
+                    placeholder="Enter your Parent Code"
+                    className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.parentCode
+                      ? 'border-red-500 dark:border-red-400'
+                      : 'border-gray-300 dark:border-gray-700'
+                      }`}
+                    disabled={isPending}
+                  />
+                  {errors.parentCode && (
+                    <p className="text-red-500 text-sm mt-2">{errors.parentCode.message}</p>
+                  )}
+                </label>
+              </motion.div>
             )}
-          </label>
+          </AnimatePresence>
 
           {/* Submit Button */}
           <button

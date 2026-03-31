@@ -3,20 +3,20 @@ import React from 'react';
 import { ExamDetail } from './types';
 
 interface ExamDetailsProps {
-    className?: string;
+    classLabel: string;
     durationMinutes: number;
     subjectName: string;
     totalQuestions: number;
 }
 
 const ExamDetails: React.FC<ExamDetailsProps> = ({ 
-    className = "Grade 10 - Section A", 
+    classLabel, 
     durationMinutes, 
     subjectName, 
     totalQuestions 
 }) => {
     const details: ExamDetail[] = [
-        { label: 'Class', value: className },
+        { label: 'Class', value: classLabel },
         { label: 'Duration', value: `${durationMinutes} Minutes` },
         { label: 'Subject', value: subjectName },
         { label: 'Total Questions', value: totalQuestions.toString() },

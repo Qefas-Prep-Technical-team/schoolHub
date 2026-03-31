@@ -140,6 +140,92 @@ export const getSessionExamAnalyticsService = async ({
     title: exam.title,
     status: exam.status,
     totalMarks: exam.totalMarks,
-    totalSubjectPapers: exam.subjectPapers.length,
   }));
+};
+
+export const getStudentGlobalStatsService = async ({
+  studentId,
+}: {
+  studentId: string;
+}) => {
+  // 1. Get the student's primary class
+  const enrollment = await prisma.classEnrollment.findFirst({
+    where: { studentId },
+    include: { class: true },
+  });
+
+  const classId = enrollment?.classId;
+
+  // 2. Get all graded attempts for this student
+  const studentAttempts = await prisma.examAttempt.findMany({
+    where: { studentId, status: "SCORED" },
+  });
+
+  const completedCount = studentAttempts.length;
+  const totalScore = studentAttempts.reduce((sum, a) => sum + Number(a.totalScore || 0), 0);
+  const totalPossible = studentAttempts.reduce((sum, a) => sum + Number(a.totalMarks || 1), 0);
+  const averageScore = totalPossible > 0 ? (totalScore / totalPossible) * 100 : 0;
+
+  // 3. Calculate rank in class if classId exists
+  let overallRank = 0;
+  let totalStudentsInClass = 0;
+
+  if (classId) {
+    const classEnrollments = await prisma.classEnrollment.findMany({
+      where: { classId },
+      select: { studentId: true },
+    });
+    totalStudentsInClass = classEnrollments.length;
+
+    const classStudentIds = classEnrollments.map((e) => e.studentId);
+
+    // Get total points for ALL students in this class
+    const allClassAttempts = await prisma.examAttempt.findMany({
+      where: {
+        studentId: { in: classStudentIds },
+        status: "SCORED",
+      },
+      select: {
+        studentId: true,
+        totalScore: true,
+      },
+    });
+
+    const studentPointsMap: Record<string, number> = {};
+    allClassAttempts.forEach((attempt) => {
+      studentPointsMap[attempt.studentId] = (studentPointsMap[attempt.studentId] || 0) + Number(attempt.totalScore || 0);
+    });
+
+    const sortedStudents = Object.entries(studentPointsMap)
+      .sort(([, a], [, b]) => b - a);
+
+    const rankIndex = sortedStudents.findIndex(([id]) => id === studentId);
+    overallRank = rankIndex !== -1 ? rankIndex + 1 : 0;
+  }
+
+  // 4. Calculate Upcoming count
+  // (We'll count published exams that have no started attempt for this student)
+  const upcomingExamsCount = classId ? await prisma.exam.count({
+    where: {
+      status: "PUBLISHED",
+      classId,
+      examAttempts: { none: { studentId } },
+      startDate: { gte: new Date() },
+    }
+  }) : 0;
+
+  return {
+    studentId,
+    classId,
+    completedCount,
+    upcomingCount: upcomingExamsCount,
+    averageScore: Math.round(averageScore),
+    overallRank,
+    totalStudentsInClass,
+    // Basic trend mock for now
+    trend: {
+        value: "+2.1%",
+        color: "green"
+    }
+  };
 };

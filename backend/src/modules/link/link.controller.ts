@@ -227,13 +227,15 @@ export const getMySentLinkRequests = async (req: Request, res: Response) => {
         limit: Number(req.query.limit),
         status: req.query.status as string,
         linkType: req.query.linkType as string,
+        category: req.query.category as any,
       },
     );
 
     return res.status(200).json({
       success: true,
       message: "Sent requests fetched successfully",
-      ...result,
+      items: result.items,
+      pagination: result.pagination,
     });
   } catch (error: any) {
     console.error("getMySentLinkRequests error:", error);
@@ -266,13 +268,15 @@ export const getMyPendingLinkRequests = async (req: Request, res: Response) => {
         page: Number(req.query.page),
         limit: Number(req.query.limit),
         linkType: req.query.linkType as string,
+        category: req.query.category as any,
       },
     );
 
     return res.status(200).json({
       success: true,
       message: "Pending requests fetched successfully",
-      ...result,
+      items: result.items,
+      pagination: result.pagination,
     });
   } catch (error: any) {
     console.error("getMyPendingLinkRequests error:", error);
@@ -306,13 +310,15 @@ export const getAllLinkRequests = async (req: Request, res: Response) => {
         limit: Number(req.query.limit),
         status: req.query.status as string,
         linkType: req.query.linkType as string,
+        category: req.query.category as any,
       },
     );
 
     return res.status(200).json({
       success: true,
-      message: "Link requests fetched successfully",
-      ...result,
+      message: "All link requests fetched successfully",
+      items: result.items,
+      pagination: result.pagination,
     });
   } catch (error: any) {
     console.error("getAllLinkRequests error:", error);
@@ -345,13 +351,15 @@ export const getMyActiveLinks = async (req: Request, res: Response) => {
         page: Number(req.query.page),
         limit: Number(req.query.limit),
         linkType: req.query.linkType as string,
+        category: req.query.category as any,
       },
     );
 
     return res.status(200).json({
       success: true,
       message: "Active links fetched successfully",
-      ...result,
+      items: result.items,
+      pagination: result.pagination,
     });
   } catch (error: any) {
     console.error("getMyActiveLinks error:", error);

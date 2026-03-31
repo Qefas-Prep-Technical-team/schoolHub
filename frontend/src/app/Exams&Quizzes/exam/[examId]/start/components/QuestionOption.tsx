@@ -8,6 +8,8 @@ interface QuestionOptionProps extends QuestionOption {
     onSelect?: (id: string) => void;
 }
 
+import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
+
 const QuestionOptionComponent: React.FC<QuestionOptionProps> = ({
     id,
     text,
@@ -33,9 +35,10 @@ const QuestionOptionComponent: React.FC<QuestionOptionProps> = ({
                 onChange={() => {}} // Controlled by label onClick for better consistency
                 className="h-5 w-5 border-gray-300 dark:border-gray-600 dark:bg-gray-900 text-primary focus:ring-primary"
             />
-            <span className="flex-1 text-base text-gray-700 dark:text-gray-300">
-                {text}
-            </span>
+            <LaTeXRenderer 
+                content={text}
+                className="flex-1 text-base text-gray-700 dark:text-gray-300"
+            />
         </label>
     );
 };

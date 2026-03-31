@@ -180,7 +180,15 @@ export const registerSchool = async (req: Request, res: Response) => {
 
 export const registerTeacher = async (req: Request, res: Response) => {
   try {
-    const { fullName, email, password, confirmPassword, schoolCode, studentCode, isIndependent } = req.body;
+    const {
+      fullName,
+      email,
+      password,
+      confirmPassword,
+      schoolCode,
+      studentCode,
+      isIndependent,
+    } = req.body;
 
     if (!fullName || !email || !password) {
       return res.status(400).json({
@@ -247,7 +255,9 @@ export const registerTeacher = async (req: Request, res: Response) => {
           password: hashedPassword,
           role: UserRole.TEACHER,
           tenantIds: schoolToConnect ? [schoolToConnect.tenantId] : [],
-          defaultTenantId: schoolToConnect ? schoolToConnect.tenantId : "default-tenant-id",
+          defaultTenantId: schoolToConnect
+            ? schoolToConnect.tenantId
+            : "default-tenant-id",
           teacherCode,
           schoolId: schoolToConnect ? schoolToConnect.id : null,
         },
@@ -313,8 +323,8 @@ export const registerTeacher = async (req: Request, res: Response) => {
       message: result.studentToConnect
         ? `Teacher registered and link requests sent to school and student ${result.studentToConnect.studentCode}`
         : schoolToConnect
-        ? "Teacher registered and connection request sent successfully"
-        : "Independent teacher account created successfully",
+          ? "Teacher registered and connection request sent successfully"
+          : "Independent teacher account created successfully",
       data: {
         teacher: {
           id: result.teacher.id,
@@ -572,7 +582,8 @@ export const registerStudent = async (
           studentCode: result.studentCode,
         },
         userRole: result.role,
-        message: "Your registration is complete. We've sent connection requests to the specified school/teacher/parent.",
+        message:
+          "Your registration is complete. We've sent connection requests to the specified school/teacher/parent.",
       },
     });
   } catch (error: any) {
@@ -697,13 +708,14 @@ export const registerParent = async (
     if (result.studentData) {
       getIO().to(`user:${result.studentData.id}`).emit("link:updated", {
         type: "LINK_REQUEST_RECEIVED",
-        message: "A parent has registered and requested to link with your account",
+        message:
+          "A parent has registered and requested to link with your account",
       });
     }
 
     const response: any = {
       success: true,
-      message: result.studentData 
+      message: result.studentData
         ? `Parent account created and link request sent to student ${result.studentData.studentCode}`
         : "Parent account created successfully",
       data: {
@@ -1620,6 +1632,7 @@ export const logout = async (req: Request, res: Response) => {
 export const requestPasswordReset = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
+    console.log("Password reset request for email:", email);
 
     if (!email) {
       return res.status(400).json({
@@ -1686,11 +1699,24 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
     const resendTest = process.env.RESEND_TEST === "true" || false; // default to false if not set
     const mainEmail = resendTest ? testEmail : email;
     // Send reset email
-    await sendPasswordResetEmail(mainEmail, resetCode);
+    const result = await sendPasswordResetEmail(mainEmail, resetCode);
+
+    if (result.error) {
+      console.log("RESEND PASSWORD RESET ERROR:", result.error);
+      // In development/test mode, we might want to know if it failed
+      if (resendTest) {
+        console.error(
+          "Failed to send reset email to test account:",
+          result.error,
+        );
+      }
+    } else {
+      console.log("RESEND PASSWORD RESET SUCCESS:", result.data);
+    }
 
     return res.status(200).json({
       success: true,
-      message: `If an account with the email ${email}exists, a reset link has been sent.`,
+      message: `If an account with the email ${email} exists, a reset link has been sent.`,
     });
   } catch (error: any) {
     console.error("Password reset request error:", error);

@@ -10,7 +10,13 @@ import { ChevronLeft, FileText, Settings, Loader2, Check, Globe } from "lucide-r
 import { toast } from "react-toastify";
 import QuestionManager from "./components/QuestionManager";
 import ConfirmationModal from "../../../components/ui/ConfirmationModal";
+import ReadingContentModal from "./components/ReadingContentModal";
+import PaperPreviewModal from "./components/PaperPreviewModal";
+import EditPaperModal from "./components/EditPaperModal";
 import { useState } from "react";
+import { BookOpen, Eye, Settings as SettingsIcon } from "lucide-react";
+import { apiClient } from "@/lib/api/client";
+import { classService } from "@/lib/api/services/classService";
 
 export default function PaperDetailPage() {
   const params = useParams();
@@ -99,6 +105,30 @@ export default function PaperDetailPage() {
       isOpen: true,
     });
   };
+
+  const [isReadingModalOpen, setIsReadingModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Fetch subjects and teachers for the edit modal
+  const schoolId = exam?.schoolId;
+  const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery({
+    queryKey: ["subjects", schoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/academic/subjects?schoolId=${schoolId}`);
+      return data.data || data;
+    },
+    enabled: !!schoolId && isEditModalOpen,
+  });
+
+  const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery({
+    queryKey: ["teachers", schoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/schools/${schoolId}/teachers`);
+      return data.data || data;
+    },
+    enabled: !!schoolId && isEditModalOpen,
+  });
 
   if (isLoadingPaper || isLoadingExam) {
     return (
@@ -208,7 +238,36 @@ export default function PaperDetailPage() {
               })}
               disabled={deletePaperMutation.isPending}
             >
-              {deletePaperMutation.isPending ? <Loader2 className="animate-spin h-3 w-3" /> : "Delete"}
+              {unpublishPaperMutation.isPending ? <Loader2 className="animate-spin h-3 w-3" /> : "Delete"}
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-lg bg-primary/5 text-primary border-primary/20 hover:bg-primary/10 text-xs px-4 font-bold flex items-center gap-2"
+              onClick={() => setIsReadingModalOpen(true)}
+            >
+              <BookOpen size={12} />
+              {paper.readingContent ? "Edit Reading Content" : "Add Reading Content"}
+            </Button>
+
+            <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 rounded-lg text-slate-600 border-slate-200 hover:bg-slate-50 text-xs px-3 font-semibold flex items-center gap-1.5"
+                onClick={() => setIsEditModalOpen(true)}
+            >
+                <SettingsIcon size={14} /> Settings
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-lg bg-amber-500/5 text-amber-600 border-amber-200 hover:bg-amber-100 text-xs px-4 font-bold flex items-center gap-2"
+              onClick={() => setIsPreviewModalOpen(true)}
+            >
+              <Eye size={12} />
+              Preview Mode
             </Button>
             
             <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-800 hidden sm:block mx-1"></div>
@@ -241,6 +300,28 @@ export default function PaperDetailPage() {
         variant={confirmDialog.variant}
         confirmText={confirmDialog.confirmText}
         isLoading={unpublishPaperMutation.isPending || deletePaperMutation.isPending}
+      />
+
+      <ReadingContentModal
+        isOpen={isReadingModalOpen}
+        onClose={() => setIsReadingModalOpen(false)}
+        paperId={paperId}
+        initialContent={paper.readingContent}
+      />
+
+      <PaperPreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        paper={paper}
+      />
+
+      <EditPaperModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        paper={paper}
+        subjects={subjects}
+        teachers={teachers}
+        isLoadingData={isLoadingSubjects || isLoadingTeachers}
       />
     </div>
   );

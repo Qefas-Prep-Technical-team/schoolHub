@@ -140,6 +140,9 @@ export default function ExamPapersPage() {
     title: "",
     description: "",
     startDate: "",
+    endDate: "",
+    resultReleaseAt: "",
+    allowImmediateResult: false,
     scope: "SCHOOL",
     classId: "",
     departmentIds: [] as string[],
@@ -179,7 +182,7 @@ export default function ExamPapersPage() {
     enabled: isSettingsOpen && !!activeSchoolId,
   });
 
-  // Sync settings when scope changes (Optional: keeping it flexible as per request)
+  // Sync settings when scope changes
   useEffect(() => {
     if (examSettings.scope === "SCHOOL") {
       // For school scope, class and department are optional filters
@@ -188,24 +191,31 @@ export default function ExamPapersPage() {
     } else if (examSettings.scope === "DEPARTMENT") {
       setExamSettings(prev => ({ ...prev, classId: "" }));
     }
-  }, [examSettings.scope]);
+
+    if (examSettings.allowImmediateResult) {
+      setExamSettings(prev => ({ ...prev, resultReleaseAt: "" }));
+    }
+  }, [examSettings.scope, examSettings.allowImmediateResult]);
 
   useEffect(() => {
-    if (exam) {
+    if (exam && isSettingsOpen) {
       setExamSettings({
         title: exam.title || "",
         description: exam.description || "",
         startDate: exam.startDate ? new Date(exam.startDate).toISOString().slice(0, 16) : "",
+        endDate: exam.endDate ? new Date(exam.endDate).toISOString().slice(0, 16) : "",
+        resultReleaseAt: exam.resultReleaseAt ? new Date(exam.resultReleaseAt).toISOString().slice(0, 16) : "",
+        allowImmediateResult: !!exam.allowImmediateResult,
         scope: exam.scope || "SCHOOL",
         classId: exam.classId || "",
-        departmentIds: exam.departments?.map((d: any) => d.department.id) || [],
+        departmentIds: exam.departments?.map((d: any) => d.departmentId || d.department?.id) || [],
         durationMinutes: exam.durationMinutes || 0,
         sessionId: exam.sessionId || "",
         term: exam.term || "",
         teacherId: exam.teacherId || "",
       });
     }
-  }, [exam]);
+  }, [exam, isSettingsOpen]);
 
   const updateExamMutation = useMutation({
     mutationFn: (data: any) => examService.updateExam(examId, data),
@@ -511,6 +521,18 @@ export default function ExamPapersPage() {
                                 />
                               </div>
                               <div className="space-y-1.5">
+                                <Label htmlFor="endDate" className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                                  <Calendar size={14} className="text-rose-500" /> End Date
+                                </Label>
+                                <Input
+                                  id="endDate"
+                                  type="datetime-local"
+                                  className="rounded-2xl border-slate-200 h-12"
+                                  value={examSettings.endDate}
+                                  onChange={(e) => setExamSettings({ ...examSettings, endDate: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-1.5">
                                 <Label htmlFor="duration" className="text-xs font-bold text-slate-600 flex items-center gap-2">
                                   <Clock size={14} className="text-primary" /> Duration (Mins)
                                 </Label>
@@ -522,6 +544,34 @@ export default function ExamPapersPage() {
                                   onChange={(e) => setExamSettings({ ...examSettings, durationMinutes: parseInt(e.target.value) || 0 })}
                                 />
                               </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-slate-600">Result Visibility</Label>
+                                <select 
+                                  className="w-full h-12 rounded-2xl border border-slate-200 bg-white dark:bg-slate-900 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                                  value={examSettings.allowImmediateResult ? "immediate" : "scheduled"}
+                                  onChange={(e) => setExamSettings({ ...examSettings, allowImmediateResult: e.target.value === "immediate" })}
+                                >
+                                  <option value="immediate">Show results immediately</option>
+                                  <option value="scheduled">Release on specific date</option>
+                                </select>
+                              </div>
+                              {!examSettings.allowImmediateResult && (
+                                <div className="space-y-1.5">
+                                  <Label htmlFor="resultReleaseAt" className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                                    <Calendar size={14} className="text-purple-500" /> Result Release Date
+                                  </Label>
+                                  <Input
+                                    id="resultReleaseAt"
+                                    type="datetime-local"
+                                    className="rounded-2xl border-slate-200 h-12"
+                                    value={examSettings.resultReleaseAt}
+                                    onChange={(e) => setExamSettings({ ...examSettings, resultReleaseAt: e.target.value })}
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

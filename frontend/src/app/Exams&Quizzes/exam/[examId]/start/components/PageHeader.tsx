@@ -5,16 +5,21 @@ import Breadcrumbs from './Breadcrumbs';
 
 interface PageHeaderProps {
     title: string;
+    subtitle?: string;
 }
 
-const PageHeader: React.FC<PageHeaderProps> = ({ title }) => {
+const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle }) => {
     return (
-        <header className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <p className="text-3xl font-bold tracking-tight">
+        <header className="flex flex-col gap-1">
+            <div className="flex flex-col">
+                <p className="text-3xl font-black tracking-tight text-[#111827] dark:text-white leading-tight">
                     {title}
                 </p>
-
+                {subtitle && (
+                    <p className="text-xs font-black uppercase tracking-widest text-primary italic">
+                        {subtitle}
+                    </p>
+                )}
             </div>
             <Breadcrumbs />
         </header>

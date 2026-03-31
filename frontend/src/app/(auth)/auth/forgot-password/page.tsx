@@ -43,12 +43,13 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = (data: ResetPasswordRequestFormData) => {
     setServerError("");
-    requestReset(data.email, {
+    const normalizedEmail = data.email.toLowerCase();
+    requestReset(normalizedEmail, {
       onSuccess: () => {
         setIsSubmitted(true);
-        setSubmittedEmail(data.email);
-         // Pass email via URL params
-        router.push(`/auth/forgot-password/CheckYourEmail?email=${encodeURIComponent(data.email)}`);
+        setSubmittedEmail(normalizedEmail);
+        // Pass email via URL params
+        router.push(`/auth/forgot-password/CheckYourEmail?email=${encodeURIComponent(normalizedEmail)}`);
       },
       onError: (error) => {
         setServerError(error.message);
@@ -83,8 +84,8 @@ export default function ForgotPasswordPage() {
             <div className="flex flex-col w-full gap-6 mt-6">
               <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
                 <div>
-                  <InputField 
-                    label="Email Address" 
+                  <InputField
+                    label="Email Address"
                     placeholder="example@email.com"
                     value={emailValue}
                     onChange={handleInputChange}
@@ -93,14 +94,14 @@ export default function ForgotPasswordPage() {
                     disabled={isPending}
                   />
                 </div>
-                
+
                 {serverError && (
                   <div className="p-3 text-sm text-red-500 bg-red-50 rounded-lg dark:bg-red-900/20 dark:text-red-400 animate-fadeIn">
                     {serverError}
                   </div>
                 )}
 
-                <ButtonGroup 
+                <ButtonGroup
                   isPending={isPending}
                   isValid={isValid}
                   onSubmit={handleSubmit(onSubmit)}
@@ -110,8 +111,8 @@ export default function ForgotPasswordPage() {
           </CardContainer>
 
           {isSubmitted && (
-            <SuccessAlert 
-              message={`If an account with the email ${submittedEmail} exists, a reset link has been sent.`} 
+            <SuccessAlert
+              message={`If an account with the email ${submittedEmail} exists, a reset link has been sent.`}
             />
           )}
         </div>

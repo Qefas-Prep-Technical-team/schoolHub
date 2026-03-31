@@ -3,8 +3,20 @@
 import ProgressCircle from '@/components/ui/ProgressCircle';
 import { Award, Info } from 'lucide-react';
 
-export default function PerformanceChart() {
-  const performanceScore = 82; // 82%
+interface PerformanceChartProps {
+  stats?: {
+    averageScore: number;
+    overallRank: number;
+    totalStudentsInClass: number;
+  };
+}
+
+export default function PerformanceChart({ stats }: PerformanceChartProps) {
+  const performanceScore = stats?.averageScore || 0;
+  const rank = stats?.overallRank || 0;
+  const total = stats?.totalStudentsInClass || 0;
+
+  const percentile = total > 0 ? Math.round((1 - (rank - 1) / total) * 100) : 0;
 
   return (
     <div className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 transition-all hover:border-primary/50 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/40 dark:backdrop-blur-xl h-full flex flex-col">
@@ -35,10 +47,14 @@ export default function PerformanceChart() {
         
         <div className="mt-8 text-center space-y-2">
           <p className="text-sm font-black text-slate-900 dark:text-white">
-            Top 10% of Class
+            {rank > 0 ? `${percentile}% Percentile` : 'Overall Performance'}
           </p>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[210px] leading-relaxed font-medium">
-            You are performing <span className="text-emerald-500 font-black">12% better</span> than the average student this term.
+            {rank > 0 ? (
+              <>You are ranked <span className="text-emerald-500 font-black">#{rank}</span> out of {total} students in your class.</>
+            ) : (
+                'Complete more assessments to see your class ranking and comparative performance.'
+            )}
           </p>
         </div>
       </div>

@@ -22,15 +22,23 @@ export const useSocketSync = () => {
         notification.type === "LINK_ACCEPTED" ||
         notification.type === "LINK_REJECTED"
       ) {
-        console.log("♻️ Invalidating links query...");
+        console.log("♻️ Invalidating links query due to notification...");
         queryClient.invalidateQueries({ queryKey: ["links"] });
       }
 
-      // Show toast for the notification
-      toast.info(notification.message || notification.title, {
-        position: "top-right",
-        autoClose: 5000,
-      });
+      // Special toast for acceptance
+      if (notification.type === "LINK_ACCEPTED") {
+          toast.success(notification.message || "Your link request was accepted!", {
+            position: "top-right",
+            autoClose: 5000,
+          });
+      } else {
+          // Show toast for the notification
+          toast.info(notification.message || notification.title, {
+            position: "top-right",
+            autoClose: 5000,
+          });
+      }
     });
 
     // Handle specific link update event (focused synchronization)
@@ -39,7 +47,11 @@ export const useSocketSync = () => {
       queryClient.invalidateQueries({ queryKey: ["links"] });
       
       if (data.message) {
-        toast.info(data.message, { position: "top-right", autoClose: 3000 });
+        if (data.type === "LINK_ACCEPTED") {
+            toast.success(data.message, { position: "top-right", autoClose: 4000 });
+        } else {
+            toast.info(data.message, { position: "top-right", autoClose: 3000 });
+        }
       }
     });
 

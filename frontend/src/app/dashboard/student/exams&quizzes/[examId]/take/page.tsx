@@ -13,7 +13,7 @@ export default function LegacyTakeRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace(`/Exams&Quizzes/exam/${examId}`);
+    router.replace(`/dashboard/student/exams&quizzes/${examId}`);
   }, [examId, router]);
 
   return (

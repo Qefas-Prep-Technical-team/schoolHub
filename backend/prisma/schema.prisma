@@ -829,6 +829,7 @@ model Exam {
   allowImmediateResult Boolean   @default(true)
   resultReleaseAt      DateTime?
   startDate            DateTime?
+  endDate              DateTime?
 
   aiPrompt      String?
   instructions  String?
@@ -885,6 +886,7 @@ model SubjectExamPaper {
   durationMinutes Int?
   totalMarks      Float              @default(0)
   status          SubjectPaperStatus @default(DRAFT)
+  readingContent  String?            @db.Text
 
   validatedAt   DateTime?
   validatedById String?

@@ -5,6 +5,7 @@ import {
   getDepartmentExamAnalyticsService,
   getExamRankingService,
   getSessionExamAnalyticsService,
+  getStudentGlobalStatsService,
 } from "./exam-analytics.service";
 
 export const getExamRanking = async (req: Request, res: Response) => {
@@ -86,6 +87,31 @@ export const getSessionExamAnalytics = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to fetch session analytics",
+    });
+  }
+};
+
+export const getMyGlobalStats = async (req: Request, res: Response) => {
+  try {
+    if (!req.user || req.user.userType !== UserRole.STUDENT) {
+        return res.status(403).json({
+          success: false,
+          message: "Only students can view their personal stats",
+        });
+      }
+
+    const data = await getStudentGlobalStatsService({
+      studentId: req.user.id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to fetch student stats",
     });
   }
 };

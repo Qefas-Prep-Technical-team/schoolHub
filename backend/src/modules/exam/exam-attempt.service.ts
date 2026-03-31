@@ -37,6 +37,10 @@ export const startExamAttemptService = async ({
     throw new Error(`This exam is scheduled to start on ${new Date(exam.startDate).toLocaleString()}.`);
   }
 
+  if (exam.endDate && new Date() > new Date(exam.endDate)) {
+    throw new Error(`This exam concluded on ${new Date(exam.endDate).toLocaleString()} and is no longer available.`);
+  }
+
   const existing = await prisma.examAttempt.findUnique({
     where: {
       examId_studentId: {
@@ -54,7 +58,19 @@ export const startExamAttemptService = async ({
   });
 
   if (existing) {
-    return existing;
+    // If the attempt is finished or expired, allow retake by deleting the old one
+    if (
+      existing.status === ExamAttemptStatus.SUBMITTED || 
+      existing.status === ExamAttemptStatus.SCORED || 
+      existing.status === ExamAttemptStatus.EXPIRED
+    ) {
+      await prisma.examAttempt.delete({
+        where: { id: existing.id },
+      });
+    } else {
+      // Still in progress, return the existing attempt to allow continuation
+      return existing;
+    }
   }
 
   const totalMarks = exam.subjectPapers.reduce(
@@ -570,9 +586,8 @@ export const getExamResultService = async ({
 
   if (requestingUserRole === UserRole.STUDENT) {
     if (!attempt.exam.allowImmediateResult && attempt.exam.resultReleaseAt) {
-      if (new Date() < attempt.exam.resultReleaseAt) {
-        throw new Error("Results are not yet available for this exam.");
-      }
+      // We don't throw anymore, we just return the attempt/result but will scrub sensitive analytics below
+      // if it's before the release date.
     }
   }
 
@@ -597,8 +612,8 @@ export const getExamResultService = async ({
     startedAt: attempt.startedAt,
   };
 
-  // Fetch class-wide statistics
-  const [stats, totalParticipants] = await Promise.all([
+  // Fetch class-wide statistics & All participants for ranking
+  const [stats, totalParticipants, allAttempts] = await Promise.all([
     prisma.examAttempt.aggregate({
       where: { 
         examId,
@@ -614,13 +629,83 @@ export const getExamResultService = async ({
         isSubmitted: true 
       },
     }),
+    prisma.examAttempt.findMany({
+      where: { examId, isSubmitted: true },
+      select: { totalScore: true, totalMarks: true },
+      orderBy: { totalScore: 'desc' }
+    })
   ]);
 
-  return {
+  // 1. Calculate Global Standing (Percentile)
+  let globalStanding = 0;
+  if (totalParticipants > 0) {
+    const studentPercentage = (attempt.totalScore / attempt.totalMarks) * 100;
+    const outperformed = allAttempts.filter(a => {
+        const p = (a.totalScore / a.totalMarks) * 100;
+        return studentPercentage > p;
+    }).length;
+    
+    // If it's the top score, give them a high percentile like 99.9
+    if (outperformed === totalParticipants - 1 && totalParticipants > 1) {
+        globalStanding = 99.9;
+    } else {
+        globalStanding = Number(((outperformed / totalParticipants) * 100).toFixed(1));
+    }
+  }
+
+  // 2. Growth Velocity (Compare with student's historical average)
+  const pastAttempts = await prisma.examAttempt.findMany({
+    where: {
+      studentId,
+      isSubmitted: true,
+      NOT: { examId } // Exclude current exam
+    },
+    select: { totalScore: true, totalMarks: true }
+  });
+
+  let velocity = 0;
+  if (pastAttempts.length > 0) {
+    const historicalAvg = pastAttempts.reduce((sum, a) => sum + (a.totalScore / a.totalMarks) * 100, 0) / pastAttempts.length;
+    const currentPercentage = (attempt.totalScore / attempt.totalMarks) * 100;
+    velocity = Number((currentPercentage - historicalAvg).toFixed(1));
+  } else {
+    // If first exam, velocity is compared to class average
+    const currentPercentage = (attempt.totalScore / attempt.totalMarks) * 100;
+    const classAvg = (stats._avg.totalScore || 0) / (attempt.totalMarks || 1) * 100;
+    velocity = Number((currentPercentage - classAvg).toFixed(1));
+  }
+
+  // 3. Performance Insight (Suggestion)
+  let performanceInsight = "Great effort! Keep practicing to improve your score.";
+  const percentage = (attempt.totalScore / attempt.totalMarks) * 100;
+  
+  if (percentage >= 90) {
+    performanceInsight = "Exceptional mastery! You've demonstrated elite understanding. Focus on helping peers or exploring advanced topics.";
+  } else if (percentage >= 75) {
+    performanceInsight = "Strong performance! You have a solid grasp of the material. Review the few missed items to reach elite status.";
+  } else if (percentage >= 50) {
+    performanceInsight = "Good work, you've passed! Focus on the subjects where your score was lower to build more consistent mastery.";
+  } else if (percentage >= 40) {
+    performanceInsight = "You're close to proficiency. We recommend reviewing the core concepts and attempting more practice questions.";
+  } else {
+    performanceInsight = "This was a challenging assessment. Don't be discouraged—review the foundations and reach out for extra support.";
+  }
+
+  const isReleased = 
+    attempt.exam.allowImmediateResult || 
+    !attempt.exam.resultReleaseAt || 
+    new Date() >= new Date(attempt.exam.resultReleaseAt);
+
+  const finalResponse = {
     ...baseData,
-    classAverage: stats._avg.totalScore || 0,
-    totalParticipants,
+    classAverage: isReleased ? (stats._avg.totalScore || 0) : null,
+    totalParticipants: isReleased ? totalParticipants : null,
+    globalStanding: isReleased ? globalStanding : null,
+    velocity: isReleased ? velocity : null,
+    performanceInsight: isReleased ? performanceInsight : "Detailed insights will be available once results are officially released."
   };
+
+  return finalResponse;
 };
 
 export const getExamReviewDataService = async ({

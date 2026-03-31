@@ -197,7 +197,7 @@ export const useSubmitAttempt = () => {
     mutationFn: (examId: string) => examService.submitAttempt(examId),
     onSuccess: (_, examId) => {
       queryClient.invalidateQueries({ queryKey: [...examKeys.detail(examId), "attempt"] });
-      toast.success("Exam submitted successfully!");
+      toast.success("Exam submitted successfully!", { toastId: "exam-submit-success" });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to submit exam");
@@ -217,6 +217,13 @@ export const useStudentExamAttempts = () => {
   return useQuery({
     queryKey: ["my-attempts"],
     queryFn: () => examService.getMyExamAttempts(),
+  });
+};
+
+export const useStudentStats = () => {
+  return useQuery({
+    queryKey: ["my-stats"],
+    queryFn: () => examService.getMyStats(),
   });
 };
 

@@ -25,14 +25,39 @@ import { ActiveLinksGrid } from './components/ActiveLinksGrid';
 import { PendingRequestsGrid } from './components/PendingRequestsGrid';
 import { ConnectModal } from './components/ConnectModal';
 import QRCodeModal from './components/QRCodeModal';
+import Pagination from '@/components/ui/Pagination';
 import { ConfirmationModal } from '@/components/reusable/ConfirmationModal';
 import { getMemberDetails, isClassLink } from './components/LinkingUtils';
 
 function LinkingHub() {
-  const { data: requests = [], isLoading: isLoadingRequests } = useLinkRequests();
-  const { data: pendingRequests = [], isLoading: isLoadingPending } = usePendingLinkRequests();
-  const { data: activeLinks = [], isLoading: isLoadingActive } = useActiveLinks();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
+  const [subTab, setSubTab] = useState<'active' | 'pending' | 'history'>('active');
+
+  const { data: requestsData, isLoading: isLoadingRequests } = useLinkRequests({ 
+    page: currentPage, 
+    category: mainTab 
+  });
+  const { data: pendingRequestsData, isLoading: isLoadingPending } = usePendingLinkRequests({
+    page: currentPage,
+    category: mainTab
+  });
+  const { data: activeLinksData, isLoading: isLoadingActive } = useActiveLinks({
+    page: currentPage,
+    category: mainTab
+  });
   const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
+
+  const requests = requestsData?.items || [];
+  const activeLinks = activeLinksData?.items || [];
+  const pendingRequests = pendingRequestsData?.items || [];
+  
+  const pagination = subTab === 'active' 
+    ? activeLinksData?.pagination 
+    : subTab === 'pending' 
+      ? pendingRequestsData?.pagination 
+      : requestsData?.pagination;
+
   const profile = profileResponse?.data || {};
 
   const respondMutation = useRespondToLinkRequest();
@@ -41,10 +66,13 @@ function LinkingHub() {
   const acceptAllMutation = useAcceptAllLinkRequests();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
-  const [subTab, setSubTab] = useState<'active' | 'pending' | 'history'>('active');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
+
+  // Reset page when tabs change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [mainTab, subTab]);
   
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState<{
@@ -64,26 +92,25 @@ function LinkingHub() {
   const { user } = useAuthStore();
 
   const filteredActiveLinks = activeLinks.filter((link: any) => {
-    const isClass = isClassLink(link.linkType || '');
     const details = getMemberDetails(link, user?.id);
-    const matchesTab = mainTab === 'classroom' ? isClass : !isClass;
     const matchesSearch = (details.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       details.email.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesTab && matchesSearch;
+    return matchesSearch;
   });
 
   const filteredRequests = requests.filter((req: any) => {
     if (req.status !== 'PENDING') return false;
-    const isClass = isClassLink(req.linkType);
     const details = getMemberDetails(req, user?.id);
-    const matchesTab = mainTab === 'classroom' ? isClass : !isClass;
     const matchesSearch = (details.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       details.email.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesTab && matchesSearch;
+    return matchesSearch;
   });
 
-  const networkPendingCount = requests.filter((r: any) => r.status === 'PENDING' && !isClassLink(r.linkType)).length;
-  const classroomPendingCount = requests.filter((r: any) => r.status === 'PENDING' && isClassLink(r.linkType)).length;
+  const networkPendingCount = subTab === 'pending' && mainTab === 'network' ? (pendingRequestsData?.pagination?.total || 0) : 0;
+  const classroomPendingCount = subTab === 'pending' && mainTab === 'classroom' ? (pendingRequestsData?.pagination?.total || 0) : 0;
+  // Note: These counts might be stale if we're not on the right tab. 
+  // For a better UX, we might need a separate "stats" hook or fetch counts independently.
+  // But for now, let's just use what we have.
 
   const handleAcceptAll = () => {
     const category = mainTab === 'classroom' ? 'classroom' : 'network';
@@ -217,6 +244,16 @@ function LinkingHub() {
               <p className="text-gray-500 max-w-xs font-medium">Link activity history for {mainTab} will appear here soon.</p>
             </div>
           </div>
+        )}
+
+        {pagination && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
     </div>

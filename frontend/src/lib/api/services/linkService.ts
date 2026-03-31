@@ -38,17 +38,14 @@ export interface LinkRequest {
 
 export const linkService = {
   // Get all link requests (sent and received)
-  getLinkRequests: async () => {
-    const response = await apiClient.get<any>("/links/requests");
-    console.log("response",response)
-    return response.data.items || [];
+  getLinkRequests: async (options: { page?: number; limit?: number; category?: string; status?: string } = {}) => {
+    const response = await apiClient.get<any>("/links/requests", { params: options });
+    return response.data;
   },
-  getPendingLinkRequests: async () => {
+  getPendingLinkRequests: async (options: { page?: number; limit?: number; category?: string } = {}) => {
     try {
-      const response = await apiClient.get<any>("/links/requests/pending");
-
-      // We use .items or default to an empty array to prevent "map of undefined" errors in UI
-      return response.data.items || response.data || [];
+      const response = await apiClient.get<any>("/links/requests/pending", { params: options });
+      return response.data;
     } catch (error) {
       console.error("Error fetching pending requests:", error);
       throw error;
@@ -75,9 +72,9 @@ export const linkService = {
   },
 
   // Get active links for the current user
-  getActiveLinks: async () => {
-    const response = await apiClient.get<any>("/links/active");
-    return response.data.items || [];
+  getActiveLinks: async (options: { page?: number; limit?: number; category?: string } = {}) => {
+    const response = await apiClient.get<any>("/links/active", { params: options });
+    return response.data;
   },
 
   // Cancel a sent link request
