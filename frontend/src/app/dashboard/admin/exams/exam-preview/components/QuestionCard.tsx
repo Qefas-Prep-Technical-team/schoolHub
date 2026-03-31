@@ -1,5 +1,6 @@
 import { Edit } from 'lucide-react';
 import Badge from './ui/Badge';
+import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
 
 interface QuestionCardProps {
     question: {
@@ -67,9 +68,9 @@ export default function QuestionCard({ question, onEdit, showAnswers = false }: 
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                         Question {question.number} - {getQuestionTypeLabel(question.type)}
                     </p>
-                    <p className="mt-1 text-base text-gray-800 dark:text-gray-200">
-                        {question.question}
-                    </p>
+                    <div className="mt-1">
+                        <LaTeXRenderer content={question.question} className="text-base text-gray-800 dark:text-gray-200" />
+                    </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -102,7 +103,7 @@ export default function QuestionCard({ question, onEdit, showAnswers = false }: 
                                     }`}
                             >
                                 <span className="font-bold">{optionLetter}</span>
-                                <span>{option}</span>
+                                <LaTeXRenderer content={option} className="text-sm" />
                             </div>
                         );
                     })}

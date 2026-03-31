@@ -13,6 +13,8 @@ interface PendingRequestsGridProps {
   onRespond: (id: string, action: 'ACCEPT' | 'REJECT') => void;
   onCancel: (id: string) => void;
   onCopy: (text: string) => void;
+  respondingId?: string | null;
+  cancellingId?: string | null;
 }
 
 export function PendingRequestsGrid({
@@ -23,7 +25,9 @@ export function PendingRequestsGrid({
   onAcceptAll,
   onRespond,
   onCancel,
-  onCopy
+  onCopy,
+  respondingId,
+  cancellingId
 }: PendingRequestsGridProps) {
   if (requests.length === 0) {
     return (
@@ -73,6 +77,7 @@ export function PendingRequestsGrid({
             onRespond={onRespond}
             onCancel={onCancel}
             onCopy={onCopy}
+            isLoading={respondingId === req.id || cancellingId === req.id}
           />
         ))}
       </div>

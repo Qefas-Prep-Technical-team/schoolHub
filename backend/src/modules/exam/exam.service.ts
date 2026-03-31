@@ -18,7 +18,6 @@ export const createExamService = async ({
   creationMode,
   mode,
   schoolId,
-  departmentId,
   classId,
   sessionId,
   durationMinutes,
@@ -29,6 +28,7 @@ export const createExamService = async ({
   resultReleaseAt,
   term,
   teacherId,
+  departmentIds = [],
 }: {
   title: string;
   description?: string;
@@ -37,7 +37,7 @@ export const createExamService = async ({
   creationMode: any;
   mode: ExamMode;
   schoolId?: string;
-  departmentId?: string;
+  departmentIds?: string[];
   classId?: string;
   sessionId?: string;
   term?: any;
@@ -59,7 +59,6 @@ export const createExamService = async ({
       creationMode,
       mode,
       schoolId: schoolId || null,
-      departmentId: departmentId || null,
       classId: classId || null,
       sessionId: sessionId || null,
       durationMinutes: durationMinutes || null,
@@ -70,10 +69,15 @@ export const createExamService = async ({
       resultReleaseAt: resultReleaseAt ? new Date(resultReleaseAt) : null,
       term: term || null,
       teacherId: teacherId || null,
+      departments: departmentIds.length > 0 ? {
+        create: departmentIds.map(id => ({ departmentId: id }))
+      } : undefined,
     },
     include: {
       school: true,
-      department: true,
+      departments: {
+        include: { department: true }
+      },
       class: true,
       session: true,
       teacher: true,
@@ -86,7 +90,7 @@ export const getExamsService = async (filters: {
   schoolId?: string;
   sessionId?: string;
   classId?: string;
-  departmentId?: string;
+  departmentIds?: string[];
   term?: any;
   status?: AssessmentStatus;
   category?: ExamCategory;
@@ -113,30 +117,43 @@ export const getExamsService = async (filters: {
     const classIds = student.classes.map((c) => c.classId);
     
     // Logic: 
-    // 1. Exams assigned to user's class with NO specific department
-    // 2. Exams assigned to user's department in their school
+    // 1. Exams assigned to user's class AND matching department
+    // 2. Exams NOT assigned to any class BUT matching department
+    // 3. General exams NOT assigned to any class AND NOT assigned to any department
     where.OR = [
       { 
         classId: { in: classIds },
-        departmentId: null 
+        departments: { some: { departmentId: student.departmentId } } 
       },
       {
         schoolId: student.schoolId,
-        departmentId: student.departmentId,
+        classId: null,
+        departments: { some: { departmentId: student.departmentId } },
+      },
+      {
+        schoolId: student.schoolId,
+        classId: null,
+        departments: { none: {} },
       }
     ];
   } else {
     // Admin/Teacher filters
     if (filters.status) where.status = filters.status;
     if (filters.classId) where.classId = filters.classId;
-    if (filters.departmentId) where.departmentId = filters.departmentId;
+    if (filters.departmentIds && filters.departmentIds.length > 0) {
+      where.departments = {
+        some: { departmentId: { in: filters.departmentIds } }
+      };
+    }
   }
 
   const exams = await prisma.exam.findMany({
     where,
     include: {
       school: true,
-      department: true,
+      departments: {
+        include: { department: true }
+      },
       class: true,
       session: true,
       subjectPapers: {
@@ -190,7 +207,9 @@ export const getExamByIdService = async (id: string, excludeCorrectAnswers: bool
     where: { id },
     include: {
       school: true,
-      department: true,
+      departments: {
+        include: { department: true }
+      },
       class: true,
       session: true,
       subjectPapers: {
@@ -663,28 +682,59 @@ export const publishExamService = async (examId: string) => {
           where: { classId: updatedExam.classId },
           select: { studentId: true },
         });
-        recipientStudentIds = enrollments.map(e => e.studentId);
-      } else if (updatedExam.departmentId && updatedExam.schoolId) {
-        // Option B: Department-wide in a School
-        const studentsInDept = await prisma.student.findMany({
-          where: { 
-            schoolId: updatedExam.schoolId,
-            departmentId: updatedExam.departmentId,
-            verified: true 
-          },
-          select: { id: true },
+
+        const studentIdsInClass = enrollments.map(e => e.studentId);
+        
+        // Fetch specific departments if selected
+        const examDepts = await prisma.examDepartment.findMany({
+          where: { examId: updatedExam.id },
+          select: { departmentId: true }
         });
-        recipientStudentIds = studentsInDept.map(s => s.id);
+        const deptIds = examDepts.map(ed => ed.departmentId);
+
+        if (deptIds.length > 0) {
+          // Only notify students in those departments
+          const studentsInDepts = await prisma.student.findMany({
+            where: {
+              id: { in: studentIdsInClass },
+              departmentId: { in: deptIds }
+            },
+            select: { id: true }
+          });
+          recipientStudentIds = studentsInDepts.map(s => s.id);
+        } else {
+          // General exam for the class
+          recipientStudentIds = studentIdsInClass;
+        }
       } else if (updatedExam.schoolId) {
-        // Option C: School-wide
-        const studentsInSchool = await prisma.student.findMany({
-          where: { 
-            schoolId: updatedExam.schoolId,
-            verified: true 
-          },
-          select: { id: true },
+        // School-wide or Department-wide (if no class is set)
+        const examDepts = await prisma.examDepartment.findMany({
+          where: { examId: updatedExam.id },
+          select: { departmentId: true }
         });
-        recipientStudentIds = studentsInSchool.map(s => s.id);
+        const deptIds = examDepts.map(ed => ed.departmentId);
+
+        if (deptIds.length > 0) {
+          const studentsInDepts = await prisma.student.findMany({
+            where: {
+              schoolId: updatedExam.schoolId,
+              departmentId: { in: deptIds },
+              verified: true
+            },
+            select: { id: true }
+          });
+          recipientStudentIds = studentsInDepts.map(s => s.id);
+        } else {
+          // School-wide
+          const studentsInSchool = await prisma.student.findMany({
+            where: { 
+              schoolId: updatedExam.schoolId,
+              verified: true 
+            },
+            select: { id: true },
+          });
+          recipientStudentIds = studentsInSchool.map(s => s.id);
+        }
       }
 
       // Remove duplicates just in case
@@ -820,7 +870,7 @@ export const updateExamService = async (
     allowImmediateResult?: boolean;
     resultReleaseAt?: Date | string | null;
     classId?: string | null;
-    departmentId?: string | null;
+    departmentIds?: string[];
     sessionId?: string | null;
     term?: any | null;
     teacherId?: string | null;
@@ -833,6 +883,7 @@ export const updateExamService = async (
   if (!existing) throw new Error("Exam not found");
 
   const updateData: any = { ...data };
+  delete updateData.departmentIds; // Remove from direct updateData
 
   if (data.startDate !== undefined) {
     updateData.startDate = data.startDate ? new Date(data.startDate) : null;
@@ -841,13 +892,11 @@ export const updateExamService = async (
     updateData.resultReleaseAt = data.resultReleaseAt ? new Date(data.resultReleaseAt) : null;
   }
 
-  // Ensure classId and departmentId are handled if provided
+  // Ensure classId is handled if provided
   if (data.classId !== undefined) {
     updateData.classId = data.classId || null;
   }
-  if (data.departmentId !== undefined) {
-    updateData.departmentId = data.departmentId || null;
-  }
+  
   if (data.sessionId !== undefined) {
     updateData.sessionId = data.sessionId || null;
   }
@@ -858,12 +907,21 @@ export const updateExamService = async (
     updateData.teacherId = data.teacherId || null;
   }
 
+  if (data.departmentIds !== undefined) {
+    updateData.departments = {
+      deleteMany: {}, // Clear existing
+      create: data.departmentIds.map((id) => ({ departmentId: id })), // Recreate
+    };
+  }
+
   return prisma.exam.update({
     where: { id: examId },
     data: updateData,
     include: {
       school: true,
-      department: true,
+      departments: {
+        include: { department: true }
+      },
       class: true,
       session: true,
       teacher: true,

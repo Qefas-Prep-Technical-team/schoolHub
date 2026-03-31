@@ -126,16 +126,15 @@ const removeDomainSideEffects = async (
 
     case "TEACHER_CLASS": {
       if (link.classId) {
-        await tx.class.updateMany({
+        const teacherId =
+          link.leftEntityType === "TEACHER"
+            ? link.leftEntityId
+            : link.rightEntityId;
+
+        await tx.classTeacher.deleteMany({
           where: {
-            id: link.classId,
-            teacherId:
-              link.leftEntityType === "TEACHER"
-                ? link.leftEntityId
-                : link.rightEntityId,
-          },
-          data: {
-            teacherId: null,
+            classId: link.classId,
+            teacherId,
           },
         });
       }

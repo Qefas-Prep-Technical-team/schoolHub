@@ -293,3 +293,62 @@ export const archiveSubjectService = async (subjectId: string) => {
     data: { isArchived: true },
   });
 };
+
+export const attachSubjectToDepartmentsService = async ({
+  subjectId,
+  departmentIds,
+}: {
+  subjectId: string;
+  departmentIds: string[];
+}) => {
+  const subject = await prisma.subject.findUnique({
+    where: { id: subjectId },
+  });
+
+  if (!subject) {
+    throw new Error("Subject not found");
+  }
+
+  const departments = await prisma.department.findMany({
+    where: {
+      id: { in: departmentIds },
+    },
+  });
+
+  if (departments.length !== departmentIds.length) {
+    throw new Error("Some departments were not found");
+  }
+
+  // Validate scope compatibility
+  if (subject.scope === AcademicOwnershipScope.SCHOOL) {
+    const invalidDepts = departments.filter(
+      (d) =>
+        d.scope !== AcademicOwnershipScope.SCHOOL ||
+        d.schoolId !== subject.schoolId
+    );
+    if (invalidDepts.length) {
+      throw new Error(
+        "School subjects can only be attached to departments in the same school."
+      );
+    }
+  }
+
+  await prisma.departmentSubject.createMany({
+    data: departmentIds.map((departmentId) => ({
+      subjectId,
+      departmentId,
+    })),
+    skipDuplicates: true,
+  });
+
+  return prisma.subject.findUnique({
+    where: { id: subjectId },
+    include: {
+      departments: {
+        include: {
+          department: true,
+        },
+      },
+    },
+  });
+};

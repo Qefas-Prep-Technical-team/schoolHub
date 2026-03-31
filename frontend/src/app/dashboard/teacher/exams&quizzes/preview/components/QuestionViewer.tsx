@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
 
 interface Question {
   id: number;
@@ -72,15 +73,13 @@ export default function QuestionViewer({
 
       {/* Question Text */}
       <div className="mb-6">
-        <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          {currentQuestionData.text}
-        </p>
+        <div className="text-base text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+          <LaTeXRenderer content={currentQuestionData.text} />
+        </div>
         
         {currentQuestionData.equation && (
           <div className="rounded-lg bg-gray-100 dark:bg-gray-800 p-4 text-center">
-            <p className="font-mono text-lg text-gray-900 dark:text-white">
-              {currentQuestionData.equation}
-            </p>
+            <LaTeXRenderer content={currentQuestionData.equation} className="font-mono text-lg text-gray-900 dark:text-white" />
           </div>
         )}
       </div>
@@ -121,7 +120,7 @@ export default function QuestionViewer({
                   ? 'text-gray-900 dark:text-white font-medium'
                   : 'text-gray-700 dark:text-gray-300'
               }`}>
-                {option}
+                <LaTeXRenderer content={option} />
               </span>
               
               {showCorrect && isCorrectOption && (

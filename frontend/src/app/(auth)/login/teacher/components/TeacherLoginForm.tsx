@@ -7,6 +7,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useLoginMutation } from "../../services/use-auth-mutations";
 import { LoginFormData, loginSchema } from "../../services/auth-schema";
 import PasswordField from "../../student/components/PasswordField";
+import Link from "next/link";
+import { ROUTES } from "@/lib/constants/routes";
 
 export default function TeacherLoginForm() {
     const [serverError, setServerError] = useState("");
@@ -110,10 +112,13 @@ export default function TeacherLoginForm() {
                 </div>
             )}
 
-            <div className="text-right mt-1">
-                <a href="#" className="text-sm font-medium text-primary hover:underline">
+            <div className="flex justify-end mt-1">
+                <Link 
+                    href={ROUTES.AUTH.FORGOT_PASSWORD} 
+                    className="text-xs font-medium text-blue-500 hover:underline transition-colors duration-200"
+                >
                     Forgot Password?
-                </a>
+                </Link>
             </div>
 
             {/* Login Button */}

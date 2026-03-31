@@ -9,6 +9,7 @@ import AnswerOptions from './AnswerOptions';
 const QuestionEditor: React.FC = () => {
     const [questionType, setQuestionType] = useState<QuestionType>('Multiple Choice');
     const [questionText, setQuestionText] = useState<string>('');
+    const [explanation, setExplanation] = useState<string>('');
     const [options, setOptions] = useState<QuestionOption[]>([
         { id: 1, text: '', correct: true, letter: 'A' },
         { id: 2, text: '', correct: false, letter: 'B' },
@@ -54,6 +55,7 @@ const QuestionEditor: React.FC = () => {
                     onQuestionTypeChange={setQuestionType}
                 />
                 <QuestionTextEditor
+                    label="Question Text"
                     questionText={questionText}
                     onQuestionTextChange={setQuestionText}
                 />
@@ -67,6 +69,16 @@ const QuestionEditor: React.FC = () => {
                 onUpdateOptionText={updateOptionText}
                 onSetCorrectAnswer={setCorrectAnswer}
             />
+
+            {/* Explanation Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+                <QuestionTextEditor
+                    label="Correct Answer Explanation"
+                    questionText={explanation}
+                    onQuestionTextChange={setExplanation}
+                    placeholder="Explain why the correct answer is right..."
+                />
+            </div>
         </div>
     );
 };

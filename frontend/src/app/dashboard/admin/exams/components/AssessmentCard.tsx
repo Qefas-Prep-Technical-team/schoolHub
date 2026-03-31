@@ -81,7 +81,22 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                     </div>
                     <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                         <FileText size={16} />
-                        <span>Mode: {assessment.mode}</span>
+                        <div className="flex flex-col">
+                            <span>Mode: {assessment.mode}</span>
+                            {assessment.departments && assessment.departments.length > 0 ? (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {assessment.departments.map((d: any) => (
+                                        <span key={d.department?.id} className="text-[10px] bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-md border border-purple-100 dark:border-purple-800 font-bold uppercase tracking-tighter">
+                                            {d.department?.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 font-bold mt-1 inline-block uppercase tracking-widest">
+                                    General
+                                </span>
+                            )}
+                        </div>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                         <Laptop size={16} />

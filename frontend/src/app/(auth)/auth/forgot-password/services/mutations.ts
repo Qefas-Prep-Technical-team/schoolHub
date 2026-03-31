@@ -44,7 +44,7 @@ export const useResetPasswordMutation = () => {
       
       // Redirect to login after successful password reset
       setTimeout(() => {
-        router.push("/forgotPassword/PasswordResetSuccessful");
+        router.push("/auth/forgot-password/PasswordResetSuccessful");
       }, 2000);
      
     },

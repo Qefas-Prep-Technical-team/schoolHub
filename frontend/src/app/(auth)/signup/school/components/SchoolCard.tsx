@@ -143,7 +143,9 @@ export default function SchoolCard() {
 
           const email = response.data.data?.school?.email || data.email;
 
-          router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}`);
+          router.push(
+            `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}&requestCode=true`,
+          );
         },
         onError: (error: any) => {
           console.error('❌ School registration failed:', error);

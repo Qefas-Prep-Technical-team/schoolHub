@@ -34,7 +34,7 @@ import { canTeacherManageSubject } from "../academic/teacher-subject.permissions
 export const getExams = async (req: Request, res: Response) => {
   console.log("LOG: [getExams] Controller Reached", { query: req.query, user: req.user });
   try {
-    const { schoolId, sessionId, classId, departmentId, status, term, category } = req.query;
+    const { schoolId, sessionId, classId, departmentId, departmentIds, status, term, category } = req.query;
 
     const effectiveSchoolId = (schoolId as string) || req.user?.schoolId;
 
@@ -42,7 +42,13 @@ export const getExams = async (req: Request, res: Response) => {
     if (effectiveSchoolId) filters.schoolId = effectiveSchoolId;
     if (sessionId) filters.sessionId = sessionId as string;
     if (classId) filters.classId = classId as string;
-    if (departmentId) filters.departmentId = departmentId as string;
+    
+    if (departmentIds) {
+      filters.departmentIds = Array.isArray(departmentIds) ? departmentIds : [departmentIds as string];
+    } else if (departmentId) {
+      filters.departmentIds = [departmentId as string];
+    }
+
     if (status) filters.status = status as any;
     if (term) filters.term = term as any;
     if (category) filters.category = category as any;

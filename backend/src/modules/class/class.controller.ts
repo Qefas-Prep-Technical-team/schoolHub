@@ -23,7 +23,7 @@ import {
 
 export const createClass = async (req: Request, res: Response) => {
   try {
-    const { name, section, scope, schoolId, subjectIds } = req.body;
+    const { name, section, scope, schoolId, subjectIds, departmentIds } = req.body;
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -58,6 +58,7 @@ export const createClass = async (req: Request, res: Response) => {
       scope,
       schoolId,
       subjectIds,
+      departmentIds,
     });
 
     return res.status(201).json({
@@ -194,7 +195,7 @@ export const getSingleClass = async (req: Request, res: Response) => {
 
     if (
       req.user.userType === UserRole.TEACHER &&
-      foundClass.teacherId !== req.user.id
+      !foundClass.teachers.some((t: any) => t.teacherId === req.user?.id)
     ) {
       return res.status(403).json({
         success: false,
@@ -261,17 +262,21 @@ export const previewClassByCode = async (req: Request, res: Response) => {
               schoolCode: foundClass.school.schoolCode,
             }
           : null,
-        teacher: foundClass.teacher
+        teacher: foundClass.teachers[0]?.teacher
           ? {
-              id: foundClass.teacher.id,
-              name: foundClass.teacher.name,
-              teacherCode: foundClass.teacher.teacherCode,
+              id: foundClass.teachers[0].teacher.id,
+              name: foundClass.teachers[0].teacher.name,
+              teacherCode: foundClass.teachers[0].teacher.teacherCode,
             }
           : null,
         subjects: foundClass.subjects.map((s) => ({
           id: s.subject.id,
           name: s.subject.name,
           code: s.subject.code,
+        })),
+        departments: foundClass.departments.map((d) => ({
+          id: d.department.id,
+          name: d.department.name,
         })),
         studentCount: foundClass.enrollments.length,
       },
@@ -309,10 +314,10 @@ export const requestToJoinClass = async (req: Request, res: Response) => {
       note,
     });
 
-    if (result.class.teacherId) {
+    for (const classTeacher of result.class.teachers) {
       await createNotification({
         recipientType: "TEACHER",
-        recipientId: result.class.teacherId,
+        recipientId: classTeacher.teacherId,
         senderType: "STUDENT",
         senderId: result.student.id,
         type: "LINK_REQUEST",
@@ -501,7 +506,7 @@ export const attachSubjectsToClass = async (req: Request, res: Response) => {
 export const updateClass = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, section, teacherId } = req.body;
+    const { name, section, teacherIds, departmentIds } = req.body;
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -524,7 +529,8 @@ export const updateClass = async (req: Request, res: Response) => {
       classId: id as string,
       name,
       section,
-      teacherId,
+      teacherIds,
+      departmentIds,
     });
 
     return res.status(200).json({

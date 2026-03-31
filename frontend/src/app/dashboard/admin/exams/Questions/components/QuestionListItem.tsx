@@ -1,4 +1,5 @@
 import type { QuestionListItemT } from "./type";
+import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
 
 
 interface QuestionListItemProps {
@@ -33,14 +34,14 @@ const QuestionListItem: React.FC<QuestionListItemProps> = ({ question }) => {
                     {getQuestionIcon(question.type)}
                 </span>
                 <div>
-                    <p
+                    <div
                         className={`text-sm ${question.active
                             ? 'font-semibold text-primary dark:text-white'
                             : 'font-medium text-gray-800 dark:text-gray-200'
                             }`}
                     >
-                        {question.title}
-                    </p>
+                        <LaTeXRenderer content={question.title} className="text-sm" />
+                    </div>
                     <p
                         className={`text-xs ${question.active
                             ? 'text-primary/80 dark:text-primary/70'

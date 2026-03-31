@@ -2,6 +2,7 @@ import { Question } from './types';
 import Card from './ui/Card';
 import StatusBadge from './ui/StatusBadge';
 import AnswerBox from './ui/AnswerBox';
+import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
 
 interface QuestionCardProps {
     question: Question;
@@ -34,9 +35,9 @@ export default function QuestionCard({ question, className = '' }: QuestionCardP
                 </div>
 
                 {/* Question */}
-                <p className="text-base font-normal leading-relaxed text-[#505095] dark:text-gray-300">
-                    {question.question}
-                </p>
+                <div className="text-base font-normal leading-relaxed text-[#505095] dark:text-gray-300">
+                    <LaTeXRenderer content={question.question} />
+                </div>
 
                 {/* Answers Section */}
                 <div className="space-y-4">
@@ -59,9 +60,9 @@ export default function QuestionCard({ question, className = '' }: QuestionCardP
                         <p className="text-sm font-semibold text-gray-900 dark:text-white">
                             Explanation
                         </p>
-                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            {question.explanation}
-                        </p>
+                        <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            <LaTeXRenderer content={question.explanation} />
+                        </div>
                         {question.points !== undefined && question.maxPoints !== undefined && (
                             <div className="mt-3 flex items-center gap-2 text-sm">
                                 <span className="font-medium text-gray-700 dark:text-gray-300">

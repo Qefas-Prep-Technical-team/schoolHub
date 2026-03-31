@@ -20,6 +20,7 @@ import {
   cancelLinkRequestService,
   revokeActiveLinkService,
 } from "./link.manage.service";
+import { getIO } from "../../socket";
 
 const isClassLinkType = (type: string) =>
   ["TEACHER_CLASS", "STUDENT_CLASS"].includes(type);
@@ -91,6 +92,14 @@ export const createLinkRequest = async (req: Request, res: Response) => {
     });
 
     if (result.request.targetId) {
+      const io = getIO();
+      // Notify the target user immediately for the "Live" feel
+      io.to(`user:${result.request.targetId}`).emit("link:updated", {
+        type: "LINK_REQUEST_RECEIVED",
+        requestId: result.request.id,
+        message: "You have a new link request",
+      });
+
       await createNotification({
         recipientType: result.request.targetType as any,
         recipientId: result.request.targetId,
@@ -163,6 +172,14 @@ export const respondToLinkRequest = async (req: Request, res: Response) => {
       currentUserId: req.user.id,
       currentUserType,
       rejectionReason,
+    });
+
+    // Emit event to requester to trigger their UI update
+    const io = getIO();
+    io.to(`user:${result.request.requesterId}`).emit("link:updated", {
+      type: action === "ACCEPT" ? "LINK_ACCEPTED" : "LINK_REJECTED",
+      requestId: result.request.id,
+      message: `Your link request was ${action.toLowerCase()}ed`,
     });
 
     return res.status(200).json({
@@ -398,6 +415,14 @@ export const cancelLinkRequest = async (req: Request, res: Response) => {
       currentUserType,
     });
 
+    // Notify target that request is gone
+    if (cancelled.targetId) {
+      getIO().to(`user:${cancelled.targetId}`).emit("link:updated", {
+        type: "LINK_CANCELLED",
+        requestId: cancelled.id,
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "Request cancelled successfully",
@@ -430,6 +455,19 @@ export const revokeActiveLink = async (req: Request, res: Response) => {
       currentUserId: req.user.id,
       currentUserType,
     });
+
+    // Notify both sides to sync UI
+    const io = getIO();
+    io.to(`user:${revoked.leftEntityId}`).emit("link:updated", {
+      type: "LINK_REVOKED",
+      linkId: revoked.id,
+    });
+    if (revoked.rightEntityId !== revoked.leftEntityId) {
+      io.to(`user:${revoked.rightEntityId}`).emit("link:updated", {
+        type: "LINK_REVOKED",
+        linkId: revoked.id,
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -485,6 +523,12 @@ export const batchRequestAction = async (req: Request, res: Response) => {
       currentUserId: req.user.id,
       currentUserType,
       rejectionReason,
+    });
+
+    // Trigger universal link sync for all connected clients 
+    // (Simpler than mapping all IDs in a batch)
+    getIO().emit("link:updated", {
+      type: `BATCH_${action}_COMPLETED`,
     });
 
     return res.status(200).json({
@@ -561,6 +605,12 @@ export const acceptAllRequestsByCategory = async (req: Request, res: Response) =
       action: "ACCEPT",
       currentUserId: req.user.id,
       currentUserType,
+    });
+
+    // Notify all affected to sync
+    getIO().emit("link:updated", {
+      type: "BATCH_ACCEPT_COMPLETED",
+      category,
     });
 
     return res.status(200).json({

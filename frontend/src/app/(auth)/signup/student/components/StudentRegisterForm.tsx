@@ -5,10 +5,11 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { UserRole } from '@/lib/types/user.types';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useStudentRegistration } from '../../services/useRegistrationMutations';
 import { StudentFormData, studentSchema } from '../../services/regSchema';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
+import { useMemo } from 'react';
 
 
 export default function StudentRegisterForm() {
@@ -18,6 +19,7 @@ export default function StudentRegisterForm() {
   const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const { mutate: registerStudent, isPending } = useStudentRegistration();
 
@@ -26,19 +28,28 @@ export default function StudentRegisterForm() {
     handleSubmit,
     formState: { errors },
     reset,
-    watch
+    watch,
+    setValue
   } = useForm<StudentFormData>({
     resolver: yupResolver(studentSchema) as any,
     mode: 'onBlur',
-    defaultValues: {
+    defaultValues: useMemo(() => ({
       fullName: '',
       email: '',
       password: '',
       confirmPassword: '',
-      tenantId: '',
-      teacherCode: ''
-    }
+      schoolCode: searchParams.get('schoolCode') || '',
+      teacherCode: searchParams.get('teacherCode') || '',
+      parentCode: searchParams.get('parentCode') || ''
+    }), [searchParams])
   });
+
+  // Sync with search params if they change
+  useEffect(() => {
+    if (searchParams.get('schoolCode')) setValue('schoolCode', searchParams.get('schoolCode') || '');
+    if (searchParams.get('teacherCode')) setValue('teacherCode', searchParams.get('teacherCode') || '');
+    if (searchParams.get('parentCode')) setValue('parentCode', searchParams.get('parentCode') || '');
+  }, [searchParams, setValue]);
 
   // Watch password changes for strength indicator
   const passwordValue = watch('password');
@@ -74,8 +85,9 @@ export default function StudentRegisterForm() {
         email: data.email.toLowerCase().trim(),
         password: data.password,
         confirmPassword: data.confirmPassword,
-        ...(data.tenantId && { tenantId: data.tenantId.trim() }),
-        ...(data.teacherCode && { teacherCode: data.teacherCode.trim() })
+        ...(data.schoolCode && { schoolCode: data.schoolCode.trim() }),
+        ...(data.teacherCode && { teacherCode: data.teacherCode.trim() }),
+        ...(data.parentCode && { parentCode: data.parentCode.trim() })
       };
 
       await registerStudent(backendData, {
@@ -90,7 +102,9 @@ export default function StudentRegisterForm() {
           const email = response.data.data?.student?.email || data.email;
 
           setTimeout(() => {
-            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.STUDENT}`);
+            router.push(
+              `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.STUDENT}&requestCode=true`,
+            );
           }, 2000);
         },
         onError: (error: any) => {
@@ -289,33 +303,33 @@ export default function StudentRegisterForm() {
             )}
           </label>
 
-          {/* Tenant ID */}
+          {/* School Code */}
           <label className="flex flex-col">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
-                Tenant ID (optional)
+                School Code (optional)
               </p>
               <div className="relative group">
                 <span className="material-symbols-outlined text-gray-400 text-base cursor-pointer">
                   info
                 </span>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                  Enter the ID provided by your school.
+                  Enter the code provided by your school.
                 </div>
               </div>
             </div>
             <input
               type="text"
-              {...register('tenantId')}
-              placeholder="Enter your Tenant ID"
-              className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.tenantId
+              {...register('schoolCode')}
+              placeholder="Enter your School Code"
+              className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.schoolCode
                 ? 'border-red-500 dark:border-red-400'
                 : 'border-gray-300 dark:border-gray-700'
                 }`}
               disabled={isPending}
             />
-            {errors.tenantId && (
-              <p className="text-red-500 text-sm mt-2">{errors.tenantId.message}</p>
+            {errors.schoolCode && (
+              <p className="text-red-500 text-sm mt-2">{errors.schoolCode.message}</p>
             )}
           </label>
 
@@ -346,6 +360,36 @@ export default function StudentRegisterForm() {
             />
             {errors.teacherCode && (
               <p className="text-red-500 text-sm mt-2">{errors.teacherCode.message}</p>
+            )}
+          </label>
+
+          {/* Parent Code */}
+          <label className="flex flex-col">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
+                Parent Code (optional)
+              </p>
+              <div className="relative group">
+                <span className="material-symbols-outlined text-gray-400 text-base cursor-pointer">
+                  info
+                </span>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                  Enter the code provided by your parent to link your accounts.
+                </div>
+              </div>
+            </div>
+            <input
+              type="text"
+              {...register('parentCode')}
+              placeholder="Enter your Parent Code"
+              className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.parentCode
+                ? 'border-red-500 dark:border-red-400'
+                : 'border-gray-300 dark:border-gray-700'
+                }`}
+              disabled={isPending}
+            />
+            {errors.parentCode && (
+              <p className="text-red-500 text-sm mt-2">{errors.parentCode.message}</p>
             )}
           </label>
 

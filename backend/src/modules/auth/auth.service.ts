@@ -329,7 +329,7 @@ export const loginUser = async (email: string, password: string) => {
 
 export const sendPasswordResetEmail = async (email: string, code: string) => {
   try {
-    const resetLink = `${process.env.FRONTEND_URL}/forgotPassword/ResetPassword?token=${code}`;
+    const resetLink = `${process.env.FRONTEND_URL}/auth/forgot-password/ResetPassword?token=${code}`;
     // 1. Ensure email isn't empty/null if it's coming from an untrusted source
     if (!email) {
       throw new Error("Email is required to send reset link");

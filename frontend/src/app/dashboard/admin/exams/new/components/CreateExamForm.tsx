@@ -9,7 +9,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { apiClient } from "@/lib/api/client";
-import { Loader2, LayoutGrid, FileText, Settings2, School, Calendar, ArrowRight, AlertCircle } from "lucide-react";
+import { Loader2, LayoutGrid, FileText, Settings2, School, Calendar, ArrowRight, AlertCircle, Check, CheckCircle2 } from "lucide-react";
 
 import { examService, CreateExamDTO } from "@/lib/api/services/examService";
 import { useExamStore } from "@/store/examStore";
@@ -32,7 +32,7 @@ const examSchema = z.object({
   sessionId: z.string().optional(),
   startDate: z.string().optional(),
   classId: z.string().optional(),
-  departmentId: z.string().optional(),
+  departmentIds: z.array(z.string()),
   allowImmediateResult: z.boolean(),
   resultReleaseAt: z.string().optional(),
 });
@@ -55,7 +55,7 @@ export default function CreateExamForm() {
     watch,
     formState: { errors },
   } = useForm<ExamFormValues>({
-    resolver: zodResolver(examSchema),
+    resolver: zodResolver(examSchema) as any,
     defaultValues: {
       title: "",
       description: "",
@@ -67,7 +67,7 @@ export default function CreateExamForm() {
       sessionId: "",
       startDate: "",
       classId: "",
-      departmentId: "",
+      departmentIds: [],
       allowImmediateResult: true,
       resultReleaseAt: "",
     },
@@ -89,11 +89,14 @@ export default function CreateExamForm() {
     enabled: !!watchedSchoolId,
   });
 
-  // Fetch Departments
+  // Fetch Departments - Now dependent on classId
+  const watchedClassId = watch("classId");
   const { data: departmentsData } = useQuery({
-    queryKey: ["school-departments", watchedSchoolId],
+    queryKey: ["school-departments", watchedSchoolId, watchedClassId],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/academic/departments?schoolId=${watchedSchoolId}`);
+      const { data } = await apiClient.get(
+        `/academic/departments?schoolId=${watchedSchoolId}${watchedClassId ? `&classId=${watchedClassId}` : ''}`
+      );
       return data.data || [];
     },
     enabled: !!watchedSchoolId,
@@ -109,16 +112,23 @@ export default function CreateExamForm() {
     }
   }, [user, setValue, watchedSchoolId]);
 
-  // TRIGGER 2: Sync target fields based on scope (Optional: keeping it flexible as per request)
+  // TRIGGER 2: Sync target fields based on scope
   useEffect(() => {
     if (watchedScope === "SCHOOL") {
       // For school scope, class and department are optional filters
     } else if (watchedScope === "CLASS") {
-      setValue("departmentId", "");
+      setValue("departmentIds", []);
     } else if (watchedScope === "DEPARTMENT") {
       setValue("classId", "");
     }
   }, [watchedScope, setValue]);
+
+  // TRIGGER 2.5: Clear departments if class changes
+  useEffect(() => {
+    if (watchedClassId) {
+      setValue("departmentIds", []);
+    }
+  }, [watchedClassId, setValue]);
 
   // TRIGGER 3: Clear session if school changes
   useEffect(() => {
@@ -291,17 +301,55 @@ export default function CreateExamForm() {
             </select>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-[10px] uppercase tracking-widest font-black text-purple-500">Target Department (Optional)</Label>
-            <select
-              {...register("departmentId")}
-              className="w-full h-12 rounded-2xl border border-purple-100 dark:border-purple-900/30 bg-purple-50/20 px-4 text-sm outline-none focus:ring-2 focus:ring-purple-500/20"
-            >
-              <option value="">Select a department...</option>
-              {departmentsData?.map((d: any) => (
-                <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
-              ))}
-            </select>
+          <div className="space-y-4 md:col-span-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] uppercase tracking-widest font-black text-purple-500">
+                Target Departments (Optional) {watchedClassId && "for selected class"}
+              </Label>
+              <span className="text-[10px] font-bold text-slate-400">
+                {watch("departmentIds")?.length || 0} Selected
+              </span>
+            </div>
+            
+            {departmentsData && departmentsData.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {departmentsData.map((d: any) => {
+                  const isSelected = watch("departmentIds")?.includes(d.id);
+                  return (
+                    <div 
+                      key={d.id}
+                      onClick={() => {
+                        const current = watch("departmentIds") || [];
+                        const next = current.includes(d.id) 
+                          ? current.filter(id => id !== d.id)
+                          : [...current, d.id];
+                        setValue("departmentIds", next);
+                      }}
+                      className={`cursor-pointer group flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${
+                        isSelected 
+                          ? "bg-purple-50 border-purple-500/50 text-purple-700 shadow-sm shadow-purple-100" 
+                          : "bg-slate-50 shadow-none border-slate-100 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800"
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-lg flex items-center justify-center transition-colors ${
+                        isSelected ? "bg-purple-600 text-white" : "bg-slate-200 dark:bg-slate-800 text-transparent"
+                      }`}>
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-bold truncate leading-tight">{d.name}</span>
+                        <span className="text-[10px] uppercase font-black opacity-50 tracking-tighter">{d.code}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="h-14 flex items-center px-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px] italic border border-dashed border-slate-200">
+                {watchedSchoolId ? "No departments found for this selection" : "Select a school first"}
+              </div>
+            )}
+            <p className="text-[10px] text-slate-500 font-medium">Leave empty for a class-wide or school-wide general exam.</p>
           </div>
 
           <div className="space-y-2">

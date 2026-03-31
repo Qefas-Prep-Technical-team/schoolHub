@@ -20,6 +20,7 @@ export interface Question {
   marks: number;
   difficulty: Difficulty;
   shuffleOptions: boolean;
+  explanation?: string;
 }
 
 export interface QuestionListItemT {

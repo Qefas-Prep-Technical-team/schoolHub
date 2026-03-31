@@ -32,11 +32,20 @@ export const canManageExam = async ({
 
   if (userType === UserRole.TEACHER) {
     if (exam.classId) {
-      return canManageClass({ userId, userType, classId: exam.classId });
+      if (await canManageClass({ userId, userType, classId: exam.classId })) {
+        return true;
+      }
     }
 
-    if (exam.departmentId) {
-      return canManageDepartment({ userId, userType, departmentId: exam.departmentId });
+    // Check if user can manage any of the departments this exam belongs to
+    const examDepartments = await prisma.examDepartment.findMany({
+      where: { examId }
+    });
+
+    for (const ed of examDepartments) {
+      if (await canManageDepartment({ userId, userType, departmentId: ed.departmentId })) {
+        return true;
+      }
     }
 
     return false;

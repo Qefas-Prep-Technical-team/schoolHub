@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import StatsCard from './components/StatsCard';
 import SearchBar from './components/SearchBar';
 import FilterChip from './components/FilterChip';
@@ -9,7 +9,7 @@ import { Button } from './components/ui/Button';
 import { ClassData } from './components/types';
 import { classService, Class } from './services/classService';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
-import { apiClient } from '@/lib/api/client';
+import { useClasses } from '@/lib/api/hooks/useClasses';
 import { toast } from 'react-toastify';
 import ClassModal from './components/ClassModal';
 
@@ -23,51 +23,37 @@ export default function ClassesOverviewPage() {
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  // Real data state
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   
   const { user } = useAuthStore();
+  const activeSchoolId = user?.schools?.[0]?.schoolId;
 
-  useEffect(() => {
-    fetchClasses();
-  }, [user]);
-
-  const fetchClasses = async () => {
-    setLoading(true);
-    try {
-      // We need schoolId. For admin, we get it from status check
-      const statusRes = await apiClient.get(`/admin/admin-status/${user?.email}`);
-      const schoolId = statusRes.data.data.schoolAdmins?.[0]?.schoolId;
-      
-      if (schoolId) {
-        const data = await classService.getClasses(schoolId);
-        setClasses(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch classes", error);
-      toast.error("Failed to load classes");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: fetchClassesData, isLoading: loading, refetch: fetchClasses } = useClasses(activeSchoolId);
+  const classes = (fetchClassesData as Class[]) || [];
 
   // Map real Class to ClassData for the UI components
   const mappedClassData: ClassData[] = useMemo(() => {
-    return classes.map(c => ({
+    return classes.map((c: Class) => ({
       id: c.id,
       name: c.name,
       section: c.section || 'N/A',
       teacher: {
-        name: c.teacher?.name || 'No Teacher Assigned',
-        avatarUrl: c.teacher?.avatarUrl || '',
+        name: c.teachers?.[0]?.teacher?.name || 'No Teacher Assigned',
+        avatarUrl: c.teachers?.[0]?.teacher?.avatarUrl || '',
       },
-      studentCount: c._count?.enrollments || 0,
-      subjectCount: c._count?.subjects || 0,
+      teachers: c.teachers,
+      _count: c._count,
+      studentCount: c._count?.enrollments ?? c.enrollments?.length ?? 0,
+      subjectCount: c._count?.subjects ?? c.subjects?.length ?? 0,
       timetableStatus: c.status === 'ACTIVE' ? 'complete' : 'pending',
       classCode: c.classCode,
+      departments: c.departments?.map((d: any) => ({
+        id: d.department.id,
+        name: d.department.name
+      })),
+      isLive: c.status === 'ACTIVE' && Math.random() > 0.3, // Simulate some classes being "Live" now
+      currentActivity: c.status === 'ACTIVE' ? (c.subjects?.[0]?.subject?.name || 'Study Session') : undefined,
     }));
   }, [classes]);
 
@@ -78,7 +64,7 @@ export default function ClassesOverviewPage() {
         const query = searchQuery.toLowerCase();
         const matchesSearch = 
           classItem.name.toLowerCase().includes(query) ||
-          classItem.teacher.name.toLowerCase().includes(query);
+          (classItem.teachers?.some((t: any) => t.teacher.name.toLowerCase().includes(query)));
         
         if (!matchesSearch) return false;
       }
@@ -88,7 +74,7 @@ export default function ClassesOverviewPage() {
       }
 
       if (filters.homeroomTeacher !== 'all' && 
-          filters.homeroomTeacher !== classItem.teacher.name) {
+          !classItem.teachers?.some((t: any) => t.teacher.name === filters.homeroomTeacher)) {
         return false;
       }
 
@@ -99,8 +85,8 @@ export default function ClassesOverviewPage() {
   // Stats calculation
   const stats = useMemo(() => {
     const totalClasses = classes.length;
-    const teachersAssigned = classes.filter(c => c.teacherId).length;
-    const studentsTotal = classes.reduce((sum, c) => sum + (c._count?.enrollments || 0), 0);
+    const teachersAssigned = classes.filter((c: Class) => c.teachers && c.teachers.length > 0).length;
+    const studentsTotal = classes.reduce((sum: number, c: Class) => sum + (c._count?.enrollments ?? c.enrollments?.length ?? 0), 0);
     const completeTimetables = mappedClassData.filter(c => c.timetableStatus === 'complete').length;
     const completionRate = totalClasses > 0 ? Math.round((completeTimetables / totalClasses) * 100) : 0;
 

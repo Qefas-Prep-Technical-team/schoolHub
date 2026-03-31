@@ -11,7 +11,22 @@ interface OverviewProps {
   classData: any;
 }
 
-const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, upcomingExams, classData }) => {
+import { useClassAttendanceSummary } from "@/lib/api/hooks/useClasses";
+import { useParams } from "next/navigation";
+
+const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData }) => {
+  const params = useParams();
+  const classId = params.id as string;
+  const { data: attendanceSummary } = useClassAttendanceSummary(classId);
+
+  // Derived data
+  const realUpcomingExams = (classData?.exams || []).slice(0, 3).map((e: any) => ({
+    id: e.id,
+    subject: e.title.split(' ')[0], // Best effort for icon match
+    date: new Date(e.createdAt).toLocaleDateString(),
+    type: e.status
+  }));
+
   return (
     <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
       
@@ -30,11 +45,11 @@ const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, upcomingExams, cla
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-8">
           <StatsCard title="Class Average Score" value="85%" />
-          <StatsCard title="Attendance Summary" value="96%" />
+          <StatsCard title="Attendance Summary" value={attendanceSummary ? `${Math.round(attendanceSummary.rate)}%` : "Loading..."} />
         </div>
 
         {/* Upcoming Exams */}
-        <UpcomingExams exams={upcomingExams} />
+        <UpcomingExams exams={realUpcomingExams} />
       </div>
     </div>
   );

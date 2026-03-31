@@ -47,14 +47,14 @@ const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onEdit }) => {
         </div>
         
         <div className={`flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full ${
-          subject.scope === "GLOBAL" 
-            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" 
+          subject.scope === "SCHOOL" 
+            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" 
             : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
         }`}>
           <span className="material-symbols-outlined text-[14px]">
-            {subject.scope === "GLOBAL" ? "public" : "lock"}
+            {subject.scope === "SCHOOL" ? "school" : "person"}
           </span>
-          <span>{subject.scope === "GLOBAL" ? "Global" : "Private"}</span>
+          <span>{subject.scope === "SCHOOL" ? "School" : "Personal"}</span>
         </div>
       </div>
 

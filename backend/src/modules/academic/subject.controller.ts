@@ -6,6 +6,7 @@ import {
   getSingleSubjectService,
   updateSubjectService,
   archiveSubjectService,
+  attachSubjectToDepartmentsService,
 } from "./subject.service";
 import { canManageSubject } from "./academic.permissions";
 
@@ -130,6 +131,39 @@ export const archiveSubject = async (req: Request, res: Response) => {
     }
 
     const subject = await archiveSubjectService(subjectId as string);
+
+    return res.status(200).json({
+      success: true,
+      data: subject,
+    });
+  } catch (error: any) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const attachDepartmentsToSubject = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const { id: subjectId } = req.params;
+    const { departmentIds } = req.body;
+
+    const hasPermission = await canManageSubject({
+      userId: req.user.id,
+      userType: req.user.userType as UserRole,
+      subjectId: subjectId as string,
+    });
+
+    if (!hasPermission) {
+      return res.status(403).json({ success: false, message: "Permission denied" });
+    }
+
+    const subject = await attachSubjectToDepartmentsService({
+      subjectId: subjectId as string,
+      departmentIds,
+    });
 
     return res.status(200).json({
       success: true,

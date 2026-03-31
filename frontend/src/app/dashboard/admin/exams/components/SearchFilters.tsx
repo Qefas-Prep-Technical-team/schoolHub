@@ -41,9 +41,11 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
     });
 
     const { data: departments = [], isLoading: isLoadingDepts } = useQuery({
-        queryKey: ['school-departments', schoolId],
+        queryKey: ['school-departments', schoolId, filters.classId],
         queryFn: async () => {
-            const { data } = await apiClient.get(`/academic/departments?schoolId=${schoolId}`);
+            const classId = filters.classId !== 'all' ? filters.classId : undefined;
+            const url = `/academic/departments?schoolId=${schoolId}${classId ? `&classId=${classId}` : ''}`;
+            const { data } = await apiClient.get(url);
             return data.data || [];
         },
         enabled: !!schoolId,

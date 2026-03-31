@@ -32,7 +32,7 @@ export default function Dashboard() {
         sessionId: filters.sessionId === 'all' ? undefined : filters.sessionId,
         term: filters.term === 'all' ? undefined : filters.term,
         classId: filters.classId === 'all' ? undefined : filters.classId,
-        departmentId: filters.departmentId === 'all' ? undefined : filters.departmentId,
+        departmentIds: filters.departmentId === 'all' ? undefined : [filters.departmentId],
         status: filters.status === 'all' ? undefined : filters.status,
         category: filters.category === 'all' ? undefined : filters.category as any,
     });

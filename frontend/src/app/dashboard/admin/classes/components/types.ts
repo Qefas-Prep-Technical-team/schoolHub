@@ -33,13 +33,29 @@ export interface ClassData {
   name: string;
   grade?: string;
   section?: string;
-  teacher: {
+  teacher?: {
     name: string;
     avatarUrl?: string;
+  };
+  teachers?: Array<{
+    teacherId: string;
+    isLead: boolean;
+    teacher: {
+      id: string;
+      name: string;
+      avatarUrl?: string;
+    };
+  }>;
+  _count?: {
+    enrollments: number;
+    subjects: number;
   };
   studentCount: number;
   subjectCount: number;
   timetableStatus: 'complete' | 'incomplete' | 'pending';
   color?: string;
   classCode?: string;
+  departments?: Array<{ id: string; name: string }>;
+  currentActivity?: string;
+  isLive?: boolean;
 }

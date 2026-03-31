@@ -271,7 +271,7 @@ model Teacher {
   school        School? @relation("SchoolToTeacher", fields: [schoolId], references: [id])
   currentSchool School? @relation("TeacherCurrentSchool", fields: [currentSchoolId], references: [id])
 
-  classes  Class[] @relation("AssignedTeacherClasses")
+  classTeachers ClassTeacher[]
   verified Boolean @default(false)
 
   outgoingLinkRequests LinkRequest[] @relation("requesterTeacher")
@@ -285,6 +285,7 @@ model Teacher {
   teacherSubjects   TeacherSubject[]
   subjectExamPapers SubjectExamPaper[]
   exams             Exam[]
+  timetablePeriods  TimetablePeriod[]
 }
 
 model Student {
@@ -315,6 +316,7 @@ model Student {
   updatedAt    DateTime      @updatedAt
   gender       Gender?
   examAttempts ExamAttempt[]
+  attendances  Attendance[]
 
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
@@ -370,7 +372,6 @@ model Class {
   name      String
   section   String?
   schoolId  String?
-  teacherId String?
   classCode String      @unique
   scope     ClassScope
   status    ClassStatus @default(PENDING)
@@ -381,14 +382,17 @@ model Class {
   grades Grade[]
 
   school            School?            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  teacher           Teacher?           @relation("AssignedTeacherClasses", fields: [teacherId], references: [id])
+  teachers          ClassTeacher[]
   enrollments       ClassEnrollment[]
   relationshipLinks RelationshipLink[]
 
   subjects ClassSubject[]
+  departments ClassDepartment[]
   exams    Exam[]
   quizzes  Quiz[]
   linkRequests LinkRequest[]
+  timetable   TimetablePeriod[]
+  attendances Attendance[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -663,6 +667,7 @@ model Subject {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   subjectExamPapers SubjectExamPaper[]
+  timetablePeriods  TimetablePeriod[]
 
   @@unique([schoolId, code])
   @@map("subjects")
@@ -681,7 +686,8 @@ model Department {
   school   School?             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacher  Teacher?            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   subjects DepartmentSubject[]
-  exams    Exam[]
+  classes  ClassDepartment[]
+  exams    ExamDepartment[]
   quizzes  Quiz[]
   students Student[]
 
@@ -717,6 +723,20 @@ model ClassSubject {
 
   @@unique([classId, subjectId])
   @@map("class_subjects")
+}
+
+model ClassDepartment {
+  id           String @id @default(uuid())
+  classId      String
+  departmentId String
+
+  class      Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([classId, departmentId])
+  @@map("class_departments")
 }
 
 model Quiz {
@@ -798,7 +818,6 @@ model Exam {
   mode         ExamMode               @default(SINGLE_SUBJECT)
 
   schoolId     String?
-  departmentId String?
   classId      String?
   sessionId    String?
   term         Term?
@@ -821,10 +840,10 @@ model Exam {
   publishedById String?
 
   school     School?     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   class      Class?      @relation(fields: [classId], references: [id], onDelete: Cascade)
   session    Session?    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   teacher    Teacher?    @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  departments ExamDepartment[]
 
   includedSubjects ExamSubject[]
   subjectPapers    SubjectExamPaper[]
@@ -1018,4 +1037,72 @@ model SubjectExamAnswer {
 
   @@unique([subjectExamAttemptId, questionId])
   @@map("subject_exam_answers")
+}
+
+model ExamDepartment {
+  id           String @id @default(uuid())
+  examId       String
+  departmentId String
+
+  exam       Exam       @relation(fields: [examId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([examId, departmentId])
+  @@map("exam_departments")
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  classId   String
+  studentId String
+  date      DateTime @db.Date
+  status    String   // 'present', 'absent', 'late', 'excused'
+  note      String?
+  
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([classId, studentId, date])
+  @@map("attendances")
+}
+
+model TimetablePeriod {
+  id          String   @id @default(uuid())
+  classId     String
+  day         String   // 'Monday', 'Tuesday', etc.
+  startTime   String   // '09:00'
+  endTime     String   // '10:00'
+  subjectId   String
+  teacherId   String
+  room        String?
+  
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId, day])
+  @@map("timetable_periods")
+}
+
+model ClassTeacher {
+  id        String @id @default(uuid())
+  classId   String
+  teacherId String
+
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  isLead    Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([classId, teacherId])
+  @@map("class_teachers")
 }

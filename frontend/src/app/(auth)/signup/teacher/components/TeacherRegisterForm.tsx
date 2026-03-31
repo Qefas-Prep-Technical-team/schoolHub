@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { UserRole } from '@/lib/types/user.types';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTeacherRegistration } from '../../services/useRegistrationMutations';
 import { TeacherFormData, teacherSchema } from '../../services/regSchema';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
@@ -18,6 +18,7 @@ export default function TeacherRegisterForm() {
   const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const { mutate: registerTeacher, isPending } = useTeacherRegistration();
 
@@ -37,10 +38,16 @@ export default function TeacherRegisterForm() {
       email: '',
       password: '',
       confirmPassword: '',
-      tenantId: '',
+      schoolCode: searchParams.get('schoolCode') || '',
       isIndependent: false
     }
   });
+
+  // Sync with search params if they change
+  useEffect(() => {
+    if (searchParams.get('schoolCode')) setValue('schoolCode', searchParams.get('schoolCode') || '');
+    if (searchParams.get('studentCode')) setValue('studentCode', searchParams.get('studentCode') || '');
+  }, [searchParams, setValue]);
 
   // Watch password changes for strength indicator
   const passwordValue = watch('password');
@@ -50,10 +57,10 @@ export default function TeacherRegisterForm() {
     setPasswordStrength(getPasswordStrength(passwordValue || ''));
   }, [passwordValue]);
 
-  // Clear tenantId when independent account is selected
+  // Clear schoolCode when independent account is selected
   useEffect(() => {
     if (isIndependentValue) {
-      setValue('tenantId', '');
+      setValue('schoolCode', '');
     }
   }, [isIndependentValue, setValue]);
 
@@ -85,7 +92,8 @@ export default function TeacherRegisterForm() {
         password: data.password,
         confirmPassword: data.confirmPassword,
         isIndependent: data.isIndependent,
-        ...(data.tenantId && !data.isIndependent && { tenantId: data.tenantId.trim() })
+        ...(data.schoolCode && !data.isIndependent && { schoolCode: data.schoolCode.trim() }),
+        ...(data.studentCode && { studentCode: data.studentCode.trim() })
       };
 
       await registerTeacher(backendData, {
@@ -100,8 +108,9 @@ export default function TeacherRegisterForm() {
           const email = response.data.data?.teacher?.email || data.email;
 
           setTimeout(() => {
-            router.push(`/verification?email=${encodeURIComponent(email)}&userType=${UserRole.TEACHER}`);
-
+            router.push(
+              `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.TEACHER}&requestCode=true`,
+            );
           }, 2000);
         },
         onError: (error: any) => {
@@ -294,32 +303,56 @@ export default function TeacherRegisterForm() {
           <div className="flex-grow border-t border-input-border-light dark:border-input-border-dark"></div>
         </div>
 
-        {/* Tenant ID */}
+        {/* School Code */}
         <label className="flex flex-col">
           <div className="flex items-center justify-between pb-2">
-            <p className="text-base font-medium text-[#0d171b] dark:text-gray-300">Tenant ID</p>
+            <p className="text-base font-medium text-[#0d171b] dark:text-gray-300">School Code</p>
             <div className="relative group">
               <span className="material-symbols-outlined text-[#4c809a] dark:text-gray-400 cursor-pointer text-base">
                 help_outline
               </span>
               <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 w-48 bg-slate-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                This ID connects you to your school&apos;s portal. Ask your administrator for it.
+                This code connects you to your school&apos;s portal. Ask your administrator for it.
               </div>
             </div>
           </div>
           <input
             type="text"
-            {...register('tenantId')}
-            placeholder="Enter your school's Tenant ID"
-            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.tenantId
+            {...register('schoolCode')}
+            placeholder="Enter your school's Code"
+            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.schoolCode
               ? 'border-red-500 dark:border-red-400'
               : 'border-input-border-light dark:border-input-border-dark'
               }`}
             disabled={isPending || isIndependentValue}
           />
-          {errors.tenantId && (
-            <p className="text-red-500 text-sm mt-2">{errors.tenantId.message}</p>
+          {errors.schoolCode && (
+            <p className="text-red-500 text-sm mt-2">{errors.schoolCode.message}</p>
           )}
+        </label>
+
+        {/* Student Code */}
+        <label className="flex flex-col">
+          <div className="flex items-center justify-between pb-2">
+            <p className="text-base font-medium text-[#0d171b] dark:text-gray-300">Student Code</p>
+            <span className="text-sm text-[#4c809a] dark:text-gray-400">Optional</span>
+          </div>
+          <input
+            type="text"
+            {...register('studentCode')}
+            placeholder="Enter student code (format: stu-123456)"
+            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.studentCode
+              ? 'border-red-500 dark:border-red-400'
+              : 'border-input-border-light dark:border-input-border-dark'
+              }`}
+            disabled={isPending}
+          />
+          {errors.studentCode && (
+            <p className="text-red-500 text-sm mt-2">{errors.studentCode.message}</p>
+          )}
+          <p className="text-xs text-[#4c809a] dark:text-gray-500 mt-2">
+            Providing a student code will send a connection request to that student.
+          </p>
         </label>
 
         {/* Independent Teacher Checkbox */}

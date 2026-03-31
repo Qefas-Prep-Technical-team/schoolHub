@@ -9,6 +9,7 @@ interface ActiveLinksGridProps {
   currentUserId?: string;
   onRevoke: (id: string) => void;
   onCopy: (text: string) => void;
+  revokingId?: string | null;
 }
 
 export function ActiveLinksGrid({
@@ -16,7 +17,8 @@ export function ActiveLinksGrid({
   mainTab,
   currentUserId,
   onRevoke,
-  onCopy
+  onCopy,
+  revokingId
 }: ActiveLinksGridProps) {
   if (links.length === 0) {
     return (
@@ -40,6 +42,7 @@ export function ActiveLinksGrid({
           currentUserId={currentUserId}
           onRevoke={onRevoke}
           onCopy={onCopy}
+          isLoading={revokingId === link.id}
         />
       ))}
     </div>

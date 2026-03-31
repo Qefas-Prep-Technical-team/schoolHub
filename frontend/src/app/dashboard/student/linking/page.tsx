@@ -25,15 +25,17 @@ import { useRequestToJoinClass } from '@/lib/api/hooks/useClasses';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
+import { copyToClipboard } from '@/lib/utils/clipboard';
 
 export default function LinkingHub() {
-  const { data: requests = [] } = useLinkRequests();
-  const { data: activeLinks = [] } = useActiveLinks();
-  const { data: profileResponse } = useLinkProfile();
+  const { data: requests = [], isLoading: isLoadingRequests } = useLinkRequests();
+  const { data: activeLinks = [], isLoading: isLoadingActive } = useActiveLinks();
+  const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
   const profile = profileResponse?.data || {};
 
   const respondMutation = useRespondToLinkRequest();
   const revokeMutation = useRevokeActiveLink();
+  const createMutation = useCreateLinkRequest(); // Already in page but added for consistency
 
   const [searchQuery, setSearchQuery] = useState('');
   const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
@@ -117,11 +119,6 @@ export default function LinkingHub() {
   const networkPendingCount = normalizedRequests.filter((r: any) => r.status === 'PENDING' && !isClassLink(r.linkType)).length;
   const classroomPendingCount = normalizedRequests.filter((r: any) => r.status === 'PENDING' && isClassLink(r.linkType)).length;
 
-  const copyToClipboard = (text: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    toast.success('Code copied to clipboard');
-  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-black/95 p-4 md:p-8">
@@ -167,7 +164,7 @@ export default function LinkingHub() {
               <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-5 rounded-2xl flex flex-col items-center gap-3 min-w-[180px]">
                 <span className="text-3xl font-black tracking-widest leading-none">{profile.linkingCode || "---"}</span>
                 <Button
-                  onClick={() => copyToClipboard(profile.linkingCode)}
+                  onClick={() => copyToClipboard(profile.linkingCode, "Linking code")}
                   variant="secondary"
                   size="sm"
                   className="w-full h-9 bg-white text-blue-600 hover:bg-blue-50 font-black text-[11px] uppercase tracking-widest rounded-lg"
@@ -261,10 +258,20 @@ export default function LinkingHub() {
 
           {/* Connection Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {subTab === 'active' ? (
+            {isLoadingActive || isLoadingRequests || isLoadingProfile ? (
+              <div className="col-span-full py-20 flex flex-col items-center justify-center text-center space-y-4">
+                <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+                <p className="text-slate-500 font-black uppercase text-[10px] tracking-widest">Synchronizing your network...</p>
+              </div>
+            ) : subTab === 'active' ? (
               filteredActiveLinks.length > 0 ? (
                 filteredActiveLinks.map((link: any) => (
-                  <ConnectionCard key={link.id} link={link} onRevoke={() => revokeMutation.mutate(link.id)} />
+                  <ConnectionCard 
+                    key={link.id} 
+                    link={link} 
+                    onRevoke={() => revokeMutation.mutate(link.id)}
+                    isRevoking={revokeMutation.isPending && revokeMutation.variables === link.id}
+                  />
                 ))
               ) : (
                 <EmptyState message={`No active ${mainTab} connections found.`} />
@@ -272,7 +279,13 @@ export default function LinkingHub() {
             ) : (
               filteredRequests.length > 0 ? (
                 filteredRequests.map((req: any) => (
-                  <PendingCard key={req.id} req={req} onRespond={(action: any) => respondMutation.mutate({ id: req.id, action })} userId={user?.id} />
+                  <PendingCard 
+                    key={req.id} 
+                    req={req} 
+                    onRespond={(action: any) => respondMutation.mutate({ id: req.id, action })} 
+                    userId={user?.id}
+                    isResponding={respondMutation.isPending && (respondMutation.variables as any)?.id === req.id}
+                  />
                 ))
               ) : (
                 <EmptyState message={`No pending ${mainTab} requests.`} />
@@ -300,7 +313,7 @@ function EmptyState({ message }: { message: string }) {
 
 // --- Sub-components for better organization ---
 
-function ConnectionCard({ link, onRevoke }: any) {
+function ConnectionCard({ link, onRevoke, isRevoking }: any) {
   const isClass = link.variant === 'classroom';
 
   return (
@@ -327,8 +340,13 @@ function ConnectionCard({ link, onRevoke }: any) {
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><MoreVertical size={18} /></Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-xl border-none shadow-2xl p-2 capitalize">
-              <DropdownMenuItem className="text-red-500 focus:text-red-500 font-black p-3 rounded-lg cursor-pointer" onClick={onRevoke}>
-                <X size={16} className="mr-2" /> Disconnect Entity
+              <DropdownMenuItem 
+                className="text-red-500 focus:text-red-500 font-black p-3 rounded-lg cursor-pointer disabled:opacity-50" 
+                onClick={onRevoke}
+                disabled={isRevoking}
+              >
+                {isRevoking ? <Loader2 size={16} className="mr-2 animate-spin" /> : <X size={16} className="mr-2" />}
+                Disconnect Entity
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -361,8 +379,7 @@ function ConnectionCard({ link, onRevoke }: any) {
             className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-800"
             onClick={() => {
               const code = link.leftEntityId === link.userId ? link.rightCode : link.leftCode;
-              navigator.clipboard.writeText(code);
-              toast.success('Code copied!');
+              copyToClipboard(code, "Entity code");
             }}
           >
             <Copy size={14} className="text-slate-400" />
@@ -377,7 +394,7 @@ function ConnectionCard({ link, onRevoke }: any) {
   );
 }
 
-function PendingCard({ req, onRespond, userId }: any) {
+function PendingCard({ req, onRespond, userId, isResponding }: any) {
   const isOutgoing = req.requesterId === userId;
   const isClass = req.variant === 'classroom';
 
@@ -441,13 +458,23 @@ function PendingCard({ req, onRespond, userId }: any) {
         <div className="flex gap-2">
           {!isOutgoing ? (
             <>
-              <Button onClick={() => onRespond('ACCEPT')} className={cn(
-                  "flex-[3] h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-orange-100 transition-all active:scale-95",
-                  isClass ? "bg-purple-600 hover:bg-purple-700 shadow-purple-100" : "bg-orange-500 shadow-orange-100"
-              )}>
-                Approve
+              <Button 
+                onClick={() => onRespond('ACCEPT')} 
+                disabled={isResponding}
+                className={cn(
+                  "flex-[3] h-12 text-white rounded-xl font-bold uppercase text-[10px] tracking-widest shadow-lg transition-all active:scale-95",
+                  isClass ? "bg-purple-600 hover:bg-purple-700 shadow-purple-100" : "bg-orange-500 hover:bg-orange-600 shadow-orange-100"
+                )}
+              >
+                {isResponding ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {isResponding ? "Processing..." : "Approve"}
               </Button>
-              <Button onClick={() => onRespond('REJECT')} variant="outline" className="flex-1 h-12 rounded-xl border-slate-100 font-bold uppercase text-[10px] tracking-widest text-red-500 hover:bg-red-50 dark:border-slate-800 dark:hover:bg-red-950/20">
+              <Button 
+                onClick={() => onRespond('REJECT')} 
+                variant="outline" 
+                disabled={isResponding}
+                className="flex-1 h-12 rounded-xl border-slate-100 font-bold uppercase text-[10px] tracking-widest text-red-500 hover:bg-red-50 dark:border-slate-800 dark:hover:bg-red-950/20"
+              >
                 Decline
               </Button>
             </>

@@ -40,11 +40,17 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false)
   const [departments, setDepartments] = useState<Department[]>([])
-  const [formData, setFormData] = useState<Partial<CreateSubjectDTO>>({
+  const [formData, setFormData] = useState<{
+    name: string;
+    code: string;
+    description?: string;
+    departmentIds: string[];
+    scope: "SCHOOL";
+  }>({
     name: "",
     code: "",
     description: "",
-    departmentId: "",
+    departmentIds: [],
     scope: "SCHOOL",
   })
 
@@ -57,16 +63,16 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
         setFormData({
           name: subject.name,
           code: subject.code,
-          description: subject.description,
-          departmentId: subject.departmentId,
-          scope: subject.scope,
+          description: subject.description || "",
+          departmentIds: subject.departments?.map((d: any) => d.departmentId) || [],
+          scope: "SCHOOL",
         })
       } else {
         setFormData({
           name: "",
           code: "",
           description: "",
-          departmentId: "",
+          departmentIds: [],
           scope: "SCHOOL",
         })
       }
@@ -100,16 +106,18 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
       }
 
       let savedSubject;
+      const { departmentIds, ...subjectData } = formData;
+
       if (subject) {
         const response = await apiClient.patch(`/academic/subjects/${subject.id}`, {
-          ...formData,
+          ...subjectData,
           scope: "SCHOOL",
         });
         savedSubject = response.data.data;
         toast.success("Subject updated successfully!");
       } else {
         const response = await apiClient.post("/academic/subjects", {
-          ...formData,
+          ...subjectData,
           schoolId,
           scope: "SCHOOL",
         });
@@ -117,16 +125,15 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
         toast.success("Subject created successfully!");
       }
 
-      // If a department is selected, link the subject to it
-      if (formData.departmentId && savedSubject?.id) {
+      // If departments are selected, link the subject to them
+      if (formData.departmentIds.length > 0 && savedSubject?.id) {
         try {
-            await apiClient.post("/academic/departments/subjects/attach", {
-                departmentId: formData.departmentId,
-                subjectIds: [savedSubject.id],
+            await apiClient.post(`/academic/subjects/${savedSubject.id}/departments`, {
+                departmentIds: formData.departmentIds,
             });
         } catch (attachErr) {
-            console.error("Failed to link subject to department", attachErr);
-            toast.warning("Subject created, but failed to link to department.");
+            console.error("Failed to link subject to departments", attachErr);
+            toast.warning("Subject created, but failed to link to all selected departments.");
         }
       }
 
@@ -178,25 +185,55 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-4">
             <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-              Department
+              Departments
             </Label>
-            <Select 
-                value={formData.departmentId} 
-                onValueChange={(value) => setFormData({ ...formData, departmentId: value })}
-            >
-              <SelectTrigger className="bg-slate-50 dark:bg-slate-800/50 border-none rounded-lg py-3 px-4 text-sm focus:ring-2 focus:ring-blue-500 transition-all">
-                <SelectValue placeholder="Select Department..." />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((dep) => (
-                  <SelectItem key={dep.id} value={dep.id}>
-                    {dep.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-2 gap-3 max-h-[150px] overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-transparent focus-within:border-blue-500/30 transition-all">
+                {departments.length === 0 ? (
+                    <div className="col-span-2 py-4 text-center text-xs text-slate-400 italic">
+                        No departments found. Create one first.
+                    </div>
+                ) : (
+                    departments.map((dep) => {
+                        const isSelected = formData.departmentIds.includes(dep.id);
+                        return (
+                            <div 
+                                key={dep.id}
+                                onClick={() => {
+                                    const newIds = isSelected 
+                                        ? formData.departmentIds.filter(id => id !== dep.id)
+                                        : [...formData.departmentIds, dep.id];
+                                    setFormData({ ...formData, departmentIds: newIds });
+                                }}
+                                className={`
+                                    flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border
+                                    ${isSelected 
+                                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
+                                        : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-800'}
+                                `}
+                            >
+                                <div className={`
+                                    w-4 h-4 rounded border flex items-center justify-center transition-all
+                                    ${isSelected 
+                                        ? 'bg-blue-600 border-blue-600' 
+                                        : 'border-slate-300 dark:border-slate-600'}
+                                `}>
+                                    {isSelected && <span className="material-symbols-outlined text-white text-[12px] font-bold">check</span>}
+                                </div>
+                                <span className={`text-xs font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-400'}`}>
+                                    {dep.name}
+                                </span>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+            {formData.departmentIds.length > 0 && (
+                <p className="text-[10px] text-blue-600 font-medium">
+                    {formData.departmentIds.length} department(s) selected
+                </p>
+            )}
           </div>
 
           <div className="space-y-2">
