@@ -71,11 +71,13 @@ export const canManageSubjectPaper = async ({
   if (!paper) return false;
 
   if (userType === UserRole.ADMIN) {
-    if (!paper.exam || !paper.exam.schoolId) return false;
+    const schoolId = paper.schoolId || paper.exam?.schoolId;
+    if (!schoolId) return false;
+    
     const schoolAdmin = await prisma.schoolAdmin.findFirst({
       where: {
         adminId: userId,
-        schoolId: paper.exam.schoolId,
+        schoolId,
         active: true,
       },
     });
@@ -88,7 +90,7 @@ export const canManageSubjectPaper = async ({
     return canTeacherManageSubject({
       teacherId: userId,
       subjectId: paper.subjectId as string,
-      schoolId: paper.exam?.schoolId || undefined,
+      schoolId: paper.schoolId || paper.exam?.schoolId || undefined,
     });
   }
 
