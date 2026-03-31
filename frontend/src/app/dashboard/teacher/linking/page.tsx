@@ -68,23 +68,36 @@ import {
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
+import Pagination from '@/components/ui/Pagination';
 
 function LinkingHub() {
-  const { data: requests = [], isLoading: isLoadingRequests } = useLinkRequests();
-  const { data: activeLinks = [], isLoading: isLoadingActive } = useActiveLinks();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+
+  const { data: requestsData, isLoading: isLoadingRequests } = useLinkRequests({ page: currentPage });
+  const { data: activeLinksData, isLoading: isLoadingActive } = useActiveLinks({ page: currentPage });
   const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
+
+  const requests = requestsData?.items || [];
+  const activeLinks = activeLinksData?.items || [];
+  
+  const pagination = activeTab === 'all' ? activeLinksData?.pagination : requestsData?.pagination;
+  
   const profile = profileResponse?.data || {};
+  const { user } = useAuthStore();
 
   const respondMutation = useRespondToLinkRequest();
   const cancelMutation = useCancelLinkRequest();
   const revokeMutation = useRevokeActiveLink();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
-  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
-  const { user } = useAuthStore();
-
   const loading = isLoadingRequests || isLoadingActive || isLoadingProfile;
+
+  // Reset page when tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
   const handleRespond = async (id: string, action: 'ACCEPT' | 'REJECT') => {
     respondMutation.mutate({ id, action });
@@ -377,6 +390,16 @@ function LinkingHub() {
               )}
             </div>
           </div>
+        )}
+
+        {pagination && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
     </div>

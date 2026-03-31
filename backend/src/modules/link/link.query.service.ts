@@ -12,6 +12,7 @@ type QueryOptions = {
   limit?: number;
   status?: string;
   linkType?: string;
+  category?: "network" | "classroom";
 };
 
 const getPagination = (page = 1, limit = 10) => {
@@ -75,6 +76,13 @@ export const getOutgoingLinkRequestsService = async (
 
   if (options.linkType && Object.values(LinkType).includes(options.linkType as any)) {
     where.linkType = options.linkType;
+  } else if (options.category) {
+    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS];
+    if (options.category === 'classroom') {
+      where.linkType = { in: classroomTypes };
+    } else {
+      where.linkType = { notIn: classroomTypes };
+    }
   }
 
   const [items, total] = await Promise.all([
@@ -122,6 +130,13 @@ export const getIncomingPendingLinkRequestsService = async (
 
   if (options.linkType && Object.values(LinkType).includes(options.linkType as any)) {
     where.linkType = options.linkType;
+  } else if (options.category) {
+    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS];
+    if (options.category === 'classroom') {
+      where.linkType = { in: classroomTypes };
+    } else {
+      where.linkType = { notIn: classroomTypes };
+    }
   }
 
   const [items, total] = await Promise.all([
@@ -208,6 +223,14 @@ export const getAllLinkRequestsService = async (
 
   if (options.linkType && Object.values(LinkType).includes(options.linkType as any)) {
     where.linkType = options.linkType;
+  } else if (options.category) {
+    // Grouped by classroom vs network
+    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS];
+    if (options.category === 'classroom') {
+      where.linkType = { in: classroomTypes };
+    } else {
+      where.linkType = { notIn: classroomTypes };
+    }
   }
 
   const [items, total] = await Promise.all([
@@ -285,6 +308,13 @@ export const getActiveLinksService = async (
 
   if (options.linkType && Object.values(LinkType).includes(options.linkType as any)) {
     where.linkType = options.linkType;
+  } else if (options.category) {
+    const classroomTypes: LinkType[] = [LinkType.TEACHER_CLASS, LinkType.STUDENT_CLASS];
+    if (options.category === 'classroom') {
+      where.linkType = { in: classroomTypes };
+    } else {
+      where.linkType = { notIn: classroomTypes };
+    }
   }
 
   const [items, total] = await Promise.all([

@@ -27,7 +27,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
     };
 
     return (
-        <Link href={"/Exams&Quizzes/exam/1"} className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900/50 sm:flex-row sm:items-start">
+        <Link href={`/dashboard/student/exams&quizzes/${assessment.id}`} className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900/50 sm:flex-row sm:items-start">
             {/* Assessment Info */}
             <div className="flex-grow">
                 <div className="mb-2 flex items-center gap-3">

@@ -4,30 +4,30 @@ import { toast } from "react-toastify";
 
 export const queryKeys = {
   all: ["links"] as const,
-  requests: () => [...queryKeys.all, "requests"] as const,
-  pending: () => [...queryKeys.requests(), "pending"] as const,
-  active: () => [...queryKeys.all, "active"] as const,
+  requests: (params: any = {}) => [...queryKeys.all, "requests", params] as const,
+  pending: (params: any = {}) => [...queryKeys.all, "requests", "pending", params] as const,
+  active: (params: any = {}) => [...queryKeys.all, "active", params] as const,
   profile: () => [...queryKeys.all, "profile"] as const,
 };
 
-export const useLinkRequests = () => {
+export const useLinkRequests = (options: { page?: number; limit?: number; category?: string; status?: string } = {}) => {
   return useQuery({
-    queryKey: queryKeys.requests(),
-    queryFn: linkService.getLinkRequests,
+    queryKey: queryKeys.requests(options),
+    queryFn: () => linkService.getLinkRequests(options),
   });
 };
 
-export const usePendingLinkRequests = () => {
+export const usePendingLinkRequests = (options: { page?: number; limit?: number; category?: string } = {}) => {
   return useQuery({
-    queryKey: queryKeys.pending(),
-    queryFn: linkService.getPendingLinkRequests,
+    queryKey: queryKeys.pending(options),
+    queryFn: () => linkService.getPendingLinkRequests(options),
   });
 };
 
-export const useActiveLinks = () => {
+export const useActiveLinks = (options: { page?: number; limit?: number; category?: string } = {}) => {
   return useQuery({
-    queryKey: queryKeys.active(),
-    queryFn: linkService.getActiveLinks,
+    queryKey: queryKeys.active(options),
+    queryFn: () => linkService.getActiveLinks(options),
   });
 };
 

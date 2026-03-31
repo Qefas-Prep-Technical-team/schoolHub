@@ -14,9 +14,11 @@ export interface Exam {
   category: "EXAM" | "QUIZ";
   durationMinutes?: number;
   startDate?: string;
+  endDate?: string;
   resultReleaseAt?: string;
   allowImmediateResult?: boolean;
   classId?: string;
+  class?: { id: string; name: string; section?: string };
   departments?: { department: { id: string; name: string } }[];
   teacherId?: string;
   createdAt: string;
@@ -41,9 +43,11 @@ export interface SubjectPaper {
   instructions: string;
   durationMinutes: number;
   totalMarks: number;
+  readingContent?: string;
   status: "DRAFT" | "REVIEW" | "APPROVED" | "REJECTED" | "PUBLISHED";
   createdAt: string;
   subject?: { name: string; schoolId: string };
+  questions?: SubjectExamQuestion[];
   _count?: { questions: number };
 }
 
@@ -74,6 +78,7 @@ export interface CreateExamDTO {
   term?: string;
   teacherId?: string;
   startDate?: string;
+  endDate?: string;
   resultReleaseAt?: string;
   allowImmediateResult?: boolean;
   classId?: string;
@@ -87,6 +92,7 @@ export interface CreatePaperDTO {
   title: string;
   instructions: string;
   durationMinutes: number;
+  readingContent?: string;
 }
 
 export const examService = {
@@ -184,6 +190,11 @@ export const examService = {
     const response = await apiClient.delete(`/exams/${examId}/papers/${paperId}`);
     return response.data;
   },
+  
+  updateSubjectPaper: async (paperId: string, data: Partial<CreatePaperDTO>) => {
+    const response = await apiClient.patch<{ data: SubjectPaper }>(`/exams/papers/${paperId}`, data);
+    return response.data.data;
+  },
 
   updateExam: async (id: string, data: Partial<CreateExamDTO>) => {
     const response = await apiClient.patch<{ data: Exam }>(`/exams/${id}`, data);
@@ -244,6 +255,11 @@ export const examService = {
 
   getMyExamAttempts: async () => {
     const response = await apiClient.get('/exams/my/attempts');
+    return response.data.data;
+  },
+
+  getMyStats: async () => {
+    const response = await apiClient.get('/exams/my/stats');
     return response.data.data;
   },
 };

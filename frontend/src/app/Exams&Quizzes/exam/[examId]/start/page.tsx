@@ -78,6 +78,7 @@ export default function Home() {
                     <div className="mx-auto max-w-7xl">
                         <PageHeader title="Mathematics Final Examination" />
                         <ExamDetails 
+                            classLabel="Mathematics"
                             durationMinutes={60} 
                             subjectName="Mathematics" 
                             totalQuestions={20} 

@@ -45,7 +45,7 @@ import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutation
 import { STUDENT_FEATURE_FLAGS, StudentFeatureFlagKey } from "./studentFeatureFlags"
 import { linkService } from "@/lib/api/services/linkService"
 import { toast } from "react-toastify"
-import { Copy, User2, ChevronUp, ChevronDown } from "lucide-react"
+import { Copy, User2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { useEffect } from "react"
 
 // Define the menu item type
@@ -174,6 +174,22 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
+                
+                {/* Retractable Toggle Button */}
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        setIsCollapsed(!isCollapsed);
+                    }}
+                    className="absolute -right-4 top-10 z-[100] h-8 w-8 rounded-full border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 flex items-center justify-center shadow-xl text-gray-600 hover:text-blue-600 hover:scale-110 active:scale-95 transition-all"
+                    title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                >
+                    {isCollapsed ? (
+                        <ChevronRight size={18} />
+                    ) : (
+                        <ChevronLeft size={18} />
+                    )}
+                </button>
             </SidebarHeader>
 
             {/* Main Menu */}

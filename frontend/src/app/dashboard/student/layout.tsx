@@ -13,7 +13,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <ProtectedStudentRoute>
             <SidebarProvider>
                 <StudentSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-                <main className="flex-1">
+                <main className="flex-1 transition-all duration-300 ease-in-out overflow-hidden">
                     <TopNavBar onToggleSidebar={() => setIsCollapsed(!isCollapsed)} isCollapsed={isCollapsed} />
                     {/* <SidebarTrigger /> */}
                     {children}

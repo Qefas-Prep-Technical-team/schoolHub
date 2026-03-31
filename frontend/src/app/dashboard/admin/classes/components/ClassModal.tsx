@@ -32,10 +32,18 @@ interface ClassModalProps {
   classItem?: Class | null
 }
 
+interface Student {
+  id: string
+  name: string
+  email: string
+  studentCode: string
+}
+
 interface Teacher {
   id: string
   name: string
   email: string
+  avatarUrl?: string
 }
 
 const ClassModal: React.FC<ClassModalProps> = ({
@@ -48,12 +56,14 @@ const ClassModal: React.FC<ClassModalProps> = ({
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
+  const [students, setStudents] = useState<Student[]>([])
   const [formData, setFormData] = useState({
     name: "",
     section: "",
     teacherId: "",
     selectedSubjectIds: [] as string[],
     selectedDepartmentIds: [] as string[],
+    selectedStudentIds: [] as string[],
   })
 
   const { user } = useAuthStore()
@@ -66,8 +76,9 @@ const ClassModal: React.FC<ClassModalProps> = ({
           name: classItem.name,
           section: classItem.section || "",
           teacherId: classItem.teachers?.find(t => t.isLead)?.teacherId || classItem.teachers?.[0]?.teacherId || "",
-          selectedSubjectIds: classItem.subjects?.map(s => s.subject.id) || [],
-          selectedDepartmentIds: classItem.departments?.map(d => d.department.id) || [],
+          selectedSubjectIds: classItem.subjects?.map((s: any) => s.subject?.id || s.id) || [],
+          selectedDepartmentIds: classItem.departments?.map((d: any) => d.department?.id || d.id) || [],
+          selectedStudentIds: classItem.enrollments?.map((e: any) => e.student?.id || e.id) || [],
         })
       } else {
         setFormData({
@@ -76,6 +87,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
           teacherId: "",
           selectedSubjectIds: [],
           selectedDepartmentIds: [],
+          selectedStudentIds: [],
         })
       }
     }
@@ -87,14 +99,16 @@ const ClassModal: React.FC<ClassModalProps> = ({
       const schoolId = statusRes.data.data.schoolAdmins?.[0]?.schoolId;
       
       if (schoolId) {
-        const [teachersData, subjectsData, departmentsData] = await Promise.all([
+        const [teachersData, subjectsData, departmentsData, studentsData] = await Promise.all([
           classService.getSchoolTeachers(schoolId),
           subjectService.getSubjects(schoolId),
-          departmentService.getDepartments(schoolId)
+          departmentService.getDepartments(schoolId),
+          classService.getSchoolStudents(schoolId)
         ])
         setTeachers(teachersData)
         setSubjects(subjectsData)
         setDepartments(departmentsData)
+        setStudents(studentsData)
       }
     } catch (error) {
       console.error("Failed to fetch initial data", error)
@@ -121,14 +135,11 @@ const ClassModal: React.FC<ClassModalProps> = ({
           section: formData.section,
           teacherIds: formData.teacherId && formData.teacherId !== "none" ? [formData.teacherId] : [],
           departmentIds: formData.selectedDepartmentIds,
+          studentIds: formData.selectedStudentIds,
         });
 
-        // Update subjects (this is a separate call in our service, but let's assume updateClass handles it or we call it)
-        // If we need to replace subjects, we might need a replaceSubjects endpoint
-        // For now, let's just use attachSubjects if that's what we have
-        if (formData.selectedSubjectIds.length > 0) {
-            await classService.attachSubjects(classItem.id, formData.selectedSubjectIds);
-        }
+        // Update subjects with replacement strategy (allows removal)
+        await classService.replaceSubjects(classItem.id, formData.selectedSubjectIds);
 
         toast.success("Class updated successfully!");
       } else {
@@ -141,6 +152,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
           subjectIds: formData.selectedSubjectIds,
           departmentIds: formData.selectedDepartmentIds,
           teacherIds: formData.teacherId && formData.teacherId !== "none" ? [formData.teacherId] : [],
+          studentIds: formData.selectedStudentIds,
         });
         toast.success("Class created successfully!");
       }
@@ -170,6 +182,15 @@ const ClassModal: React.FC<ClassModalProps> = ({
       selectedDepartmentIds: prev.selectedDepartmentIds.includes(departmentId)
         ? prev.selectedDepartmentIds.filter(id => id !== departmentId)
         : [...prev.selectedDepartmentIds, departmentId]
+    }))
+  }
+
+  const toggleStudent = (studentId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedStudentIds: prev.selectedStudentIds.includes(studentId)
+        ? prev.selectedStudentIds.filter(id => id !== studentId)
+        : [...prev.selectedStudentIds, studentId]
     }))
   }
 
@@ -298,6 +319,50 @@ const ClassModal: React.FC<ClassModalProps> = ({
             </div>
             <p className="text-[10px] text-slate-400 font-medium">
               Selected: {formData.selectedDepartmentIds.length} departments
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+              Assign Students (Connected Only)
+            </Label>
+            <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+              {students.length === 0 ? (
+                <p className="text-xs text-slate-400 text-center py-4">No connected students found for this school.</p>
+              ) : (
+                students.map((student) => (
+                  <div 
+                    key={student.id} 
+                    onClick={() => toggleStudent(student.id)}
+                    className={`flex items-center justify-between p-3 rounded-md cursor-pointer transition-colors ${
+                      formData.selectedStudentIds.includes(student.id) 
+                        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' 
+                        : 'hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                        formData.selectedStudentIds.includes(student.id) 
+                          ? 'bg-blue-600 border-blue-600' 
+                          : 'border-slate-300 dark:border-slate-600'
+                      }`}>
+                        {formData.selectedStudentIds.includes(student.id) && (
+                          <span className="material-symbols-outlined text-[12px] text-white font-bold">
+                            check
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold truncate">{student.name}</span>
+                        <span className="text-[10px] opacity-70">{student.email} • {student.studentCode}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <p className="text-[10px] text-slate-400 font-medium">
+              Selected: {formData.selectedStudentIds.length} students
             </p>
           </div>
 

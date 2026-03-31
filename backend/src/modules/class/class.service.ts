@@ -22,6 +22,7 @@ type CreateClassInput = {
   subjectIds?: string[];
   departmentIds?: string[];
   teacherIds?: string[];
+  studentIds?: string[];
 };
 
 export const createClassService = async ({
@@ -34,6 +35,7 @@ export const createClassService = async ({
   subjectIds = [],
   departmentIds = [],
   teacherIds = [],
+  studentIds = [],
 }: CreateClassInput) => {
   const classCode = await generateUniqueClassCode(name);
 
@@ -73,6 +75,9 @@ export const createClassService = async ({
         },
         departments: {
           create: departmentIds.map((departmentId) => ({ departmentId })),
+        },
+        enrollments: {
+          create: studentIds.filter(Boolean).map((studentId) => ({ studentId })),
         },
       },
       include: {
@@ -167,6 +172,9 @@ export const createClassService = async ({
       },
       departments: {
         create: departmentIds.map((departmentId) => ({ departmentId })),
+      },
+      enrollments: {
+        create: studentIds.map((studentId) => ({ studentId })),
       },
     },
     include: {
@@ -617,12 +625,14 @@ export const updateClassService = async ({
   section,
   teacherIds,
   departmentIds,
+  studentIds,
 }: {
   classId: string;
   name?: string;
   section?: string;
   teacherIds?: string[];
   departmentIds?: string[];
+  studentIds?: string[];
 }) => {
   const foundClass = await prisma.class.findUnique({
     where: { id: classId },
@@ -639,17 +649,22 @@ export const updateClassService = async ({
       section: section ?? undefined,
       teachers: teacherIds ? {
         deleteMany: {},
-        create: teacherIds.map(id => ({ teacherId: id }))
+        create: teacherIds.filter(Boolean).map(id => ({ teacherId: id }))
       } : undefined,
       departments: departmentIds ? {
         deleteMany: {},
         create: departmentIds.map(id => ({ departmentId: id }))
+      } : undefined,
+      enrollments: studentIds ? {
+        deleteMany: {},
+        create: studentIds.filter(Boolean).map(id => ({ studentId: id }))
       } : undefined
     },
     include: {
       school: true,
       teachers: { include: { teacher: true } },
       subjects: { include: { subject: true } },
+      departments: { include: { department: true } },
       enrollments: { include: { student: true } },
     },
   });

@@ -5,6 +5,7 @@ import React from 'react';
 import { Question } from './types';
 import QuestionOptionComponent from './QuestionOption';
 import Button from './ui/Button';
+import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
 
 interface QuestionCardProps extends Question {
     onNext?: () => void;
@@ -57,9 +58,9 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                 )}
             </div>
 
-            <div 
-                className="mt-4 text-base leading-relaxed prose prose-slate dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: text }}
+            <LaTeXRenderer 
+                content={text}
+                className="mt-4 text-base leading-relaxed text-gray-800 dark:text-gray-200"
             />
             
             {equation && (

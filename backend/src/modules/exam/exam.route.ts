@@ -24,6 +24,7 @@ import {
   linkSubjectPaperToExam,
   deleteSubjectPaper,
   unlinkSubjectPaper,
+  updateSubjectPaper,
 } from "./exam.controller";
 import {
   getExamAttempt,
@@ -48,6 +49,7 @@ import {
   getDepartmentExamAnalytics,
   getExamRanking,
   getSessionExamAnalytics,
+  getMyGlobalStats,
 } from "./exam-analytics.controller";
 
 const router = Router();
@@ -60,10 +62,12 @@ router.patch("/review/answers/:answerId", authenticateToken, markSubjectiveAnswe
 
 router.get("/papers/all", authenticateToken, getSubjectPapers);
 router.post("/papers", authenticateToken, createSubjectPaper);
+router.patch("/papers/:paperId", authenticateToken, updateSubjectPaper);
 router.patch("/papers/:paperId/link", authenticateToken, linkSubjectPaperToExam);
 router.patch("/papers/:paperId/unlink", authenticateToken, unlinkSubjectPaper);
 
 router.get("/", authenticateToken, getExams);
+router.get("/my/stats", authenticateToken, getMyGlobalStats);
 router.get("/:id", authenticateToken, getExamById);
 router.patch("/:id", authenticateToken, updateExam);
 router.post("/", authenticateToken, createExam);

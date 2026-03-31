@@ -63,6 +63,7 @@ export const classService = {
     subjectIds?: string[];
     departmentIds?: string[];
     teacherIds?: string[];
+    studentIds?: string[];
   }) => {
     const response = await apiClient.post("/classes", data);
     return response.data.data;
@@ -73,6 +74,7 @@ export const classService = {
     section?: string;
     teacherIds?: string[];
     departmentIds?: string[];
+    studentIds?: string[];
   }) => {
     const response = await apiClient.patch(`/classes/${id}`, data);
     return response.data.data;
@@ -97,8 +99,28 @@ export const classService = {
     return response.data.data;
   },
 
+  replaceSubjects: async (classId: string, subjectIds: string[]) => {
+    const response = await apiClient.put("/classes/subjects/edit", {
+      classId,
+      subjectIds,
+    });
+    return response.data.data;
+  },
+
   getSchoolTeachers: async (schoolId: string) => {
     const response = await apiClient.get("/admin/teachers", {
+      params: { schoolId },
+    });
+    return response.data.data;
+  },
+
+  getAllTeachers: async () => {
+    const response = await apiClient.get("/admin/teachers");
+    return response.data.data;
+  },
+  
+  getSchoolStudents: async (schoolId: string) => {
+    const response = await apiClient.get("/admin/students", {
       params: { schoolId },
     });
     return response.data.data;

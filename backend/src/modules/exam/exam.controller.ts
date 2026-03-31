@@ -24,6 +24,7 @@ import {
   unpublishSubjectPaperService,
   deleteSubjectPaperService,
   unlinkSubjectPaperService,
+  updateSubjectPaperService,
 } from "./exam.service";
 import {
   canManageExam,
@@ -168,7 +169,7 @@ export const createExam = async (req: Request, res: Response) => {
 
 export const createSubjectPaper = async (req: Request, res: Response) => {
   try {
-    const { subjectId, teacherId, title, instructions, durationMinutes, schoolId: bodySchoolId } = req.body;
+    const { subjectId, teacherId, title, instructions, durationMinutes, readingContent, schoolId: bodySchoolId } = req.body;
     const schoolId = bodySchoolId || req.user?.schoolId;
 
     if (!req.params.id && !schoolId) {
@@ -219,6 +220,7 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
       title,
       instructions,
       durationMinutes,
+      readingContent,
     });
 
     return res.status(201).json({
@@ -230,6 +232,50 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to create subject paper",
+    });
+  }
+};
+
+export const updateSubjectPaper = async (req: Request, res: Response) => {
+  try {
+    const { paperId } = req.params;
+    const { title, instructions, durationMinutes, readingContent, subjectId, teacherId } = req.body;
+
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+
+    const allowed = await canManageSubjectPaper({
+      userId: req.user.id,
+      userType: req.user.userType,
+      subjectPaperId: paperId as string,
+    });
+
+    if (!allowed) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to manage this subject paper",
+      });
+    }
+
+    const data = await updateSubjectPaperService(paperId as string, {
+      title,
+      instructions,
+      durationMinutes,
+      readingContent,
+      subjectId,
+      teacherId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Subject paper updated successfully",
+      data,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to update subject paper",
     });
   }
 };

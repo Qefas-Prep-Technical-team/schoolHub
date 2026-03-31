@@ -31,6 +31,7 @@ const examSchema = z.object({
   schoolId: z.string().min(1, "Please select a school"),
   sessionId: z.string().optional(),
   startDate: z.string().optional(),
+  endDate: z.string().optional(),
   classId: z.string().optional(),
   departmentIds: z.array(z.string()),
   allowImmediateResult: z.boolean(),
@@ -66,6 +67,7 @@ export default function CreateExamForm() {
       schoolId: "",
       sessionId: "",
       startDate: "",
+      endDate: "",
       classId: "",
       departmentIds: [],
       allowImmediateResult: true,
@@ -161,6 +163,7 @@ export default function CreateExamForm() {
     ...data,
     description: data.description || "",
     startDate: data.startDate || undefined,
+    endDate: data.endDate || undefined,
     resultReleaseAt: data.resultReleaseAt || undefined,
   });
 
@@ -263,6 +266,19 @@ export default function CreateExamForm() {
               className="h-12 rounded-2xl border-slate-200 dark:border-slate-800"
             />
             <p className="text-[10px] text-slate-500 font-medium">If set, students cannot start before this time.</p>
+          </div>
+
+          <div className="space-y-3">
+            <Label htmlFor="endDate" className="text-sm font-semibold text-slate-500 flex items-center gap-2">
+              <Calendar size={16} className="text-rose-500/50" /> Concludes At (Optional)
+            </Label>
+            <Input
+              id="endDate"
+              type="datetime-local"
+              {...register("endDate")}
+              className="h-12 rounded-2xl border-slate-200 dark:border-slate-800"
+            />
+            <p className="text-[10px] text-slate-500 font-medium">If set, the exam becomes unavailable after this time.</p>
           </div>
         </div>
 

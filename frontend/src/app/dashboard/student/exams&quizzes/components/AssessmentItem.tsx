@@ -3,8 +3,10 @@
 import { Assessment } from './types';
 import Badge from './ui/Badge';
 import Link from "next/link";
-import { Clock, BookOpen, ChevronRight, Activity, Calendar } from "lucide-react";
+import { Clock, BookOpen, ChevronRight, Activity, Calendar, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 interface AssessmentItemProps {
     assessment: Assessment;
@@ -12,6 +14,8 @@ interface AssessmentItemProps {
 
 export default function AssessmentItem({ assessment }: AssessmentItemProps) {
     const [timeLeftStr, setTimeLeftStr] = useState<string | null>(null);
+    const [isNavigating, setIsNavigating] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         if (assessment.status !== 'upcoming' && assessment.status !== 'active' && assessment.status !== 'ongoing') return;
@@ -56,8 +60,22 @@ export default function AssessmentItem({ assessment }: AssessmentItemProps) {
     const isLive = assessment.status === 'active' || assessment.status === 'ongoing';
 
     return (
-        <Link href={`/dashboard/student/exams&quizzes/${assessment.id}`}>
-            <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/50 dark:backdrop-blur-xl h-full flex flex-col justify-between">
+        <div 
+            onClick={() => {
+                if (isNavigating) return;
+                setIsNavigating(true);
+                router.push(`/dashboard/student/exams&quizzes/${assessment.id}`);
+            }}
+            className={cn(
+                "group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all dark:border-slate-800 dark:bg-slate-900/50 dark:backdrop-blur-xl h-full flex flex-col justify-between cursor-pointer",
+                isNavigating ? "opacity-90 pointer-events-none" : "hover:-translate-y-1 hover:shadow-xl"
+            )}
+        >
+            {isNavigating && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/40 dark:bg-slate-950/40 backdrop-blur-[2px] transition-all">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            )}
                 {/* Status Indicator Bar */}
                 <div className={`absolute left-0 top-0 h-1 w-full opacity-60 transition-opacity group-hover:opacity-100 ${
                     isLive ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 
@@ -142,7 +160,6 @@ export default function AssessmentItem({ assessment }: AssessmentItemProps) {
 
                 {/* Background Decoration */}
                 <div className="absolute -right-4 -bottom-4 h-16 w-16 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
-            </div>
-        </Link>
+        </div>
     );
-}
+}

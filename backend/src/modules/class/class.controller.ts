@@ -23,7 +23,7 @@ import {
 
 export const createClass = async (req: Request, res: Response) => {
   try {
-    const { name, section, scope, schoolId, subjectIds, departmentIds } = req.body;
+    const { name, section, scope, schoolId, subjectIds, departmentIds, studentIds } = req.body;
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -59,6 +59,7 @@ export const createClass = async (req: Request, res: Response) => {
       schoolId,
       subjectIds,
       departmentIds,
+      studentIds,
     });
 
     return res.status(201).json({
@@ -506,7 +507,8 @@ export const attachSubjectsToClass = async (req: Request, res: Response) => {
 export const updateClass = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, section, teacherIds, departmentIds } = req.body;
+    const { name, section, teacherIds, departmentIds, studentIds } = req.body;
+    console.log("Updating class with data:", { id, name, section, teacherIds, departmentIds, studentIds });
 
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -531,6 +533,7 @@ export const updateClass = async (req: Request, res: Response) => {
       section,
       teacherIds,
       departmentIds,
+      studentIds,
     });
 
     return res.status(200).json({

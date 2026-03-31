@@ -123,7 +123,13 @@ export const useDeleteTimetablePeriod = (classId: string) => {
 export const useUpdateClass = (id: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { name?: string; section?: string; teacherIds?: string[]; departmentIds?: string[] }) =>
+    mutationFn: (data: { 
+      name?: string; 
+      section?: string; 
+      teacherIds?: string[]; 
+      departmentIds?: string[];
+      studentIds?: string[];
+    }) =>
       classService.updateClass(id, data),
     onSuccess: (updatedClass) => {
       queryClient.setQueryData(classQueryKeys.detail(id), updatedClass);
