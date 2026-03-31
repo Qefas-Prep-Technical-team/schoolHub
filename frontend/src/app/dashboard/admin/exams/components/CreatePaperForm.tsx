@@ -20,6 +20,7 @@ const paperSchema = z.object({
   title: z.string().min(3, "Title is too short"),
   instructions: z.string().min(5, "Please provide instructions"),
   durationMinutes: z.number().min(1, "Duration is required"),
+  readingContent: z.string().optional(),
 });
 
 type PaperFormValues = z.infer<typeof paperSchema>;
@@ -50,6 +51,7 @@ export function CreatePaperForm({
       title: "",
       instructions: "",
       durationMinutes: 60,
+      readingContent: "",
     },
   });
 
@@ -137,6 +139,18 @@ export function CreatePaperForm({
           className="rounded-xl min-h-[100px] border-gray-200 dark:border-gray-800 focus:ring-blue-500/20"
         />
         {errors.instructions && <p className="text-red-500 text-xs mt-1">{errors.instructions.message}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-semibold flex items-center gap-2 text-gray-700 dark:text-gray-300">
+          <FileText size={16} className="text-purple-500" /> Reading Section <span className="text-xs font-normal text-gray-400">(Optional)</span>
+        </Label>
+        <Textarea 
+          {...register("readingContent")} 
+          placeholder="Paste comprehension passage here..." 
+          className="rounded-xl min-h-[120px] bg-purple-50/10 dark:bg-purple-900/10 border-purple-100 dark:border-purple-900/30 focus:ring-purple-500/20" 
+        />
+        <p className="text-[10px] text-gray-500 font-medium italic">This will be shown to students as a dedicated reading modal during the exam.</p>
       </div>
 
       <div className="space-y-2">
