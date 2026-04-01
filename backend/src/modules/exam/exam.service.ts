@@ -390,7 +390,12 @@ export const updateSubjectPaperService = async (paperId: string, data: {
   return prisma.subjectExamPaper.update({
     where: { id: paperId },
     data: {
-      ...data,
+      title: data.title || undefined,
+      instructions: data.instructions || undefined,
+      durationMinutes: data.durationMinutes !== undefined ? data.durationMinutes : undefined,
+      readingContent: data.readingContent === "" ? null : (data.readingContent || undefined),
+      subjectId: data.subjectId === "" ? null : (data.subjectId || undefined),
+      teacherId: data.teacherId === "" ? null : (data.teacherId || undefined),
       updatedAt: new Date(),
     },
   });
