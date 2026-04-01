@@ -847,7 +847,7 @@ model Exam {
   departments ExamDepartment[]
 
   includedSubjects ExamSubject[]
-  subjectPapers    SubjectExamPaper[]
+  subjectPapers    ExamSubjectPaper[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -877,7 +877,6 @@ model ExamSubject {
 
 model SubjectExamPaper {
   id              String             @id @default(uuid())
-  examId          String?
   subjectId       String?
   schoolId        String?
   teacherId       String?
@@ -892,7 +891,7 @@ model SubjectExamPaper {
   validatedById String?
   publishedAt   DateTime?
 
-  exam    Exam?    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  exams   ExamSubjectPaper[]
   subject Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   school  School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
@@ -903,9 +902,23 @@ model SubjectExamPaper {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([examId, subjectId])
+  @@index([subjectId])
   @@index([schoolId, status])
   @@map("subject_exam_papers")
+}
+
+model ExamSubjectPaper {
+  id             String @id @default(uuid())
+  examId         String
+  subjectPaperId String
+
+  exam         Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  subjectPaper SubjectExamPaper @relation(fields: [subjectPaperId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([examId, subjectPaperId])
+  @@map("exam_subject_papers")
 }
 
 model SubjectExamQuestion {

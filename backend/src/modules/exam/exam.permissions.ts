@@ -65,13 +65,18 @@ export const canManageSubjectPaper = async ({
 }) => {
   const paper = await prisma.subjectExamPaper.findUnique({
     where: { id: subjectPaperId },
-    include: { exam: true },
+    include: { 
+      exams: {
+        include: { exam: true }
+      } 
+    },
   });
 
   if (!paper) return false;
 
   if (userType === UserRole.ADMIN) {
-    const schoolId = paper.schoolId || paper.exam?.schoolId;
+    // Check paper's own schoolId or if any linked exam belongs to admin's school
+    const schoolId = paper.schoolId || paper.exams?.[0]?.exam?.schoolId;
     if (!schoolId) return false;
     
     const schoolAdmin = await prisma.schoolAdmin.findFirst({
@@ -87,10 +92,20 @@ export const canManageSubjectPaper = async ({
   if (userType === UserRole.TEACHER) {
     if (paper.teacherId === userId) return true;
 
+    // Check if teacher can manage any of the exams this paper is linked to
+    for (const link of paper.exams) {
+      const allowed = await canManageExam({
+        userId,
+        userType,
+        examId: link.examId,
+      });
+      if (allowed) return true;
+    }
+
     return canTeacherManageSubject({
       teacherId: userId,
       subjectId: paper.subjectId as string,
-      schoolId: paper.schoolId || paper.exam?.schoolId || undefined,
+      schoolId: paper.schoolId || paper.exams?.[0]?.exam?.schoolId || undefined,
     });
   }
 

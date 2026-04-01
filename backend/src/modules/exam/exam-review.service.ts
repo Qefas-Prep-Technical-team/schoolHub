@@ -27,7 +27,7 @@ export const getManualReviewQueueService = async ({
           subjectPaper: {
             include: {
               subject: true,
-              exam: true,
+              exams: { include: { exam: true } },
             },
           },
           examAttempt: {

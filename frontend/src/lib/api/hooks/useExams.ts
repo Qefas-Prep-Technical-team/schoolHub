@@ -253,9 +253,9 @@ export const useLinkPaperToExam = () => {
 export const useUnlinkPaper = (examId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (paperId: string) => examService.unlinkSubjectPaper(paperId),
+    mutationFn: (paperId: string) => examService.unlinkSubjectPaper(paperId, examId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["exam-papers", examId] });
+      queryClient.invalidateQueries({ queryKey: examKeys.papers(examId) });
       queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
       toast.success("Subject paper unlinked!");
     },

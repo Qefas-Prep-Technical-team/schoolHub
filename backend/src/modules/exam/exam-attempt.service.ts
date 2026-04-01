@@ -19,7 +19,9 @@ export const startExamAttemptService = async ({
     include: {
       subjectPapers: {
         include: {
-          questions: true,
+          subjectPaper: {
+            include: { questions: true },
+          },
         },
       },
     },
@@ -73,8 +75,10 @@ export const startExamAttemptService = async ({
     }
   }
 
-  const totalMarks = exam.subjectPapers.reduce(
-    (sum, paper) => sum + Number(paper.totalMarks || 0),
+  const papers = exam.subjectPapers.map(link => link.subjectPaper);
+
+  const totalMarks = papers.reduce(
+    (sum: number, paper: any) => sum + Number(paper.totalMarks || 0),
     0,
   );
 
@@ -93,7 +97,7 @@ export const startExamAttemptService = async ({
       expiresAt,
       status: ExamAttemptStatus.IN_PROGRESS,
       subjectAttempts: {
-        create: exam.subjectPapers.map((paper) => ({
+        create: papers.map((paper: any) => ({
           subjectPaperId: paper.id,
           totalMarks: Number(paper.totalMarks || 0),
         })),

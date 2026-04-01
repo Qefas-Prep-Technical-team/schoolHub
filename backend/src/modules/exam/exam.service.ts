@@ -171,11 +171,15 @@ export const getExamsService = async (filters: {
       session: true,
       subjectPapers: {
         include: {
-          subject: true,
-          teacher: true,
-          questions: {
-            orderBy: { order: "asc" },
-          },
+          subjectPaper: {
+            include: {
+              subject: true,
+              teacher: true,
+              questions: {
+                orderBy: { order: "asc" },
+              },
+            }
+          }
         },
       },
       // Include student's attempt if studentId is filtered
@@ -190,9 +194,17 @@ export const getExamsService = async (filters: {
     },
   });
 
+  const formattedExams = (exams as any[]).map(exam => ({
+    ...exam,
+    subjectPapers: exam.subjectPapers.map((link: any) => ({
+      ...link.subjectPaper,
+      examId: link.examId
+    }))
+  }));
+
   // If filtered for a student, enforce result visibility logic
   if (studentId) {
-    return (exams as any[]).map(exam => {
+    return formattedExams.map(exam => {
       const attempt = exam.examAttempts?.[0];
       if (attempt && !exam.allowImmediateResult) {
         const released = exam.resultReleaseAt && new Date() >= new Date(exam.resultReleaseAt);
@@ -212,7 +224,7 @@ export const getExamsService = async (filters: {
     });
   }
 
-  return exams;
+  return formattedExams;
 };
 
 export const getExamByIdService = async (id: string, excludeCorrectAnswers: boolean = false) => {
@@ -227,19 +239,33 @@ export const getExamByIdService = async (id: string, excludeCorrectAnswers: bool
       session: true,
       subjectPapers: {
         include: {
-          subject: true,
-          teacher: true,
-          questions: {
-            orderBy: { order: "asc" },
-          },
+          subjectPaper: {
+            include: {
+              subject: true,
+              teacher: true,
+              questions: {
+                orderBy: { order: "asc" },
+              },
+            }
+          }
         },
       },
     },
   });
 
-  if (exam && excludeCorrectAnswers) {
-    exam.subjectPapers.forEach(paper => {
-      paper.questions = paper.questions.map(q => ({
+  if (!exam) return null;
+
+  const formattedExam = {
+    ...exam,
+    subjectPapers: (exam as any).subjectPapers.map((link: any) => ({
+      ...link.subjectPaper,
+      examId: link.examId
+    }))
+  };
+
+  if (excludeCorrectAnswers) {
+    formattedExam.subjectPapers.forEach((paper: any) => {
+      paper.questions = paper.questions.map((q: any) => ({
         ...q,
         correctAnswer: "", // Scrub sensitive data
         explanation: ""
@@ -247,25 +273,32 @@ export const getExamByIdService = async (id: string, excludeCorrectAnswers: bool
     });
   }
 
-  return exam;
+  return formattedExam;
 };
 
 export const getExamPapersService = async (examId: string, schoolId?: string) => {
-  return prisma.subjectExamPaper.findMany({
+  const links = await prisma.examSubjectPaper.findMany({
     where: { 
       examId,
       exam: schoolId ? { schoolId } : undefined
     },
     include: {
-      subject: true,
-      teacher: true,
-      questions: {
-        select: {
-          id: true,
-        },
+      subjectPaper: {
+        include: {
+          subject: true,
+          teacher: true,
+          questions: {
+            select: { id: true },
+          },
+        }
       },
     },
   });
+
+  return links.map(link => ({
+    ...link.subjectPaper,
+    examId: link.examId, // Keep for backward compatibility if possible
+  }));
 };
 
 export const getSubjectPapersService = async (filters: { 
@@ -279,12 +312,12 @@ export const getSubjectPapersService = async (filters: {
     where.OR = [
       { schoolId: filters.schoolId },
       { subject: { schoolId: filters.schoolId } },
-      { exam: { schoolId: filters.schoolId } }
+      { exams: { some: { exam: { schoolId: filters.schoolId } } } }
     ];
   }
 
   if (filters.unlinkedOnly) {
-    where.examId = null;
+    where.exams = { none: {} };
   }
 
   if (filters.teacherId) {
@@ -303,7 +336,9 @@ export const getSubjectPapersService = async (filters: {
     include: {
       subject: true,
       teacher: true,
-      exam: true,
+      exams: {
+        include: { exam: true }
+      },
       questions: {
         select: { id: true }
       }
@@ -313,24 +348,46 @@ export const getSubjectPapersService = async (filters: {
 };
 
 export const linkSubjectPaperToExamService = async (subjectPaperId: string, examId: string) => {
-  return prisma.subjectExamPaper.update({
-    where: { id: subjectPaperId },
-    data: { examId }
+  return prisma.examSubjectPaper.upsert({
+    where: {
+      examId_subjectPaperId: {
+        examId,
+        subjectPaperId,
+      },
+    },
+    update: {},
+    create: {
+      examId,
+      subjectPaperId,
+    },
   });
 };
 
-export const unlinkSubjectPaperService = async (subjectPaperId: string) => {
-  return prisma.subjectExamPaper.update({
-    where: { id: subjectPaperId },
-    data: { examId: null }
-  });
+export const unlinkSubjectPaperService = async (subjectPaperId: string, examId?: string) => {
+  if (examId) {
+    return prisma.examSubjectPaper.delete({
+      where: {
+        examId_subjectPaperId: {
+          examId,
+          subjectPaperId,
+        },
+      },
+    });
+  } else {
+    // If no examId provided, unlink from ALL exams (optional behavior, let's keep it safe)
+    return prisma.examSubjectPaper.deleteMany({
+      where: { subjectPaperId }
+    });
+  }
 };
 
 export const getSubjectPaperByIdService = async (id: string) => {
   return prisma.subjectExamPaper.findUnique({
     where: { id },
     include: {
-      exam: true,
+      exams: {
+        include: { exam: true }
+      },
       subject: true,
       teacher: true,
       questions: {
@@ -361,7 +418,6 @@ export const createSubjectPaperService = async ({
 }) => {
   return prisma.subjectExamPaper.create({
     data: {
-      examId: examId || null,
       subjectId: subjectId || null,
       schoolId: schoolId || null,
       teacherId: teacherId || null,
@@ -369,9 +425,16 @@ export const createSubjectPaperService = async ({
       instructions: instructions || null,
       durationMinutes: durationMinutes || null,
       readingContent: readingContent || null,
+      exams: examId && examId !== 'none' ? {
+        create: {
+          examId
+        }
+      } : undefined,
     },
     include: {
-      exam: true,
+      exams: {
+        include: { exam: true }
+      },
       subject: true,
       school: true,
       teacher: true,
@@ -556,7 +619,11 @@ export const validateSubjectPaperService = async (subjectPaperId: string) => {
   // Final check of questions
   const paperWithQuestions = await prisma.subjectExamPaper.findUnique({
     where: { id: subjectPaperId },
-    include: { questions: true, exam: true, subject: true }
+    include: { 
+      questions: true, 
+      exams: { include: { exam: true } }, 
+      subject: true 
+    }
   });
 
   if (!paperWithQuestions) throw new Error("Subject paper not found");
@@ -567,34 +634,37 @@ export const validateSubjectPaperService = async (subjectPaperId: string) => {
       status: SubjectPaperStatus.APPROVED,
       validatedAt: new Date(),
     },
-    include: { questions: true, exam: true, subject: true },
+    include: { 
+      questions: true, 
+      exams: { include: { exam: true } }, 
+      subject: true 
+    },
   });
 
-  // Notify school admins
-  if (updated.exam && updated.exam.schoolId) {
-    const schoolAdmins = await prisma.schoolAdmin.findMany({
-      where: {
-        schoolId: updated.exam.schoolId,
-        active: true,
-      },
-      include: {
-        admin: true
-      }
-    });
+  // Notify school admins for each linked exam
+  for (const link of updated.exams) {
+    if (link.exam?.schoolId) {
+      const schoolAdmins = await prisma.schoolAdmin.findMany({
+        where: {
+          schoolId: link.exam.schoolId,
+          active: true,
+        },
+      });
 
-    Promise.all(
-      schoolAdmins.map((sa) =>
-        createNotification({
-          recipientType: "ADMIN",
-          recipientId: sa.adminId, // Admin model ID
-          type: "GENERAL",
-          title: "Subject Paper Validated!",
-          message: `A subject paper for "${updated.subject?.name || "Unknown"}" in exam "${updated.exam?.title || "Unknown"}" has been validated and is ready for publishing.`,
-          link: `/dashboard/admin/exams/${updated.examId}/papers/${updated.id}`,
-          meta: { examId: updated.examId, paperId: updated.id },
-        })
-      )
-    ).catch((err) => console.error("Failed to notify admins of paper validation:", err));
+      Promise.all(
+        schoolAdmins.map((sa) =>
+          createNotification({
+            recipientType: "ADMIN",
+            recipientId: sa.adminId,
+            type: "GENERAL",
+            title: "Subject Paper Validated!",
+            message: `A subject paper for "${updated.subject?.name || "Unknown"}" in exam "${link.exam?.title || "Unknown"}" has been validated and is ready for publishing.`,
+            link: `/dashboard/admin/exams/${link.examId}/papers/${updated.id}`,
+            meta: { examId: link.examId, paperId: updated.id },
+          })
+        )
+      ).catch((err) => console.error("Failed to notify admins of paper validation:", err));
+    }
   }
 
   return updated;
@@ -640,7 +710,9 @@ export const validateExamService = async (examId: string) => {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     include: {
-      subjectPapers: true,
+      subjectPapers: {
+        include: { subjectPaper: true }
+      },
     },
   });
 
@@ -649,7 +721,9 @@ export const validateExamService = async (examId: string) => {
     throw new Error("Exam must have at least one subject paper");
   }
 
-  const unpublished = exam.subjectPapers.filter(
+  const papers = exam.subjectPapers.map(link => link.subjectPaper);
+
+  const unpublished = papers.filter(
     (paper) => paper.status !== SubjectPaperStatus.PUBLISHED
   );
 
@@ -657,7 +731,7 @@ export const validateExamService = async (examId: string) => {
     throw new Error("All subject papers must be published before exam validation");
   }
 
-  const totalMarks = exam.subjectPapers.reduce(
+  const totalMarks = papers.reduce(
     (sum, p) => sum + Number(p.totalMarks || 0),
     0
   );
@@ -668,7 +742,11 @@ export const validateExamService = async (examId: string) => {
       totalMarks,
       validatedAt: new Date(),
     },
-    include: { subjectPapers: true },
+    include: {
+      subjectPapers: {
+        include: { subjectPaper: true }
+      },
+    },
   });
 };
 
@@ -676,7 +754,9 @@ export const publishExamService = async (examId: string) => {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     include: {
-      subjectPapers: true,
+      subjectPapers: {
+        include: { subjectPaper: true }
+      },
     },
   });
 
@@ -685,7 +765,9 @@ export const publishExamService = async (examId: string) => {
     throw new Error("Exam must have at least one subject paper");
   }
 
-  const unpublished = exam.subjectPapers.filter(
+  const papers = exam.subjectPapers.map(link => link.subjectPaper);
+
+  const unpublished = papers.filter(
     (paper) => paper.status !== SubjectPaperStatus.PUBLISHED
   );
 
@@ -693,7 +775,7 @@ export const publishExamService = async (examId: string) => {
     throw new Error("All subject papers must be published before publishing exam");
   }
 
-  const totalMarks = exam.subjectPapers.reduce(
+  const totalMarks = papers.reduce(
     (sum, p) => sum + Number(p.totalMarks || 0),
     0
   );
@@ -1076,7 +1158,11 @@ export const deleteExamService = async (examId: string) => {
     include: {
       subjectPapers: {
         include: {
-          examAttempts: true
+          subjectPaper: {
+            include: {
+              examAttempts: true
+            }
+          }
         }
       }
     }
@@ -1085,7 +1171,9 @@ export const deleteExamService = async (examId: string) => {
   if (!exam) throw new Error("Exam not found");
 
   // Check if any paper in the exam has attempts
-  const hasAttempts = exam.subjectPapers.some(paper => paper.examAttempts && paper.examAttempts.length > 0);
+  const hasAttempts = (exam.subjectPapers as any[]).some(link => 
+    link.subjectPaper.examAttempts && link.subjectPaper.examAttempts.length > 0
+  );
   if (hasAttempts) {
     throw new Error("Cannot delete an exam that has student attempts. Try unpublishing it instead.");
   }

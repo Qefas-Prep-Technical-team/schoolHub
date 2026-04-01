@@ -704,8 +704,9 @@ export const linkSubjectPaperToExam = async (req: Request, res: Response) => {
 export const unlinkSubjectPaper = async (req: Request, res: Response) => {
   try {
     const { paperId } = req.params;
-    console.log("LOG: [unlinkSubjectPaper] Unlinking paper:", paperId);
-    const data = await unlinkSubjectPaperService(paperId as string);
+    const { examId } = req.body || req.query;
+    console.log("LOG: [unlinkSubjectPaper] Unlinking paper:", paperId, "from exam:", examId);
+    const data = await unlinkSubjectPaperService(paperId as string, examId as string);
     res.status(200).json({ success: true, data });
   } catch (error: any) {
     console.error("ERROR: [unlinkSubjectPaper]", error);

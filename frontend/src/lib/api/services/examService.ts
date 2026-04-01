@@ -36,7 +36,8 @@ export interface Exam {
 
 export interface SubjectPaper {
   id: string;
-  examId: string;
+  examId?: string; // Optional legacy field
+  exams?: { examId: string; exam?: Exam }[];
   subjectId?: string;
   teacherId?: string;
   schoolId?: string;
@@ -249,8 +250,8 @@ export const examService = {
     const response = await apiClient.patch(`/exams/papers/${paperId}/link`, { examId });
     return response.data;
   },
-  unlinkSubjectPaper: async (paperId: string) => {
-    const response = await apiClient.patch(`/exams/papers/${paperId}/unlink`);
+  unlinkSubjectPaper: async (paperId: string, examId?: string) => {
+    const response = await apiClient.patch(`/exams/papers/${paperId}/unlink`, { examId });
     return response.data;
   },
 

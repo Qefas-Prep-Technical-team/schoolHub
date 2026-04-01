@@ -28,7 +28,7 @@ export default function AddExistingPaperModal({ examId, trigger }: AddExistingPa
   const filteredPapers = papers.filter(p => 
     (p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.subject?.name?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    p.examId !== examId
+    !p.exams?.some(link => link.examId === examId)
   );
 
   const handleLink = async (paperId: string) => {

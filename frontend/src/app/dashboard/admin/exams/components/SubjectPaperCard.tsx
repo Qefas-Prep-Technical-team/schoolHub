@@ -94,10 +94,15 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
                 <span>{paper.teacher?.name || 'Unassigned'}</span>
               </div>
 
-              {paper.exam && (
+              {paper.exams && paper.exams.length > 0 && (
                 <div className="flex items-center text-sm text-primary/80 gap-2 font-medium">
-                  <Calendar className="h-4 w-4" />
-                  <span className="truncate">Part of: {paper.exam.title}</span>
+                  <Calendar className="h-4 w-4 shrink-0" />
+                  <span className="truncate">
+                    {paper.exams.length === 1 
+                      ? `Part of: ${paper.exams[0].exam?.title}` 
+                      : `Part of: ${paper.exams[0].exam?.title} (+${paper.exams.length - 1} more)`
+                    }
+                  </span>
                 </div>
               )}
             </div>
