@@ -22,7 +22,8 @@ import {
   Info,
   History,
   TrendingUp,
-  Award
+  Award,
+  Loader2
 } from 'lucide-react';
 import {
   Tooltip,
@@ -40,7 +41,9 @@ import ProgressCircle from '@/components/ui/ProgressCircle';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import ExamGradeReport from './components/ExamGradeReport';
 import SubjectPaperReport from '../exams/papers/[id]/components/SubjectPaperReport';
-import IndividualStudentReport from './components/IndividualStudentReport';
+import IndividualStudentReport, { ReportPageContent } from './components/IndividualStudentReport';
+import BulkIndividualReports from './components/BulkIndividualReports';
+import { downloadIndividualResultsAsZip } from './utils/batchPDFDownloader';
 
 export default function AdminGradesDashboard() {
   const { user } = useAuthStore();
@@ -381,6 +384,24 @@ function ExamStudentList({
   const router = useRouter();
   const [showMobilePapers, setShowMobilePapers] = useState(false);
   const [isNavigating, setIsNavigating] = useState<string | null>(null);
+  const [isBatchDownloading, setIsBatchDownloading] = useState(false);
+
+  const handleBatchDownloadZip = async () => {
+    if (!attempts || attempts.length === 0) return;
+    setIsBatchDownloading(true);
+    try {
+      const exam = exams?.find((e: any) => e.id === examId);
+      await downloadIndividualResultsAsZip({
+        results: attempts,
+        school,
+        examTitle: exam?.title || 'Exam'
+      });
+    } catch (error) {
+      console.error("Batch download failed:", error);
+    } finally {
+      setIsBatchDownloading(false);
+    }
+  };
 
   // Extract unique papers for filtering
   const papers = useMemo(() => {
@@ -572,6 +593,20 @@ function ExamStudentList({
                       )}
                     </PDFDownloadLink>
                   )}
+
+                  <Button 
+                    variant="outline" 
+                    disabled={isBatchDownloading || isLoading || !attempts?.length}
+                    onClick={handleBatchDownloadZip}
+                    className="rounded-xl font-bold h-11 border-slate-200 dark:border-slate-800 shadow-sm bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    <Download size={18} className="mr-2" /> 
+                    {isBatchDownloading ? (
+                      <span className="flex items-center">
+                        <Loader2 className="mr-2 animate-spin" size={14} /> Archiving...
+                      </span>
+                    ) : 'Batch Individual PDFs'}
+                  </Button>
 
                   <Button variant="outline" className="rounded-xl font-bold h-11 border-slate-200 dark:border-slate-800 shadow-sm">
                      <Download size={18} className="mr-2" /> Export CSV

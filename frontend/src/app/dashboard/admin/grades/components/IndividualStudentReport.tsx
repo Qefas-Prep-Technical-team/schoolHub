@@ -231,15 +231,11 @@ interface IndividualStudentReportProps {
   school: any;
 }
 
-const IndividualStudentReport: React.FC<IndividualStudentReportProps> = ({
-  result,
-  school,
-}) => {
+export const ReportPageContent: React.FC<{ result: any; school: any }> = ({ result, school }) => {
   const percent = Math.round((result.totalScore / result.totalMarks) * 100);
   const statusColor = percent >= 70 ? '#10B981' : percent >= 40 ? '#F59E0B' : '#EF4444';
 
   return (
-    <Document>
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
@@ -274,17 +270,17 @@ const IndividualStudentReport: React.FC<IndividualStudentReportProps> = ({
             <View style={{ flexDirection: 'row', gap: 15, marginTop: 5 }}>
               <View>
                 <Text style={styles.scoreLabel}>Weighted Score</Text>
-                <Text style={{ fontSize: 13, fontWeight: 'black', color: '#1E293B' }}>
+                <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#1E293B' }}>
                   {result.totalScore} <Text style={{ fontSize: 9, color: '#94A3B8' }}>/ {result.totalMarks}</Text>
                 </Text>
               </View>
               <View>
                 <Text style={styles.scoreLabel}>Percentage</Text>
-                <Text style={{ fontSize: 13, fontWeight: 'black', color: statusColor }}>{percent}%</Text>
+                <Text style={{ fontSize: 13, fontWeight: 'bold', color: statusColor }}>{percent}%</Text>
               </View>
               <View>
                 <Text style={styles.scoreLabel}>Grade</Text>
-                <Text style={{ fontSize: 13, fontWeight: 'black', color: statusColor }}>
+                <Text style={{ fontSize: 13, fontWeight: 'bold', color: statusColor }}>
                   {percent >= 75 ? 'A1' : percent >= 70 ? 'B2' : percent >= 65 ? 'B3' : percent >= 60 ? 'C4' : percent >= 55 ? 'C5' : percent >= 50 ? 'C6' : percent >= 45 ? 'D7' : percent >= 40 ? 'E8' : 'F9'}
                 </Text>
               </View>
@@ -383,6 +379,16 @@ const IndividualStudentReport: React.FC<IndividualStudentReportProps> = ({
           </View>
         </View>
       </Page>
+  );
+};
+
+const IndividualStudentReport: React.FC<IndividualStudentReportProps> = ({
+  result,
+  school,
+}) => {
+  return (
+    <Document>
+      <ReportPageContent result={result} school={school} />
     </Document>
   );
 };
