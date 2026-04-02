@@ -43,7 +43,8 @@ export default function StudentRegisterForm() {
       confirmPassword: '',
       schoolCode: searchParams.get('schoolCode') || '',
       teacherCode: searchParams.get('teacherCode') || '',
-      parentCode: searchParams.get('parentCode') || ''
+      parentCode: searchParams.get('parentCode') || '',
+      classCode: searchParams.get('classCode') || ''
     }), [searchParams])
   });
 
@@ -52,6 +53,7 @@ export default function StudentRegisterForm() {
     if (searchParams.get('schoolCode')) setValue('schoolCode', searchParams.get('schoolCode') || '');
     if (searchParams.get('teacherCode')) setValue('teacherCode', searchParams.get('teacherCode') || '');
     if (searchParams.get('parentCode')) setValue('parentCode', searchParams.get('parentCode') || '');
+    if (searchParams.get('classCode')) setValue('classCode', searchParams.get('classCode') || '');
   }, [searchParams, setValue]);
 
   // Watch password changes for strength indicator
@@ -90,7 +92,8 @@ export default function StudentRegisterForm() {
         confirmPassword: data.confirmPassword,
         ...(data.schoolCode && { schoolCode: data.schoolCode.trim() }),
         ...(data.teacherCode && { teacherCode: data.teacherCode.trim() }),
-        ...(data.parentCode && { parentCode: data.parentCode.trim() })
+        ...(data.parentCode && { parentCode: data.parentCode.trim() }),
+        ...(data.classCode && { classCode: data.classCode.trim() })
       };
 
       await registerStudent(backendData, {

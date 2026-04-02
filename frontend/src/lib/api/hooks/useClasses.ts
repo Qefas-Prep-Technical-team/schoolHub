@@ -29,6 +29,15 @@ export const useSingleClass = (id: string) => {
   });
 };
 
+export const usePreviewClassById = (id: string) => {
+  return useQuery({
+    queryKey: [...classQueryKeys.all, "preview", id],
+    queryFn: () => classService.previewClassById(id),
+    enabled: !!id,
+    staleTime: 60000, // Metadata doesn't change often
+  });
+};
+
 export const useRequestToJoinClass = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -63,6 +72,16 @@ export const useClassAttendanceSummary = (classId: string) => {
     enabled: !!classId,
     refetchInterval: 5000,
     staleTime: 4000,
+  });
+};
+
+export const useClassStats = (classId: string) => {
+  return useQuery({
+    queryKey: [...classQueryKeys.all, "stats", classId],
+    queryFn: () => classService.getClassStats(classId),
+    enabled: !!classId,
+    refetchInterval: 10000, // Analytics can be slightly slower
+    staleTime: 8000,
   });
 };
 

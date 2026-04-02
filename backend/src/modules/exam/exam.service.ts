@@ -390,9 +390,23 @@ export const getSubjectPaperByIdService = async (id: string) => {
       },
       subject: true,
       teacher: true,
+      school: {
+        include: {
+          settings: true
+        }
+      },
       questions: {
         orderBy: { order: "asc" },
       },
+      examAttempts: {
+        include: {
+          examAttempt: {
+            include: {
+              student: true
+            }
+          }
+        }
+      }
     },
   });
 };
@@ -695,7 +709,7 @@ export const publishSubjectPaperService = async (subjectPaperId: string) => {
     });
   }
 
-  return prisma.subjectExamPaper.update({
+  const updatedPaper = await prisma.subjectExamPaper.update({
     where: { id: subjectPaperId },
     data: {
       status: SubjectPaperStatus.PUBLISHED,
@@ -704,6 +718,18 @@ export const publishSubjectPaperService = async (subjectPaperId: string) => {
     },
     include: { questions: true },
   });
+
+  if (updatedPaper.schoolId) {
+    createNotification({
+      recipientType: "SCHOOL",
+      recipientId: updatedPaper.schoolId,
+      type: "GENERAL",
+      title: "Subject Paper Published",
+      message: `A new subject paper "${updatedPaper.title}" has been published by a teacher.`,
+    }).catch((err) => console.error("Failed to notify school of paper publication:", err));
+  }
+
+  return updatedPaper;
 };
 
 export const validateExamService = async (examId: string) => {
@@ -790,6 +816,16 @@ export const publishExamService = async (examId: string) => {
     },
     include: { subjectPapers: true },
   });
+
+  if (updatedExam.schoolId) {
+    createNotification({
+      recipientType: "SCHOOL",
+      recipientId: updatedExam.schoolId,
+      type: "GENERAL",
+      title: "New Exam Published",
+      message: `The exam "${updatedExam.title}" has been published by a teacher.`,
+    }).catch((err) => console.error("Failed to notify school of exam publication:", err));
+  }
 
   // SCATTER NOTIFICATIONS based on scope and targeting
   const notifyStudents = async () => {

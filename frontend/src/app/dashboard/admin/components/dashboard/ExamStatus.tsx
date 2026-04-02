@@ -5,6 +5,9 @@ import { useState } from 'react';
 
 import Link from 'next/link';
 import StatusBadge from './StatusBadge';
+import { useExams } from '@/lib/api/hooks/useExams';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Exam {
   id: string;
@@ -18,38 +21,37 @@ interface Exam {
 }
 
 export default function ExamStatus() {
-  const [exams, setExams] = useState<Exam[]>([
-    {
-      id: '1',
-      title: 'Mathematics Mid-Term',
-      subject: 'Mathematics',
-      grade: 'Grade 10',
-      status: 'ongoing',
-      time: 'Ends in 2 hrs',
-      description: 'Algebra & Calculus sections',
-      teacher: 'Mr. Anderson',
-    },
-    {
-      id: '2',
-      title: 'Physics Practical',
-      subject: 'Physics',
-      grade: 'Grade 12',
-      status: 'upcoming',
-      time: 'Tomorrow, 9:00 AM',
-      description: 'Lab equipment check required',
-      teacher: 'Mrs. Robinson',
-    },
-    {
-      id: '3',
-      title: 'English Literature',
-      subject: 'English',
-      grade: 'Grade 11',
-      status: 'grading',
-      time: 'Completed yesterday',
-      description: 'Essay submissions pending review',
-      teacher: 'Ms. Johnson',
-    },
-  ]);
+  const { user } = useAuthStore();
+  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || '';
+  
+  const { data: examsData, isLoading } = useExams({ schoolId });
+
+  // Map API data to the component's internal Exam interface
+  const exams: Exam[] = (examsData || []).slice(0, 5).map((e: any) => {
+    // Basic status mapping logic
+    let status: Exam['status'] = 'upcoming';
+    const now = new Date();
+    const start = e.startDate ? new Date(e.startDate) : null;
+    const end = e.endDate ? new Date(e.endDate) : null;
+
+    if (e.status === 'PUBLISHED') {
+      if (start && now >= start && (!end || now <= end)) status = 'ongoing';
+      else if (end && now > end) status = 'completed';
+    } else if (e.status === 'DRAFT') {
+      status = 'upcoming';
+    }
+
+    return {
+      id: e.id,
+      title: e.title,
+      subject: e.subjectPapers?.[0]?.title || 'Multiple Subjects',
+      grade: e.class?.name || 'All Grades',
+      status,
+      time: start ? new Date(start).toLocaleDateString() : 'TBD',
+      teacher: e.teacher?.name || 'Academic Dept',
+      description: e.description || ''
+    };
+  });
 
   const getStatusConfig = (status: Exam['status']) => {
     switch (status) {
@@ -110,7 +112,17 @@ export default function ExamStatus() {
       </div>
 
       <div className="divide-y divide-slate-100 dark:divide-slate-800 flex-1">
-        {exams.map((exam) => {
+        {isLoading ? (
+          <div className="p-6 space-y-4">
+            <Skeleton className="h-20 w-full rounded-xl" />
+            <Skeleton className="h-20 w-full rounded-xl" />
+          </div>
+        ) : exams.length === 0 ? (
+          <div className="p-10 text-center text-slate-500">
+            No active exams found
+          </div>
+        ) : (
+          exams.map((exam) => {
           const statusConfig = getStatusConfig(exam.status);
           const Icon = statusConfig.icon;
 
@@ -158,7 +170,8 @@ export default function ExamStatus() {
               </div>
             </div>
           );
-        })}
+          })
+        )}
       </div>
 
       {/* Action Footer */}

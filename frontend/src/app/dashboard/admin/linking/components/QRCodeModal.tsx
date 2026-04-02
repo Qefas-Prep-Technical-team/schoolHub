@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { copyToClipboard } from "@/lib/utils/clipboard";
-import { Copy, User, GraduationCap } from "lucide-react";
+import { Copy, User, GraduationCap, Users } from "lucide-react";
 
 interface QRCodeModalProps {
   isOpen: boolean;
@@ -20,7 +20,7 @@ interface QRCodeModalProps {
 }
 
 const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, schoolCode }) => {
-  const baseUrl = "https://www.schoolhub.flexitistudio.com";
+  const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || (typeof window !== "undefined" ? window.location.origin : "");
   
   const links = [
     {
@@ -37,11 +37,18 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, schoolCode }
       url: `${baseUrl}/signup/teacher?schoolCode=${schoolCode}`,
       color: "emerald",
     },
+    {
+      title: "Quick Link",
+      role: "Join School",
+      icon: <Users className="w-5 h-5" />,
+      url: `${baseUrl}/join/school/${schoolCode}`,
+      color: "blue",
+    },
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] bg-white dark:bg-slate-900 border-none shadow-2xl rounded-3xl overflow-hidden p-0">
+      <DialogContent className="sm:max-w-[900px] bg-white dark:bg-slate-900 border-none shadow-2xl rounded-3xl overflow-hidden p-0">
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white">
           <DialogHeader className="text-white">
             <DialogTitle className="text-3xl font-black tracking-tight">QR Access Hub</DialogTitle>
@@ -52,7 +59,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, schoolCode }
         </div>
 
         <div className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {links.map((link) => (
               <div 
                 key={link.role}

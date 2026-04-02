@@ -55,6 +55,16 @@ export const classService = {
     return response.data.data;
   },
 
+  previewClassById: async (id: string): Promise<Class> => {
+    const response = await apiClient.get(`/classes/preview/${id}`);
+    return response.data.data;
+  },
+
+  getClassStats: async (id: string) => {
+    const response = await apiClient.get(`/classes/${id}/stats`);
+    return response.data.data;
+  },
+
   createClass: async (data: {
     name: string;
     section?: string;

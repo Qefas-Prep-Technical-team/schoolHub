@@ -128,10 +128,29 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
+  html, body {
     @apply bg-background text-foreground;
+    scrollbar-gutter: stable;
+    width: 100vw !important;
+    overflow-x: hidden !important;
+    position: relative;
   }
 }
+
+
+/* Prevent Radix UI / Shadcn Sheet from shifting or shrinking the layout */
+body[data-scroll-locked] {
+  padding-right: 0px !important;
+  margin-right: 0px !important;
+  overflow: visible !important;
+  width: 100% !important;
+}
+
+[data-radix-scroll-area-viewport] {
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+}
+
 
 .glassmorphism {
   background: rgba(255, 255, 255, 0.5);
@@ -214,3 +233,54 @@
 }
 
 
+
+@media print {
+  .no-print, 
+  nav, 
+  aside, 
+  header, 
+  footer,
+  .inline-flex,
+  button {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .max-w-7xl,
+  .max-w-6xl,
+  .max-w-5xl {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  [class*="rounded-"],
+  [class*="rounded-["] {
+    border-radius: 1rem !important;
+  }
+
+  [class*="shadow-"],
+  [class*="shadow-["] {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  .animate-in,
+  .animate-pulse,
+  .animate-bounce {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

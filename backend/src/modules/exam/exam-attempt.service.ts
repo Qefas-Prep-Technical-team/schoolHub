@@ -377,6 +377,8 @@ export const scoreExamAttemptService = async ({
   }
 
   let totalScore = 0;
+  const answerUpdates: Promise<any>[] = [];
+  const subjectAttemptUpdates: { id: string, score: number }[] = [];
 
   for (const subjectAttempt of attempt.subjectAttempts) {
     let subjectScore = 0;
@@ -396,28 +398,39 @@ export const scoreExamAttemptService = async ({
         scoreAwarded = isCorrect ? Number(answer.question.marks || 0) : 0;
       }
 
-      await prisma.subjectExamAnswer.update({
-        where: { id: answer.id },
-        data: {
-          isCorrect,
-          scoreAwarded,
-          requiresManualReview,
-        },
-      });
+      answerUpdates.push(
+        prisma.subjectExamAnswer.update({
+          where: { id: answer.id },
+          data: {
+            isCorrect,
+            scoreAwarded,
+            requiresManualReview,
+          },
+        })
+      );
 
       subjectScore += scoreAwarded;
     }
 
-    await prisma.subjectExamAttempt.update({
-      where: { id: subjectAttempt.id },
-      data: {
-        score: subjectScore,
-        submittedAt: new Date(),
-      },
-    });
-
+    subjectAttemptUpdates.push({ id: subjectAttempt.id, score: subjectScore });
     totalScore += subjectScore;
   }
+
+  // Parallelize answer updates
+  await Promise.all(answerUpdates);
+
+  // Parallelize subject attempt updates
+  await Promise.all(
+    subjectAttemptUpdates.map(update => 
+      prisma.subjectExamAttempt.update({
+        where: { id: update.id },
+        data: {
+          score: update.score,
+          submittedAt: new Date(),
+        },
+      })
+    )
+  );
 
   const updated = await prisma.examAttempt.update({
     where: { id: attempt.id },
@@ -457,60 +470,68 @@ export const scoreExamAttemptService = async ({
     meta: { examAttemptId: attempt.id, examId: attempt.examId },
   }).catch((err) => console.error("Submission alert error:", err));
 
-  // --- Grade Integration ---
+  // --- Grade Integration (Parallelized) ---
   try {
+    const gradePromises: Promise<any>[] = [];
+    
     for (const sa of updated.subjectAttempts) {
       const subjectName = sa.subjectPaper?.subject?.name || "Unknown Subject";
-      await prisma.grade.upsert({
-        where: { id: `grade-sa-${sa.id}` },
-        update: {
-          score: sa.score,
-          maxMarks: sa.totalMarks,
-          updatedAt: new Date(),
-        },
-        create: {
-          id: `grade-sa-${sa.id}`,
-          studentId: updated.studentId,
-          schoolId: updated.exam.schoolId || "",
-          teacherId: sa.subjectPaper.teacherId || updated.exam.teacherId,
-          classId: updated.exam.classId,
-          subject: subjectName,
-          assessmentType: updated.exam.category || "EXAM",
-          score: sa.score,
-          maxMarks: sa.totalMarks,
-          remarks: `Subject results for ${updated.exam.title}`,
-          examId: updated.examId,
-          examAttemptId: updated.id,
-          subjectExamAttemptId: sa.id,
-        },
-      });
+      gradePromises.push(
+        prisma.grade.upsert({
+          where: { id: `grade-sa-${sa.id}` },
+          update: {
+            score: sa.score,
+            maxMarks: sa.totalMarks,
+            updatedAt: new Date(),
+          },
+          create: {
+            id: `grade-sa-${sa.id}`,
+            studentId: updated.studentId,
+            schoolId: updated.exam.schoolId || "",
+            teacherId: sa.subjectPaper.teacherId || updated.exam.teacherId,
+            classId: updated.exam.classId,
+            subject: subjectName,
+            assessmentType: updated.exam.category || "EXAM",
+            score: sa.score,
+            maxMarks: sa.totalMarks,
+            remarks: `Subject results for ${updated.exam.title}`,
+            examId: updated.examId,
+            examAttemptId: updated.id,
+            subjectExamAttemptId: sa.id,
+          },
+        })
+      );
     }
 
-    // If combined, also create a total summary entry
+    // If combined, also create/update a total summary entry
     if (updated.subjectAttempts.length > 1) {
-      await prisma.grade.upsert({
-        where: { id: `grade-total-${updated.id}` },
-        update: {
-          score: updated.totalScore,
-          maxMarks: updated.totalMarks,
-          updatedAt: new Date(),
-        },
-        create: {
-          id: `grade-total-${updated.id}`,
-          studentId: updated.studentId,
-          schoolId: updated.exam.schoolId || "",
-          teacherId: updated.exam.teacherId,
-          classId: updated.exam.classId,
-          subject: `${updated.exam.title} (Total)`,
-          assessmentType: updated.exam.category || "EXAM",
-          score: updated.totalScore,
-          maxMarks: updated.totalMarks,
-          remarks: `Overall total for combined exam`,
-          examId: updated.examId,
-          examAttemptId: updated.id,
-        },
-      });
+      gradePromises.push(
+        prisma.grade.upsert({
+          where: { id: `grade-total-${updated.id}` },
+          update: {
+            score: updated.totalScore,
+            maxMarks: updated.totalMarks,
+            updatedAt: new Date(),
+          },
+          create: {
+            id: `grade-total-${updated.id}`,
+            studentId: updated.studentId,
+            schoolId: updated.exam.schoolId || "",
+            teacherId: updated.exam.teacherId,
+            classId: updated.exam.classId,
+            subject: `${updated.exam.title} (Total)`,
+            assessmentType: updated.exam.category || "EXAM",
+            score: updated.totalScore,
+            maxMarks: updated.totalMarks,
+            remarks: `Overall total for combined exam`,
+            examId: updated.examId,
+            examAttemptId: updated.id,
+          },
+        })
+      );
     }
+    
+    await Promise.all(gradePromises);
   } catch (gradeError) {
     console.error("Failed to sync detailed exam results to grades:", gradeError);
   }
@@ -805,7 +826,15 @@ export const getExamAttemptsService = async ({
     },
     include: {
       student: true,
-      subjectAttempts: true,
+      subjectAttempts: {
+        include: {
+          subjectPaper: {
+            include: {
+              subject: true,
+            },
+          },
+        },
+      },
     },
     orderBy: {
       totalScore: "desc",

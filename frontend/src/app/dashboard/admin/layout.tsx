@@ -12,10 +12,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
 
             <SidebarProvider open={!isCollapsed} onOpenChange={(open) => setIsCollapsed(!open)}>
-                <div className="flex min-h-screen bg-gray-50 dark:bg-slate-950 w-full relative">
+                <div className="flex min-h-screen bg-gray-50 dark:bg-slate-950 min-w-full relative overflow-x-hidden">
                     <AdminSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
-                    <SidebarInset className="flex-1 overflow-x-hidden">
+                    <SidebarInset className="relative flex-1">
                         <TopNavBar />
                         <div className="p-4 md:p-8">
                             {children}

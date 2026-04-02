@@ -15,6 +15,18 @@ export interface PerformanceAnalysis {
   insight: string;
 }
 
+export interface DashboardSummary {
+  recentExams: any[];
+  unassignedCount: number;
+  unassignedTeachers: any[];
+  classesSummary: {
+    id: string;
+    name: string;
+    studentCount: number;
+    teacherCount: number;
+  }[];
+}
+
 export const schoolService = {
   getStats: async (schoolId: string): Promise<SchoolStats> => {
     const response = await apiClient.get(`/schools/${schoolId}/stats`);
@@ -53,6 +65,11 @@ export const schoolService = {
 
   updateSettings: async (schoolId: string, data: any) => {
     const response = await apiClient.patch(`/schools/${schoolId}/settings`, data);
+    return response.data.data;
+  },
+
+  getDashboardSummary: async (schoolId: string): Promise<DashboardSummary> => {
+    const response = await apiClient.get(`/schools/${schoolId}/dashboard-summary`);
     return response.data.data;
   },
 };

@@ -23,7 +23,8 @@ import {
     GraduationCap,
     Users,
     BarChart3,
-    Eye
+    Eye,
+    Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProgressCircle from "@/components/ui/ProgressCircle";
@@ -134,13 +135,23 @@ export default function ExamResultPage() {
         <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 pb-32">
             <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-12">
                 
-                <button
-                    onClick={() => router.push('/dashboard/student/exams&quizzes')}
-                    className="flex items-center gap-3 text-slate-400 hover:text-primary transition-all text-[10px] font-black uppercase tracking-widest group"
-                >
-                    <ArrowLeft size={18} className="group-hover:-translate-x-1.5 transition-transform" />
-                    Back to Performance Center
-                </button>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <button
+                        onClick={() => router.push('/dashboard/student/exams&quizzes')}
+                        className="flex items-center gap-3 text-slate-400 hover:text-primary transition-all text-[10px] font-black uppercase tracking-widest group no-print"
+                    >
+                        <ArrowLeft size={18} className="group-hover:-translate-x-1.5 transition-transform" />
+                        Back to Performance Center
+                    </button>
+
+                    <Button 
+                        onClick={() => window.print()}
+                        className="rounded-2xl h-10 px-6 font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm hover:shadow-lg transition-all no-print"
+                        variant="outline"
+                    >
+                        <Download className="mr-2" size={16} /> Download Result PDF
+                    </Button>
+                </div>
 
                 {/* Hero Result Section */}
                 <div className="relative overflow-hidden rounded-[4rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.08)] p-10 md:p-16">

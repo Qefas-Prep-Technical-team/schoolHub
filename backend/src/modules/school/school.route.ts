@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/authMiddleware";
-import { getSchoolTeachers, getSchoolStudents, getSchoolStats, getSchoolPerformanceAnalysis, getSchoolProfile, updateSchoolProfile, getSchoolSettings, updateSchoolSettings } from "./school.controller";
+import { getSchoolTeachers, getSchoolStudents, getSchoolStats, getSchoolPerformanceAnalysis, getSchoolProfile, updateSchoolProfile, getSchoolSettings, updateSchoolSettings, getDashboardSummary } from "./school.controller";
 
 const router = Router();
 
@@ -28,12 +28,14 @@ router.get("/:schoolId/students", getSchoolStudents);
  */
 router.get("/:schoolId/stats", getSchoolStats);
 
+router.get("/:schoolId/performance-analysis", getSchoolPerformanceAnalysis);
+
 /**
- * @route   GET /api/v1/schools/:schoolId/performance-analysis
- * @desc    Get school-wide performance insights
+ * @route   GET /api/v1/schools/:schoolId/dashboard-summary
+ * @desc    Get dashboard summary for institutional overview
  * @access  Private-Admin
  */
-router.get("/:schoolId/performance-analysis", getSchoolPerformanceAnalysis);
+router.get("/:schoolId/dashboard-summary", getDashboardSummary);
 
 /**
  * @route   GET /api/v1/schools/:schoolId/profile

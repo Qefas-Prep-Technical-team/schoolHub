@@ -72,12 +72,12 @@ export default function MetricsGrid({ stats, isLoading }: MetricsGridProps) {
       },
       {
         id: 'attendance',
-        title: "Daily Active",
-        value: '94%',
+        title: "Institution Health",
+        value: stats.students > 0 ? '98%' : '0%',
         icon: CalendarCheck,
         iconColor: 'text-teal-600 dark:text-teal-400',
         iconBg: 'bg-teal-50 dark:bg-teal-900/30',
-        trend: { value: 'Stable', isPositive: true },
+        trend: { value: 'Optimal', isPositive: true },
       },
       {
         id: 'exams',

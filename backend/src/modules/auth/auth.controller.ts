@@ -16,6 +16,7 @@ import {
 import jwt from "jsonwebtoken";
 import { AdminRole, UserRole } from "@prisma/client";
 import { getIO } from "../../socket";
+import { createNotification } from "../notification/notification.service";
 
 // Simple slugify helper (no extra package)
 const slugify = (value: string) =>
@@ -187,6 +188,7 @@ export const registerTeacher = async (req: Request, res: Response) => {
       confirmPassword,
       schoolCode,
       studentCode,
+      classCode,
       isIndependent,
     } = req.body;
 
@@ -240,6 +242,20 @@ export const registerTeacher = async (req: Request, res: Response) => {
         return res.status(404).json({
           success: false,
           message: "Invalid Student Code. Student not found",
+        });
+      }
+    }
+
+    let classToConnect = null;
+    if (classCode) {
+      classToConnect = await prisma.class.findFirst({
+        where: { classCode },
+      });
+
+      if (!classToConnect) {
+        return res.status(404).json({
+          success: false,
+          message: "Invalid Class Code. Class not found",
         });
       }
     }
@@ -301,13 +317,43 @@ export const registerTeacher = async (req: Request, res: Response) => {
         });
       }
 
-      return { teacher, studentToConnect };
+      if (classToConnect) {
+        await tx.linkRequest.create({
+          data: {
+            linkType: "TEACHER_CLASS",
+            requesterType: "TEACHER",
+            requesterId: teacher.id,
+            requesterTeacherId: teacher.id,
+            requesterCode: teacher.teacherCode,
+            targetType: "CLASS",
+            targetId: classToConnect.id,
+            classId: classToConnect.id,
+            targetCode: classToConnect.classCode,
+            status: "PENDING",
+            note: "I would like to join this class",
+            schoolId: classToConnect.schoolId,
+          },
+        });
+      }
+
+      return { teacher, studentToConnect, classToConnect };
     });
 
     if (schoolToConnect) {
       getIO().to(`user:${schoolToConnect.id}`).emit("link:updated", {
         type: "LINK_REQUEST_RECEIVED",
         message: "A new teacher has requested to connect",
+      });
+
+      await createNotification({
+        recipientType: "SCHOOL",
+        recipientId: schoolToConnect.id,
+        senderType: "TEACHER",
+        senderId: result.teacher.id,
+        type: "LINK_REQUEST",
+        title: "New Teacher Join Request",
+        message: `${fullName} has requested to join your school as a teacher.`,
+        meta: { teacherId: result.teacher.id, schoolCode },
       });
     }
 
@@ -316,7 +362,47 @@ export const registerTeacher = async (req: Request, res: Response) => {
         type: "LINK_REQUEST_RECEIVED",
         message: "A teacher has requested to connect with you",
       });
+
+      await createNotification({
+        recipientType: "STUDENT",
+        recipientId: result.studentToConnect.id,
+        senderType: "TEACHER",
+        senderId: result.teacher.id,
+        type: "LINK_REQUEST",
+        title: "Teacher Connection Request",
+        message: `Teacher ${fullName} has requested to connect with you.`,
+        meta: { teacherId: result.teacher.id, studentCode },
+      });
     }
+
+    if (classToConnect && classToConnect.schoolId) {
+       getIO().to(`user:${classToConnect.schoolId}`).emit("link:updated", {
+        type: "LINK_REQUEST_RECEIVED",
+        message: `A new teacher has requested to join class ${classToConnect.name}`,
+      });
+
+      await createNotification({
+        recipientType: "SCHOOL",
+        recipientId: classToConnect.schoolId,
+        senderType: "TEACHER",
+        senderId: result.teacher.id,
+        type: "LINK_REQUEST",
+        title: "Class Join Request",
+        message: `Teacher ${fullName} has requested to join class ${classToConnect.name}`,
+        meta: { teacherId: result.teacher.id, classCode },
+      });
+    }
+
+    // Always notify the teacher himself
+    await createNotification({
+      recipientType: "TEACHER",
+      recipientId: result.teacher.id,
+      type: "GENERAL",
+      title: "Registration Successful",
+      message: schoolToConnect 
+        ? `Your registration is complete and your request to join ${schoolToConnect.name} has been sent.`
+        : "Your teacher registration was successful.",
+    });
 
     return res.status(201).json({
       success: true,
@@ -354,6 +440,7 @@ interface RegisterStudentBody {
   schoolCode?: string;
   teacherCode?: string;
   parentCode?: string;
+  classCode?: string;
 }
 
 const generateStudentCode = (): string => {
@@ -398,6 +485,7 @@ export const registerStudent = async (
       schoolCode,
       teacherCode,
       parentCode,
+      classCode,
     } = req.body;
 
     if (!fullName || !email || !password || !confirmPassword) {
@@ -465,6 +553,19 @@ export const registerStudent = async (
         return res.status(404).json({
           success: false,
           message: `Parent with code ${parentCode} not found`,
+        });
+      }
+    }
+
+    let classToConnect = null;
+    if (classCode) {
+      classToConnect = await prisma.class.findFirst({
+        where: { classCode },
+      });
+      if (!classToConnect) {
+        return res.status(404).json({
+          success: false,
+          message: `Class with code ${classCode} not found`,
         });
       }
     }
@@ -547,6 +648,26 @@ export const registerStudent = async (
         });
       }
 
+      // Auto-linking for Class
+      if (classToConnect) {
+        await tx.linkRequest.create({
+          data: {
+            linkType: "STUDENT_CLASS",
+            requesterType: "STUDENT",
+            requesterId: student.id,
+            requesterStudentId: student.id,
+            requesterCode: student.studentCode,
+            targetType: "CLASS",
+            targetId: classToConnect.id,
+            classId: classToConnect.id,
+            targetCode: classToConnect.classCode,
+            status: "PENDING",
+            note,
+            schoolId: classToConnect.schoolId,
+          },
+        });
+      }
+
       return student;
     });
 
@@ -556,11 +677,33 @@ export const registerStudent = async (
         type: "LINK_REQUEST_RECEIVED",
         message: "A new student has requested to connect",
       });
+
+      await createNotification({
+        recipientType: "SCHOOL",
+        recipientId: school.id,
+        senderType: "STUDENT",
+        senderId: result.id,
+        type: "LINK_REQUEST",
+        title: "New Student Join Request",
+        message: `${fullName} has requested to join your school.`,
+        meta: { studentId: result.id, schoolCode },
+      });
     }
     if (teacher) {
       io.to(`user:${teacher.id}`).emit("link:updated", {
         type: "LINK_REQUEST_RECEIVED",
         message: "A student has requested to connect with you",
+      });
+
+      await createNotification({
+        recipientType: "TEACHER",
+        recipientId: teacher.id,
+        senderType: "STUDENT",
+        senderId: result.id,
+        type: "LINK_REQUEST",
+        title: "Student Connection Request",
+        message: `Student ${fullName} has requested to connect with you.`,
+        meta: { studentId: result.id, teacherCode },
       });
     }
     if (parent) {
@@ -568,7 +711,46 @@ export const registerStudent = async (
         type: "LINK_REQUEST_RECEIVED",
         message: "Your child has registered and requested a link",
       });
+
+      await createNotification({
+        recipientType: "PARENT",
+        recipientId: parent.id,
+        senderType: "STUDENT",
+        senderId: result.id,
+        type: "LINK_REQUEST",
+        title: "Child Connection Request",
+        message: `Your child ${fullName} has registered and requested a connection.`,
+        meta: { studentId: result.id, parentCode },
+      });
     }
+    if (classToConnect && classToConnect.schoolId) {
+      io.to(`user:${classToConnect.schoolId}`).emit("link:updated", {
+        type: "LINK_REQUEST_RECEIVED",
+        message: `A new student has requested to join class ${classToConnect.name}`,
+      });
+
+      await createNotification({
+        recipientType: "SCHOOL",
+        recipientId: classToConnect.schoolId,
+        senderType: "STUDENT",
+        senderId: result.id,
+        type: "LINK_REQUEST",
+        title: "Class Join Request",
+        message: `Student ${fullName} has requested to join class ${classToConnect.name}`,
+        meta: { studentId: result.id, classCode },
+      });
+    }
+
+    // Always notify the student himself
+    await createNotification({
+      recipientType: "STUDENT",
+      recipientId: result.id,
+      type: "GENERAL",
+      title: "Registration Successful",
+      message: school 
+        ? `Your registration is complete and your request to join ${school.name} has been sent.`
+        : "Your student registration was successful.",
+    });
 
     return res.status(201).json({
       success: true,

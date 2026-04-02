@@ -39,6 +39,7 @@ export default function TeacherRegisterForm() {
       password: '',
       confirmPassword: '',
       schoolCode: searchParams.get('schoolCode') || '',
+      classCode: searchParams.get('classCode') || '',
       isIndependent: false
     }
   });
@@ -47,6 +48,7 @@ export default function TeacherRegisterForm() {
   useEffect(() => {
     if (searchParams.get('schoolCode')) setValue('schoolCode', searchParams.get('schoolCode') || '');
     if (searchParams.get('studentCode')) setValue('studentCode', searchParams.get('studentCode') || '');
+    if (searchParams.get('classCode')) setValue('classCode', searchParams.get('classCode') || '');
   }, [searchParams, setValue]);
 
   // Watch password changes for strength indicator
@@ -93,7 +95,8 @@ export default function TeacherRegisterForm() {
         confirmPassword: data.confirmPassword,
         isIndependent: data.isIndependent,
         ...(data.schoolCode && !data.isIndependent && { schoolCode: data.schoolCode.trim() }),
-        ...(data.studentCode && { studentCode: data.studentCode.trim() })
+        ...(data.studentCode && { studentCode: data.studentCode.trim() }),
+        ...(data.classCode && { classCode: data.classCode.trim() })
       };
 
       await registerTeacher(backendData, {

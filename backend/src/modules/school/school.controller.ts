@@ -8,6 +8,7 @@ import {
   updateSchoolSettingsService,
   getSchoolStatsService,
   getSchoolPerformanceAnalysisService,
+  getDashboardRecentActivityService,
 } from "./school.service";
 
 /**
@@ -206,6 +207,27 @@ export const updateSchoolSettings = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to update school settings",
+    });
+  }
+};
+
+/**
+ * Handle fetching school dashboard summary
+ */
+export const getDashboardSummary = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.params;
+    if (!schoolId) {
+      return res.status(400).json({ success: false, message: "schoolId is required" });
+    }
+
+    const data = await getDashboardRecentActivityService(schoolId as string);
+    return res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    console.error(`[School Controller Error]`, error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to fetch dashboard summary",
     });
   }
 };

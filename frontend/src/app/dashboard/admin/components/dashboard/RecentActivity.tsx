@@ -1,76 +1,182 @@
-import { CheckCircle, UserPlus, Database, TrendingUp } from 'lucide-react';
+'use client';
 
-interface Activity {
-  id: string;
-  time: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  iconColor: string;
-}
+import { 
+  CheckCircle, 
+  UserPlus, 
+  Database, 
+  TrendingUp, 
+  Bell, 
+  ShieldAlert, 
+  ExternalLink,
+  ChevronRight,
+  Clock
+} from 'lucide-react';
+import { useNotifications } from '@/lib/api/hooks/useNotifications';
+import { formatDistanceToNow } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
+
+const typeConfig: Record<string, { icon: any, color: string, bg: string }> = {
+  LINK_REQUEST: { icon: UserPlus, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  LINK_RESPONSE: { icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  ACADEMIC: { icon: TrendingUp, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+  SYSTEM: { icon: Database, color: 'text-slate-500', bg: 'bg-slate-500/10' },
+  ANNOUNCEMENT: { icon: Bell, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  CRITICAL: { icon: ShieldAlert, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+};
 
 export default function RecentActivity() {
-  const activities: Activity[] = [
-    {
-      id: '1',
-      time: '10 mins ago',
-      description: 'Mrs. Krabappel published Grade 4 Math results.',
-      icon: CheckCircle,
-      iconColor: 'text-emerald-500',
-    },
-    {
-      id: '2',
-      time: '45 mins ago',
-      description: 'New student Bart Simpson enrolled in Grade 4.',
-      icon: UserPlus,
-      iconColor: 'text-blue-500',
-    },
-    {
-      id: '3',
-      time: '2 hours ago',
-      description: 'System backup completed successfully.',
-      icon: Database,
-      iconColor: 'text-slate-400',
-    },
-    {
-      id: '4',
-      time: '5 hours ago',
-      description: 'Grade 10 Science scores improved by 15%.',
-      icon: TrendingUp,
-      iconColor: 'text-emerald-500',
-    },
-  ];
+  const { data: notifications, isLoading } = useNotifications({ limit: 7 });
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0 }
+  };
 
   return (
-    <div className="bg-surface-light dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-lg text-slate-900 dark:text-white">
-          Recent Activity
-        </h3>
-        <button className="text-xs font-semibold text-primary hover:underline">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className={cn(
+        "relative overflow-hidden group min-h-[750px] flex flex-col",
+        "bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl",
+        "rounded-[3rem] border border-white/20 dark:border-slate-800/50",
+        "shadow-2xl shadow-slate-200/50 dark:shadow-none p-8 md:p-10",
+        "transition-all duration-500 hover:shadow-primary/5"
+      )}
+    >
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 h-40 w-40 bg-primary/5 rounded-full blur-3xl opacity-50 transition-opacity group-hover:opacity-100" />
+
+      <div className="relative z-10 flex items-center justify-between mb-8">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="text-[10px] font-black text-primary dark:text-primary/70 uppercase tracking-[0.2em]">Institutional Pulse</span>
+          </div>
+          <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter">
+            Recent Activity
+          </h3>
+        </div>
+        <Link 
+          href="/dashboard/admin/notifications"
+          className="h-10 px-4 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-md border border-white/20 dark:border-slate-700/50 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-all flex items-center gap-2 group/btn"
+        >
           View All
-        </button>
+          <ChevronRight size={12} className="group-hover/btn:translate-x-1 transition-transform" />
+        </Link>
       </div>
       
-      <div className="space-y-4">
-        {activities.map((activity) => {
-          const Icon = activity.icon;
-          return (
-            <div key={activity.id} className="flex items-start gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
-              <div className={`${activity.iconColor} p-2 rounded-lg bg-slate-100 dark:bg-slate-800`}>
-                <Icon className="h-4 w-4" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-slate-700 dark:text-slate-300">
-                  {activity.description}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {activity.time}
-                </p>
-              </div>
+      <div className="flex-1 space-y-4 relative z-10 overflow-y-auto overflow-x-hidden pr-2 custom-scrollbar">
+        <AnimatePresence mode='wait'>
+          {isLoading ? (
+            <div key="loading" className="space-y-4">
+              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <div key={i} className="flex items-start gap-4">
+                  <Skeleton className="h-12 w-12 rounded-2xl shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4 rounded-full" />
+                    <Skeleton className="h-3 w-1/4 rounded-full" />
+                  </div>
+                </div>
+              ))}
             </div>
-          );
-        })}
+          ) : !notifications || notifications.length === 0 ? (
+            <motion.div 
+               key="empty"
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               className="h-full flex flex-col items-center justify-center p-10 text-center gap-4 py-20"
+            >
+               <div className="h-16 w-16 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-300">
+                  <Bell size={32} />
+               </div>
+               <p className="text-sm font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest">
+                  Static Baseline
+               </p>
+               <p className="text-xs text-slate-500 font-bold">
+                  No institutional events captured in the last cycle.
+               </p>
+            </motion.div>
+          ) : (
+            <motion.div key="list" className="space-y-2">
+              {notifications.slice(0, 7).map((notification: any) => {
+                const config = typeConfig[notification.type] || typeConfig.ANNOUNCEMENT;
+                const Icon = config.icon;
+                
+                return (
+                  <motion.div 
+                    key={notification.id}
+                    variants={itemVariants}
+                    whileHover={{ x: 5 }}
+                    className="group/item relative flex items-start gap-4 p-4 rounded-[2rem] border border-transparent hover:border-white/20 dark:hover:border-slate-800 hover:bg-white/30 dark:hover:bg-slate-800/30 transition-all cursor-pointer"
+                  >
+                    <div className={cn(
+                      "flex-shrink-0 h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-500 scale-95 group-hover/item:scale-100",
+                      config.bg,
+                      config.color
+                    )}>
+                      <Icon size={20} strokeWidth={2.5} />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={cn(
+                            "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-current opacity-60",
+                            config.color
+                        )}>
+                            {notification.type.replace('_', ' ')}
+                        </span>
+                        <div className="flex items-center gap-1 text-[10px] font-black text-slate-400">
+                           <Clock size={10} strokeWidth={3} />
+                           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                        </div>
+                      </div>
+                      
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate leading-snug">
+                        {notification.title}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-bold truncate line-clamp-1 mt-0.5 opacity-80 group-hover/item:opacity-100 transition-opacity">
+                        {notification.message}
+                      </p>
+                    </div>
+
+                    <div className="absolute right-4 bottom-4 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                        <ExternalLink size={14} className="text-slate-300 hover:text-primary transition-colors" />
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+
+      {/* Bottom Status Bar */}
+      <div className="mt-8 pt-6 border-t border-slate-200/30 dark:border-slate-800/50 relative z-10">
+         <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Live Activity Monitor</p>
+            </div>
+            <Link href="/dashboard/admin/notifications" className="text-[10px] font-black text-primary hover:tracking-[0.15em] transition-all uppercase">
+               Configure Filters
+            </Link>
+         </div>
+      </div>
+    </motion.div>
   );
 }

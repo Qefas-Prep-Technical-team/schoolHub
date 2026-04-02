@@ -165,6 +165,12 @@ model School {
   schoolType  String?
   website     String?
   description String? @db.Text
+  
+  bannerImage  String?
+  favicon      String?
+  socialLinks  Json?
+  operatingHours String?
+  mapLocation  String?
 
   grades Grade[]
   admins SchoolAdmin[]
@@ -307,6 +313,8 @@ model Student {
   grades           Grade[]
   classes          ClassEnrollment[]
   parentLinks      ParentChildLink[]
+
+  termAverage      Float?
 
   outgoingLinkRequests LinkRequest[] @relation("requesterStudent")
   incomingLinkRequests LinkRequest[] @relation("targetStudent")
@@ -884,6 +892,8 @@ model SubjectExamPaper {
   instructions    String?
   durationMinutes Int?
   totalMarks      Float              @default(0)
+  passMark        Float              @default(40)
+  weight          Float              @default(1)
   status          SubjectPaperStatus @default(DRAFT)
   readingContent  String?            @db.Text
 
@@ -1015,6 +1025,7 @@ model SubjectExamAttempt {
 
   score       Float     @default(0)
   totalMarks  Float     @default(0)
+  weightedScore Float?
   submittedAt DateTime?
   grades      Grade[]
 

@@ -377,6 +377,29 @@ export const previewClassByCodeService = async (classCode: string) => {
   return foundClass;
 };
 
+export const previewClassByIdService = async (id: string) => {
+  const foundClass = await prisma.class.findUnique({
+    where: { id },
+    include: {
+      school: true,
+      teachers: { include: { teacher: true } },
+      subjects: { include: { subject: true } },
+      departments: { include: { department: true } },
+      enrollments: true,
+    },
+  });
+
+  if (!foundClass) {
+    throw new Error("Class not found");
+  }
+
+  if (foundClass.status !== ClassStatus.ACTIVE) {
+    throw new Error("This class is not open for joining");
+  }
+
+  return foundClass;
+};
+
 export const requestToJoinClassService = async ({
   studentId,
   classCode,
@@ -773,4 +796,83 @@ export const removeSubjectFromClassService = async ({
   });
 
   return true;
+};
+
+export const getClassStatsService = async (classId: string) => {
+  // 1. Attendance Trend (Last 14 days)
+  const last14Days = Array.from({ length: 14 }).map((_, i) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - i);
+    return d;
+  });
+
+  const attendances = await prisma.attendance.findMany({
+    where: {
+      classId,
+      date: {
+        gte: last14Days[13],
+        lte: last14Days[0],
+      },
+    },
+  });
+
+  const attendanceTrend = last14Days.map((date) => {
+    const dateStr = date.toISOString().split("T")[0];
+    const daily = attendances.filter((a) => a.date.toISOString().split("T")[0] === dateStr);
+    const total = daily.length;
+    const present = daily.filter((a) => a.status === "present").length;
+    return {
+      date: dateStr,
+      label: date.toLocaleDateString("en-US", { weekday: "short", day: "numeric" }),
+      value: total > 0 ? Math.round((present / total) * 100) : 0,
+      total,
+    };
+  }).reverse();
+
+  // 2. Performance (Recent Exams)
+  const recentExams = await prisma.exam.findMany({
+    where: { classId },
+    orderBy: { createdAt: "desc" },
+    take: 6,
+    include: {
+      examAttempts: {
+        select: {
+          totalScore: true,
+          totalMarks: true,
+        },
+      },
+    },
+  });
+
+  const performanceTrend = recentExams.map((exam: any) => {
+    const validAttempts = exam.examAttempts.filter((a: any) => a.totalMarks > 0);
+    const avgScore =
+      validAttempts.length > 0
+        ? Math.round(
+            (validAttempts.reduce((acc: number, curr: any) => acc + (curr.totalScore / curr.totalMarks), 0) /
+              validAttempts.length) *
+              100
+          )
+        : 0;
+
+    return {
+      label: exam.title.length > 10 ? exam.title.substring(0, 8) + "..." : exam.title,
+      fullTitle: exam.title,
+      value: avgScore,
+    };
+  }).reverse();
+
+  // 3. Overall Average Score
+  const allAttempts = recentExams.flatMap((e: any) => e.examAttempts || []);
+  const validAllAttempts = allAttempts.filter((a: any) => a.totalMarks > 0);
+  const overallAvgScore = validAllAttempts.length > 0
+    ? Math.round((validAllAttempts.reduce((acc: number, curr: any) => acc + (curr.totalScore / curr.totalMarks), 0) / validAllAttempts.length) * 100)
+    : 0;
+
+  return {
+    attendanceTrend,
+    performanceTrend,
+    overallAvgScore,
+  };
 };

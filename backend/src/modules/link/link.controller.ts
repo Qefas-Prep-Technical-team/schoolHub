@@ -91,6 +91,10 @@ export const createLinkRequest = async (req: Request, res: Response) => {
       classId,
     });
 
+    console.log(`[Link Request] Success: Created request ${result.request.id} of type ${linkType}`);
+
+    const notificationPromises: Promise<any>[] = [];
+
     if (result.request.targetId) {
       const io = getIO();
       // Notify the target user immediately for the "Live" feel
@@ -100,22 +104,51 @@ export const createLinkRequest = async (req: Request, res: Response) => {
         message: "You have a new link request",
       });
 
-      await createNotification({
-        recipientType: result.request.targetType as any,
-        recipientId: result.request.targetId,
-        senderType: result.request.requesterType as any,
-        senderId: result.request.requesterId,
-        type: "LINK_REQUEST",
-        title: "New Link Request",
-        message: `${result.request.requesterType} sent you a link request`,
-        linkRequestId: result.request.id,
-        meta: {
-          linkType: result.request.linkType,
-          requesterCode: result.request.requesterCode,
-          targetCode: result.request.targetCode,
-        },
-      });
+      notificationPromises.push(
+        createNotification({
+          recipientType: result.request.targetType as any,
+          recipientId: result.request.targetId,
+          senderType: result.request.requesterType as any,
+          senderId: result.request.requesterId,
+          type: "LINK_REQUEST",
+          title: "New Link Request",
+          message: `${result.request.requesterType} sent you a link request`,
+          linkRequestId: result.request.id,
+          meta: {
+            linkType: result.request.linkType,
+            requesterCode: result.request.requesterCode,
+            targetCode: result.request.targetCode,
+          },
+        }).catch(err => console.error(`Failed to notify target ${result.request.targetId}:`, err))
+      );
     }
+
+    // Always notify the requester themselves
+    notificationPromises.push(
+      createNotification({
+        recipientType: result.request.requesterType as any,
+        recipientId: result.request.requesterId,
+        type: "GENERAL",
+        title: "Link Request Sent",
+        message: `Your link request to join as ${result.request.linkType} has been sent successfully.`,
+        linkRequestId: result.request.id,
+      }).catch(err => console.error(`Failed to notify requester ${result.request.requesterId}:`, err))
+    );
+
+    // Notify School if it's a teacher initiating an action
+    if (schoolId && requesterType === LinkEntityType.TEACHER) {
+      notificationPromises.push(
+        createNotification({
+          recipientType: "SCHOOL",
+          recipientId: schoolId,
+          type: "GENERAL",
+          title: "Teacher Relationship Action",
+          message: `A teacher has initiated a new relationship link (${linkType}).`,
+        }).catch(err => console.error("Failed to notify school of link request:", err))
+      );
+    }
+
+    await Promise.all(notificationPromises);
 
     return res.status(201).json({
       success: true,
@@ -124,7 +157,7 @@ export const createLinkRequest = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("createLinkRequest error:", error);
-    return res.status(400).json({
+    return res.status(error.status || 400).json({
       success: false,
       message: error.message || "Failed to create link request",
     });
@@ -181,6 +214,18 @@ export const respondToLinkRequest = async (req: Request, res: Response) => {
       requestId: result.request.id,
       message: `Your link request was ${action.toLowerCase()}ed`,
     });
+
+    // Notify School if it's a teacher-related link action taking place
+    if (result.request.schoolId && 
+       (result.request.requesterType === LinkEntityType.TEACHER || result.request.targetType === LinkEntityType.TEACHER)) {
+      createNotification({
+        recipientType: "SCHOOL",
+        recipientId: result.request.schoolId,
+        type: "GENERAL",
+        title: "Teacher Link Request Update",
+        message: `A teacher relationship link request was ${action.toLowerCase()}ed.`,
+      }).catch(err => console.error("Failed to notify school of link request response:", err));
+    }
 
     return res.status(200).json({
       success: true,

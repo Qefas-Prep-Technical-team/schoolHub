@@ -11,13 +11,14 @@ interface OverviewProps {
   classData: any;
 }
 
-import { useClassAttendanceSummary } from "@/lib/api/hooks/useClasses";
+import { useClassAttendanceSummary, useClassStats } from "@/lib/api/hooks/useClasses";
 import { useParams } from "next/navigation";
 
 const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData }) => {
   const params = useParams();
   const classId = params.id as string;
   const { data: attendanceSummary } = useClassAttendanceSummary(classId);
+  const { data: stats, isLoading: isStatsLoading } = useClassStats(classId);
 
   // Derived data
   const realUpcomingExams = (classData?.exams || []).slice(0, 3).map((e: any) => ({
@@ -33,7 +34,11 @@ const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData }) => {
       {/* Left Column */}
       <div className="lg:col-span-2 flex flex-col gap-8">
         {/* Performance Chart */}
-        <PerformanceChart />
+        <PerformanceChart 
+          performanceTrend={stats?.performanceTrend} 
+          attendanceTrend={stats?.attendanceTrend}
+          isLoading={isStatsLoading}
+        />
 
         {/* Behaviour Alerts */}
         <BehaviourAlert alerts={behaviourAlerts} />
@@ -44,7 +49,7 @@ const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData }) => {
         
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-8">
-          <StatsCard title="Class Average Score" value="85%" />
+          <StatsCard title="Class Average Score" value={stats ? `${stats.overallAvgScore}%` : "Loading..."} />
           <StatsCard title="Attendance Summary" value={attendanceSummary ? `${Math.round(attendanceSummary.rate)}%` : "Loading..."} />
         </div>
 

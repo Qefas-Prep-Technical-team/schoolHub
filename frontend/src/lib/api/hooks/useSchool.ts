@@ -7,6 +7,7 @@ export const schoolQueryKeys = {
   teachers: (schoolId: string) => [...schoolQueryKeys.all, "teachers", schoolId] as const,
   performance: (schoolId: string) => [...schoolQueryKeys.all, "performance", schoolId] as const,
   students: (schoolId: string, params?: any) => [...schoolQueryKeys.all, "students", schoolId, params] as const,
+  dashboardSummary: (schoolId: string) => [...schoolQueryKeys.all, "dashboard-summary", schoolId] as const,
 };
 
 export const useSchoolStats = (schoolId: string) => {
@@ -79,5 +80,14 @@ export const useUpdateSchoolSettings = () => {
     onSuccess: (_, { schoolId }) => {
       queryClient.invalidateQueries({ queryKey: [...schoolQueryKeys.all, "settings", schoolId] });
     },
+  });
+};
+
+export const useSchoolDashboardSummary = (schoolId: string) => {
+  return useQuery({
+    queryKey: schoolQueryKeys.dashboardSummary(schoolId),
+    queryFn: () => schoolService.getDashboardSummary(schoolId),
+    enabled: !!schoolId,
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 };

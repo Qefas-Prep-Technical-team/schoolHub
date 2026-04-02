@@ -94,8 +94,13 @@ export const findEntityByCode = async (code: string): Promise<FindEntityResult |
     };
   }
 
-  const foundClass = await prisma.class.findUnique({
-    where: { classCode: code },
+  const foundClass = await prisma.class.findFirst({
+    where: { 
+      OR: [
+        { classCode: code },
+        { id: code }
+      ]
+    },
   });
   if (foundClass) {
     return {
@@ -105,6 +110,19 @@ export const findEntityByCode = async (code: string): Promise<FindEntityResult |
       schoolId: foundClass.schoolId,
       classId: foundClass.id,
       data: foundClass,
+    };
+  }
+
+  // Also support school lookup by ID
+  const schoolById = await prisma.school.findUnique({
+    where: { id: code },
+  });
+  if (schoolById) {
+    return {
+      type: LinkEntityType.SCHOOL,
+      id: schoolById.id,
+      code: schoolById.schoolCode,
+      data: schoolById,
     };
   }
 

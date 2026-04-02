@@ -45,6 +45,7 @@ export interface SubjectPaper {
   instructions: string;
   durationMinutes: number;
   totalMarks: number;
+  passMark?: number;
   readingContent?: string;
   status: "DRAFT" | "REVIEW" | "APPROVED" | "REJECTED" | "PUBLISHED";
   createdAt: string;
@@ -94,6 +95,7 @@ export interface CreatePaperDTO {
   title: string;
   instructions: string;
   durationMinutes: number;
+  passMark?: number;
   readingContent?: string;
 }
 

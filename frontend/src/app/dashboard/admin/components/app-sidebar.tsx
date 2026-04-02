@@ -152,7 +152,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
         <Sidebar
             collapsible="icon"
             className={cn(
-                "transition-all duration-300 ease-in-out",
+                "transition-all duration-300 ease-in-out no-print",
                 isCollapsed ? "w-[80px]" : "w-[260px]"
             )}
         >
@@ -191,20 +191,26 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                     </SidebarMenuItem>
                 </SidebarMenu>
 
-                {/* Retractable Toggle Button */}
+                {/* Retractable Toggle Button - Premium Style */}
                 <button
                     onClick={(e) => {
                         e.preventDefault();
                         setIsCollapsed(!isCollapsed);
                     }}
-                    className="absolute -right-4 top-10 z-[100] h-8 w-8 rounded-full border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 flex items-center justify-center shadow-xl text-gray-600 hover:text-blue-600 hover:scale-110 active:scale-95 transition-all"
+                    className={cn(
+                        "absolute -right-4 top-24 z-50 h-8 w-8 rounded-full border border-border bg-background shadow-xl hidden md:flex items-center justify-center transition-all duration-300",
+                        "hover:scale-110 active:scale-95 group-hover:opacity-100",
+                        !isCollapsed ? "opacity-100" : "opacity-100 md:opacity-0"
+                    )}
                     title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                 >
-                    {isCollapsed ? (
-                        <ChevronRight size={18} />
-                    ) : (
-                        <ChevronLeft size={18} />
-                    )}
+                    <div className="bg-primary/10 rounded-full p-1 group-hover:bg-primary/20 transition-colors">
+                        {isCollapsed ? (
+                            <ChevronRight size={16} className="text-primary" />
+                        ) : (
+                            <ChevronLeft size={16} className="text-primary" />
+                        )}
+                    </div>
                 </button>
             </SidebarHeader>
 

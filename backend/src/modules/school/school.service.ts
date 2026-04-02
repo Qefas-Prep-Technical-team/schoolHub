@@ -324,3 +324,52 @@ export const getSchoolPerformanceAnalysisService = async (schoolId: string) => {
     letterGrade,
   };
 };
+
+/**
+ * Fetch a summary of recent institutional activity for the Admin Dashboard
+ */
+export const getDashboardRecentActivityService = async (schoolId: string) => {
+  const [recentExams, unassignedTeachers, classes] = await Promise.all([
+    // 1. Fetch 5 most recent exams
+    prisma.exam.findMany({
+      where: { schoolId },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        class: true,
+        teacher: true,
+      }
+    }),
+    
+    // 2. Find teachers not linked to any class (simplified logic)
+    prisma.teacher.findMany({
+      where: {
+        schoolId,
+        classTeachers: { none: {} }
+      },
+      select: { id: true, name: true }
+    }),
+
+    // 3. Fetch all classes for context
+    prisma.class.findMany({
+      where: { schoolId },
+      include: {
+        _count: {
+          select: { enrollments: true, teachers: true }
+        }
+      }
+    })
+  ]);
+
+  return {
+    recentExams,
+    unassignedCount: unassignedTeachers.length,
+    unassignedTeachers: unassignedTeachers.slice(0, 3), // Return a few names
+    classesSummary: classes.map(c => ({
+      id: c.id,
+      name: c.name,
+      studentCount: (c as any)._count.enrollments,
+      teacherCount: (c as any)._count.teachers,
+    }))
+  };
+};

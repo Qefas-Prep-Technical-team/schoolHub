@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, UserCog, AlertTriangle } from 'lucide-react';
+import { Calendar, UserCog, AlertTriangle, QrCode } from 'lucide-react';
 import CustomTabs from './components/Tabs';
 import Overview from './components/Overview';
 import TimetablePage from './components/timetable/TimetableTab';
@@ -10,6 +10,7 @@ import ClassSubjectsPage from './components/subjects/SubjectsTab';
 import ClassExamsPage from './components/exams/ExamsTab';
 import ClassAttendancePage from './components/attendance/AttendanceTab';
 import ManageClassModal from './components/ManageClassModal';
+import ClassQRCodeModal from './components/ClassQRCodeModal';
 
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -23,6 +24,7 @@ export default function ClassDetailsPage() {
   const { data: classData, isLoading: loading, error } = useSingleClass(id);
   const [activeTab, setActiveTab] = React.useState("tab1");
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   // Handle errors from the hook
   useEffect(() => {
@@ -178,6 +180,14 @@ export default function ClassDetailsPage() {
             </div>
             
             <div className="flex flex-wrap gap-3">
+              <button 
+                onClick={() => setIsQRModalOpen(true)}
+                className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm font-bold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all active:scale-95"
+              >
+                <QrCode size={18} />
+                <span>QR Access</span>
+              </button>
+              
               <button className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm font-bold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all active:scale-95">
                 <Calendar size={18} />
                 <span>Timetable</span>
@@ -207,6 +217,12 @@ export default function ClassDetailsPage() {
       <ManageClassModal 
         isOpen={isManageModalOpen}
         onClose={() => setIsManageModalOpen(false)}
+        classData={classData}
+      />
+
+      <ClassQRCodeModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
         classData={classData}
       />
     </div>

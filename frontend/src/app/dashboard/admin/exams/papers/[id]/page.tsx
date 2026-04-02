@@ -2,10 +2,14 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { examService } from "@/lib/api/services/examService";
+import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { useSchoolDashboardSummary } from "@/lib/api/hooks/useSchool";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, FileText, Settings, Loader2, Check, Globe, BookOpen, Eye, Settings as SettingsIcon } from "lucide-react";
 import { toast } from "react-toastify";
 import QuestionManager from "../../[examId]/papers/[paperId]/components/QuestionManager";
@@ -13,8 +17,19 @@ import ConfirmationModal from "../../components/ui/ConfirmationModal";
 import ReadingContentModal from "../../[examId]/papers/[paperId]/components/ReadingContentModal";
 import PaperPreviewModal from "../../[examId]/papers/[paperId]/components/PaperPreviewModal";
 import EditPaperModal from "../../[examId]/papers/[paperId]/components/EditPaperModal";
-import { useState } from "react";
-import { apiClient } from "@/lib/api/client";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+// import SubjectPaperReport from './components/SubjectPaperReport'; // Moved to dynamic to avoid build errors 
+
+const PDFDownloadLink = dynamic(
+  () => import('@react-pdf/renderer').then(mod => mod.PDFDownloadLink),
+  { ssr: false }
+);
+
+const SubjectPaperReport = dynamic(
+  () => import('./components/SubjectPaperReport'),
+  { ssr: false }
+);
 
 export default function StandalonePaperDetailPage() {
   const params = useParams();
@@ -23,11 +38,18 @@ export default function StandalonePaperDetailPage() {
   const paperId = params.id as string;
   const examId = "none";
 
-  const { data: paper, isLoading: isLoadingPaper, isError: isErrorPaper } = useQuery({
+  const { data: paperData, isLoading: isLoadingPaper, isError: isErrorPaper } = useQuery({
     queryKey: ["paper", paperId],
     queryFn: () => examService.getPaperById(examId, paperId),
     enabled: !!paperId,
   });
+
+  const paper = paperData as any;
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const queryClient = useQueryClient();
 
@@ -95,23 +117,25 @@ export default function StandalonePaperDetailPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Fetch subjects and teachers for the edit modal
-  const schoolId = paper?.schoolId;
+  const paperSchoolId = paper?.schoolId;
+  const fallbackSchoolId = (user as any)?.schools?.[0]?.schoolId || (user as any)?.defaultTenantId || "";
+  const { data: school } = useSchoolProfile(paperSchoolId || fallbackSchoolId);
   const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery({
-    queryKey: ["subjects", schoolId],
+    queryKey: ["subjects", paperSchoolId],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/academic/subjects?schoolId=${schoolId}`);
+      const { data } = await apiClient.get(`/academic/subjects?schoolId=${paperSchoolId}`);
       return data.data || data;
     },
-    enabled: !!schoolId && isEditModalOpen,
+    enabled: !!paperSchoolId && isEditModalOpen,
   });
 
   const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery({
-    queryKey: ["teachers", schoolId],
+    queryKey: ["teachers", paperSchoolId],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/schools/${schoolId}/teachers`);
+      const { data } = await apiClient.get(`/schools/${paperSchoolId}/teachers`);
       return data.data || data;
     },
-    enabled: !!schoolId && isEditModalOpen,
+    enabled: !!paperSchoolId && isEditModalOpen,
   });
 
   const isTeacher = user?.userType === "TEACHER";
@@ -272,11 +296,176 @@ export default function StandalonePaperDetailPage() {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <QuestionManager 
-            paperId={paperId} 
-            examId={examId}
-            paper={paper}
-        />
+        <Tabs defaultValue="questions" className="w-full">
+          <TabsList className="mb-8 p-1 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl w-full max-w-md">
+            <TabsTrigger value="questions" className="flex-1 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all">
+              Questions
+            </TabsTrigger>
+            <TabsTrigger value="grades" className="flex-1 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm py-2.5 font-bold transition-all">
+              Grades
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="questions">
+            <QuestionManager 
+                paperId={paperId} 
+                examId={examId}
+                paper={paper}
+            />
+          </TabsContent>
+
+          <TabsContent value="grades">
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Student Grades</h2>
+                  <p className="text-sm text-gray-500">Performance report for students who took this paper</p>
+                </div>
+
+                {isMounted && paper?.examAttempts && paper.examAttempts.length > 0 ? (
+                  <PDFDownloadLink
+                    document={<SubjectPaperReport paper={paper} school={school} attempts={paper.examAttempts} /> as any}
+                    fileName={`${paper.title?.replace(/\s+/g, '_') || 'Report'}_Grade_Report.pdf`}
+                  >
+                    {({ loading }: any) => (
+                      <Button 
+                        className="text-white font-bold px-6 rounded-xl shadow-lg transition-all gap-2"
+                        disabled={loading}
+                        style={{ 
+                          backgroundColor: paper.school?.settings?.themeColor || 'var(--primary)',
+                          boxShadow: paper.school?.settings?.themeColor ? `0 10px 15px -3px ${paper.school.settings.themeColor}33` : undefined
+                        }}
+                      >
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText size={18} />}
+                        Download Grade Report
+                      </Button>
+                    )}
+                  </PDFDownloadLink>
+                ) : !isMounted && paper?.examAttempts && paper.examAttempts.length > 0 ? (
+                   <Button 
+                    className="text-white font-bold px-6 rounded-xl shadow-lg transition-all gap-2 opacity-50"
+                    disabled
+                    style={{ 
+                      backgroundColor: paper?.school?.settings?.themeColor || 'var(--primary)',
+                    }}
+                  >
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Preparing Report...
+                  </Button>
+                ) : (
+                  <Button 
+                    className="bg-gray-200 text-gray-400 font-bold px-6 rounded-xl cursor-not-allowed border border-gray-300"
+                    disabled
+                    title="No attempts recorded"
+                  >
+                    <FileText size={18} />
+                    Download Grade Report
+                  </Button>
+                )}
+              </div>
+
+              {paper.examAttempts && paper.examAttempts.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { label: "Total Sat", value: paper.examAttempts.length, color: "text-primary" },
+                    { 
+                      label: "Class Average", 
+                      value: (paper.examAttempts.reduce((sum: number, a: any) => sum + (a.score || 0), 0) / paper.examAttempts.length).toFixed(1),
+                      color: "text-blue-600" 
+                    },
+                    { 
+                      label: "Highest Score", 
+                      value: Math.max(...paper.examAttempts.map((a: any) => a.score || 0)).toFixed(1),
+                      color: "text-emerald-600" 
+                    },
+                    { 
+                      label: "Lowest Score", 
+                      value: Math.min(...paper.examAttempts.map((a: any) => a.score || 0)).toFixed(1),
+                      color: "text-rose-600" 
+                    }
+                  ].map((stat, idx) => (
+                    <div key={idx} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                      <p className={`text-xl font-black ${stat.color}`}>{stat.value}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Student</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Code</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Score</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Percentage</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                      {paper.examAttempts && paper.examAttempts.length > 0 ? (
+                        paper.examAttempts.map((attempt: any) => {
+                          const percentage = (attempt.score / (attempt.totalMarks || paper.totalMarks)) * 100;
+                          const isPass = percentage >= (paper.passMark || 40);
+                          return (
+                            <tr key={attempt.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="font-bold text-gray-900 dark:text-white capitalize">
+                                  {attempt.examAttempt?.student?.name}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 font-medium text-gray-500 font-mono text-xs">
+                                {attempt.examAttempt?.student?.studentCode}
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="font-black text-gray-900 dark:text-white">
+                                  {attempt.score}
+                                </span>
+                                <span className="text-gray-400 ml-1">
+                                  / {attempt.totalMarks || paper.totalMarks}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center justify-center gap-2">
+                                  <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full rounded-full ${isPass ? 'bg-emerald-500' : 'bg-red-500'}`}
+                                      style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-bold text-gray-600 dark:text-gray-400">
+                                    {percentage.toFixed(0)}%
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${
+                                  isPass 
+                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
+                                    : 'bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
+                                }`}>
+                                  {isPass ? 'PASS' : 'FAIL'}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
+                            No student attempts found for this paper.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
 
       <ConfirmationModal

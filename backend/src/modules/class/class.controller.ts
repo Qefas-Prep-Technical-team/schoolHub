@@ -10,7 +10,9 @@ import {
   createClassService,
   getClassesService,
   getSingleClassService,
+  getClassStatsService,
   previewClassByCodeService,
+  previewClassByIdService,
   rejectClassService,
   removeStudentFromClassService,
   requestToJoinClassService,
@@ -270,12 +272,12 @@ export const previewClassByCode = async (req: Request, res: Response) => {
               teacherCode: foundClass.teachers[0].teacher.teacherCode,
             }
           : null,
-        subjects: foundClass.subjects.map((s) => ({
+        subjects: foundClass.subjects.map((s: any) => ({
           id: s.subject.id,
           name: s.subject.name,
           code: s.subject.code,
         })),
-        departments: foundClass.departments.map((d) => ({
+        departments: foundClass.departments.map((d: any) => ({
           id: d.department.id,
           name: d.department.name,
         })),
@@ -291,9 +293,65 @@ export const previewClassByCode = async (req: Request, res: Response) => {
   }
 };
 
+export const previewClassById = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const foundClass = await previewClassByIdService(
+      req.params.id as string
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Class preview fetched successfully",
+      data: {
+        id: foundClass.id,
+        name: foundClass.name,
+        section: foundClass.section,
+        classCode: foundClass.classCode,
+        scope: foundClass.scope,
+        status: foundClass.status,
+        school: foundClass.school
+          ? {
+              id: foundClass.school.id,
+              name: foundClass.school.name,
+              schoolCode: foundClass.school.schoolCode,
+            }
+          : null,
+        teacher: foundClass.teachers[0]?.teacher
+          ? {
+              id: foundClass.teachers[0].teacher.id,
+              name: foundClass.teachers[0].teacher.name,
+              teacherCode: foundClass.teachers[0].teacher.teacherCode,
+            }
+          : null,
+        subjects: foundClass.subjects.map((s: any) => ({
+          id: s.subject.id,
+          name: s.subject.name,
+          code: s.subject.code,
+        })),
+        departments: foundClass.departments.map((d: any) => ({
+          id: d.department.id,
+          name: d.department.name,
+        })),
+        studentCount: foundClass.enrollments.length,
+      },
+    });
+  } catch (error: any) {
+    console.error("previewClassById error:", error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to preview class",
+    });
+  }
+};
+
 export const requestToJoinClass = async (req: Request, res: Response) => {
   try {
     const { classCode, note } = req.body;
+    console.log(`[Join Request] Student ${req.user?.id} requesting to join class ${classCode}`);
 
     if (!req.user || req.user.userType !== UserRole.STUDENT) {
       return res.status(403).json({
@@ -315,38 +373,17 @@ export const requestToJoinClass = async (req: Request, res: Response) => {
       note,
     });
 
+    console.log(`[Join Request] Success: Created request ${result.request.id} for class ${result.class.id}`);
+
+    // Collect all notification promises to run in parallel
+    const notificationPromises: Promise<any>[] = [];
+
+    // Notifications for Teachers
     for (const classTeacher of result.class.teachers) {
-      await createNotification({
-        recipientType: "TEACHER",
-        recipientId: classTeacher.teacherId,
-        senderType: "STUDENT",
-        senderId: result.student.id,
-        type: "LINK_REQUEST",
-        title: "New Class Join Request",
-        message: `${result.student.name} requested to join ${result.class.name}`,
-        linkRequestId: result.request.id,
-        meta: {
-          classId: result.class.id,
-          classCode: result.class.classCode,
-          linkType: result.request.linkType,
-          studentId: result.student.id,
-          studentCode: result.student.studentCode,
-        },
-      });
-    }
-
-    if (result.class.schoolId) {
-      const schoolAdmins = await prisma.schoolAdmin.findMany({
-        where: {
-          schoolId: result.class.schoolId,
-          active: true,
-        },
-      });
-
-      for (const sa of schoolAdmins) {
-        await createNotification({
-          recipientType: "ADMIN",
-          recipientId: sa.adminId,
+      notificationPromises.push(
+        createNotification({
+          recipientType: "TEACHER",
+          recipientId: classTeacher.teacherId,
           senderType: "STUDENT",
           senderId: result.student.id,
           type: "LINK_REQUEST",
@@ -360,9 +397,45 @@ export const requestToJoinClass = async (req: Request, res: Response) => {
             studentId: result.student.id,
             studentCode: result.student.studentCode,
           },
-        });
+        }).catch(err => console.error(`Failed to notify teacher ${classTeacher.teacherId}:`, err))
+      );
+    }
+
+    // Notifications for School Admins
+    if (result.class.schoolId) {
+      const schoolAdmins = await prisma.schoolAdmin.findMany({
+        where: {
+          schoolId: result.class.schoolId,
+          active: true,
+        },
+      });
+
+      for (const sa of schoolAdmins) {
+        notificationPromises.push(
+          createNotification({
+            recipientType: "ADMIN",
+            recipientId: sa.adminId,
+            senderType: "STUDENT",
+            senderId: result.student.id,
+            type: "LINK_REQUEST",
+            title: "New Class Join Request",
+            message: `${result.student.name} requested to join ${result.class.name}`,
+            linkRequestId: result.request.id,
+            meta: {
+              classId: result.class.id,
+              classCode: result.class.classCode,
+              linkType: result.request.linkType,
+              studentId: result.student.id,
+              studentCode: result.student.studentCode,
+            },
+          }).catch(err => console.error(`Failed to notify admin ${sa.adminId}:`, err))
+        );
       }
     }
+
+    // FIRE AND FORGET NOTIFICATIONS (or wait for them but don't let them hang the whole response if some fail)
+    // Actually, it's better to wait for them to ensure they are sent, but we use Promise.all for speed.
+    await Promise.all(notificationPromises);
 
     return res.status(201).json({
       success: true,
@@ -380,7 +453,7 @@ export const requestToJoinClass = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("requestToJoinClass error:", error);
-    return res.status(400).json({
+    return res.status(error.status || 400).json({
       success: false,
       message: error.message || "Failed to request to join class",
     });
@@ -695,6 +768,27 @@ export const removeSubjectFromClass = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to remove subject from class",
+    });
+  }
+};
+
+export const getClassStats = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const stats = await getClassStatsService(id as string);
+    return res.status(200).json({
+      success: true,
+      data: stats,
+    });
+  } catch (error: any) {
+    console.error("getClassStats error:", error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to fetch class stats",
     });
   }
 };

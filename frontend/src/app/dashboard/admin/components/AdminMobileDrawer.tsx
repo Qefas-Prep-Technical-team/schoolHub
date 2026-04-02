@@ -19,7 +19,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations";
 import { ADMIN_FEATURE_FLAGS, type AdminFeatureFlagKey } from "./adminFeatureFlags";
-import { adminMenuItems } from "./AdminMobileNav"; // or import from wherever you export it
+import { adminMenuItems } from "./AdminMobileNav";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 const SECTION_TITLES = {
   core: "Core Management",
@@ -54,6 +56,10 @@ export function AdminMobileDrawer() {
   const pathname = usePathname();
   const { mutate: logout } = useLogoutMutation();
   const [open, setOpen] = React.useState(false);
+  
+  const user = useAuthStore((state) => state.user);
+  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || "";
+  const { data: school } = useSchoolProfile(schoolId);
 
   const sections = React.useMemo(() => getFilteredMenuItemsBySection(adminMenuItems as any), []);
 
@@ -67,14 +73,27 @@ export function AdminMobileDrawer() {
 
       <SheetContent side="left" className="p-0 w-[88vw] max-w-[380px] flex flex-col">
         {/* Header */}
-        <div className="px-4 py-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl border border-border bg-background flex items-center justify-center">
-              <School className="h-5 w-5 text-blue-500" />
+        <div className="px-5 py-6 border-b border-white/10 bg-slate-50 dark:bg-slate-900/50">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-primary p-0.5 shadow-lg shadow-primary/20">
+              <div className="w-full h-full rounded-[0.9rem] bg-white flex items-center justify-center overflow-hidden">
+                {school?.logo ? (
+                  <img src={school.logo} alt="School Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <School className="h-6 w-6 text-primary" />
+                )}
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-base font-bold">SCHOOLHUB</span>
-              <span className="text-xs text-muted-foreground">Admin navigation</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-lg font-black tracking-tight uppercase truncate">
+                {school?.name || "SCHOOLHUB"}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  Admin Terminal
+                </span>
+              </div>
             </div>
           </div>
         </div>

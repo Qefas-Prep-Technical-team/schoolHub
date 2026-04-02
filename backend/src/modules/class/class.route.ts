@@ -8,7 +8,9 @@ import {
   createClass,
   getClasses,
   getSingleClass,
+  getClassStats,
   previewClassByCode,
+  previewClassById,
   rejectClass,
   removeStudentFromClass,
   requestToJoinClass,
@@ -64,6 +66,8 @@ router.get("/:id/timetable", authenticateToken, getClassTimetable);
 router.post("/:id/timetable", authenticateToken, upsertTimetablePeriod);
 router.delete("/:id/timetable/:periodId", authenticateToken, deleteTimetablePeriod);
 
+router.get("/preview/:id", authenticateToken, previewClassById);
+router.get("/:id/stats", authenticateToken, getClassStats);
 router.get("/:id", authenticateToken, getSingleClass);
 
 export default router;

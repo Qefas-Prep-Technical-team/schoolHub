@@ -266,13 +266,23 @@ function DetailedStudentResult({ examId, onBack }: { examId: string, onBack: () 
 
   return (
     <div className="space-y-10 animate-in fade-in zoom-in-95 duration-700">
-      <button 
-        onClick={onBack}
-        className="flex items-center gap-3 text-slate-400 hover:text-primary transition-all text-[10px] font-black uppercase tracking-widest group"
-      >
-        <ArrowLeft size={18} className="group-hover:-translate-x-1.5 transition-transform" />
-        Back to Results Overview
-      </button>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <button 
+          onClick={onBack}
+          className="flex items-center gap-3 text-slate-400 hover:text-primary transition-all text-[10px] font-black uppercase tracking-widest group no-print"
+        >
+          <ArrowLeft size={18} className="group-hover:-translate-x-1.5 transition-transform" />
+          Back to Results Overview
+        </button>
+
+        <Button 
+          onClick={() => window.print()}
+          className="rounded-2xl h-10 px-6 font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm hover:shadow-lg transition-all no-print"
+          variant="outline"
+        >
+          <Download className="mr-2" size={16} /> Download Result PDF
+        </Button>
+      </div>
 
       {/* Main Result Card */}
       <div className="relative overflow-hidden rounded-[4rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-[0_32px_128px_-16px_rgba(0,0,0,0.1)] p-10 md:p-16">
@@ -350,14 +360,14 @@ function DetailedStudentResult({ examId, onBack }: { examId: string, onBack: () 
                             <div key={i} className="p-10 rounded-[3rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between group hover:shadow-2xl hover:border-primary/50 transition-all duration-500">
                                 <div className="space-y-2">
                                     <p className="text-xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors">{sub.subjectName}</p>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 mt-1">
                                         <div className="h-1.5 w-24 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                             <div 
                                                 className={cn("h-full transition-all duration-1000", percent >= 70 ? "bg-emerald-500" : percent >= 40 ? "bg-amber-500" : "bg-rose-500")}
                                                 style={{ width: `${percent}%` }}
                                             />
                                         </div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Unit Analysis</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{sub.score} / {sub.totalMarks} Points</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-10">

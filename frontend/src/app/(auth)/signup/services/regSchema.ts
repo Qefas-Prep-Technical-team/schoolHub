@@ -111,6 +111,17 @@ export const teacherSchema = yup.object({
         return /^stu-\d{6}$/.test(value);
       },
     ),
+  classCode: yup
+    .string()
+    .optional()
+    .test(
+      "classCode-format",
+      "Class code must be at least 3 characters",
+      (value) => {
+        if (!value || value.trim() === "") return true;
+        return value.trim().length >= 3;
+      },
+    ),
 });
 
 export type TeacherFormData = yup.InferType<typeof teacherSchema>;
@@ -179,6 +190,18 @@ export const studentSchema = yup.object({
     .test(
       "parentCode-format",
       "Parent code must be at least 3 characters",
+      (value) => {
+        if (!value || value.trim() === "") return true;
+        return value.trim().length >= 3;
+      },
+    ),
+  
+  classCode: yup
+    .string()
+    .optional()
+    .test(
+      "classCode-format",
+      "Class code must be at least 3 characters",
       (value) => {
         if (!value || value.trim() === "") return true;
         return value.trim().length >= 3;

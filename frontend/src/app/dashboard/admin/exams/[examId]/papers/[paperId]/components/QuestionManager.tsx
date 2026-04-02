@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import { apiClient } from "@/lib/api/client";
 import { examService } from "@/lib/api/services/examService";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
+import { cn } from "@/lib/utils";
 
 import { 
   DndContext, 
@@ -58,6 +59,9 @@ export default function QuestionManager({
   const [activeTab, setActiveTab] = useState("list");
   const [editingQuestion, setEditingQuestion] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [bulkDeleteType, setBulkDeleteType] = useState<"selected" | "all" | null>(null);
 
   const deleteQuestionMutation = useMutation({
     mutationFn: (questionId: string) => examService.deleteQuestion(questionId),
@@ -127,6 +131,38 @@ export default function QuestionManager({
     setDeletingId(questionId);
   };
 
+  const handleBulkDelete = async () => {
+    if (bulkDeleteType === "selected" && selectedIds.length === 0) return;
+    
+    const idsToDelete = bulkDeleteType === "all" ? Math.random() < 2 ? questions.map((q: any) => q.id) : [] : selectedIds;
+    if (idsToDelete.length === 0) return;
+
+    setIsBulkDeleting(true);
+    try {
+      await Promise.all(idsToDelete.map((id: string) => examService.deleteQuestion(id)));
+      queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
+      toast.success(`Successfully deleted ${idsToDelete.length} questions!`);
+      setSelectedIds([]);
+      setBulkDeleteType(null);
+    } catch (error: any) {
+      toast.error("Some questions failed to delete.");
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const selectAll = () => {
+    if (selectedIds.length === questions.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(questions.map((q: any) => q.id));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -136,6 +172,29 @@ export default function QuestionManager({
         </div>
         
         <div className="flex items-center gap-2">
+           {paper?.status === 'PUBLISHED' && (
+             <div className="bg-amber-50 text-amber-600 border border-amber-200 px-4 py-2 rounded-xl text-xs font-bold mr-2 hidden md:block flex items-center">
+               Paper is Published. Unpublish to edit.
+             </div>
+           )}
+           {selectedIds.length > 0 && paper?.status !== 'PUBLISHED' && (
+             <Button
+               onClick={() => setBulkDeleteType("selected")}
+               variant="destructive"
+               className="h-10 px-4 rounded-xl gap-2 font-bold shadow-sm"
+             >
+               <Trash2 size={16} /> Delete Selected ({selectedIds.length})
+             </Button>
+           )}
+           {questions.length > 0 && paper?.status !== 'PUBLISHED' && (
+             <Button
+               onClick={() => setBulkDeleteType("all")}
+               variant="outline"
+               className="h-10 px-4 rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10 font-bold shadow-sm"
+             >
+               Delete All
+             </Button>
+           )}
            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-full md:w-auto overflow-x-auto scroller-none">
               {[
                 { id: 'list', label: 'List', icon: FileText },
@@ -191,6 +250,20 @@ export default function QuestionManager({
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
                 >
+                  <div className="flex items-center justify-between mb-2 px-2">
+                    <label className={cn("flex items-center gap-2 text-sm font-bold text-gray-500 cursor-pointer", paper?.status === 'PUBLISHED' && "hidden")}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedIds.length === questions.length && questions.length > 0}
+                        onChange={selectAll}
+                        disabled={paper?.status === 'PUBLISHED'}
+                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary disabled:opacity-50"
+                      />
+                      Select All
+                    </label>
+                    <span className="text-xs text-amber-500 md:hidden ml-auto font-bold">{paper?.status === 'PUBLISHED' ? "Unpublish to edit" : "Reorder dragging via the handle grip"}</span>
+                    <span className="text-xs text-gray-400 font-medium hidden md:block">{paper?.status === 'PUBLISHED' ? "Read-only: Unpublish this paper to reorder or edit" : "Reorder dragging via the handle grip"}</span>
+                  </div>
                   <SortableContext 
                     items={localQuestions.map(q => q.id)}
                     strategy={verticalListSortingStrategy}
@@ -202,7 +275,9 @@ export default function QuestionManager({
                         idx={idx} 
                         onEdit={handleEdit} 
                         onDelete={handleDelete}
-                        isDeleting={deleteQuestionMutation.isPending}
+                        isSelected={selectedIds.includes(q.id)}
+                        onToggleSelect={() => toggleSelection(q.id)}
+                        isDeleting={deleteQuestionMutation.isPending || isBulkDeleting}
                         isPublished={paper?.status === 'PUBLISHED'}
                       />
                     ))}
@@ -261,11 +336,20 @@ export default function QuestionManager({
         onConfirm={() => deletingId && deleteQuestionMutation.mutate(deletingId)}
         isPending={deleteQuestionMutation.isPending}
       />
+
+      <DeleteConfirmationModal
+        isOpen={!!bulkDeleteType}
+        onClose={() => setBulkDeleteType(null)}
+        onConfirm={handleBulkDelete}
+        isPending={isBulkDeleting}
+        title={bulkDeleteType === "all" ? "Delete All Questions" : "Delete Selected Questions"}
+        description={bulkDeleteType === "all" ? "Are you extremely sure you want to permanently delete every single question in this paper? This action cannot be undone." : `Are you sure you want to delete the ${selectedIds.length} selected questions?`}
+      />
     </div>
   );
 }
 
-function SortableQuestionCard({ q, idx, onEdit, onDelete, isDeleting, isPublished }: any) {
+function SortableQuestionCard({ q, idx, onEdit, onDelete, isSelected, onToggleSelect, isDeleting, isPublished }: any) {
   const {
     attributes,
     listeners,
@@ -280,14 +364,28 @@ function SortableQuestionCard({ q, idx, onEdit, onDelete, isDeleting, isPublishe
     transition,
     zIndex: isDragging ? 50 : 0,
     opacity: isDragging ? 0.5 : 1,
+    touchAction: 'none' // Ensures touch drag works on mobile properly
   };
 
   return (
     <div ref={setNodeRef} style={style}>
-      <Card className={`p-5 border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group overflow-hidden ${isDragging ? 'border-primary shadow-lg ring-2 ring-primary/20' : ''}`}>
-        <div className="flex gap-4">
+      <Card className={cn(
+          "p-5 border-gray-100 dark:border-gray-800 shadow-sm transition-all group overflow-hidden relative",
+          isDragging ? 'border-primary shadow-xl ring-2 ring-primary/20 scale-[1.02]' : 'hover:shadow-md cursor-default',
+          isSelected ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/30' : ''
+      )}>
+        <div className="absolute top-4 left-4 z-10">
+          <input 
+            type="checkbox" 
+            checked={isSelected}
+            onChange={onToggleSelect}
+            disabled={isPublished}
+            className={cn("w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary mt-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed", isPublished && "hidden")}
+          />
+        </div>
+        <div className={cn("flex gap-4", !isPublished && "pl-8")}>
           <div className="flex flex-col items-center gap-2 mt-1">
-            <span className="w-8 h-8 rounded-full bg-primary/5 text-primary flex items-center justify-center text-xs font-bold border border-primary/20">
+            <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold border border-primary/20">
               {idx + 1}
             </span>
             <div 
