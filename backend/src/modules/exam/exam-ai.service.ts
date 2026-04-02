@@ -177,3 +177,44 @@ export const generateStructuredExamQuestionsFromPrompt = async ({
   const content = response.output_text;
   return JSON.parse(content);
 };
+
+export const generateStudentPerformanceInsight = async ({
+  studentName,
+  totalScore,
+  totalMarks,
+  grade,
+  proficiency,
+  subjects,
+}: {
+  studentName: string;
+  totalScore: number;
+  totalMarks: number;
+  grade: string;
+  proficiency: string;
+  subjects: any[];
+}) => {
+  try {
+    const percentage = Math.round((totalScore / totalMarks) * 100);
+    const subjectData = subjects.map(s => `${s.subjectName}: ${Math.round((s.score / s.totalMarks) * 100)}%`).join(", ");
+
+    const response = await client.chat.completions.create({
+      model: "gpt-4o", // Using a standard chat model for insights
+      messages: [
+        {
+          role: "system",
+          content: "You are the Registrar of a top Nigerian academic institution. Provide a professional, encouraging, and data-driven academic insight for a student's performance report. Your response should be a single paragraph (max 60 words), include specific suggestions for improvement, and reflect Nigerian academic excellence standards."
+        },
+        {
+          role: "user",
+          content: `Student Name: ${studentName}\nOverall Percentage: ${percentage}%\nWAEC Grade: ${grade}\nProficiency: ${proficiency}\nSubject Breakdown: ${subjectData}`
+        }
+      ],
+      max_tokens: 150,
+    });
+
+    return response.choices[0]?.message?.content || "The student exhibits consistent engagement and has a solid path towards future academic excellence.";
+  } catch (error) {
+    console.error("AI Insight Generation Error:", error);
+    return "The student exhibits consistent engagement and has a solid path towards future academic excellence.";
+  }
+};

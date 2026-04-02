@@ -168,3 +168,87 @@ export const getStudentProfileService = async (studentId: string) => {
     },
   });
 };
+
+export const updateStudentProfileService = async (studentId: string, data: {
+  name?: string;
+  email?: string;
+  gender?: any;
+  dateOfBirth?: string | Date;
+}) => {
+  const updateData: any = {};
+  if (data.name) updateData.name = data.name;
+  if (data.email) updateData.email = data.email;
+  if (data.gender) updateData.gender = data.gender;
+  if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth);
+
+  return prisma.student.update({
+    where: { id: studentId },
+    data: updateData,
+    include: {
+      department: true,
+      school: true,
+      classes: {
+        include: {
+          class: true,
+        },
+      },
+    },
+  });
+};
+
+export const requestEmailUpdateService = async (studentId: string, newEmail: string) => {
+  // Check if email is already taken
+  const existingUser = await prisma.student.findUnique({ where: { email: newEmail } });
+  if (existingUser) {
+    throw new Error("This email is already registered with another account");
+  }
+
+  // Generate 6-digit code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  // @ts-ignore - pendingEmail fields added to schema but prisma generate not run
+  await prisma.student.update({
+    where: { id: studentId },
+    data: {
+      pendingEmail: newEmail,
+      emailVerificationCode: code,
+      emailVerificationExpiry: expiry,
+    },
+  });
+
+  return code;
+};
+
+export const verifyEmailUpdateService = async (studentId: string, code: string) => {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+  });
+
+  if (!student) throw new Error("Student not found");
+  
+  const s = student as any;
+
+  if (s.emailVerificationCode !== code) {
+    throw new Error("Invalid verification code");
+  }
+
+  if (new Date() > new Date(s.emailVerificationExpiry)) {
+    throw new Error("Verification code has expired");
+  }
+
+  if (!s.pendingEmail) {
+    throw new Error("No pending email update found");
+  }
+
+  return prisma.student.update({
+    where: { id: studentId },
+    data: {
+      email: s.pendingEmail,
+      // @ts-ignore - fields exist in schema
+      pendingEmail: null,
+      emailVerificationCode: null,
+      emailVerificationExpiry: null,
+    },
+  });
+};

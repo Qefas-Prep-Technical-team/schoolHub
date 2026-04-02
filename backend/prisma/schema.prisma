@@ -251,6 +251,10 @@ model Admin {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   gender    Gender?
+
+  pendingEmail           String?
+  emailVerificationCode  String?
+  emailVerificationExpiry DateTime?
 }
 
 model Teacher {
@@ -286,6 +290,11 @@ model Teacher {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   gender            Gender?
+
+  pendingEmail           String?
+  emailVerificationCode  String?
+  emailVerificationExpiry DateTime?
+
   subjects          Subject[]
   departments       Department[]
   teacherSubjects   TeacherSubject[]
@@ -326,6 +335,10 @@ model Student {
   examAttempts ExamAttempt[]
   attendances  Attendance[]
 
+  pendingEmail           String?
+  emailVerificationCode  String?
+  emailVerificationExpiry DateTime?
+
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
 }
@@ -351,6 +364,10 @@ model Parent {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   gender    Gender?
+
+  pendingEmail           String?
+  emailVerificationCode  String?
+  emailVerificationExpiry DateTime?
 
   @@map("parents")
 }

@@ -107,159 +107,82 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 // default to false if not set
 
-export const sendVerificationEmail = async (email: string, code: string) => {
-  // ADD 'return' and 'await' here
+export const sendEmailUpdateVerification = async (email: string, code: string) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? process.env.TEST_EMAIL as string : email;
+  
   return await resend.emails.send({
     from: process.env.MAIL_FROM as string,
-    to: email,
-    subject: "Your Verification Code",
+    to: recipient,
+    subject: `[ACTION REQUIRED] Verify Your New Email Address ${isTest ? `(Original: ${email})` : ''}`,
     html: `
-     <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Verification</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f0f8ff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .verification-card {
-            background-color: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 120, 215, 0.15);
-            max-width: 480px;
-            width: 100%;
-            overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .verification-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 120, 215, 0.2);
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #4da8ff, #0078d7);
-            padding: 30px 20px;
-            text-align: center;
-            color: white;
-        }
-        
-        .header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        
-        .header p {
-            opacity: 0.9;
-            font-size: 16px;
-        }
-        
-        .content {
-            padding: 30px;
-        }
-        
-        .code-container {
-            background-color: #f0f8ff;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            margin: 25px 0;
-            border: 1px solid #d1ebff;
-        }
-        
-        .verification-code {
-            font-size: 42px;
-            font-weight: 700;
-            letter-spacing: 8px;
-            color: #0078d7;
-            margin: 10px 0;
-            padding: 5px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 120, 215, 0.1);
-        }
-        
-        .instructions {
-            color: #555;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-        
-        .expiry-notice {
-            background-color: #fff9e6;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            border-radius: 0 8px 8px 0;
-            margin-top: 25px;
-        }
-        
-        .expiry-notice b {
-            color: #e6a700;
-        }
-        
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #777;
-            font-size: 14px;
-            border-top: 1px solid #eee;
-        }
-        
-        @media (max-width: 500px) {
-            .verification-code {
-                font-size: 32px;
-                letter-spacing: 6px;
-            }
-            
-            .content {
-                padding: 20px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="verification-card">
-        <div class="header">
-            <h1>Email Verification</h1>
-            <p>Secure your account with verification</p>
+      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
+          <div style="width: 48px; height: 48px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 24px;">S</div>
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">SchoolHub <span style="color: #2563eb;">Identity</span></h2>
+            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
+          </div>
         </div>
         
-        <div class="content">
-            <p class="instructions">Thank you for signing up! To complete your registration, please use the verification code below:</p>
-            
-            <div class="code-container">
-                <p>Your verification code is:</p>
-                <div class="verification-code">${code}</div>
-                <p>Enter this code on the verification page</p>
-            </div>
-            
-            <div class="expiry-notice">
-                <p>This code expires in <b>10 minutes</b>. Please verify your email address before it expires.</p>
-            </div>
+        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">Verify Your New Email</h3>
+        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">To complete the update of your institutional contact records, please use the secure verification code below.</p>
+        
+        <div style="margin: 32px 0; padding: 40px; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 24px; text-align: center;">
+          <p style="margin: 0 0 12px 0; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Verification Code</p>
+          <div style="font-size: 48px; font-weight: 900; letter-spacing: 12px; color: #1e293b; font-family: monospace;">
+            ${code}
+          </div>
         </div>
         
-        <div class="footer">
-            <p>If you didn't request this code, you can safely ignore this email.</p>
+        <div style="padding: 24px; background: #fffcf0; border-radius: 16px; border-left: 4px solid #f59e0b; margin-bottom: 32px;">
+          <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5; font-weight: 500;">
+            <b>Security Note:</b> This code will expire in <b>10 minutes</b>. If you did not initiate this request, please contact your system administrator immediately.
+          </p>
         </div>
-    </div>
-</body>
-</html>
+        
+        <div style="border-top: 1px solid #f1f5f9; pt-32; padding-top: 24px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
+          ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
+        </div>
+      </div>
+    `,
+  });
+};
+
+export const sendVerificationEmail = async (email: string, code: string) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? process.env.TEST_EMAIL as string : email;
+
+  return await resend.emails.send({
+    from: process.env.MAIL_FROM as string,
+    to: recipient,
+    subject: `[SchoolHub] Verify Your Account ${isTest ? `(Original: ${email})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
+          <div style="width: 48px; height: 48px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 24px;">S</div>
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">SchoolHub</h2>
+            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Academic Management System</p>
+          </div>
+        </div>
+        
+        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">Welcome to SchoolHub</h3>
+        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">Thank you for joining our academic community. Please use the verification code below to activate your account.</p>
+        
+        <div style="margin: 32px 0; padding: 40px; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 24px; text-align: center;">
+          <p style="margin: 0 0 12px 0; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Verification Code</p>
+          <div style="font-size: 48px; font-weight: 900; letter-spacing: 12px; color: #1e293b; font-family: monospace;">
+            ${code}
+          </div>
+        </div>
+        
+        <div style="border-top: 1px solid #f1f5f9; pt-32; padding-top: 24px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
+          ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
+        </div>
+      </div>
     `,
   });
 };

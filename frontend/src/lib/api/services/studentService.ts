@@ -22,6 +22,9 @@ export interface Student {
     code: string;
   };
   gender?: string;
+  dateOfBirth?: string;
+  gradeLevel?: string;
+  createdAt?: string;
 }
 
 export interface StudentProfile extends Student {
@@ -70,5 +73,20 @@ export const studentService = {
   updateDepartmentByAdmin: async (studentId: string, departmentId: string) => {
     const response = await apiClient.patch<{ data: Student }>(`/students/${studentId}/department`, { departmentId });
     return response.data.data;
+  },
+
+  updateProfile: async (data: { name?: string; email?: string; gender?: string; dateOfBirth?: string | Date }) => {
+    const response = await apiClient.patch<{ data: StudentProfile }>("/students/profile", data);
+    return response.data.data;
+  },
+
+  requestEmailUpdate: async (newEmail: string) => {
+    const response = await apiClient.post("/students/profile/email/request", { newEmail });
+    return response.data;
+  },
+
+  verifyEmailUpdate: async (code: string) => {
+    const response = await apiClient.post("/students/profile/email/verify", { code });
+    return response.data;
   },
 };

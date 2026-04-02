@@ -156,10 +156,8 @@ const styles = StyleSheet.create({
     color: '#1E293B',
   },
   footer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 40,
-    right: 40,
+    position: 'relative',
+    marginTop: 40,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
     paddingTop: 10,
@@ -172,10 +170,60 @@ const styles = StyleSheet.create({
   },
   gradingKey: {
     marginTop: 20,
+    padding: 10,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 6,
+    borderWidth: 0.5,
+    borderColor: '#E2E8F0',
+  },
+  gradingTitle: {
     fontSize: 8,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  gradingText: {
+    fontSize: 7,
     color: '#64748B',
     lineHeight: 1.4,
-  }
+  },
+  signatureSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 40,
+    paddingHorizontal: 10,
+  },
+  signatureBox: {
+    width: 150,
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
+    paddingTop: 5,
+    alignItems: 'center',
+  },
+  signatureLabel: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#475569',
+    textTransform: 'uppercase',
+  },
+  stampBox: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: -15,
+  },
+  stampLabel: {
+    fontSize: 6,
+    color: '#94A3B8',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
 });
 
 interface ExamGradeReportProps {
@@ -215,27 +263,35 @@ const ExamGradeReport: React.FC<ExamGradeReportProps> = ({ exam, attempts, schoo
         <View style={styles.examMetadata}>
           <View style={styles.metaItem}>
             <Text style={styles.metaLabel}>Examination Title</Text>
-            <Text style={styles.metaValue}>{exam?.title}</Text>
+            <Text style={styles.metaValue}>{exam?.title || 'External Assessment'}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Session / Term</Text>
-            <Text style={styles.metaValue}>{exam?.session?.name || 'N/A'} - {exam?.term} Term</Text>
+            <Text style={styles.metaLabel}>Academic Session</Text>
+            <Text style={styles.metaValue}>{exam?.session?.name || new Date().getFullYear() + '/' + (new Date().getFullYear() + 1)}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Class</Text>
-            <Text style={styles.metaValue}>{exam?.class?.name || 'All Classes'}</Text>
+            <Text style={styles.metaLabel}>Academic Term</Text>
+            <Text style={styles.metaValue}>{exam?.term || 'First'} Term</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Date Generated</Text>
+            <Text style={styles.metaLabel}>Department / Class</Text>
+            <Text style={styles.metaValue}>{exam?.class?.name || 'Institutional Level'}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Date of Issue</Text>
             <Text style={styles.metaValue}>{new Date().toLocaleDateString()}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Total Papers</Text>
-            <Text style={styles.metaValue}>{exam?.subjectPapers?.length || 1}</Text>
+            <Text style={styles.metaLabel}>Weighted Total</Text>
+            <Text style={styles.metaValue}>{exam?.totalMarks || 0} pts</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Participation</Text>
-            <Text style={styles.metaValue}>{attempts?.length} Students</Text>
+            <Text style={styles.metaLabel}>Institutional Pass Mark</Text>
+            <Text style={styles.metaValue}>40% ({((0.4 * (exam?.totalMarks || 0))).toFixed(1)} pts)</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Cohort Participation</Text>
+            <Text style={styles.metaValue}>{attempts?.length} Examinees</Text>
           </View>
         </View>
 
@@ -244,16 +300,16 @@ const ExamGradeReport: React.FC<ExamGradeReportProps> = ({ exam, attempts, schoo
           <View style={styles.tableHeader}>
             <Text style={[styles.headerText, styles.colNo]}>#</Text>
             <Text style={[styles.headerText, styles.colName]}>Student Name</Text>
-            <Text style={[styles.headerText, styles.colCode]}>Reg Code</Text>
+            <Text style={[styles.headerText, { width: '20%', color: '#FFFFFF', fontSize: 9, fontWeight: 'bold' }]}>Registration No.</Text>
             <Text style={[styles.headerText, styles.colScore]}>Score</Text>
-            <Text style={[styles.headerText, styles.colMax]}>Max</Text>
-            <Text style={[styles.headerText, styles.colPercent]}>Percentage</Text>
-            <Text style={[styles.headerText, { width: '10%', textAlign: 'center' }]}>Status</Text>
+            <Text style={[styles.headerText, styles.colPercent]}>%</Text>
+            <Text style={[styles.headerText, { width: '10%', textAlign: 'center', color: '#FFFFFF', fontSize: 9, fontWeight: 'bold' }]}>Grade</Text>
           </View>
 
           {attempts.map((attempt, index) => {
-            const percentage = ((attempt.totalScore / attempt.totalMarks) * 100).toFixed(1);
-            const isPass = parseFloat(percentage) >= 40;
+            const percentage = Math.round((attempt.totalScore / attempt.totalMarks) * 100);
+            const isPass = percentage >= 40;
+            const grade = percentage >= 75 ? 'A1' : percentage >= 70 ? 'B2' : percentage >= 65 ? 'B3' : percentage >= 60 ? 'C4' : percentage >= 55 ? 'C5' : percentage >= 50 ? 'C6' : percentage >= 45 ? 'D7' : percentage >= 40 ? 'E8' : 'F9';
 
             return (
               <View 
@@ -262,13 +318,12 @@ const ExamGradeReport: React.FC<ExamGradeReportProps> = ({ exam, attempts, schoo
               >
                 <Text style={[styles.rowText, styles.colNo]}>{index + 1}</Text>
                 <Text style={[styles.rowText, styles.colName]}>{attempt.student?.name}</Text>
-                <Text style={[styles.rowText, styles.colCode]}>{attempt.student?.studentCode}</Text>
+                <Text style={[styles.rowText, { width: '20%', fontSize: 9, color: '#334155' }]}>{attempt.student?.studentCode}</Text>
                 <Text style={[styles.rowText, styles.colScore, { fontWeight: 'bold' }]}>{attempt.totalScore}</Text>
-                <Text style={[styles.rowText, styles.colMax]}>{attempt.totalMarks}</Text>
                 <Text style={[styles.rowText, styles.colPercent]}>{percentage}%</Text>
-                <View style={[styles.statusBadge, isPass ? styles.passBadge : styles.failBadge]}>
-                  <Text>{isPass ? 'PASS' : 'FAIL'}</Text>
-                </View>
+                <Text style={[styles.rowText, { width: '10%', textAlign: 'center', fontWeight: 'bold', color: isPass ? '#10B981' : '#EF4444' }]}>
+                  {grade}
+                </Text>
               </View>
             );
           })}
@@ -276,14 +331,14 @@ const ExamGradeReport: React.FC<ExamGradeReportProps> = ({ exam, attempts, schoo
 
         {/* Summary Statistics */}
         <View style={styles.summarySection}>
-          <Text style={styles.summaryTitle}>Institutional Performance Summary</Text>
+          <Text style={styles.summaryTitle}>Institutional Aggregate Performance Summary</Text>
           <View style={styles.summaryGrid}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Average Score</Text>
+              <Text style={styles.summaryLabel}>Cohort Mean</Text>
               <Text style={styles.summaryValue}>{avgScore}%</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Overall Pass Rate</Text>
+              <Text style={styles.summaryLabel}>Success Rate</Text>
               <Text style={styles.summaryValue}>{passRate}%</Text>
             </View>
             <View style={styles.summaryItem}>
@@ -291,25 +346,38 @@ const ExamGradeReport: React.FC<ExamGradeReportProps> = ({ exam, attempts, schoo
               <Text style={styles.summaryValue}>{topScore}%</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Completion</Text>
-              <Text style={styles.summaryValue}>100%</Text>
+              <Text style={styles.summaryLabel}>Status</Text>
+              <Text style={styles.summaryValue}>Finalized</Text>
             </View>
           </View>
         </View>
 
-        {/* Explanation & Footer */}
+        {/* Grading Key & Verification */}
         <View style={styles.gradingKey}>
-          <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Report Explanation:</Text>
-          <Text>
-            This report represents the aggregate results for the "{exam?.title}" examination. 
-            Percentage scores are calculated based on raw marks obtained across all subject papers.
-            The institutional pass mark is set at 40%. Assessments are verified via OMR/AI grading systems.
+          <Text style={styles.gradingTitle}>Official Institutional Grading Standards (WAEC Style)</Text>
+          <Text style={styles.gradingText}>
+            A1 (Distinction): 75-100% | B2 (Very Good): 70-74% | B3 (Good): 65-69% {"\n"}
+            C4-C6 (Credit): 50-64% | D7-E8 (Pass): 40-49% | F9 (Fail): 0-39% {"\n"}
+            This report serves as a legal academic record for the specified examination cohort.
           </Text>
         </View>
 
+        {/* Signatures & Stamp */}
+        <View style={styles.signatureSection}>
+           <View style={styles.signatureBox}>
+              <Text style={styles.signatureLabel}>Examination Officer</Text>
+           </View>
+           <View style={styles.stampBox}>
+              <Text style={styles.stampLabel}>OFFICIAL{"\n"}SCHOOL STAMP</Text>
+           </View>
+           <View style={styles.signatureBox}>
+              <Text style={styles.signatureLabel}>Principal/Director</Text>
+           </View>
+        </View>
+
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Generated by SchoolHub Smart Assessment System</Text>
-          <Text style={styles.footerText}>Page 1 of 1</Text>
+          <Text style={styles.footerText}>Certified Academic Record • Powered by SchoolHub Nigeria</Text>
+          <Text style={styles.footerText}>Report Generation Hub • {new Date().toLocaleDateString()}</Text>
         </View>
       </Page>
     </Document>

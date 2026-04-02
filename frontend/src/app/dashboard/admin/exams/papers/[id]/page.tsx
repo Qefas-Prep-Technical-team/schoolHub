@@ -19,17 +19,8 @@ import PaperPreviewModal from "../../[examId]/papers/[paperId]/components/PaperP
 import EditPaperModal from "../../[examId]/papers/[paperId]/components/EditPaperModal";
 import React, { useState, useMemo, useEffect } from "react";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
-// import SubjectPaperReport from './components/SubjectPaperReport'; // Moved to dynamic to avoid build errors 
-
-const PDFDownloadLink = dynamic(
-  () => import('@react-pdf/renderer').then(mod => mod.PDFDownloadLink),
-  { ssr: false }
-);
-
-const SubjectPaperReport = dynamic(
-  () => import('./components/SubjectPaperReport'),
-  { ssr: false }
-);
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import SubjectPaperReport from './components/SubjectPaperReport';
 
 export default function StandalonePaperDetailPage() {
   const params = useParams();
@@ -324,7 +315,7 @@ export default function StandalonePaperDetailPage() {
 
                 {isMounted && paper?.examAttempts && paper.examAttempts.length > 0 ? (
                   <PDFDownloadLink
-                    document={<SubjectPaperReport paper={paper} school={school} attempts={paper.examAttempts} /> as any}
+                    document={<SubjectPaperReport paper={paper} school={school} attempts={paper.examAttempts} />}
                     fileName={`${paper.title?.replace(/\s+/g, '_') || 'Report'}_Grade_Report.pdf`}
                   >
                     {({ loading }: any) => (
@@ -337,7 +328,7 @@ export default function StandalonePaperDetailPage() {
                         }}
                       >
                         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText size={18} />}
-                        Download Grade Report
+                        {loading ? 'Preparing Download...' : 'Download Grade Report'}
                       </Button>
                     )}
                   </PDFDownloadLink>

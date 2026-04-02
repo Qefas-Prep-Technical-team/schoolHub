@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { UserPlus } from 'lucide-react';
 import { StudentConnectionModal } from './components/StudentConnectionModal';
+import { Badge } from '@/components/ui/badge';
 
 export default function StudentHomeDashboard() {
   const { username } = useUserStore();
@@ -79,32 +80,36 @@ export default function StudentHomeDashboard() {
     const weakest = sortedSubjects[0];
     const strongest = sortedSubjects[sortedSubjects.length - 1];
 
-    // Generate AI Suggestions
+    // Nigerian Academic Advisory Logic (WAEC/NECO Standard)
     let advice = "";
-    if (weakest.A < 50) {
-      advice = `Critical attention needed in ${weakest.subject}. We've noticed consistent struggles here. Focus on foundational concepts and consider requesting a peer-tutoring session.`;
-    } else if (weakest.A < 70) {
-      advice = `Good progress, but ${weakest.subject} could use a boost. Focus on active recall and past papers to push your scores into the distinction range.`;
+    if (weakest.A < 40) {
+      advice = `Urgent intervention required in ${weakest.subject} (F9 standing). We recommend specialized tutoring and a review of foundational prerequisites to stabilize performance before the next assessment cycle.`;
+    } else if (weakest.A < 50) {
+      advice = `Performance in ${weakest.subject} is currently at Pass level (D7/E8). Aim for more consistent practice with past WAEC/NECO papers to elevate this to a Credit (C6) or higher.`;
+    } else if (weakest.A < 75) {
+      advice = `Strong performance in ${weakest.subject} (Credit range). With targeted focus on high-weight topics, you are well-positioned to achieve a Distinction (A1/B2) in upcoming cycles.`;
     } else {
-      advice = `Excellence across the board! Your weakest area is ${weakest.subject} at ${weakest.A}%, which is still very strong. Keep sharpening your skills!`;
+      advice = `Exceptional academic standing! Your mastery of ${weakest.subject} at ${weakest.A}% demonstrates Distinction-level (A1) command. Maintain this excellence while supporting peers in collaborative sessions.`;
     }
 
     return { chartData, weakest, strongest, advice };
   }, [attempts, standaloneGrades]);
 
   const gpa = useMemo(() => {
-    if ((!attempts || attempts.length === 0) && (!standaloneGrades || standaloneGrades.length === 0)) return "0.0";
+    if ((!attempts || attempts.length === 0) && (!standaloneGrades || standaloneGrades.length === 0)) return "0.00";
     
     let totalWeight = 0;
     let totalPoints = 0;
 
+    // Nigerian 5.0 GPA Scale (WAEC Alignment)
     const getPoints = (percent: number) => {
-        if (percent >= 90) return 4.0;
-        if (percent >= 70) return 4.0; 
-        if (percent >= 60) return 3.0;
-        if (percent >= 50) return 2.0;
-        if (percent >= 40) return 1.0;
-        return 0.0;
+        if (percent >= 75) return 5.0; // A1
+        if (percent >= 70) return 4.0; // B2
+        if (percent >= 65) return 3.5; // B3
+        if (percent >= 50) return 3.0; // C4-C6
+        if (percent >= 45) return 2.0; // D7
+        if (percent >= 40) return 1.0; // E8
+        return 0.0; // F9
     };
 
     attempts?.forEach((a: any) => {
@@ -132,37 +137,51 @@ export default function StudentHomeDashboard() {
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 p-6 lg:p-10 pb-32">
       <div className="max-w-7xl mx-auto space-y-12">
         
-        {/* Welcome Section */}
-        <section className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-2"
-          >
-            <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
-              Welcome back, <span className="text-primary italic">{username || 'Scholar'}</span>
-            </h1>
-            <p className="text-slate-500 font-medium text-lg">Your academic journey is looking bright today.</p>
-          </motion.div>
+        {/* Premium Academic Header */}
+        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3rem] p-8 md:p-14 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000">
+             <Sparkles size={400} className="text-primary rotate-12" />
+          </div>
           
-          <div className="flex flex-wrap items-center gap-4">
-            <Button 
-              onClick={() => setIsConnectionModalOpen(true)}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl h-14 px-6 shadow-sm flex items-center gap-3 font-bold group transition-all"
-            >
-              <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                <UserPlus size={18} />
+          <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-10">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <Badge className="bg-primary/10 text-primary border-none rounded-full px-5 py-1.5 text-[10px] font-black uppercase tracking-widest">
+                  Academic Command Center
+                </Badge>
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                  Term Progress: High
+                </span>
               </div>
-              View Connection QR
-            </Button>
+              <h1 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tighter leading-[0.85]">
+                Welcome Back, <br />
+                <span className="text-primary italic">{username || 'Scholar'}</span>
+              </h1>
+              <p className="text-xl text-slate-500 font-medium max-w-xl">
+                Your Academic Journey at <span className="text-slate-900 dark:text-white font-black italic">SchoolHub Institution</span> continues today.
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-4">
+               <Button 
+                onClick={() => setIsConnectionModalOpen(true)}
+                className="bg-slate-900 text-white hover:bg-slate-800 rounded-3xl h-16 px-8 shadow-2xl shadow-primary/20 flex items-center gap-4 font-black uppercase tracking-widest text-[11px] group transition-all"
+              >
+                <div className="h-10 w-10 rounded-xl bg-white/10 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <UserPlus size={20} />
+                </div>
+                Connection QR
+              </Button>
 
-            <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm h-14">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                  <Calendar size={20} />
-              </div>
-              <div className="pr-4">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Term</p>
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">Spring Semester 2026</p>
+              <div className="flex items-center gap-5 bg-slate-50 dark:bg-slate-950 p-3 rounded-3xl border border-slate-100 dark:border-slate-800 h-16 px-6">
+                <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
+                    <Calendar size={20} />
+                </div>
+                <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Term</p>
+                    <p className="font-black text-slate-900 dark:text-white whitespace-nowrap">2023/24 - Second Term</p>
+                </div>
               </div>
             </div>
           </div>
@@ -351,12 +370,12 @@ export default function StudentHomeDashboard() {
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-3">
                                                 <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{scorePercent}%</p>
-                                                <span className={cn(
+                                                 <span className={cn(
                                                     "px-2 py-0.5 rounded-lg text-[10px] font-black uppercase",
-                                                    scorePercent >= 70 ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
-                                                )}>
-                                                    {scorePercent >= 70 ? 'Superior' : 'Needs Focus'}
-                                                </span>
+                                                    scorePercent >= 75 ? "bg-emerald-500/10 text-emerald-500" : scorePercent >= 50 ? "bg-amber-500/10 text-amber-500" : "bg-rose-500/10 text-rose-500"
+                                                 )}>
+                                                    {scorePercent >= 75 ? 'Distinction' : scorePercent >= 50 ? 'Credit' : 'Needs Focus'}
+                                                 </span>
                                             </div>
                                         </td>
                                         <td className="px-8 py-6 text-right">

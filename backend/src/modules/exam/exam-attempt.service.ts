@@ -1,4 +1,5 @@
 import prisma from "../../config/database";
+import { generateStudentPerformanceInsight } from "./exam-ai.service";
 import { AssessmentStatus, ExamAttemptStatus, UserRole } from "@prisma/client";
 import { createNotification } from "../notification/notification.service";
 import {
@@ -587,7 +588,12 @@ export const getExamResultService = async ({
       },
     },
     include: {
-      exam: true,
+      student: true,
+      exam: {
+        include: {
+          class: true,
+        },
+      },
       subjectAttempts: {
         include: {
           subjectPaper: {
@@ -622,16 +628,26 @@ export const getExamResultService = async ({
     subjectName: subjectAttempt.subjectPaper.subject?.name || "Unknown",
     score: subjectAttempt.score,
     totalMarks: subjectAttempt.totalMarks,
+    passMark: subjectAttempt.subjectPaper.passMark || 40,
     submittedAt: subjectAttempt.submittedAt,
   }));
 
   const baseData = {
     examId: attempt.examId,
     studentId: attempt.studentId,
+    student: {
+      name: attempt.student.name,
+      email: attempt.student.email,
+      studentCode: attempt.student.studentCode,
+    },
+    className: attempt.exam.class?.name || "N/A",
     title: attempt.exam.title,
     durationMinutes: attempt.exam.durationMinutes,
     totalScore: attempt.totalScore,
     totalMarks: attempt.totalMarks,
+    overallPassMark: attempt.exam.mode === 'SINGLE_SUBJECT' 
+      ? (attempt.subjectAttempts[0]?.subjectPaper?.passMark || 40)
+      : 40, // Default 40% for combined exams if not specified
     submittedAt: attempt.submittedAt,
     subjects: subjectBreakdown,
     startedAt: attempt.startedAt,
@@ -656,12 +672,14 @@ export const getExamResultService = async ({
     }),
     prisma.examAttempt.findMany({
       where: { examId, isSubmitted: true },
-      select: { totalScore: true, totalMarks: true },
+      select: { totalScore: true, totalMarks: true, studentId: true },
       orderBy: { totalScore: 'desc' }
     })
   ]);
 
-  // 1. Calculate Global Standing (Percentile)
+  // 1. Calculate Position and Global Standing (Percentile)
+  const position = allAttempts.findIndex(a => a.studentId === studentId) + 1;
+
   let globalStanding = 0;
   if (totalParticipants > 0) {
     const studentPercentage = (attempt.totalScore / attempt.totalMarks) * 100;
@@ -700,20 +718,53 @@ export const getExamResultService = async ({
     velocity = Number((currentPercentage - classAvg).toFixed(1));
   }
 
-  // 3. Performance Insight (Suggestion)
+  // 3. Performance Insight (Suggestion) & Nigerian Grading
   let performanceInsight = "Great effort! Keep practicing to improve your score.";
   const percentage = (attempt.totalScore / attempt.totalMarks) * 100;
   
-  if (percentage >= 90) {
+  let grade = "F9";
+  let proficiency = "Fail";
+
+  if (percentage >= 75) {
+    grade = "A1";
+    proficiency = "Distinction";
     performanceInsight = "Exceptional mastery! You've demonstrated elite understanding. Focus on helping peers or exploring advanced topics.";
-  } else if (percentage >= 75) {
-    performanceInsight = "Strong performance! You have a solid grasp of the material. Review the few missed items to reach elite status.";
+  } else if (percentage >= 70) {
+    grade = "B2";
+    proficiency = "Very Good";
+    performanceInsight = "Very strong performance! You have a solid grasp of the material. Review the few missed items to reach elite status.";
+  } else if (percentage >= 65) {
+    grade = "B3";
+    proficiency = "Good";
+    performanceInsight = "Good work! You have a solid understanding. Focus on consistency to reach the next level.";
   } else if (percentage >= 50) {
+    grade = "C6";
+    proficiency = "Credit";
     performanceInsight = "Good work, you've passed! Focus on the subjects where your score was lower to build more consistent mastery.";
   } else if (percentage >= 40) {
+    grade = "D7";
+    proficiency = "Pass";
     performanceInsight = "You're close to proficiency. We recommend reviewing the core concepts and attempting more practice questions.";
   } else {
+    grade = "F9";
+    proficiency = "Fail";
     performanceInsight = "This was a challenging assessment. Don't be discouraged—review the foundations and reach out for extra support.";
+  }
+
+  // Attempt to generate AI insight if OpenAI key is present, otherwise fallback to heuristic
+  if (process.env.OPENAI_API_KEY) {
+     try {
+        performanceInsight = await generateStudentPerformanceInsight({
+            studentName: attempt.student.name,
+            totalScore: attempt.totalScore,
+            totalMarks: attempt.totalMarks,
+            grade,
+            proficiency,
+            subjects: subjectBreakdown
+        });
+     } catch (err) {
+        console.error("Failed to generate AI insight, using heuristic.");
+     }
   }
 
   const isReleased = 
@@ -723,9 +774,12 @@ export const getExamResultService = async ({
 
   const finalResponse = {
     ...baseData,
+    grade: isReleased ? grade : null,
+    proficiency: isReleased ? proficiency : null,
     classAverage: isReleased ? (stats._avg.totalScore || 0) : null,
     totalParticipants: isReleased ? totalParticipants : null,
     globalStanding: isReleased ? globalStanding : null,
+    position: isReleased ? position : null,
     velocity: isReleased ? velocity : null,
     performanceInsight: isReleased ? performanceInsight : "Detailed insights will be available once results are officially released."
   };

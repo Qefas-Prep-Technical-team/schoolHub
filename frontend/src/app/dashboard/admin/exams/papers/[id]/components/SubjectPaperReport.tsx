@@ -171,11 +171,45 @@ const styles = StyleSheet.create({
     color: '#64748B',
     lineHeight: 1.5,
   },
+  signatureSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 40,
+    paddingHorizontal: 10,
+  },
+  signatureBox: {
+    width: 150,
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
+    paddingTop: 5,
+    alignItems: 'center',
+  },
+  signatureLabel: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#475569',
+    textTransform: 'uppercase',
+  },
+  stampBox: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: -15,
+  },
+  stampLabel: {
+    fontSize: 6,
+    color: '#94A3B8',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
   footer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 40,
-    right: 40,
+    position: 'relative',
+    marginTop: 40,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
     paddingTop: 10,
@@ -226,23 +260,35 @@ const SubjectPaperReport: React.FC<SubjectPaperReportProps> = ({
             <Text style={styles.metaValue}>{paper?.title}</Text>
           </View>
           <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Academic Session</Text>
+            <Text style={styles.metaValue}>{new Date().getFullYear()}/{new Date().getFullYear() + 1} Session</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Term</Text>
+            <Text style={styles.metaValue}>First Term</Text>
+          </View>
+          <View style={styles.metaItem}>
             <Text style={styles.metaLabel}>Subject</Text>
             <Text style={styles.metaValue}>{paper?.subject?.name || 'N/A'}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Teacher</Text>
-            <Text style={styles.metaValue}>{paper?.teacher?.name || 'Assigned Staff'}</Text>
+            <Text style={styles.metaLabel}>Assigned Staff</Text>
+            <Text style={styles.metaValue}>{paper?.teacher?.name || 'Academic Dept'}</Text>
           </View>
           <View style={styles.metaItem}>
             <Text style={styles.metaLabel}>Date Generated</Text>
             <Text style={styles.metaValue}>{new Date().toLocaleDateString()}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Pass Mark</Text>
-            <Text style={styles.metaValue}>{paper?.passMark || 40}%</Text>
+            <Text style={styles.metaLabel}>Total Marks (WA)</Text>
+            <Text style={styles.metaValue}>{paper?.totalMarks || 0} pts</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Participants</Text>
+            <Text style={styles.metaLabel}>Paper Pass Mark</Text>
+            <Text style={styles.metaValue}>{paper?.passMark || 40}% ({((paper?.passMark || 40) / 100 * (paper?.totalMarks || 0)).toFixed(1)} pts)</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Class Enrollment</Text>
             <Text style={styles.metaValue}>{attempts?.length} Students</Text>
           </View>
         </View>
@@ -252,16 +298,16 @@ const SubjectPaperReport: React.FC<SubjectPaperReportProps> = ({
           <View style={styles.tableHeader}>
             <Text style={[styles.headerText, styles.colNo]}>#</Text>
             <Text style={[styles.headerText, styles.colName]}>Student Name</Text>
-            <Text style={[styles.headerText, styles.colCode]}>Reg Code</Text>
+            <Text style={[styles.headerText, { width: '20%', color: '#FFFFFF', fontSize: 9, fontWeight: 'bold' }]}>Registration No.</Text>
             <Text style={[styles.headerText, styles.colScore]}>Score</Text>
-            <Text style={[styles.headerText, styles.colMax]}>Max</Text>
             <Text style={[styles.headerText, styles.colPercent]}>%</Text>
-            <Text style={[styles.headerText, { width: '10%', textAlign: 'center' }]}>Status</Text>
+            <Text style={[styles.headerText, { width: '10%', textAlign: 'center', color: '#FFFFFF', fontSize: 9, fontWeight: 'bold' }]}>Grade</Text>
           </View>
 
           {attempts.map((attempt, index) => {
-            const percentage = ((attempt.score / attempt.totalMarks) * 100).toFixed(1);
-            const isPass = parseFloat(percentage) >= (paper.passMark || 40);
+            const percentage = Math.round((attempt.score / attempt.totalMarks) * 100);
+            const isPass = percentage >= (paper.passMark || 40);
+            const grade = percentage >= 75 ? 'A1' : percentage >= 70 ? 'B2' : percentage >= 65 ? 'B3' : percentage >= 60 ? 'C4' : percentage >= 55 ? 'C5' : percentage >= 50 ? 'C6' : percentage >= 45 ? 'D7' : percentage >= 40 ? 'E8' : 'F9';
 
             return (
               <View
@@ -272,65 +318,67 @@ const SubjectPaperReport: React.FC<SubjectPaperReportProps> = ({
                 <Text style={[styles.rowText, styles.colName]}>
                   {attempt.examAttempt?.student?.name}
                 </Text>
-                <Text style={[styles.rowText, styles.colCode]}>
+                <Text style={[styles.rowText, { width: '20%', fontSize: 9, color: '#334155' }]}>
                   {attempt.examAttempt?.student?.studentCode}
                 </Text>
                 <Text style={[styles.rowText, styles.colScore, { fontWeight: 'bold' }]}>
                   {attempt.score}
                 </Text>
-                <Text style={[styles.rowText, styles.colMax]}>
-                  {attempt.totalMarks}
-                </Text>
                 <Text style={[styles.rowText, styles.colPercent]}>
                   {percentage}%
                 </Text>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    isPass ? styles.passBadge : styles.failBadge,
-                  ]}
-                >
-                  <Text>{isPass ? 'PASS' : 'FAIL'}</Text>
-                </View>
+                <Text style={[styles.rowText, { width: '10%', textAlign: 'center', fontWeight: 'bold', color: isPass ? '#10B981' : '#EF4444' }]}>
+                  {grade}
+                </Text>
               </View>
             );
           })}
         </View>
 
-        {/* Summary Area */}
         <View style={styles.summarySection}>
-          <Text style={styles.summaryTitle}>Analytical Summary</Text>
+          <Text style={styles.summaryTitle}>Analytical Performance Summary</Text>
           <View style={styles.summaryGrid}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Subject Average</Text>
+              <Text style={styles.summaryLabel}>Mean Percentage</Text>
               <Text style={styles.summaryValue}>{avgScore}%</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Success Rate</Text>
+              <Text style={styles.summaryLabel}>Subject Success Rate</Text>
               <Text style={styles.summaryValue}>{passRate}%</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Assessment Type</Text>
-              <Text style={styles.summaryValue}>Final Exam</Text>
+              <Text style={styles.summaryLabel}>Assessment Category</Text>
+              <Text style={styles.summaryValue}>Continuous Assessment</Text>
             </View>
           </View>
         </View>
 
-        {/* Grading Key & Explanation */}
         <View style={styles.gradingKey}>
-          <Text style={styles.gradingTitle}>Grading Key & Explanation</Text>
+          <Text style={styles.gradingTitle}>Official Grading Standards (WAEC/NECO)</Text>
           <Text style={styles.gradingText}>
-            This report summarizes the performance of students for the "{paper?.title}" subject paper. 
-            The raw score represents the total points awarded by the AI grading engine or human marker.
-            Percentage is calculated as (Raw Score / Maximum Marks) * 100.
-            Results undergo strict validation to ensure academic integrity.
+            A1 (Distinction): 75-100% | B2 (Very Good): 70-74% | B3 (Good): 65-69% {"\n"}
+            C4-C6 (Credit): 50-64% | D7-E8 (Pass): 40-49% | F9 (Fail): 0-39% {"\n"}
+            This report serves as an internal academic record for institutional review.
           </Text>
         </View>
 
+        {/* Verification & Signatures */}
+        <View style={styles.signatureSection}>
+           <View style={styles.signatureBox}>
+              <Text style={styles.signatureLabel}>Subject Teacher</Text>
+           </View>
+           <View style={styles.stampBox}>
+              <Text style={styles.stampLabel}>OFFICIAL{"\n"}STAMP</Text>
+           </View>
+           <View style={styles.signatureBox}>
+              <Text style={styles.signatureLabel}>Head of Department</Text>
+           </View>
+        </View>
+
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Generated by SchoolHub Smart Assessment System</Text>
+          <Text style={styles.footerText}>Certified Subject Assessment Record • SchoolHub Nigeria</Text>
           <Text style={styles.footerText}>
-            Confidential Academic Record • {new Date().getFullYear()}
+            Generated: {new Date().toLocaleDateString()} • {new Date().getFullYear()} Session
           </Text>
         </View>
       </Page>

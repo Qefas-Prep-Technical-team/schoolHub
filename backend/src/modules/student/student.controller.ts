@@ -1,6 +1,86 @@
 import { Request, Response } from "express";
 import { UserRole } from "@prisma/client";
-import { pickDepartmentService, getStudentProfileService } from "./student.service";
+import { 
+  pickDepartmentService, 
+  getStudentProfileService, 
+  updateStudentProfileService,
+  requestEmailUpdateService,
+  verifyEmailUpdateService
+} from "./student.service";
+import { sendEmailUpdateVerification } from "../auth/auth.service";
+
+export const requestEmailUpdate = async (req: Request, res: Response) => {
+  try {
+    const { id: studentId } = req.user!;
+    const { newEmail } = req.body;
+
+    if (!newEmail) {
+      return res.status(400).json({ success: false, message: "New email is required" });
+    }
+
+    const code = await requestEmailUpdateService(studentId, newEmail);
+    await sendEmailUpdateVerification(newEmail, code);
+
+    return res.status(200).json({
+      success: true,
+      message: "Verification code sent to your new email",
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to request email update",
+    });
+  }
+};
+
+export const confirmEmailUpdate = async (req: Request, res: Response) => {
+  try {
+    const { id: studentId } = req.user!;
+    const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ success: false, message: "Verification code is required" });
+    }
+
+    await verifyEmailUpdateService(studentId, code);
+
+    return res.status(200).json({
+      success: true,
+      message: "Email updated successfully",
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to verify email update",
+    });
+  }
+};
+
+export const updateStudentProfile = async (req: Request, res: Response) => {
+  try {
+    const { id: currentUserId } = req.user!;
+    const { name, email, gender, dateOfBirth } = req.body;
+
+    const updatedProfile = await updateStudentProfileService(currentUserId, {
+      name,
+      email,
+      gender,
+      dateOfBirth,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: updatedProfile,
+    });
+  } catch (error: any) {
+    console.error("updateStudentProfile error:", error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to update profile",
+    });
+  }
+};
 
 export const pickDepartment = async (req: Request, res: Response) => {
   try {

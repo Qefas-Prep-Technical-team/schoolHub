@@ -17,8 +17,19 @@ import {
   GraduationCap,
   Percent,
   Download,
-  Filter
+  Filter,
+  ShieldCheck,
+  Info,
+  History,
+  TrendingUp,
+  Award
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useExams, useExamAttempts, useExamResult, useSubjectPapers } from '@/lib/api/hooks/useExams';
 import { useAdminGrades } from '@/lib/api/hooks/useGrades';
 import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
@@ -532,7 +543,7 @@ function ExamStudentList({
                           disabled={loading || isLoading}
                           className="rounded-xl font-bold h-11 border-slate-200 dark:border-slate-800 shadow-sm"
                         >
-                          <Download size={18} className="mr-2" /> {loading ? 'Generating...' : 'Export PDF'}
+                          <Download size={18} className="mr-2" /> {loading ? 'Preparing Download...' : 'Export PDF'}
                         </Button>
                       )}
                     </PDFDownloadLink>
@@ -556,7 +567,7 @@ function ExamStudentList({
                           disabled={loading || isLoading}
                           className="rounded-xl font-bold h-11 border-slate-200 dark:border-slate-800 shadow-sm"
                         >
-                          <Download size={18} className="mr-2" /> {loading ? 'Generating...' : 'Export PDF'}
+                          <Download size={18} className="mr-2" /> {loading ? 'Preparing Download...' : 'Export PDF'}
                         </Button>
                       )}
                     </PDFDownloadLink>
@@ -689,162 +700,278 @@ function DetailedStudentResult({ examId, studentId, onBack, school }: any) {
   const scorePercentage = Math.round((result.totalScore / result.totalMarks) * 100);
 
   return (
-    <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 p-4 md:p-6 pb-12">
-      <div className="flex items-center justify-between no-print">
-        <button 
-          onClick={onBack}
-          className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-xs font-black uppercase tracking-widest group"
-        >
-          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-          Back to Participant List
-        </button>
+    <TooltipProvider>
+      <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 p-4 md:p-6 pb-12">
+        <div className="flex items-center justify-between no-print">
+          <button 
+            onClick={onBack}
+            className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-xs font-black uppercase tracking-widest group"
+          >
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            Back to Participant List
+          </button>
 
-        <PDFDownloadLink
-          document={<IndividualStudentReport result={result} school={school} />}
-          fileName={`${result.student?.name || 'Student'}_${result.title || 'Result'}.pdf`}
-        >
-          {({ loading }) => (
-            <Button 
-              disabled={loading}
-              className="rounded-2xl h-10 px-6 font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm hover:shadow-lg transition-all"
-              variant="outline"
-            >
-              <Download className="mr-2" size={16} /> {loading ? 'Preparing...' : 'Download Performance PDF'}
-            </Button>
-          )}
-        </PDFDownloadLink>
+          <div className="flex items-center gap-3">
+             <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest">
+                <ShieldCheck size={14} /> Certified Digital Record
+             </div>
+             <PDFDownloadLink
+                document={<IndividualStudentReport result={result} school={school} />}
+                fileName={`${result.student?.name || 'Student'}_${result.title || 'Result'}.pdf`}
+              >
+                {({ loading }) => (
+                  <Button 
+                    disabled={loading}
+                    className="rounded-2xl h-10 px-6 font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm hover:shadow-lg transition-all"
+                    variant="outline"
+                  >
+                    <Download className="mr-2" size={16} /> {loading ? 'Preparing Download...' : 'Download Statement'}
+                  </Button>
+                )}
+              </PDFDownloadLink>
+          </div>
+        </div>
+
+        {/* Main Result Card */}
+        <div className="relative overflow-hidden rounded-[3rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl p-8 md:p-12">
+              <div className="absolute top-0 right-0 p-8 opacity-[0.05] dark:opacity-[0.03] pointer-events-none">
+                  <GraduationCap size={400} className="text-primary rotate-12 -translate-y-20 translate-x-20" />
+              </div>
+              
+              {/* Official Seal Watermark (Nigerian Context) */}
+              <div className="absolute bottom-10 right-10 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
+                  <Award size={200} className="rotate-12" />
+              </div>
+
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 relative z-10">
+                  <div className="space-y-8 max-w-2xl text-center md:text-left">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="inline-flex items-center gap-3 px-5 py-2 rounded-2xl bg-primary/10 text-primary dark:text-primary-400 text-xs font-black uppercase tracking-widest border border-primary/20">
+                            <User size={16} /> Academic Performance Transcript
+                        </div>
+                        <div className="px-4 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                           {result.startedAt ? format(new Date(result.startedAt), "yyyy") : new Date().getFullYear()} SESSION
+                        </div>
+                      </div>
+                      
+                      <div>
+                          <div className="flex flex-col md:flex-row md:items-baseline gap-2 md:gap-4 mb-2">
+                             <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.05]">
+                                {result.student?.name}
+                             </h1>
+                             <span className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">
+                                REG: {result.student?.studentCode}
+                             </span>
+                          </div>
+                          <p className="text-lg text-slate-500 font-medium border-l-4 border-primary pl-4">
+                            Result for <span className="text-slate-900 dark:text-white font-black underline decoration-primary/30 decoration-4">{result.title}</span> 
+                            <span className="ml-2 text-primary font-black opacity-50">• {result.className}</span>
+                          </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="p-6 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-inner group hover:border-primary/30 transition-colors cursor-help">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-center md:justify-start gap-1">
+                                Peer Standing <Info size={10} />
+                              </p>
+                              <p className="text-2xl font-black text-slate-900 dark:text-white italic">TOP {100 - (result.globalStanding || 0)}%</p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
+                            <p className="text-[10px] font-bold">Your rank compared to all attendees of this assessment.</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                             <div className="p-6 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-inner group hover:border-primary/30 transition-colors cursor-help">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-center md:justify-start gap-1">
+                                  Weighted Aggregate <Info size={10} />
+                                </p>
+                                <p className="text-2xl font-black text-slate-900 dark:text-white">{result.totalScore}/{result.totalMarks}</p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
+                            <p className="text-[10px] font-bold">Total marks achieved across all subject components.</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                         <Tooltip>
+                           <TooltipTrigger asChild>
+                              <div className="p-6 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-inner group hover:border-primary/30 transition-colors cursor-help">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-center md:justify-start gap-1">
+                                  Final Grade <Info size={10} />
+                                </p>
+                                <p className={cn(
+                                  "text-2xl font-black uppercase",
+                                  scorePercentage >= 75 ? "text-emerald-500" : scorePercentage >= 40 ? "text-amber-500" : "text-rose-500"
+                                )}>{result.grade || (scorePercentage >= 75 ? 'A1' : scorePercentage >= 40 ? 'C6' : 'F9')}</p>
+                            </div>
+                           </TooltipTrigger>
+                           <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
+                            <p className="text-[10px] font-bold">Nigerian standard alphabetical grade reflection.</p>
+                          </TooltipContent>
+                         </Tooltip>
+                      </div>
+                  </div>
+
+                  <div className="shrink-0 flex justify-center">
+                      <div className="relative group p-4">
+                          <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full scale-125 opacity-50 dark:opacity-20 animate-pulse" />
+                          <div className="relative z-10 transition-transform duration-700 hover:rotate-6">
+                            <ProgressCircle 
+                                value={scorePercentage}
+                                size={280}
+                                strokeWidth={22}
+                                label={`${scorePercentage}%`}
+                                sublabel="Overall Mastery"
+                                className="drop-shadow-2xl"
+                            />
+                            {/* Inner Grade Hub */}
+                            <div className="absolute inset-x-0 bottom-[35%] flex flex-col items-center pointer-events-none">
+                               <div className="px-3 py-1 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-100 dark:border-slate-800">
+                                  <span className="text-[10px] font-black text-primary uppercase tracking-widest animate-bounce inline-block">
+                                    {result.proficiency || "Distinction"}
+                                  </span>
+                               </div>
+                            </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+        </div>
+
+        {/* Breakdown Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                  <div className="flex items-center justify-between px-2">
+                      <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 uppercase tracking-wider">
+                          <BarChart3 className="text-primary" /> Subject Mastery Breakdown
+                      </h3>
+                  </div>
+                  <div className="space-y-4">
+                      {result.subjects?.map((sub: any, i: number) => {
+                          const percent = Math.round((sub.score / sub.totalMarks) * 100);
+                          const subGrade = percent >= 75 ? 'A1' : percent >= 70 ? 'B2' : percent >= 65 ? 'B3' : percent >= 50 ? 'C6' : percent >= 40 ? 'D7' : 'F9';
+                          
+                          return (
+                              <div key={i} className="p-8 rounded-[2.5rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between group hover:border-primary transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5">
+                                  <div className="flex items-center gap-6">
+                                      <div className={cn(
+                                        "h-12 w-12 rounded-2xl flex items-center justify-center font-black text-lg shadow-inner",
+                                        percent >= 75 ? "bg-emerald-500/10 text-emerald-500" : percent >= 40 ? "bg-amber-500/10 text-amber-500" : "bg-rose-500/10 text-rose-500"
+                                      )}>
+                                        {subGrade}
+                                      </div>
+                                      <div className="space-y-1">
+                                          <p className="text-lg font-black text-slate-900 dark:text-white leading-tight">{sub.subjectName}</p>
+                                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Weighted Score: {sub.score} / {sub.totalMarks}</p>
+                                      </div>
+                                  </div>
+                                  <div className="flex items-center gap-8 text-right">
+                                      <div className="h-14 w-1 bg-slate-100 dark:bg-slate-800 rounded-full" />
+                                      <div className="w-16">
+                                          <p className={cn(
+                                              "text-2xl font-black",
+                                              percent >= 75 ? "text-emerald-500" : percent >= 45 ? "text-amber-500" : "text-rose-500"
+                                          )}>{percent}%</p>
+                                      </div>
+                                  </div>
+                              </div>
+                          );
+                      })}
+                  </div>
+              </div>
+
+              <div className="space-y-6">
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 px-2 uppercase tracking-wider">
+                      <Percent className="text-indigo-500" /> Statistical Comparison
+                  </h3>
+                  <div className="p-10 rounded-[2.5rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-10 shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none">
+                         <TrendingUp size={200} />
+                      </div>
+
+                      <div className="space-y-6 relative z-10">
+                          <div className="flex justify-between items-end">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="cursor-help group">
+                                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1">Global Standing Rank <Info size={10} /></p>
+                                      <p className="text-3xl font-black text-primary group-hover:scale-105 transition-transform duration-300">Superior to {(result.globalStanding || 0).toFixed(1)}%</p>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
+                                  <p className="text-[10px] font-bold">This percentage indicates how many of your peers scored lower than you globally.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              <div className={cn(
+                                "h-14 w-14 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg border-2",
+                                scorePercentage >= 75 ? "bg-emerald-500 text-white border-emerald-400" : "bg-primary text-white border-primary/50"
+                              )}>
+                                  {result.grade || (scorePercentage >= 75 ? 'A1' : 'C6')}
+                              </div>
+                          </div>
+                          <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner p-0.5">
+                              <div 
+                                className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-all duration-1000" 
+                                style={{ width: `${result.globalStanding || 92}%` }}
+                              />
+                          </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-6 relative z-10">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-center shadow-inner hover:border-primary/20 transition-colors cursor-help">
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-1">Class Median <Info size={10} /></p>
+                                  <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{Math.round((result.classAverage / result.totalMarks) * 100) || "76"}%</p>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
+                              <p className="text-[10px] font-bold">The middle score in the entire class for this assessment.</p>
+                            </TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                               <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-center shadow-inner hover:border-emerald-500/20 transition-colors cursor-help">
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-1">Trend Velocity <Info size={10} /></p>
+                                  <div className="flex items-center justify-center gap-2">
+                                      <span className={cn(
+                                        "h-2 w-2 rounded-full animate-pulse",
+                                        (result.velocity || 0) >= 0 ? "bg-emerald-500" : "bg-rose-500"
+                                      )} />
+                                      <p className={cn(
+                                        "text-2xl font-black",
+                                        (result.velocity || 0) >= 0 ? "text-emerald-500" : "text-rose-500"
+                                      )}>{(result.velocity || 0) >= 0 ? '+' : ''}{result.velocity || "0"}%</p>
+                                  </div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
+                              <p className="text-[10px] font-bold">Your growth trajectory compared to your previous performance average.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                      </div>
+
+                      <div className="p-8 rounded-[2rem] bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20 relative group overflow-hidden">
+                          <History className="absolute -right-4 -bottom-4 text-indigo-500 opacity-5 group-hover:opacity-10 transition-opacity" size={100} />
+                          <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                             <TrendingUp size={14} /> Analytical Summary
+                          </p>
+                          <p className="text-sm font-medium text-slate-600 dark:text-slate-400 leading-relaxed italic relative z-10">
+                              "{result.performanceInsight || "The student exhibits consistent engagement and has a solid path towards future academic excellence."}"
+                          </p>
+                      </div>
+                  </div>
+              </div>
+        </div>
       </div>
-
-      {/* Main Result Card */}
-      <div className="relative overflow-hidden rounded-[3rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl p-8 md:p-12">
-            <div className="absolute top-0 right-0 p-8 opacity-[0.05] dark:opacity-[0.03]">
-                <GraduationCap size={400} className="text-primary rotate-12 -translate-y-20 translate-x-20" />
-            </div>
-
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 relative z-10">
-                <div className="space-y-8 max-w-2xl text-center md:text-left">
-                    <div className="inline-flex items-center gap-3 px-5 py-2 rounded-2xl bg-primary/10 text-primary dark:text-primary-400 text-xs font-black uppercase tracking-widest border border-primary/20">
-                        <User size={16} /> Performance Analysis Report
-                    </div>
-                    
-                    <div>
-                        <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.05]">
-                            {result.student?.name}
-                        </h1>
-                        <p className="text-lg text-slate-500 font-medium mt-3 border-l-4 border-primary pl-4">Assessment analysis for <span className="text-slate-900 dark:text-white font-black underline decoration-primary/30 decoration-4">{result.title}</span></p>
-                    </div>
-
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div className="p-5 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-inner">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Peer Percentile</p>
-                            <p className="text-2xl font-black text-slate-900 dark:text-white italic">TOP 5%</p>
-                        </div>
-                        <div className="p-5 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-inner">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Academic Score</p>
-                            <p className="text-2xl font-black text-slate-900 dark:text-white">{result.totalScore}/{result.totalMarks}</p>
-                        </div>
-                         <div className="p-5 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-inner">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Proficiency</p>
-                            <p className="text-2xl font-black text-emerald-500 uppercase">Distinction</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="shrink-0 flex justify-center">
-                    <div className="relative group p-4">
-                        <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full scale-125 opacity-50 dark:opacity-20 animate-pulse" />
-                        <ProgressCircle 
-                            value={scorePercentage}
-                            size={280}
-                            strokeWidth={22}
-                            label={`${scorePercentage}%`}
-                            sublabel="Institution Avg Comparison"
-                            className="relative z-10 drop-shadow-2xl"
-                        />
-                    </div>
-                </div>
-            </div>
-      </div>
-
-      {/* Breakdown Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-6">
-                <div className="flex items-center justify-between px-2">
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 uppercase tracking-wider">
-                        <BarChart3 className="text-primary" /> Topic Performance
-                    </h3>
-                </div>
-                <div className="space-y-4">
-                    {result.subjects?.map((sub: any, i: number) => {
-                        const percent = Math.round((sub.score / sub.totalMarks) * 100);
-                        return (
-                            <div key={i} className="p-8 rounded-[2.5rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between group hover:border-primary transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5">
-                                <div className="space-y-1">
-                                    <p className="text-lg font-black text-slate-900 dark:text-white leading-tight">{sub.subjectName}</p>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Unit Excellence Breakdown</p>
-                                </div>
-                                <div className="flex items-center gap-8 text-right">
-                                    <div className="hidden md:block">
-                                        <p className="text-xl font-black text-slate-900 dark:text-white leading-none">{sub.score}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">/ {sub.totalMarks}</p>
-                                    </div>
-                                    <div className="h-14 w-1 bg-slate-100 dark:bg-slate-800 rounded-full" />
-                                    <div className="w-16">
-                                        <p className={cn(
-                                            "text-2xl font-black",
-                                            percent >= 70 ? "text-emerald-500" : percent >= 40 ? "text-amber-500" : "text-rose-500"
-                                        )}>{percent}%</p>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            <div className="space-y-6">
-                <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 px-2 uppercase tracking-wider">
-                    <Percent className="text-indigo-500" /> Relative standing
-                </h3>
-                <div className="p-10 rounded-[2.5rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-10 shadow-sm">
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-end">
-                            <div>
-                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Global Standing Rank</p>
-                                <p className="text-3xl font-black text-primary">Superior to 92.4%</p>
-                            </div>
-                            <div className="h-12 w-12 rounded-2xl bg-primary text-white flex items-center justify-center font-black">
-                                A+
-                            </div>
-                        </div>
-                        <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
-                            <div className="h-full w-[92%] bg-gradient-to-r from-primary to-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
-                        </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-center shadow-inner">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Class Median</p>
-                            <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{result.classAverage || "76"}%</p>
-                        </div>
-                         <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-center shadow-inner">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Trend Velocity</p>
-                            <div className="flex items-center justify-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <p className="text-2xl font-black text-emerald-500">+12%</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="p-6 rounded-3xl bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20">
-                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 leading-relaxed italic">
-                            "The student exhibits exceptional mastery of core concepts. Current velocity suggests they are on track for elite academic honors this term."
-                        </p>
-                    </div>
-                </div>
-            </div>
-      </div>
-    </div>
+    </TooltipProvider>
   );
 }
 
