@@ -61,8 +61,12 @@ export default function StudentHeroCard({ student }: { student: StudentProfile }
       <div className="sticky top-6 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-6 lg:p-8 shadow-xl shadow-slate-200/50 dark:shadow-none">
         <div className="flex flex-col items-center text-center">
           <div className="relative mb-6">
-            <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-[2rem] bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-primary border-4 border-white dark:border-slate-800 shadow-lg">
-               <User size={48} strokeWidth={1.5} />
+            <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-[2rem] bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-primary border-4 border-white dark:border-slate-800 shadow-lg overflow-hidden">
+               {student.profileImage ? (
+                 <img src={student.profileImage} alt={student.name} className="w-full h-full object-cover" />
+               ) : (
+                 <User size={48} strokeWidth={1.5} />
+               )}
             </div>
             {student.verified && (
               <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-2 rounded-2xl border-4 border-white dark:border-slate-900 shadow-md">

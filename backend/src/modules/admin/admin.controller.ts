@@ -2,6 +2,7 @@ import prisma from "../../config/database";
 import { Request, Response } from "express";
 import { $Enums, AdminRole, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { updateAdminProfileService } from "./admin.service";
 
 // controllers/auth.controller.ts
 
@@ -495,7 +496,7 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
 
 export const getSchoolStudents = async (req: Request, res: Response) => {
   try {
-    const { schoolId } = req.query;
+    const { schoolId, page = "1", limit = "10" } = req.query;
 
     if (!schoolId) {
       return res.status(400).json({
@@ -503,6 +504,9 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
         message: "schoolId is required",
       });
     }
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const take = Number(limit);
 
     // Verify requesting admin belongs to this school
     const schoolAdmin = await prisma.schoolAdmin.findFirst({
@@ -520,22 +524,35 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
       });
     }
 
-    // Get all students linked to this school
-    const students = await prisma.student.findMany({
-      where: { schoolId: schoolId as string },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        studentCode: true,
-        authProvider: true,
-        verified: true,
-      },
-    });
+    // Get count and students
+    const [total, students] = await Promise.all([
+      prisma.student.count({
+        where: { schoolId: schoolId as string },
+      }),
+      prisma.student.findMany({
+        where: { schoolId: schoolId as string },
+        skip,
+        take,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          studentCode: true,
+          authProvider: true,
+          verified: true,
+          profileImage: true,
+          gender: true,
+        },
+        orderBy: { name: 'asc' }
+      }),
+    ]);
 
     return res.status(200).json({
       success: true,
       count: students.length,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / take),
       data: students,
     });
   } catch (error: any) {
@@ -614,6 +631,93 @@ export const getSchoolMembers = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: error.message || "Server error",
+    });
+  }
+};
+
+/**
+ * Update current admin profile
+ */
+export const updateAdminProfile = async (req: Request, res: Response) => {
+  try {
+    const adminId = req.user?.id;
+    const { name, gender, profileImage, bannerImage } = req.body;
+
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const updated = await updateAdminProfileService(adminId, { 
+      name, 
+      gender,
+      profileImage,
+      bannerImage
+    } as any);
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error("Update admin profile error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+/**
+ * Manually verify a student (Admin only)
+ */
+export const verifyStudent = async (req: Request, res: Response) => {
+  try {
+    const studentId = req.params.id as string;
+    const adminId = req.user?.id;
+
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    // Verify student belongs to a school this admin manages
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      select: { schoolId: true }
+    });
+
+    if (!student || !student.schoolId) {
+      return res.status(404).json({ success: false, message: "Student not found or not linked to a school" });
+    }
+
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: {
+        adminId,
+        schoolId: student.schoolId,
+        active: true
+      }
+    });
+
+    if (!schoolAdmin) {
+      return res.status(403).json({ success: false, message: "You don't have permission to verify this student" });
+    }
+
+    const updatedStudent = await prisma.student.update({
+      where: { id: studentId },
+      data: { verified: true }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Student verified successfully",
+      data: updatedStudent
+    });
+
+  } catch (error: any) {
+    console.error("Verify student error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error"
     });
   }
 };

@@ -3,7 +3,7 @@ import prisma from "../../config/database";
 import { Resend } from "resend";
 
 import bcrypt from "bcrypt";
-import { generateToken } from "../../utils/generateToken";
+import { generateAccessToken } from "../../services/authService";
 import { OAuth2Client } from "google-auth-library";
 import { generateUniqueCode } from "../../utils/code-generator";
 import { UserRole } from "@prisma/client";
@@ -199,7 +199,7 @@ export const loginUser = async (email: string, password: string) => {
     const match = await bcrypt.compare(password, student.password);
     if (!match) throw new Error("Invalid credentials");
 
-    const token = generateToken({ id: student.id, role: "student" });
+    const token = generateAccessToken(student.id, "STUDENT");
     return { user: student, token };
   }
 
@@ -213,7 +213,7 @@ export const loginUser = async (email: string, password: string) => {
     const match = await bcrypt.compare(password, teacher.password);
     if (!match) throw new Error("Invalid credentials");
 
-    const token = generateToken({ id: teacher.id, role: "teacher" });
+    const token = generateAccessToken(teacher.id, "TEACHER");
     return { user: teacher, token };
   }
 
@@ -227,7 +227,7 @@ export const loginUser = async (email: string, password: string) => {
     const match = await bcrypt.compare(password, admin.password);
     if (!match) throw new Error("Invalid credentials");
 
-    const token = generateToken({ id: admin.id, role: "admin" });
+    const token = generateAccessToken(admin.id, "ADMIN");
     return { user: admin, token };
   }
 
@@ -241,7 +241,7 @@ export const loginUser = async (email: string, password: string) => {
     const match = await bcrypt.compare(password, parent.password);
     if (!match) throw new Error("Invalid credentials");
 
-    const token = generateToken({ id: parent.id, role: "parent" });
+    const token = generateAccessToken(parent.id, "PARENT");
     return { user: parent, token };
   }
 
@@ -386,6 +386,6 @@ export const googleAuthService = async (
       );
   }
 
-  const token = generateToken({ id: user.id, role: roleStr });
+  const token = generateAccessToken(user.id, userRole);
   return { user, token };
 };

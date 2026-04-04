@@ -20,6 +20,7 @@ export default function StudentsPage() {
   }, [searchParams]);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
     classId: "",
     gender: "",
@@ -28,6 +29,12 @@ export default function StudentsPage() {
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+    setPage(1); // Reset to first page on filter change
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1); // Reset to first page on search change
   };
 
   return (
@@ -35,11 +42,16 @@ export default function StudentsPage() {
       <PageHeader onAdd={() => setOpen(true)} />
 
       <div className="space-y-4">
-        <SearchBar value={searchTerm} onChange={setSearchTerm} />
+        <SearchBar value={searchTerm} onChange={handleSearchChange} />
         <FilterChips selectedFilters={filters} onFilterChange={handleFilterChange} />
       </div>
 
-      <StudentsTable searchTerm={searchTerm} filters={filters} />
+      <StudentsTable 
+        searchTerm={searchTerm} 
+        filters={filters} 
+        page={page}
+        onPageChange={setPage}
+      />
 
       <AddStudentDialog open={open} onOpenChange={setOpen} />
     </div>

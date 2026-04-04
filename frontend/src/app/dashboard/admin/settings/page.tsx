@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useSchoolSettings, useUpdateSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { adminService } from '@/lib/api/services/adminService';
 import { 
   Settings, 
   Bell, 
@@ -17,7 +18,8 @@ import {
   Smartphone,
   ShieldCheck,
   UserCheck,
-  Paintbrush
+  Paintbrush,
+  UserCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -38,6 +40,19 @@ export default function SettingsPage() {
   const [localSettings, setLocalSettings] = useState<any>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeTab, setActiveTab] = useState('General');
+  const [personalProfile, setPersonalProfile] = useState<any>({
+    name: user?.name || '',
+    gender: (user as any)?.gender || '',
+  });
+
+  useEffect(() => {
+    if (user) {
+      setPersonalProfile({
+        name: user.name || '',
+        gender: (user as any).gender || '',
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (settings) {
@@ -68,6 +83,15 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     try {
+      if (activeTab === 'Profile') {
+        await adminService.updateProfile(personalProfile);
+        toast.success('Profile updated successfully');
+        setHasChanges(false);
+        // Refresh page to update auth store/context if needed, 
+        // or just rely on local state if the change is reflected there
+        return;
+      }
+
       // Strip metadata fields that Prisma doesn't expect in an update
       const { id, schoolId: sid, createdAt, updatedAt, ...cleanData } = localSettings;
 
@@ -118,6 +142,7 @@ export default function SettingsPage() {
     { label: 'Appearance', icon: Palette },
     { label: 'Notifications', icon: Bell },
     { label: 'Security', icon: Lock },
+    { label: 'Profile', icon: UserCircle },
   ];
 
   return (
@@ -368,6 +393,62 @@ export default function SettingsPage() {
                                     checked={localSettings.lockSettings ?? false}
                                     onCheckedChange={(val: boolean) => handleToggle('lockSettings', val)}
                                 />
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {activeTab === 'Profile' && (
+                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
+                                <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                                    <UserCircle size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-lg">Personal Profile</h3>
+                                    <p className="text-xs text-slate-500">Manage your personal account details</p>
+                                </div>
+                            </div>
+                            <CardContent className="p-8 space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Full Name</Label>
+                                        <Input 
+                                            value={personalProfile.name}
+                                            onChange={(e) => {
+                                                setPersonalProfile((p: any) => ({ ...p, name: e.target.value }));
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Your Full Name"
+                                            className="h-12 rounded-2xl border-slate-200"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gender</Label>
+                                        <select 
+                                            className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-4 font-bold text-sm"
+                                            value={personalProfile.gender}
+                                            onChange={(e) => {
+                                                setPersonalProfile((p: any) => ({ ...p, gender: e.target.value }));
+                                                setHasChanges(true);
+                                            }}
+                                        >
+                                            <option value="">Select Gender</option>
+                                            <option value="MALE">Male</option>
+                                            <option value="FEMALE">Female</option>
+                                            <option value="OTHER">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 rounded-3xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 flex gap-4">
+                                    <ShieldCheck className="text-blue-600 shrink-0" size={24} />
+                                    <div>
+                                        <p className="text-sm font-bold text-blue-900 dark:text-blue-100">Security & Email</p>
+                                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                                            To change your login email or password, please use the security verification flow available in the dropdown menu.
+                                        </p>
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     )}

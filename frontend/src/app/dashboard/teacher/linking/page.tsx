@@ -109,7 +109,39 @@ function LinkingHub() {
     toast.success('Link copied to clipboard');
   };
 
-  const pendingRequests = requests.filter((r: any) => r.status === 'PENDING');
+  const getPeer = (item: any) => {
+    const r = item.approvedFromRequest || item;
+    const participants = [
+      r.targetStudent, r.targetTeacher, r.targetParent, r.targetSchool, r.approverAdmin,
+      r.requesterStudent, r.requesterTeacher, r.requesterParent, r.requesterSchool, r.requesterAdmin
+    ].filter(Boolean);
+
+    return participants.find((p: any) => p.id !== user?.id);
+  };
+
+  const normalizedActiveLinks = activeLinks.map((link: any) => {
+    const peer = getPeer(link);
+    return {
+      ...link,
+      peerName: peer?.name || peer?.email || 'Linked Member',
+      peerEmail: peer?.email || '',
+      peerImage: peer?.profileImage || peer?.logo || peer?.avatar,
+      peerCode: peer?.studentCode || peer?.teacherCode || peer?.parentCode || (link.leftEntityId === user?.id ? link.rightCode : link.leftCode)
+    };
+  });
+
+  const normalizedRequests = requests.map((req: any) => {
+    const peer = getPeer(req);
+    return {
+      ...req,
+      peerName: peer?.name || peer?.email || 'Request Member',
+      peerEmail: peer?.email || '',
+      peerImage: peer?.profileImage || peer?.logo || peer?.avatar,
+      peerCode: req.requesterId === user?.id ? req.targetCode : req.requesterCode
+    };
+  });
+
+  const pendingRequests = normalizedRequests.filter((r: any) => r.status === 'PENDING');
 
   const handleCancel = async (id: string) => {
     cancelMutation.mutate(id);
@@ -273,15 +305,19 @@ function LinkingHub() {
                   <p className="text-gray-500 max-w-sm mx-auto font-medium">Your connections will appear here once link requests are accepted.</p>
                 </div>
               ) : (
-                activeLinks.map((link: any) => (
+                normalizedActiveLinks.map((link: any) => (
                   <Card key={link.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-md hover:shadow-xl transition-all group">
                     <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 p-6 flex flex-row items-center justify-between space-y-0">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-2xl flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all">
-                          <UserPlus size={24} />
+                        <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-2xl flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all overflow-hidden border border-gray-100 dark:border-gray-800">
+                          {link.peerImage ? (
+                            <img src={link.peerImage} alt={link.peerName} className="h-full w-full object-cover" />
+                          ) : (
+                            <UserPlus size={24} />
+                          )}
                         </div>
                         <div>
-                          <CardTitle className="text-lg font-black">{link.peerName || 'Linked Member'}</CardTitle>
+                          <CardTitle className="text-lg font-black">{link.peerName}</CardTitle>
                           <CardDescription className="text-xs font-bold uppercase tracking-widest text-primary">{link?.type?.replace('_', ' ')}</CardDescription>
                         </div>
                       </div>
@@ -307,13 +343,13 @@ function LinkingHub() {
                       <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700/50 group/code">
                         <div className="flex flex-col">
                           <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Member Code</span>
-                          <span className="font-black text-primary tracking-widest">{link.peerCode || (link.leftEntityId === user?.id ? link.rightCode : link.leftCode)}</span>
+                          <span className="font-black text-primary tracking-widest">{link.peerCode}</span>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 rounded-lg opacity-0 group-hover/code:opacity-100 transition-opacity"
-                          onClick={() => copyToClipboard(link.peerCode || (link.leftEntityId === user?.id ? link.rightCode : link.leftCode))}
+                          onClick={() => copyToClipboard(link.peerCode)}
                         >
                           <Copy size={14} />
                         </Button>
@@ -347,8 +383,19 @@ function LinkingHub() {
                           <Clock size={12} /> {new Date(req.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <CardTitle className="text-xl font-black mt-4">{req.sender?.name || req.receiver?.name || 'Link Request'}</CardTitle>
-                      <CardDescription className="font-bold text-gray-500 truncate">{req.sender?.email || req.receiver?.email}</CardDescription>
+                      <div className="flex items-center gap-4 mt-4">
+                        <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-orange-50 dark:border-orange-900/20">
+                          {req.peerImage ? (
+                            <img src={req.peerImage} alt={req.peerName} className="h-full w-full object-cover" />
+                          ) : (
+                            <Clock size={20} className="text-orange-500" />
+                          )}
+                        </div>
+                        <div>
+                          <CardTitle className="text-xl font-black">{req.peerName}</CardTitle>
+                          <CardDescription className="font-bold text-gray-500 truncate">{req.peerEmail}</CardDescription>
+                        </div>
+                      </div>
 
                       {req.note && (
                         <div className="mt-3 p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-100 dark:border-blue-900/30">
@@ -357,7 +404,7 @@ function LinkingHub() {
                       )}
                       <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700/50">
                         <Hash size={12} className="text-gray-400" />
-                        <span className="text-xs font-black text-primary tracking-widest">{req.requesterId === user?.id ? req.targetCode : req.requesterCode}</span>
+                        <span className="text-xs font-black text-primary tracking-widest">{req.peerCode}</span>
                       </div>
                     </CardHeader>
                     <CardContent className="p-6 pt-0 space-y-4">

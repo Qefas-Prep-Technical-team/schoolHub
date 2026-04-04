@@ -2,17 +2,17 @@ import React from "react";
 
 export function AvatarCell({
   name,
-  avatar,
+  profileImage,
 }: {
   name: string;
-  avatar?: string;
+  profileImage?: string;
 }) {
   return (
     <div className="flex items-center gap-3">
       <div
         className="w-10 h-10 rounded-full bg-cover bg-center"
         style={{
-          backgroundImage: `url(${avatar ?? "/default-avatar.png"})`,
+          backgroundImage: `url(${profileImage ?? "/default-avatar.png"})`,
         }}
       ></div>
 

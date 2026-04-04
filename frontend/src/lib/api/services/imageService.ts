@@ -36,11 +36,7 @@ export const imageService = {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await apiClient.post("/upload/proxy", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await apiClient.post("/upload/proxy", formData);
 
     return response.data.data; // Returns { publicUrl, key }
   },

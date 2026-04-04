@@ -17,7 +17,14 @@ export const useStudentProfile = () => {
 export const useUpdateStudentProfile = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { name?: string; email?: string; gender?: string; dateOfBirth?: string | Date }) =>
+    mutationFn: (data: { 
+      name?: string; 
+      email?: string; 
+      gender?: string; 
+      dateOfBirth?: string | Date;
+      profileImage?: string;
+      bannerImage?: string;
+    }) =>
       studentService.updateProfile(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: studentKeys.profile() });

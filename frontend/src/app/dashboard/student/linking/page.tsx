@@ -77,17 +77,23 @@ export default function LinkingHub() {
 
   const isClassLink = (type: string) => type === 'STUDENT_CLASS' || type === 'TEACHER_CLASS';
 
-  // Helper to pick the "other" person from a link or request
+  // Helper to pick the "other" person or entity from a link or request
   const getPeer = (item: any) => {
     const r = item.approvedFromRequest || item;
-    // Collect all participants
+    
+    // Explicitly check for school relation first if it's an institutional link
+    if (item.school) return item.school;
+    if (r.targetSchool) return r.targetSchool;
+    if (r.requesterSchool) return r.requesterSchool;
+
+    // Collect all personal participants
     const participants = [
-      r.targetStudent, r.targetTeacher, r.targetParent, r.targetSchool, r.approverAdmin,
-      r.requesterStudent, r.requesterTeacher, r.requesterParent, r.requesterSchool, r.requesterAdmin
+      r.targetStudent, r.targetTeacher, r.targetParent, r.approverAdmin,
+      r.requesterStudent, r.requesterTeacher, r.requesterParent, r.requesterAdmin
     ].filter(Boolean);
 
     // Filter out the current user
-    const peer = participants.find((p: any) => p.id !== user?.id) || participants[0];
+    const peer = participants.find((p: any) => p.id !== user?.id) || participants[0] || r.class;
     return peer;
   };
 
@@ -112,6 +118,7 @@ export default function LinkingHub() {
       ...link,
       peerName,
       peerEmail,
+      peerImage: peer?.logo || peer?.profileImage || peer?.avatar,
       variant: isClass ? 'classroom' : 'network'
     };
   });
@@ -129,6 +136,7 @@ export default function LinkingHub() {
       ...req,
       peerName,
       peerEmail,
+      peerImage: peer?.logo || peer?.profileImage || peer?.avatar,
       variant: isClassLink(req.linkType) ? 'classroom' : 'network'
     };
   });
@@ -403,10 +411,14 @@ function ConnectionCard({ link, onRevoke, isRevoking }: any) {
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-4">
             <div className={cn(
-               "h-12 w-12 rounded-xl flex items-center justify-center border group-hover:scale-110 transition-transform",
+               "h-12 w-12 rounded-xl flex items-center justify-center border group-hover:scale-110 transition-transform overflow-hidden",
                isClass ? "bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800" : "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-700"
             )}>
-              <ShieldCheck size={24} className={isClass ? "text-purple-500" : "text-blue-500"} />
+              {link.peerImage ? (
+                <img src={link.peerImage} alt={link.peerName} className="h-full w-full object-cover" />
+              ) : (
+                <ShieldCheck size={24} className={isClass ? "text-purple-500" : "text-blue-500"} />
+              )}
             </div>
             <div>
               <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{link.peerName}</h4>
@@ -501,10 +513,14 @@ function PendingCard({ req, onRespond, onCancel, userId, isResponding, isCancell
       <div className="p-6 space-y-6 pt-10">
         <div className="flex items-center gap-4">
           <div className={cn(
-             "h-12 w-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105",
+             "h-12 w-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 overflow-hidden",
              isClass ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20" : "bg-orange-50 text-orange-600 dark:bg-orange-900/20"
           )}>
-            <Clock size={24} />
+            {req.peerImage ? (
+              <img src={req.peerImage} alt={req.peerName} className="h-full w-full object-cover" />
+            ) : (
+              <Clock size={24} />
+            )}
           </div>
           <div>
             <h4 className="font-extrabold text-lg text-slate-900 dark:text-white leading-tight">{req.peerName}</h4>

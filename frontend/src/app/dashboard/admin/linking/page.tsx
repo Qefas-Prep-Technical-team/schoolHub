@@ -23,6 +23,7 @@ import { LinkingCodeCards } from './components/LinkingCodeCards';
 import { LinkingTabs } from './components/LinkingTabs';
 import { ActiveLinksGrid } from './components/ActiveLinksGrid';
 import { PendingRequestsGrid } from './components/PendingRequestsGrid';
+import { ProfilePreviewModal } from './components/ProfilePreviewModal';
 import { ConnectModal } from './components/ConnectModal';
 import QRCodeModal from './components/QRCodeModal';
 import Pagination from '@/components/ui/Pagination';
@@ -68,6 +69,8 @@ function LinkingHub() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<{item: any, details: any} | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Reset page when tabs change
   React.useEffect(() => {
@@ -139,6 +142,11 @@ function LinkingHub() {
 
   const handleCancel = async (id: string) => {
     cancelMutation.mutate(id);
+  };
+
+  const handleViewProfile = (item: any, details: any) => {
+    setSelectedProfile({ item, details });
+    setIsProfileModalOpen(true);
   };
 
   const handleRevoke = async (id: string) => {
@@ -219,6 +227,7 @@ function LinkingHub() {
             currentUserId={user?.id}
             onRevoke={handleRevoke}
             onCopy={copyToClipboard}
+            onViewProfile={handleViewProfile}
             revokingId={revokeMutation.isPending ? (revokeMutation.variables as string) : null}
           />
         ) : subTab === 'pending' ? (
@@ -231,6 +240,7 @@ function LinkingHub() {
             onRespond={handleRespond}
             onCancel={handleCancel}
             onCopy={copyToClipboard}
+            onViewProfile={handleViewProfile}
             respondingId={respondMutation.isPending ? (respondMutation.variables as any)?.id : null}
             cancellingId={cancelMutation.isPending ? (cancelMutation.variables as string) : null}
           />
@@ -256,6 +266,13 @@ function LinkingHub() {
           />
         )}
       </div>
+
+      <ProfilePreviewModal 
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        details={selectedProfile?.details}
+        item={selectedProfile?.item}
+      />
     </div>
   );
 }

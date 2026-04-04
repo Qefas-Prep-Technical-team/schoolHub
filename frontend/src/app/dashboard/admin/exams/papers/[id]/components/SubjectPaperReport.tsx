@@ -234,11 +234,19 @@ const SubjectPaperReport: React.FC<SubjectPaperReportProps> = ({
   school,
 }) => {
   const avgScore = attempts.length > 0
-    ? (attempts.reduce((sum, a) => sum + (a.score / a.totalMarks) * 100, 0) / attempts.length).toFixed(1)
+    ? (attempts.reduce((sum, a) => {
+        const marks = a.totalMarks || a.maxMarks || paper.totalMarks || 100;
+        const score = a.score || 0;
+        return sum + (score / marks) * 100;
+      }, 0) / attempts.length).toFixed(1)
     : '0';
 
   const passRate = attempts.length > 0
-    ? ((attempts.filter(a => (a.score / a.totalMarks) >= (paper.passMark || 40) / 100).length / attempts.length) * 100).toFixed(0)
+    ? ((attempts.filter(a => {
+        const marks = a.totalMarks || a.maxMarks || paper.totalMarks || 100;
+        const score = a.score || 0;
+        return (score / marks) >= (paper.passMark || 40) / 100;
+      }).length / attempts.length) * 100).toFixed(0)
     : '0';
 
   return (
@@ -305,7 +313,9 @@ const SubjectPaperReport: React.FC<SubjectPaperReportProps> = ({
           </View>
 
           {attempts.map((attempt, index) => {
-            const percentage = Math.round((attempt.score / attempt.totalMarks) * 100);
+            const marks = attempt.totalMarks || attempt.maxMarks || paper.totalMarks || 100;
+            const score = attempt.score || 0;
+            const percentage = Math.round((score / marks) * 100);
             const isPass = percentage >= (paper.passMark || 40);
             const grade = percentage >= 75 ? 'A1' : percentage >= 70 ? 'B2' : percentage >= 65 ? 'B3' : percentage >= 60 ? 'C4' : percentage >= 55 ? 'C5' : percentage >= 50 ? 'C6' : percentage >= 45 ? 'D7' : percentage >= 40 ? 'E8' : 'F9';
 

@@ -1,3 +1,5 @@
+"use client"
+
 import Header from './components//Header'
 import ChildDetailsDrawer from './components/ChildDetailsDrawer/ChildDetailsDrawer'
 import { useChildDetailsDrawer } from './components/ChildDetailsDrawer/components/useChildDetailsDrawer'

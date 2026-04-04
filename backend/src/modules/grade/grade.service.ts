@@ -85,35 +85,49 @@ export const processGradeOCRService = async (imageUrl: string) => {
     throw new Error("OpenAI API key is missing");
   }
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      {
-        role: "system",
-        content: "Act as a data entry clerk. Extract the student names and their corresponding numerical scores from this image. Return the data strictly as a JSON array: [{ \"studentName\": \"string\", \"score\": number }]. If a score is illegible, mark it as null."
-      },
-      {
-        role: "user",
-        content: [
-          { type: "text", text: "Please extract the grades from this mark sheet." },
-          {
-            type: "image_url",
-            image_url: {
-              url: imageUrl,
-            },
-          },
-        ],
-      },
-    ],
-    response_format: { type: "json_object" },
-  });
+  console.log("[OCR] Processing image:", imageUrl);
 
-  const content = response.choices[0].message.content;
-  if (!content) throw new Error("AI failed to extract data");
-  
-  const parsed = JSON.parse(content);
-  // Expecting { "grades": [...] } or similar based on prompt, let's normalize
-  return parsed.grades || parsed.data || parsed;
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "Act as a data entry clerk. Extract the student names and their corresponding numerical scores from this image. Return the data as a JSON object with a 'grades' key containing an array: { \"grades\": [{ \"studentName\": \"string\", \"score\": number }] }. If a score is illegible, mark it as null."
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Please extract the grades from this mark sheet." },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageUrl,
+              },
+            },
+          ],
+        },
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content;
+    console.log("[OCR] AI Response Received");
+    
+    if (!content) throw new Error("AI failed to extract data");
+
+    const parsed = JSON.parse(content);
+    // Normalize to array, checking for common keys used by AI
+    const grades = parsed.grades || parsed.data || (Array.isArray(parsed) ? parsed : []);
+    
+    return Array.isArray(grades) ? grades : [];
+  } catch (error: any) {
+    console.error("[OCR] Error during processing:", error.message);
+    if (error.response) {
+      console.error("[OCR] OpenAI Response Error:", error.response.data);
+    }
+    throw error;
+  }
 };
 
 export const bulkCreateGradesService = async (schoolId: string, grades: any[]) => {

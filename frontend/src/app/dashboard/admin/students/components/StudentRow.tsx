@@ -7,7 +7,7 @@ export function StudentRow({ student }: { student: Student }) {
   return (
     <tr className="border-b border-border-light dark:border-border-dark hover:bg-background-light/40 dark:hover:bg-background-dark/40 transition">
       <td className="p-4">
-        <AvatarCell name={student.name} avatar={student.avatar} />
+        <AvatarCell name={student.name} profileImage={student.profileImage} />
       </td>
 
       <td className="p-4 text-sm text-text-light dark:text-text-dark">

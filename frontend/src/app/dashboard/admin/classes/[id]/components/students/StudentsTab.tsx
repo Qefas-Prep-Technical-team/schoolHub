@@ -33,7 +33,7 @@ export default function ClassStudentsPage({ enrollments = [] }: ClassStudentsPag
     email: e.student.email,
     gender: 'other', // Not in current schema
     dateOfBirth: e.student.dateOfBirth || '',
-    profileImage: '',
+    profileImage: e.student.profileImage || '',
     performance: 'good',
     attendance: 100,
     lastScore: 0,

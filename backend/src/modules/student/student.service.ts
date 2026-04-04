@@ -174,12 +174,16 @@ export const updateStudentProfileService = async (studentId: string, data: {
   email?: string;
   gender?: any;
   dateOfBirth?: string | Date;
+  profileImage?: string;
+  bannerImage?: string;
 }) => {
   const updateData: any = {};
   if (data.name) updateData.name = data.name;
   if (data.email) updateData.email = data.email;
   if (data.gender) updateData.gender = data.gender;
   if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth);
+  if (data.profileImage !== undefined) updateData.profileImage = data.profileImage;
+  if (data.bannerImage !== undefined) updateData.bannerImage = data.bannerImage;
 
   return prisma.student.update({
     where: { id: studentId },

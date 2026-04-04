@@ -18,19 +18,28 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
 
   const className = req.class ? (req.class.name + (req.class.section ? ` - ${req.class.section}` : '')) : undefined;
   
-  // Determine peer identification (for logic where we need to know the 'other' side)
-  const isLeft = item.leftEntityId === currentUserId;
-  const peerCode = isLeft ? item.rightCode : item.leftCode;
+  // Determine identification codes
+  const peerCode = item.leftEntityId === currentUserId ? item.rightCode : item.leftCode;
   const requestCode = (req.requesterId === currentUserId) ? (req.targetCode || item.targetCode) : (req.requesterCode || item.requesterCode);
+  
+  // If the viewer is an Admin but NOT a participant in the link, 
+  // both leftCode and rightCode are informative. We pick the non-School code if possible.
+  let adminObservedCode = item.leftCode !== currentUserId && item.rightCode !== currentUserId ? (item.leftCode || item.rightCode) : undefined;
+  
+  // For requests, if Admin is observing
+  if (!adminObservedCode && req.requesterId !== currentUserId && req.targetId !== currentUserId) {
+    adminObservedCode = req.requesterCode || req.targetCode || item.requesterCode || item.targetCode;
+  }
 
-  const bestCode = peerCode || requestCode || '---';
+  const bestCode = adminObservedCode || peerCode || requestCode || '---';
 
   if (person) {
     return {
       name: person.name || person.fullName || person.username || bestCode || 'Verified Member',
       email: person.email || 'No Email',
       className: className,
-      code: person.teacherCode || person.studentCode || person.parentCode || person.adminCode || bestCode
+      code: person.teacherCode || person.studentCode || person.parentCode || person.adminCode || bestCode,
+      image: person.profileImage || person.avatar
     };
   }
 
@@ -39,7 +48,8 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
       name: school.name || 'Unknown School',
       email: school.schoolEmail || 'School Entity',
       className: undefined,
-      code: school.schoolCode || bestCode
+      code: school.schoolCode || bestCode,
+      image: school.logo
     };
   }
 
@@ -48,13 +58,15 @@ export const getMemberDetails = (item: any, currentUserId?: string) => {
       name: className || 'Unknown Class',
       email: 'Classroom Entity',
       className: undefined,
-      code: req.class.classCode || bestCode
+      code: req.class.classCode || bestCode,
+      image: undefined
     };
   }
   
   return {
     name: item.peerName || bestCode || 'Linked Member',
     email: item.peerEmail || 'No Email',
-    code: bestCode
+    code: bestCode,
+    image: item.peerImage
   };
 };

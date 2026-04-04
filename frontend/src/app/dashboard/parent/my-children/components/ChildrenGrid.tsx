@@ -1,6 +1,9 @@
+"use client"
+
 import React from 'react'
 import ChildCard from './ChildCard'
 import AddChildCard from './AddChildCard'
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
 
 interface Child {
   id: string
@@ -77,10 +80,41 @@ const childrenData: Child[] = [
   },
 ]
 
+
 export default function ChildrenGrid() {
+  const { user } = useAuthStore()
+  const children = user?.children || []
+
+  if (children.length === 0) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <AddChildCard />
+      </div>
+    )
+  }
+
+  // Map backend children to frontend Child interface
+  const mappedChildren: Child[] = children.map((c: any) => ({
+    id: c.studentId,
+    name: c.studentName,
+    age: 0, // Not available in login yet
+    grade: 'N/A',
+    class: 'Assigned Class',
+    studentId: c.studentCode,
+    imageUrl: c.studentImage || '/avatars/default-student.png',
+    attendance: 0,
+    gradeValue: 'N/A',
+    status: c.linkStatus === 'ACCEPTED' ? 'active' : 'inactive',
+    badge: {
+      text: c.linkStatus === 'PENDING' ? 'Pending Link' : 'Connected',
+      color: c.linkStatus === 'PENDING' ? 'blue' : 'green',
+      icon: c.linkStatus === 'PENDING' ? 'clock' : 'check_circle',
+    },
+  }))
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {childrenData.map((child) => (
+      {mappedChildren.map((child) => (
         <ChildCard key={child.id} child={child} />
       ))}
       <AddChildCard />

@@ -1,7 +1,7 @@
 export type Student = {
   id: string;
   name: string;
-  avatar?: string;
+  profileImage?: string;
   className: string;
   gender: "Male" | "Female";
   status: "Active" | "Inactive";

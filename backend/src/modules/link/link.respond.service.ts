@@ -212,23 +212,29 @@ const applyDomainSideEffects = async (
 
     case "SCHOOL_STUDENT": {
       if (
+        request.requesterType === "STUDENT" &&
+        request.targetType === "SCHOOL"
+      ) {
+        await tx.student.update({
+          where: { id: request.requesterId },
+          data: { 
+            schoolId: request.targetId,
+            verified: true 
+          },
+        });
+      }
+
+      if (
         request.requesterType === "SCHOOL" &&
         request.targetType === "STUDENT" &&
         request.targetId
       ) {
         await tx.student.update({
           where: { id: request.targetId },
-          data: { schoolId: request.requesterId },
-        });
-      }
-
-      if (
-        request.requesterType === "STUDENT" &&
-        request.targetType === "SCHOOL"
-      ) {
-        await tx.student.update({
-          where: { id: request.requesterId },
-          data: { schoolId: request.targetId },
+          data: { 
+            schoolId: request.requesterId,
+            verified: true 
+          },
         });
       }
       break;
@@ -292,7 +298,10 @@ const applyDomainSideEffects = async (
       if (foundClass?.schoolId) {
         await tx.student.update({
           where: { id: studentId },
-          data: { schoolId: foundClass.schoolId },
+          data: { 
+            schoolId: foundClass.schoolId,
+            verified: true 
+          },
         });
       }
       break;

@@ -19,9 +19,23 @@ export const proxyUpload = async (req: Request, res: Response) => {
   try {
     const file = (req as any).file as Express.Multer.File;
 
-    if (!file || !file.buffer || file.buffer.length === 0) {
-      throw new Error("No file data received. Please attach a file with field name 'file'.");
+    if (!file) {
+      console.error("[Proxy Upload] Multer did not find 'file' in request");
+      return res.status(400).json({
+        success: false,
+        message: "No file received. Please check the field name is 'file'.",
+      });
     }
+
+    if (!file.buffer || file.buffer.length === 0) {
+      console.error("[Proxy Upload] File received but buffer is empty");
+      return res.status(400).json({
+        success: false,
+        message: "File is empty",
+      });
+    }
+
+    console.log(`[Proxy Upload] Received file: ${file.originalname} (${file.size} bytes, ${file.mimetype})`);
 
     const data = await uploadBufferToBunnyService(file.buffer, file.mimetype);
     
@@ -30,7 +44,11 @@ export const proxyUpload = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[Proxy Upload Controller Error]`, error);
+    console.error(`[Proxy Upload Controller Error]`, {
+      message: error.message,
+      stack: error.stack,
+      details: error.response?.data
+    });
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to proxy upload",

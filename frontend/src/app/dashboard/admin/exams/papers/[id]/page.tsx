@@ -348,6 +348,7 @@ export default function StandalonePaperDetailPage() {
                       <PDFDownloadLink
                         document={<SubjectPaperReport paper={paper} school={school} attempts={allResults.map(r => ({
                           ...r,
+                          totalMarks: r.maxMarks, // Pass totalMarks for compatibility with component
                           examAttempt: { student: { name: r.studentName, studentCode: r.studentCode } }
                         }))} />}
                         fileName={`${paper.title?.replace(/\s+/g, '_') || 'Report'}_Grade_Report.pdf`}

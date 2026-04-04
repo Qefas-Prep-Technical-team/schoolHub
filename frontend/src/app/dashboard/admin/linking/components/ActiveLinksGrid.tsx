@@ -9,6 +9,7 @@ interface ActiveLinksGridProps {
   currentUserId?: string;
   onRevoke: (id: string) => void;
   onCopy: (text: string) => void;
+  onViewProfile?: (item: any, details: any) => void;
   revokingId?: string | null;
 }
 
@@ -18,6 +19,7 @@ export function ActiveLinksGrid({
   currentUserId,
   onRevoke,
   onCopy,
+  onViewProfile,
   revokingId
 }: ActiveLinksGridProps) {
   if (links.length === 0) {
@@ -42,6 +44,7 @@ export function ActiveLinksGrid({
           currentUserId={currentUserId}
           onRevoke={onRevoke}
           onCopy={onCopy}
+          onViewProfile={onViewProfile}
           isLoading={revokingId === link.id}
         />
       ))}

@@ -59,13 +59,15 @@ export const confirmEmailUpdate = async (req: Request, res: Response) => {
 export const updateStudentProfile = async (req: Request, res: Response) => {
   try {
     const { id: currentUserId } = req.user!;
-    const { name, email, gender, dateOfBirth } = req.body;
+    const { name, email, gender, dateOfBirth, profileImage, bannerImage } = req.body;
 
     const updatedProfile = await updateStudentProfileService(currentUserId, {
       name,
       email,
       gender,
       dateOfBirth,
+      profileImage,
+      bannerImage,
     });
 
     return res.status(200).json({

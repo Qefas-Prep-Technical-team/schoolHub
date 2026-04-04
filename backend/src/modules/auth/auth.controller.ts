@@ -1406,7 +1406,7 @@ export const login = async (req: Request, res: Response) => {
         console.log("Fetching student with email:", email);
         user = await prisma.student.findUnique({
           where: { email },
-          // include: { school: true },
+          include: { school: true },
         });
         break;
       case UserRole.PARENT:
@@ -1523,6 +1523,9 @@ export const login = async (req: Request, res: Response) => {
           role: user.role,
           adminCode: user.adminCode,
           schoolCode: primarySchool?.schoolCode || null,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
           schools,
           defaultTenantId: user.defaultTenantId,
         },
@@ -1537,6 +1540,9 @@ export const login = async (req: Request, res: Response) => {
           email: user.email,
           role: user.role,
           teacherCode: user.teacherCode,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
           school: user.school,
           defaultTenantId: user.defaultTenantId,
         },
@@ -1551,8 +1557,10 @@ export const login = async (req: Request, res: Response) => {
           email: user.email,
           role: user.role,
           studentCode: user.studentCode,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
           school: user.school,
-
           defaultTenantId: user.defaultTenantId,
         },
         userRole: user.role,
@@ -1565,12 +1573,16 @@ export const login = async (req: Request, res: Response) => {
           fullName: user.fullName,
           email: user.email,
           role: user.role,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
           defaultTenantId: user.defaultTenantId,
         },
         children: user.children?.map((child: any) => ({
           studentId: child.student.id,
           studentName: child.student.name,
           studentCode: child.student.studentCode,
+          studentImage: child.student.profileImage,
           linkStatus: child.status,
         })),
         userRole: user.role,

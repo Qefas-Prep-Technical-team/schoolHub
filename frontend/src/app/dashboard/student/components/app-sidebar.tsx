@@ -258,7 +258,13 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton className="flex items-center justify-between hover:bg-accent/60 transition-colors py-3 px-4 rounded-lg">
                                     <div className="flex items-center">
-                                        <User2 className="mr-2 h-5 w-5" />
+                                        <div className="mr-2 h-8 w-8 rounded-lg overflow-hidden bg-accent flex items-center justify-center shrink-0">
+                                            {profile?.profileImage ? (
+                                                <img src={profile.profileImage} alt={profile.name} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <User2 className="h-5 w-5 text-muted-foreground" />
+                                            )}
+                                        </div>
                                         {!isCollapsed && (
                                             <div className="flex flex-col items-start">
                                                 <span className="font-medium text-[0.9rem] leading-none mb-1">{profile?.name || 'Student'}</span>

@@ -37,6 +37,7 @@ import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import ImageUpload from '@/components/reusable/ImageUpload';
 
 export default function StudentProfilePage() {
     const { data: profile, isLoading } = useStudentProfile();
@@ -49,7 +50,9 @@ export default function StudentProfilePage() {
         name: '',
         email: '',
         gender: '',
-        dateOfBirth: ''
+        dateOfBirth: '',
+        profileImage: '',
+        bannerImage: ''
     });
 
     const [emailStep, setEmailStep] = useState<'input' | 'verify'>('input');
@@ -61,7 +64,9 @@ export default function StudentProfilePage() {
             name: profile.name,
             email: profile.email,
             gender: profile.gender || '',
-            dateOfBirth: profile.dateOfBirth ? format(new Date(profile.dateOfBirth), 'yyyy-MM-dd') : ''
+            dateOfBirth: profile.dateOfBirth ? format(new Date(profile.dateOfBirth), 'yyyy-MM-dd') : '',
+            profileImage: profile.profileImage || '',
+            bannerImage: profile.bannerImage || ''
         });
         setEmailStep('input');
         setVerificationCode('');
@@ -103,17 +108,25 @@ export default function StudentProfilePage() {
             <div className="relative group/hero">
                 {/* Cover Photo / Pattern */}
                 <div className="h-48 md:h-80 w-full overflow-hidden bg-slate-950 md:rounded-[3rem] relative shadow-2xl">
-                    <div className="absolute inset-0 opacity-30">
-                        <div className="absolute top-0 -left-20 w-80 h-80 bg-primary blur-[120px] rounded-full animate-pulse" />
-                        <div className="absolute bottom-0 -right-20 w-80 h-80 bg-indigo-500 blur-[120px] rounded-full animate-pulse delay-700" />
-                    </div>
+                    {profile.bannerImage ? (
+                        <img src={profile.bannerImage} alt="Banner" className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="absolute inset-0 opacity-30">
+                            <div className="absolute top-0 -left-20 w-80 h-80 bg-primary blur-[120px] rounded-full animate-pulse" />
+                            <div className="absolute bottom-0 -right-20 w-80 h-80 bg-indigo-500 blur-[120px] rounded-full animate-pulse delay-700" />
+                        </div>
+                    )}
                 </div>
 
                 {/* Profile Identity (Overlapping) */}
                 <div className="relative -mt-20 md:-mt-24 px-6 md:px-12 flex flex-col items-center md:items-end md:flex-row gap-6 md:gap-10">
                     <div className="relative shrink-0">
-                        <div className="h-32 w-32 md:h-44 md:w-44 rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-4xl md:text-6xl font-black text-white shadow-2xl border-4 border-white dark:border-slate-950 hover:scale-105 transition-transform duration-500">
-                            {initials}
+                        <div className="h-32 w-32 md:h-44 md:w-44 rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-4xl md:text-6xl font-black text-white shadow-2xl border-4 border-white dark:border-slate-950 hover:scale-105 transition-transform duration-500 overflow-hidden">
+                            {profile.profileImage ? (
+                                <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                            ) : (
+                                initials
+                            )}
                         </div>
                         <Badge className="absolute -top-1 -right-1 md:-top-3 md:-right-3 h-8 w-8 md:h-10 md:w-10 rounded-xl md:rounded-2xl bg-emerald-500 border-4 border-white dark:border-slate-950 flex items-center justify-center">
                             <CheckCircle2 size={16} className="text-white" />
@@ -246,7 +259,24 @@ export default function StudentProfilePage() {
                             </Button>
                         </CardHeader>
                         <CardContent className="p-8 md:p-10 pt-0 space-y-8">
-                            <div className="grid grid-cols-1 gap-6">
+                            <div className="grid grid-cols-1 gap-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <ImageUpload 
+                                        label="Profile Picture" 
+                                        value={formData.profileImage} 
+                                        onChange={(url) => setFormData({...formData, profileImage: url})} 
+                                        description="Shown on your ID and rankings."
+                                        aspectRatio="square"
+                                    />
+                                    <ImageUpload 
+                                        label="Profile Banner" 
+                                        value={formData.bannerImage} 
+                                        onChange={(url) => setFormData({...formData, bannerImage: url})} 
+                                        description="Background for your profile header."
+                                        aspectRatio="video"
+                                    />
+                                </div>
+
                                 <div className="space-y-3">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Full Legal Name</Label>
                                     <div className="relative group">

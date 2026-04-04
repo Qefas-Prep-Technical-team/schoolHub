@@ -71,6 +71,7 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
   const [step, setStep] = useState<'upload' | 'processing' | 'verify'>('upload');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [extractedGrades, setExtractedGrades] = useState<any[]>([]);
+  const [showFullImage, setShowFullImage] = useState(false);
   
   const [maxMarks, setMaxMarks] = useState('100');
 
@@ -95,7 +96,9 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
         
         // 3. Process with AI
         const data = await gradeService.processOCR(publicUrl);
-        setExtractedGrades(data);
+        // Robust handling of data (could be array or object with grades/data key)
+        const finalGrades = Array.isArray(data) ? data : (data?.grades || data?.data || []);
+        setExtractedGrades(Array.isArray(finalGrades) ? finalGrades : []);
         setStep('verify');
       } catch (error) {
         console.error("OCR Failed:", error);
@@ -203,15 +206,23 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
            <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[500px]">
                 {/* Left Side: Original Image */}
-                <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden relative group">
-                    <div className="absolute top-4 left-4 z-10 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest">Original Scan</div>
+                <div 
+                    onClick={() => setShowFullImage(true)}
+                    className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden relative group cursor-zoom-in hover:border-indigo-500/50 transition-all"
+                >
+                    <div className="absolute top-4 left-4 z-10 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                        Original Scan <Sparkles size={10} className="text-amber-400" />
+                    </div>
                     {imagePreview && (
-                        <div className="w-full h-full p-4">
+                        <div className="w-full h-full p-4 flex items-center justify-center">
                             <img 
                                 src={imagePreview} 
                                 alt="Scan Preview" 
-                                className="w-full h-full object-contain rounded-2xl"
+                                className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl group-hover:scale-[1.02] transition-transform duration-700"
                             />
+                            <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/5 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-indigo-600 shadow-xl">Click to expand</div>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -332,6 +343,31 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
           </Button>
         </DialogFooter>
       </DialogContent>
+      
+      {/* Full Image Preview Modal */}
+      <Dialog open={showFullImage} onOpenChange={setShowFullImage}>
+        <DialogContent className="sm:max-w-[90vw] h-[90vh] p-4 bg-black/95 border-none rounded-[2rem] flex flex-col items-center justify-center">
+          <DialogHeader className="w-full flex flex-row items-center justify-between absolute top-4 left-0 px-8 z-50">
+            <DialogTitle className="text-white/80 font-black uppercase tracking-[0.3em] text-xs">Full Scan Inspection</DialogTitle>
+            <Button 
+                variant="ghost" 
+                onClick={() => setShowFullImage(false)}
+                className="text-white/40 hover:text-white hover:bg-white/10 rounded-full h-10 w-10 p-0"
+            >
+                ×
+            </Button>
+          </DialogHeader>
+          {imagePreview && (
+            <div className="w-full h-full flex items-center justify-center mt-12">
+               <img 
+                  src={imagePreview} 
+                  alt="Full Scan Preview" 
+                  className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+               />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

@@ -2,14 +2,15 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Bell, ChevronDown, Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { Bell, ChevronDown, Search, ChevronLeft, ChevronRight, User } from "lucide-react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import clsx from "clsx";
 import { ThemeToggle } from "@/app/theme-toggle";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { StudentMobileDrawer } from "./StudentMobileDrawer";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
+import { linkService } from "@/lib/api/services/linkService";
 
 export default function TopNavBar({
   onToggleSidebar,
@@ -19,7 +20,15 @@ export default function TopNavBar({
   isCollapsed?: boolean;
 }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
   const { userType, user } = useAuthStore();
+
+  useEffect(() => {
+    linkService.getProfile().then(setProfile).catch(() => {});
+  }, []);
+
+  const displayImage = profile?.profileImage || user?.profileImage;
+  const displayName = profile?.name || user?.name || user?.email;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
@@ -56,17 +65,21 @@ export default function TopNavBar({
 
           {/* Profile */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsProfileOpen(!isProfileOpen)}>
-            <div className="relative w-9 h-9 md:w-10 md:h-10">
-              <Image
-                src="/avatars/admin-profile.png"
-                alt="Student Profile"
-                fill
-                className="rounded-full object-cover"
-              />
+            <div className="relative w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden bg-accent flex items-center justify-center">
+              {displayImage ? (
+                <Image
+                  src={displayImage}
+                  alt="Student Profile"
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <User className="h-5 w-5 text-muted-foreground" />
+              )}
             </div>
 
             <div className="hidden md:flex flex-col text-right">
-              <p className="text-sm font-medium leading-tight">{user?.email}</p>
+              <p className="text-sm font-medium leading-tight">{displayName}</p>
               <p className="text-xs text-muted-foreground leading-tight">{userType}</p>
             </div>
 

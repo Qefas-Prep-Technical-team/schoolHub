@@ -7,23 +7,33 @@ import { v4 as uuidv4 } from "uuid";
  * Endpoint: PUT https://{region}.storage.bunnycdn.com/{storageZone}/{key}
  */
 export const uploadBufferToBunnyService = async (buffer: Buffer, fileType: string = "image/png") => {
-  const storageZone = process.env.BUNNY_STORAGE_ZONE_NAME;
-  const apiKey      = process.env.BUNNY_STORAGE_API_KEY;
-  const pullZoneUrl = process.env.BUNNY_PULL_ZONE_URL;
-  const region      = (process.env.BUNNY_STORAGE_REGION || "").trim();
+  const storageZone = (process.env.BUNNY_STORAGE_ZONE_NAME || "").trim();
+  const apiKey      = (process.env.BUNNY_STORAGE_API_KEY      || "").trim();
+  const pullZoneUrl = (process.env.BUNNY_PULL_ZONE_URL      || "").trim();
+  const region      = (process.env.BUNNY_STORAGE_REGION      || "").trim();
 
   if (!storageZone || !apiKey || !pullZoneUrl) {
-    throw new Error(
-      `Bunny.net is not configured. Missing: ${!storageZone ? "BUNNY_STORAGE_ZONE_NAME " : ""}${!apiKey ? "BUNNY_STORAGE_API_KEY " : ""}${!pullZoneUrl ? "BUNNY_PULL_ZONE_URL" : ""}`
-    );
+    console.error("[Bunny Service] Missing configuration:", { storageZone, hasKey: !!apiKey, pullZoneUrl });
+    throw new Error("Upload service is not correctly configured on the server.");
   }
 
-  const key      = `institutional/${uuidv4()}-${Date.now()}`;
+  // Determine extension from fileType
+  const extMap: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+    "image/svg+xml": "svg",
+    "image/gif": "gif",
+    "image/webp": "webp"
+  };
+  const extension = extMap[fileType] || "png";
+  const key = `institutional/${uuidv4()}-${Date.now()}.${extension}`;
+  
   // Regional hostname: storage.bunnycdn.com for default, {region}.storage.bunnycdn.com for others
   const hostname = region ? `${region}.storage.bunnycdn.com` : `storage.bunnycdn.com`;
   const path     = `/${storageZone}/${key}`;
 
-  console.log(`[Bunny Upload] PUT https://${hostname}${path}`);
+  console.log(`[Bunny Upload] PUT https://${hostname}${path} (Type: ${fileType})`);
 
   return new Promise<{ publicUrl: string; key: string }>((resolve, reject) => {
     const options = {
@@ -41,12 +51,17 @@ export const uploadBufferToBunnyService = async (buffer: Buffer, fileType: strin
       let body = "";
       res.on("data", (chunk) => { body += chunk; });
       res.on("end", () => {
+        console.log(`[Bunny Service] Response: ${res.statusCode} - ${body}`);
         if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-          const base       = pullZoneUrl.endsWith("/") ? pullZoneUrl : pullZoneUrl + "/";
-          const publicUrl  = `https://${base.replace(/^https?:\/\//, "")}${key}`;
+          // Construct public URL cleanly
+          const cleanPullZone = pullZoneUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
+          const publicUrl = `https://${cleanPullZone}/${key}`;
+          
+          console.log(`[Bunny Service] Success. Public URL: ${publicUrl}`);
           resolve({ publicUrl, key });
         } else {
-          reject(new Error(`Bunny.net returned ${res.statusCode}: ${body}`));
+          console.error(`[Bunny Service] Failed (${res.statusCode}): ${body}`);
+          reject(new Error(`Bunny.net storage returned ${res.statusCode}: ${body}`));
         }
       });
     });

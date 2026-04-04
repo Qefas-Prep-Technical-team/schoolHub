@@ -139,6 +139,8 @@ export const getSchoolStudentsService = async (
       verified: true,
       role: true,
       gender: true,
+      profileImage: true,
+      bannerImage: true,
       classes: {
         include: {
           class: true,

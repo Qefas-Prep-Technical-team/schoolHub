@@ -16,6 +16,15 @@ interface User {
   userType: UserType;
   defaultTenantId?: string;
   schools?: { schoolId: string; name: string }[];
+  profileImage?: string;
+  bannerImage?: string;
+  children?: {
+    studentId: string;
+    studentName: string;
+    studentCode: string;
+    studentImage?: string;
+    linkStatus: string;
+  }[];
 }
 
 interface AuthState {

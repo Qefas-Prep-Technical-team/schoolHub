@@ -10,10 +10,12 @@ import {
   Clock, 
   Hash, 
   ChevronRight,
-  Loader2
+  Loader2,
+  User
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Card, 
   CardContent, 
@@ -38,6 +40,7 @@ interface ConnectionCardProps {
   onRespond?: (id: string, action: 'ACCEPT' | 'REJECT') => void;
   onCancel?: (id: string) => void;
   onCopy?: (text: string) => void;
+  onViewProfile?: (item: any, details: any) => void;
   isLoading?: boolean;
 }
 
@@ -49,6 +52,7 @@ export function ConnectionCard({
   onRespond,
   onCancel,
   onCopy,
+  onViewProfile,
   isLoading = false
 }: ConnectionCardProps) {
   const details = getMemberDetails(item, currentUserId);
@@ -63,14 +67,29 @@ export function ConnectionCard({
       )}>
         <CardHeader className="p-6 flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-4">
-            <div className={cn(
-              "w-12 h-12 rounded-xl flex items-center justify-center shadow-sm transition-all text-white group-hover:scale-110",
-              isClass ? "bg-purple-500 shadow-purple-200" : "bg-blue-500 shadow-blue-200"
-            )}>
-              {isClass ? <Link2 size={24} /> : <UserPlus size={24} />}
+            <div 
+              className="relative cursor-pointer group/avatar"
+              onClick={() => onViewProfile?.(item, details)}
+            >
+              <div className={cn(
+                "absolute -inset-1 rounded-2xl blur-md opacity-0 group-hover/avatar:opacity-40 transition-opacity",
+                isClass ? "bg-purple-500" : "bg-blue-500"
+              )} />
+              <Avatar className="h-14 w-14 rounded-2xl border-2 border-white dark:border-gray-800 shadow-sm transition-transform group-hover/avatar:scale-105">
+                <AvatarImage src={details.image} alt={details.name} className="object-cover" />
+                <AvatarFallback className={cn(
+                  "rounded-2xl text-white font-black text-xl",
+                  isClass ? "bg-purple-500" : "bg-blue-500"
+                )}>
+                  {details.name?.charAt(0).toUpperCase() || <User size={20} />}
+                </AvatarFallback>
+              </Avatar>
             </div>
-            <div>
-              <CardTitle className="text-xl font-black truncate max-w-[180px] text-slate-900 dark:text-white">{details.name}</CardTitle>
+            <div 
+              className="cursor-pointer"
+              onClick={() => onViewProfile?.(item, details)}
+            >
+              <CardTitle className="text-xl font-black truncate max-w-[180px] text-slate-900 dark:text-white group-hover:text-primary transition-colors">{details.name}</CardTitle>
               <CardDescription className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 {item?.linkType?.replace('_', ' ')}
               </CardDescription>
@@ -126,7 +145,11 @@ export function ConnectionCard({
             </Button>
           </div>
 
-          <Button variant="outline" className="w-full justify-between h-12 rounded-xl border-slate-100 dark:border-slate-800 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all group/btn">
+          <Button 
+            variant="outline" 
+            onClick={() => onViewProfile?.(item, details)}
+            className="w-full justify-between h-12 rounded-xl border-slate-100 dark:border-slate-800 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all group/btn"
+          >
             <span>View Full Profile</span>
             <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
           </Button>
@@ -159,19 +182,38 @@ export function ConnectionCard({
       </div>
 
       <CardHeader className="p-6 pb-2 mt-2">
-        <div className="flex items-center gap-3 mb-5">
-          <div className={cn(
-            "w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105",
-            isClass ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20" : "bg-orange-50 text-orange-600 dark:bg-orange-900/20"
-          )}>
-            <Clock size={24} />
+        <div className="flex items-center gap-4 mb-5">
+          <div 
+            className="relative cursor-pointer group/avatar"
+            onClick={() => onViewProfile?.(item, details)}
+          >
+             <div className={cn(
+              "absolute -inset-1 rounded-2xl blur-md opacity-0 group-hover/avatar:opacity-40 transition-opacity",
+              isClass ? "bg-purple-500" : "bg-orange-500"
+            )} />
+            <Avatar className="h-14 w-14 rounded-2xl shadow-sm transition-transform group-hover/avatar:scale-105 border-2 border-white dark:border-gray-800">
+              <AvatarImage src={details.image} alt={details.name} className="object-cover" />
+              <AvatarFallback className={cn(
+                "rounded-2xl text-white font-black text-xl",
+                isClass ? "bg-purple-500" : "bg-orange-500"
+              )}>
+                {details.name?.charAt(0).toUpperCase() || <Clock size={20} />}
+              </AvatarFallback>
+            </Avatar>
           </div>
-          <span className="text-[11px] text-slate-400 font-black tracking-wider uppercase">
-            {new Date(item.createdAt).toLocaleDateString()}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-[11px] text-slate-400 font-black tracking-wider uppercase">
+              {new Date(item.createdAt).toLocaleDateString()}
+            </span>
+            <CardTitle 
+              className="text-xl font-black truncate max-w-[150px] text-slate-900 dark:text-white leading-tight cursor-pointer hover:text-primary transition-colors"
+              onClick={() => onViewProfile?.(item, details)}
+            >
+              {details.name}
+            </CardTitle>
+          </div>
         </div>
 
-        <CardTitle className="text-xl font-black truncate pr-20 text-slate-900 dark:text-white leading-tight">{details.name}</CardTitle>
         <CardDescription className="text-xs font-bold text-slate-400 truncate mt-1">
           {details.email} {details.className ? `• ${details.className}` : ''}
         </CardDescription>

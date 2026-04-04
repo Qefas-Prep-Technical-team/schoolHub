@@ -29,9 +29,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     if (!file) return;
 
     // Validate
-    const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml'];
+    const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Invalid file type. Please use PNG, JPG, or SVG.');
+      toast.error('Invalid file type. Please use PNG, JPG, WEBP, or SVG.');
       return;
     }
 
@@ -45,8 +45,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       onChange(publicUrl);
       toast.success(`${label} uploaded successfully!`);
     } catch (error: any) {
-      console.error('Upload failed:', error);
-      toast.error(error.message || 'Failed to upload image. Institutional services might be under maintenance.');
+      console.error('Upload failed details:', error.response?.data || error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to upload image.';
+      toast.error(errorMessage);
     } finally {
       setIsUploading(false);
     }
@@ -54,7 +55,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
   const aspectClasses = {
     square: 'aspect-square size-32',
-    video: 'aspect-video w-full max-w-md h-auto',
+    video: 'aspect-video w-full max-w-md h-auto rounded-[2rem]',
     favicon: 'aspect-square size-14',
   };
 
@@ -99,7 +100,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             className="absolute inset-0 opacity-0 cursor-pointer"
             onChange={handleFileChange}
             disabled={isUploading}
-            accept=".jpg,.jpeg,.png,.svg"
+            accept=".jpg,.jpeg,.png,.svg,.webp"
             title=""
           />
         </div>

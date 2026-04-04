@@ -261,6 +261,9 @@ model Admin {
   pendingEmail           String?
   emailVerificationCode  String?
   emailVerificationExpiry DateTime?
+
+  profileImage String?
+  bannerImage  String?
 }
 
 model Teacher {
@@ -308,6 +311,9 @@ model Teacher {
   subjectExamPapers SubjectExamPaper[]
   exams             Exam[]
   timetablePeriods  TimetablePeriod[]
+
+  profileImage String?
+  bannerImage  String?
 }
 
 model Student {
@@ -349,6 +355,9 @@ model Student {
 
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
+
+  profileImage String?
+  bannerImage  String?
 }
 
 model Parent {
@@ -376,6 +385,9 @@ model Parent {
   pendingEmail           String?
   emailVerificationCode  String?
   emailVerificationExpiry DateTime?
+
+  profileImage String?
+  bannerImage  String?
 
   @@map("parents")
 }
