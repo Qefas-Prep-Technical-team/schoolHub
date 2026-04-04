@@ -1,5 +1,7 @@
 "use client";
-import { useState } from "react";
+
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import PageHeader from "./components/PageHeader";
 import SearchBar from "./components/SearchBar";
 import FilterChips from "./components/FilterChips";
@@ -8,7 +10,15 @@ import StudentsTable from "./components/StudentsTable";
 
 
 export default function StudentsPage() {
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
+  
+  useEffect(() => {
+    if (searchParams.get('showAdd') === 'true') {
+      setOpen(true);
+    }
+  }, [searchParams]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     classId: "",

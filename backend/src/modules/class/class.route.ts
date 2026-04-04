@@ -20,6 +20,10 @@ import {
   editClassSubjects,
   removeSubjectFromClass,
 } from "./class.controller";
+import {
+  getClassBehaviourAlerts,
+  createBehaviourAlert,
+} from "./behaviour.controller";
 import { 
   getClassAttendance, 
   submitAttendance, 
@@ -68,6 +72,8 @@ router.delete("/:id/timetable/:periodId", authenticateToken, deleteTimetablePeri
 
 router.get("/preview/:id", authenticateToken, previewClassById);
 router.get("/:id/stats", authenticateToken, getClassStats);
+router.get("/:id/behaviour-alerts", authenticateToken, getClassBehaviourAlerts);
+router.post("/:id/behaviour-alerts", authenticateToken, createBehaviourAlert);
 router.get("/:id", authenticateToken, getSingleClass);
 
 export default router;

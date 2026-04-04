@@ -258,6 +258,32 @@ export const getExamAttemptService = async ({
   // Scrub correct answers if exam is still in progress
   if (attempt.status === "IN_PROGRESS") {
     result.subjectAttempts.forEach(sa => {
+      // Deterministic shuffle if enabled
+      if ((attempt as any).exam?.shuffleQuestions) {
+        // Use student ID + attempt ID as seed
+        const seedStr = sa.id + attempt!.studentId;
+        let seed = 0;
+        for (let i = 0; i < seedStr.length; i++) {
+          seed = ((seed << 5) - seed) + seedStr.charCodeAt(i);
+          seed |= 0;
+        }
+
+        const seededRandom = (s: number) => {
+          const x = Math.sin(s) * 10000;
+          return x - Math.floor(x);
+        };
+
+        const questions = [...sa.subjectPaper.questions];
+        let m = questions.length, t, i;
+        while (m) {
+          i = Math.floor(seededRandom(seed++) * m--);
+          t = questions[m];
+          questions[m] = questions[i];
+          questions[i] = t;
+        }
+        sa.subjectPaper.questions = questions;
+      }
+
       sa.subjectPaper.questions = sa.subjectPaper.questions.map(q => ({
         ...q,
         correctAnswer: "",
@@ -483,6 +509,7 @@ export const scoreExamAttemptService = async ({
           update: {
             score: sa.score,
             maxMarks: sa.totalMarks,
+            subjectPaperId: sa.subjectPaperId, // Link to paper
             updatedAt: new Date(),
           },
           create: {
@@ -497,6 +524,7 @@ export const scoreExamAttemptService = async ({
             maxMarks: sa.totalMarks,
             remarks: `Subject results for ${updated.exam.title}`,
             examId: updated.examId,
+            subjectPaperId: sa.subjectPaperId, // Link to paper
             examAttemptId: updated.id,
             subjectExamAttemptId: sa.id,
           },
@@ -919,5 +947,41 @@ export const getStudentExamAttemptsService = async (studentId: string) => {
     orderBy: {
       submittedAt: "desc",
     },
+  });
+};
+
+export const deleteExamAttemptService = async ({
+  examId,
+  studentId,
+}: {
+  examId: string;
+  studentId: string;
+}) => {
+  const attempt = await prisma.examAttempt.findUnique({
+    where: {
+      examId_studentId: {
+        examId,
+        studentId,
+      },
+    },
+  });
+
+  if (!attempt) {
+    throw new Error("Exam attempt not found");
+  }
+
+  // Delete associated grades first
+  await prisma.grade.deleteMany({
+    where: {
+      OR: [
+        { examAttemptId: attempt.id },
+        { examId, studentId, assessmentType: "EXAM" }
+      ]
+    },
+  });
+
+  // Delete the attempt (cascade will handle subject attempts and answers)
+  return prisma.examAttempt.delete({
+    where: { id: attempt.id },
   });
 };

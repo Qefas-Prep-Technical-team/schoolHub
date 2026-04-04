@@ -306,155 +306,168 @@ export default function StandalonePaperDetailPage() {
           </TabsContent>
 
           <TabsContent value="grades">
-            <div className="space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Student Grades</h2>
-                  <p className="text-sm text-gray-500">Performance report for students who took this paper</p>
-                </div>
+            {(() => {
+              // Normalize and merge results from online attempts and manual grades
+              const onlineResults = (paper.examAttempts || []).map((a: any) => ({
+                id: a.id,
+                studentName: a.examAttempt?.student?.name,
+                studentCode: a.examAttempt?.student?.studentCode,
+                score: a.score,
+                maxMarks: a.totalMarks || paper.totalMarks,
+                type: 'ONLINE'
+              }));
 
-                {isMounted && paper?.examAttempts && paper.examAttempts.length > 0 ? (
-                  <PDFDownloadLink
-                    document={<SubjectPaperReport paper={paper} school={school} attempts={paper.examAttempts} />}
-                    fileName={`${paper.title?.replace(/\s+/g, '_') || 'Report'}_Grade_Report.pdf`}
-                  >
-                    {({ loading }: any) => (
-                      <Button 
-                        className="text-white font-bold px-6 rounded-xl shadow-lg transition-all gap-2"
-                        disabled={loading}
-                        style={{ 
-                          backgroundColor: paper.school?.settings?.themeColor || 'var(--primary)',
-                          boxShadow: paper.school?.settings?.themeColor ? `0 10px 15px -3px ${paper.school.settings.themeColor}33` : undefined
-                        }}
+              const manualResults = (paper.grades || []).map((g: any) => ({
+                id: g.id,
+                studentName: g.student?.name,
+                studentCode: g.student?.studentCode,
+                score: g.score,
+                maxMarks: g.maxMarks,
+                type: 'MANUAL'
+              }));
+
+              const allResults = [...onlineResults, ...manualResults];
+              const hasResults = allResults.length > 0;
+
+              // Statistics
+              const avgScore = hasResults 
+                ? (allResults.reduce((sum, r) => sum + r.score, 0) / allResults.length).toFixed(1)
+                : '0.0';
+              const highBox = hasResults ? Math.max(...allResults.map(r => r.score)).toFixed(1) : '0.0';
+              const lowBox = hasResults ? Math.min(...allResults.map(r => r.score)).toFixed(1) : '0.0';
+
+              return (
+                <div className="space-y-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">Student Grades</h2>
+                      <p className="text-sm text-gray-500">Performance report for students who took this paper</p>
+                    </div>
+
+                    {isMounted && hasResults ? (
+                      <PDFDownloadLink
+                        document={<SubjectPaperReport paper={paper} school={school} attempts={allResults.map(r => ({
+                          ...r,
+                          examAttempt: { student: { name: r.studentName, studentCode: r.studentCode } }
+                        }))} />}
+                        fileName={`${paper.title?.replace(/\s+/g, '_') || 'Report'}_Grade_Report.pdf`}
                       >
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText size={18} />}
-                        {loading ? 'Preparing Download...' : 'Download Grade Report'}
+                        {({ loading }: any) => (
+                          <Button 
+                            className="text-white font-bold px-6 rounded-xl shadow-lg transition-all gap-2"
+                            disabled={loading}
+                            style={{ 
+                              backgroundColor: paper.school?.settings?.themeColor || 'var(--primary)',
+                              boxShadow: paper.school?.settings?.themeColor ? `0 10px 15px -3px ${paper.school.settings.themeColor}33` : undefined
+                            }}
+                          >
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText size={18} />}
+                            {loading ? 'Preparing Download...' : 'Download Grade Report'}
+                          </Button>
+                        )}
+                      </PDFDownloadLink>
+                    ) : (
+                      <Button 
+                        className="bg-gray-200 text-gray-400 font-bold px-6 rounded-xl cursor-not-allowed border border-gray-300"
+                        disabled
+                        title="No attempts recorded"
+                      >
+                        <FileText size={18} />
+                        Download Grade Report
                       </Button>
                     )}
-                  </PDFDownloadLink>
-                ) : !isMounted && paper?.examAttempts && paper.examAttempts.length > 0 ? (
-                   <Button 
-                    className="text-white font-bold px-6 rounded-xl shadow-lg transition-all gap-2 opacity-50"
-                    disabled
-                    style={{ 
-                      backgroundColor: paper?.school?.settings?.themeColor || 'var(--primary)',
-                    }}
-                  >
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Preparing Report...
-                  </Button>
-                ) : (
-                  <Button 
-                    className="bg-gray-200 text-gray-400 font-bold px-6 rounded-xl cursor-not-allowed border border-gray-300"
-                    disabled
-                    title="No attempts recorded"
-                  >
-                    <FileText size={18} />
-                    Download Grade Report
-                  </Button>
-                )}
-              </div>
+                  </div>
 
-              {paper.examAttempts && paper.examAttempts.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { label: "Total Sat", value: paper.examAttempts.length, color: "text-primary" },
-                    { 
-                      label: "Class Average", 
-                      value: (paper.examAttempts.reduce((sum: number, a: any) => sum + (a.score || 0), 0) / paper.examAttempts.length).toFixed(1),
-                      color: "text-blue-600" 
-                    },
-                    { 
-                      label: "Highest Score", 
-                      value: Math.max(...paper.examAttempts.map((a: any) => a.score || 0)).toFixed(1),
-                      color: "text-emerald-600" 
-                    },
-                    { 
-                      label: "Lowest Score", 
-                      value: Math.min(...paper.examAttempts.map((a: any) => a.score || 0)).toFixed(1),
-                      color: "text-rose-600" 
-                    }
-                  ].map((stat, idx) => (
-                    <div key={idx} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                      <p className={`text-xl font-black ${stat.color}`}>{stat.value}</p>
+                  {hasResults && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {[
+                        { label: "Total Sat", value: allResults.length, color: "text-primary" },
+                        { label: "Class Average", value: avgScore, color: "text-blue-600" },
+                        { label: "Highest Score", value: highBox, color: "text-emerald-600" },
+                        { label: "Lowest Score", value: lowBox, color: "text-rose-600" }
+                      ].map((stat, idx) => (
+                        <div key={idx} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                          <p className={`text-xl font-black ${stat.color}`}>{stat.value}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Student</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Code</th>
-                        <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Score</th>
-                        <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Percentage</th>
-                        <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                      {paper.examAttempts && paper.examAttempts.length > 0 ? (
-                        paper.examAttempts.map((attempt: any) => {
-                          const percentage = (attempt.score / (attempt.totalMarks || paper.totalMarks)) * 100;
-                          const isPass = percentage >= (paper.passMark || 40);
-                          return (
-                            <tr key={attempt.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                              <td className="px-6 py-4">
-                                <div className="font-bold text-gray-900 dark:text-white capitalize">
-                                  {attempt.examAttempt?.student?.name}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 font-medium text-gray-500 font-mono text-xs">
-                                {attempt.examAttempt?.student?.studentCode}
-                              </td>
-                              <td className="px-6 py-4 text-center">
-                                <span className="font-black text-gray-900 dark:text-white">
-                                  {attempt.score}
-                                </span>
-                                <span className="text-gray-400 ml-1">
-                                  / {attempt.totalMarks || paper.totalMarks}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center justify-center gap-2">
-                                  <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                    <div 
-                                      className={`h-full rounded-full ${isPass ? 'bg-emerald-500' : 'bg-red-500'}`}
-                                      style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-xs font-bold text-gray-600 dark:text-gray-400">
-                                    {percentage.toFixed(0)}%
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-center">
-                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${
-                                  isPass 
-                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
-                                    : 'bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
-                                }`}>
-                                  {isPass ? 'PASS' : 'FAIL'}
-                                </span>
+                  <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] overflow-hidden shadow-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Student</th>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Code</th>
+                            <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Score</th>
+                            <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Percentage</th>
+                            <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest text-right pr-8">Source</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                          {hasResults ? (
+                            allResults.map((result: any) => {
+                              const percentage = (result.score / result.maxMarks) * 100;
+                              const isPass = percentage >= (paper.passMark || 40);
+                              return (
+                                <tr key={result.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                                  <td className="px-6 py-4">
+                                    <div className="font-bold text-gray-900 dark:text-white capitalize">
+                                      {result.studentName}
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 font-medium text-gray-500 font-mono text-xs">
+                                    {result.studentCode}
+                                  </td>
+                                  <td className="px-6 py-4 text-center">
+                                    <span className="font-black text-gray-900 dark:text-white">
+                                      {result.score}
+                                    </span>
+                                    <span className="text-gray-400 ml-1">
+                                      / {result.maxMarks}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                        <div 
+                                          className={`h-full rounded-full ${isPass ? 'bg-emerald-500' : 'bg-red-500'}`}
+                                          style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+                                        />
+                                      </div>
+                                      <span className="text-xs font-bold text-gray-600 dark:text-gray-400">
+                                        {percentage.toFixed(0)}%
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 text-right pr-8">
+                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black tracking-widest ${
+                                      result.type === 'MANUAL' 
+                                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
+                                        : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
+                                    }`}>
+                                      {result.type}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          ) : (
+                            <tr>
+                              <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
+                                No student attempts or standalone grades found for this paper.
                               </td>
                             </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
-                            No student attempts found for this paper.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
           </TabsContent>
         </Tabs>
       </main>

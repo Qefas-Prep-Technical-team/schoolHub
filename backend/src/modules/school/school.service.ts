@@ -205,31 +205,98 @@ export const updateSchoolProfileService = async (schoolId: string, data: any) =>
   });
 };
 
-/**
- * Fetch school settings
- */
 export const getSchoolSettingsService = async (schoolId: string) => {
+  console.log(`[SchoolService] getSchoolSettings: Starting for schoolId: ${schoolId}`);
+  
+  // Resolve the school by either its UUID `id` or its `tenantId` string
+  const school = await prisma.school.findFirst({
+    where: {
+      OR: [
+        { id: schoolId },
+        { tenantId: schoolId }
+      ]
+    },
+    select: { id: true, name: true }
+  });
+
+  if (!school) {
+    console.error(`[SchoolService] getSchoolSettings: School NOT FOUND for id/tenantId: ${schoolId}`);
+    throw new Error(`School record not found for the provided ID: "${schoolId}". Settings cannot be fetched or created.`);
+  }
+
+  // Use the canonical school.id (UUID) for all further lookups
+  const resolvedId = school.id;
+  console.log(`[SchoolService] getSchoolSettings: School verified: "${school.name}" (resolved ID: ${resolvedId})`);
+
   let settings = await prisma.schoolSetting.findUnique({
-    where: { schoolId },
+    where: { schoolId: resolvedId },
   });
 
   if (!settings) {
-    settings = await prisma.schoolSetting.create({
-      data: { schoolId },
-    });
+    console.log(`[SchoolService] getSchoolSettings: No settings found. Creating default settings...`);
+    try {
+      settings = await prisma.schoolSetting.create({
+        data: { schoolId: resolvedId },
+      });
+      console.log(`[SchoolService] getSchoolSettings: Default settings created successfully.`);
+    } catch (createError: any) {
+      console.error(`[SchoolService] getSchoolSettings: FAILED to create settings:`, createError);
+      throw new Error(`Database error while creating school settings: ${createError.message}`);
+    }
+  } else {
+    console.log(`[SchoolService] getSchoolSettings: Settings record retrieved.`);
   }
 
   return settings;
 };
 
-/**
- * Update school settings
- */
 export const updateSchoolSettingsService = async (schoolId: string, data: any) => {
-  return await prisma.schoolSetting.update({
-    where: { schoolId },
-    data,
+  console.log(`[SchoolService] updateSchoolSettings: Received update request for schoolId: ${schoolId}`);
+  
+  // Resolve the canonical school.id
+  const school = await prisma.school.findFirst({
+    where: {
+      OR: [
+        { id: schoolId },
+        { tenantId: schoolId }
+      ]
+    },
+    select: { id: true }
   });
+
+  if (!school) {
+    throw new Error(`Cannot update settings: school not found for ID "${schoolId}".`);
+  }
+
+  const resolvedId = school.id;
+
+  try {
+    const updatePayload: any = {};
+    if (data.showComingSoon !== undefined) updatePayload.showComingSoon = !!data.showComingSoon;
+    if (data.themeColor !== undefined) updatePayload.themeColor = String(data.themeColor);
+    if (data.defaultSession !== undefined) updatePayload.defaultSession = data.defaultSession || null;
+    if (data.defaultTerm !== undefined) updatePayload.defaultTerm = data.defaultTerm || null;
+    if (data.enableEmailNotifications !== undefined) updatePayload.enableEmailNotifications = !!data.enableEmailNotifications;
+    if (data.enablePushNotifications !== undefined) updatePayload.enablePushNotifications = !!data.enablePushNotifications;
+    if (data.enableMaintenanceMode !== undefined) updatePayload.enableMaintenanceMode = !!data.enableMaintenanceMode;
+    if (data.allowTeacherDigitalSignature !== undefined) updatePayload.allowTeacherDigitalSignature = !!data.allowTeacherDigitalSignature;
+    if (data.lockSettings !== undefined) updatePayload.lockSettings = !!data.lockSettings;
+
+    console.log(`[SchoolService] updateSchoolSettings: Payload:`, JSON.stringify(updatePayload));
+
+    const updated = await prisma.schoolSetting.update({
+      where: { schoolId: resolvedId },
+      data: updatePayload,
+    });
+    console.log(`[SchoolService] updateSchoolSettings: SUCCESS`);
+    return updated;
+  } catch (updateError: any) {
+    console.error(`[SchoolService] updateSchoolSettings: FAILED:`, updateError);
+    if (updateError.code === 'P2025') {
+      throw new Error(`Settings record not found to update. Try refreshing the page.`);
+    }
+    throw new Error(`Prisma Error [${updateError.code || 'UNKNOWN'}]: ${updateError.message}`);
+  }
 };
 
 /**

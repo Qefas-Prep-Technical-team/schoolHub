@@ -54,3 +54,11 @@ export const useVerifyEmailUpdate = () => {
     },
   });
 };
+
+export const useStudents = (schoolId: string, filters: Record<string, string | boolean | undefined> = {}) => {
+  return useQuery({
+    queryKey: [...studentKeys.all, schoolId, filters],
+    queryFn: () => studentService.getSchoolStudents(schoolId, filters),
+    enabled: !!schoolId,
+  });
+};

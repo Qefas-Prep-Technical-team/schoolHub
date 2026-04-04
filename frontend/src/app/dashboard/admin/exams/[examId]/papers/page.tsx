@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { examService } from "@/lib/api/services/examService";
 import { CreatePaperForm } from "./components/CreatePaperForm";
 import { sessionService } from "@/lib/api/services/sessionService";
-import { Copy, FileText, Clock, Users, Check, Loader2, ShieldCheck, ChevronLeft, Settings2, Calendar, Trash2, Link as LinkIcon, Link2Off, Globe, Lock, Unlock, AlertCircle } from "lucide-react";
+import { Copy, FileText, Clock, Users, Check, Loader2, ShieldCheck, ChevronLeft, Settings2, Calendar, Trash2, Link as LinkIcon, Link2Off, Globe, Lock, Unlock, AlertCircle, Shuffle } from "lucide-react";
 import { useUnlinkPaper } from "@/lib/api/hooks/useExams";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -27,6 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import ConfirmationModal from "../../components/ui/ConfirmationModal";
 
 export default function ExamPapersPage() {
@@ -111,6 +112,24 @@ export default function ExamPapersPage() {
 
   const unlinkPaperMutation = useUnlinkPaper(examId);
 
+  const { data: attempts = [], isLoading: isLoadingAttempts } = useQuery({
+    queryKey: ["exam-attempts", examId],
+    queryFn: () => examService.getExamAttempts(examId),
+    enabled: !!examId,
+  });
+
+  const deleteAttemptMutation = useMutation({
+    mutationFn: (studentId: string) => examService.deleteExamAttempt(examId, studentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exam-attempts", examId] });
+      toast.success("Student record cleared. They can now retake the exam.");
+      setConfirmDialog({ ...confirmDialog, isOpen: false });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete attempt");
+    }
+  });
+
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -143,6 +162,7 @@ export default function ExamPapersPage() {
     endDate: "",
     resultReleaseAt: "",
     allowImmediateResult: false,
+    shuffleQuestions: false,
     scope: "SCHOOL",
     classId: "",
     departmentIds: [] as string[],
@@ -213,6 +233,7 @@ export default function ExamPapersPage() {
         sessionId: exam.sessionId || "",
         term: exam.term || "",
         teacherId: exam.teacherId || "",
+        shuffleQuestions: !!exam.shuffleQuestions,
       });
     }
   }, [exam, isSettingsOpen]);
@@ -574,6 +595,22 @@ export default function ExamPapersPage() {
                               )}
                             </div>
                           </div>
+
+                          <div className="space-y-3 p-6 bg-primary/5 dark:bg-primary/10 rounded-[2rem] border border-primary/10">
+                            <Label className="text-xs font-black uppercase tracking-widest text-primary/60">Exam Integrity</Label>
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="space-y-0.5">
+                                <Label className="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                                  <Shuffle size={14} className="text-primary" /> Shuffle Questions
+                                </Label>
+                                <p className="text-[10px] text-slate-500 font-medium">Randomize question order for every student attempt.</p>
+                              </div>
+                              <Switch 
+                                checked={examSettings.shuffleQuestions}
+                                onCheckedChange={(checked) => setExamSettings({ ...examSettings, shuffleQuestions: checked })}
+                              />
+                            </div>
+                          </div>
                         </div>
 
                         <div className="space-y-6">
@@ -915,6 +952,101 @@ export default function ExamPapersPage() {
         </div>
       </div>
 
+      {/* Participants Section */}
+      <div className="mt-12 space-y-6">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+              <Users size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-black tracking-tight text-gray-900 dark:text-white">
+                Exam Participants <span className="text-primary ml-1">({attempts.length})</span>
+              </h2>
+              <p className="text-xs font-medium text-muted-foreground">Students who have started or submitted this examination.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[2.5rem] overflow-hidden shadow-sm">
+          {isLoadingAttempts ? (
+            <div className="p-8 space-y-4">
+              <Skeleton className="h-12 w-full rounded-2xl" />
+              <Skeleton className="h-12 w-full rounded-2xl" />
+            </div>
+          ) : attempts.length === 0 ? (
+            <div className="p-12 text-center flex flex-col items-center">
+              <div className="h-16 w-16 rounded-3xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-300 mb-4">
+                <Users size={32} />
+              </div>
+              <p className="text-gray-500 font-bold">No students have attempted this exam yet.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-gray-800">
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Student Name</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Progress</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Score</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
+                  {attempts.map((attempt: any) => (
+                    <tr key={attempt.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                      <td className="px-8 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-black text-gray-900 dark:text-white">{attempt.student?.name}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{attempt.student?.studentCode}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-4">
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase border ${
+                          attempt.status === 'SCORED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                          attempt.status === 'SUBMITTED' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                          attempt.status === 'EXPIRED' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                          'bg-amber-50 text-amber-600 border-amber-100'
+                        }`}>
+                          {attempt.status}
+                        </span>
+                      </td>
+                      <td className="px-8 py-4 text-center">
+                        <span className="text-xs font-bold text-gray-600">
+                          {attempt.subjectAttempts?.length || 0} / {papers.length} Papers
+                        </span>
+                      </td>
+                      <td className="px-8 py-4 text-center">
+                        <span className="text-sm font-black text-primary">
+                          {attempt.totalScore} <span className="text-slate-300">/</span> {attempt.totalMarks}
+                        </span>
+                      </td>
+                      <td className="px-8 py-4 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openConfirmDialog({
+                            title: "Clear Student Record",
+                            description: `Are you sure you want to delete ${attempt.student?.name}'s attempt? This will permanently remove their answers and allow them to take the exam again.`,
+                            variant: "danger",
+                            confirmText: "Clear & Reset",
+                            onConfirm: () => deleteAttemptMutation.mutate(attempt.studentId)
+                          })}
+                          className="h-9 rounded-xl text-red-600 hover:bg-red-50 font-bold text-xs flex items-center gap-2 ml-auto"
+                        >
+                          <Trash2 size={14} /> Clear Record
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
       <ConfirmationModal
         isOpen={confirmDialog.isOpen}
         onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
@@ -928,7 +1060,8 @@ export default function ExamPapersPage() {
           unpublishExamMutation.isPending || 
           deleteExamMutation.isPending || 
           unpublishPaperMutation.isPending || 
-          unlinkPaperMutation.isPending
+          unlinkPaperMutation.isPending ||
+          deleteAttemptMutation.isPending
         }
       />
     </div>

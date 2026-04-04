@@ -27,6 +27,7 @@ import {
   updateSubjectPaper,
 } from "./exam.controller";
 import {
+  deleteExamAttempt,
   getExamAttempt,
   getExamAttempts,
   getMyExamAttempts,
@@ -96,6 +97,7 @@ router.post("/:id/start", authenticateToken, startExamAttempt);
 router.get("/my/attempts", authenticateToken, getMyExamAttempts);
 router.get("/:id/attempt", authenticateToken, getExamAttempt);
 router.get("/:id/attempts", authenticateToken, getExamAttempts);
+router.delete("/:id/attempts/:studentId", authenticateToken, deleteExamAttempt);
 router.post("/:id/answers", authenticateToken, saveExamAnswer);
 router.post("/:id/submit", authenticateToken, submitExamAttempt);
 router.get("/:id/review", authenticateToken, getExamReviewData);

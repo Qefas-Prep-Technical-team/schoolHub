@@ -171,19 +171,26 @@ export const updateSchoolProfile = async (req: Request, res: Response) => {
  * Handle fetching school settings
  */
 export const getSchoolSettings = async (req: Request, res: Response) => {
+  const { schoolId } = req.params;
   try {
-    const { schoolId } = req.params;
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "schoolId is required" });
+      return res.status(400).json({ success: false, message: "School ID is required in the request parameters." });
     }
-
+    
+    console.log(`[SettingsController] GET request for schoolId: ${schoolId}`);
     const data = await getSchoolSettingsService(schoolId as string);
+    
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
+    console.error(`[SettingsController] GET Error for ${schoolId}:`, error);
+    
+    // Check if it's a "Not Found" error from service
+    const isNotFound = error.message.includes("record not found");
+    
+    return res.status(isNotFound ? 404 : 400).json({
       success: false,
-      message: error.message || "Failed to fetch school settings",
+      message: error.message || "An unexpected error occurred while fetching school settings.",
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
@@ -192,21 +199,25 @@ export const getSchoolSettings = async (req: Request, res: Response) => {
  * Handle updating school settings
  */
 export const updateSchoolSettings = async (req: Request, res: Response) => {
+  const { schoolId } = req.params;
   try {
-    const { schoolId } = req.params;
     const updateData = req.body;
 
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "schoolId is required" });
+      return res.status(400).json({ success: false, message: "School ID is required in the request parameters to perform an update." });
     }
-
+    
+    console.log(`[SettingsController] PATCH request for schoolId: ${schoolId}`);
     const data = await updateSchoolSettingsService(schoolId as string, updateData);
+    
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
+    console.error(`[SettingsController] PATCH Error for ${schoolId}:`, error);
+    
     return res.status(400).json({
       success: false,
-      message: error.message || "Failed to update school settings",
+      message: error.message || "An unexpected error occurred while updating school settings.",
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };

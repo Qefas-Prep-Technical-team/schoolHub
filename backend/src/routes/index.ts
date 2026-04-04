@@ -10,6 +10,7 @@ import examRoutes from "../modules/exam/exam.route";
 import schoolRoutes from "../modules/school/school.route";
 import studentRoutes from "../modules/student/student.route";
 import uploadRoutes from "../modules/upload/upload.route";
+import gradeRoutes from "../modules/grade/grade.route";
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use("/exams", examRoutes);
 router.use("/schools", schoolRoutes);
 router.use("/students", studentRoutes);
 router.use("/upload", uploadRoutes);
+router.use("/grades", gradeRoutes);
 // router.use("/teachers", teacherRoutes);
 
 export default router;

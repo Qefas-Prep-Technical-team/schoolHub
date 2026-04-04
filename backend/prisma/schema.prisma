@@ -207,6 +207,12 @@ model SchoolSetting {
   defaultSession String?
   defaultTerm    String?
 
+  enableEmailNotifications Boolean @default(true)
+  enablePushNotifications  Boolean @default(true)
+  enableMaintenanceMode   Boolean @default(false)
+  allowTeacherDigitalSignature Boolean @default(false)
+  lockSettings            Boolean @default(false)
+
   updatedAt DateTime @updatedAt
 }
 
@@ -266,6 +272,7 @@ model Teacher {
   invitationToken String? @unique
 
   grades          Grade[]
+  reportedAlerts  BehaviourAlert[]
   role            UserRole
   tenantIds       String[] @default(["default-tenant-id"])
   defaultTenantId String   @default("default-tenant-id")
@@ -320,6 +327,7 @@ model Student {
   schoolId         String?
   originalSchoolId String?
   grades           Grade[]
+  behaviourAlerts  BehaviourAlert[]
   classes          ClassEnrollment[]
   parentLinks      ParentChildLink[]
 
@@ -405,6 +413,7 @@ model Class {
   createdByType LinkEntityType?
 
   grades Grade[]
+  behaviourAlerts BehaviourAlert[]
 
   school            School?            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teachers          ClassTeacher[]
@@ -492,27 +501,36 @@ model Grade {
   // Relations
   student Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   school  School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull) // Add this
+  teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
   class   Class?   @relation(fields: [classId], references: [id], onDelete: SetNull)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
   subject        String
-  assessmentType String
+  category       GradeCategory @default(EXAM)
+  assessmentType String?
+  status         GradeStatus   @default(DRAFT)
   score          Float
   maxMarks       Float
+  weight         Float         @default(1.0)
   remarks        String?
 
+  sessionId            String?
+  term                 Term?
   examId               String?
+  subjectPaperId       String?
   examAttemptId        String?
   subjectExamAttemptId String?
 
   // Relations
   exam               Exam?               @relation(fields: [examId], references: [id], onDelete: SetNull)
+  subjectPaper       SubjectExamPaper?   @relation(fields: [subjectPaperId], references: [id], onDelete: SetNull)
   examAttempt        ExamAttempt?        @relation(fields: [examAttemptId], references: [id], onDelete: SetNull)
   subjectExamAttempt SubjectExamAttempt? @relation(fields: [subjectExamAttemptId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([studentId, examId, subjectPaperId])
   @@map("grades")
 }
 
@@ -855,6 +873,7 @@ model Exam {
   resultReleaseAt      DateTime?
   startDate            DateTime?
   endDate              DateTime?
+  shuffleQuestions     Boolean   @default(false)
 
   aiPrompt      String?
   instructions  String?
@@ -925,6 +944,7 @@ model SubjectExamPaper {
 
   questions    SubjectExamQuestion[]
   examAttempts SubjectExamAttempt[]
+  grades       Grade[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1000,6 +1020,7 @@ model Session {
 
   school School? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   exams  Exam[]
+  grades Grade[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1148,4 +1169,41 @@ model ClassTeacher {
 
   @@unique([classId, teacherId])
   @@map("class_teachers")
+}
+
+model BehaviourAlert {
+  id          String        @id @default(uuid())
+  type        BehaviourType @default(WARNING)
+  title       String
+  description String?
+  studentId   String
+  reportedById String
+  classId     String
+
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  reporter   Teacher @relation(fields: [reportedById], references: [id], onDelete: Cascade)
+  class      Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("behaviour_alerts")
+}
+
+enum BehaviourType {
+  WARNING
+  DANGER
+}
+
+enum GradeCategory {
+  EXAM
+  MIDTERM
+  ASSIGNMENT
+  QUIZ
+}
+
+enum GradeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }

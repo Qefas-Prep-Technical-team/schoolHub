@@ -2,6 +2,7 @@
 
 import { UserPlus, FileText, Megaphone, MoreHorizontal, Users, Calendar, Download, Settings } from 'lucide-react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Action {
   id: string;
@@ -11,10 +12,11 @@ interface Action {
   color: string;
   iconColor: string;
   bgColor: string;
-  onClick?: () => void;
+  href: string;
 }
 
 export default function QuickActions() {
+  const router = useRouter();
   const [actions] = useState<Action[]>([
     {
       id: 'add-student',
@@ -24,7 +26,7 @@ export default function QuickActions() {
       color: 'border-blue-200 dark:border-blue-800',
       iconColor: 'text-blue-600 dark:text-blue-400',
       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-      onClick: () => console.log('Add Student clicked'),
+      href: '/dashboard/admin/students?showAdd=true',
     },
     {
       id: 'publish-results',
@@ -34,7 +36,7 @@ export default function QuickActions() {
       color: 'border-emerald-200 dark:border-emerald-800',
       iconColor: 'text-emerald-600 dark:text-emerald-400',
       bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
-      onClick: () => console.log('Publish Results clicked'),
+      href: '/dashboard/admin/grades',
     },
     {
       id: 'announce',
@@ -44,7 +46,7 @@ export default function QuickActions() {
       color: 'border-amber-200 dark:border-amber-800',
       iconColor: 'text-amber-600 dark:text-amber-400',
       bgColor: 'bg-amber-50 dark:bg-amber-900/20',
-      onClick: () => console.log('Announce clicked'),
+      href: '/dashboard/admin/notifications',
     },
     {
       id: 'manage-staff',
@@ -54,7 +56,7 @@ export default function QuickActions() {
       color: 'border-purple-200 dark:border-purple-800',
       iconColor: 'text-purple-600 dark:text-purple-400',
       bgColor: 'bg-purple-50 dark:bg-purple-900/20',
-      onClick: () => console.log('Manage Staff clicked'),
+      href: '/dashboard/admin/teachers',
     },
     {
       id: 'schedule',
@@ -64,7 +66,7 @@ export default function QuickActions() {
       color: 'border-indigo-200 dark:border-indigo-800',
       iconColor: 'text-indigo-600 dark:text-indigo-400',
       bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
-      onClick: () => console.log('Schedule clicked'),
+      href: '/dashboard/admin/classes',
     },
     {
       id: 'export-data',
@@ -74,7 +76,7 @@ export default function QuickActions() {
       color: 'border-teal-200 dark:border-teal-800',
       iconColor: 'text-teal-600 dark:text-teal-400',
       bgColor: 'bg-teal-50 dark:bg-teal-900/20',
-      onClick: () => console.log('Export Data clicked'),
+      href: '/dashboard/admin/grades',
     },
     {
       id: 'settings',
@@ -84,17 +86,7 @@ export default function QuickActions() {
       color: 'border-slate-200 dark:border-slate-800',
       iconColor: 'text-slate-600 dark:text-slate-400',
       bgColor: 'bg-slate-50 dark:bg-slate-900/20',
-      onClick: () => console.log('Settings clicked'),
-    },
-    {
-      id: 'more',
-      title: 'More',
-      icon: MoreHorizontal,
-      description: 'Additional actions',
-      color: 'border-gray-200 dark:border-gray-800',
-      iconColor: 'text-gray-600 dark:text-gray-400',
-      bgColor: 'bg-gray-50 dark:bg-gray-900/20',
-      onClick: () => console.log('More clicked'),
+      href: '/dashboard/admin/settings',
     },
   ]);
 
@@ -123,7 +115,7 @@ export default function QuickActions() {
           return (
             <button
               key={action.id}
-              onClick={action.onClick}
+              onClick={() => router.push(action.href)}
               className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border ${action.color} ${action.bgColor} hover:border-primary/50 hover:scale-[1.02] transition-all group`}
             >
               <div className={`p-2 rounded-lg ${action.bgColor} group-hover:bg-white dark:group-hover:bg-slate-700 transition-colors`}>

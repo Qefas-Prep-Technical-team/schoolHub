@@ -50,7 +50,8 @@ export const downloadIndividualResultsAsZip = async ({
       const blob = await pdf(doc).toBlob();
       
       // Add to ZIP folder
-      const fileName = `${preparedResult.student?.name || 'Student'}_${preparedResult.student?.studentCode || i}_Result.pdf`.replace(/[/\\?%*:|"<>]/g, '-');
+      const studentName = preparedResult.student?.name || 'Student';
+      const fileName = `${studentName} - ${sanitizedExamTitle}.pdf`.replace(/[/\\?%*:|"<>]/g, '-');
       folder.file(fileName, blob);
     } catch (err) {
       console.error(`Failed to generate PDF for ${preparedResult.student?.name}:`, err);

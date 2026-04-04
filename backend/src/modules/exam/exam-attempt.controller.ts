@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserRole } from "@prisma/client";
 import {
+  deleteExamAttemptService,
   getExamAttemptService,
   getExamAttemptsService,
   getExamResultService,
@@ -237,6 +238,35 @@ export const getExamAttempts = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to fetch exam attempts",
+    });
+  }
+};
+
+export const deleteExamAttempt = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const studentId = req.params.studentId as string;
+
+    if (!id || !studentId) {
+      return res.status(400).json({
+        success: false,
+        message: "examId and studentId are required",
+      });
+    }
+
+    await deleteExamAttemptService({
+      examId: id,
+      studentId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Exam attempt deleted successfully",
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to delete exam attempt",
     });
   }
 };

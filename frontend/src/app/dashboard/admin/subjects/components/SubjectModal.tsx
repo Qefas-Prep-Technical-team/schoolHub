@@ -24,6 +24,7 @@ import { departmentService, Department } from "../../departments/services/depart
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
 import { apiClient } from "@/lib/api/client"
 import { toast } from "react-toastify"
+import { useSchoolTeachers } from "@/lib/api/hooks/useSchool"
 
 interface SubjectModalProps {
   isOpen: boolean
@@ -45,16 +46,33 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
     code: string;
     description?: string;
     departmentIds: string[];
+    teacherIds: string[];
     scope: "SCHOOL";
   }>({
     name: "",
     code: "",
     description: "",
     departmentIds: [],
+    teacherIds: [],
     scope: "SCHOOL",
   })
 
   const { user } = useAuthStore()
+  
+  // Get schoolId for teachers fetch
+  const [schoolId, setSchoolId] = useState<string>("");
+  
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (user?.email) {
+        const res = await apiClient.get(`/admin/admin-status/${user.email}`);
+        setSchoolId(res.data.data.schoolAdmins?.[0]?.schoolId || "");
+      }
+    };
+    checkStatus();
+  }, [user?.email]);
+
+  const { data: schoolTeachers = [] } = useSchoolTeachers(schoolId);
 
   useEffect(() => {
     if (isOpen) {
@@ -65,6 +83,7 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
           code: subject.code,
           description: subject.description || "",
           departmentIds: subject.departments?.map((d: any) => d.departmentId) || [],
+          teacherIds: (subject as any).teacherSubjects?.map((ts: any) => ts.teacherId) || [],
           scope: "SCHOOL",
         })
       } else {
@@ -73,6 +92,7 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
           code: "",
           description: "",
           departmentIds: [],
+          teacherIds: [],
           scope: "SCHOOL",
         })
       }
@@ -134,6 +154,19 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
         } catch (attachErr) {
             console.error("Failed to link subject to departments", attachErr);
             toast.warning("Subject created, but failed to link to all selected departments.");
+        }
+      }
+
+      // If teachers are selected, link them
+      if (formData.teacherIds.length > 0 && savedSubject?.id) {
+        try {
+            await apiClient.post(`/academic/subjects/${savedSubject.id}/teachers`, {
+                teacherIds: formData.teacherIds,
+                schoolId,
+            });
+        } catch (attachErr) {
+            console.error("Failed to link subject to teachers", attachErr);
+            toast.warning("Subject created, but failed to link to all selected teachers.");
         }
       }
 
@@ -232,6 +265,60 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
             {formData.departmentIds.length > 0 && (
                 <p className="text-[10px] text-blue-600 font-medium">
                     {formData.departmentIds.length} department(s) selected
+                </p>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+              Assign Teachers
+            </Label>
+            <div className="grid grid-cols-2 gap-3 max-h-[150px] overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-transparent focus-within:border-blue-500/30 transition-all">
+                {schoolTeachers.length === 0 ? (
+                    <div className="col-span-2 py-4 text-center text-xs text-slate-400 italic">
+                        No teachers found.
+                    </div>
+                ) : (
+                    schoolTeachers.map((teacher: any) => {
+                        const isSelected = formData.teacherIds.includes(teacher.id);
+                        return (
+                            <div 
+                                key={teacher.id}
+                                onClick={() => {
+                                    const newIds = isSelected 
+                                        ? formData.teacherIds.filter(id => id !== teacher.id)
+                                        : [...formData.teacherIds, teacher.id];
+                                    setFormData({ ...formData, teacherIds: newIds });
+                                }}
+                                className={`
+                                    flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border
+                                    ${isSelected 
+                                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
+                                        : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-800'}
+                                `}
+                            >
+                                <div className={`
+                                    w-4 h-4 rounded border flex items-center justify-center transition-all
+                                    ${isSelected 
+                                        ? 'bg-blue-600 border-blue-600' 
+                                        : 'border-slate-300 dark:border-slate-600'}
+                                `}>
+                                    {isSelected && <span className="material-symbols-outlined text-white text-[12px] font-bold">check</span>}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className={`text-xs font-bold ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-900 dark:text-white'}`}>
+                                        {teacher.name}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 uppercase">{teacher.teacherCode}</span>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+            {formData.teacherIds.length > 0 && (
+                <p className="text-[10px] text-blue-600 font-medium">
+                    {formData.teacherIds.length} teacher(s) selected
                 </p>
             )}
           </div>

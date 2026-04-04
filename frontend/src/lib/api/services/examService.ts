@@ -17,6 +17,7 @@ export interface Exam {
   endDate?: string;
   resultReleaseAt?: string;
   allowImmediateResult?: boolean;
+  shuffleQuestions?: boolean;
   classId?: string;
   class?: { id: string; name: string; section?: string };
   departments?: { department: { id: string; name: string } }[];
@@ -84,6 +85,7 @@ export interface CreateExamDTO {
   endDate?: string;
   resultReleaseAt?: string;
   allowImmediateResult?: boolean;
+  shuffleQuestions?: boolean;
   classId?: string;
   departmentIds?: string[];
 }
@@ -229,6 +231,11 @@ export const examService = {
   submitAttempt: async (examId: string) => {
     const response = await apiClient.post(`/exams/${examId}/submit`);
     return response.data.data;
+  },
+
+  deleteExamAttempt: async (examId: string, studentId: string) => {
+    const response = await apiClient.delete(`/exams/${examId}/attempts/${studentId}`);
+    return response.data;
   },
 
   getExamResult: async (examId: string, studentId?: string) => {

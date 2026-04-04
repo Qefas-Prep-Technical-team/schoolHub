@@ -11,10 +11,11 @@ import ClassExamsPage from './components/exams/ExamsTab';
 import ClassAttendancePage from './components/attendance/AttendanceTab';
 import ManageClassModal from './components/ManageClassModal';
 import ClassQRCodeModal from './components/ClassQRCodeModal';
+import TeachersTab from './components/TeachersTab';
 
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
-import { useSingleClass } from '@/lib/api/hooks/useClasses';
+import { useSingleClass, useClassBehaviourAlerts } from '@/lib/api/hooks/useClasses';
 
 export default function ClassDetailsPage() {
   const params = useParams();
@@ -22,6 +23,7 @@ export default function ClassDetailsPage() {
   const id = params.id as string;
   
   const { data: classData, isLoading: loading, error } = useSingleClass(id);
+  const { data: realBehaviourAlerts = [] } = useClassBehaviourAlerts(id);
   const [activeTab, setActiveTab] = React.useState("tab1");
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -51,24 +53,14 @@ export default function ClassDetailsPage() {
     }
   }, [error]);
 
-  const behaviourAlerts = [
-    {
-      id: '1',
-      type: 'warning' as const,
-      title: 'Late submission of Science homework',
-      description: 'Student: Alice Johnson - Reported by: Ms. Davis',
-      student: 'Alice Johnson',
-      reportedBy: 'Ms. Davis',
-    },
-    {
-      id: '2',
-      type: 'danger' as const,
-      title: 'Disruptive behaviour during History class',
-      description: 'Student: Bob Williams - Reported by: Mr. Smith',
-      student: 'Bob Williams',
-      reportedBy: 'Mr. Smith',
-    },
-  ];
+  const behaviourAlerts = realBehaviourAlerts.map((alert: any) => ({
+    id: alert.id,
+    type: alert.type.toLowerCase() as 'warning' | 'danger',
+    title: alert.title,
+    description: alert.description || "",
+    student: alert.student?.name || "Unknown",
+    reportedBy: alert.reporter?.name || "System",
+  }));
 
    const upcomingExams = [
      {
@@ -99,7 +91,12 @@ export default function ClassDetailsPage() {
     { 
       id: 'subjects', 
       label: 'Subjects' , 
-      content: <ClassSubjectsPage classSubjects={classData?.subjects || []} className={classData?.name} /> 
+      content: <ClassSubjectsPage classSubjects={classData?.subjects || []} className={classData?.name} classId={id} /> 
+    },
+    {
+      id: 'teachers',
+      label: 'Teachers',
+      content: <TeachersTab teachers={classData?.teachers || []} />
     },
     { 
       id: 'timetable', 

@@ -27,15 +27,30 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
 
     const { data: sessions = [], isLoading: isLoadingSessions } = useQuery({
         queryKey: ['sessions', schoolId],
-        queryFn: () => sessionService.getSessions(),
+        queryFn: async () => {
+            try {
+                const res = await apiClient.get(`/sessions?schoolId=${schoolId}`);
+                const result = res.data?.data || res.data;
+                return Array.isArray(result) ? result : [];
+            } catch (err) {
+                console.error("Error fetching sessions:", err);
+                return [];
+            }
+        },
         enabled: !!schoolId,
     });
 
     const { data: classes = [], isLoading: isLoadingClasses } = useQuery({
         queryKey: ['school-classes', schoolId],
         queryFn: async () => {
-            const { data } = await apiClient.get(`/classes?schoolId=${schoolId}`);
-            return data.data || [];
+            try {
+                const res = await apiClient.get(`/classes?schoolId=${schoolId}`);
+                const result = res.data?.data || res.data;
+                return Array.isArray(result) ? result : [];
+            } catch (err) {
+                console.error("Error fetching classes:", err);
+                return [];
+            }
         },
         enabled: !!schoolId,
     });
@@ -43,17 +58,23 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
     const { data: departments = [], isLoading: isLoadingDepts } = useQuery({
         queryKey: ['school-departments', schoolId, filters.classId],
         queryFn: async () => {
-            const classId = filters.classId !== 'all' ? filters.classId : undefined;
-            const url = `/academic/departments?schoolId=${schoolId}${classId ? `&classId=${classId}` : ''}`;
-            const { data } = await apiClient.get(url);
-            return data.data || [];
+            try {
+                const classId = filters.classId !== 'all' ? filters.classId : undefined;
+                const url = `/academic/departments?schoolId=${schoolId}${classId ? `&classId=${classId}` : ''}`;
+                const res = await apiClient.get(url);
+                const result = res.data?.data || res.data;
+                return Array.isArray(result) ? result : [];
+            } catch (err) {
+                console.error("Error fetching departments:", err);
+                return [];
+            }
         },
         enabled: !!schoolId,
     });
 
     const sessionOptions = [
         { value: 'all', label: 'All Sessions' },
-        ...sessions.map((s: any) => ({ value: s.id, label: s.name })),
+        ...(Array.isArray(sessions) ? sessions : []).map((s: any) => ({ value: s.id, label: s.name })),
     ];
 
     const termOptions = [
@@ -65,12 +86,12 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
 
     const classOptions = [
         { value: 'all', label: 'All Classes' },
-        ...classes.map((c: any) => ({ value: c.id, label: `${c.name} ${c.section}` })),
+        ...(Array.isArray(classes) ? classes : []).map((c: any) => ({ value: c.id, label: `${c.name} ${c.section || ''}`.trim() })),
     ];
 
     const departmentOptions = [
         { value: 'all', label: 'All Depts' },
-        ...departments.map((d: any) => ({ value: d.id, label: d.name })),
+        ...(Array.isArray(departments) ? departments : []).map((d: any) => ({ value: d.id, label: d.name })),
     ];
 
     const isLoadingAny = isLoadingSessions || isLoadingClasses || isLoadingDepts;

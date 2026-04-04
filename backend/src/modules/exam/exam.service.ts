@@ -406,6 +406,11 @@ export const getSubjectPaperByIdService = async (id: string) => {
             }
           }
         }
+      },
+      grades: {
+        include: {
+          student: true
+        }
       }
     },
   });

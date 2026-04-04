@@ -7,6 +7,7 @@ import {
   updateSubject,
   archiveSubject,
   attachDepartmentsToSubject,
+  attachTeachersToSubject,
 } from "./subject.controller";
 import {
   createDepartment,
@@ -42,6 +43,7 @@ router.get("/subjects/:id", authenticateToken, getSingleSubject);
 router.patch("/subjects/:id", authenticateToken, updateSubject);
 router.patch("/subjects/:id/archive", authenticateToken, archiveSubject);
 router.post("/subjects/:id/departments", authenticateToken, attachDepartmentsToSubject);
+router.post("/subjects/:id/teachers", authenticateToken, attachTeachersToSubject);
 
 // Department Routes
 router.post("/departments", authenticateToken, createDepartment);

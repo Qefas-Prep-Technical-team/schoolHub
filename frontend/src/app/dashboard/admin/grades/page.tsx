@@ -44,6 +44,9 @@ import SubjectPaperReport from '../exams/papers/[id]/components/SubjectPaperRepo
 import IndividualStudentReport, { ReportPageContent } from './components/IndividualStudentReport';
 import BulkIndividualReports from './components/BulkIndividualReports';
 import { downloadIndividualResultsAsZip } from './utils/batchPDFDownloader';
+import InstitutionReportModal from './components/InstitutionReportModal';
+import GradeHub from './components/GradeHub';
+import { useGradeHub } from '@/lib/api/hooks/useGrades';
 
 export default function AdminGradesDashboard() {
   const { user } = useAuthStore();
@@ -55,10 +58,11 @@ export default function AdminGradesDashboard() {
   const [selectedPaperId, setSelectedPaperId] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'exams' | 'standalone' | 'papers'>('exams');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isInstitutionReportModalOpen, setIsInstitutionReportModalOpen] = useState(false);
 
   // Data fetching
   const { data: exams, isLoading: isLoadingExams } = useExams();
-  const { data: standaloneGrades, isLoading: isLoadingGrades } = useAdminGrades();
+  const { data: standaloneGrades, isLoading: isLoadingGrades } = useGradeHub(schoolId);
   const { data: subjectPapers, isLoading: isLoadingPapers } = useSubjectPapers();
   const { data: school } = useSchoolProfile(schoolId);
 
@@ -89,7 +93,11 @@ export default function AdminGradesDashboard() {
             <p className="text-sm md:text-base text-slate-500 font-medium">Manage and analyze student performance across the institution.</p>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
-             <Button variant="outline" className="w-full md:w-auto rounded-xl border-slate-200 dark:border-slate-800 h-12 px-6 font-bold bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center">
+             <Button 
+                onClick={() => setIsInstitutionReportModalOpen(true)}
+                variant="outline" 
+                className="w-full md:w-auto rounded-xl border-slate-200 dark:border-slate-800 h-12 px-6 font-bold bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center"
+              >
                 <Download className="mr-2" size={18} /> Export Institution Report
              </Button>
           </div>
@@ -175,9 +183,10 @@ export default function AdminGradesDashboard() {
                 </div>
               </div>
               
-              <StandaloneGradesView 
+              <GradeHub 
                 grades={standaloneGrades || []} 
                 isLoading={isLoadingGrades} 
+                schoolId={schoolId}
               />
             </section>
           ) : (
@@ -201,6 +210,12 @@ export default function AdminGradesDashboard() {
           )}
         </div>
       </div>
+
+      <InstitutionReportModal 
+        isOpen={isInstitutionReportModalOpen} 
+        onClose={() => setIsInstitutionReportModalOpen(false)} 
+        school={school}
+      />
     </div>
   );
 }
@@ -1007,91 +1022,6 @@ function DetailedStudentResult({ examId, studentId, onBack, school }: any) {
         </div>
       </div>
     </TooltipProvider>
-  );
-}
-
-/**
- * Standalone Grades View
- */
-function StandaloneGradesView({ grades, isLoading }: any) {
-  return (
-    <div className="space-y-8">
-      {/* Search & Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="relative group flex-1 max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
-            <input 
-                type="text" 
-                placeholder="Search standalone grades..."
-                className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-700 dark:text-slate-200"
-            />
-        </div>
-        <div className="flex items-center gap-3">
-             <Button variant="outline" className="rounded-xl h-12 px-6 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-                <Download size={18} className="mr-2" /> Export
-             </Button>
-             <Button className="rounded-xl h-12 px-6 font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20">
-                <Plus size={18} className="mr-2" /> Manual Entry
-             </Button>
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Student</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Subject / Paper</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Score</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Type</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Date Recorded</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {isLoading ? (
-                <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-bold animate-pulse uppercase tracking-widest text-[10px]">Retrieving grade records...</td></tr>
-              ) : grades.length === 0 ? (
-                <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No standalone entries found</td></tr>
-              ) : grades.map((grade: any) => (
-                <tr key={grade.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-900/30 transition-colors">
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 shadow-inner">
-                            <User size={20} />
-                        </div>
-                        <div>
-                            <p className="text-sm font-black text-slate-700 dark:text-slate-200">{grade.student?.name}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Class {grade.class?.name}{grade.class?.section}</p>
-                        </div>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex flex-col">
-                        <span className="text-sm font-black text-slate-700 dark:text-slate-200">{grade.subject}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">{grade.assessmentType}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                      <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                        {grade.score}<span className="text-xs text-slate-400 ml-1">/{grade.maxMarks}</span>
-                      </p>
-                  </td>
-                  <td className="px-8 py-6">
-                      <span className="px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-indigo-900/30 shadow-sm">
-                        {grade.assessmentType || 'General'}
-                      </span>
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                      <p className="text-xs text-slate-500 font-bold tracking-tight">{format(new Date(grade.createdAt), "MMMM d, yyyy")}</p>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
   );
 }
 

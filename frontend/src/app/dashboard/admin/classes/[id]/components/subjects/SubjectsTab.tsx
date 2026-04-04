@@ -10,12 +10,17 @@ import { Subject } from './components/types';
 interface ClassSubjectsPageProps {
   classSubjects?: any[];
   className?: string;
+  classId?: string;
 }
 
-export default function ClassSubjectsPage({ classSubjects = [], className = '' }: ClassSubjectsPageProps) {
+export default function ClassSubjectsPage({ 
+  classSubjects = [], 
+  className = '',
+  classId: propClassId
+}: ClassSubjectsPageProps) {
   const router = useRouter();
   const params = useParams();
-  const classId = params.id as string;
+  const classId = propClassId || (params.id as string);
 
   // Map real classSubject data to Subject type
   const subjects: Subject[] = classSubjects.map(cs => ({

@@ -352,3 +352,55 @@ export const attachSubjectToDepartmentsService = async ({
     },
   });
 };
+
+export const attachTeachersToSubjectService = async ({
+  subjectId,
+  teacherIds,
+  schoolId,
+}: {
+  subjectId: string;
+  teacherIds: string[];
+  schoolId: string;
+}) => {
+  const subject = await prisma.subject.findUnique({
+    where: { id: subjectId },
+  });
+
+  if (!subject) {
+    throw new Error("Subject not found");
+  }
+
+  if (subject.schoolId !== schoolId && subject.scope === AcademicOwnershipScope.SCHOOL) {
+    throw new Error("Subject does not belong to this school");
+  }
+
+  const teachers = await prisma.teacher.findMany({
+    where: {
+      id: { in: teacherIds },
+    },
+  });
+
+  if (teachers.length !== teacherIds.length) {
+    throw new Error("Some teachers were not found");
+  }
+
+  await prisma.teacherSubject.createMany({
+    data: teacherIds.map((teacherId) => ({
+      subjectId,
+      teacherId,
+      schoolId,
+    })),
+    skipDuplicates: true,
+  });
+
+  return prisma.subject.findUnique({
+    where: { id: subjectId },
+    include: {
+      teacherSubjects: {
+        include: {
+          teacher: true,
+        },
+      },
+    },
+  });
+};

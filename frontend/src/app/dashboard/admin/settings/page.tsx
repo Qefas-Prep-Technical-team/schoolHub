@@ -12,8 +12,12 @@ import {
   Rocket,
   Save,
   RotateCcw,
-  CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Mail,
+  Smartphone,
+  ShieldCheck,
+  UserCheck,
+  Paintbrush
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -22,6 +26,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'react-toastify';
+import { Input } from '@/components/ui/input';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -32,29 +37,68 @@ export default function SettingsPage() {
 
   const [localSettings, setLocalSettings] = useState<any>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [activeTab, setActiveTab] = useState('General');
 
   useEffect(() => {
     if (settings) {
-      setLocalSettings(settings);
+      // Ensure all fields have at least a default value to avoid uncontrolled input warnings
+      setLocalSettings({
+        ...settings,
+        themeColor: settings.themeColor || '#3670e2',
+        defaultSession: settings.defaultSession || '',
+        defaultTerm: settings.defaultTerm || '',
+        enableEmailNotifications: settings.enableEmailNotifications ?? true,
+        enablePushNotifications: settings.enablePushNotifications ?? true,
+        enableMaintenanceMode: settings.enableMaintenanceMode ?? false,
+        allowTeacherDigitalSignature: settings.allowTeacherDigitalSignature ?? false,
+        lockSettings: settings.lockSettings ?? false,
+      });
     }
   }, [settings]);
 
   const handleToggle = (field: string, checked: boolean) => {
-    setLocalSettings((prev: any) => ({ ...prev, [field]: checked }));
+    setLocalSettings((prev: any) => prev ? ({ ...prev, [field]: checked }) : null);
+    setHasChanges(true);
+  };
+
+  const handleChange = (field: string, value: any) => {
+    setLocalSettings((prev: any) => prev ? ({ ...prev, [field]: value }) : null);
     setHasChanges(true);
   };
 
   const handleSave = async () => {
     try {
+      // Strip metadata fields that Prisma doesn't expect in an update
+      const { id, schoolId: sid, createdAt, updatedAt, ...cleanData } = localSettings;
+
       await updateMutation.mutateAsync({
         schoolId,
-        data: localSettings
+        data: cleanData
       });
       toast.success('Settings updated successfully');
       setHasChanges(false);
-    } catch (error) {
-      toast.error('Failed to update settings');
+    } catch (error: any) {
+      console.error('Update Error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update settings';
+      toast.error(errorMessage);
     }
+  };
+
+  const resetSettings = () => {
+    if (settings) {
+      setLocalSettings({
+        ...settings,
+        themeColor: settings.themeColor || '#3670e2',
+        defaultSession: settings.defaultSession || '',
+        defaultTerm: settings.defaultTerm || '',
+        enableEmailNotifications: settings.enableEmailNotifications ?? true,
+        enablePushNotifications: settings.enablePushNotifications ?? true,
+        enableMaintenanceMode: settings.enableMaintenanceMode ?? false,
+        allowTeacherDigitalSignature: settings.allowTeacherDigitalSignature ?? false,
+        lockSettings: settings.lockSettings ?? false,
+      });
+    }
+    setHasChanges(false);
   };
 
   if (isLoading || !localSettings) {
@@ -68,6 +112,13 @@ export default function SettingsPage() {
         </div>
     );
   }
+
+  const tabs = [
+    { label: 'General', icon: Database },
+    { label: 'Appearance', icon: Palette },
+    { label: 'Notifications', icon: Bell },
+    { label: 'Security', icon: Lock },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 lg:p-12 max-w-6xl mx-auto space-y-10">
@@ -90,10 +141,7 @@ export default function SettingsPage() {
             >
               <Button 
                 variant="outline" 
-                onClick={() => {
-                  setLocalSettings(settings);
-                  setHasChanges(false);
-                }}
+                onClick={resetSettings}
                 className="rounded-xl border-slate-200 h-11"
               >
                 <RotateCcw size={16} className="mr-2" /> Reset
@@ -111,19 +159,15 @@ export default function SettingsPage() {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-        {/* Navigation / Shortcut Sidebar */}
+        {/* Navigation Sidebar */}
         <aside className="md:col-span-3 space-y-2">
-            {[
-                { label: 'General', icon: Database, active: true },
-                { label: 'Appearance', icon: Palette },
-                { label: 'Notifications', icon: Bell },
-                { label: 'Security', icon: Lock },
-            ].map((item, idx) => (
+            {tabs.map((item, idx) => (
                 <button 
                   key={idx}
+                  onClick={() => setActiveTab(item.label)}
                   className={cn(
                     "w-full flex items-center gap-3 p-4 rounded-2xl text-sm font-bold transition-all",
-                    item.active ? "bg-white dark:bg-slate-900 shadow-md text-primary" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    activeTab === item.label ? "bg-white dark:bg-slate-900 shadow-md text-primary" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                   )}
                 >
                     <item.icon size={18} />
@@ -134,83 +178,201 @@ export default function SettingsPage() {
 
         {/* Settings Content */}
         <main className="md:col-span-9 space-y-8">
-            <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                        <Rocket size={20} />
-                    </div>
-                    <div>
-                        <h3 className="font-black text-lg">Feature Management</h3>
-                        <p className="text-xs text-slate-500">Control feature availability across dashboards</p>
-                    </div>
-                </div>
-                <CardContent className="p-8 space-y-8">
-                    <SettingItem 
-                      title="Coming Soon Overlay"
-                      description="Enable a 'Coming Soon' placeholder for features currently in development."
-                      icon={Rocket}
-                      checked={localSettings.showComingSoon}
-                      onCheckedChange={(val: boolean) => handleToggle('showComingSoon', val)}
-                    />
-                    
-                    <div className="p-6 rounded-3xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 flex gap-4">
-                        <AlertCircle className="text-amber-600 shrink-0" size={24} />
-                        <div>
-                            <p className="text-sm font-bold text-amber-900 dark:text-amber-100">Development Mode Warning</p>
-                            <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                                Enabling the Coming Soon overlay will globally restrict access to beta features for all students and staff members.
-                            </p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    {activeTab === 'General' && (
+                        <div className="space-y-8">
+                            <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                                <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
+                                    <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                                        <Rocket size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-lg">Feature Management</h3>
+                                        <p className="text-xs text-slate-500">Control feature availability across dashboards</p>
+                                    </div>
+                                </div>
+                                <CardContent className="p-8 space-y-8">
+                                    <SettingItem 
+                                      title="Coming Soon Overlay"
+                                      description="Enable a 'Coming Soon' placeholder for features currently in development."
+                                      icon={Rocket}
+                                      checked={localSettings.showComingSoon ?? false}
+                                      onCheckedChange={(val: boolean) => handleToggle('showComingSoon', val)}
+                                    />
+                                    
+                                    <div className="p-6 rounded-3xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 flex gap-4">
+                                        <AlertCircle className="text-amber-600 shrink-0" size={24} />
+                                        <div>
+                                            <p className="text-sm font-bold text-amber-900 dark:text-amber-100">Development Mode Warning</p>
+                                            <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                                                Enabling the Coming Soon overlay will globally restrict access to beta features for all students and staff members.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
 
-            <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900">
-                <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-                        <Database size={20} />
-                    </div>
-                    <div>
-                        <h3 className="font-black text-lg">Academic Configuration</h3>
-                        <p className="text-xs text-slate-500">Default settings for the current academic cycle</p>
-                    </div>
-                </div>
-                <CardContent className="p-8 space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Default Session</Label>
-                            <select 
-                             className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-4 font-bold text-sm"
-                             value={localSettings.defaultSession || ''}
-                             onChange={(e) => {
-                                 setLocalSettings((prev: any) => ({ ...prev, defaultSession: e.target.value }));
-                                 setHasChanges(true);
-                             }}
-                            >
-                                <option value="">Select Session</option>
-                                <option value="2023/2024">2023/2024</option>
-                                <option value="2024/2025">2024/2025</option>
-                            </select>
+                            <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900">
+                                <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4">
+                                    <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                                        <Database size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-lg">Academic Configuration</h3>
+                                        <p className="text-xs text-slate-500">Default settings for the current academic cycle</p>
+                                    </div>
+                                </div>
+                                <CardContent className="p-8 space-y-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Default Session</Label>
+                                            <select 
+                                             className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-4 font-bold text-sm"
+                                             value={localSettings.defaultSession || ''}
+                                             onChange={(e) => handleChange('defaultSession', e.target.value)}
+                                            >
+                                                <option value="">Select Session</option>
+                                                <option value="2023/2024">2023/2024</option>
+                                                <option value="2024/2025">2024/2025</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Default Term</Label>
+                                            <select 
+                                              className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-4 font-bold text-sm"
+                                              value={localSettings.defaultTerm || ''}
+                                              onChange={(e) => handleChange('defaultTerm', e.target.value)}
+                                            >
+                                                <option value="">Select Term</option>
+                                                <option value="First Term">First Term</option>
+                                                <option value="Second Term">Second Term</option>
+                                                <option value="Third Term">Third Term</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Default Term</Label>
-                            <select 
-                              className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-4 font-bold text-sm"
-                              value={localSettings.defaultTerm || ''}
-                              onChange={(e) => {
-                                setLocalSettings((prev: any) => ({ ...prev, defaultTerm: e.target.value }));
-                                setHasChanges(true);
-                            }}
-                            >
-                                <option value="">Select Term</option>
-                                <option value="First Term">First Term</option>
-                                <option value="Second Term">Second Term</option>
-                                <option value="Third Term">Third Term</option>
-                            </select>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    )}
+
+                    {activeTab === 'Appearance' && (
+                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
+                                <div className="h-10 w-10 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center">
+                                    <Paintbrush size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-lg">Theme Settings</h3>
+                                    <p className="text-xs text-slate-500">Personalize your institution&apos;s digital atmosphere</p>
+                                </div>
+                            </div>
+                            <CardContent className="p-8 space-y-8">
+                                <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
+                                    <div className="space-y-2 flex-1">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Primary Theme Color</Label>
+                                        <div className="flex gap-4 items-center">
+                                            <Input 
+                                                type="color" 
+                                                value={localSettings.themeColor || '#3670e2'} 
+                                                onChange={(e) => handleChange('themeColor', e.target.value)}
+                                                className="w-16 h-12 p-1 rounded-xl cursor-copy border-none bg-transparent"
+                                            />
+                                            <Input 
+                                                type="text" 
+                                                value={localSettings.themeColor || ''} 
+                                                onChange={(e) => handleChange('themeColor', e.target.value)}
+                                                placeholder="#000000"
+                                                className="h-12 rounded-2xl font-mono font-bold border-slate-200"
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 font-medium italic mt-2">
+                                            This color will be applied to buttons, accents, and important branding elements across all user dashboards.
+                                        </p>
+                                    </div>
+                                    <div 
+                                        className="h-32 w-32 rounded-3xl shadow-inner border-4 border-white dark:border-slate-800"
+                                        style={{ backgroundColor: localSettings.themeColor || '#3670e2' }}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {activeTab === 'Notifications' && (
+                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
+                                <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                                    <Bell size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-lg">Communication Preferences</h3>
+                                    <p className="text-xs text-slate-500">Configure how the platform interacts with stakeholders</p>
+                                </div>
+                            </div>
+                            <CardContent className="p-8 space-y-8">
+                                <SettingItem 
+                                    title="Email Notifications"
+                                    description="Send automated emails for announcements, grading updates, and system alerts."
+                                    icon={Mail}
+                                    checked={localSettings.enableEmailNotifications ?? true}
+                                    onCheckedChange={(val: boolean) => handleToggle('enableEmailNotifications', val)}
+                                />
+                                <SettingItem 
+                                    title="Push Notifications"
+                                    description="Deliver real-time alerts to mobile devices and browsers for urgent updates."
+                                    icon={Smartphone}
+                                    checked={localSettings.enablePushNotifications ?? true}
+                                    onCheckedChange={(val: boolean) => handleToggle('enablePushNotifications', val)}
+                                />
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {activeTab === 'Security' && (
+                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
+                                <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                                    <ShieldCheck size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-lg">Institutional Security</h3>
+                                    <p className="text-xs text-slate-500">Global safeguards and administrative controls</p>
+                                </div>
+                            </div>
+                            <CardContent className="p-8 space-y-8">
+                                <SettingItem 
+                                    title="Maintenance Mode"
+                                    description="Restrict access to all users except administrators during system upgrades."
+                                    icon={Settings}
+                                    checked={localSettings.enableMaintenanceMode ?? false}
+                                    onCheckedChange={(val: boolean) => handleToggle('enableMaintenanceMode', val)}
+                                />
+                                <SettingItem 
+                                    title="Teacher Digital Signatures"
+                                    description="Enable cryptographic signing for report cards and official documents."
+                                    icon={UserCheck}
+                                    checked={localSettings.allowTeacherDigitalSignature ?? false}
+                                    onCheckedChange={(val: boolean) => handleToggle('allowTeacherDigitalSignature', val)}
+                                />
+                                <SettingItem 
+                                    title="Lock Institutional Settings"
+                                    description="Prevent modifications to these settings by non-owner administrators."
+                                    icon={Lock}
+                                    checked={localSettings.lockSettings ?? false}
+                                    onCheckedChange={(val: boolean) => handleToggle('lockSettings', val)}
+                                />
+                            </CardContent>
+                        </Card>
+                    )}
+                </motion.div>
+            </AnimatePresence>
         </main>
       </div>
     </div>

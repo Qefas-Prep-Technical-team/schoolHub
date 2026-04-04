@@ -8,6 +8,7 @@ export const gradeKeys = {
   admin: (filters: any) => [...gradeKeys.all, "admin", filters] as const,
   details: () => [...gradeKeys.all, "detail"] as const,
   detail: (id: string) => [...gradeKeys.details(), id] as const,
+  hub: (filters: any) => [...gradeKeys.all, "hub", filters] as const,
 };
 
 export const useStudentGrades = (studentId?: string) => {
@@ -31,5 +32,13 @@ export const useGrade = (id: string) => {
     queryKey: gradeKeys.detail(id),
     queryFn: () => gradeService.getGradeById(id),
     enabled: !!id,
+  });
+};
+
+export const useGradeHub = (schoolId: string, filters?: any) => {
+  return useQuery({
+    queryKey: gradeKeys.hub({ schoolId, ...filters }),
+    queryFn: () => gradeService.getGradeHub(schoolId, filters),
+    enabled: !!schoolId,
   });
 };

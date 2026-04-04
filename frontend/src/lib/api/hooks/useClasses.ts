@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { classService, ClassJoinRequestData } from "../services/classService";
 import { toast } from "react-toastify";
 import { queryKeys as linkQueryKeys } from "./useLinks";
+import { apiClient } from "../client";
 
 export const classQueryKeys = {
   all: ["classes"] as const,
@@ -161,10 +162,21 @@ export const useUpdateClass = (id: string) => {
   });
 };
 
+export const useClassBehaviourAlerts = (classId: string) => {
+  return useQuery({
+    queryKey: [...classQueryKeys.detail(classId), "behaviour-alerts"],
+    queryFn: async () => {
+      const response = await apiClient.get(`/classes/${classId}/behaviour-alerts`);
+      return response.data.data;
+    },
+    enabled: !!classId,
+  });
+};
+
 export const useAllTeachers = () => {
   return useQuery({
     queryKey: ["teachers"],
     queryFn: () => classService.getAllTeachers(),
-    staleTime: 60000, // Teachers list doesn't change often
+    staleTime: 60000,
   });
 };

@@ -1,71 +1,69 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import https from "https";
 import { v4 as uuidv4 } from "uuid";
 
 /**
- * Initialize S3-compatible client for Bunny.net
+ * Upload a buffer to Bunny.net using their native HTTP Storage API.
+ * Bunny.net is NOT truly S3-compatible - must use AccessKey header auth.
+ * Endpoint: PUT https://{region}.storage.bunnycdn.com/{storageZone}/{key}
  */
-const getS3Client = () => {
-  let region = process.env.BUNNY_STORAGE_REGION || "";
-  
-  // Clean region if it's a full hostname by mistake (e.g. storage.bunnycdn.com -> "")
-  if (region.includes(".")) {
-    console.warn("[Bunny.net] Invalid region detected in .env, defaulting to Global (s3.bunnycdn.com)");
-    region = "";
+export const uploadBufferToBunnyService = async (buffer: Buffer, fileType: string = "image/png") => {
+  const storageZone = process.env.BUNNY_STORAGE_ZONE_NAME;
+  const apiKey      = process.env.BUNNY_STORAGE_API_KEY;
+  const pullZoneUrl = process.env.BUNNY_PULL_ZONE_URL;
+  const region      = (process.env.BUNNY_STORAGE_REGION || "").trim();
+
+  if (!storageZone || !apiKey || !pullZoneUrl) {
+    throw new Error(
+      `Bunny.net is not configured. Missing: ${!storageZone ? "BUNNY_STORAGE_ZONE_NAME " : ""}${!apiKey ? "BUNNY_STORAGE_API_KEY " : ""}${!pullZoneUrl ? "BUNNY_PULL_ZONE_URL" : ""}`
+    );
   }
 
-  const endpoint = region 
-    ? `https://${region}.s3.bunnycdn.com` 
-    : `https://s3.bunnycdn.com`;
+  const key      = `institutional/${uuidv4()}-${Date.now()}`;
+  // Regional hostname: storage.bunnycdn.com for default, {region}.storage.bunnycdn.com for others
+  const hostname = region ? `${region}.storage.bunnycdn.com` : `storage.bunnycdn.com`;
+  const path     = `/${storageZone}/${key}`;
 
-  return new S3Client({
-    region: region || "de", // Bunny S3 defaults to Falkenstein (de) or 'auto'
-    endpoint,
-    credentials: {
-      accessKeyId: process.env.BUNNY_STORAGE_ZONE_NAME || "",
-      secretAccessKey: process.env.BUNNY_STORAGE_API_KEY || "",
-    },
-    forcePathStyle: true,
+  console.log(`[Bunny Upload] PUT https://${hostname}${path}`);
+
+  return new Promise<{ publicUrl: string; key: string }>((resolve, reject) => {
+    const options = {
+      hostname,
+      path,
+      method: "PUT",
+      headers: {
+        AccessKey:       apiKey,
+        "Content-Type":  fileType,
+        "Content-Length": buffer.length,
+      },
+    };
+
+    const req = https.request(options, (res) => {
+      let body = "";
+      res.on("data", (chunk) => { body += chunk; });
+      res.on("end", () => {
+        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+          const base       = pullZoneUrl.endsWith("/") ? pullZoneUrl : pullZoneUrl + "/";
+          const publicUrl  = `https://${base.replace(/^https?:\/\//, "")}${key}`;
+          resolve({ publicUrl, key });
+        } else {
+          reject(new Error(`Bunny.net returned ${res.statusCode}: ${body}`));
+        }
+      });
+    });
+
+    req.on("error", (err) => reject(err));
+    req.write(buffer);
+    req.end();
   });
 };
 
 /**
- * Get a signed upload URL from Bunny.net Edge Storage
- * Uses S3-compatible presigned PUT flow
+ * Get a signed upload URL (legacy - kept for compatibility)
  */
 export const getCloudflareUploadUrlService = async (fileType: string = "image/png") => {
-  const storageZone = process.env.BUNNY_STORAGE_ZONE_NAME;
-  const pullZoneUrl = process.env.BUNNY_PULL_ZONE_URL;
-
-  if (!storageZone || !pullZoneUrl) {
-    console.error("[Bunny.net Config Missing]", { storageZone: !!storageZone, pullZoneUrl: !!pullZoneUrl });
-    throw new Error(`Bunny.net Media Engine is not configured. Missing: ${!storageZone ? 'BUNNY_STORAGE_ZONE_NAME' : ''} ${!pullZoneUrl ? 'BUNNY_PULL_ZONE_URL' : ''}`);
-  }
-
-  try {
-    const s3Client = getS3Client();
-    
-    // Generate a unique path/key for the institutional asset
-    // Format: institutional/<uuid>-<timestamp>
-    const key = `institutional/${uuidv4()}-${Date.now()}`;
-    
-    const command = new PutObjectCommand({
-      Bucket: storageZone, // Bunny uses Storage Zone Name as Bucket
-      Key: key,
-      ContentType: fileType,
-    });
-
-    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-    
-    const publicUrl = `${pullZoneUrl.endsWith('/') ? pullZoneUrl : pullZoneUrl + '/'}${key}`;
-
-    return {
-      uploadUrl,
-      publicUrl,
-      key,
-    };
-  } catch (error: any) {
-    console.error("[Bunny.net Upload Service Error]", error);
-    throw new Error(error.message || "Failed to communicate with Bunny.net Media Engine");
-  }
+  // No longer using S3-style presigned URLs. Return a placeholder that signals
+  // the caller should use the proxy endpoint instead.
+  throw new Error(
+    "Use the /upload/proxy endpoint instead. Direct presigned URLs are not supported."
+  );
 };
