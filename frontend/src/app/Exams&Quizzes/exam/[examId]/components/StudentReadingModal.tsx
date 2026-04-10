@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, X, Maximize2, Minimize2, ZoomIn } from "lucide-react";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 import ImageLightbox from "@/components/ui/ImageLightbox";
-import { useState } from "react";
+import { useState, memo } from "react";
 
 interface StudentReadingModalProps {
   isOpen: boolean;
@@ -20,18 +20,19 @@ interface StudentReadingModalProps {
   images?: string[];
   imageLabels?: string[];
   subjectName: string;
+  onZoom?: (src: string, alt?: string) => void;
 }
 
-export default function StudentReadingModal({
+const StudentReadingModal = memo(({
   isOpen,
   onClose,
   content,
   images = [],
   imageLabels = [],
-  subjectName
-}: StudentReadingModalProps) {
+  subjectName,
+  onZoom
+}: StudentReadingModalProps) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [lightboxImage, setLightboxImage] = useState<{ src: string, alt?: string } | null>(null);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -81,7 +82,7 @@ export default function StudentReadingModal({
                       <figure key={i} className="flex flex-col items-center group">
                         <div 
                           className="relative cursor-zoom-in overflow-hidden rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl w-full"
-                          onClick={() => setLightboxImage({ src: url, alt: imageLabels[i] })}
+                          onClick={() => onZoom?.(url, imageLabels[i])}
                         >
                           <img 
                             src={url} 
@@ -106,14 +107,9 @@ export default function StudentReadingModal({
                <LaTeXRenderer 
                 content={content} 
                 className="text-lg leading-[1.8] text-slate-800 dark:text-slate-200 font-serif selection:bg-primary/20"
+                onZoom={onZoom}
                />
 
-               <ImageLightbox 
-                  isOpen={!!lightboxImage}
-                  onClose={() => setLightboxImage(null)}
-                  src={lightboxImage?.src || ""}
-                  alt={lightboxImage?.alt}
-               />
             </div>
           </div>
 
@@ -129,4 +125,7 @@ export default function StudentReadingModal({
       </DialogContent>
     </Dialog>
   );
-}
+});
+
+StudentReadingModal.displayName = "StudentReadingModal";
+export default StudentReadingModal;

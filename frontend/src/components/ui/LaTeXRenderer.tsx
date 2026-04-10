@@ -1,20 +1,18 @@
-"use client";
-
+import React, { useState, useMemo, memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { useState, useMemo } from 'react';
 import ImageLightbox from './ImageLightbox';
 import { ZoomIn } from 'lucide-react';
 
 interface LaTeXRendererProps {
   content: string;
   className?: string;
+  onZoom?: (src: string, alt?: string) => void;
 }
 
-export default function LaTeXRenderer({ content, className = "" }: LaTeXRendererProps) {
-  const [lightboxImage, setLightboxImage] = useState<{ src: string, alt?: string } | null>(null);
+const LaTeXRenderer = memo(({ content, className = "", onZoom }: LaTeXRendererProps) => {
 
   if (!content) return null;
   const components: any = useMemo(() => ({
@@ -22,7 +20,7 @@ export default function LaTeXRenderer({ content, className = "" }: LaTeXRenderer
       <figure className="my-6 text-center group">
         <div 
           className="relative inline-block cursor-zoom-in overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg"
-          onClick={() => setLightboxImage({ src: (src as string) || "", alt: (alt as string) || undefined })}
+          onClick={() => onZoom?.((src as string) || "", (alt as string) || undefined)}
         >
           <img 
             src={src as string} 
@@ -54,12 +52,9 @@ export default function LaTeXRenderer({ content, className = "" }: LaTeXRenderer
         {content}
       </ReactMarkdown>
 
-      <ImageLightbox 
-        isOpen={!!lightboxImage}
-        onClose={() => setLightboxImage(null)}
-        src={lightboxImage?.src || ""}
-        alt={lightboxImage?.alt}
-      />
     </div>
   );
-}
+});
+
+LaTeXRenderer.displayName = "LaTeXRenderer";
+export default LaTeXRenderer;

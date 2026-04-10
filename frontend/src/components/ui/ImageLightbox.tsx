@@ -17,7 +17,6 @@ interface ImageLightboxProps {
 }
 
 export default function ImageLightbox({ isOpen, onClose, src, alt }: ImageLightboxProps) {
-  if (!src) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

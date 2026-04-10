@@ -9,12 +9,13 @@ import {
   useSubmitAttempt 
 } from "@/lib/api/hooks/useExams";
 import { Loader2, AlertCircle, Clock, FileText, Calendar, Info, PlayCircle, ChevronLeft, BookOpen, Lock as LockIcon, ChevronRight as ChevronRightIcon } from "lucide-react";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 import { format, isAfter } from "date-fns";
 import { Button as ShcnButton } from "@/components/ui/button";
 import StudentReadingModal from "./components/StudentReadingModal";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
+import ImageLightbox from "@/components/ui/ImageLightbox";
 
 // UI Components from the "start" directory
 import PageHeader from './start/components/PageHeader';
@@ -47,6 +48,7 @@ export default function UnifiedExamPage() {
   const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string, alt?: string } | null>(null);
   
   // Timer State
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
@@ -56,7 +58,8 @@ export default function UnifiedExamPage() {
 
   // Submission Guard & UI state
   const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
-  const isSubmittingRef = useMemo(() => ({ current: false }), []);
+  const isSubmittingRef = useRef(false);
+  const initialAnswersRestoredRef = useRef(false);
 
   // Define basic memos first
   const totalDuration = useMemo(() => {
@@ -73,9 +76,19 @@ export default function UnifiedExamPage() {
     return isAfter(new Date(), new Date(exam.resultReleaseAt));
   }, [exam]);
 
+  const currentSubjectPapers = useMemo(() => {
+    if (attempt?.status === "IN_PROGRESS" && attempt.subjectAttempts?.length > 0) {
+      return attempt.subjectAttempts.map((sa: any) => ({
+        ...sa.subjectPaper,
+        id: sa.subjectPaperId,
+      }));
+    }
+    return exam?.subjectPapers || [];
+  }, [exam?.subjectPapers, attempt]);
+
   const activeSubject = useMemo(() => 
-    exam?.subjectPapers?.find(p => p.id === activeSubjectId), 
-    [exam, activeSubjectId]
+    currentSubjectPapers.find((p: any) => p.id === activeSubjectId), 
+    [currentSubjectPapers, activeSubjectId]
   );
 
   const activeQuestion = useMemo(() => 
@@ -149,9 +162,9 @@ export default function UnifiedExamPage() {
     if (activeQuestionIndex < totalQuestionsInActiveSubject - 1) {
       setActiveQuestionIndex(prev => prev + 1);
     } else {
-      const currentSubjectIdx = exam?.subjectPapers?.findIndex(p => p.id === activeSubjectId) ?? -1;
-      if (currentSubjectIdx < (exam?.subjectPapers?.length ?? 0) - 1) {
-        const nextSubject = exam?.subjectPapers?.[currentSubjectIdx + 1];
+      const currentSubjectIdx = currentSubjectPapers.findIndex((p: any) => p.id === activeSubjectId) ?? -1;
+      if (currentSubjectIdx < currentSubjectPapers.length - 1) {
+        const nextSubject = currentSubjectPapers[currentSubjectIdx + 1];
         if (nextSubject) {
           setActiveSubjectId(nextSubject.id);
           setActiveQuestionIndex(0);
@@ -182,6 +195,10 @@ export default function UnifiedExamPage() {
     }
   }, [examId, router, submitAttemptMutation]);
 
+  const handleZoom = useCallback((src: string, alt?: string) => {
+    setLightboxImage({ src, alt });
+  }, []);
+
   const handleManualSubmit = async () => {
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
@@ -204,13 +221,12 @@ export default function UnifiedExamPage() {
 
   // Initialize Exam State
   useEffect(() => {
-    if (exam?.subjectPapers?.length && !activeSubjectId) {
-      setActiveSubjectId(exam.subjectPapers[0].id);
+    if (currentSubjectPapers.length && !activeSubjectId) {
+      setActiveSubjectId(currentSubjectPapers[0].id);
     }
 
-    // Initialize local answers from attempt ONLY when attempt first loads
-    // and localAnswers is empty
-    if (attempt?.subjectAttempts && Object.keys(localAnswers).length === 0) {
+    // Initialize local answers from attempt ONLY once
+    if (attempt?.subjectAttempts && !initialAnswersRestoredRef.current) {
       const restoredAnswers: Record<string, string> = {};
       let hasAnswers = false;
       attempt.subjectAttempts.forEach((sa: any) => {
@@ -224,8 +240,9 @@ export default function UnifiedExamPage() {
         console.log("Restored saved answers:", Object.keys(restoredAnswers).length);
         setLocalAnswers(restoredAnswers);
       }
+      initialAnswersRestoredRef.current = true;
     }
-  }, [exam, attempt, activeSubjectId]); // Removed localAnswers from dependencies to prevent loop
+  }, [exam, attempt, activeSubjectId, initialAnswersRestoredRef]);
 
   // Sync Timer and Progress
   useEffect(() => {
@@ -320,7 +337,7 @@ export default function UnifiedExamPage() {
             classLabel={`${exam.class?.name || "N/A"} ${exam.class?.section || ""}`}
             durationMinutes={totalDuration}
             subjectName={exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
-            totalQuestions={exam.subjectPapers?.reduce((sum: number, p: any) => sum + (p.questions?.length || 0), 0) || 0}
+            totalQuestions={currentSubjectPapers.reduce((sum: number, p: any) => sum + (p.questions?.length || 0), 0)}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -492,7 +509,7 @@ export default function UnifiedExamPage() {
             classLabel={`${exam.class?.name || "N/A"} ${exam.class?.section || ""}`}
             durationMinutes={totalDuration}
             subjectName={exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
-            totalQuestions={exam.subjectPapers?.reduce((sum: number, p: any) => sum + (p.questions?.length || 0), 0) || 0}
+            totalQuestions={currentSubjectPapers.reduce((sum: number, p: any) => sum + (p.questions?.length || 0), 0)}
           />
 
           {exam.instructions && (
@@ -533,6 +550,7 @@ export default function UnifiedExamPage() {
                   selectedOptionId={localAnswers[activeQuestion?.id || ""]}
                   onSelectOption={handleSelectOption}
                   onNext={handleNextQuestion}
+                  onZoom={handleZoom}
                   showNextButton={true}
                 />
               </div>
@@ -551,11 +569,11 @@ export default function UnifiedExamPage() {
                   onTimerExpire={handleTimerExpire}
                 />
                 
-                {exam.subjectPapers && exam.subjectPapers.length > 1 && (
+                {currentSubjectPapers && currentSubjectPapers.length > 1 && (
                    <div className="mt-6 p-4 rounded-xl border border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937]">
                       <h3 className="text-sm font-bold mb-3 uppercase tracking-wider text-slate-400">Switch Subject</h3>
                       <div className="space-y-2">
-                         {exam.subjectPapers.map(paper => (
+                         {currentSubjectPapers.map((paper: any) => (
                            <button
                              key={paper.id}
                              onClick={() => {
@@ -591,16 +609,15 @@ export default function UnifiedExamPage() {
         isLoading={submitAttemptMutation.isPending}
       />
 
-      {(activeSubject?.readingContent || (activeSubject?.images && activeSubject.images.length > 0)) && (
-         <StudentReadingModal
-            isOpen={showReadingModal}
-            onClose={() => setShowReadingModal(false)}
-            content={activeSubject.readingContent || ""}
-            images={activeSubjectImages}
-            imageLabels={activeSubjectLabels}
-            subjectName={activeSubject.title || activeSubject.subject?.name || "Subject"}
-         />
-      )}
+      <StudentReadingModal
+        isOpen={showReadingModal && !!(activeSubject?.readingContent || (activeSubject?.images && activeSubject.images.length > 0))}
+        onClose={() => setShowReadingModal(false)}
+        content={activeSubject?.readingContent || ""}
+        images={activeSubjectImages}
+        imageLabels={activeSubjectLabels}
+        subjectName={activeSubject?.title || activeSubject?.subject?.name || "Subject"}
+        onZoom={handleZoom}
+      />
 
       {/* Auto-submission Overlay */}
       {isAutoSubmitting && (
@@ -623,6 +640,13 @@ export default function UnifiedExamPage() {
           </div>
         </div>
       )}
+
+      <ImageLightbox 
+        isOpen={!!lightboxImage}
+        onClose={() => setLightboxImage(null)}
+        src={lightboxImage?.src || ""}
+        alt={lightboxImage?.alt}
+      />
     </div>
   );
 }
