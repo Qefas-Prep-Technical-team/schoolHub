@@ -85,6 +85,11 @@ export default function UnifiedExamPage() {
 
   const totalQuestionsInActiveSubject = activeSubject?.questions?.length || 0;
 
+  const activeSubjectImages = useMemo(() => activeSubject?.images || [], [activeSubject?.images]);
+  const activeSubjectLabels = useMemo(() => activeSubject?.imageLabels || [], [activeSubject?.imageLabels]);
+  const activeQuestionImages = useMemo(() => activeQuestion?.images || [], [activeQuestion?.images]);
+  const activeQuestionLabels = useMemo(() => activeQuestion?.imageLabels || [], [activeQuestion?.imageLabels]);
+
   // Handlers
   const handleConfirmStart = () => {
     if (!isStarted) {
@@ -510,8 +515,8 @@ export default function UnifiedExamPage() {
                   totalQuestions={totalQuestionsInActiveSubject}
                   type={activeQuestion?.type}
                   text={activeQuestion?.question || ""}
-                  images={activeQuestion?.images || []}
-                  imageLabels={activeQuestion?.imageLabels || []}
+                  images={activeQuestionImages}
+                  imageLabels={activeQuestionLabels}
                   options={
                     activeQuestion?.type === "TRUE_FALSE" 
                       ? [
@@ -591,8 +596,8 @@ export default function UnifiedExamPage() {
             isOpen={showReadingModal}
             onClose={() => setShowReadingModal(false)}
             content={activeSubject.readingContent || ""}
-            images={activeSubject.images || []}
-            imageLabels={activeSubject.imageLabels || []}
+            images={activeSubjectImages}
+            imageLabels={activeSubjectLabels}
             subjectName={activeSubject.title || activeSubject.subject?.name || "Subject"}
          />
       )}
