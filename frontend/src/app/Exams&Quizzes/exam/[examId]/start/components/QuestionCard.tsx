@@ -6,6 +6,9 @@ import { Question } from './types';
 import QuestionOptionComponent from './QuestionOption';
 import Button from './ui/Button';
 import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
+import ImageLightbox from '@/components/ui/ImageLightbox';
+import { useState } from 'react';
+import { ZoomIn } from 'lucide-react';
 
 interface QuestionCardProps extends Question {
     onNext?: () => void;
@@ -19,6 +22,8 @@ interface QuestionCardProps {
     text: string;
     type?: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER";
     equation?: string;
+    images?: string[];
+    imageLabels?: string[];
     options: { id: string; text: string }[];
     selectedOptionId?: string;
     onSelectOption?: (optionId: string) => void;
@@ -33,12 +38,15 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
     text,
     type = "MULTIPLE_CHOICE",
     equation,
+    images = [],
+    imageLabels = [],
     options,
     selectedOptionId,
     onSelectOption,
     onNext,
     showNextButton = true
 }) => {
+    const [lightboxImage, setLightboxImage] = useState<{ src: string, alt?: string } | null>(null);
     return (
         <div className="rounded-xl border border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] p-6">
             <div className="flex justify-between gap-4 items-center mb-4">
@@ -58,10 +66,41 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                 )}
             </div>
 
-            <LaTeXRenderer 
-                content={text}
-                className="mt-4 text-base leading-relaxed text-gray-800 dark:text-gray-200"
-            />
+            <div className="space-y-6">
+                {images.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        {images.map((url, i) => (
+                            <figure key={i} className="flex flex-col gap-2 group">
+                                <div 
+                                    className="relative cursor-zoom-in overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm w-full h-auto bg-white dark:bg-slate-900"
+                                    onClick={() => setLightboxImage({ src: url, alt: imageLabels[i] })}
+                                >
+                                    <img 
+                                        src={url} 
+                                        alt={imageLabels[i] || `Question Image ${i + 1}`} 
+                                        className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-105" 
+                                    />
+                                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <div className="bg-white/80 dark:bg-black/80 p-3 rounded-full shadow-large transform scale-0 group-hover:scale-110 transition-transform duration-300">
+                                            <ZoomIn size={20} className="text-primary" />
+                                        </div>
+                                    </div>
+                                </div>
+                                {imageLabels[i] && (
+                                    <figcaption className="text-center text-[10px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 italic">
+                                        {imageLabels[i]}
+                                    </figcaption>
+                                )}
+                            </figure>
+                        ))}
+                    </div>
+                )}
+
+                <LaTeXRenderer 
+                    content={text}
+                    className="mt-4 text-base leading-relaxed text-gray-800 dark:text-gray-200"
+                />
+            </div>
             
             {equation && (
                 <div className="mt-4 rounded-lg bg-gray-100 dark:bg-gray-800 p-4 text-center">
@@ -91,6 +130,13 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                     ))}
                 </div>
             )}
+
+            <ImageLightbox 
+                isOpen={!!lightboxImage}
+                onClose={() => setLightboxImage(null)}
+                src={lightboxImage?.src || ""}
+                alt={lightboxImage?.alt}
+            />
         </div>
     );
 };

@@ -3,6 +3,7 @@ import { QuestionType } from "@prisma/client";
 export const validateExamQuestionInput = (question: {
   type: QuestionType;
   question: string;
+  images?: string[];
   optionA?: string;
   optionB?: string;
   optionC?: string;

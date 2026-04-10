@@ -71,7 +71,7 @@ export default function PaperPreviewModal({
             </div>
 
             <div className="flex items-center gap-3">
-              {paper.readingContent && (
+              {(paper.readingContent || (paper.images && paper.images.length > 0)) && (
                 <ShcnButton 
                   variant="outline"
                   className="rounded-xl font-black bg-primary/5 text-primary border-primary/20 hover:bg-primary/10 flex items-center gap-2 px-5"
@@ -110,6 +110,8 @@ export default function PaperPreviewModal({
                     totalQuestions={questions.length}
                     type={currentQuestion.type as any}
                     text={currentQuestion.question}
+                    images={currentQuestion.images}
+                    imageLabels={currentQuestion.imageLabels}
                     options={
                       currentQuestion.type === "TRUE_FALSE"
                         ? [
@@ -174,11 +176,13 @@ export default function PaperPreviewModal({
         </div>
 
         {/* Reusing StudentReadingModal for preview fidelity */}
-        {paper.readingContent && (
+        {(paper.readingContent || (paper.images && paper.images.length > 0)) && (
           <StudentReadingModal
             isOpen={showReadingModal}
             onClose={() => setShowReadingModal(false)}
-            content={paper.readingContent}
+            content={paper.readingContent || ""}
+            images={paper.images}
+            imageLabels={paper.imageLabels}
             subjectName={paper.subject?.name || "Subject"}
           />
         )}

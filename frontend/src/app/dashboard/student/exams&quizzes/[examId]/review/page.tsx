@@ -193,6 +193,18 @@ export default function ExamReviewPage() {
                                 </div>
 
                                 <div className="p-12 space-y-10">
+                                    {q.images && q.images.length > 0 && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {q.images.map((url: string, i: number) => (
+                                                <img 
+                                                  key={i} 
+                                                  src={url} 
+                                                  alt={`Question Figure ${i + 1}`} 
+                                                  className="rounded-3xl border border-slate-100 dark:border-slate-800 shadow-lg w-full" 
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
                                     <LaTeXRenderer 
                                         content={q.question}
                                         className="text-2xl font-medium leading-relaxed text-slate-800 dark:text-slate-200"

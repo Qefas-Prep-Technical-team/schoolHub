@@ -8,14 +8,17 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BookOpen, X, Maximize2, Minimize2 } from "lucide-react";
+import { BookOpen, X, Maximize2, Minimize2, ZoomIn } from "lucide-react";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
+import ImageLightbox from "@/components/ui/ImageLightbox";
 import { useState } from "react";
 
 interface StudentReadingModalProps {
   isOpen: boolean;
   onClose: () => void;
   content: string;
+  images?: string[];
+  imageLabels?: string[];
   subjectName: string;
 }
 
@@ -23,9 +26,12 @@ export default function StudentReadingModal({
   isOpen,
   onClose,
   content,
+  images = [],
+  imageLabels = [],
   subjectName
 }: StudentReadingModalProps) {
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string, alt?: string } | null>(null);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -68,10 +74,45 @@ export default function StudentReadingModal({
           </div>
 
           <div className="flex-1 overflow-y-auto min-h-0 bg-slate-50/30 dark:bg-transparent custom-scrollbar">
-            <div className="max-w-3xl mx-auto p-10 sm:p-16">
+            <div className="max-w-3xl mx-auto p-10 sm:p-16 space-y-8">
+                {images && images.length > 0 && (
+                  <div className="grid grid-cols-1 gap-8 mb-10">
+                    {images.map((url, i) => (
+                      <figure key={i} className="flex flex-col items-center group">
+                        <div 
+                          className="relative cursor-zoom-in overflow-hidden rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl w-full"
+                          onClick={() => setLightboxImage({ src: url, alt: imageLabels[i] })}
+                        >
+                          <img 
+                            src={url} 
+                            alt={imageLabels[i] || `Passage Illustration ${i + 1}`} 
+                            className="w-full h-auto transition-transform duration-500 group-hover:scale-105" 
+                          />
+                          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="bg-white/80 dark:bg-black/80 p-4 rounded-full shadow-large transform scale-0 group-hover:scale-110 transition-transform duration-300">
+                              <ZoomIn size={24} className="text-primary" />
+                            </div>
+                          </div>
+                        </div>
+                        {imageLabels[i] && (
+                          <figcaption className="mt-4 text-slate-500 dark:text-slate-400 font-medium italic">
+                            {imageLabels[i]}
+                          </figcaption>
+                        )}
+                      </figure>
+                    ))}
+                  </div>
+                )}
                <LaTeXRenderer 
                 content={content} 
                 className="text-lg leading-[1.8] text-slate-800 dark:text-slate-200 font-serif selection:bg-primary/20"
+               />
+
+               <ImageLightbox 
+                  isOpen={!!lightboxImage}
+                  onClose={() => setLightboxImage(null)}
+                  src={lightboxImage?.src || ""}
+                  alt={lightboxImage?.alt}
                />
             </div>
           </div>

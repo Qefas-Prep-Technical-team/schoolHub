@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, Plus, Trash2, X, Loader2, Save, Eye, EyeOff } from "lucide-react";
+import { Check, Plus, Trash2, X, Loader2, Save, Eye, EyeOff, Upload, Image as ImageIcon, Copy } from "lucide-react";
+import QuestionTextEditor from "../../../../Questions/components/QuestionTextEditor";
 import FormulaToolbar from "../../../../Questions/components/FormulaToolbar";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 import { useRef } from "react";
+import { imageService } from "@/lib/api/services/imageService";
 
 export default function ManualAddForm({ 
   paperId, 
@@ -34,6 +36,9 @@ export default function ManualAddForm({
     C: initialData?.optionC || "",
     D: initialData?.optionD || ""
   });
+  const [images, setImages] = useState<string[]>(initialData?.images || []);
+  const [imageLabels, setImageLabels] = useState<string[]>(initialData?.imageLabels || []);
+  const [isUploading, setIsUploading] = useState(false);
   const [explanation, setExplanation] = useState(initialData?.explanation || "");
   const [showPreview, setShowPreview] = useState(false);
   const questionRef = useRef<HTMLTextAreaElement>(null);
@@ -100,6 +105,8 @@ export default function ManualAddForm({
       marks,
       correctAnswer,
       explanation,
+      images,
+      imageLabels,
       ...(type === "MULTIPLE_CHOICE" ? {
         optionA: options.A,
         optionB: options.B,
@@ -165,18 +172,61 @@ export default function ManualAddForm({
           
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 transition-all">
             <FormulaToolbar onInsert={handleInsert} />
-            <Textarea 
-              ref={questionRef}
-              placeholder="Enter the question here... Use $...$ for math." 
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              className="min-h-[120px] border-0 focus-visible:ring-0 rounded-none bg-white dark:bg-gray-950"
-              required
+            <QuestionTextEditor
+              questionText={question}
+              onQuestionTextChange={setQuestion}
+              images={images}
+              imageLabels={imageLabels}
+              onImagesChange={setImages}
+              onImageLabelsChange={setImageLabels}
+              placeholder="Enter your question here..."
             />
-            {showPreview && question && (
+            <div className="p-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50/30">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                id="question-images"
+                className="hidden"
+                onChange={async (e) => {
+                  const files = e.target.files;
+                  if (!files || files.length === 0) return;
+                  setIsUploading(true);
+                  try {
+                    const uploadPromises = Array.from(files).map(f => imageService.proxyUploadToBunny(f));
+                    const results = await Promise.all(uploadPromises);
+                    setImages(prev => [...prev, ...results.map(r => r.publicUrl)]);
+                    toast.success(`${files.length} images added`);
+                  } catch (err) {
+                    toast.error("Upload failed");
+                  } finally {
+                    setIsUploading(false);
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={isUploading}
+                onClick={() => document.getElementById('question-images')?.click()}
+                className="h-8 rounded-lg text-gray-500 hover:text-primary gap-2"
+              >
+                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon size={16} />}
+                {isUploading ? "Uploading..." : "Add Question Images"}
+              </Button>
+            </div>
+            {showPreview && (question || images.length > 0) && (
               <div className="p-4 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-1 duration-200">
                 <div className="text-[10px] uppercase font-black tracking-widest text-primary mb-2">Live Preview</div>
-                <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
+                <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
+                  {images.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {images.map((url, i) => (
+                        <img key={i} src={url} className="rounded-lg w-full" alt="" />
+                      ))}
+                    </div>
+                  )}
                   <LaTeXRenderer content={question} />
                 </div>
               </div>

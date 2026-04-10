@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { Plus, Sparkles, FileText, Trash2, Edit2, GripVertical, Check, Loader2 } from "lucide-react";
+import { Plus, Sparkles, FileText, Trash2, Edit2, GripVertical, Check, Loader2, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "react-toastify";
@@ -426,6 +426,26 @@ function SortableQuestionCard({ q, idx, onEdit, onDelete, isSelected, onToggleSe
             <div className="text-gray-900 dark:text-gray-100 font-semibold mb-3 leading-relaxed">
               <LaTeXRenderer content={q.question} />
             </div>
+
+            {q.images && q.images.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4 mt-2">
+                {q.images.map((url: string, i: number) => (
+                  <div key={i} className="relative aspect-video rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-900 group/img transition-all hover:shadow-md">
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 rounded-full bg-white/20 text-white backdrop-blur-sm"
+                        onClick={() => window.open(url, '_blank')}
+                      >
+                        <ImageIcon size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             
             {q.type === 'MULTIPLE_CHOICE' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">

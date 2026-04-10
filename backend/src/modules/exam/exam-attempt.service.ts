@@ -873,6 +873,7 @@ export const getExamReviewDataService = async ({
         return {
           questionId: question.id,
           question: question.question,
+          images: (question as any).images || [],
           type: question.type,
           options: {
             optionA: question.optionA,

@@ -425,6 +425,8 @@ export const createSubjectPaperService = async ({
   instructions,
   durationMinutes,
   readingContent,
+  images,
+  imageLabels,
 }: {
   examId?: string;
   subjectId?: string;
@@ -434,6 +436,8 @@ export const createSubjectPaperService = async ({
   instructions?: string;
   durationMinutes?: number;
   readingContent?: string;
+  images?: string[];
+  imageLabels?: string[];
 }) => {
   return prisma.subjectExamPaper.create({
     data: {
@@ -444,6 +448,8 @@ export const createSubjectPaperService = async ({
       instructions: instructions || null,
       durationMinutes: durationMinutes || null,
       readingContent: readingContent || null,
+      images: images || [],
+      imageLabels: imageLabels || [],
       exams: examId && examId !== 'none' ? {
         create: {
           examId
@@ -466,6 +472,8 @@ export const updateSubjectPaperService = async (paperId: string, data: {
   instructions?: string;
   durationMinutes?: number;
   readingContent?: string;
+  images?: string[];
+  imageLabels?: string[];
   subjectId?: string;
   teacherId?: string;
 }) => {
@@ -476,6 +484,8 @@ export const updateSubjectPaperService = async (paperId: string, data: {
       instructions: data.instructions || undefined,
       durationMinutes: data.durationMinutes !== undefined ? data.durationMinutes : undefined,
       readingContent: data.readingContent === "" ? null : (data.readingContent || undefined),
+      images: data.images !== undefined ? data.images : undefined,
+      imageLabels: data.imageLabels !== undefined ? data.imageLabels : undefined,
       subjectId: data.subjectId === "" ? null : (data.subjectId || undefined),
       teacherId: data.teacherId === "" ? null : (data.teacherId || undefined),
       updatedAt: new Date(),
@@ -497,6 +507,8 @@ export const addManualQuestionsToPaperService = async ({
     optionD?: string;
     correctAnswer: string;
     explanation?: string;
+    images?: string[];
+    imageLabels?: string[];
     marks?: number;
   }>;
 }) => {
@@ -529,6 +541,8 @@ export const addManualQuestionsToPaperService = async ({
       optionD: q.optionD || null,
       correctAnswer: q.correctAnswer,
       explanation: q.explanation || null,
+      images: q.images || [],
+      imageLabels: q.imageLabels || [],
       marks: q.marks || 1,
       order: existingCount + index,
     })),
@@ -561,6 +575,8 @@ export const addAIQuestionsToPaperService = async ({
     optionD?: string;
     correctAnswer: string;
     explanation?: string;
+    images?: string[];
+    imageLabels?: string[];
     marks?: number;
   }>;
 }) => {
@@ -593,6 +609,8 @@ export const addAIQuestionsToPaperService = async ({
       optionD: q.optionD || null,
       correctAnswer: q.correctAnswer,
       explanation: q.explanation || null,
+      images: q.images || [],
+      imageLabels: q.imageLabels || [],
       marks: q.marks || 1,
       order: existingCount + index,
     })),
@@ -938,6 +956,8 @@ export const updateQuestionService = async (
     optionD?: string;
     correctAnswer?: string;
     explanation?: string;
+    images?: string[];
+    imageLabels?: string[];
     marks?: number;
   }
 ) => {
@@ -961,6 +981,7 @@ export const updateQuestionService = async (
     optionD: data.optionD !== undefined ? data.optionD : (existing.optionD || undefined),
     correctAnswer: data.correctAnswer || existing.correctAnswer,
     marks: data.marks !== undefined ? data.marks : Number(existing.marks),
+    imageLabels: data.imageLabels !== undefined ? data.imageLabels : (existing.imageLabels || []),
   };
 
   validateExamQuestionInput(merged);
@@ -976,6 +997,8 @@ export const updateQuestionService = async (
       optionD: data.optionD,
       correctAnswer: data.correctAnswer,
       explanation: data.explanation,
+      images: data.images,
+      imageLabels: data.imageLabels,
       marks: data.marks,
     },
   });

@@ -468,14 +468,14 @@ export default function UnifiedExamPage() {
                    <ShcnButton 
                       variant="outline" 
                       className={`rounded-xl font-black flex items-center gap-2 px-5 transition-all ${
-                         activeSubject?.readingContent 
+                         (activeSubject?.readingContent || (activeSubject?.images && activeSubject.images.length > 0))
                             ? "bg-primary/5 text-primary border-primary/20 hover:bg-primary/10" 
                             : "bg-slate-100 dark:bg-slate-800 text-slate-400 border-transparent opacity-50 cursor-not-allowed"
                       }`}
-                      onClick={() => activeSubject?.readingContent && setShowReadingModal(true)}
-                      disabled={!activeSubject?.readingContent}
+                      onClick={() => (activeSubject?.readingContent || (activeSubject?.images && activeSubject.images.length > 0)) && setShowReadingModal(true)}
+                      disabled={!(activeSubject?.readingContent || (activeSubject?.images && activeSubject.images.length > 0))}
                    >
-                      <BookOpen size={18} /> Read {activeSubject?.readingContent ? "Passage" : "Paper"}
+                      <BookOpen size={18} /> Read {(activeSubject?.readingContent || (activeSubject?.images && activeSubject.images.length > 0)) ? "Passage" : "Paper"}
                    </ShcnButton>
                    <ShcnButton variant="ghost" className="rounded-xl font-bold" onClick={() => setShowDetails(true)}>
                       <Info size={18} className="mr-2" /> View Details
@@ -510,6 +510,8 @@ export default function UnifiedExamPage() {
                   totalQuestions={totalQuestionsInActiveSubject}
                   type={activeQuestion?.type}
                   text={activeQuestion?.question || ""}
+                  images={activeQuestion?.images || []}
+                  imageLabels={activeQuestion?.imageLabels || []}
                   options={
                     activeQuestion?.type === "TRUE_FALSE" 
                       ? [
@@ -584,11 +586,13 @@ export default function UnifiedExamPage() {
         isLoading={submitAttemptMutation.isPending}
       />
 
-      {activeSubject?.readingContent && (
+      {(activeSubject?.readingContent || (activeSubject?.images && activeSubject.images.length > 0)) && (
          <StudentReadingModal
             isOpen={showReadingModal}
             onClose={() => setShowReadingModal(false)}
-            content={activeSubject.readingContent}
+            content={activeSubject.readingContent || ""}
+            images={activeSubject.images || []}
+            imageLabels={activeSubject.imageLabels || []}
             subjectName={activeSubject.title || activeSubject.subject?.name || "Subject"}
          />
       )}

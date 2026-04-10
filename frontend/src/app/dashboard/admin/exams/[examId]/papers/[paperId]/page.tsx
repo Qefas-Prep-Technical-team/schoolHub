@@ -307,6 +307,8 @@ export default function PaperDetailPage() {
         onClose={() => setIsReadingModalOpen(false)}
         paperId={paperId}
         initialContent={paper.readingContent}
+        initialImages={paper.images}
+        initialLabels={paper.imageLabels}
       />
 
       <PaperPreviewModal

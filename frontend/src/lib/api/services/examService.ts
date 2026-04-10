@@ -48,6 +48,8 @@ export interface SubjectPaper {
   totalMarks: number;
   passMark?: number;
   readingContent?: string;
+  images: string[];
+  imageLabels: string[];
   status: "DRAFT" | "REVIEW" | "APPROVED" | "REJECTED" | "PUBLISHED";
   createdAt: string;
   subject?: { name: string; schoolId: string };
@@ -60,6 +62,8 @@ export interface SubjectExamQuestion {
   subjectPaperId: string;
   type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER";
   question: string;
+  images: string[];
+  imageLabels: string[];
   optionA?: string;
   optionB?: string;
   optionC?: string;
@@ -99,6 +103,8 @@ export interface CreatePaperDTO {
   durationMinutes: number;
   passMark?: number;
   readingContent?: string;
+  images?: string[];
+  imageLabels?: string[];
 }
 
 export const examService = {
