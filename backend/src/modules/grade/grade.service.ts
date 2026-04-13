@@ -225,3 +225,9 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[]) =
     throw error;
   }
 };
+
+export const deleteGradeService = async (id: string) => {
+  return prisma.grade.delete({
+    where: { id },
+  });
+};

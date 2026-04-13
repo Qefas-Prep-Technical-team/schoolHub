@@ -58,6 +58,7 @@ export default function UnifiedExamPage() {
 
   // Submission Guard & UI state
   const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const isSubmittingRef = useRef(false);
   const initialAnswersRestoredRef = useRef(false);
 
@@ -110,14 +111,23 @@ export default function UnifiedExamPage() {
       return;
     }
 
+    setIsTransitioning(true);
+
     if (attempt?.status === "IN_PROGRESS") {
-      setShowDetails(false);
+      setTimeout(() => {
+        setShowDetails(false);
+        setIsTransitioning(false);
+      }, 50);
       return;
     }
 
     startAttemptMutation.mutate(examId as string, {
       onSuccess: () => {
+        setIsTransitioning(false);
         setShowDetails(false);
+      },
+      onError: () => {
+        setIsTransitioning(false);
       }
     });
   };
@@ -416,11 +426,11 @@ export default function UnifiedExamPage() {
                <ShcnButton 
                  size="lg" 
                  className="h-16 px-16 text-xl font-bold rounded-2xl gap-3 shadow-xl shadow-primary/20 transform transition-all active:scale-95"
-                 disabled={!isStarted || startAttemptMutation.isPending}
+                 disabled={!isStarted || startAttemptMutation.isPending || isTransitioning}
                  onClick={handleConfirmStart}
                >
-                  {startAttemptMutation.isPending ? (
-                    <Loader2 className="animate-spin" />
+                  {startAttemptMutation.isPending || isTransitioning ? (
+                    <><Loader2 className="animate-spin" /> Loading Exam Environment...</>
                   ) : !isStarted ? (
                     <><Clock /> Exam Starting Soon</>
                   ) : (

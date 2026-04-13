@@ -50,3 +50,13 @@ export const bulkCreateGrades = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const deleteGrade = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const result = await gradeService.deleteGradeService(id as string);
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

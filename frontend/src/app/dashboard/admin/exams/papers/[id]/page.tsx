@@ -10,7 +10,7 @@ import { useSchoolDashboardSummary } from "@/lib/api/hooks/useSchool";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, FileText, Settings, Loader2, Check, Globe, BookOpen, Eye, Settings as SettingsIcon } from "lucide-react";
+import { ChevronLeft, FileText, Settings, Loader2, Check, Globe, BookOpen, Eye, Settings as SettingsIcon, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import QuestionManager from "../../[examId]/papers/[paperId]/components/QuestionManager";
 import ConfirmationModal from "../../components/ui/ConfirmationModal";
@@ -76,6 +76,17 @@ export default function StandalonePaperDetailPage() {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to delete paper");
+    }
+  });
+
+  const deleteGradeMutation = useMutation({
+    mutationFn: (gradeId: string) => apiClient.delete(`/grades/${gradeId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
+      toast.success("Manual grade deleted!");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete grade");
     }
   });
 
@@ -317,13 +328,16 @@ export default function StandalonePaperDetailPage() {
                 type: 'ONLINE'
               }));
 
-              const manualResults = (paper.grades || []).map((g: any) => ({
+              const manualResults = (paper.grades || [])
+                .filter((g: any) => !g.examAttemptId && !g.subjectExamAttemptId)
+                .map((g: any) => ({
                 id: g.id,
                 studentName: g.student?.name,
                 studentCode: g.student?.studentCode,
                 score: g.score,
                 maxMarks: g.maxMarks,
-                type: 'MANUAL'
+                type: 'MANUAL',
+                gradeId: g.id
               }));
 
               const allResults = [...onlineResults, ...manualResults];
@@ -444,13 +458,40 @@ export default function StandalonePaperDetailPage() {
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 text-right pr-8">
-                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black tracking-widest ${
-                                      result.type === 'MANUAL' 
-                                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
-                                        : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
-                                    }`}>
-                                      {result.type}
-                                    </span>
+                                    <div className="flex items-center justify-end gap-3">
+                                      <span className={`px-2 py-0.5 rounded text-[8px] font-black tracking-widest ${
+                                        result.type === 'MANUAL' 
+                                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
+                                          : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
+                                      }`}>
+                                        {result.type}
+                                      </span>
+                                      {result.type === 'MANUAL' && (
+                                        <button
+                                          onClick={() => {
+                                            openConfirmDialog({
+                                              title: "Delete Manual Grade",
+                                              description: `Are you sure you want to delete the manual grade for ${result.studentName}?`,
+                                              variant: "danger",
+                                              confirmText: "Delete",
+                                              onConfirm: () => {
+                                                deleteGradeMutation.mutate(result.gradeId);
+                                                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                                              }
+                                            });
+                                          }}
+                                          disabled={deleteGradeMutation.isPending}
+                                          className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded transition-colors disabled:opacity-50"
+                                          title="Delete manual grade"
+                                        >
+                                          {deleteGradeMutation.isPending ? (
+                                            <Loader2 size={14} className="animate-spin" />
+                                          ) : (
+                                            <Trash2 size={14} />
+                                          )}
+                                        </button>
+                                      )}
+                                    </div>
                                   </td>
                                 </tr>
                               );
