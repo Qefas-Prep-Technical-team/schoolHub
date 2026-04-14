@@ -5,13 +5,15 @@ import { getStudentGradesService, getGradeByIdService, getAllGradesService } fro
 export const getStudentGrades = async (req: Request, res: Response) => {
   try {
     const studentId = req.user?.userType === UserRole.STUDENT ? req.user.id : (req.query.studentId as string);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
 
     if (!studentId) {
       return res.status(400).json({ success: false, message: "studentId is required" });
     }
 
-    const data = await getStudentGradesService(studentId);
-    return res.status(200).json({ success: true, data });
+    const data = await getStudentGradesService(studentId, page, limit);
+    return res.status(200).json({ success: true, ...data });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }

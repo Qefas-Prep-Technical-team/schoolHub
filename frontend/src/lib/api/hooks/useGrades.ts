@@ -11,10 +11,10 @@ export const gradeKeys = {
   hub: (filters: any) => [...gradeKeys.all, "hub", filters] as const,
 };
 
-export const useStudentGrades = (studentId?: string) => {
+export const useStudentGrades = (studentId?: string, params?: { page?: number; limit?: number }) => {
   return useQuery({
-    queryKey: gradeKeys.list({ studentId }),
-    queryFn: () => gradeService.getStudentGrades(studentId),
+    queryKey: gradeKeys.list({ studentId, ...params }),
+    queryFn: () => gradeService.getStudentGrades(studentId, params),
   });
 };
 

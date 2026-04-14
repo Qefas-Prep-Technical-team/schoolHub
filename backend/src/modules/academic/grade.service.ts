@@ -1,37 +1,54 @@
 import prisma from "../../config/database";
 
-export const getStudentGradesService = async (studentId: string) => {
+export const getStudentGradesService = async (studentId: string, page: number = 1, limit: number = 10) => {
   const now = new Date();
+  const skip = (page - 1) * limit;
   
-  return prisma.grade.findMany({
-    where: { 
-      studentId,
-      OR: [
-        {
-          exam: {
-            OR: [
-              { allowImmediateResult: true },
-              { resultReleaseAt: null },
-              { resultReleaseAt: { lte: now } }
-            ]
-          }
-        },
-        // If it's a direct grade (no tied exam), it should always be visible
-        {
-          examId: null
-        }
-      ]
-    },
-    include: {
-      exam: {
-        include: {
-          session: true,
+  const where: any = { 
+    studentId,
+    OR: [
+      {
+        exam: {
+          OR: [
+            { allowImmediateResult: true },
+            { resultReleaseAt: null },
+            { resultReleaseAt: { lte: now } }
+          ]
         }
       },
-      examAttempt: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      {
+        examId: null
+      }
+    ]
+  };
+
+  const [data, total] = await Promise.all([
+    prisma.grade.findMany({
+      where,
+      include: {
+        exam: {
+          include: {
+            session: true,
+          }
+        },
+        examAttempt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.grade.count({ where })
+  ]);
+
+  return {
+    grades: data,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  };
 };
 
 export const getGradeByIdService = async (id: string) => {

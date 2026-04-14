@@ -2,10 +2,10 @@ export type PerformanceLevel = 'High' | 'Medium' | 'Low';
 export type ViewType = 'Grid View' | 'List View';
 
 export interface Student {
-  id: number;
+  id: string | number;
   name: string;
   grade: string;
-  avatarUrl: string;
+  avatarUrl?: string;
   performance: PerformanceLevel;
   attendance: number;
   lastExam: string;

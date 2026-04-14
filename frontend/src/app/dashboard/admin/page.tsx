@@ -37,32 +37,47 @@ export default function AdminDashboard() {
       <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 md:p-6 lg:p-10 space-y-8">
         
         {/* Premium School Header */}
-        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 md:p-12 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-12 opacity-[0.03]">
-            <Building2 size={320} className="text-primary" />
+        <section className="relative overflow-hidden rounded-[3rem] p-8 md:p-12 shadow-2xl border-0 bg-white/70 dark:bg-slate-900/80 backdrop-blur-3xl group">
+          {/* Animated Background Gradients */}
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/20 dark:bg-primary/20 rounded-full blur-3xl animate-pulse pointer-events-none" />
+          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-500/20 dark:bg-indigo-500/20 rounded-full blur-3xl animate-pulse delay-700 pointer-events-none" />
+          
+          <div className="absolute top-0 right-0 p-12 opacity-[0.03] dark:opacity-5 group-hover:scale-110 transition-transform duration-700 ease-in-out pointer-events-none">
+            <Building2 size={380} className="text-primary" />
           </div>
           
           <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="flex items-center gap-3">
-                <Badge className="bg-primary/10 text-primary border-none rounded-full px-4 py-1 text-[10px] font-black uppercase tracking-widest">
+                <Badge className="bg-gradient-to-r from-primary/10 to-indigo-500/10 text-primary dark:text-white border border-primary/20 rounded-full px-5 py-1.5 text-[11px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md">
                   Institution Overview
                 </Badge>
-                <div className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
-                <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                  <ShieldCheck size={14} className="text-emerald-500" /> Verified System
-                </span>
+                <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                    Verified System
+                  </span>
+                </div>
               </div>
-              <h1 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tighter leading-[0.85]">
-                {schoolName} <br />
-                <span className="text-slate-400">Command Center</span>
-              </h1>
+              <div className="flex flex-col gap-1">
+                <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {schoolName}
+                </h1>
+                <h2 className="text-lg md:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-500 to-purple-500">
+                  Command Center
+                </h2>
+              </div>
             </div>
             
-            <DateControls
-              onSessionChange={setSession}
-              onTermChange={setTerm}
-            />
+            <div className="bg-white/40 dark:bg-slate-950/40 p-2 rounded-[2rem] border border-white/50 dark:border-slate-800/50 backdrop-blur-md shadow-inner group-hover:bg-white/60 dark:group-hover:bg-slate-950/60 transition-colors duration-500">
+              <DateControls
+                onSessionChange={setSession}
+                onTermChange={setTerm}
+              />
+            </div>
           </div>
         </section>
 

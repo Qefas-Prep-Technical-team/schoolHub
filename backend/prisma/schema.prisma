@@ -664,6 +664,9 @@ enum NotificationType {
   LINK_ACCEPTED
   LINK_REJECTED
   GENERAL
+  ANNOUNCEMENT
+  MESSAGE
+  ACADEMIC
 }
 
 enum NotificationStatus {

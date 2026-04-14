@@ -6,7 +6,7 @@ type CreateNotificationInput = {
   recipientId: string;
   senderType?: "ADMIN" | "TEACHER" | "STUDENT" | "PARENT" | "SCHOOL";
   senderId?: string;
-  type: "LINK_REQUEST" | "LINK_ACCEPTED" | "LINK_REJECTED" | "GENERAL";
+  type: "LINK_REQUEST" | "LINK_ACCEPTED" | "LINK_REJECTED" | "GENERAL" | "ANNOUNCEMENT" | "MESSAGE" | "ACADEMIC";
   title: string;
   message: string;
   linkRequestId?: string;

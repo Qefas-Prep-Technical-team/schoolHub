@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, X, Info, AlertCircle, ExternalLink } from 'lucide-react';
+import { Bell, Check, X, Info, AlertCircle, ExternalLink, Mail, Megaphone, Activity } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -77,10 +77,18 @@ export default function NotificationCenter() {
     );
   };
 
+  // Filter for Messages & Announcements
+  const filteredNotifications = notifications.filter((n: Notification) => 
+    n.type === 'MESSAGE' || n.type === 'ANNOUNCEMENT'
+  );
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'LINK_REQUEST': return <Info className="h-4 w-4 text-blue-500" />;
       case 'SYSTEM': return <AlertCircle className="h-4 w-4 text-orange-500" />;
+      case 'MESSAGE': return <Mail className="h-4 w-4 text-primary" />;
+      case 'ANNOUNCEMENT': return <Megaphone className="h-4 w-4 text-purple-500" />;
+      case 'ACADEMIC': return <Activity className="h-4 w-4 text-green-500" />;
       default: return <Bell className="h-4 w-4 text-gray-500" />;
     }
   };
@@ -98,9 +106,9 @@ export default function NotificationCenter() {
         </Button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent align="end" className="w-[380px] p-0 shadow-2xl border-border bg-background">
+      <DropdownMenuContent align="end" className="w-[380px] p-0 shadow-2xl border-border bg-background rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b">
-          <DropdownMenuLabel className="p-0 font-bold text-base">Notifications</DropdownMenuLabel>
+          <DropdownMenuLabel className="p-0 font-bold text-base">Messages & Announcements</DropdownMenuLabel>
           {unreadCount > 0 && (
             <Button 
               variant="ghost" 
@@ -113,24 +121,28 @@ export default function NotificationCenter() {
           )}
         </div>
 
-        <div className="h-[400px] overflow-y-auto">
-          {notifications.length === 0 ? (
+        <div className="max-h-[400px] overflow-y-auto">
+          {filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[300px] text-center p-6">
               <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                <Bell className="h-6 w-6 text-gray-400" />
+                <Megaphone className="h-6 w-6 text-gray-400" />
               </div>
-              <p className="font-bold text-gray-900 dark:text-white">No notifications yet</p>
-              <p className="text-sm text-gray-500 mt-1">We'll let you know when something important happens.</p>
+              <p className="font-bold text-gray-900 dark:text-white">No messages yet</p>
+              <p className="text-sm text-gray-500 mt-1">We'll let you know when school announcements or messages arrive.</p>
             </div>
           ) : (
             <div className="flex flex-col">
-              {notifications.map((n: any) => (
+              {filteredNotifications.map((n: any) => (
                 <div 
                   key={n.id} 
                   className={cn(
-                    "p-4 border-b hover:bg-accent/50 transition-colors relative group",
+                    "p-4 border-b hover:bg-accent/50 transition-colors relative group cursor-pointer",
                     !n.isRead && "bg-primary/5 dark:bg-primary/10"
                   )}
+                  onClick={() => {
+                    if (n.link) router.push(n.link);
+                    if (!n.isRead) handleMarkAsRead(n.id);
+                  }}
                 >
                   {!n.isRead && (
                     <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-primary rounded-full" />

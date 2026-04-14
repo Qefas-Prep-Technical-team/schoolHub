@@ -270,9 +270,9 @@ export const examService = {
     return response.data;
   },
 
-  getMyExamAttempts: async () => {
-    const response = await apiClient.get('/exams/my/attempts');
-    return response.data.data;
+  getMyExamAttempts: async (params?: { page?: number; limit?: number }) => {
+    const response = await apiClient.get('/exams/my/attempts', { params });
+    return response.data;
   },
 
   getMyStats: async () => {

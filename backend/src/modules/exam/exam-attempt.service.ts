@@ -940,39 +940,57 @@ export const getExamAttemptsService = async ({
   });
 };
 
-export const getStudentExamAttemptsService = async (studentId: string) => {
+export const getStudentExamAttemptsService = async (studentId: string, page: number = 1, limit: number = 10) => {
   const now = new Date();
+  const skip = (page - 1) * limit;
 
-  return prisma.examAttempt.findMany({
-    where: {
-      studentId,
-      status: {
-        in: [ExamAttemptStatus.SUBMITTED, ExamAttemptStatus.SCORED],
-      },
-      exam: {
-        OR: [
-          { allowImmediateResult: true },
-          { resultReleaseAt: null },
-          { resultReleaseAt: { lte: now } }
-        ]
-      }
+  const where: any = {
+    studentId,
+    status: {
+      in: [ExamAttemptStatus.SUBMITTED, ExamAttemptStatus.SCORED],
     },
-    include: {
-      exam: true,
-      subjectAttempts: {
-        include: {
-          subjectPaper: {
-            include: {
-              subject: true,
+    exam: {
+      OR: [
+        { allowImmediateResult: true },
+        { resultReleaseAt: null },
+        { resultReleaseAt: { lte: now } }
+      ]
+    }
+  };
+
+  const [data, total] = await Promise.all([
+    prisma.examAttempt.findMany({
+      where,
+      include: {
+        exam: true,
+        subjectAttempts: {
+          include: {
+            subjectPaper: {
+              include: {
+                subject: true,
+              },
             },
           },
         },
       },
-    },
-    orderBy: {
-      submittedAt: "desc",
-    },
-  });
+      orderBy: {
+        submittedAt: "desc",
+      },
+      skip,
+      take: limit,
+    }),
+    prisma.examAttempt.count({ where })
+  ]);
+
+  return {
+    attempts: data,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  };
 };
 
 export const deleteExamAttemptService = async ({

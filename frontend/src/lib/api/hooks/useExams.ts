@@ -213,10 +213,10 @@ export const useExamResult = (examId: string, studentId?: string) => {
   });
 };
 
-export const useStudentExamAttempts = () => {
+export const useStudentExamAttempts = (params?: { page?: number; limit?: number }) => {
   return useQuery({
-    queryKey: ["my-attempts"],
-    queryFn: () => examService.getMyExamAttempts(),
+    queryKey: ["my-attempts", params],
+    queryFn: () => examService.getMyExamAttempts(params),
   });
 };
 

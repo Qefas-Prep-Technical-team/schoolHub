@@ -762,10 +762,9 @@ export const getMyProfile = async (req: Request, res: Response) => {
             email: true,
             adminCode: true,
             role: true,
-            // Temporarily disabled until migration
-            // gender: true,
-            // profileImage: true,
-            // bannerImage: true,
+            gender: true,
+            profileImage: true,
+            bannerImage: true,
             schoolAdmins: {
               where: { active: true },
               include: { school: { select: { schoolCode: true } } },
@@ -783,10 +782,9 @@ export const getMyProfile = async (req: Request, res: Response) => {
             email: true,
             teacherCode: true,
             role: true,
-            // Temporarily disabled until migration
-            // gender: true,
-            // profileImage: true,
-            // bannerImage: true,
+            gender: true,
+            profileImage: true,
+            bannerImage: true,
           },
         });
         break;
@@ -799,8 +797,7 @@ export const getMyProfile = async (req: Request, res: Response) => {
             email: true,
             studentCode: true,
             role: true,
-            // Temporarily disabled until migration
-            // gender: true,
+            gender: true,
             profileImage: true,
             bannerImage: true,
           },
@@ -815,10 +812,9 @@ export const getMyProfile = async (req: Request, res: Response) => {
             email: true,
             parentCode: true,
             role: true,
-            // Temporarily disabled until migration
-            // gender: true,
-            // profileImage: true,
-            // bannerImage: true,
+            gender: true,
+            profileImage: true,
+            bannerImage: true,
           },
         });
         break;

@@ -1,8 +1,7 @@
-
+import { User } from "lucide-react";
 import Link from "next/link";
 import PerformanceBadge from "./PerformanceBadge";
 import { Student } from "./types";
-
 
 interface StudentCardProps {
   student: Student;
@@ -10,19 +9,24 @@ interface StudentCardProps {
 
 const StudentCard: React.FC<StudentCardProps> = ({ student }) => {
   const getAttendanceColor = (attendance: number) => {
-    return attendance < 85 ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-200';
+    return attendance < 85 ? 'text-red-500 font-bold' : 'text-gray-800 dark:text-gray-200';
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 p-4 transition-shadow hover:shadow-lg dark:hover:shadow-primary/10">
+    <div className="flex flex-col gap-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/40 backdrop-blur-md p-5 transition-all hover:shadow-xl hover:-translate-y-1">
       <div className="flex items-center gap-4">
-        <div 
-          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12"
-          style={{ backgroundImage: `url("${student.avatarUrl}")` }}
-        />
-        <div className="flex flex-col">
-          <p className="text-gray-900 dark:text-white font-bold">{student.name}</p>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">{student.grade}</p>
+        <div className="relative w-12 h-12 shrink-0">
+          <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-gray-100 dark:border-gray-700">
+            {student.avatarUrl ? (
+              <img src={student.avatarUrl} alt={student.name} className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-6 h-6 text-primary" />
+            )}
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-gray-900 dark:text-white font-black truncate">{student.name}</p>
+          <p className="text-gray-500 dark:text-gray-400 text-xs font-bold">{student.grade}</p>
         </div>
       </div>
       

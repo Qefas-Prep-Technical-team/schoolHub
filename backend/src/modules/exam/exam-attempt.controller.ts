@@ -210,11 +210,14 @@ export const getMyExamAttempts = async (req: Request, res: Response) => {
       });
     }
 
-    const data = await getStudentExamAttemptsService(req.user.id);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const data = await getStudentExamAttemptsService(req.user.id, page, limit);
 
     return res.status(200).json({
       success: true,
-      data,
+      ...data,
     });
   } catch (error: any) {
     return res.status(400).json({

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/authMiddleware";
 import { getSchoolTeachers, getSchoolStudents, getSchoolStats, getSchoolPerformanceAnalysis, getSchoolProfile, updateSchoolProfile, getSchoolSettings, updateSchoolSettings, getDashboardSummary } from "./school.controller";
+import { getTeacherDashboardStats, getTeacherLinkedSchools, getTeacherPerformanceTrends, getTeacherStudents } from "./teacher-dashboard.controller";
 
 const router = Router();
 
@@ -64,5 +65,33 @@ router.get("/:schoolId/settings", getSchoolSettings);
  * @access  Private-Admin
  */
 router.patch("/:schoolId/settings", updateSchoolSettings);
+
+/**
+ * @route   GET /api/v1/schools/teacher/dashboard-stats
+ * @desc    Get dashboard statistics for a teacher
+ * @access  Private-Teacher
+ */
+router.get("/teacher/dashboard-stats", getTeacherDashboardStats);
+
+/**
+ * @route   GET /api/v1/schools/teacher/linked-schools
+ * @desc    Get all schools linked to the teacher
+ * @access  Private-Teacher
+ */
+router.get("/teacher/linked-schools", getTeacherLinkedSchools);
+
+/**
+ * @route   GET /api/v1/schools/teacher/performance-trends
+ * @desc    Get performance trends for a teacher
+ * @access  Private-Teacher
+ */
+router.get("/teacher/performance-trends", getTeacherPerformanceTrends);
+
+/**
+ * @route   GET /api/v1/schools/teacher/students
+ * @desc    Get all students linked to the teacher's classes
+ * @access  Private-Teacher
+ */
+router.get("/teacher/students", getTeacherStudents);
 
 export default router;

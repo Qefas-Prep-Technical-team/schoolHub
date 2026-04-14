@@ -1,53 +1,61 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
-import TopNavbar from './TopNavbar';
+import { useState, useEffect } from 'react';
+import { teacherService } from '@/lib/api/services/teacherService';
+import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import StatsCards from './StatsCards';
 import AssignmentsExams from './AssignmentsExams';
 import PerformanceAnalytics from './PerformanceAnalytics';
-import AttendanceWidget from './AttendanceWidget';
+import StudentPerformanceWidget from './StudentPerformanceWidget';
 import MessagesAnnouncements from './MessagesAnnouncements';
 
 export default function DashboardPage() {
-  const [stats] = useState({
-    totalClasses: 5,
-    totalStudents: 124,
-    upcomingLessons: 3,
+  const [stats, setStats] = useState({
+    totalClasses: 0,
+    totalStudents: 0,
+    upcomingLessons: 0,
+    averagePerformance: 0,
+    attendanceRate: 0,
   });
+  const [performanceMetrics, setPerformanceMetrics] = useState({
+    topStudents: [],
+    distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 }
+  });
+  const [recentExams, setRecentExams] = useState<any[]>([]);
+  const { selectedSchoolId, schools, setSchools } = useDashboardStore();
+  const [loading, setLoading] = useState(true);
 
-  const assignments = [
-    {
-      id: '1',
-      title: 'Biology Midterm Papers',
-      description: '12 Submissions Pending Grading',
-      icon: 'hourglass_top',
-      iconColor: 'text-orange-500',
-      status: 'pending',
-      action: 'Grade Now',
-      dueDate: null,
-    },
-    {
-      id: '2',
-      title: 'Chemistry Lab Report',
-      description: 'Deadline: Tomorrow, 5:00 PM',
-      icon: 'event_upcoming',
-      iconColor: 'text-red-500',
-      status: 'due_soon',
-      action: null,
-      dueDate: 'tomorrow',
-    },
-    {
-      id: '3',
-      title: 'Physics Homework 5',
-      description: '2 new submissions',
-      icon: 'history',
-      iconColor: 'text-green-500',
-      status: 'recent',
-      action: null,
-      dueDate: null,
-    },
-  ];
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const linkedSchools = await teacherService.getLinkedSchools();
+        setSchools(linkedSchools);
+        
+        // Load stats for current selection
+        const dashboardData = await teacherService.getDashboardStats(selectedSchoolId || undefined);
+        setStats(dashboardData.stats);
+        setPerformanceMetrics(dashboardData.performanceMetrics);
+        setRecentExams(dashboardData.recentExams);
+      } catch (error) {
+        console.error('Failed to load dashboard data', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadInitialData();
+  }, [selectedSchoolId, setSchools]);
+
+  const dashboardAssignments = recentExams.map(exam => ({
+    id: exam.id,
+    title: exam.title,
+    description: `${exam.subject} - ${exam.className}`,
+    icon: 'assignment',
+    iconColor: 'text-blue-500',
+    status: exam.status === 'PUBLISHED' ? 'recent' : 'pending',
+    action: exam.status === 'DRAFT' ? 'Publish' : null,
+    dueDate: exam.date,
+  }));
 
   const messages = [
     {
@@ -76,15 +84,6 @@ export default function DashboardPage() {
     },
   ];
 
-  const attendanceData = {
-    overallPercentage: 90,
-    classes: [
-      { name: 'Biology 101', absences: 5, color: 'text-red-600' },
-      { name: 'Chemistry 202', absences: 1, color: 'text-gray-500' },
-      { name: 'Physics 101', absences: 2, color: 'text-yellow-600' },
-    ],
-  };
-
   const handleCreateNew = () => {
     console.log('Create new item');
     // Open create modal or navigate
@@ -95,20 +94,38 @@ export default function DashboardPage() {
     // Navigate to respective page
   };
 
+  if (loading && schools.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <p className="text-gray-500 font-medium">Loading your dashboard...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      <TopNavbar onCreateNew={handleCreateNew} />
+    <div className="min-h-screen bg-transparent">
       
       <main className="p-4 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           {/* Page Header */}
-          <div className="mb-6 md:mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-              Welcome back, Ms. Vance!
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Here&apos;s a snapshot of your day.
-            </p>
+          <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+                Welcome back, Teacher!
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">
+                {selectedSchoolId 
+                  ? `Showing data for ${schools.find(s => s.id === selectedSchoolId)?.name}` 
+                  : "Showing overview across all your connected schools."}
+              </p>
+            </div>
+            {loading && (
+              <div className="flex items-center gap-2 text-primary font-bold animate-pulse text-xs bg-primary/10 px-3 py-1.5 rounded-full">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                Syncing School Data...
+              </div>
+            )}
           </div>
 
           {/* Stats Cards */}
@@ -120,7 +137,7 @@ export default function DashboardPage() {
             <div className="lg:col-span-2 flex flex-col gap-6">
               {/* Assignments & Exams */}
               <AssignmentsExams   
-                assignments={assignments as any} 
+                assignments={dashboardAssignments as any} 
                 onViewAll={() => handleViewAll('assignments')}
               />
 
@@ -130,8 +147,8 @@ export default function DashboardPage() {
 
             {/* Right Column */}
             <div className="flex flex-col gap-6">
-              {/* Today's Attendance */}
-              <AttendanceWidget data={attendanceData} />
+              {/* Student Performance (Replaced Attendance) */}
+              <StudentPerformanceWidget performanceMetrics={performanceMetrics} />
 
               {/* Messages & Announcements */}
               <MessagesAnnouncements 
