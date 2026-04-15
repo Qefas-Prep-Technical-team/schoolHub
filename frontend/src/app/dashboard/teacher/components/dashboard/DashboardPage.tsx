@@ -29,9 +29,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const linkedSchools = await teacherService.getLinkedSchools();
-        setSchools(linkedSchools);
-        
+        setLoading(true);
         // Load stats for current selection
         const dashboardData = await teacherService.getDashboardStats(selectedSchoolId || undefined);
         setStats(dashboardData.stats);
@@ -44,7 +42,8 @@ export default function DashboardPage() {
       }
     };
     loadInitialData();
-  }, [selectedSchoolId, setSchools]);
+  }, [selectedSchoolId]);
+
 
   const dashboardAssignments = recentExams.map(exam => ({
     id: exam.id,

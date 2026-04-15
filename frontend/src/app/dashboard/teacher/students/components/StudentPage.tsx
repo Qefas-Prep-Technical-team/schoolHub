@@ -9,9 +9,16 @@ import Pagination from './Pagination';
 
 const StudentPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [totalItems, setTotalItems] = useState<number>(0);
   const itemsPerPage = 8;
-  const totalItems = 42;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+
+  // Reset to first page on search
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="font-display bg-background-light dark:bg-background-dark">
@@ -20,8 +27,16 @@ const StudentPage: React.FC = () => {
         <main className="flex-1 p-8">
           <div className="mx-auto max-w-7xl">
             <Header />
-            <ControlsBar />
-            <StudentGrid />
+            <ControlsBar 
+              searchQuery={searchQuery}
+              onSearchChange={handleSearchChange}
+            />
+            <StudentGrid 
+              page={currentPage}
+              searchQuery={searchQuery}
+              limit={itemsPerPage}
+              onDataLoaded={(total: number) => setTotalItems(total)}
+            />
             
             <Pagination
               currentPage={currentPage}
@@ -36,5 +51,6 @@ const StudentPage: React.FC = () => {
     </div>
   );
 };
+
 
 export default StudentPage;

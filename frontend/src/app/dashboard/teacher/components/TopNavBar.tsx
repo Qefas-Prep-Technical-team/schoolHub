@@ -10,6 +10,7 @@ import { TeacherMobileDrawer } from "./TeacherMobileDrawer";
 import NotificationCenter from "../../admin/components/NotificationCenter";
 import { useState, useEffect } from "react";
 import { linkService } from "@/lib/api/services/linkService";
+import { teacherService } from "@/lib/api/services/teacherService";
 import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
 
 export default function TopNavBar({
@@ -23,12 +24,17 @@ export default function TopNavBar({
   const [profile, setProfile] = useState<any>(null);
   const { userType, user } = useAuthStore();
   
-  const { selectedSchoolId, schools, setSelectedSchoolId } = useDashboardStore();
+  const { selectedSchoolId, schools, setSelectedSchoolId, setSchools } = useDashboardStore();
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     linkService.getProfile().then(setProfile).catch(() => {});
-  }, []);
+    
+    // Fetch linked schools globally for the teacher dashboard
+    teacherService.getLinkedSchools()
+      .then(setSchools)
+      .catch((err) => console.error("Failed to fetch linked schools in TopNavBar:", err));
+  }, [setSchools]);
 
   const displayImage = profile?.data?.profileImage || user?.profileImage;
   const displayName = profile?.data?.name || user?.name || user?.email;

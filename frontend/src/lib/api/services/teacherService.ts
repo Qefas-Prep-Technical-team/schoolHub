@@ -21,12 +21,44 @@ export const teacherService = {
   },
 
   /**
-   * Get students for the teacher, optionally filtered by school
+   * Get students for the teacher, optionally filtered by school/class, search, and paginated
    */
-  getStudents: async (schoolId?: string) => {
+  getStudents: async (options: { schoolId?: string; classId?: string; search?: string; page?: number; limit?: number } = {}) => {
     const response = await apiClient.get("/schools/teacher/students", {
-      params: { schoolId },
+      params: options,
     });
+    return response.data.data;
+  },
+
+  /**
+   * Get classes for the teacher, optionally filtered by school
+   */
+  getClasses: async (options: { schoolId?: string } = {}) => {
+    const response = await apiClient.get("/schools/teacher/classes", {
+      params: options,
+    });
+    return response.data.data;
+  },
+  getClassDetail: async (classId: string) => {
+    const response = await apiClient.get(`/schools/teacher/classes/${classId}`);
+    return response.data.data;
+  },
+
+  /**
+   * Get assignments for a specific class, optionally filtered by category
+   */
+  getClassAssignments: async (classId: string, category?: string) => {
+    const response = await apiClient.get(`/schools/teacher/classes/${classId}/assignments`, {
+      params: { category }
+    });
+    return response.data.data;
+  },
+
+  /**
+   * Get grades for a specific class
+   */
+  getClassGrades: async (classId: string) => {
+    const response = await apiClient.get(`/schools/teacher/classes/${classId}/grades`);
     return response.data.data;
   },
 

@@ -1,90 +1,41 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import { ExamToolbar } from './components/ExamToolbar'
 import { ExamTable } from './components/ExamTable'
 import { Exam, ExamFilter } from './components/types'
-
-
-
-
-
-
-const mockBottomNavItems = [
-  { id: 'settings', label: 'Settings', icon: 'settings', path: '/settings' },
-  { id: 'logout', label: 'Logout', icon: 'logout', path: '/logout' },
-]
-
-const mockExams: Exam[] = [
-  {
-    id: '1',
-    title: 'Mid-Term Biology Exam',
-    type: 'exam',
-    questions: 50,
-    totalMarks: 100,
-    scheduledDate: new Date('2024-10-25'),
-    status: 'graded',
-    createdAt: new Date('2024-09-15'),
-    updatedAt: new Date('2024-10-26'),
-    classId: '1',
-  },
-  {
-    id: '2',
-    title: 'Chapter 5 Pop Quiz',
-    type: 'quiz',
-    questions: 10,
-    totalMarks: 10,
-    scheduledDate: new Date('2024-11-02'),
-    status: 'scheduled',
-    createdAt: new Date('2024-10-20'),
-    updatedAt: new Date('2024-10-20'),
-    classId: '1',
-  },
-  {
-    id: '3',
-    title: 'Photosynthesis Quiz',
-    type: 'quiz',
-    questions: 15,
-    totalMarks: 20,
-    scheduledDate: new Date('2024-10-18'),
-    status: 'completed',
-    createdAt: new Date('2024-10-10'),
-    updatedAt: new Date('2024-10-19'),
-    classId: '1',
-  },
-  {
-    id: '4',
-    title: 'Final Exam',
-    type: 'exam',
-    questions: 0,
-    totalMarks: 150,
-    scheduledDate: new Date('2024-12-15'),
-    status: 'draft',
-    createdAt: new Date('2024-11-01'),
-    updatedAt: new Date('2024-11-01'),
-    classId: '1',
-  },
-]
-
-const tabs = [
-  { id: 'students', label: 'Students' },
-  { id: 'assignments', label: 'Assignments' },
-  { id: 'exams-quizzes', label: 'Exams & Quizzes', count: mockExams.length },
-  { id: 'grades', label: 'Grades' },
-]
-
-const breadcrumbs = [
-  { label: 'My Classes', href: '/classes' },
-  { label: 'Biology - Period 3', href: '/classes/1' },
-  { label: 'Exams & Quizzes', active: true },
-]
+import { teacherService } from '@/lib/api/services/teacherService'
+import { Loader2 } from 'lucide-react'
 
 export default function ExamsPage() {
-  const [activeTab, setActiveTab] = useState('exams-quizzes')
+  const params = useParams()
+  const classId = params.classId as string
   const [searchQuery, setSearchQuery] = useState('')
-  const [exams, setExams] = useState<Exam[]>(mockExams)
-  const [filteredExams, setFilteredExams] = useState<Exam[]>(mockExams)
   const [filters, setFilters] = useState<ExamFilter>({})
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['class-exams', classId],
+    queryFn: () => teacherService.getClassAssignments(classId), // Fetches all assessments
+    enabled: !!classId,
+  })
+
+  // Map backend exam format to frontend exam format
+  const exams: Exam[] = (data || []).map((e: any) => ({
+    id: e.id,
+    title: e.title,
+    type: e.title.toLowerCase().includes('quiz') ? 'quiz' : 'exam', // Heuristic if type not explicit yet
+    questions: 0,
+    totalMarks: 0,
+    scheduledDate: new Date(e.dueDate || e.createdAt),
+    status: e.status,
+    createdAt: new Date(e.createdAt),
+    updatedAt: new Date(e.updatedAt),
+    classId: classId
+  }))
+
+  const [filteredExams, setFilteredExams] = useState<Exam[]>([])
 
   useEffect(() => {
     let filtered = exams
@@ -113,7 +64,7 @@ export default function ExamsPage() {
     }
 
     setFilteredExams(filtered)
-  }, [searchQuery, exams, filters])
+  }, [searchQuery, data, filters])
 
   const handleViewExam = (exam: Exam) => {
     console.log('View exam:', exam)
@@ -161,6 +112,15 @@ export default function ExamsPage() {
   const handleLogout = () => {
     console.log('Logout')
     // Implement logout logic
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <p className="mt-4 text-gray-500 font-medium">Loading exams...</p>
+      </div>
+    );
   }
 
   return (

@@ -5,6 +5,7 @@ import { ParentT } from './components/types';
 import PageHeader from './components/PageHeader';
 import SearchBar from './components/SearchBar';
 import ParentGrid from './components/ParentGrid';
+import { Info } from 'lucide-react';
 
 
 const ParentListPage: React.FC = () => {
@@ -97,11 +98,28 @@ const ParentListPage: React.FC = () => {
 
                 <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 md:px-8 py-8 md:py-12">
                     <div className="flex flex-col gap-8">
+                        {/* Coming Soon Banner */}
+                        <div className="bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary p-6 rounded-r-2xl flex items-center gap-4 animate-in fade-in slide-in-from-left duration-700">
+                            <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
+                                <Info className="w-6 h-6 text-primary" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Feature Coming Soon!</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    We&apos;re currently building the parent directory to help you connect with guardians more easily. Stay tuned for updates!
+                                </p>
+                            </div>
+                        </div>
+
                         <PageHeader title="Parent Directory" />
                         <SearchBar onSearch={handleSearch} />
-                        <ParentGrid parents={filteredParents} />
+                        <div className="relative">
+                           <div className="absolute inset-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-[1px] z-10 pointer-events-none rounded-3xl" />
+                           <ParentGrid parents={filteredParents} />
+                        </div>
                     </div>
                 </main>
+
             </div>
         </div>
     );
