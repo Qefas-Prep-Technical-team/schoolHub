@@ -1,8 +1,9 @@
 import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 const HeaderTitle: React.FC = () => {
-  const { selectedSchoolId, schools } = useDashboardStore();
-  const selectedSchool = schools.find(s => s.id === selectedSchoolId);
+  const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
+  const { user } = useAuthStore();
 
   return (
     <div>
@@ -10,9 +11,9 @@ const HeaderTitle: React.FC = () => {
         Students
       </h1>
       <p className="text-gray-500 dark:text-gray-400 font-medium text-sm mt-1">
-        {selectedSchoolId && selectedSchool 
-          ? `Managing students for ${selectedSchool.name}` 
-          : "Overview across all your connected schools"}
+        {selectedSchoolId === user?.id 
+          ? "Overview across all your connected schools" 
+          : `Managing students for ${selectedSchoolName}`}
       </p>
     </div>
   );

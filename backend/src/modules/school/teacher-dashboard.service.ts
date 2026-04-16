@@ -579,13 +579,13 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
 
     // 4. Upcoming Activities (Exams/Quizzes)
     const upcomingActivities = c.exams
-        .filter(e => new Date(e.date) > new Date())
+        .filter(e => new Date(e.startDate || e.createdAt) > new Date())
         .map(e => ({
             id: e.id,
             title: e.title,
             type: 'exam',
-            date: new Date(e.date).toLocaleDateString(),
-            description: e.subject.name,
+            date: new Date(e.startDate || e.createdAt).toLocaleDateString(),
+            description: e.subject?.name || "No Subject",
             status: 'upcoming',
             icon: 'description',
             color: 'red'

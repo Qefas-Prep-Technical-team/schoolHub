@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import StudentCard from "./StudentCard";
 import { teacherService } from "@/lib/api/services/teacherService";
 import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { User, Loader2 } from "lucide-react";
 
 interface StudentGridProps {
@@ -13,12 +14,14 @@ interface StudentGridProps {
 
 const StudentGrid: React.FC<StudentGridProps> = ({ page, searchQuery, limit, onDataLoaded }) => {
   const { selectedSchoolId } = useDashboardStore();
+  const { user } = useAuthStore();
   
   const { data, isLoading, error } = useQuery({
     queryKey: ['teacher-students', selectedSchoolId, searchQuery, page, limit],
     queryFn: async () => {
+      const filterId = selectedSchoolId === user?.id ? undefined : selectedSchoolId;
       const result = await teacherService.getStudents({
-        schoolId: selectedSchoolId || undefined,
+        schoolId: filterId || undefined,
         search: searchQuery || undefined,
         page,
         limit,

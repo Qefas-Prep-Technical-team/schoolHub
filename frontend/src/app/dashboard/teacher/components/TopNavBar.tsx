@@ -36,6 +36,13 @@ export default function TopNavBar({
       .catch((err) => console.error("Failed to fetch linked schools in TopNavBar:", err));
   }, [setSchools]);
 
+  // Sync selectedSchoolId with user.id if it's empty
+  useEffect(() => {
+    if (!selectedSchoolId && user?.id) {
+      setSelectedSchoolId(user.id, "Personal Dashboard");
+    }
+  }, [selectedSchoolId, user?.id, setSelectedSchoolId]);
+
   const displayImage = profile?.data?.profileImage || user?.profileImage;
   const displayName = profile?.data?.name || user?.name || user?.email;
 
@@ -68,10 +75,18 @@ export default function TopNavBar({
           <div className="relative">
             <select
               value={selectedSchoolId}
-              onChange={(e) => setSelectedSchoolId(e.target.value)}
+              onChange={(e) => {
+                const schoolId = e.target.value;
+                if (!schoolId || schoolId === user?.id) {
+                  setSelectedSchoolId(user?.id || "", "Personal Dashboard");
+                } else {
+                  const selectedSchool = schools.find((s: any) => s.id === schoolId);
+                  setSelectedSchoolId(schoolId, selectedSchool?.name || "Unknown School");
+                }
+              }}
               className="appearance-none bg-gray-100 dark:bg-gray-800 border-none rounded-xl px-4 py-2.5 pr-10 text-sm font-semibold text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer min-w-[180px] md:min-w-[220px]"
             >
-              <option value="">Personal Dashboard</option>
+              <option value={user?.id || ""}>Personal Dashboard</option>
               {schools.map((school: any) => (
                 <option key={school.id} value={school.id}>
                   {school.name}

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getTeacherClassDetailService, getTeacherClassesService, getTeacherDashboardStatsService, getTeacherLinkedSchoolsService, getTeacherPerformanceTrendsService, getTeacherStudentsService } from "./teacher-dashboard.service";
+import { getTeacherClassAssignmentsService, getTeacherClassDetailService, getTeacherClassGradesService, getTeacherClassesService, getTeacherDashboardStatsService, getTeacherLinkedSchoolsService, getTeacherPerformanceTrendsService, getTeacherStudentsService } from "./teacher-dashboard.service";
 
 /**
  * Handle fetching teacher dashboard stats
@@ -132,12 +132,17 @@ export const getTeacherClassDetail = async (req: Request, res: Response) => {
     const teacherId = (req as any).user.id;
     const { classId } = req.params;
 
-    const data = await getTeacherClassDetailService(teacherId, classId);
+    const data = await getTeacherClassDetailService(teacherId, classId as string);
 
     return res.status(200).json({
       success: true,
       data,
     });
+  } catch (error: any) {
+    console.error(`[Teacher Dashboard Controller Error]`, error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to fetch class details",
     });
   }
 };
@@ -151,12 +156,17 @@ export const getTeacherClassAssignments = async (req: Request, res: Response) =>
     const { classId } = req.params;
     const { category } = req.query;
 
-    const data = await getTeacherClassAssignmentsService(teacherId, classId, category as string);
+    const data = await getTeacherClassAssignmentsService(teacherId, classId as string, category as string);
 
     return res.status(200).json({
       success: true,
       data,
     });
+  } catch (error: any) {
+    console.error(`[Teacher Dashboard Controller Error]`, error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to fetch class assignments",
     });
   }
 };
@@ -169,7 +179,7 @@ export const getTeacherClassGrades = async (req: Request, res: Response) => {
     const teacherId = (req as any).user.id;
     const { classId } = req.params;
 
-    const data = await getTeacherClassGradesService(teacherId, classId);
+    const data = await getTeacherClassGradesService(teacherId, classId as string);
 
     return res.status(200).json({
       success: true,

@@ -10,12 +10,14 @@ import ClassGrid from './ClassGrid';
 import EmptyState from './EmptyState';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Loader2 } from 'lucide-react';
 
 
 export default function MyClassesPage() {
     const router = useRouter();
-    const { selectedSchoolId } = useDashboardStore();
+    const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
+    const { user } = useAuthStore();
     const [filters, setFilters] = useState({
         academicYear: '',
         term: '',
@@ -27,8 +29,9 @@ export default function MyClassesPage() {
     const { data: classes = [], isLoading } = useQuery({
         queryKey: ['teacher-classes', selectedSchoolId],
         queryFn: async () => {
+            const filterId = selectedSchoolId === user?.id ? undefined : selectedSchoolId;
             const data = await teacherService.getClasses({ 
-                schoolId: selectedSchoolId || undefined 
+                schoolId: filterId || undefined 
             });
             return data as Class[];
         }
@@ -66,7 +69,9 @@ export default function MyClassesPage() {
             <div className="max-w-screen-xl mx-auto">
                 <PageHeader
                     title="My Classes"
-                    description="View and manage all your assigned classes and subjects."
+                    description={selectedSchoolId === user?.id 
+                        ? "Viewing all your assigned classes across connected schools." 
+                        : `Viewing assigned classes for ${selectedSchoolName}.`}
                 />
 
                 <FilterChips

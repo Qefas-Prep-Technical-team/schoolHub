@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import StatsCards from './StatsCards';
 import AssignmentsExams from './AssignmentsExams';
 import PerformanceAnalytics from './PerformanceAnalytics';
@@ -23,15 +24,17 @@ export default function DashboardPage() {
     distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 }
   });
   const [recentExams, setRecentExams] = useState<any[]>([]);
-  const { selectedSchoolId, schools, setSchools } = useDashboardStore();
+  const { selectedSchoolId, selectedSchoolName, schools } = useDashboardStore();
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadInitialData = async () => {
       try {
         setLoading(true);
-        // Load stats for current selection
-        const dashboardData = await teacherService.getDashboardStats(selectedSchoolId || undefined);
+        // If selectedSchoolId is the user.id, it's the personal dashboard, so fetch global stats
+        const filterId = selectedSchoolId === user?.id ? undefined : selectedSchoolId;
+        const dashboardData = await teacherService.getDashboardStats(filterId || undefined);
         setStats(dashboardData.stats);
         setPerformanceMetrics(dashboardData.performanceMetrics);
         setRecentExams(dashboardData.recentExams);
@@ -114,9 +117,9 @@ export default function DashboardPage() {
                 Welcome back, Teacher!
               </h1>
               <p className="text-gray-500 dark:text-gray-400 mt-1">
-                {selectedSchoolId 
-                  ? `Showing data for ${schools.find(s => s.id === selectedSchoolId)?.name}` 
-                  : "Showing overview across all your connected schools."}
+                {selectedSchoolId === user?.id 
+                  ? "Showing overview across all your connected schools."
+                  : `Showing data for ${selectedSchoolName}`}
               </p>
             </div>
             {loading && (

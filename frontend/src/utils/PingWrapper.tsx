@@ -1,5 +1,5 @@
 // components/AuthWrapper.tsx
-import StatusBar from '@/components/reuseables/StatusBar';
+import PingOverlay from '@/components/reuseables/PingOverlay';
 import { useEffect, useState } from 'react';
 
 export const PingWrapper = ({ children }: { children: React.ReactNode }) => {
@@ -18,7 +18,7 @@ export const PingWrapper = ({ children }: { children: React.ReactNode }) => {
     return (
         <div>
             {isWaking && (
-                <StatusBar />
+                <PingOverlay />
             )}
             {children}
         </div>
