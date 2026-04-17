@@ -1,8 +1,9 @@
 import React from 'react';
-
 import GradeTableToolbar from './GradeTableToolbar';
 import StudentGradeRow from './StudentGradeRow';
 import { StudentGrade } from './types';
+import { useGradeSettingsStore } from '@/lib/api/hooks/useGradeSettingsStore';
+import { calculateGrade } from '../../utils/gradeCalculator';
 
 interface GradeTableProps {
   students: StudentGrade[];
@@ -11,6 +12,7 @@ interface GradeTableProps {
 
 const GradeTable: React.FC<GradeTableProps> = ({ students, onStudentsUpdate }) => {
   const selectedCount = students.filter((s) => s.isSelected).length;
+  const { gradingScale } = useGradeSettingsStore();
 
   const handleSelectAll = (selected: boolean) => {
     const updatedStudents = students.map((student) => ({
@@ -36,24 +38,16 @@ const GradeTable: React.FC<GradeTableProps> = ({ students, onStudentsUpdate }) =
       if (student.id === id) {
         const updated = { ...student, [field]: value };
         
-        // Calculate total
-        const total = updated.caScore + updated.assignmentScore + updated.examScore;
-        updated.total = total;
+        // Calculate percentage for the total column (assuming 100 as base for record-grades form)
+        updated.total = updated.score; // Store numeric for internal use
         
         // Validate and calculate grade
-        const hasError = [updated.caScore, updated.assignmentScore, updated.examScore]
-          .some(score => score < 0 || score > 100);
+        const hasError = updated.score < 0 || updated.score > 100; 
         
         updated.hasError = hasError;
         
         if (!hasError) {
-          // Simple grade calculation (customize as needed)
-          if (total >= 90) updated.grade = 'A';
-          else if (total >= 80) updated.grade = 'A-';
-          else if (total >= 70) updated.grade = 'B';
-          else if (total >= 60) updated.grade = 'C';
-          else if (total >= 50) updated.grade = 'D';
-          else updated.grade = 'F';
+          updated.grade = calculateGrade(updated.score, 100, gradingScale);
         } else {
           updated.grade = 'Invalid';
         }
@@ -105,16 +99,16 @@ const GradeTable: React.FC<GradeTableProps> = ({ students, onStudentsUpdate }) =
                   Student Name
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-300 tracking-wider">
-                  Student ID
+                  Student Code
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-300 tracking-wider">
-                  CA Score
+                  Subject Paper
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-300 tracking-wider">
-                  Assignment Score
+                  Type
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-300 tracking-wider">
-                  Exam Score
+                  Score
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 dark:text-gray-300 tracking-wider">
                   Total

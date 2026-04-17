@@ -70,5 +70,15 @@ export const teacherService = {
       params: { schoolId, range }
     });
     return response.data.data;
+  },
+
+  /**
+   * Get exams/quizzes for the teacher
+   */
+  getExams: async (options: { schoolId?: string; classId?: string; category?: string; status?: string } = {}) => {
+    const response = await apiClient.get("/exams", {
+      params: options,
+    });
+    return response.data.data;
   }
 };

@@ -1,3 +1,6 @@
+import React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 interface TablePaginationProps {
   currentPage: number;
   totalPages: number;
@@ -33,45 +36,45 @@ const TablePagination: React.FC<TablePaginationProps> = ({
   }
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center px-4 py-3 border-t border-slate-200 dark:border-slate-800 gap-4">
-      <p className="text-sm text-slate-500 dark:text-slate-400">
-        Showing {startItem} to {endItem} of {totalItems} results
+    <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 bg-slate-50/30 dark:bg-slate-900/10 border-t border-slate-100 dark:border-slate-800 gap-4">
+      <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+        Showing <span className="text-slate-900 dark:text-slate-100">{startItem}</span> to <span className="text-slate-900 dark:text-slate-100">{endItem}</span> of <span className="text-slate-900 dark:text-slate-100">{totalItems}</span> results
       </p>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <button
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          <span className="material-symbols-outlined text-xl">chevron_left</span>
+          <ChevronLeft size={16} />
         </button>
         
         {pageNumbers.map((page, index) => (
           typeof page === 'number' ? (
             <button
               key={index}
-              className={`flex h-8 w-8 items-center justify-center rounded-lg border text-sm ${
+              className={`flex h-9 min-w-9 px-3 items-center justify-center rounded-xl text-xs font-black transition-all active:scale-90 ${
                 currentPage === page
-                  ? 'border-primary bg-primary/20 text-primary'
-                  : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105'
+                  : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
               onClick={() => onPageChange(page)}
             >
               {page}
             </button>
           ) : (
-            <span key={index} className="text-slate-400 px-2">
+            <span key={index} className="text-slate-400 px-1 font-black">
               {page}
             </span>
           )
         ))}
         
         <button
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
-          <span className="material-symbols-outlined text-xl">chevron_right</span>
+          <ChevronRight size={16} />
         </button>
       </div>
     </div>

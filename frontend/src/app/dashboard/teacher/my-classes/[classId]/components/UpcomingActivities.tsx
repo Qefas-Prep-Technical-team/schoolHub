@@ -1,4 +1,5 @@
-import { Calendar, ArrowRight } from 'lucide-react';
+import { Calendar, ArrowRight, Clock, AlertCircle, CheckCircle2, Bookmark } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Activity {
   id: string;
@@ -17,90 +18,79 @@ interface UpcomingActivitiesProps {
 }
 
 export default function UpcomingActivities({ activities, onViewAll }: UpcomingActivitiesProps) {
-  const getColorClasses = (color: string) => {
-    switch (color) {
-      case 'yellow':
-        return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400';
-      case 'orange':
-        return 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
-      case 'red':
-        return 'bg-red-500/10 text-red-600 dark:text-red-400';
-      case 'blue':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
-      case 'green':
-        return 'bg-green-500/10 text-green-600 dark:text-green-400';
-      default:
-        return 'bg-gray-500/10 text-gray-600 dark:text-gray-400';
-    }
-  };
-
-  const getStatusBadge = (status: Activity['status']) => {
+  const getStatusStyles = (status: Activity['status']) => {
     switch (status) {
       case 'upcoming':
-        return <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full">Upcoming</span>;
+        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
       case 'overdue':
-        return <span className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full">Overdue</span>;
+        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
       case 'completed':
-        return <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">Completed</span>;
+        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
       default:
-        return null;
+        return 'bg-slate-100 text-slate-500 border-slate-200';
     }
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          Upcoming Activities
+    <div className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 shadow-xl">
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+          <Clock className="text-primary" size={20} />
+          Academic Deadlines
         </h2>
         <button
           onClick={onViewAll}
-          className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
+          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:gap-3 transition-all"
         >
           View All
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight size={14} />
         </button>
       </div>
 
       <div className="space-y-4">
-        {activities.map((activity) => (
-          <div
+        {activities.map((activity, idx) => (
+          <motion.div
             key={activity.id}
-            className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800/80 rounded-lg transition-colors"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: idx * 0.05 }}
+            className="group flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700/50"
           >
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${getColorClasses(activity.color)}`}>
-                <span className="material-symbols-outlined text-xl">
-                  {activity.icon}
-                </span>
+            <div className="flex items-center gap-5">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm transition-transform group-hover:scale-110`}>
+                 <Bookmark className="text-primary" size={22} strokeWidth={2.5} />
               </div>
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white">
+              <div className="space-y-1">
+                <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                   {activity.title}
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                   {activity.description}
                 </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Calendar className="w-3 h-3 text-gray-400" />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {activity.date}
-                  </span>
-                  {getStatusBadge(activity.status)}
+                <div className="flex items-center gap-4 mt-2">
+                   <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400">
+                      <Calendar size={12} className="text-primary" />
+                      {activity.date}
+                   </div>
+                   <span className={`px-2.5 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-[0.1em] ${getStatusStyles(activity.status)}`}>
+                      {activity.status}
+                   </span>
                 </div>
               </div>
             </div>
-            <button className="text-sm text-primary hover:text-primary/80 font-medium hover:underline">
-              {activity.status === 'completed' ? 'Review' : 'View Details'}
+            <button className="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-400 hover:text-primary transition-all active:scale-95">
+               <ArrowRight size={18} strokeWidth={2.5} />
             </button>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       {activities.length === 0 && (
-        <div className="text-center py-8">
-          <Calendar className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">No upcoming activities</p>
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+               <CheckCircle2 className="w-8 h-8 text-slate-300" />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No Pending Deadlines</p>
         </div>
       )}
     </div>

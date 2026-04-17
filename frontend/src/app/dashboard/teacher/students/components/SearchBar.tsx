@@ -1,27 +1,41 @@
-'use client';
+import React from 'react';
+import { Search, X } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface SearchBarProps {
-  value: string;
-  onChange: (value: string) => void;
+  query: string;
+  onQueryChange: (query: string) => void;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ value, onChange }) => {
+const SearchBar: React.FC<SearchBarProps> = ({ query, onQueryChange }) => {
   return (
-    <label className="flex flex-col min-w-40 h-11 w-full">
-      <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
-        <div className="text-gray-500 dark:text-gray-400 flex bg-gray-100 dark:bg-gray-800 items-center justify-center pl-3.5 rounded-l-lg">
-          <span className="material-symbols-outlined">search</span>
-        </div>
-        <input
-          className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border-none bg-gray-100 dark:bg-gray-800 h-full placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 text-sm font-normal"
-          placeholder="Search by name, ID..."
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
+    <div className="relative group w-full max-w-md">
+      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <Search className="h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
       </div>
-    </label>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => onQueryChange(e.target.value)}
+        className="block w-full h-12 pl-11 pr-11 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-slate-200/60 dark:border-slate-800/60 rounded-2xl text-sm font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all duration-300 shadow-xl shadow-slate-200/50 dark:shadow-none"
+        placeholder="Search Students by Name or ID..."
+      />
+      {query && (
+        <button
+          onClick={() => onQueryChange('')}
+          className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+      
+      {/* Search Focus Ring Animation */}
+      <motion.div 
+        layoutId="search-glow"
+        className="absolute inset-0 -z-10 rounded-2xl bg-primary/5 opacity-0 group-focus-within:opacity-100 blur-xl transition-opacity"
+      />
+    </div>
   );
 };
-
 
 export default SearchBar;

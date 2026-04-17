@@ -1,147 +1,130 @@
-import { Eye, Edit, PlusCircle, Trash2 } from 'lucide-react';
-import { Exam } from './types';
+import { Eye, Edit, PlusCircle, Trash2, Calendar, FileText, BarChart3, Clock } from 'lucide-react';
 import Link from 'next/link';
-
+import { motion } from 'framer-motion';
 
 interface ExamsTableProps {
-  exams: Exam[];
+  exams: any[]; // Using any to handle real backend data structure
   activeTab: 'exams' | 'quizzes';
 } 
 
 export default function ExamsTable({ exams, activeTab }: ExamsTableProps) {
-  const getStatusColor = (status: Exam['status']) => {
-    switch (status) {
-      case 'published':
-        return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
-      case 'completed':
-        return 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
-      case 'draft':
-        return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200';
+  const getStatusStyles = (status: string) => {
+    switch (status?.toUpperCase()) {
+      case 'PUBLISHED':
+        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+      case 'COMPLETED':
+        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
+      case 'DRAFT':
+        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
       default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300';
+        return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20';
     }
-  };
-
-  const handleAction = (action: string, examId: string) => {
-    console.log(`${action} exam ${examId}`);
-    // Implement action logic
   };
 
   if (exams.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-text-secondary-light dark:text-text-secondary-dark text-lg font-medium mb-2">
-          No {activeTab} found
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="p-6 rounded-full bg-slate-100 dark:bg-slate-800 mb-6 opacity-50">
+          <FileText className="w-12 h-12 text-slate-400" />
         </div>
-        <p className="text-text-secondary-light dark:text-text-secondary-dark">
-          Create your first {activeTab.slice(0, -1)} or adjust your filters
+        <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">No {activeTab} Records</h3>
+        <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-xs text-sm font-bold uppercase tracking-widest leading-relaxed">
+          Start by creating your first {activeTab.slice(0, -1)} or adjust filters to see more results.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left min-w-[800px]">
-        <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-700">
-            <th className="px-4 py-3 text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">
-              Title
-            </th>
-            <th className="px-4 py-3 text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">
-              Class
-            </th>
-            <th className="px-4 py-3 text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">
-              Subject
-            </th>
-            <th className="px-4 py-3 text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark text-center">
-              Marks
-            </th>
-            <th className="px-4 py-3 text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark text-center">
-              Questions
-            </th>
-            <th className="px-4 py-3 text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">
-              Status
-            </th>
-            <th className="px-4 py-3 text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">
-              Date Created
-            </th>
-            <th className="px-4 py-3 text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark text-right">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {exams.map((exam) => (
-            <tr
-              key={exam.id}
-              className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors duration-150"
-            >
-              <td className="h-16 px-4 py-2 text-sm font-medium text-text-light dark:text-text-dark">
-                {exam.title}
-              </td>
-              <td className="h-16 px-4 py-2 text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                {exam.class}
-              </td>
-              <td className="h-16 px-4 py-2 text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                {exam.subject}
-              </td>
-              <td className="h-16 px-4 py-2 text-sm text-text-secondary-light dark:text-text-secondary-dark text-center">
-                {exam.marks}
-              </td>
-              <td className="h-16 px-4 py-2 text-sm text-text-secondary-light dark:text-text-secondary-dark text-center">
-                {exam.questions}
-              </td>
-              <td className="h-16 px-4 py-2">
-                <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getStatusColor(exam.status)}`}>
-                  {exam.status.charAt(0).toUpperCase() + exam.status.slice(1)}
-                </span>
-              </td>
-              <td className="h-16 px-4 py-2 text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                {exam.dateCreated}
-              </td>
-              <td className="h-16 px-4 py-2">
-                <div className="flex items-center justify-end gap-1">
-                  <Link href="/dashboard/teacher/exams&quizzes/preview">
-                  <button
-                    onClick={() => handleAction('view', exam.id)}
-                    className="p-2 rounded-full cursor-pointer hover:bg-gray-200 dark:hover:bg-white/10 text-text-secondary-light dark:text-text-secondary-dark transition-colors"
-                    title="View"
-                  >
-                    <Eye className="w-5 h-5" />
-                  </button>
-                  </Link>
-                     <Link href="/dashboard/teacher/exams&quizzes/question-list">
-                  <button
-                    onClick={() => handleAction('edit', exam.id)}
-                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/10 text-text-secondary-light dark:text-text-secondary-dark transition-colors"
-                    title="Edit"
-                  >
-                    <Edit className="w-5 h-5" />
-                  </button>
-                  </Link>
-                      <Link href="/dashboard/teacher/exams&quizzes/question-list">
-                  <button
-                    onClick={() => handleAction('add_questions', exam.id)}
-                    className="p-2 rounded-full cursor-pointer hover:bg-gray-200 dark:hover:bg-white/10 text-text-secondary-light dark:text-text-secondary-dark transition-colors"
-                    title="Add Questions"
-                  >
-                    <PlusCircle className="w-5 h-5" />
-                  </button>
-                  </Link>
-                  <button
-                    onClick={() => handleAction('delete', exam.id)}
-                    className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+    <div className="space-y-4">
+      {/* Table Headers (Visual Only) */}
+      <div className="hidden lg:flex items-center justify-between px-10 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+        <div className="flex-1">Assessment Details</div>
+        <div className="flex items-center gap-20 px-10">
+          <div className="w-20 text-center">Metrics</div>
+          <div className="w-24 text-center">Status</div>
+          <div className="w-32 text-right">Actions</div>
+        </div>
+      </div>
+
+      <div className="space-y-4 pt-2">
+        {exams.map((exam, idx) => (
+          <motion.div
+            key={exam.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.05 }}
+            className="group flex flex-col lg:flex-row items-center justify-between gap-6 p-6 md:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm hover:bg-white dark:hover:bg-slate-800 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-500"
+          >
+            {/* Title & Context */}
+            <div className="flex items-center gap-6 flex-1 min-w-0">
+              <div className={`p-4 rounded-[1.5rem] bg-primary/5 text-primary group-hover:scale-110 transition-transform duration-500`}>
+                <FileText size={24} strokeWidth={2.5} />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-lg font-black text-slate-900 dark:text-slate-100 truncate group-hover:text-primary transition-colors">
+                  {exam.title}
+                </h4>
+                <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">
+                    <BarChart3 size={10} />
+                    {exam.class?.name || 'All Classes'}
+                  </div>
+                  <span className="text-slate-300 dark:text-slate-700 mx-1">•</span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                    <Calendar size={12} />
+                    {new Date(exam.createdAt).toLocaleDateString()}
+                  </div>
                 </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </div>
+            </div>
+
+            {/* Metrics */}
+            <div className="flex flex-wrap items-center gap-8 px-6 border-x border-slate-100 dark:border-slate-800/50">
+              <div className="flex flex-col items-center">
+                <span className="text-sm font-black text-slate-900 dark:text-slate-100">{exam.totalMarks || 0}</span>
+                <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Total Marks</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-sm font-black text-slate-900 dark:text-slate-100">
+                  {exam.subjectPapers?.length || 0}
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Papers</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-1 text-sm font-black text-slate-900 dark:text-slate-100">
+                  <Clock size={12} className="text-slate-400" />
+                  {exam.durationMinutes || 'None'}
+                </div>
+                <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Mins</span>
+              </div>
+            </div>
+
+            {/* Status & Actions */}
+            <div className="flex items-center gap-6">
+              <span className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.1em] rounded-xl border ${getStatusStyles(exam.status)}`}>
+                {exam.status}
+              </span>
+
+              <div className="flex items-center gap-2">
+                <Link href="/dashboard/teacher/exams&quizzes/preview">
+                  <button className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90" title="Preview">
+                    <Eye size={18} strokeWidth={2.5} />
+                  </button>
+                </Link>
+                <Link href="/dashboard/teacher/exams&quizzes/question-list">
+                  <button className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90" title="Edit">
+                    <Edit size={18} strokeWidth={2.5} />
+                  </button>
+                </Link>
+                <button className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90" title="Delete">
+                  <Trash2 size={18} strokeWidth={2.5} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }

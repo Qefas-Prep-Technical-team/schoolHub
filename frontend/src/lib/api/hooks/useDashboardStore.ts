@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface DashboardState {
   selectedSchoolId: string;
@@ -8,10 +9,21 @@ interface DashboardState {
   setSelectedSchoolId: (schoolId: string, schoolName: string) => void;
 }
 
-export const useDashboardStore = create<DashboardState>((set) => ({
-  selectedSchoolId: "",
-  selectedSchoolName: "Personal Dashboard",
-  schools: [],
-  setSchools: (schools) => set({ schools }),
-  setSelectedSchoolId: (schoolId, schoolName) => set({ selectedSchoolId: schoolId, selectedSchoolName: schoolName }),
-}));
+export const useDashboardStore = create<DashboardState>()(
+  persist(
+    (set) => ({
+      selectedSchoolId: "",
+      selectedSchoolName: "Personal Dashboard",
+      schools: [],
+      setSchools: (schools) => set({ schools }),
+      setSelectedSchoolId: (schoolId, schoolName) => set({ selectedSchoolId: schoolId, selectedSchoolName: schoolName }),
+    }),
+    {
+      name: "dashboard-context",
+      partialize: (state) => ({ 
+        selectedSchoolId: state.selectedSchoolId, 
+        selectedSchoolName: state.selectedSchoolName 
+      }),
+    }
+  )
+);

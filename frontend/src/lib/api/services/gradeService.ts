@@ -66,7 +66,7 @@ export const gradeService = {
     const { data } = await apiClient.get("/grades/hub", {
       params: { schoolId, ...filters }
     });
-    return data.data;
+    return data;
   },
 
   createGradeEntry: async (gradeData: any) => {

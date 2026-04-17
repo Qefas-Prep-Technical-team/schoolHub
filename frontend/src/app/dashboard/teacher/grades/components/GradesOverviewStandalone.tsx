@@ -10,7 +10,7 @@ const GradesOverviewStandalone: React.FC = () => {
     {
       id: 1,
       name: 'Olivia Chen',
-      studentId: 'S-2041',
+      studentCode: 'S-2041',
       caScore: '18/20',
       assignmentScore: '45/50',
       examScore: '88/100',
@@ -21,7 +21,7 @@ const GradesOverviewStandalone: React.FC = () => {
     {
       id: 2,
       name: 'Ben Carter',
-      studentId: 'S-2042',
+      studentCode: 'S-2042',
       caScore: '15/20',
       assignmentScore: '40/50',
       examScore: '75/100',
@@ -116,7 +116,7 @@ const GradesOverviewStandalone: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  {['Student Name', 'Student ID', 'CA', 'Assignment', 'Exam', 'Total', 'Grade', 'Status', 'Actions'].map((header) => (
+                  {['Student Name', 'Student Code', 'CA', 'Assignment', 'Exam', 'Total', 'Grade', 'Status', 'Actions'].map((header) => (
                     <th key={header} className="px-4 py-3 text-left">
                       {header}
                     </th>
@@ -127,7 +127,7 @@ const GradesOverviewStandalone: React.FC = () => {
                 {grades.map((grade) => (
                   <tr key={grade.id} className="border-t">
                     <td className="px-4 py-3">{grade.name}</td>
-                    <td className="px-4 py-3 text-gray-500">{grade.studentId}</td>
+                    <td className="px-4 py-3 text-gray-500">{grade.studentCode}</td>
                     <td className="px-4 py-3 text-center">{grade.caScore}</td>
                     <td className="px-4 py-3 text-center">{grade.assignmentScore}</td>
                     <td className="px-4 py-3 text-center">{grade.examScore}</td>

@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
@@ -10,6 +11,17 @@ import AssignmentsExams from './AssignmentsExams';
 import PerformanceAnalytics from './PerformanceAnalytics';
 import StudentPerformanceWidget from './StudentPerformanceWidget';
 import MessagesAnnouncements from './MessagesAnnouncements';
+import TeacherSchedule from './TeacherSchedule';
+import RecentPersonalActivity from './RecentPersonalActivity';
+import { 
+  Sparkles, 
+  Plus, 
+  Calendar, 
+  Settings, 
+  Share2,
+  LayoutGrid
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -24,16 +36,17 @@ export default function DashboardPage() {
     distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 }
   });
   const [recentExams, setRecentExams] = useState<any[]>([]);
-  const { selectedSchoolId, selectedSchoolName, schools } = useDashboardStore();
+  const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
+
+  const isPersonal = selectedSchoolId === user?.id;
 
   useEffect(() => {
     const loadInitialData = async () => {
       try {
         setLoading(true);
-        // If selectedSchoolId is the user.id, it's the personal dashboard, so fetch global stats
-        const filterId = selectedSchoolId === user?.id ? undefined : selectedSchoolId;
+        const filterId = isPersonal ? undefined : selectedSchoolId;
         const dashboardData = await teacherService.getDashboardStats(filterId || undefined);
         setStats(dashboardData.stats);
         setPerformanceMetrics(dashboardData.performanceMetrics);
@@ -45,7 +58,7 @@ export default function DashboardPage() {
       }
     };
     loadInitialData();
-  }, [selectedSchoolId]);
+  }, [selectedSchoolId, isPersonal]);
 
 
   const dashboardAssignments = recentExams.map(exam => ({
@@ -62,158 +75,153 @@ export default function DashboardPage() {
   const messages = [
     {
       id: '1',
-      title: 'Parent-Teacher Conferences',
-      description: 'School-wide announcement: Schedules are now available for booking...',
-      sender: 'System',
+      title: 'Academic Update',
+      description: 'The semester results are being finalized...',
+      sender: 'Admin',
       isUnread: true,
       isAnnouncement: true,
     },
     {
       id: '2',
-      title: 'From: John Doe',
-      description: 'Question about last week\'s homework...',
-      sender: 'John Doe',
+      title: 'Class Project',
+      description: 'A student has a follow-up about the project requirements.',
+      sender: 'Grade 10A',
       isUnread: true,
       isAnnouncement: false,
-    },
-    {
-      id: '3',
-      title: 'From: Jane Smith',
-      description: 'Absence note for today\'s class.',
-      sender: 'Jane Smith',
-      isUnread: false,
-      isAnnouncement: false,
-    },
+    }
   ];
 
-  const handleCreateNew = () => {
-    console.log('Create new item');
-    // Open create modal or navigate
-  };
-
-  const handleViewAll = (section: string) => {
-    console.log(`View all ${section}`);
-    // Navigate to respective page
-  };
-
-  if (loading && schools.length === 0) {
+  if (loading && !stats.totalClasses) {
     return (
-      <div className="flex flex-col items-center justify-center p-20 min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-        <p className="text-gray-500 font-medium">Loading your dashboard...</p>
+      <div className="flex flex-col items-center justify-center p-20 min-h-[60vh]">
+        <motion.div 
+          animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full mb-8 shadow-2xl shadow-primary/20"
+        />
+        <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-2">Synchronizing Command Center</h2>
+        <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Preparing your customized dashboard...</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-transparent">
-      
-      <main className="p-4 md:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Page Header */}
-          <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-                Welcome back, Teacher!
-              </h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">
-                {selectedSchoolId === user?.id 
-                  ? "Showing overview across all your connected schools."
-                  : `Showing data for ${selectedSchoolName}`}
-              </p>
-            </div>
-            {loading && (
-              <div className="flex items-center gap-2 text-primary font-bold animate-pulse text-xs bg-primary/10 px-3 py-1.5 rounded-full">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-                Syncing School Data...
+      <main className="p-4 md:p-6 lg:p-10">
+        <div className="max-w-[1600px] mx-auto">
+          {/* Header Section */}
+          <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center gap-2 text-primary font-black uppercase tracking-[0.2em] text-[10px] mb-2">
+                <Sparkles size={14} />
+                Command Center
               </div>
-            )}
-          </div>
+              <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">
+                Welcome back, <span className="text-primary">{user?.name?.split(' ')[0] || 'Teacher'}!</span>
+              </h1>
+              <div className="flex items-center gap-3 mt-4">
+                <div className="px-4 py-1.5 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[11px] font-black uppercase tracking-wider shadow-xl">
+                  {isPersonal ? "Personal Overview" : selectedSchoolName}
+                </div>
+                {isPersonal && (
+                  <span className="text-slate-400 dark:text-slate-500 text-[11px] font-black uppercase tracking-widest italic">
+                    • Aggregating your unique data cross-school
+                  </span>
+                )}
+              </div>
+            </motion.div>
 
-          {/* Stats Cards */}
-          <StatsCards stats={stats} />
-
-          {/* Dashboard Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-            {/* Left Column */}
-            <div className="lg:col-span-2 flex flex-col gap-6">
-              {/* Assignments & Exams */}
-              <AssignmentsExams   
-                assignments={dashboardAssignments as any} 
-                onViewAll={() => handleViewAll('assignments')}
-              />
-
-              {/* Performance Analytics */}
-              <PerformanceAnalytics />
-            </div>
-
-            {/* Right Column */}
-            <div className="flex flex-col gap-6">
-              {/* Student Performance (Replaced Attendance) */}
-              <StudentPerformanceWidget performanceMetrics={performanceMetrics} />
-
-              {/* Messages & Announcements */}
-              <MessagesAnnouncements 
-                messages={messages} 
-                onViewAll={() => handleViewAll('messages')}
-              />
+            <div className="flex items-center gap-3">
+              <Button className="h-12 px-6 rounded-2xl bg-white dark:bg-slate-800 border-none shadow-xl shadow-slate-200/50 dark:shadow-none text-slate-900 dark:text-white hover:bg-slate-50 font-black tracking-tight">
+                <Calendar className="mr-2 h-4 w-4" />
+                Timetable
+              </Button>
+              <Button className="h-12 w-12 p-0 rounded-2xl bg-white dark:bg-slate-800 border-none shadow-xl shadow-slate-200/50 dark:shadow-none text-slate-900 dark:text-white hover:bg-slate-50">
+                <Settings className="h-5 w-5" />
+              </Button>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <QuickAction 
-              icon="assignment"
-              label="Create Assignment"
-              onClick={() => handleCreateNew()}
-              color="bg-blue-500"
-            />
-            <QuickAction 
-              icon="quiz"
-              label="Schedule Exam"
-              onClick={() => handleCreateNew()}
-              color="bg-green-500"
-            />
-            <QuickAction 
-              icon="checklist"
-              label="Take Attendance"
-              onClick={() => handleCreateNew()}
-              color="bg-purple-500"
-            />
-            <QuickAction 
-              icon="mail"
-              label="Send Message"
-              onClick={() => handleCreateNew()}
-              color="bg-orange-500"
-            />
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={selectedSchoolId}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              {/* Stats Row */}
+              <StatsCards stats={stats} />
+
+              {/* Bento Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8">
+                
+                {/* Assignments & Exams (8 Cols) */}
+                <div className="lg:col-span-8">
+                  <AssignmentsExams   
+                    assignments={dashboardAssignments as any} 
+                    onViewAll={() => {}}
+                  />
+                </div>
+
+                {/* Daily Schedule (4 Cols) */}
+                <div className="lg:col-span-4">
+                  <TeacherSchedule />
+                </div>
+
+                {/* Performance Analytics (8 Cols) */}
+                <div className="lg:col-span-8">
+                  <PerformanceAnalytics />
+                </div>
+
+                {/* Student Performance (4 Cols) */}
+                <div className="lg:col-span-4">
+                  <StudentPerformanceWidget performanceMetrics={performanceMetrics} />
+                </div>
+
+                {/* Personal Feed (8 Cols) */}
+                <div className="lg:col-span-8">
+                  <RecentPersonalActivity />
+                </div>
+
+                {/* Quick Tools & Announcements (4 Cols) */}
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                  <div className="bg-primary/5 dark:bg-primary/10 rounded-[2rem] p-6 border border-primary/10">
+                    <div className="flex items-center gap-2 mb-4">
+                      <LayoutGrid className="w-5 h-5 text-primary" />
+                      <h3 className="text-sm font-black uppercase tracking-widest text-primary">Quick Tools</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <QuickTool icon={Plus} label="Grade" sub="New Entry" color="bg-emerald-500" />
+                      <QuickTool icon={Share2} label="Reports" sub="Export Data" color="bg-blue-500" />
+                    </div>
+                  </div>
+                  
+                  <MessagesAnnouncements 
+                    messages={messages} 
+                    onViewAll={() => {}}
+                  />
+                </div>
+
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
     </div>
   );
 }
 
-interface QuickActionProps {
-  icon: string;
-  label: string;
-  onClick: () => void;
-  color: string;
-}
-
-function QuickAction({ icon, label, onClick, color }: QuickActionProps) {
+function QuickTool({ icon: Icon, label, sub, color }: { icon: any, label: string, sub: string, color: string }) {
   return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-    >
-      <div className={`${color} w-12 h-12 rounded-full flex items-center justify-center mb-3`}>
-        <span className="material-symbols-outlined text-white text-2xl">
-          {icon}
-        </span>
+    <button className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800/80 rounded-[1.5rem] shadow-lg shadow-slate-200/50 dark:shadow-none hover:translate-y-[-4px] active:scale-95 transition-all duration-300">
+      <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center mb-3 shadow-lg shadow-current/20`}>
+        <Icon className="w-5 h-5 text-white" />
       </div>
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 text-center">
-        {label}
-      </span>
+      <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{label}</span>
+      <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">{sub}</span>
     </button>
   );
 }

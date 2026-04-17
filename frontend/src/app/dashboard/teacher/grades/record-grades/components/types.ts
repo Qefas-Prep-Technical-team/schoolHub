@@ -1,10 +1,10 @@
 export interface StudentGrade {
   id: string;
   name: string;
-  studentId: string;
-  caScore: number;
-  assignmentScore: number;
-  examScore: number;
+  studentCode: string;
+  subjectPaper: string;
+  assessmentType: string;
+  score: number;
   total: number;
   grade: string;
   isSelected: boolean;

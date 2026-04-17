@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import StudentCard from "./StudentCard";
 import { teacherService } from "@/lib/api/services/teacherService";
 import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
-import { User, Loader2 } from "lucide-react";
+import { User, AlertCircle } from "lucide-react";
+import { StudentGridSkeleton } from "./StudentSkeleton";
 
 interface StudentGridProps {
   page: number;
@@ -19,7 +21,8 @@ const StudentGrid: React.FC<StudentGridProps> = ({ page, searchQuery, limit, onD
   const { data, isLoading, error } = useQuery({
     queryKey: ['teacher-students', selectedSchoolId, searchQuery, page, limit],
     queryFn: async () => {
-      const filterId = selectedSchoolId === user?.id ? undefined : selectedSchoolId;
+      const isPersonal = selectedSchoolId === user?.id;
+      const filterId = isPersonal ? undefined : selectedSchoolId;
       const result = await teacherService.getStudents({
         schoolId: filterId || undefined,
         search: searchQuery || undefined,
@@ -36,58 +39,68 @@ const StudentGrid: React.FC<StudentGridProps> = ({ page, searchQuery, limit, onD
   const students = data?.students || [];
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col gap-8">
-        <div className="flex items-center justify-center py-10">
-          <Loader2 className="w-10 h-10 text-primary animate-spin" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
-          {[...Array(limit)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl h-[300px] border border-gray-100 dark:border-gray-700"></div>
-          ))}
-        </div>
-      </div>
-    );
+    return <StudentGridSkeleton limit={limit} />;
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-red-50 dark:bg-red-900/10 rounded-3xl border border-dashed border-red-200 dark:border-red-800">
-        <div className="w-16 h-16 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center mb-4">
-          <User className="w-8 h-8 text-red-500" />
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-col items-center justify-center py-24 rounded-[3rem] border border-red-100 bg-red-50/50 dark:bg-red-900/10"
+      >
+        <div className="p-5 rounded-full bg-red-100 dark:bg-red-900/10 mb-6">
+          <AlertCircle className="w-12 h-12 text-red-500" />
         </div>
-        <h3 className="text-xl font-bold text-red-900 dark:text-red-100">Failed to load students</h3>
-        <p className="text-red-600 dark:text-red-400 mt-2 max-w-xs text-center text-sm font-medium">
-          {(error as any)?.message || "There was an error fetching the student list. Please try again." }
+        <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 italic">"The Connection was Severed"</h3>
+        <p className="text-slate-600 dark:text-slate-400 mt-3 max-w-sm text-center text-sm font-bold uppercase tracking-widest leading-relaxed">
+          {(error as any)?.message || "Failed to synchronize student records. Please verify your connection." }
         </p>
-      </div>
+      </motion.div>
     );
   }
 
   if (students.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-300 dark:border-gray-700">
-        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-          <User className="w-8 h-8 text-gray-400" />
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-col items-center justify-center py-24 rounded-[3rem] border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10"
+      >
+        <div className="p-5 rounded-full bg-slate-100 dark:bg-slate-800 mb-6">
+          <User className="w-12 h-12 text-slate-400" />
         </div>
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white">No students found</h3>
-        <p className="text-gray-500 dark:text-gray-400 mt-2 max-w-xs text-center">
+        <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Silent Corridors</h3>
+        <p className="text-slate-500 dark:text-slate-400 mt-3 max-w-sm text-center text-sm font-black uppercase tracking-[0.15em] leading-relaxed">
           {searchQuery 
-            ? `No students matching "${searchQuery}" found.` 
-            : "We couldn't find any students assigned to you in this school context."}
+            ? `No records found for "${searchQuery}"` 
+            : "No students are currently assigned to this academic section."}
         </p>
-      </div>
+      </motion.div>
     );
   }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {students.map((student: any) => (
-        <StudentCard key={student.id} student={student} />
-      ))}
+      <AnimatePresence mode="popLayout">
+        {students.map((student: any, index: number) => (
+          <motion.div
+            key={student.id}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ 
+              duration: 0.4, 
+              delay: index * 0.05,
+              ease: [0.23, 1, 0.32, 1] 
+            }}
+          >
+            <StudentCard student={student} />
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 };
 
-
-export default StudentGrid;
+export default StudentGrid;

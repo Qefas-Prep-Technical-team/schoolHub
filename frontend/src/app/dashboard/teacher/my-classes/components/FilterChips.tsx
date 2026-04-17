@@ -1,4 +1,8 @@
-import { ChevronDown, X } from 'lucide-react';
+'use client';
+
+import { ChevronDown, X, Layers, BookOpen, GraduationCap, Calendar, Clock, FilterX } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 
 interface FilterChipsProps {
     filters: {
@@ -22,169 +26,134 @@ const filterOptions = {
 
 export default function FilterChips({ filters, onFilterChange, onClearFilters }: FilterChipsProps) {
     const hasActiveFilters = Object.values(filters).some(value => value !== '');
+    const [openFilter, setOpenFilter] = useState<string | null>(null);
+
+    const toggleFilter = (type: string) => {
+        setOpenFilter(openFilter === type ? null : type);
+    };
 
     return (
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-            {/* Academic Year Filter */}
-            <div className="relative group">
-                <button className="flex h-10 items-center justify-center gap-2 rounded-lg bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 px-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {filters.academicYear || 'Academic Year'}
-                    </span>
-                    <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                </button>
-                <div className="absolute hidden group-hover:block bg-white dark:bg-gray-800 rounded-lg shadow-lg mt-1 p-2 min-w-[160px] z-10 border border-gray-200 dark:border-gray-700">
-                    {filterOptions.academicYear.map((year) => (
-                        <button
-                            key={year}
-                            onClick={() => onFilterChange('academicYear', year)}
-                            className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${filters.academicYear === year ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-300'
-                                }`}
-                        >
-                            {year}
-                        </button>
-                    ))}
-                    {filters.academicYear && (
-                        <button
-                            onClick={() => onFilterChange('academicYear', '')}
-                            className="w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600 dark:text-red-400"
-                        >
-                            Clear
-                        </button>
-                    )}
-                </div>
-            </div>
+        <div className="mb-10 flex flex-wrap items-center gap-4">
+            <FilterPill 
+                label="Academic Year" 
+                value={filters.academicYear} 
+                options={filterOptions.academicYear} 
+                icon={Calendar} 
+                isOpen={openFilter === 'year'}
+                onToggle={() => toggleFilter('year')}
+                onChange={(val) => { onFilterChange('academicYear', val); setOpenFilter(null); }}
+            />
+            <FilterPill 
+                label="Term" 
+                value={filters.term} 
+                options={filterOptions.term} 
+                icon={Clock} 
+                isOpen={openFilter === 'term'}
+                onToggle={() => toggleFilter('term')}
+                onChange={(val) => { onFilterChange('term', val); setOpenFilter(null); }}
+            />
+             <FilterPill 
+                label="Level" 
+                value={filters.level} 
+                options={filterOptions.level} 
+                icon={Layers} 
+                isOpen={openFilter === 'level'}
+                onToggle={() => toggleFilter('level')}
+                onChange={(val) => { onFilterChange('level', val); setOpenFilter(null); }}
+            />
+             <FilterPill 
+                label="Class" 
+                value={filters.class} 
+                options={filterOptions.class} 
+                icon={GraduationCap} 
+                isOpen={openFilter === 'class'}
+                onToggle={() => toggleFilter('class')}
+                onChange={(val) => { onFilterChange('class', val); setOpenFilter(null); }}
+            />
+             <FilterPill 
+                label="Subject" 
+                value={filters.subject} 
+                options={filterOptions.subject} 
+                icon={BookOpen} 
+                isOpen={openFilter === 'subject'}
+                onToggle={() => toggleFilter('subject')}
+                onChange={(val) => { onFilterChange('subject', val); setOpenFilter(null); }}
+            />
 
-            {/* Term Filter */}
-            <div className="relative group">
-                <button className="flex h-10 items-center justify-center gap-2 rounded-lg bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 px-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {filters.term || 'Term'}
-                    </span>
-                    <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                </button>
-                <div className="absolute hidden group-hover:block bg-white dark:bg-gray-800 rounded-lg shadow-lg mt-1 p-2 min-w-[160px] z-10 border border-gray-200 dark:border-gray-700">
-                    {filterOptions.term.map((term) => (
-                        <button
-                            key={term}
-                            onClick={() => onFilterChange('term', term)}
-                            className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${filters.term === term ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-300'
-                                }`}
-                        >
-                            {term}
-                        </button>
-                    ))}
-                    {filters.term && (
-                        <button
-                            onClick={() => onFilterChange('term', '')}
-                            className="w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600 dark:text-red-400"
-                        >
-                            Clear
-                        </button>
-                    )}
-                </div>
-            </div>
+            {/* Clear Filters Button Modernized */}
+            <AnimatePresence>
+                {hasActiveFilters && (
+                    <motion.button
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        onClick={onClearFilters}
+                        className="flex h-12 items-center justify-center gap-2 rounded-2xl text-rose-500 bg-rose-500/10 px-6 hover:bg-rose-500 hover:text-white transition-all ml-auto text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/5 active:scale-95"
+                    >
+                        <FilterX size={16} />
+                        Clear All
+                    </motion.button>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
 
-            {/* Level Filter */}
-            <div className="relative group">
-                <button className="flex h-10 items-center justify-center gap-2 rounded-lg bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 px-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {filters.level || 'Level'}
+function FilterPill({ label, value, options, icon: Icon, isOpen, onToggle, onChange }: any) {
+    return (
+        <div className="relative">
+            <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={onToggle}
+                className={`flex h-12 items-center justify-between gap-3 rounded-2xl px-5 border transition-all duration-300 ${
+                    value 
+                    ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' 
+                    : 'bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border-slate-200/60 dark:border-slate-800/60 text-slate-600 dark:text-slate-300 hover:border-primary/50'
+                }`}
+            >
+                <div className="flex items-center gap-2">
+                    <Icon size={16} className={value ? 'text-white' : 'text-primary'} strokeWidth={2.5} />
+                    <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                        {value || label}
                     </span>
-                    <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                </button>
-                <div className="absolute hidden group-hover:block bg-white dark:bg-gray-800 rounded-lg shadow-lg mt-1 p-2 min-w-[160px] z-10 border border-gray-200 dark:border-gray-700">
-                    {filterOptions.level.map((level) => (
-                        <button
-                            key={level}
-                            onClick={() => onFilterChange('level', level)}
-                            className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${filters.level === level ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-300'
-                                }`}
-                        >
-                            {level}
-                        </button>
-                    ))}
-                    {filters.level && (
-                        <button
-                            onClick={() => onFilterChange('level', '')}
-                            className="w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600 dark:text-red-400"
-                        >
-                            Clear
-                        </button>
-                    )}
                 </div>
-            </div>
+                <ChevronDown size={14} className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} ${value ? 'text-white/70' : 'text-slate-400'}`} />
+            </motion.button>
 
-            {/* Class Filter */}
-            <div className="relative group">
-                <button className="flex h-10 items-center justify-center gap-2 rounded-lg bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 px-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {filters.class || 'Class'}
-                    </span>
-                    <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                </button>
-                <div className="absolute hidden group-hover:block bg-white dark:bg-gray-800 rounded-lg shadow-lg mt-1 p-2 min-w-[160px] z-10 border border-gray-200 dark:border-gray-700">
-                    {filterOptions.class.map((cls) => (
-                        <button
-                            key={cls}
-                            onClick={() => onFilterChange('class', cls)}
-                            className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${filters.class === cls ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-300'
-                                }`}
-                        >
-                            {cls}
-                        </button>
-                    ))}
-                    {filters.class && (
-                        <button
-                            onClick={() => onFilterChange('class', '')}
-                            className="w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600 dark:text-red-400"
-                        >
-                            Clear
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* Subject Filter */}
-            <div className="relative group">
-                <button className="flex h-10 items-center justify-center gap-2 rounded-lg bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 px-4 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {filters.subject || 'Subject'}
-                    </span>
-                    <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                </button>
-                <div className="absolute hidden group-hover:block bg-white dark:bg-gray-800 rounded-lg shadow-lg mt-1 p-2 min-w-[160px] z-10 border border-gray-200 dark:border-gray-700">
-                    {filterOptions.subject.map((subject) => (
-                        <button
-                            key={subject}
-                            onClick={() => onFilterChange('subject', subject)}
-                            className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${filters.subject === subject ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-300'
-                                }`}
-                        >
-                            {subject}
-                        </button>
-                    ))}
-                    {filters.subject && (
-                        <button
-                            onClick={() => onFilterChange('subject', '')}
-                            className="w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600 dark:text-red-400"
-                        >
-                            Clear
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* Clear Filters Button */}
-            {hasActiveFilters && (
-                <button
-                    onClick={onClearFilters}
-                    className="flex h-10 items-center justify-center gap-2 rounded-lg text-gray-600 dark:text-gray-400 px-4 hover:text-gray-800 dark:hover:text-gray-200 transition-colors ml-auto"
-                >
-                    <X className="w-4 h-4" />
-                    <span className="text-sm font-medium">Clear All</span>
-                </button>
-            )}
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-full left-0 mt-3 p-3 bg-white/90 dark:bg-slate-900/95 backdrop-blur-3xl rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-2xl z-50 min-w-[200px]"
+                    >
+                        <div className="space-y-1">
+                            {options.map((opt: string) => (
+                                <button
+                                    key={opt}
+                                    onClick={() => onChange(opt)}
+                                    className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                        value === opt 
+                                        ? 'bg-primary text-white shadow-lg shadow-primary/10' 
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                    }`}
+                                >
+                                    {opt}
+                                </button>
+                            ))}
+                            {value && (
+                                <button
+                                    onClick={() => onChange('')}
+                                    className="w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500/10 transition-all mt-1"
+                                >
+                                    Remove Filter
+                                </button>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

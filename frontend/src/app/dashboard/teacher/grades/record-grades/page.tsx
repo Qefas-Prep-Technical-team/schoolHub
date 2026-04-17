@@ -12,44 +12,44 @@ const initialStudents: StudentGrade[] = [
   {
     id: '1',
     name: 'Olivia Chen',
-    studentId: 'S001',
-    caScore: 18,
-    assignmentScore: 23,
-    examScore: 48,
-    total: 89,
+    studentCode: 'S001',
+    subjectPaper: 'Mathematics',
+    assessmentType: 'Assignment',
+    score: 18,
+    total: 18,
     grade: 'A-',
     isSelected: false,
   },
   {
     id: '2',
     name: 'Benjamin Carter',
-    studentId: 'S002',
-    caScore: 15,
-    assignmentScore: 20,
-    examScore: 40,
-    total: 75,
+    studentCode: 'S002',
+    subjectPaper: 'Mathematics',
+    assessmentType: 'Assignment',
+    score: 15,
+    total: 15,
     grade: 'B',
     isSelected: false,
   },
   {
     id: '3',
     name: 'Sophia Rodriguez',
-    studentId: 'S003',
-    caScore: 20,
-    assignmentScore: 25,
-    examScore: 50,
-    total: 95,
+    studentCode: 'S003',
+    subjectPaper: 'Mathematics',
+    assessmentType: 'Exam',
+    score: 20,
+    total: 20,
     grade: 'A',
     isSelected: false,
   },
   {
     id: '4',
     name: 'Liam Goldberg',
-    studentId: 'S004',
-    caScore: 120,
-    assignmentScore: 18,
-    examScore: 35,
-    total: 173,
+    studentCode: 'S004',
+    subjectPaper: 'Mathematics',
+    assessmentType: 'Assignment',
+    score: 120,
+    total: 120,
     grade: 'Invalid',
     isSelected: false,
     hasError: true,
@@ -57,11 +57,11 @@ const initialStudents: StudentGrade[] = [
   {
     id: '5',
     name: 'Ava Nguyen',
-    studentId: 'S005',
-    caScore: 19,
-    assignmentScore: 22,
-    examScore: 45,
-    total: 86,
+    studentCode: 'S005',
+    subjectPaper: 'Mathematics',
+    assessmentType: 'Assignment',
+    score: 19,
+    total: 19,
     grade: 'A-',
     isSelected: false,
   },
@@ -107,12 +107,8 @@ export default function RecordGradesPage() {
       // Validate all scores
       const hasErrors = students.some(
         (student) =>
-          student.caScore < 0 ||
-          student.caScore > 100 ||
-          student.assignmentScore < 0 ||
-          student.assignmentScore > 100 ||
-          student.examScore < 0 ||
-          student.examScore > 100
+          student.score < 0 ||
+          student.score > 100
       );
 
       if (hasErrors) {

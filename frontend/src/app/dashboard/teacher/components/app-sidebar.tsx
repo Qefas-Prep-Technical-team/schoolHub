@@ -11,6 +11,7 @@ import {
     SidebarMenu,
     SidebarMenuItem,
     SidebarMenuButton,
+    useSidebar,
 } from "@/components/ui/sidebar"
 import {
     DropdownMenu,
@@ -89,12 +90,9 @@ const getFilteredMenuItems = (): MenuItem[] => {
     return menuItems.filter(item => FEATURE_FLAGS_TEACHERS[item.featureKey]);
 };
 
-interface AppSidebarProps {
-    isCollapsed: boolean;
-    setIsCollapsed: (collapsed: boolean) => void;
-}
-
-export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
+export function AppSidebar() {
+    const { state } = useSidebar()
+    const isCollapsed = state === "collapsed"
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const [profile, setProfile] = useState<any>(null)
@@ -116,8 +114,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
         <Sidebar
             collapsible="icon"
             className={cn(
-                "transition-all duration-300 ease-in-out",
-                isCollapsed ? "w-[80px]" : "w-[260px]"
+                "transition-all duration-300 ease-in-out border-r border-slate-200 dark:border-slate-800"
             )}
         >
             {/* Header */}
