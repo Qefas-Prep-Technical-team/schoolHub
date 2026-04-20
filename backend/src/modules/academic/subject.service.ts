@@ -156,6 +156,12 @@ export const getSubjectsService = async ({
       include: {
         departments: { include: { department: true } },
         classes: { include: { class: true } },
+        _count: {
+          select: {
+            teacherSubjects: true,
+            classes: true,
+          }
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -184,6 +190,12 @@ export const getSubjectsService = async ({
       include: {
         departments: { include: { department: true } },
         classes: { include: { class: true } },
+        _count: {
+          select: {
+            teacherSubjects: true,
+            classes: true,
+          }
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -207,6 +219,12 @@ export const getSubjectsService = async ({
       include: {
         departments: { include: { department: true } },
         classes: { include: { class: true } },
+        _count: {
+          select: {
+            teacherSubjects: true,
+            classes: true,
+          }
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -229,6 +247,7 @@ export const getSingleSubjectService = async (subjectId: string) => {
     include: {
       departments: { include: { department: true } },
       classes: { include: { class: true } },
+      teacherSubjects: { include: { teacher: true } },
       quizzes: true,
       exams: true,
     },
@@ -333,13 +352,19 @@ export const attachSubjectToDepartmentsService = async ({
     }
   }
 
-  await prisma.departmentSubject.createMany({
-    data: departmentIds.map((departmentId) => ({
-      subjectId,
-      departmentId,
-    })),
-    skipDuplicates: true,
-  });
+  // Sync departments: Remove existing, add new
+  await prisma.$transaction([
+    prisma.departmentSubject.deleteMany({
+      where: { subjectId }
+    }),
+    prisma.departmentSubject.createMany({
+      data: departmentIds.map((departmentId) => ({
+        subjectId,
+        departmentId,
+      })),
+      skipDuplicates: true,
+    })
+  ]);
 
   return prisma.subject.findUnique({
     where: { id: subjectId },
@@ -384,14 +409,23 @@ export const attachTeachersToSubjectService = async ({
     throw new Error("Some teachers were not found");
   }
 
-  await prisma.teacherSubject.createMany({
-    data: teacherIds.map((teacherId) => ({
-      subjectId,
-      teacherId,
-      schoolId,
-    })),
-    skipDuplicates: true,
-  });
+  // Sync teachers: Remove existing, add new
+  await prisma.$transaction([
+    prisma.teacherSubject.deleteMany({
+      where: { 
+        subjectId,
+        schoolId
+      }
+    }),
+    prisma.teacherSubject.createMany({
+      data: teacherIds.map((teacherId) => ({
+        subjectId,
+        teacherId,
+        schoolId,
+      })),
+      skipDuplicates: true,
+    })
+  ]);
 
   return prisma.subject.findUnique({
     where: { id: subjectId },

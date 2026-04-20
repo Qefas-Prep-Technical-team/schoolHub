@@ -454,6 +454,10 @@ export const getExams = async (req: Request, res: Response) => {
       filters.availableForStudentId = req.user.id;
     }
 
+    if (req.user?.userType === UserRole.TEACHER) {
+      filters.availableForTeacherId = req.user.id;
+    }
+
     const items = await getExamsService(filters);
 
     return res.status(200).json({

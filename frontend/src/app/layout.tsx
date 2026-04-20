@@ -75,6 +75,11 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
           rel="stylesheet"
         />
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.16.44/dist/katex.min.css"
+          crossOrigin="anonymous"
+        />
 
 
 

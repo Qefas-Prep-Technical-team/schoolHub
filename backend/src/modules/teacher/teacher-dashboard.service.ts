@@ -104,11 +104,12 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
     sortedStudents.map(async (s) => {
       const student = await prisma.student.findUnique({
         where: { id: s.studentId },
-        select: { name: true, profileImage: true },
+        select: { name: true, profileImage: true, studentCode: true },
       });
       return {
         id: s.studentId,
         name: student?.name || "Unknown Student",
+        studentCode: student?.studentCode || "N/A",
         image: student?.profileImage,
         average: s.average,
       };
@@ -298,117 +299,142 @@ export const getTeacherStudentsService = async (options: {
   page?: number;
   limit?: number;
 }) => {
-  const { teacherId, schoolId, classId, search = "", page = 1, limit = 10 } = options;
+  const { teacherId, schoolId, classId, search, page = 1, limit = 8 } = options;
   const skip = (page - 1) * limit;
 
-  console.log(`LOG: [getTeacherStudentsService] Params: teacherId=${teacherId}, schoolId=${schoolId}, classId=${classId}, search=${search}, page=${page}, limit=${limit}`);
-
-  // 1. Check School Connection (following user's request)
-  if (schoolId) {
-    const activeLink = await prisma.relationshipLink.findFirst({
-      where: {
-        linkType: LinkType.SCHOOL_TEACHER,
-        status: LinkStatus.ACTIVE,
-        leftEntityId: schoolId,
-        rightEntityId: teacherId,
-      }
+  // 1. Authorization: Resolve the school context first
+  let targetSchoolId = schoolId;
+  
+  if (classId && !targetSchoolId) {
+    const classInfo = await prisma.class.findUnique({
+      where: { id: classId },
+      select: { schoolId: true }
     });
-
-    if (!activeLink) {
-      console.log(`LOG: [getTeacherStudentsService] No active SCHOOL_TEACHER link found for teacher ${teacherId} in school ${schoolId}`);
-      return { students: [], total: 0 };
-    }
-    console.log(`LOG: [getTeacherStudentsService] Active SCHOOL_TEACHER link confirmed for teacher ${teacherId}`);
+    if (classInfo?.schoolId) targetSchoolId = classInfo.schoolId;
   }
 
-  // 2. Find assigned classes
-  const classTeachers = await prisma.classTeacher.findMany({
-    where: {
-      teacherId,
-      ...(classId ? { classId } : schoolId ? { class: { schoolId } } : {}),
-    },
-    select: { classId: true },
-  });
+  // Ensure teacher actually has access to this data (School or Class level)
+  if (targetSchoolId) {
+      const teacherProfile = await prisma.teacher.findUnique({
+          where: { id: teacherId },
+          select: { schoolId: true, currentSchoolId: true }
+      });
 
-  const assignedClassIds = classTeachers.map((ct) => ct.classId);
-  console.log(`LOG: [getTeacherStudentsService] Found ${assignedClassIds.length} classes for teacher ${teacherId}${classId ? ` in class ${classId}` : schoolId ? ` in school ${schoolId}` : ''}`);
-
-
-  if (assignedClassIds.length === 0) {
-    return { students: [], total: 0 };
-  }
-
-  // 3. Count total unique matching students
-  const countResult = await prisma.classEnrollment.groupBy({
-    by: ['studentId'],
-    where: {
-      classId: { in: assignedClassIds },
-      student: search ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { studentCode: { contains: search, mode: 'insensitive' } }
-        ]
-      } : {}
-    },
-  });
-  const total = countResult.length;
-
-  // 4. Find unique students in these classes with pagination
-  const enrollments = await prisma.classEnrollment.findMany({
-    where: {
-      classId: { in: assignedClassIds },
-      student: search ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { studentCode: { contains: search, mode: 'insensitive' } }
-        ]
-      } : {}
-    },
-    include: {
-      student: {
-        include: {
-          grades: {
-            where: { classId: { in: assignedClassIds } },
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-          },
-          attendances: {
-            where: { classId: { in: assignedClassIds } },
-            take: 10,
+      const isDirectlyAssociated = teacherProfile?.schoolId === targetSchoolId || teacherProfile?.currentSchoolId === targetSchoolId;
+      
+      if (!isDirectlyAssociated) {
+          const link = await prisma.relationshipLink.findFirst({
+              where: {
+                  linkType: LinkType.SCHOOL_TEACHER,
+                  status: LinkStatus.ACTIVE,
+                  OR: [
+                      { leftEntityId: targetSchoolId, rightEntityId: teacherId },
+                      { leftEntityId: teacherId, rightEntityId: targetSchoolId }
+                  ]
+              }
+          });
+          
+          if (!link) {
+              // Final fallback: Are they explicitly assigned to ANY class in this school?
+              const anyAssigned = await prisma.classTeacher.findFirst({
+                  where: { teacherId, class: { schoolId: targetSchoolId } }
+              });
+              if (!anyAssigned) {
+                  console.log(`LOG: [getTeacherStudentsService] UNAUTHORIZED for school ${targetSchoolId}`);
+                  return { students: [], total: 0 };
+              }
           }
-        },
-      },
-      class: true,
-    },
-    distinct: ['studentId'],
-    skip,
-    take: limit,
-  }) as any[];
+      }
+  }
 
-  console.log(`LOG: [getTeacherStudentsService] Successfully fetched ${enrollments.length} students (total matching: ${total})`);
+  // 2. Resolve exactly which classes to pull students from
+  let assignedIds: string[] = [];
+  if (classId) {
+      assignedIds = [classId];
+  } else {
+      const classTeachers = await prisma.classTeacher.findMany({
+          where: {
+              teacherId,
+              ...(targetSchoolId ? { class: { schoolId: targetSchoolId } } : {}),
+          },
+          select: { classId: true }
+      });
+      assignedIds = classTeachers.map(ct => ct.classId);
+  }
 
-  // 5. Map to final format
-  const students = enrollments.map(e => {
-    const student = e.student;
-    const lastGrade = student.grades[0];
-    const performance = lastGrade 
-        ? (lastGrade.score / lastGrade.maxMarks > 0.8 ? 'High' : lastGrade.score / lastGrade.maxMarks > 0.5 ? 'Medium' : 'Low')
-        : 'Low';
-        
-    const presentCount = student.attendances.filter((a: any) => a.status === 'present').length;
-    const totalAttendance = student.attendances.length;
-    const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 100;
+  if (assignedIds.length === 0) {
+      console.log(`LOG: [getTeacherStudentsService] No classes found for query.`);
+      return { students: [], total: 0 };
+  }
 
-    return {
-        id: e.studentId,
-        name: student.name,
-        grade: e.class.name,
-        avatarUrl: student.profileImage,
-        performance,
-        attendance: attendanceRate,
-        lastExam: lastGrade ? `${Math.round((lastGrade.score / lastGrade.maxMarks) * 100)}/100` : 'N/A'
-    };
+  // 3. Robust Querying for Students
+  const whereClause = {
+      classId: { in: assignedIds },
+      ...(search ? {
+          student: {
+              OR: [
+                  { name: { contains: search, mode: 'insensitive' as const } },
+                  { studentCode: { contains: search, mode: 'insensitive' as const } }
+              ]
+          }
+      } : {})
+  };
+
+  // Count enrollments
+  const total = await prisma.classEnrollment.count({
+      where: whereClause,
   });
+
+  const enrollments = await prisma.classEnrollment.findMany({
+      where: whereClause,
+      include: {
+          student: {
+              include: {
+                  grades: {
+                      where: { classId: { in: assignedIds } },
+                      orderBy: { createdAt: 'desc' },
+                      take: 1,
+                  },
+                  attendances: {
+                      where: { classId: { in: assignedIds } },
+                      take: 10,
+                  }
+              },
+          },
+          class: true,
+      },
+      distinct: ['studentId'],
+      skip,
+      take: limit,
+      orderBy: { enrolledAt: 'desc' }
+  });
+
+  console.log(`LOG: [getTeacherStudentsService] Result sets: total=${total}, returned=${enrollments.length}`);
+
+  // 4. Clean Mapping
+  const students = enrollments.map(e => {
+      const s = e.student;
+      if (!s) return null; // Safety check
+
+      const lastGrade = s.grades?.[0];
+      const performance = lastGrade 
+          ? (lastGrade.score / lastGrade.maxMarks > 0.8 ? 'High' : lastGrade.score / lastGrade.maxMarks > 0.5 ? 'Medium' : 'Low')
+          : 'Medium';
+          
+      const presentCount = s.attendances?.filter((a: any) => a.status === 'present').length || 0;
+      const totalAttendance = s.attendances?.length || 0;
+      const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 100;
+
+      return {
+          id: s.id,
+          name: s.name,
+          grade: e.class.name,
+          avatarUrl: s.profileImage,
+          performance,
+          attendance: attendanceRate,
+          lastExam: lastGrade ? `${Math.round((lastGrade.score / lastGrade.maxMarks) * 100)}/100` : 'N/A'
+      };
+  }).filter(Boolean);
 
   return { students, total };
 };
@@ -421,18 +447,41 @@ export const getTeacherClassesService = async (teacherId: string, schoolId?: str
 
     // 1. Check School Connection
     if (schoolId) {
-        const activeLink = await prisma.relationshipLink.findFirst({
-            where: {
-                linkType: LinkType.SCHOOL_TEACHER,
-                status: LinkStatus.ACTIVE,
-                leftEntityId: schoolId,
-                rightEntityId: teacherId,
-            }
+        // 1. Check direct association in Teacher profile
+        const teacherProfile = await prisma.teacher.findUnique({
+            where: { id: teacherId },
+            select: { schoolId: true, currentSchoolId: true }
         });
 
-        if (!activeLink) {
-            console.log(`LOG: [getTeacherClassesService] No active SCHOOL_TEACHER link found for teacher ${teacherId} in school ${schoolId}`);
-            return [];
+        const isDirectlyAssociated = teacherProfile?.schoolId === schoolId || teacherProfile?.currentSchoolId === schoolId;
+
+        if (!isDirectlyAssociated) {
+            // 2. Check relationship links (robust bidirectional check)
+            const activeLink = await prisma.relationshipLink.findFirst({
+                where: {
+                    linkType: LinkType.SCHOOL_TEACHER,
+                    status: LinkStatus.ACTIVE,
+                    OR: [
+                        {
+                            leftEntityType: LinkEntityType.SCHOOL,
+                            leftEntityId: schoolId,
+                            rightEntityType: LinkEntityType.TEACHER,
+                            rightEntityId: teacherId,
+                        },
+                        {
+                            leftEntityType: LinkEntityType.TEACHER,
+                            leftEntityId: teacherId,
+                            rightEntityType: LinkEntityType.SCHOOL,
+                            rightEntityId: schoolId,
+                        }
+                    ]
+                }
+            });
+
+            if (!activeLink) {
+                console.log(`LOG: [getTeacherClassesService] No active SCHOOL_TEACHER link or direct association found for teacher ${teacherId} in school ${schoolId}`);
+                return [];
+            }
         }
     }
 
@@ -568,6 +617,7 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
         .map(data => ({
             id: data.student.id,
             name: data.student.name,
+            studentCode: data.student.studentCode,
             score: Math.round(data.total / data.count),
             avatar: data.student.profileImage,
             rank: 0, // Assigned below

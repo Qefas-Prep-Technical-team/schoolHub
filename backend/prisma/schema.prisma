@@ -314,6 +314,7 @@ model Teacher {
 
   profileImage String?
   bannerImage  String?
+  gradingScale Json?
 }
 
 model Student {
@@ -726,9 +727,27 @@ model Subject {
   updatedAt         DateTime           @updatedAt
   subjectExamPapers SubjectExamPaper[]
   timetablePeriods  TimetablePeriod[]
+  schemesOfWork     SchemeOfWork[]
 
   @@unique([schoolId, code])
   @@map("subjects")
+}
+
+model SchemeOfWork {
+  id          String   @id @default(uuid())
+  subjectId   String
+  term        Int?     @default(1)
+  week        Int
+  topic       String
+  objectives  String?  @db.Text
+  resources   String?  @db.Text
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@map("schemes_of_work")
 }
 
 model Department {

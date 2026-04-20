@@ -4,14 +4,17 @@ import { motion } from 'framer-motion';
 
 interface ExamsTableProps {
   exams: any[]; // Using any to handle real backend data structure
-  activeTab: 'exams' | 'quizzes';
+  activeTab: 'exams' | 'quizzes' | 'subject-papers';
 } 
 
 export default function ExamsTable({ exams, activeTab }: ExamsTableProps) {
+  const isSubjectPaperTab = activeTab === 'subject-papers';
+
   const getStatusStyles = (status: string) => {
     switch (status?.toUpperCase()) {
       case 'PUBLISHED':
         return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+      case 'APPROVED':
       case 'COMPLETED':
         return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
       case 'DRAFT':
@@ -22,14 +25,15 @@ export default function ExamsTable({ exams, activeTab }: ExamsTableProps) {
   };
 
   if (exams.length === 0) {
+    const emptyLabel = activeTab === 'subject-papers' ? 'Subject Paper' : activeTab.slice(0, -1);
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <div className="p-6 rounded-full bg-slate-100 dark:bg-slate-800 mb-6 opacity-50">
           <FileText className="w-12 h-12 text-slate-400" />
         </div>
-        <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">No {activeTab} Records</h3>
+        <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">No {activeTab.replace('-', ' ')} Records</h3>
         <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-xs text-sm font-bold uppercase tracking-widest leading-relaxed">
-          Start by creating your first {activeTab.slice(0, -1)} or adjust filters to see more results.
+          Start by creating your first {emptyLabel} or adjust filters to see more results.
         </p>
       </div>
     );
@@ -39,7 +43,7 @@ export default function ExamsTable({ exams, activeTab }: ExamsTableProps) {
     <div className="space-y-4">
       {/* Table Headers (Visual Only) */}
       <div className="hidden lg:flex items-center justify-between px-10 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-        <div className="flex-1">Assessment Details</div>
+        <div className="flex-1">{isSubjectPaperTab ? 'Paper Details' : 'Assessment Details'}</div>
         <div className="flex items-center gap-20 px-10">
           <div className="w-20 text-center">Metrics</div>
           <div className="w-24 text-center">Status</div>
@@ -63,13 +67,19 @@ export default function ExamsTable({ exams, activeTab }: ExamsTableProps) {
               </div>
               <div className="min-w-0">
                 <h4 className="text-lg font-black text-slate-900 dark:text-slate-100 truncate group-hover:text-primary transition-colors">
-                  {exam.title}
+                  {exam.title || exam.subject?.name || 'Untitled Paper'}
                 </h4>
                 <div className="flex flex-wrap items-center gap-3 mt-1.5">
                   <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">
                     <BarChart3 size={10} />
-                    {exam.class?.name || 'All Classes'}
+                    {isSubjectPaperTab ? (exam.subject?.name || 'No Subject') : (exam.class?.name || 'All Classes')}
                   </div>
+                  {isSubjectPaperTab && exam.exams?.length > 0 && (
+                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary/70 bg-primary/5 px-2 py-1 rounded-lg">
+                      <PlusCircle size={10} />
+                      Linked to {exam.exams.length} Exam{exam.exams.length > 1 ? 's' : ''}
+                    </div>
+                  )}
                   <span className="text-slate-300 dark:text-slate-700 mx-1">•</span>
                   <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
                     <Calendar size={12} />
@@ -87,9 +97,11 @@ export default function ExamsTable({ exams, activeTab }: ExamsTableProps) {
               </div>
               <div className="flex flex-col items-center">
                 <span className="text-sm font-black text-slate-900 dark:text-slate-100">
-                  {exam.subjectPapers?.length || 0}
+                  {isSubjectPaperTab ? (exam.questions?.length || 0) : (exam.subjectPapers?.length || 0)}
                 </span>
-                <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Papers</span>
+                <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400">
+                  {isSubjectPaperTab ? 'Questions' : 'Papers'}
+                </span>
               </div>
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-1 text-sm font-black text-slate-900 dark:text-slate-100">
@@ -107,12 +119,12 @@ export default function ExamsTable({ exams, activeTab }: ExamsTableProps) {
               </span>
 
               <div className="flex items-center gap-2">
-                <Link href="/dashboard/teacher/exams&quizzes/preview">
+                <Link href={isSubjectPaperTab ? `/dashboard/teacher/exams&quizzes/preview?paperId=${exam.id}` : `/dashboard/teacher/exams&quizzes/preview`}>
                   <button className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90" title="Preview">
                     <Eye size={18} strokeWidth={2.5} />
                   </button>
                 </Link>
-                <Link href="/dashboard/teacher/exams&quizzes/question-list">
+                <Link href={isSubjectPaperTab ? `/dashboard/teacher/exams&quizzes/add-question?paperId=${exam.id}` : `/dashboard/teacher/exams&quizzes/question-list`}>
                   <button className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90" title="Edit">
                     <Edit size={18} strokeWidth={2.5} />
                   </button>

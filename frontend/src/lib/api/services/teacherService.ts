@@ -6,7 +6,7 @@ export const teacherService = {
    * @param schoolId Optional school ID to filter data
    */
   getDashboardStats: async (schoolId?: string) => {
-    const response = await apiClient.get("/schools/teacher/dashboard-stats", {
+    const response = await apiClient.get("/teacher/dashboard-stats", {
       params: { schoolId },
     });
     return response.data.data;
@@ -16,7 +16,7 @@ export const teacherService = {
    * Fetch schools linked to the teacher
    */
   getLinkedSchools: async () => {
-    const response = await apiClient.get("/schools/teacher/linked-schools");
+    const response = await apiClient.get("/teacher/linked-schools");
     return response.data.data;
   },
 
@@ -24,7 +24,7 @@ export const teacherService = {
    * Get students for the teacher, optionally filtered by school/class, search, and paginated
    */
   getStudents: async (options: { schoolId?: string; classId?: string; search?: string; page?: number; limit?: number } = {}) => {
-    const response = await apiClient.get("/schools/teacher/students", {
+    const response = await apiClient.get("/teacher/students", {
       params: options,
     });
     return response.data.data;
@@ -34,13 +34,14 @@ export const teacherService = {
    * Get classes for the teacher, optionally filtered by school
    */
   getClasses: async (options: { schoolId?: string } = {}) => {
-    const response = await apiClient.get("/schools/teacher/classes", {
+    const response = await apiClient.get("/teacher/classes", {
       params: options,
     });
     return response.data.data;
   },
+
   getClassDetail: async (classId: string) => {
-    const response = await apiClient.get(`/schools/teacher/classes/${classId}`);
+    const response = await apiClient.get(`/teacher/classes/${classId}`);
     return response.data.data;
   },
 
@@ -48,7 +49,7 @@ export const teacherService = {
    * Get assignments for a specific class, optionally filtered by category
    */
   getClassAssignments: async (classId: string, category?: string) => {
-    const response = await apiClient.get(`/schools/teacher/classes/${classId}/assignments`, {
+    const response = await apiClient.get(`/teacher/classes/${classId}/assignments`, {
       params: { category }
     });
     return response.data.data;
@@ -58,7 +59,7 @@ export const teacherService = {
    * Get grades for a specific class
    */
   getClassGrades: async (classId: string) => {
-    const response = await apiClient.get(`/schools/teacher/classes/${classId}/grades`);
+    const response = await apiClient.get(`/teacher/classes/${classId}/grades`);
     return response.data.data;
   },
 
@@ -66,7 +67,7 @@ export const teacherService = {
    * Get performance trends for the teacher
    */
   getPerformanceTrends: async (schoolId?: string, range: string = 'month') => {
-    const response = await apiClient.get("/schools/teacher/performance-trends", {
+    const response = await apiClient.get("/teacher/performance-trends", {
       params: { schoolId, range }
     });
     return response.data.data;
@@ -77,6 +78,16 @@ export const teacherService = {
    */
   getExams: async (options: { schoolId?: string; classId?: string; category?: string; status?: string } = {}) => {
     const response = await apiClient.get("/exams", {
+      params: options,
+    });
+    return response.data.data;
+  },
+
+  /**
+   * Get subject papers for the teacher
+   */
+  getSubjectPapers: async (options: { schoolId?: string } = {}) => {
+    const response = await apiClient.get("/exams/papers/all", {
       params: options,
     });
     return response.data.data;

@@ -13,7 +13,7 @@ import { ExamsTableSkeleton } from './ExamsSkeleton';
 import { Trophy, ClipboardList, Sparkles } from 'lucide-react';
 
 export default function ExamsQuizzesOverview() {
-  const [activeTab, setActiveTab] = useState<'exams' | 'quizzes'>('exams');
+  const [activeTab, setActiveTab] = useState<'exams' | 'quizzes' | 'subject-papers'>('exams');
   const { selectedSchoolId } = useDashboardStore();
   const { user } = useAuthStore();
   const [filters, setFilters] = useState({
@@ -29,6 +29,12 @@ export default function ExamsQuizzesOverview() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['teacher-exams', selectedSchoolId, activeTab, filters],
     queryFn: async () => {
+      if (activeTab === 'subject-papers') {
+        const result = await teacherService.getSubjectPapers({
+          schoolId: selectedSchoolId, // Pass the selectedSchoolId (which could be user.id for personal)
+        });
+        return result;
+      }
       const result = await teacherService.getExams({
         schoolId: isPersonal ? undefined : selectedSchoolId,
         category,
@@ -83,6 +89,12 @@ export default function ExamsQuizzesOverview() {
                 onClick={() => setActiveTab('quizzes')}
                 icon={ClipboardList}
                 label="Quizzes"
+              />
+              <TabButton 
+                active={activeTab === 'subject-papers'} 
+                onClick={() => setActiveTab('subject-papers')}
+                icon={Sparkles}
+                label="Subject Papers"
               />
             </div>
 

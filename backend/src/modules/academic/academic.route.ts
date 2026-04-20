@@ -33,6 +33,13 @@ import {
   getGradeById,
   getAllGrades,
 } from "./grade.controller";
+import { 
+  getSubjectSchemes, 
+  createSchemeEntry, 
+  updateSchemeEntry, 
+  deleteSchemeEntry,
+  bulkSyncScheme
+} from "./scheme-of-work.controller";
 
 const router = Router();
 
@@ -44,6 +51,13 @@ router.patch("/subjects/:id", authenticateToken, updateSubject);
 router.patch("/subjects/:id/archive", authenticateToken, archiveSubject);
 router.post("/subjects/:id/departments", authenticateToken, attachDepartmentsToSubject);
 router.post("/subjects/:id/teachers", authenticateToken, attachTeachersToSubject);
+
+// Scheme of Work Routes
+router.get("/subjects/:id/scheme", authenticateToken, getSubjectSchemes);
+router.post("/subjects/:id/scheme", authenticateToken, createSchemeEntry);
+router.post("/subjects/:id/scheme/sync", authenticateToken, bulkSyncScheme);
+router.patch("/scheme/:id", authenticateToken, updateSchemeEntry);
+router.delete("/scheme/:id", authenticateToken, deleteSchemeEntry);
 
 // Department Routes
 router.post("/departments", authenticateToken, createDepartment);

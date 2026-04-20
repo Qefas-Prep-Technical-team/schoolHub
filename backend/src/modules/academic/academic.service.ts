@@ -695,21 +695,57 @@ export const getExamsService = async ({
   schoolId,
   departmentIds,
   classId,
+  availableForTeacherId,
+  availableForStudentId,
 }: {
   schoolId?: string;
   departmentIds?: string[];
   classId?: string;
+  availableForTeacherId?: string;
+  availableForStudentId?: string;
 }) => {
-  return prisma.exam.findMany({
-    where: {
-      ...(schoolId ? { schoolId } : { id: 'none' }),
-      ...(departmentIds && departmentIds.length > 0 ? {
-        departments: {
-          some: { departmentId: { in: departmentIds } }
+  const where: any = {
+    ...(schoolId ? { schoolId } : { id: "none" }),
+    ...(departmentIds && departmentIds.length > 0
+      ? {
+          departments: {
+            some: { departmentId: { in: departmentIds } },
+          },
         }
-      } : {}),
-      ...(classId ? { classId } : {}),
-    },
+      : {}),
+    ...(classId ? { classId } : {}),
+  };
+
+  // If a teacher ID is provided, show exams they own or are associated with via class assignments
+  if (availableForTeacherId) {
+    where.OR = [
+      { teacherId: availableForTeacherId }, // Exams they created/own
+      {
+        class: {
+          OR: [
+            { teacherId: availableForTeacherId }, // Form Teacher of the class
+            {
+              subjects: {
+                some: { teacherId: availableForTeacherId }, // Teaching any subject to this class
+              },
+            },
+          ],
+        },
+      },
+    ];
+  }
+
+  // If a student ID is provided, filter exams by their class enrolment
+  if (availableForStudentId) {
+    where.class = {
+      students: {
+        some: { id: availableForStudentId },
+      },
+    };
+  }
+
+  return prisma.exam.findMany({
+    where,
     include: {
       school: true,
       departments: { include: { department: true } },

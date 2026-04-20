@@ -98,36 +98,37 @@ export const getExamsService = async (filters: {
   status?: AssessmentStatus;
   category?: ExamCategory;
   availableForStudentId?: string;
+  teacherId?: string;
+  isPersonal?: boolean;
 }) => {
   const where: any = {};
   const studentId = filters.availableForStudentId;
-  if (filters.schoolId) where.schoolId = filters.schoolId;
+  const teacherId = filters.teacherId;
+
+  if (filters.isPersonal) {
+    where.schoolId = null;
+  } else if (filters.schoolId) {
+    where.schoolId = filters.schoolId;
+  }
   if (filters.sessionId) where.sessionId = filters.sessionId;
   if (filters.term) where.term = filters.term;
   if (filters.category) where.category = filters.category;
   
   // For students, we strictly enforce PUBLISHED status and multi-criteria targeting
-  if (filters.availableForStudentId) {
-    console.log("LOG: [getExamsService] Fetching student info for filtering:", filters.availableForStudentId);
+  if (studentId) {
+    // ... student logic remains same ...
+    console.log("LOG: [getExamsService] Fetching student info for filtering:", studentId);
     const student = await prisma.student.findUnique({
-      where: { id: filters.availableForStudentId },
+      where: { id: studentId },
       include: { classes: true },
     });
 
     if (!student) throw new Error("Student not found");
-    console.log("LOG: [getExamsService] Student found:", { 
-      id: student.id, 
-      schoolId: student.schoolId, 
-      departmentId: student.departmentId,
-      classesCount: student.classes.length 
-    });
-
-    where.status = AssessmentStatus.PUBLISHED;
     
+    where.status = AssessmentStatus.PUBLISHED;
     const classIds = student.classes.map((c) => c.classId);
     
     const orConditions: any[] = [
-      // 1. General school-wide exams: No class restriction AND no department restriction
       {
         schoolId: student.schoolId,
         classId: null,
@@ -135,7 +136,6 @@ export const getExamsService = async (filters: {
       }
     ];
 
-    // 2. Specific targeted exams: MUST match BOTH class AND department (as requested by user)
     if (classIds.length > 0 && student.departmentId) {
       orConditions.push({
         classId: { in: classIds },
@@ -143,16 +143,38 @@ export const getExamsService = async (filters: {
       });
     }
     
-    // Note: If an exam has a class but no department, or a department but no class, 
-    // it is NOT considered "General" and will not show up here unless it matches 
-    // the strict (Class + Dept) rule.
-
     where.OR = orConditions;
-    console.log("LOG: [getExamsService] Generated OR conditions:", JSON.stringify(where.OR, null, 2));
   } else {
     // Admin/Teacher filters
     if (filters.status) where.status = filters.status;
     if (filters.classId) where.classId = filters.classId;
+
+    if (teacherId) {
+      // Find subjects assigned to the teacher in the current context
+      // Note: We use schoolId from filters to find the specific subjects the teacher manages in that school.
+      const assignedSubjects = await prisma.teacherSubject.findMany({
+        where: { 
+          teacherId,
+          schoolId: filters.isPersonal ? null : (filters.schoolId || undefined)
+        },
+        select: { subjectId: true }
+      });
+      const subjectIds = assignedSubjects.map(s => s.subjectId);
+
+      // Restriction: Exam must either be for one of these subjects OR include one of these subjects
+      where.AND = [
+        { OR: [
+          { subjectId: { in: subjectIds } },
+          { includedSubjects: { some: { subjectId: { in: subjectIds } } } }
+        ] }
+      ];
+
+      // If it's a teacher, we also usually only want to show their own creations if in personal context
+      if (filters.isPersonal) {
+        where.AND.push({ teacherId: filters.teacherId });
+      }
+    }
+
     if (filters.departmentIds && filters.departmentIds.length > 0) {
       where.departments = {
         some: { departmentId: { in: filters.departmentIds } }
@@ -304,31 +326,40 @@ export const getExamPapersService = async (examId: string, schoolId?: string) =>
 export const getSubjectPapersService = async (filters: { 
   teacherId?: string, 
   unlinkedOnly?: boolean,
-  schoolId?: string 
+  schoolId?: string,
+  isPersonal?: boolean
 }) => {
   const where: any = {};
   
-  if (filters.schoolId) {
-    where.OR = [
-      { schoolId: filters.schoolId },
-      { subject: { schoolId: filters.schoolId } },
-      { exams: { some: { exam: { schoolId: filters.schoolId } } } }
-    ];
+  // 1. Filter by teacher (creator)
+  if (filters.teacherId) {
+    where.teacherId = filters.teacherId;
+
+    // 2. Further filter by subjects specifically assigned to this teacher
+    // (This ensures they only see papers for subjects they are authorized to teach)
+    const assignedSubjects = await prisma.teacherSubject.findMany({
+      where: { 
+        teacherId: filters.teacherId,
+        schoolId: filters.isPersonal ? null : filters.schoolId || undefined
+      },
+      select: { subjectId: true }
+    });
+    const subjectIds = assignedSubjects.map(s => s.subjectId);
+    
+    // Strict filter: If no subjects are assigned to the teacher in this context,
+    // they shouldn't see any papers (as requested: "make sure it is the subject assigned... that shows up")
+    where.subjectId = { in: subjectIds };
+  }
+
+  // 3. Filter by school or personal context
+  if (filters.isPersonal) {
+    where.schoolId = null;
+  } else if (filters.schoolId) {
+    where.schoolId = filters.schoolId;
   }
 
   if (filters.unlinkedOnly) {
     where.exams = { none: {} };
-  }
-
-  if (filters.teacherId) {
-    // Fetch subjects assigned to this teacher
-    const teacherSubjects = await prisma.teacherSubject.findMany({
-      where: { teacherId: filters.teacherId },
-      select: { subjectId: true }
-    });
-    const subjectIds = teacherSubjects.map(ts => ts.subjectId);
-    
-    where.subjectId = { in: subjectIds };
   }
 
   return prisma.subjectExamPaper.findMany({

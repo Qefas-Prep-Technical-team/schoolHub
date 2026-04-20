@@ -30,7 +30,7 @@ export default function TeacherRow({ teacher, selected, onSelect }: TeacherRowPr
         />
       </td>
       <td className="p-4">
-        <Link href={"/dashboard/admin/teachers/profilePage"} className="flex items-center gap-3">
+        <Link href={`/dashboard/admin/teachers/${teacher.id}`} className="flex items-center gap-3">
           <img 
             className="size-10 rounded-full object-cover" 
             alt={`Profile picture of ${teacher.name}`} 

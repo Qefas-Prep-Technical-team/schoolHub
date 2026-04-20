@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,9 +18,9 @@ import { subjectService, Subject } from "./services/subjectService"
 import { departmentService, Department } from "../departments/services/departmentService"
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
 import { apiClient } from "@/lib/api/client"
-import { toast } from "react-toastify"
 
 const SubjectsPage = () => {
+  const router = useRouter()
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,6 +73,10 @@ const SubjectsPage = () => {
     setIsModalOpen(true)
   }
 
+  const handleView = (subject: Subject) => {
+    router.push(`/dashboard/admin/subjects/${subject.id}`)
+  }
+
   const handleCreate = () => {
     setEditingSubject(null)
     setIsModalOpen(true)
@@ -83,40 +88,37 @@ const SubjectsPage = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-4xl font-black font-headline tracking-tight text-slate-900 dark:text-white mb-2">
-              Subjects
+            <h1 className="text-4xl font-black font-headline tracking-tighter text-slate-900 dark:text-white mb-2 uppercase">
+              Curriculum & Subjects
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-lg">
-              Manage the academic curriculum and subject assignments across departments.
+            <p className="text-slate-500 dark:text-slate-400 text-lg font-medium">
+              Manage the academic core, departmental scope, and faculty assignments.
             </p>
           </div>
           <Button 
             onClick={handleCreate}
-            className="flex items-center gap-2 px-6 py-6 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-full font-bold shadow-lg hover:shadow-blue-500/20 transition-all active:scale-95"
+            className="flex items-center gap-3 px-8 py-7 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 text-base uppercase tracking-tight"
           >
-            <Plus className="h-5 w-5" />
-            <span>Add New Subject</span>
+            <Plus className="h-6 w-6 stroke-[3]" />
+            <span>New Subject</span>
           </Button>
         </div>
 
         {/* Filter Bar */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-4 mb-8">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-4 mb-8 shadow-sm">
           <div className="flex-1 min-w-[240px] relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition-all text-slate-900 dark:text-white"
-              placeholder="Search subjects by name or code..."
+              className="w-full pl-12 pr-4 py-6 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 transition-all text-slate-900 dark:text-white"
+              placeholder="Filter by subject name or code..."
             />
           </div>
           
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 whitespace-nowrap">
-              Filter By:
-            </span>
+          <div className="flex items-center gap-3">
             <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="w-[180px] bg-slate-50 dark:bg-slate-800/50 border-none rounded-lg text-xs font-semibold py-2">
+              <SelectTrigger className="w-[200px] h-12 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-xs font-black uppercase tracking-wider px-4">
                 <SelectValue placeholder="All Departments" />
               </SelectTrigger>
               <SelectContent>
@@ -128,7 +130,7 @@ const SubjectsPage = () => {
             </Select>
 
             <Select value={selectedScope} onValueChange={setSelectedScope}>
-              <SelectTrigger className="w-[150px] bg-slate-50 dark:bg-slate-800/50 border-none rounded-lg text-xs font-semibold py-2">
+              <SelectTrigger className="w-[160px] h-12 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-xs font-black uppercase tracking-wider px-4">
                 <SelectValue placeholder="Scope: All" />
               </SelectTrigger>
               <SelectContent>
@@ -138,38 +140,33 @@ const SubjectsPage = () => {
               </SelectContent>
             </Select>
           </div>
-
-          <div className="flex items-center gap-1 ml-auto">
-            <Button variant="ghost" size="icon" className="text-blue-600">
-              <LayoutGrid className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="text-slate-400">
-              <List className="h-5 w-5" />
-            </Button>
-          </div>
         </div>
 
         {/* Subjects Bento Grid */}
         {loading ? (
           <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="relative h-16 w-16">
+                <div className="absolute inset-0 rounded-full border-4 border-blue-600/20"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
+            </div>
           </div>
         ) : filteredSubjects.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredSubjects.map((subject) => (
               <SubjectCard 
                 key={subject.id} 
                 subject={subject} 
                 onEdit={handleEdit}
+                onView={handleView}
               />
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
-            <div className="material-symbols-outlined text-6xl text-slate-200 mb-4">menu_book</div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No subjects found</h3>
-            <p className="text-slate-500 dark:text-slate-400">
-              {searchQuery ? "Try adjusting your search or filters" : "Get started by adding your first subject"}
+          <div className="text-center py-32 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+            <span className="material-symbols-outlined text-7xl text-slate-200 dark:text-slate-800 mb-6">menu_book</span>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Empty Curriculum</h3>
+            <p className="text-slate-500 dark:text-slate-400 font-medium max-w-sm mx-auto">
+              {searchQuery ? "No subjects match your current filter settings." : "Ready to build your school's curriculum? Start by adding your first subject module."}
             </p>
           </div>
         )}

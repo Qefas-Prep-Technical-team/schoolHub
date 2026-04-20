@@ -12,6 +12,13 @@ import {
   updateAdminProfile,
   verifyStudent,
 } from "./admin.controller";
+import { 
+  getTeacherById, 
+  assignTeacherToClass,
+  updateTeacher,
+  getTeacherTimetable,
+  createTimetablePeriod
+} from "./teacher-management.controller";
 import { authenticateToken } from "@middleware/authMiddleware";
 
 const router = express.Router();
@@ -34,6 +41,11 @@ router.get("/teachers", getSchoolTeachers);
 router.get("/students", getSchoolStudents);
 router.get("/members", getSchoolMembers);
 router.patch("/profile", updateAdminProfile);
+router.get("/teachers/:id", getTeacherById);
+router.get("/teachers/:id/timetable", getTeacherTimetable);
+router.post("/teachers/:id/timetable", createTimetablePeriod);
+router.patch("/teachers/:id", updateTeacher);
+router.post("/teachers/:id/assign-class", assignTeacherToClass);
 router.patch("/students/:id/verify", verifyStudent);
 router.put("/:adminId/approve", approveAdmin);
 router.put("/:adminId/reject", rejectAdmin);

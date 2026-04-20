@@ -49,3 +49,16 @@ export const deleteTimetablePeriodService = async (id: string) => {
     where: { id },
   });
 };
+export const getTeacherTimetableService = async (teacherId: string) => {
+  return prisma.timetablePeriod.findMany({
+    where: { teacherId },
+    include: {
+      subject: true,
+      class: true,
+    },
+    orderBy: [
+      { day: "asc" },
+      { startTime: "asc" },
+    ],
+  });
+};

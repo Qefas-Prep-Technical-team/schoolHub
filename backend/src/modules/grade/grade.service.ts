@@ -6,8 +6,18 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export const getGradeHubService = async (schoolId: string, filters: any) => {
-  const where: any = { schoolId };
+export const getGradeHubService = async (schoolId?: string, filters: any = {}) => {
+  const where: any = {};
+  
+  // Only add schoolId if it's a valid non-empty string
+  if (schoolId && schoolId !== 'all' && schoolId !== 'undefined' && schoolId !== '') {
+    where.schoolId = schoolId;
+  }
+
+  // Support teacherId filter (Personal Dashboard or teacher-specific view)
+  if (filters.teacherId && filters.teacherId !== 'all' && filters.teacherId !== '') {
+    where.teacherId = filters.teacherId;
+  }
   
   if (filters.classId && filters.classId !== 'all') where.classId = filters.classId;
   if (filters.category && filters.category !== 'all') where.category = filters.category;
@@ -17,27 +27,38 @@ export const getGradeHubService = async (schoolId: string, filters: any) => {
   if (filters.examId && filters.examId !== 'all') where.examId = filters.examId;
   if (filters.subjectPaperId && filters.subjectPaperId !== 'all') where.subjectPaperId = filters.subjectPaperId;
 
-  return prisma.grade.findMany({
-    where,
-    include: {
-      student: {
-        select: { id: true, name: true, gradeLevel: true }
+  const page = parseInt(filters.page) || 1;
+  const limit = parseInt(filters.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const [grades, total] = await Promise.all([
+    prisma.grade.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        student: {
+          select: { id: true, name: true, gradeLevel: true, studentCode: true }
+        },
+        class: {
+          select: { id: true, name: true, section: true }
+        },
+        session: {
+          select: { id: true, name: true }
+        },
+        exam: {
+          select: { id: true, title: true }
+        },
+        subjectPaper: {
+          select: { id: true, title: true, subject: { select: { id: true, name: true } } }
+        }
       },
-      class: {
-        select: { id: true, name: true, section: true }
-      },
-      session: {
-        select: { id: true, name: true }
-      },
-      exam: {
-        select: { id: true, title: true }
-      },
-      subjectPaper: {
-        select: { id: true, title: true, subject: { select: { id: true, name: true } } }
-      }
-    },
-    orderBy: { createdAt: 'desc' }
-  });
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.grade.count({ where })
+  ]);
+
+  return { grades, total };
 };
 
 export const createGradeEntryService = async (data: any) => {

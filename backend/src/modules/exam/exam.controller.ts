@@ -37,9 +37,10 @@ export const getExams = async (req: Request, res: Response) => {
   try {
     const { schoolId, sessionId, classId, departmentId, departmentIds, status, term, category } = req.query;
 
-    const effectiveSchoolId = (schoolId as string) || req.user?.schoolId;
+    const isPersonal = (schoolId as string) === req.user?.id;
+    const effectiveSchoolId = isPersonal ? undefined : ((schoolId as string) || req.user?.schoolId);
 
-    const filters: any = {};
+    const filters: any = { isPersonal };
     if (effectiveSchoolId) filters.schoolId = effectiveSchoolId;
     if (sessionId) filters.sessionId = sessionId as string;
     if (classId) filters.classId = classId as string;
@@ -56,6 +57,8 @@ export const getExams = async (req: Request, res: Response) => {
 
     if (req.user?.userType === UserRole.STUDENT) {
       filters.availableForStudentId = req.user.id;
+    } else if (req.user?.userType === UserRole.TEACHER) {
+      filters.teacherId = req.user.id;
     }
 
     console.log("LOG: [getExams] Calling getExamsService with filters:", filters);
@@ -668,20 +671,25 @@ export const deleteExam = async (req: Request, res: Response) => {
 
 export const getSubjectPapers = async (req: Request, res: Response) => {
   try {
-    const { unlinkedOnly } = req.query;
+    const { unlinkedOnly, schoolId } = req.query;
+    
+    const isPersonal = schoolId === req.user?.id;
     const filters: any = {
       unlinkedOnly: unlinkedOnly === 'true',
-      schoolId: req.user?.schoolId,
+      schoolId: isPersonal ? undefined : (schoolId as string || req.user?.schoolId),
+      isPersonal,
     };
 
     if (req.user?.userType === UserRole.TEACHER) {
       filters.teacherId = req.user.id;
     }
 
+    console.log("LOG: [getSubjectPapers] Fetching with filters:", filters);
     const data = await getSubjectPapersService(filters);
     res.status(200).json({ success: true, data });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("LOG ERROR: [getSubjectPapers]", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

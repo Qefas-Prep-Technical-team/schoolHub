@@ -3,9 +3,21 @@ import * as gradeService from "./grade.service";
 
 export const getGradeHub = async (req: Request, res: Response) => {
   try {
-    const { schoolId } = req.query;
-    const grades = await gradeService.getGradeHubService(schoolId as string, req.query);
-    res.json({ success: true, data: grades });
+    const { schoolId, page = 1, limit = 10 } = req.query;
+    const { grades, total } = await gradeService.getGradeHubService(schoolId as string, req.query);
+    
+    const totalPages = Math.ceil(total / Number(limit));
+
+    res.json({ 
+      success: true, 
+      data: grades,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages
+      }
+    });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
