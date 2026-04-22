@@ -42,21 +42,23 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
 
                 {/* Mobile hamburger */}
                 <AdminMobileDrawer />
+            </div>
 
-                {/* Search Bar */}
-                <div className="relative hidden md:flex items-center flex-1 max-w-md">
-                    <Search className="absolute left-4 w-4 h-4 text-gray-400" />
+            {/* Central Search Section */}
+            <div className="hidden md:flex flex-1 justify-center px-8">
+                <div className="relative w-full max-w-6xl group">
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={22} />
                     <input
                         type="search"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search students, teachers, schools..."
-                        className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-500 border-none focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm transition-all"
+                        className="w-full pl-14 pr-8 py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-500 border-none focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 text-base font-semibold transition-all shadow-inner"
                     />
                 </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-end gap-4 flex-1">
                 {/* Quick Actions */}
                 <button className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">
                     <LayoutGrid className="w-5 h-5" />

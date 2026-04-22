@@ -13,6 +13,9 @@ import StudentPerformanceWidget from './StudentPerformanceWidget';
 import MessagesAnnouncements from './MessagesAnnouncements';
 import TeacherSchedule from './TeacherSchedule';
 import RecentPersonalActivity from './RecentPersonalActivity';
+import { useNotifications } from '@/lib/api/hooks/useNotifications';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { 
   Sparkles, 
   Plus, 
@@ -39,24 +42,29 @@ export default function DashboardPage() {
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const isPersonal = selectedSchoolId === user?.id;
 
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const filterId = isPersonal ? undefined : selectedSchoolId;
+      const dashboardData = await teacherService.getDashboardStats(filterId || undefined);
+      setStats(dashboardData.stats);
+      setPerformanceMetrics(dashboardData.performanceMetrics);
+      setRecentExams(dashboardData.recentExams);
+    } catch (err: any) {
+      console.error('Failed to load dashboard data', err);
+      const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout');
+      setError(isTimeout ? 'The server is taking too long to respond. This might be due to a large amount of data. Please try again.' : 'Failed to synchronize dashboard. Check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setLoading(true);
-        const filterId = isPersonal ? undefined : selectedSchoolId;
-        const dashboardData = await teacherService.getDashboardStats(filterId || undefined);
-        setStats(dashboardData.stats);
-        setPerformanceMetrics(dashboardData.performanceMetrics);
-        setRecentExams(dashboardData.recentExams);
-      } catch (error) {
-        console.error('Failed to load dashboard data', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadInitialData();
   }, [selectedSchoolId, isPersonal]);
 
@@ -72,35 +80,45 @@ export default function DashboardPage() {
     dueDate: exam.date,
   }));
 
-  const messages = [
-    {
-      id: '1',
-      title: 'Academic Update',
-      description: 'The semester results are being finalized...',
-      sender: 'Admin',
-      isUnread: true,
-      isAnnouncement: true,
-    },
-    {
-      id: '2',
-      title: 'Class Project',
-      description: 'A student has a follow-up about the project requirements.',
-      sender: 'Grade 10A',
-      isUnread: true,
-      isAnnouncement: false,
-    }
-  ];
+  const { data: notifications = [] } = useNotifications({ limit: 5 });
+
+  const messages = notifications.map(n => ({
+    id: n.id,
+    title: n.title,
+    description: n.message,
+    sender: n.type === 'ANNOUNCEMENT' ? 'School' : (n.data?.senderName || 'System'),
+    isUnread: !n.isRead,
+    isAnnouncement: n.type === 'ANNOUNCEMENT',
+  }));
 
   if (loading && !stats.totalClasses) {
+    return <DashboardSkeleton />;
+  }
+
+  if (error) {
     return (
-      <div className="flex flex-col items-center justify-center p-20 min-h-[60vh]">
+      <div className="min-h-screen flex items-center justify-center p-6">
         <motion.div 
-          animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full mb-8 shadow-2xl shadow-primary/20"
-        />
-        <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-2">Synchronizing Command Center</h2>
-        <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Preparing your customized dashboard...</p>
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl max-w-md text-center space-y-6"
+        >
+          <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center mx-auto text-rose-500">
+            <LayoutGrid size={32} className="animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Sync Stalled</h2>
+            <p className="text-sm text-slate-500 leading-relaxed font-medium">
+              {error}
+            </p>
+          </div>
+          <Button 
+            onClick={() => loadInitialData()} 
+            className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
+          >
+            Reconnect Dashboard
+          </Button>
+        </motion.div>
       </div>
     );
   }
@@ -213,6 +231,52 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+function DashboardSkeleton() {
+  const skeletonClass = "bg-slate-200 dark:bg-slate-800/80";
+  return (
+    <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-10">
+      <div className="max-w-[1600px] mx-auto">
+        {/* Header Skeleton */}
+        <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-4">
+            <Skeleton className={cn("h-4 w-32", skeletonClass)} />
+            <Skeleton className={cn("h-12 w-96 rounded-2xl", skeletonClass)} />
+            <Skeleton className={cn("h-6 w-64 rounded-xl", skeletonClass)} />
+          </div>
+          <div className="flex gap-3">
+            <Skeleton className={cn("h-12 w-32 rounded-2xl", skeletonClass)} />
+            <Skeleton className={cn("h-12 w-12 rounded-2xl", skeletonClass)} />
+          </div>
+        </div>
+
+        {/* Stats Row Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className={cn("h-32 rounded-[2rem]", skeletonClass)} />
+          ))}
+        </div>
+
+        {/* Grid Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8">
+          {/* Main Content Skeleton (8 Cols) */}
+          <div className="lg:col-span-8 space-y-6">
+            <Skeleton className={cn("h-[400px] rounded-[2.5rem]", skeletonClass)} />
+            <Skeleton className={cn("h-[500px] rounded-[2.5rem]", skeletonClass)} />
+          </div>
+
+          {/* Sidebar Content Skeleton (4 Cols) */}
+          <div className="lg:col-span-4 space-y-6">
+            <Skeleton className={cn("h-[300px] rounded-[2.5rem]", skeletonClass)} />
+            <Skeleton className={cn("h-[200px] rounded-[2.5rem]", skeletonClass)} />
+            <Skeleton className={cn("h-[400px] rounded-[2.5rem]", skeletonClass)} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function QuickTool({ icon: Icon, label, sub, color }: { icon: any, label: string, sub: string, color: string }) {
   return (

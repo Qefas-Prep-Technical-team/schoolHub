@@ -9,6 +9,8 @@ import { LoginFormData, loginSchema } from "../../services/auth-schema";
 import PasswordField from "../../student/components/PasswordField";
 import Link from "next/link";
 import { ROUTES } from "@/lib/constants/routes";
+import GoogleLoginButton from "../../components/GoogleLoginButton";
+
 
 export default function TeacherLoginForm() {
     const [serverError, setServerError] = useState("");
@@ -136,6 +138,19 @@ export default function TeacherLoginForm() {
                     "Login as Teacher"
                 )}
             </button>
+
+            <div className="relative my-2">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-gray-100 dark:border-gray-800" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white dark:bg-[#1C2431] px-4 text-gray-400 font-bold tracking-widest">
+                        Or continue with
+                    </span>
+                </div>
+            </div>
+
+            <GoogleLoginButton userType="TEACHER" />
         </form>
     );
 }

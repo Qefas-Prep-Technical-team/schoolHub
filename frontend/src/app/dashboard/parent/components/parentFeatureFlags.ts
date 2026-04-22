@@ -3,7 +3,7 @@ export const PARENT_FEATURE_FLAGS = {
   // === CORE FEATURES ===
   dashboard: true,
   children: true,
-  assignments: true,
+  assignments: false,
   results: true,
   performance: true,
   attendance: true,

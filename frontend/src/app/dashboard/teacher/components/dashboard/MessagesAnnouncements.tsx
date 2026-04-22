@@ -1,4 +1,5 @@
 import { Mail, Megaphone } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface Message {
   id: string;
@@ -11,35 +12,41 @@ interface Message {
 
 interface MessagesAnnouncementsProps {
   messages: Message[];
-  onViewAll: () => void;
+  onViewAll?: () => void;
 }
 
 export default function MessagesAnnouncements({ messages, onViewAll }: MessagesAnnouncementsProps) {
+  const router = useRouter();
   return (
     <div className="p-6 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-          Messages & Announcements
+          Inbox & Notifications
         </h2>
         <button
-          onClick={onViewAll}
-          className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+          onClick={() => onViewAll ? onViewAll() : router.push('/dashboard/teacher/notifications')}
+          className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
         >
           View All
         </button>
       </div>
 
       <div className="space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`p-4 rounded-lg cursor-pointer transition-colors ${
-              message.isAnnouncement
-                ? 'bg-primary/10 dark:bg-primary/20 hover:bg-primary/20 dark:hover:bg-primary/30'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-900/40'
-            }`}
-            onClick={() => console.log(`Open message: ${message.id}`)}
-          >
+        {messages.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No recent alerts</p>
+          </div>
+        ) : (
+          messages.map((message) => (
+            <div
+              key={message.id}
+              className={`p-4 rounded-lg cursor-pointer transition-colors ${
+                message.isAnnouncement
+                  ? 'bg-primary/10 dark:bg-primary/20 hover:bg-primary/20 dark:hover:bg-primary/30'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-900/40'
+              }`}
+              onClick={() => router.push('/dashboard/teacher/notifications')}
+            >
             <div className="flex items-start gap-3">
               {/* Icon */}
               <div className={`mt-1 ${message.isAnnouncement ? 'text-primary' : 'text-gray-400'}`}>
@@ -75,7 +82,8 @@ export default function MessagesAnnouncements({ messages, onViewAll }: MessagesA
               </div>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Compose Button */}

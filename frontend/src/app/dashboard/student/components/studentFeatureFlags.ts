@@ -3,15 +3,15 @@ export const STUDENT_FEATURE_FLAGS = {
   // === CORE FEATURES ===
   dashboard: true,
   classes: true,
-  assignments: true,
+  assignments: false,
   results: true,
   attendance: true,
   exams: true,
-  documents: true,
+  documents: false,
 
   // === COMMUNICATION ===
   messages: false,
-  notifications: true,
+  notifications: false,
   linking: true,
 
   // === PROFILE & SETTINGS ===

@@ -172,10 +172,14 @@ export const createExam = async (req: Request, res: Response) => {
 
 export const createSubjectPaper = async (req: Request, res: Response) => {
   try {
-    const { subjectId, teacherId, title, instructions, durationMinutes, readingContent, schoolId: bodySchoolId } = req.body;
-    const schoolId = bodySchoolId || req.user?.schoolId;
+    const { subjectId, teacherId: bodyTeacherId, title, instructions, durationMinutes, readingContent, schoolId: bodySchoolId } = req.body;
+    
+    const isPersonal = (bodySchoolId as string) === req.user?.id;
+    const schoolId = isPersonal ? null : (bodySchoolId || req.user?.schoolId);
+    // Security: If teacher, always use their own id as teacherId
+    const teacherId = req.user?.userType === UserRole.TEACHER ? req.user.id : bodyTeacherId;
 
-    if (!req.params.id && !schoolId) {
+    if (!req.params.id && !schoolId && !isPersonal) {
        throw new Error("schoolId is required for standalone papers");
     }
 
@@ -187,23 +191,27 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
     }
 
     if (req.user.userType === UserRole.TEACHER) {
-      const examAllowed = await canManageExam({
-        userId: req.user.id,
-        userType: req.user.userType,
-        examId: req.params.id as string,
-      });
-
-      if (!examAllowed) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not allowed to manage this exam",
+      // Standalone paper check: if no exam ID, we skip canManageExam but still check subject permissions
+      if (req.params.id && req.params.id !== 'none') {
+        const examAllowed = await canManageExam({
+          userId: req.user.id,
+          userType: req.user.userType,
+          examId: req.params.id as string,
         });
+
+        if (!examAllowed) {
+          return res.status(403).json({
+            success: false,
+            message: "You are not allowed to manage this exam",
+          });
+        }
       }
 
       if (subjectId) {
         const canManageSubject = await canTeacherManageSubject({
           teacherId: req.user.id,
           subjectId,
+          schoolId: schoolId || undefined,
         });
 
         if (!canManageSubject) {

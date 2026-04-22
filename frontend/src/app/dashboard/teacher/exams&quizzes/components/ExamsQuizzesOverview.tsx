@@ -10,11 +10,19 @@ import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { ExamsTableSkeleton } from './ExamsSkeleton';
-import { Trophy, ClipboardList, Sparkles } from 'lucide-react';
+import { Trophy, ClipboardList, Sparkles, Building2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import CreatePaperForm from './CreatePaperForm';
+import { useRouter } from 'next/navigation';
 
 export default function ExamsQuizzesOverview() {
   const [activeTab, setActiveTab] = useState<'exams' | 'quizzes' | 'subject-papers'>('exams');
-  const { selectedSchoolId } = useDashboardStore();
+  const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
   const [filters, setFilters] = useState({
     class: '',
@@ -22,6 +30,8 @@ export default function ExamsQuizzesOverview() {
     status: '',
     date: '',
   });
+  const [isAddPaperModalOpen, setIsAddPaperModalOpen] = useState(false);
+  const router = useRouter();
 
   const isPersonal = selectedSchoolId === user?.id;
   const category = activeTab === 'exams' ? 'EXAM' : 'QUIZ';
@@ -68,6 +78,8 @@ export default function ExamsQuizzesOverview() {
         <PageHeader 
           title="Assessments" 
           onCreateNew={handleCreateNew}
+          onAddPaper={() => setIsAddPaperModalOpen(true)}
+          activeTab={activeTab}
         />
         
         <motion.div 
@@ -141,6 +153,29 @@ export default function ExamsQuizzesOverview() {
           </div>
         </motion.div>
       </div>
+
+      <Dialog open={isAddPaperModalOpen} onOpenChange={setIsAddPaperModalOpen}>
+        <DialogContent className="sm:max-w-[80vw] p-0 overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl border-slate-200/60 dark:border-slate-800/60 rounded-[2.5rem]">
+          <DialogHeader className="p-8 pb-0">
+            <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+              Create <span className="text-primary">Subject Paper</span>
+            </DialogTitle>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 flex items-center gap-2">
+              <Building2 size={12} className="text-primary" />
+              For: <span className="text-slate-900 dark:text-slate-100">{selectedSchoolName}</span>
+            </p>
+          </DialogHeader>
+          <div className="p-8">
+            <CreatePaperForm 
+              onSuccess={(paperId) => {
+                console.log("DEBUG: [ExamsQuizzesOverview] Redirecting to add-question:", paperId);
+                router.push(`/dashboard/teacher/exams&quizzes/add-question?paperId=${paperId}`);
+                setIsAddPaperModalOpen(false);
+              }} 
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

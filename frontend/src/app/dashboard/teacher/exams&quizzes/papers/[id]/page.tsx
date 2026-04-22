@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { examService } from "@/lib/api/services/examService";
 import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
@@ -20,17 +20,16 @@ import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import SubjectPaperReport from './components/SubjectPaperReport';
 
-export default function TeacherAddQuestionDashboard() {
-  const searchParams = useSearchParams();
+export default function TeacherPaperDetailPage() {
+  const params = useParams();
   const router = useRouter();
   const { user } = useAuthStore();
-  const queryClient = useQueryClient();
-  const paperId = searchParams.get("paperId");
+  const paperId = params.id as string;
   const examId = "none";
 
   const { data: paperData, isLoading: isLoadingPaper, isError: isErrorPaper } = useQuery({
     queryKey: ["paper", paperId],
-    queryFn: () => examService.getPaperById(examId, paperId!),
+    queryFn: () => examService.getPaperById(examId, paperId),
     enabled: !!paperId,
   });
 
@@ -41,8 +40,10 @@ export default function TeacherAddQuestionDashboard() {
     setIsMounted(true);
   }, []);
 
+  const queryClient = useQueryClient();
+
   const publishPaperMutation = useMutation({
-    mutationFn: () => examService.publishPaper(examId, paperId!),
+    mutationFn: () => examService.publishPaper(examId, paperId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
       toast.success("Subject paper published successfully!");
@@ -53,7 +54,7 @@ export default function TeacherAddQuestionDashboard() {
   });
 
   const unpublishPaperMutation = useMutation({
-    mutationFn: () => examService.unpublishPaper(examId, paperId!),
+    mutationFn: () => examService.unpublishPaper(examId, paperId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
       toast.success("Subject paper unpublished!");
@@ -64,14 +65,26 @@ export default function TeacherAddQuestionDashboard() {
   });
 
   const deletePaperMutation = useMutation({
-    mutationFn: () => examService.deletePaper(examId, paperId!),
+    mutationFn: () => examService.deletePaper(examId, paperId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["exam-papers", examId] });
       queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
       router.push(`/dashboard/teacher/exams&quizzes`);
       toast.success("Subject paper deleted!");
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to delete paper");
+    }
+  });
+
+  const deleteGradeMutation = useMutation({
+    mutationFn: (gradeId: string) => apiClient.delete(`/grades/${gradeId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
+      toast.success("Manual grade deleted!");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete grade");
     }
   });
 
@@ -108,7 +121,7 @@ export default function TeacherAddQuestionDashboard() {
   const fallbackSchoolId = (user as any)?.schools?.[0]?.schoolId || (user as any)?.defaultTenantId || "";
   const { data: school } = useSchoolProfile(paperSchoolId || fallbackSchoolId);
   
-  const { data: subjects = [] } = useQuery({
+  const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery({
     queryKey: ["subjects", paperSchoolId],
     queryFn: async () => {
       const { data } = await apiClient.get(`/academic/subjects?schoolId=${paperSchoolId}`);
@@ -117,7 +130,7 @@ export default function TeacherAddQuestionDashboard() {
     enabled: !!paperSchoolId && isEditModalOpen,
   });
 
-  const { data: teachers = [] } = useQuery({
+  const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery({
     queryKey: ["teachers", paperSchoolId],
     queryFn: async () => {
       const { data } = await apiClient.get(`/schools/${paperSchoolId}/teachers`);
@@ -126,33 +139,38 @@ export default function TeacherAddQuestionDashboard() {
     enabled: !!paperSchoolId && isEditModalOpen,
   });
 
-  if (!paperId) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <h2 className="text-xl font-black text-slate-900 uppercase">Missing Paper ID</h2>
-        <p className="text-slate-500">Please provide a valid paper ID to manage questions.</p>
-        <Button onClick={() => router.back()}>Go Back</Button>
-      </div>
-    );
-  }
+  const isTeacher = user?.userType === "TEACHER";
+  const isAdmin = user?.userType === "ADMIN";
+  const isAssignedTeacher = paper?.teacherId === user?.id;
+  const canAccess = isAdmin || (isTeacher && isAssignedTeacher);
 
   if (isLoadingPaper) {
     return (
-      <div className="max-w-7xl mx-auto p-8 space-y-8">
+      <div className="max-w-6xl mx-auto p-6 md:p-8 space-y-8">
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-10 rounded-full" />
           <Skeleton className="h-8 w-1/3" />
         </div>
-        <Skeleton className="h-64 w-full rounded-[2.5rem]" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
   }
 
   if (isErrorPaper || !paper) {
     return (
-      <div className="max-w-7xl mx-auto p-8 text-center pt-20">
+      <div className="max-w-6xl mx-auto p-6 md:p-8 text-center">
         <h2 className="text-xl font-bold text-red-600 mb-2">Paper Not Found</h2>
-        <p className="text-slate-500 mb-6">The subject paper you are looking for does not exist or has been removed.</p>
+        <p className="text-gray-500 mb-6">The subject paper you are looking for does not exist or has been removed.</p>
+        <Button onClick={() => router.back()}>Go Back</Button>
+      </div>
+    );
+  }
+
+  if (!canAccess) {
+    return (
+      <div className="max-w-6xl mx-auto p-6 md:p-8 text-center">
+        <h2 className="text-xl font-bold text-amber-600 mb-2">Access Denied</h2>
+        <p className="text-gray-500 mb-6">You do not have permission to manage this subject paper.</p>
         <Button onClick={() => router.back()}>Go Back</Button>
       </div>
     );
@@ -160,7 +178,6 @@ export default function TeacherAddQuestionDashboard() {
 
   return (
     <div className="min-h-screen bg-transparent">
-      {/* Admin-matched Header */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 truncate">
@@ -174,7 +191,7 @@ export default function TeacherAddQuestionDashboard() {
             </Button>
             <div className="truncate">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded">Management Hub</span>
+                <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded">Paper Manager</span>
                 <span className="text-slate-300 dark:text-slate-700">/</span>
                 <h1 className="text-lg font-black text-slate-900 dark:text-white capitalize truncate">
                   {paper.title}
@@ -221,6 +238,22 @@ export default function TeacherAddQuestionDashboard() {
               </Button>
             )}
             
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50 text-xs px-3 font-bold"
+              onClick={() => openConfirmDialog({
+                title: "Delete Paper",
+                description: `Permanently delete "${paper.title}"?`,
+                variant: "danger",
+                confirmText: "Delete",
+                onConfirm: () => deletePaperMutation.mutate()
+              })}
+              disabled={deletePaperMutation.isPending}
+            >
+              {deletePaperMutation.isPending ? <Loader2 className="animate-spin h-3 w-3" /> : "Delete"}
+            </Button>
+
             <Button
               variant="outline"
               size="sm"
@@ -251,7 +284,7 @@ export default function TeacherAddQuestionDashboard() {
             </Button>
             
             <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 hidden sm:block mx-1"></div>
-            <div className="flex flex-col items-end shrink-0">
+            <div className="flex flex-col items-end">
               <span className="text-xs font-black text-slate-900 dark:text-white leading-none">
                 {paper.totalMarks} Marks
               </span>
@@ -265,7 +298,7 @@ export default function TeacherAddQuestionDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="questions" className="w-full">
-          <TabsList className="mb-8 p-1 bg-slate-100/50 dark:bg-slate-800/50 rounded-[1.25rem] w-full max-w-sm border border-slate-200/50 dark:border-slate-800/50">
+          <TabsList className="mb-8 p-1 bg-slate-100/50 dark:bg-slate-800/50 rounded-[1.25rem] w-full max-w-md border border-slate-200/50 dark:border-slate-800/50">
             <TabsTrigger value="questions" className="flex-1 rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm py-2.5 font-black text-xs uppercase tracking-widest transition-all">
               Questions
             </TabsTrigger>
@@ -275,17 +308,16 @@ export default function TeacherAddQuestionDashboard() {
           </TabsList>
 
           <TabsContent value="questions">
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden min-h-[70vh]">
-                <QuestionManager 
-                    paperId={paperId} 
-                    examId={examId}
-                    paper={paper}
-                />
-            </div>
+            <QuestionManager 
+                paperId={paperId} 
+                examId={examId}
+                paper={paper}
+            />
           </TabsContent>
 
           <TabsContent value="grades">
             {(() => {
+              // Normalize and merge results from online attempts and manual grades
               const onlineResults = (paper.examAttempts || []).map((a: any) => ({
                 id: a.id,
                 studentName: a.examAttempt?.student?.name,
@@ -310,6 +342,7 @@ export default function TeacherAddQuestionDashboard() {
               const allResults = [...onlineResults, ...manualResults];
               const hasResults = allResults.length > 0;
 
+              // Statistics
               const avgScore = hasResults 
                 ? (allResults.reduce((sum, r) => sum + r.score, 0) / allResults.length).toFixed(1)
                 : '0.0';
@@ -321,32 +354,40 @@ export default function TeacherAddQuestionDashboard() {
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                       <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Student Grades</h2>
-                      <p className="text-sm font-semibold text-slate-500">Full performance report aligned with school standards</p>
+                      <p className="text-sm font-semibold text-slate-500">Performance report for students who took this paper</p>
                     </div>
 
                     {isMounted && hasResults ? (
                       <PDFDownloadLink
                         document={<SubjectPaperReport paper={paper} school={school} attempts={allResults.map(r => ({
                           ...r,
-                          totalMarks: r.maxMarks,
+                          totalMarks: r.maxMarks, // Pass totalMarks for compatibility with component
                           examAttempt: { student: { name: r.studentName, studentCode: r.studentCode } }
                         }))} />}
-                        fileName={`${paper.title?.replace(/\s+/g, '_')}_Report.pdf`}
+                        fileName={`${paper.title?.replace(/\s+/g, '_') || 'Report'}_Grade_Report.pdf`}
                       >
                         {({ loading }: any) => (
                           <Button 
-                            className="bg-primary text-white font-black px-6 rounded-2xl shadow-xl shadow-primary/20 gap-2 uppercase tracking-widest text-[10px]"
+                            className="text-white font-black px-6 rounded-2xl shadow-xl transition-all gap-2 uppercase tracking-widest text-[10px]"
                             disabled={loading}
+                            style={{ 
+                              backgroundColor: paper.school?.settings?.themeColor || 'var(--primary)',
+                              boxShadow: paper.school?.settings?.themeColor ? `0 10px 15px -3px ${paper.school.settings.themeColor}33` : undefined
+                            }}
                           >
                             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText size={16} />}
-                            Generate Report
+                            {loading ? 'Preparing...' : 'Download Grade Report'}
                           </Button>
                         )}
                       </PDFDownloadLink>
                     ) : (
-                      <Button className="bg-slate-200 text-slate-400 font-bold px-6 rounded-2xl cursor-not-allowed border border-slate-300 uppercase tracking-widest text-[10px]" disabled>
+                      <Button 
+                        className="bg-slate-200 text-slate-400 font-bold px-6 rounded-2xl cursor-not-allowed border border-slate-300 uppercase tracking-widest text-[10px]"
+                        disabled
+                        title="No attempts recorded"
+                      >
                         <FileText size={16} />
-                        Report Unavailable
+                        Download Grade Report
                       </Button>
                     )}
                   </div>
@@ -355,9 +396,9 @@ export default function TeacherAddQuestionDashboard() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {[
                         { label: "Total Sat", value: allResults.length, color: "text-primary" },
-                        { label: "Average", value: avgScore, color: "text-blue-600" },
-                        { label: "Highest", value: highBox, color: "text-emerald-600" },
-                        { label: "Lowest", value: lowBox, color: "text-rose-600" }
+                        { label: "Class Average", value: avgScore, color: "text-blue-600" },
+                        { label: "Highest Score", value: highBox, color: "text-emerald-600" },
+                        { label: "Lowest Score", value: lowBox, color: "text-rose-600" }
                       ].map((stat, idx) => (
                         <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-[2rem] shadow-sm">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{stat.label}</p>
@@ -373,10 +414,10 @@ export default function TeacherAddQuestionDashboard() {
                         <thead>
                           <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                             <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
-                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Code</th>
+                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Code</th>
                             <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</th>
-                            <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance</th>
-                            <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
+                            <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Percentage</th>
+                            <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Source</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -387,7 +428,7 @@ export default function TeacherAddQuestionDashboard() {
                               return (
                                 <tr key={result.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition-colors">
                                   <td className="px-8 py-5">
-                                    <div className="font-black text-slate-900 dark:text-white capitalize truncate max-w-[200px]">
+                                    <div className="font-black text-slate-900 dark:text-white capitalize">
                                       {result.studentName}
                                     </div>
                                   </td>
@@ -395,23 +436,61 @@ export default function TeacherAddQuestionDashboard() {
                                     {result.studentCode}
                                   </td>
                                   <td className="px-8 py-5 text-center">
-                                    <span className="font-black text-slate-900 dark:text-white">{result.score}</span>
-                                    <span className="text-slate-400 ml-1 font-bold">/ {result.maxMarks}</span>
+                                    <span className="font-black text-slate-900 dark:text-white">
+                                      {result.score}
+                                    </span>
+                                    <span className="text-slate-400 ml-1 font-bold">
+                                      / {result.maxMarks}
+                                    </span>
                                   </td>
                                   <td className="px-8 py-5">
-                                    <div className="flex items-center justify-center gap-2">
-                                      <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                        <div className={`h-full ${isPass ? 'bg-emerald-500' : 'bg-red-500'}`} style={{ width: `${percentage}%` }} />
+                                    <div className="flex items-center justify-center gap-3">
+                                      <div className="w-20 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div 
+                                          className={`h-full rounded-full ${isPass ? 'bg-emerald-500' : 'bg-red-500'}`}
+                                          style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+                                        />
                                       </div>
-                                      <span className="text-[10px] font-black text-slate-600">{percentage.toFixed(0)}%</span>
+                                      <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">
+                                        {percentage.toFixed(0)}%
+                                      </span>
                                     </div>
                                   </td>
                                   <td className="px-8 py-5 text-right">
-                                    <span className={`px-3 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase ${
-                                        result.type === 'MANUAL' ? 'bg-blue-50 text-blue-600' : 'bg-indigo-50 text-indigo-600'
+                                    <div className="flex items-center justify-end gap-4">
+                                      <span className={`px-3 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase ${
+                                        result.type === 'MANUAL' 
+                                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
+                                          : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
                                       }`}>
                                         {result.type}
                                       </span>
+                                      {result.type === 'MANUAL' && (
+                                        <button
+                                          onClick={() => {
+                                            openConfirmDialog({
+                                              title: "Delete Manual Grade",
+                                              description: `Are you sure you want to delete the manual grade for ${result.studentName}?`,
+                                              variant: "danger",
+                                              confirmText: "Delete",
+                                              onConfirm: () => {
+                                                deleteGradeMutation.mutate(result.gradeId);
+                                                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                                              }
+                                            });
+                                          }}
+                                          disabled={deleteGradeMutation.isPending}
+                                          className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-xl transition-all disabled:opacity-50"
+                                          title="Delete manual grade"
+                                        >
+                                          {deleteGradeMutation.isPending ? (
+                                            <Loader2 size={16} className="animate-spin" />
+                                          ) : (
+                                            <Trash2 size={16} />
+                                          )}
+                                        </button>
+                                      )}
+                                    </div>
                                   </td>
                                 </tr>
                               );
@@ -421,7 +500,7 @@ export default function TeacherAddQuestionDashboard() {
                               <td colSpan={5} className="px-8 py-20 text-center text-slate-400">
                                 <div className="flex flex-col items-center gap-3">
                                   <FileText className="opacity-20" size={48} />
-                                  <p className="font-extrabold uppercase tracking-widest text-xs">Waiting for student submissions</p>
+                                  <p className="font-extrabold uppercase tracking-widest text-xs">No grades found for this paper.</p>
                                 </div>
                               </td>
                             </tr>
@@ -437,7 +516,6 @@ export default function TeacherAddQuestionDashboard() {
         </Tabs>
       </main>
 
-      {/* Admin Modals */}
       <ConfirmationModal
         isOpen={confirmDialog.isOpen}
         onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
@@ -452,7 +530,7 @@ export default function TeacherAddQuestionDashboard() {
       <ReadingContentModal
         isOpen={isReadingModalOpen}
         onClose={() => setIsReadingModalOpen(false)}
-        paperId={paperId!}
+        paperId={paperId}
         initialContent={paper.readingContent}
       />
 
@@ -468,7 +546,7 @@ export default function TeacherAddQuestionDashboard() {
         paper={paper}
         subjects={subjects}
         teachers={teachers}
-        isLoadingData={false}
+        isLoadingData={isLoadingSubjects || isLoadingTeachers}
       />
     </div>
   );

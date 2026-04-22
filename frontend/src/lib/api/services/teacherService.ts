@@ -91,5 +91,15 @@ export const teacherService = {
       params: options,
     });
     return response.data.data;
+  },
+
+  /**
+   * Get subjects assigned to the teacher
+   */
+  getSubjects: async (options: { schoolId?: string } = {}) => {
+    const response = await apiClient.get("/teacher/subjects", {
+      params: options,
+    });
+    return response.data.data;
   }
 };

@@ -154,25 +154,8 @@ export default function ManualAddForm({
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>Question Text</Label>
-            <button
-              type="button"
-              onClick={() => setShowPreview(!showPreview)}
-              className={`flex items-center gap-2 px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                showPreview
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30"
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-              }`}
-            >
-              {showPreview ? <EyeOff size={12} /> : <Eye size={12} />}
-              {showPreview ? "Hide Preview" : "Show LaTeX Preview"}
-            </button>
-          </div>
-          
-          <div className="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-            <FormulaToolbar onInsert={handleInsert} />
             <QuestionTextEditor
+              label="Question Text"
               questionText={question}
               onQuestionTextChange={setQuestion}
               images={images}
@@ -181,57 +164,6 @@ export default function ManualAddForm({
               onImageLabelsChange={setImageLabels}
               placeholder="Enter your question here..."
             />
-            <div className="p-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50/30">
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                id="question-images"
-                className="hidden"
-                onChange={async (e) => {
-                  const files = e.target.files;
-                  if (!files || files.length === 0) return;
-                  setIsUploading(true);
-                  try {
-                    const uploadPromises = Array.from(files).map(f => imageService.proxyUploadToBunny(f));
-                    const results = await Promise.all(uploadPromises);
-                    setImages(prev => [...prev, ...results.map(r => r.publicUrl)]);
-                    toast.success(`${files.length} images added`);
-                  } catch (err) {
-                    toast.error("Upload failed");
-                  } finally {
-                    setIsUploading(false);
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={isUploading}
-                onClick={() => document.getElementById('question-images')?.click()}
-                className="h-8 rounded-lg text-gray-500 hover:text-primary gap-2"
-              >
-                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon size={16} />}
-                {isUploading ? "Uploading..." : "Add Question Images"}
-              </Button>
-            </div>
-            {showPreview && (question || images.length > 0) && (
-              <div className="p-4 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-1 duration-200">
-                <div className="text-[10px] uppercase font-black tracking-widest text-primary mb-2">Live Preview</div>
-                <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
-                  {images.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2">
-                      {images.map((url, i) => (
-                        <img key={i} src={url} className="rounded-lg w-full" alt="" />
-                      ))}
-                    </div>
-                  )}
-                  <LaTeXRenderer content={question} />
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         {type === "MULTIPLE_CHOICE" && (
@@ -302,14 +234,13 @@ export default function ManualAddForm({
            </div>
         )}
 
-        <div className="space-y-2 pt-2 border-t mt-6">
-          <Label className="text-gray-500">Explanation (Optional)</Label>
-          <Textarea 
-            placeholder="Explain why this answer is correct..." 
-            value={explanation}
-            onChange={(e) => setExplanation(e.target.value)}
-            className="text-sm"
-          />
+        <div className="pt-2 border-t mt-6">
+            <QuestionTextEditor
+              label="Explanation (Optional)"
+              questionText={explanation}
+              onQuestionTextChange={setExplanation}
+              placeholder="Explain why this answer is correct..."
+            />
         </div>
       </div>
 

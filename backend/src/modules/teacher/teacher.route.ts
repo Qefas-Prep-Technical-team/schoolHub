@@ -9,6 +9,7 @@ import {
     getTeacherClassDetail,
     getTeacherClassAssignments,
     getTeacherClassGrades,
+    getTeacherSubjects,
 } from "./teacher-dashboard.controller";
 
 const router = Router();
@@ -50,6 +51,13 @@ router.get("/students", getTeacherStudents);
  * @access  Private-Teacher
  */
 router.get("/classes", getTeacherClasses);
+
+/**
+ * @route   GET /api/v1/teacher/subjects
+ * @desc    Get all subjects assigned to the teacher
+ * @access  Private-Teacher
+ */
+router.get("/subjects", getTeacherSubjects);
 
 /**
  * @route   GET /api/v1/teacher/classes/:classId

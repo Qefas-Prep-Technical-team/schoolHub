@@ -3,17 +3,17 @@ export const FEATURE_FLAGS_TEACHERS = {
   // Feature Set 1: Core Teaching Tools (ALWAYS ENABLED)
   dashboard: true,
   classes: true,
-  assignments: true,
+  assignments: false,
   exams: true,
   grades: true,
   parents: false,
-  documents: true,
+  documents: false,
   students: true,
 
   // Feature Set 2: Daily Operations (DISABLE DURING DEVELOPMENT)
   attendance: false,
   messages: false,
-  notifications: true,
+  notifications: false,
   linking: true,
 
   // Feature Set 3: Analytics & AI (DISABLE DURING DEVELOPMENT)

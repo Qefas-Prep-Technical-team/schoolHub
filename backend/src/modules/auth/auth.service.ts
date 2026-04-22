@@ -3,12 +3,10 @@ import prisma from "../../config/database";
 import { Resend } from "resend";
 
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { generateAccessToken } from "../../services/authService";
-import { OAuth2Client } from "google-auth-library";
 import { generateUniqueCode } from "../../utils/code-generator";
 import { UserRole } from "@prisma/client";
-
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Get student by code (for parent to verify before linking)
 export const getStudentByCode = async (req: Request, res: Response) => {
@@ -301,91 +299,135 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
 };
 
 export const googleAuthService = async (
-  idToken: string,
+  supabaseToken: string,
   userRole: UserRole,
 ) => {
-  const ticket = await client.verifyIdToken({
-    idToken: idToken,
-    audience: process.env.GOOGLE_CLIENT_ID,
-  });
+  // Verify Supabase's own signed JWT (the session.access_token from the frontend).
+  // This is always present and contains the verified Google user data embedded by Supabase.
+  // We verify it with our SUPABASE_JWT_SECRET from the Supabase Dashboard → Settings → API.
+  const jwtSecret = process.env.SUPABASE_JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error("SUPABASE_JWT_SECRET is not configured on the server.");
+  }
 
-  const payload = ticket.getPayload();
-  if (!payload) throw new Error("Invalid Google token");
+  let decoded: any;
+  try {
+    decoded = jwt.verify(supabaseToken, jwtSecret);
+  } catch (err: any) {
+    throw new Error("Invalid or expired Supabase session token.");
+  }
 
-  const { sub: googleId, email, name } = payload;
+  // Extract user info from the Supabase JWT payload
+  const email: string | undefined = decoded.email;
+  const userMeta = decoded.user_metadata || {};
+  const name: string | undefined = userMeta.full_name || userMeta.name;
+  const googleId: string | undefined = userMeta.provider_id || userMeta.sub;
+
   if (!email) throw new Error("Google account must have an email");
 
   let user: any;
-  const roleStr = userRole.toLowerCase();
+  let actualRole: UserRole = userRole;
 
-  switch (userRole) {
-    case UserRole.STUDENT: {
-      user = await prisma.student.findUnique({ where: { googleId } });
-      if (!user) {
-        user = await prisma.student.findUnique({ where: { email } });
-        if (user) {
-          user = await prisma.student.update({
-            where: { email },
-            data: { googleId, authProvider: "GOOGLE" },
-          });
-        } else {
-          const studentCode = await generateUniqueCode(
-            prisma,
-            "student",
-            name || "Student",
-          );
-          user = await prisma.student.create({
-            data: {
-              name: name || "Google User",
-              email: email,
-              googleId,
-              authProvider: "GOOGLE",
-              studentCode,
-              role: UserRole.STUDENT,
-              verified: true,
-            },
-          });
-        }
-      }
-      break;
+  // Global lookup to detect "Wrong Portal" logins
+  const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
+    prisma.student.findFirst({ where: { OR: [{ googleId }, { email }] } }),
+    prisma.teacher.findFirst({ where: { OR: [{ googleId }, { email }] } }),
+    prisma.admin.findFirst({ where: { OR: [{ googleId }, { email }] } }),
+    prisma.parent.findFirst({ where: { OR: [{ googleId }, { email }] } }),
+  ]);
+
+  const existingUser = existingStudent || existingTeacher || existingAdmin || existingParent;
+
+  if (existingUser) {
+    user = existingUser;
+    // Determine the actual role based on which table they were found in
+    if (existingStudent) actualRole = UserRole.STUDENT;
+    else if (existingTeacher) actualRole = UserRole.TEACHER;
+    else if (existingAdmin) actualRole = UserRole.ADMIN;
+    else if (existingParent) actualRole = UserRole.PARENT;
+
+    // Link Google ID if not already linked
+    if (!user.googleId && googleId) {
+      const updateData = { googleId, authProvider: "GOOGLE", verified: true };
+      if (actualRole === UserRole.STUDENT) user = await prisma.student.update({ where: { id: user.id }, data: updateData });
+      else if (actualRole === UserRole.TEACHER) user = await prisma.teacher.update({ where: { id: user.id }, data: updateData });
+      else if (actualRole === UserRole.ADMIN) user = await prisma.admin.update({ where: { id: user.id }, data: { ...updateData, status: "APPROVED" } });
+      else if (actualRole === UserRole.PARENT) user = await prisma.parent.update({ where: { id: user.id }, data: updateData });
     }
-
-    case UserRole.PARENT: {
-      user = await prisma.parent.findUnique({ where: { googleId } });
-      if (!user) {
-        user = await prisma.parent.findUnique({ where: { email } });
-        if (user) {
-          user = await prisma.parent.update({
-            where: { email },
-            data: { googleId, authProvider: "GOOGLE" },
-          });
-        } else {
-          const parentCode = await generateUniqueCode(
-            prisma,
-            "parent",
-            name || "Parent",
-          );
-          user = await prisma.parent.create({
-            data: {
-              fullName: name || "Google User",
-              email: email,
-              googleId,
-              authProvider: "GOOGLE",
-              parentCode,
-              role: UserRole.PARENT,
-            },
-          });
-        }
+  } else {
+    // If user doesn't exist, create them in the requested role
+    switch (userRole) {
+      case UserRole.STUDENT: {
+        const studentCode = await generateUniqueCode(prisma, "student", name || "Student");
+        user = await prisma.student.create({
+          data: {
+            name: name || "Google User",
+            email,
+            googleId,
+            authProvider: "GOOGLE",
+            studentCode,
+            role: UserRole.STUDENT,
+            verified: true,
+          },
+        });
+        break;
       }
-      break;
-    }
 
-    default:
-      throw new Error(
-        "Google Login only supported for Students and Parents currently",
-      );
+      case UserRole.TEACHER: {
+        const teacherCode = await generateUniqueCode(prisma, "teacher", name || "Teacher");
+        user = await prisma.teacher.create({
+          data: {
+            name: name || "Google User",
+            email,
+            googleId,
+            authProvider: "GOOGLE",
+            teacherCode,
+            role: UserRole.TEACHER,
+            verified: true,
+          },
+        });
+        break;
+      }
+
+      case UserRole.ADMIN: {
+        const adminCode = await generateUniqueCode(prisma, "admin", name || "Admin");
+        user = await prisma.admin.create({
+          data: {
+            name: name || "Google User",
+            email,
+            googleId,
+            authProvider: "GOOGLE",
+            adminCode,
+            role: UserRole.ADMIN,
+            verified: true,
+            status: "APPROVED",
+          },
+        });
+        break;
+      }
+
+      case UserRole.PARENT: {
+        const parentCode = await generateUniqueCode(prisma, "parent", name || "Parent");
+        user = await prisma.parent.create({
+          data: {
+            fullName: name || "Google User",
+            email,
+            googleId,
+            authProvider: "GOOGLE",
+            parentCode,
+            role: UserRole.PARENT,
+            verified: true,
+          },
+        });
+        break;
+      }
+
+      default:
+        throw new Error(`Google Login not supported for role: ${userRole}`);
+    }
   }
 
-  const token = generateAccessToken(user.id, userRole);
+  const token = generateAccessToken(user.id, actualRole);
   return { user, token };
 };
+

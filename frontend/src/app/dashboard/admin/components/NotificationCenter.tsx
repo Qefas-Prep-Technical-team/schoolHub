@@ -24,10 +24,12 @@ import { linkService } from '@/lib/api/services/linkService';
 import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
 export default function NotificationCenter() {
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
   const { userType } = useAuthStore();
   const { data: notifications = [], isLoading: isLoadingNotifications } = useNotifications({ limit: 10 });
   const { data: unreadCountData } = useUnreadCount();
@@ -77,10 +79,8 @@ export default function NotificationCenter() {
     );
   };
 
-  // Filter for Messages & Announcements
-  const filteredNotifications = notifications.filter((n: Notification) => 
-    n.type === 'MESSAGE' || n.type === 'ANNOUNCEMENT'
-  );
+  // Remove filter to show all notification types
+  const filteredNotifications = notifications;
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -94,7 +94,7 @@ export default function NotificationCenter() {
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-accent h-10 w-10">
           <Bell className="h-5 w-5" />
@@ -108,7 +108,7 @@ export default function NotificationCenter() {
       
       <DropdownMenuContent align="end" className="w-[380px] p-0 shadow-2xl border-border bg-background rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b">
-          <DropdownMenuLabel className="p-0 font-bold text-base">Messages & Announcements</DropdownMenuLabel>
+          <DropdownMenuLabel className="p-0 font-bold text-base">Activity & Notifications</DropdownMenuLabel>
           {unreadCount > 0 && (
             <Button 
               variant="ghost" 
@@ -142,6 +142,7 @@ export default function NotificationCenter() {
                   onClick={() => {
                     if (n.link) router.push(n.link);
                     if (!n.isRead) handleMarkAsRead(n.id);
+                    setIsOpen(false);
                   }}
                 >
                   {!n.isRead && (
@@ -217,12 +218,14 @@ export default function NotificationCenter() {
           <Button 
             variant="ghost" 
             className="w-full h-9 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white"
-            onClick={() => {
-              const rolePath = userType?.toLowerCase() || 'admin';
-              router.push(`/dashboard/${rolePath}/notifications`);
-            }}
+            asChild
           >
-            See all notifications
+            <Link 
+              href={`/dashboard/${userType?.toLowerCase() || 'admin'}/notifications`}
+              onClick={() => setIsOpen(false)}
+            >
+              See all notifications
+            </Link>
           </Button>
         </div>
       </DropdownMenuContent>

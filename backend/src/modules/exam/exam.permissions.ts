@@ -12,6 +12,8 @@ export const canManageExam = async ({
   userType: UserRole;
   examId: string;
 }) => {
+  if (!examId) return false;
+
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
   });

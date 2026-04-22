@@ -10,24 +10,27 @@ export const queryKeys = {
   profile: () => [...queryKeys.all, "profile"] as const,
 };
 
-export const useLinkRequests = (options: { page?: number; limit?: number; category?: string; status?: string } = {}) => {
+export const useLinkRequests = (params: { page?: number; limit?: number; category?: string; status?: string } = {}, options: any = {}) => {
   return useQuery({
-    queryKey: queryKeys.requests(options),
-    queryFn: () => linkService.getLinkRequests(options),
+    queryKey: queryKeys.requests(params),
+    queryFn: () => linkService.getLinkRequests(params),
+    ...options
   });
 };
 
-export const usePendingLinkRequests = (options: { page?: number; limit?: number; category?: string } = {}) => {
+export const usePendingLinkRequests = (params: { page?: number; limit?: number; category?: string } = {}, options: any = {}) => {
   return useQuery({
-    queryKey: queryKeys.pending(options),
-    queryFn: () => linkService.getPendingLinkRequests(options),
+    queryKey: queryKeys.pending(params),
+    queryFn: () => linkService.getPendingLinkRequests(params),
+    ...options
   });
 };
 
-export const useActiveLinks = (options: { page?: number; limit?: number; category?: string } = {}) => {
+export const useActiveLinks = (params: { page?: number; limit?: number; category?: string } = {}, options: any = {}) => {
   return useQuery({
-    queryKey: queryKeys.active(options),
-    queryFn: () => linkService.getActiveLinks(options),
+    queryKey: queryKeys.active(params),
+    queryFn: () => linkService.getActiveLinks(params),
+    ...options
   });
 };
 

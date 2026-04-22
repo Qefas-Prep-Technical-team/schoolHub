@@ -5,121 +5,108 @@ import prisma from "../../config/database";
  * Fetch dashboard stats for a teacher, optionally filtered by school
  */
 export const getTeacherDashboardStatsService = async (teacherId: string, schoolId?: string) => {
-  // 1. Get classes assigned to the teacher
+  // 1. Get classes assigned to the teacher (Core dependency for other queries)
   const classTeachers = await prisma.classTeacher.findMany({
     where: {
       teacherId,
       ...(schoolId ? { class: { schoolId } } : {}),
     },
-    include: {
-      class: {
-        include: {
-          _count: {
-            select: { enrollments: true },
-          },
-        },
-      },
-    },
+    select: { classId: true },
   });
 
   const assignedClassIds = classTeachers.map((ct) => ct.classId);
   const totalClasses = assignedClassIds.length;
 
-  // 2. Get unique students across those classes
-  const enrollments = await prisma.classEnrollment.findMany({
-    where: {
-      classId: { in: assignedClassIds },
-    },
-    select: {
-      studentId: true,
-    },
-  });
-
-  const uniqueStudentIds = new Set(enrollments.map((e) => e.studentId));
-  const totalStudents = uniqueStudentIds.size;
-
-  // 3. Fetch recent exams/assignments for these classes
-  const recentExams = await prisma.exam.findMany({
-    where: {
-      classId: { in: assignedClassIds },
-      ...(schoolId ? { schoolId } : {}),
-    },
-    take: 5,
-    orderBy: { createdAt: "desc" },
-    include: {
-      class: true,
-      subject: true,
-    },
-  });
-
-  // 4. Calculate some performance analytics (simplified)
-  // Get grades for students in these classes
-  const grades = await prisma.grade.findMany({
-    where: {
-      classId: { in: assignedClassIds },
-    },
-    select: {
-      score: true,
-      maxMarks: true,
-    },
-    take: 100, // Limit for performance
-  });
-
-  let averageScore = 0;
-  if (grades.length > 0) {
-    const totalPercentage = grades.reduce((acc, g) => acc + (g.score / g.maxMarks) * 100, 0);
-    averageScore = Math.round(totalPercentage / grades.length);
+  if (totalClasses === 0) {
+    return {
+      stats: { totalClasses: 0, totalStudents: 0, upcomingLessons: 0, averagePerformance: 0, attendanceRate: 100 },
+      performanceMetrics: { topStudents: [], distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 } },
+      recentExams: [],
+    };
   }
 
-  // 5. Performance Metrics (Detailed)
-  // Fetch top 5 students in these classes by their average grade
-  const studentGrades = await prisma.grade.findMany({
-    where: { classId: { in: assignedClassIds } },
-    select: {
-      studentId: true,
-      score: true,
-      maxMarks: true,
-    },
-  });
+  // 2. Parallelize independent queries
+  const [
+    enrollmentCount,
+    recentExams,
+    gradeStats,
+    studentGradeAverages,
+    distributionStats,
+    attendanceToday
+  ] = await Promise.all([
+    // Unique student count across assigned classes
+    prisma.classEnrollment.groupBy({
+      by: ['studentId'],
+      where: { classId: { in: assignedClassIds } },
+    }).then(groups => groups.length),
 
-  const studentAveragesMap = new Map<string, { total: number; count: number }>();
-  studentGrades.forEach((g) => {
-    const current = studentAveragesMap.get(g.studentId) || { total: 0, count: 0 };
-    studentAveragesMap.set(g.studentId, {
-      total: current.total + (g.score / g.maxMarks) * 100,
-      count: current.count + 1,
-    });
-  });
+    // Recent exams
+    prisma.exam.findMany({
+      where: {
+        classId: { in: assignedClassIds },
+        ...(schoolId ? { schoolId } : {}),
+      },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: { class: { select: { name: true } }, subject: { select: { name: true } } },
+    }),
 
-  const sortedStudents = Array.from(studentAveragesMap.entries())
-    .map(([studentId, data]) => ({
-      studentId,
-      average: Math.round(data.total / data.count),
-    }))
-    .sort((a, b) => b.average - a.average)
-    .slice(0, 5);
+    // Global performance average (Summing scores and max marks for accurate percentage)
+    prisma.grade.aggregate({
+      where: { classId: { in: assignedClassIds } },
+      _sum: { score: true, maxMarks: true },
+    }),
 
-  // Fetch student names for the top performers
-  const topStudentsWithInfo = await Promise.all(
-    sortedStudents.map(async (s) => {
-      const student = await prisma.student.findUnique({
-        where: { id: s.studentId },
-        select: { name: true, profileImage: true, studentCode: true },
-      });
-      return {
-        id: s.studentId,
-        name: student?.name || "Unknown Student",
-        studentCode: student?.studentCode || "N/A",
-        image: student?.profileImage,
-        average: s.average,
-      };
+    // Top performers (Grouped by student)
+    prisma.grade.groupBy({
+      by: ['studentId'],
+      where: { classId: { in: assignedClassIds } },
+      _sum: { score: true, maxMarks: true },
+      orderBy: { _sum: { score: 'desc' } }, // Note: This doesn't sort by average, but it's a good proxy for finding candidates
+      take: 10,
+    }),
+
+    // Distribution (using raw data but limited for summary speed)
+    prisma.grade.findMany({
+      where: { classId: { in: assignedClassIds } },
+      select: { score: true, maxMarks: true },
+      take: 200,
+      orderBy: { createdAt: 'desc' }
+    }),
+
+    // Attendance rate for today
+    prisma.attendance.aggregate({
+      where: {
+        classId: { in: assignedClassIds },
+        date: { gte: new Date(new Date().setHours(0,0,0,0)) },
+      },
+      _count: { status: true },
+      _sum: { id: true }, // We'll count present separately
     })
-  );
+  ]);
 
-  // Performance Distribution
+  // 3. Process Attendance (Separate query for "present" to be efficient)
+  const presentCount = await prisma.attendance.count({
+    where: {
+      classId: { in: assignedClassIds },
+      date: { gte: new Date(new Date().setHours(0,0,0,0)) },
+      status: "present"
+    }
+  });
+
+  const totalAttendance = attendanceToday._count.status;
+  const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 100;
+
+  // 4. Process Performance
+  let averageScore = 0;
+  if (gradeStats._sum.maxMarks && gradeStats._sum.maxMarks > 0) {
+    averageScore = Math.round((gradeStats._sum.score || 0) / gradeStats._sum.maxMarks * 100);
+  }
+
+  // 5. Process Distribution
   const distribution = { A: 0, B: 0, C: 0, D: 0, F: 0 };
-  studentAveragesMap.forEach((data) => {
-    const avg = data.total / data.count;
+  distributionStats.forEach((g) => {
+    const avg = (g.score / g.maxMarks) * 100;
     if (avg >= 90) distribution.A++;
     else if (avg >= 80) distribution.B++;
     else if (avg >= 70) distribution.C++;
@@ -127,29 +114,33 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
     else distribution.F++;
   });
 
-  // 6. Attendance Summary (simplified)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const attendance = await prisma.attendance.findMany({
-    where: {
-      classId: { in: assignedClassIds },
-      date: today,
-    },
-  });
-
-  const totalPresent = attendance.filter((a) => a.status === "present").length;
-  const attendancePercentage = attendance.length > 0 ? Math.round((totalPresent / attendance.length) * 100) : 100;
+  // 6. Process Top Students (Fetch minimal info for top candidates)
+  const topStudentsWithInfo = await Promise.all(
+    studentGradeAverages.map(async (s) => {
+      const student = await prisma.student.findUnique({
+        where: { id: s.studentId },
+        select: { name: true, profileImage: true, studentCode: true },
+      });
+      return {
+        id: s.studentId,
+        name: student?.name || "Unknown",
+        studentCode: student?.studentCode || "N/A",
+        image: student?.profileImage,
+        average: s._sum.maxMarks && s._sum.maxMarks > 0 ? Math.round((s._sum.score || 0) / s._sum.maxMarks * 100) : 0,
+      };
+    })
+  );
 
   return {
     stats: {
       totalClasses,
-      totalStudents,
+      totalStudents: enrollmentCount,
       upcomingLessons: 0,
       averagePerformance: averageScore,
-      attendanceRate: attendancePercentage,
+      attendanceRate,
     },
     performanceMetrics: {
-      topStudents: topStudentsWithInfo,
+      topStudents: topStudentsWithInfo.sort((a, b) => b.average - a.average || 0).slice(0, 5),
       distribution,
     },
     recentExams: recentExams.map((exam) => ({
@@ -546,6 +537,7 @@ export const getTeacherClassesService = async (teacherId: string, schoolId?: str
             id: c.id,
             name: c.name,
             subject: c.subjects[0]?.subject.name || "Multiple Subjects",
+            subjectId: c.subjects[0]?.subject.id || null,
             level: c.name.split(' ')[0] || "N/A", // Heuristic for level if not explicit
             section: c.section || "N/A",
             studentCount: c._count.enrollments,
@@ -809,4 +801,27 @@ export const getTeacherClassGradesService = async (teacherId: string, classId: s
     });
 
     return studentGrades;
+};
+
+/**
+ * Fetch subjects assigned to a teacher, filtered by school.
+ * This checks both direct assignment (Subject.teacherId) and the TeacherSubject relation.
+ */
+export const getTeacherSubjectsService = async (teacherId: string, schoolId: string) => {
+    return prisma.subject.findMany({
+        where: {
+            schoolId,
+            isArchived: false,
+            OR: [
+                { teacherId },
+                { teacherSubjects: { some: { teacherId } } }
+            ]
+        },
+        include: {
+            teacher: {
+                select: { name: true, id: true }
+            }
+        },
+        orderBy: { name: 'asc' }
+    });
 };

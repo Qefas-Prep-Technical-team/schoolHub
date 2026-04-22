@@ -56,7 +56,7 @@ export default function TopNavBar() {
 
 
   return (
-    <header className="sticky top-0 z-30 h-16 flex items-center bg-white/60 dark:bg-slate-950/60 backdrop-blur-xl border-b border-white/20 dark:border-slate-800/10 transition-all duration-500 px-4 md:px-6">
+    <header className="sticky top-0 z-30 h-20 flex items-center bg-white/60 dark:bg-slate-950/60 backdrop-blur-xl border-b border-white/20 dark:border-slate-800/10 transition-all duration-500 px-4 md:px-6">
       <div className="flex items-center justify-between w-full max-w-[1600px] mx-auto gap-4">
         {/* Left Section */}
         <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
@@ -90,27 +90,26 @@ export default function TopNavBar() {
             userId={user?.id || ""}
             onSelect={(id, name) => setSelectedSchoolId(id, name)}
           />
+        </div>
 
-          <div className={cn(
-            "relative w-full transition-all duration-500 hidden xl:block group",
-            isCollapsed ? "max-w-[480px]" : "max-w-[240px]"
-          )}>
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary" size={15} />
+        {/* Central Search Section */}
+        <div className="hidden md:flex flex-1 justify-center px-8">
+          <div className="relative w-full max-w-6xl group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary" size={22} />
             <input 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Quick search..." 
-              className="w-full pl-10 pr-12 py-2 rounded-xl bg-slate-100/50 dark:bg-slate-900/50 text-sm border border-transparent focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all duration-300 outline-none shadow-inner" 
+              placeholder="Search anything: students, classes, or activity..." 
+              className="w-full pl-16 pr-18 py-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 text-base font-semibold border border-transparent focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all duration-300 outline-none shadow-inner" 
             />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black text-slate-400 select-none shadow-sm">
-              <span className="text-[9px] mt-0.5">⌘</span>K
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black text-slate-400 select-none shadow-sm">
+              <span className="text-[9px] mt-0.5 opacity-60">⌘</span>K
             </div>
           </div>
         </div>
 
         {/* Right Section */}
-        <div className="flex items-center gap-3 shrink-0">
-
+        <div className="flex items-center justify-end gap-3 flex-1 shrink-0">
           <div className="flex items-center gap-1">
             <NotificationCenter />
             <ThemeToggle />
