@@ -1,4 +1,5 @@
 import { apiClient } from "../client";
+import { getSupabase } from "../../supabaseClient";
 
 export const imageService = {
   /**
@@ -39,5 +40,32 @@ export const imageService = {
     const response = await apiClient.post("/upload/proxy", formData);
 
     return response.data.data; // Returns { publicUrl, key }
+  },
+
+  /**
+   * Upload file directly to Supabase Storage
+   */
+  uploadToSupabase: async (file: File, bucket: string = "school-assets") => {
+    const supabase = getSupabase();
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(filePath);
+
+    return { publicUrl, key: filePath };
   },
 };

@@ -101,5 +101,59 @@ export const teacherService = {
       params: options,
     });
     return response.data.data;
+  },
+
+  /**
+   * Get the profile of the authenticated teacher
+   */
+  getProfile: async () => {
+    const response = await apiClient.get("/teacher/profile");
+    return response.data.data;
+  },
+
+  /**
+   * Update the teacher's profile
+   */
+  updateProfile: async (data: { 
+    name?: string; 
+    gender?: string; 
+    dateOfBirth?: string | Date;
+    profileImage?: string;
+    bannerImage?: string;
+  }) => {
+    const response = await apiClient.patch("/teacher/profile", data);
+    return response.data;
+  },
+
+  /**
+   * Request an email update
+   */
+  requestEmailUpdate: async (newEmail: string) => {
+    const response = await apiClient.post("/teacher/profile/email/request", { newEmail });
+    return response.data;
+  },
+
+  /**
+   * Verify and finalize email update
+   */
+  verifyEmailUpdate: async (code: string) => {
+    const response = await apiClient.post("/teacher/profile/email/verify", { code });
+    return response.data;
+  },
+
+  /**
+   * Get teacher settings
+   */
+  getSettings: async () => {
+    const response = await apiClient.get("/teacher/settings");
+    return response.data.data;
+  },
+
+  /**
+   * Update teacher settings
+   */
+  updateSettings: async (settings: any) => {
+    const response = await apiClient.patch("/teacher/settings", settings);
+    return response.data.data;
   }
 };

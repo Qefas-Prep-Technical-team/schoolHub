@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Noto_Sans, Roboto } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Noto_Sans, Roboto, Lexend } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import NavBar from "@/components/reusable/NavBar";
@@ -11,6 +11,7 @@ import queryClient from "@/lib/queryClient";
 import Providers from "@/utils/providers";
 import NextTopLoader from 'nextjs-toploader';
 import AppInitializer from "@/utils/AppInitializer";
+import AuthModal from "@/components/reusable/AuthModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,15 +24,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'SchoolHub – Smart School Management',
-  description: 'An all-in-one SaaS for modern schools, students, and parents.',
+  title: 'Qefas Hub – Smart Academic Management',
+  description: 'An all-in-one SaaS for modern schools, students, and parents to achieve academic excellence.',
   icons: {
     icon: './favicon.ico',
     apple: './apple-touch-icon.png',
   },
   openGraph: {
-    title: 'SchoolHub – Empowering Schools',
-    description: 'Manage school operations with ease.',
+    title: 'Qefas Hub – Empowering Education',
+    description: 'Manage academic operations with ease.',
     images: ['/meta-image.png'],
   },
 };
@@ -57,6 +58,13 @@ const roboto = Roboto({
   weight: ["400", "500", "700"],
 });
 
+const lexend = Lexend({
+  variable: "--font-lexend",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -67,9 +75,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* <!-- Primary Meta Tags --> */}
-        <title>SchoolHub Landing Page</title>
-        <meta name="title" content="SchoolHub Landing Page" />
-        <meta name="description" content="A landing page for SchoolHub" />
+        <title>Qefas Hub Landing Page</title>
+        <meta name="title" content="Qefas Hub Landing Page" />
+        <meta name="description" content="A landing page for Qefas Hub" />
         {/* <link rel="icon" href="/favicon.ico" /> */}
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
@@ -102,8 +110,9 @@ export default function RootLayout({
       <body
         className={`
           ${inter.variable} 
-    ${notoSans.variable} 
-    ${roboto.variable} 
+          ${notoSans.variable} 
+          ${roboto.variable} 
+          ${lexend.variable}
           ${geistSans.variable} 
           ${geistMono.variable} 
           antialiased
@@ -116,6 +125,7 @@ export default function RootLayout({
             <AppInitializer>
 
               <NavBar />
+              <AuthModal />
               <NextTopLoader showSpinner={false} />
               {children}
               <Footer />

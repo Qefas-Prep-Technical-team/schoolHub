@@ -10,6 +10,12 @@ import {
     getTeacherClassAssignments,
     getTeacherClassGrades,
     getTeacherSubjects,
+    getTeacherProfile,
+    updateTeacherProfile,
+    requestTeacherEmailUpdate,
+    confirmTeacherEmailUpdate,
+    getTeacherSettings,
+    updateTeacherSettings,
 } from "./teacher-dashboard.controller";
 
 const router = Router();
@@ -79,5 +85,47 @@ router.get("/classes/:classId/assignments", getTeacherClassAssignments);
  * @access  Private-Teacher
  */
 router.get("/classes/:classId/grades", getTeacherClassGrades);
+
+/**
+ * @route   GET /api/v1/teacher/profile
+ * @desc    Get the profile of the authenticated teacher
+ * @access  Private-Teacher
+ */
+router.get("/profile", getTeacherProfile);
+
+/**
+ * @route   PATCH /api/v1/teacher/profile
+ * @desc    Update the profile of the authenticated teacher
+ * @access  Private-Teacher
+ */
+router.patch("/profile", updateTeacherProfile);
+
+/**
+ * @route   POST /api/v1/teacher/profile/email/request
+ * @desc    Request an email update for the authenticated teacher
+ * @access  Private-Teacher
+ */
+router.post("/profile/email/request", requestTeacherEmailUpdate);
+
+/**
+ * @route   POST /api/v1/teacher/profile/email/verify
+ * @desc    Confirm and finalize email update for the teacher
+ * @access  Private-Teacher
+ */
+router.post("/profile/email/verify", confirmTeacherEmailUpdate);
+
+/**
+ * @route   GET /api/v1/teacher/settings
+ * @desc    Get the settings of the authenticated teacher
+ * @access  Private-Teacher
+ */
+router.get("/settings", getTeacherSettings);
+
+/**
+ * @route   PATCH /api/v1/teacher/settings
+ * @desc    Update the settings of the authenticated teacher
+ * @access  Private-Teacher
+ */
+router.patch("/settings", updateTeacherSettings);
 
 export default router;

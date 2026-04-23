@@ -148,14 +148,23 @@ export const sendEmailUpdateVerification = async (email: string, code: string) =
   });
 };
 
-export const sendVerificationEmail = async (email: string, code: string) => {
+export const sendVerificationEmail = async (email: string, code: string, type: 'welcome' | 'confirmation' = 'welcome') => {
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? process.env.TEST_EMAIL as string : email;
+
+  const subject = type === 'welcome' 
+    ? `Welcome to SchoolHub - Verify Your Account ${isTest ? `(Original: ${email})` : ''}` 
+    : `[SchoolHub] Payment Identity Verification ${isTest ? `(Original: ${email})` : ''}`;
+
+  const title = type === 'welcome' ? "Welcome to SchoolHub" : "Confirm Your Payment";
+  const description = type === 'welcome'
+    ? "Thank you for joining our academic community. Please use the verification code below to activate your account and proceed with your subscription."
+    : "Please use the secure verification code below to confirm your identity and proceed with your payment confirmation.";
 
   return await resend.emails.send({
     from: process.env.MAIL_FROM as string,
     to: recipient,
-    subject: `[SchoolHub] Verify Your Account ${isTest ? `(Original: ${email})` : ''}`,
+    subject: subject,
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
@@ -166,8 +175,8 @@ export const sendVerificationEmail = async (email: string, code: string) => {
           </div>
         </div>
         
-        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">Welcome to SchoolHub</h3>
-        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">Thank you for joining our academic community. Please use the verification code below to activate your account.</p>
+        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">${title}</h3>
+        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">${description}</p>
         
         <div style="margin: 32px 0; padding: 40px; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 24px; text-align: center;">
           <p style="margin: 0 0 12px 0; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Verification Code</p>
@@ -300,7 +309,7 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
 
 export const googleAuthService = async (
   supabaseToken: string,
-  userRole: UserRole,
+  userRole?: UserRole,
 ) => {
   // Verify Supabase's own signed JWT (the session.access_token from the frontend).
   // This is always present and contains the verified Google user data embedded by Supabase.
@@ -312,9 +321,24 @@ export const googleAuthService = async (
 
   let decoded: any;
   try {
-    decoded = jwt.verify(supabaseToken, jwtSecret);
-  } catch (err: any) {
-    throw new Error("Invalid or expired Supabase session token.");
+    const parts = supabaseToken.split('.');
+    if (parts.length === 3) {
+      const header = JSON.parse(Buffer.from(parts[0], 'base64').toString());
+      console.log("Token Header:", header);
+    }
+    
+    // Support both HS256 (standard) and ES256 (asymmetric)
+    decoded = jwt.verify(supabaseToken, process.env.SUPABASE_JWT_SECRET!, {
+      algorithms: ['HS256', 'ES256']
+    });
+  } catch (error: any) {
+    console.error("Supabase JWT Verification Failed:", {
+      error: error.message,
+      name: error.name,
+      secretSet: !!process.env.SUPABASE_JWT_SECRET,
+      tokenLength: supabaseToken?.length
+    });
+    throw new Error("Invalid or expired session token");
   }
 
   // Extract user info from the Supabase JWT payload
@@ -356,6 +380,10 @@ export const googleAuthService = async (
     }
   } else {
     // If user doesn't exist, create them in the requested role
+    if (!userRole) {
+      throw new Error("No user role provided. If you are a new user, please sign up through the registration page.");
+    }
+
     switch (userRole) {
       case UserRole.STUDENT: {
         const studentCode = await generateUniqueCode(prisma, "student", name || "Student");

@@ -12,6 +12,7 @@ import studentRoutes from "../modules/student/student.route";
 import uploadRoutes from "../modules/upload/upload.route";
 import gradeRoutes from "../modules/grade/grade.route";
 import teacherRoutes from "../modules/teacher/teacher.route";
+import paymentRoutes from "../modules/payment/payment.route";
 
 const router = Router();
 
@@ -29,5 +30,6 @@ router.use("/students", studentRoutes);
 router.use("/upload", uploadRoutes);
 router.use("/grades", gradeRoutes);
 router.use("/teacher", teacherRoutes);
+router.use("/payment", paymentRoutes);
 
 export default router;

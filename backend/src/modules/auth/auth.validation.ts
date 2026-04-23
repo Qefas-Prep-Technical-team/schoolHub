@@ -232,7 +232,8 @@ export const googleAuthSchema = yup.object({
     idToken: yup.string().required("Google ID Token is required"),
     userRole: yup
       .string()
-      .oneOf(["STUDENT", "PARENT"], "Invalid user role for Google Login")
-      .required("User role is required"),
+      .oneOf(["STUDENT", "PARENT", "TEACHER", "ADMIN"], "Invalid user role for Google Login")
+      .optional()
+      .nullable(),
   }),
 });

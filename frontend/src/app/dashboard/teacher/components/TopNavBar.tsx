@@ -10,6 +10,7 @@ import {
   ChevronDown 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTeacherProfile } from "@/lib/api/hooks/useTeacher";
 
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
@@ -32,14 +33,13 @@ export default function TopNavBar() {
   const { toggleSidebar, state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
   const { userType, user } = useAuthStore();
+  const { data: teacherProfile } = useTeacherProfile();
   
   const { selectedSchoolId, schools, setSelectedSchoolId, setSchools } = useDashboardStore();
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    linkService.getProfile().then(setProfile).catch(() => {});
     teacherService.getLinkedSchools()
       .then(setSchools)
       .catch((err) => console.error("Failed to fetch linked schools in TopNavBar:", err));
@@ -51,8 +51,8 @@ export default function TopNavBar() {
     }
   }, [selectedSchoolId, user?.id, setSelectedSchoolId]);
 
-  const displayImage = profile?.data?.profileImage || user?.profileImage;
-  const displayName = profile?.data?.name || user?.name || user?.email;
+  const displayImage = teacherProfile?.profileImage || user?.profileImage;
+  const displayName = teacherProfile?.name || user?.name || user?.email;
 
 
   return (
@@ -121,7 +121,7 @@ export default function TopNavBar() {
           >
             <div className="relative w-7 h-7 rounded-full overflow-hidden bg-white dark:bg-slate-800 shadow-sm transition-transform group-hover:scale-110 duration-500">
               {displayImage ? (
-                <Image src={displayImage} alt="Profile" fill className="object-cover" />
+                <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
                   <User className="h-3.5 w-3.5 text-slate-400" />

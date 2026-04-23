@@ -189,6 +189,13 @@ model School {
   quizzes   Quiz[]
   exams     Exam[]
 
+  // Subscription details
+  plan               String    @default("FREE")
+  subscriptionStatus String    @default("INACTIVE")
+  subscriptionEnd    DateTime?
+  lastPaymentDate    DateTime?
+  paystackCustomerCode String?
+
   teachers        Teacher[]        @relation("SchoolToTeacher")
   currentTeachers Teacher[]        @relation("TeacherCurrentSchool")
   sessions        Session[]
@@ -315,6 +322,13 @@ model Teacher {
   profileImage String?
   bannerImage  String?
   gradingScale Json?
+  settings     Json? @default("{}")
+
+  // Subscription details
+  plan               String    @default("FREE")
+  subscriptionStatus String    @default("INACTIVE")
+  subscriptionEnd    DateTime?
+  lastPaymentDate    DateTime?
 }
 
 model Student {
@@ -359,6 +373,12 @@ model Student {
 
   profileImage String?
   bannerImage  String?
+
+  // Subscription details
+  plan               String    @default("FREE")
+  subscriptionStatus String    @default("INACTIVE")
+  subscriptionEnd    DateTime?
+  lastPaymentDate    DateTime?
 }
 
 model Parent {
@@ -389,6 +409,13 @@ model Parent {
 
   profileImage String?
   bannerImage  String?
+
+
+  // Subscription details
+  plan               String    @default("FREE")
+  subscriptionStatus String    @default("INACTIVE")
+  subscriptionEnd    DateTime?
+  lastPaymentDate    DateTime?
 
   @@map("parents")
 }
@@ -1246,4 +1273,32 @@ enum GradeStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model Transaction {
+  id                String            @id @default(uuid())
+  reference         String            @unique
+  amount            Float
+  currency          String            @default("NGN")
+  status            TransactionStatus @default(PENDING)
+  paymentMethod     String?           // e.g. "card", "bank_transfer"
+  
+  userId            String
+  userType          UserRole
+  
+  plan              String?
+  billingCycle      String?           // "monthly" or "yearly"
+  
+  metadata          Json?
+  
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([userId, userType])
+  @@map("transactions")
 }

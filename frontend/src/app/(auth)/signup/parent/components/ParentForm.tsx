@@ -9,6 +9,7 @@ import { ParentFormData, parentSchema } from '../../services/regSchema';
 import { useParentRegistration } from '../../services/useRegistrationMutations';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
+import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
 
 
 export default function ParentRegistrationForm() {
@@ -326,6 +327,19 @@ export default function ParentRegistrationForm() {
             'Create Parent Account'
           )}
         </button>
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-gray-100 dark:border-gray-800" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <GoogleLoginButton userType={UserRole.PARENT} />
 
         <p className="text-center text-sm text-[#4c809a] dark:text-gray-400">
           Already have an account?{" "}

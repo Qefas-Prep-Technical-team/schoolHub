@@ -12,6 +12,7 @@ import { useStudentRegistration } from '../../services/useRegistrationMutations'
 import { StudentFormData, studentSchema } from '../../services/regSchema';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
 import { useMemo } from 'react';
+import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
 
 
 export default function StudentRegisterForm() {
@@ -447,6 +448,19 @@ export default function StudentRegisterForm() {
               'Create Student Account'
             )}
           </button>
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-100 dark:border-gray-800" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <GoogleLoginButton userType={UserRole.STUDENT} />
         </form>
 
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">

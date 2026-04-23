@@ -976,8 +976,19 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
     console.log(testEmail, "test email");
     const resendTest = process.env.RESEND_TEST === "true" || false; // default to false if not set
     const mainEmail = resendTest ? testEmail : email;
+
+    // Detect if user exists to customize email content
+    // Sequential check to avoid hitting connection limits (P1001)
+    const admin = await prisma.admin.findUnique({ where: { email }, select: { id: true } });
+    const teacher = !admin ? await prisma.teacher.findUnique({ where: { email }, select: { id: true } }) : null;
+    const student = !admin && !teacher ? await prisma.student.findUnique({ where: { email }, select: { id: true } }) : null;
+    const parent = !admin && !teacher && !student ? await prisma.parent.findUnique({ where: { email }, select: { id: true } }) : null;
+    
+    const userExists = !!(admin || teacher || student || parent);
+    const emailType = userExists ? 'confirmation' : 'welcome';
+
     // Send email via Resend
-    const result = await sendVerificationEmail(mainEmail, code);
+    const result = await sendVerificationEmail(mainEmail, code, emailType);
     if (result.error) {
       // This will print the specific reason (e.g., "Missing required field", "Unauthorized")
       console.log("RESEND ERROR:", result.error);
@@ -1385,42 +1396,54 @@ export const login = async (req: Request, res: Response) => {
     }
 
     let user: any;
+    let actualRole: UserRole = userType as UserRole;
 
-    // Fetch user based on type
-    switch (userType) {
-      case UserRole.ADMIN:
-        user = await prisma.admin.findUnique({
-          where: { email },
-          include: { schoolAdmins: { include: { school: true } } },
-        });
-        break;
-      case UserRole.TEACHER:
-        console.log("Fetching teacher with email:", email);
-        user = await prisma.teacher.findUnique({
-          where: { email },
-          include: { school: true },
-        });
-        console.log("Fetched teacher:", user);
-        break;
-      case UserRole.STUDENT:
-        console.log("Fetching student with email:", email);
-        user = await prisma.student.findUnique({
-          where: { email },
-          include: { school: true },
-        });
-        break;
-      case UserRole.PARENT:
-        user = await prisma.parent.findUnique({
-          where: { email },
-          include: {
-            children: {
-              include: {
-                student: true,
+    const fetchUserWithRelations = async (role: UserRole, email: string) => {
+      switch (role) {
+        case UserRole.ADMIN:
+          return await prisma.admin.findUnique({
+            where: { email },
+            include: { schoolAdmins: { include: { school: true } } },
+          });
+        case UserRole.TEACHER:
+          return await prisma.teacher.findUnique({
+            where: { email },
+            include: { school: true },
+          });
+        case UserRole.STUDENT:
+          return await prisma.student.findUnique({
+            where: { email },
+            include: { school: true },
+          });
+        case UserRole.PARENT:
+          return await prisma.parent.findUnique({
+            where: { email },
+            include: {
+              children: {
+                include: {
+                  student: true,
+                },
               },
             },
-          },
-        });
-        break;
+          });
+        default:
+          return null;
+      }
+    };
+
+    // 1. Try fetching based on provided type
+    user = await fetchUserWithRelations(userType as UserRole, email);
+
+    // 2. If not found, search across other roles (Smart Search)
+    if (!user) {
+      const rolesToSearch = Object.values(UserRole).filter((r) => r !== userType);
+      for (const role of rolesToSearch) {
+        user = await fetchUserWithRelations(role as UserRole, email);
+        if (user) {
+          actualRole = role as UserRole;
+          break;
+        }
+      }
     }
 
     if (!user) {
@@ -1479,8 +1502,9 @@ export const login = async (req: Request, res: Response) => {
     }
     // ========================================
 
-    const accessToken = generateAccessToken(user.id, userType);
-    const refreshToken = await generateRefreshToken(user.id, userType);
+    // IMPORTANT: Generate token with ACTUAL role, not the one from the portal
+    const accessToken = generateAccessToken(user.id, actualRole);
+    const refreshToken = await generateRefreshToken(user.id, actualRole);
 
     res.cookie("token", accessToken, {
       httpOnly: true,
@@ -1502,9 +1526,7 @@ export const login = async (req: Request, res: Response) => {
     let responseData: any = {};
     let message = "Logged in successfully";
 
-    console.log(user.defaultTenantId);
-
-    if (userType === UserRole.ADMIN) {
+    if (actualRole === UserRole.ADMIN) {
       const schools = user.schoolAdmins.map((sa: any) => ({
         schoolId: sa.school.id,
         schoolName: sa.school.name,
@@ -1532,7 +1554,7 @@ export const login = async (req: Request, res: Response) => {
         userRole: user.role,
         accessToken,
       };
-    } else if (userType === UserRole.TEACHER) {
+    } else if (actualRole === UserRole.TEACHER) {
       responseData = {
         user: {
           id: user.id,
@@ -1549,7 +1571,7 @@ export const login = async (req: Request, res: Response) => {
         userRole: user.role,
         accessToken,
       };
-    } else if (userType === UserRole.STUDENT) {
+    } else if (actualRole === UserRole.STUDENT) {
       responseData = {
         user: {
           id: user.id,
@@ -1566,7 +1588,7 @@ export const login = async (req: Request, res: Response) => {
         userRole: user.role,
         accessToken,
       };
-    } else if (userType === UserRole.PARENT) {
+    } else if (actualRole === UserRole.PARENT) {
       responseData = {
         user: {
           id: user.id,
@@ -1600,6 +1622,120 @@ export const login = async (req: Request, res: Response) => {
 // =========================
 // VERIFY EMAIL CODE
 // =========================
+export const verifyCheckoutCode = async (req: Request, res: Response) => {
+  try {
+    const { email, code, userType } = req.body;
+    console.log("Verifying checkout code for:", { email, userType, code });
+
+    if (!email || !code || !userType) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, code, and user type are required",
+      });
+    }
+
+    if (!Object.values(UserRole).includes(userType as UserRole)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid user type" });
+    }
+
+    const found = await prisma.verificationCode.findFirst({
+      where: { email, code, userType: userType as UserRole, used: false },
+    });
+
+    if (!found)
+      return res.status(400).json({ success: false, message: "Invalid code" });
+    if (found.expiresAt < new Date())
+      return res.status(400).json({ success: false, message: "Code expired" });
+
+    await prisma.verificationCode.update({
+      where: { id: found.id },
+      data: { used: true },
+    });
+
+    // Handle "Register them if not registered"
+    let user: any;
+    const role = userType as UserRole;
+
+    // Check if user exists
+    switch (role) {
+      case UserRole.ADMIN:
+        user = await prisma.admin.findUnique({ where: { email } });
+        if (!user) {
+          const adminCode = await generateUniqueCode(prisma, "admin", "Admin");
+          user = await prisma.admin.create({
+            data: { email, name: "School Admin", role: UserRole.ADMIN, adminCode, verified: true }
+          });
+        }
+        break;
+      case UserRole.TEACHER:
+        user = await prisma.teacher.findUnique({ where: { email } });
+        if (!user) {
+          const teacherCode = await generateUniqueCode(prisma, "teacher", "Teacher");
+          user = await prisma.teacher.create({
+            data: { email, name: "Teacher", role: UserRole.TEACHER, teacherCode, verified: true }
+          });
+        }
+        break;
+      case UserRole.STUDENT:
+        user = await prisma.student.findUnique({ where: { email } });
+        if (!user) {
+          const studentCode = await generateUniqueCode(prisma, "student", "Student");
+          user = await prisma.student.create({
+            data: { email, name: "Student", role: UserRole.STUDENT, studentCode, verified: true }
+          });
+        }
+        break;
+      case UserRole.PARENT:
+        user = await prisma.parent.findUnique({ where: { email } });
+        if (!user) {
+          const parentCode = await generateUniqueCode(prisma, "parent", "Parent");
+          user = await prisma.parent.create({
+            data: { email, fullName: "Parent", role: UserRole.PARENT, parentCode, verified: true }
+          });
+        }
+        break;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully for checkout.",
+      userRole: userType,
+      userId: user?.id
+    });
+  } catch (error) {
+    console.error("Error verifying checkout code:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const checkEmail = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const admin = await prisma.admin.findUnique({ where: { email }, select: { id: true } });
+    if (admin) return res.status(200).json({ success: true, exists: true, role: UserRole.ADMIN });
+
+    const teacher = await prisma.teacher.findUnique({ where: { email }, select: { id: true } });
+    if (teacher) return res.status(200).json({ success: true, exists: true, role: UserRole.TEACHER });
+
+    const student = await prisma.student.findUnique({ where: { email }, select: { id: true } });
+    if (student) return res.status(200).json({ success: true, exists: true, role: UserRole.STUDENT });
+
+    const parent = await prisma.parent.findUnique({ where: { email }, select: { id: true } });
+    if (parent) return res.status(200).json({ success: true, exists: true, role: UserRole.PARENT });
+
+    return res.status(200).json({ success: true, exists: false });
+  } catch (error) {
+    console.error("Error checking email:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 export const verifyEmailCode = async (req: Request, res: Response) => {
   try {
     const { email, code, userType } = req.body;
@@ -2252,10 +2388,10 @@ export const googleAuth = async (req: Request, res: Response) => {
   try {
     const { idToken, userRole } = req.body;
 
-    if (!idToken || !userRole) {
+    if (!idToken) {
       return res.status(400).json({
         success: false,
-        message: "Google ID Token and User Role are required",
+        message: "Google ID Token is required",
       });
     }
 

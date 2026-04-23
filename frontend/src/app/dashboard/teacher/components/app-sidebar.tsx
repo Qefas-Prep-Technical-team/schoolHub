@@ -43,8 +43,10 @@ import {
     ChevronDown,
     Share2,
     Copy,
-    LucideIcon
+    LucideIcon,
+    Loader2
 } from "lucide-react";
+import { useTeacherProfile } from "@/lib/api/hooks/useTeacher"
 import { Box, Typography } from "@mui/material"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -72,17 +74,16 @@ export const menuItems: MenuItem[] = [
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/dashboard/teacher/assignments", featureKey: "assignments" },
     { icon: FileCheck2, label: "Exams/Quizzes", href: "/dashboard/teacher/exams&quizzes", featureKey: "exams" },
     { icon: FileText, label: "Documents", href: "/dashboard/teacher/documents", featureKey: "documents" },
-    { icon: MessageSquare, label: "Messages", href: "/teacher/messages", featureKey: "messages" },
-    { icon: MessageSquare, label: "Messages", href: "/teacher/messages", featureKey: "messages" },
+    { icon: MessageSquare, label: "Messages", href: "/dashboard/teacher/messages", featureKey: "messages" },
     { icon: BellRing, label: "Notifications", href: "/dashboard/teacher/notifications", featureKey: "notifications" },
     { icon: Share2, label: "Linking Hub", href: "/dashboard/teacher/linking", featureKey: "linking" },
-    { icon: BarChart3, label: "Reports", href: "/teacher/reports", featureKey: "reports" },
-    { icon: BookMarked, label: "Resources", href: "/teacher/resources", featureKey: "resources" },
-    { icon: Brain, label: "AI Assistant", href: "/teacher/ai-tools", featureKey: "aiTools" },
-    { icon: CalendarClock, label: "Timetable", href: "/teacher/timetable", featureKey: "timetable" },
-    { icon: UserCircle, label: "Profile", href: "/teacher/profile", featureKey: "profile" },
-    { icon: Settings, label: "Settings", href: "/teacher/settings", featureKey: "settings" },
-    { icon: LifeBuoy, label: "Support", href: "/teacher/support", featureKey: "support" },
+    { icon: BarChart3, label: "Reports", href: "/dashboard/teacher/reports", featureKey: "reports" },
+    { icon: BookMarked, label: "Resources", href: "/dashboard/teacher/resources", featureKey: "resources" },
+    { icon: Brain, label: "AI Assistant", href: "/dashboard/teacher/ai-tools", featureKey: "aiTools" },
+    { icon: CalendarClock, label: "Timetable", href: "/dashboard/teacher/timetable", featureKey: "timetable" },
+    { icon: UserCircle, label: "Profile", href: "/dashboard/teacher/profile", featureKey: "profile" },
+    { icon: Settings, label: "Settings", href: "/dashboard/teacher/settings", featureKey: "settings" },
+    { icon: LifeBuoy, label: "Support", href: "/dashboard/teacher/support", featureKey: "support" },
 ];
 
 // Filter menu items based on feature flags
@@ -95,12 +96,8 @@ export function AppSidebar() {
     const isCollapsed = state === "collapsed"
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
-    const [profile, setProfile] = useState<any>(null)
+    const { data: profile } = useTeacherProfile()
     const pathname = usePathname()
-
-    useEffect(() => {
-        linkService.getProfile().then(setProfile).catch(() => {})
-    }, [])
 
     const copyCode = (code: string) => {
         navigator.clipboard.writeText(code)
@@ -190,7 +187,11 @@ export function AppSidebar() {
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton className="flex items-center justify-between hover:bg-accent/60 transition-colors py-3 px-4 rounded-lg">
                                     <div className="flex items-center">
-                                        <User2 className="mr-2 h-5 w-5" />
+                                        {profile?.profileImage ? (
+                                            <img src={profile.profileImage} alt="Profile" className="mr-2 h-6 w-6 rounded-full object-cover border border-primary/20" />
+                                        ) : (
+                                            <User2 className="mr-2 h-5 w-5" />
+                                        )}
                                         {!isCollapsed && (
                                             <div className="flex flex-col items-start">
                                                 <span className="font-medium text-[0.9rem] leading-none mb-1">{profile?.name || 'Teacher'}</span>

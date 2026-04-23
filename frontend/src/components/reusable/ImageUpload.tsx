@@ -38,8 +38,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     try {
       setIsUploading(true);
       
-      // 1. Proxy upload through backend (to Bunny.net)
-      const { publicUrl } = await imageService.proxyUploadToBunny(file);
+      // 1. Upload directly to Supabase
+      const { publicUrl } = await imageService.uploadToSupabase(file);
       
       // 2. Callback to update parent state with the public URL
       onChange(publicUrl);

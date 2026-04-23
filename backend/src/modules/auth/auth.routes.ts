@@ -5,6 +5,8 @@ import {
   registerStudent,
   registerParent,
   verifyEmailCode,
+  verifyCheckoutCode,
+  checkEmail,
   requestVerificationCode,
   login,
   refreshToken,
@@ -61,12 +63,14 @@ router.post("/parents/link-child", linkChildToParent);
 router.post("/google", validateRequest(googleAuthSchema), googleAuth);
 
 // Verification
+router.post("/check-email", checkEmail);
 router.post(
   "/request-code",
   validateRequest(requestCodeSchema),
   requestVerificationCode
 );
 router.post("/verify-code", validateRequest(verifyCodeSchema), verifyEmailCode);
+router.post("/verify-checkout-code", validateRequest(verifyCodeSchema), verifyCheckoutCode);
 
 // Login & Session
 router.post("/login", validateRequest(loginSchema), login);

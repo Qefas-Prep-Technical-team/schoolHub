@@ -25,6 +25,7 @@ import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 import PhoneCallbackOutlinedIcon from '@mui/icons-material/PhoneCallbackOutlined';
 import { LayoutDashboard, Rocket } from 'lucide-react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useAuthModalStore } from '@/utils/AuthModalStore';
 
 
 interface NavBarDrawerProps {
@@ -32,6 +33,7 @@ interface NavBarDrawerProps {
 }
 export default function NavBarDrawer(props: NavBarDrawerProps) {
     const { isAuthenticated } = useAuthStore();
+    const { openModal } = useAuthModalStore();
     const { theme } = useTheme();
     const { pages } = props;
     const [open, setOpen] = React.useState(false);
@@ -53,28 +55,13 @@ export default function NavBarDrawer(props: NavBarDrawerProps) {
     }
     const DrawerList = (
         <Box sx={{ width: 250, backgroundColor: theme == "dark" ? "black" : "white", flex: 1, color: theme == "dark" ? "white" : "black" }} role="presentation" onClick={toggleDrawer(false)}>
-            <Box className='flex items-center flex-row justify-center flex-1 ml-5 mt-4 mb-4'>
-                <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' }, mr: 1 }}>
-                    <Image src="/schoolhub.png" alt="school hub logo" width={20} height={20} className='space-x-20' />
-                </Box>
-                <Typography
-                    variant="h5"
-                    noWrap
-                    component="a"
-                    href="/"
-                    sx={{
-                        mr: 2,
-                        display: { xs: 'flex', md: 'none' },
-                        flexGrow: 1,
-                        fontFamily: 'monospace',
-                        fontWeight: 700,
-                        letterSpacing: '.3rem',
-                        color: 'inherit',
-                        textDecoration: 'none',
-                    }}
-                >
-                    SCHOOLHUB
-                </Typography>
+            <Box className='flex items-center gap-3 px-6 py-8'>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-600/20">
+                    <Image src="/schoolhub.png" alt="Qefas Hub" width={22} height={22} className="brightness-0 invert" />
+                </div>
+                <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase font-sans">
+                    Qefas <span className="text-blue-600">Hub</span>
+                </span>
             </Box>
             <Divider className='pt' sx={{ backgroundColor: theme == "dark" ? "white" : "black" }} />
             <List>
@@ -91,30 +78,26 @@ export default function NavBarDrawer(props: NavBarDrawerProps) {
                     </Link>
                 ))}
                 <Divider className='pt' sx={{ backgroundColor: theme == "dark" ? "white" : "black", mt: 10 }} />
-                <Link href={"/signup"} passHref>
-                    <ListItem disablePadding>
-                        <ListItemButton>
-                            <ListItemIcon sx={{ color: theme == "dark" ? "white" : "black" }}>
-                                <Rocket />
-                            </ListItemIcon>
-                            <ListItemText primary={"Get Started"} />
-                        </ListItemButton>
-                    </ListItem>
-                </Link>
+                <ListItem disablePadding onClick={() => openModal('signup-role')}>
+                    <ListItemButton>
+                        <ListItemIcon sx={{ color: theme == "dark" ? "white" : "black" }}>
+                            <Rocket />
+                        </ListItemIcon>
+                        <ListItemText primary={"Get Started"} />
+                    </ListItemButton>
+                </ListItem>
                 {
                     !isAuthenticated ?
                         <>
 
-                            <Link href={"/login"} passHref>
-                                <ListItem disablePadding>
-                                    <ListItemButton>
-                                        <ListItemIcon sx={{ color: theme == "dark" ? "white" : "black" }}>
-                                            <LoginOutlinedIcon />
-                                        </ListItemIcon>
-                                        <ListItemText primary={"Login"} />
-                                    </ListItemButton>
-                                </ListItem>
-                            </Link>
+                            <ListItem disablePadding onClick={() => openModal('login-role')}>
+                                <ListItemButton>
+                                    <ListItemIcon sx={{ color: theme == "dark" ? "white" : "black" }}>
+                                        <LoginOutlinedIcon />
+                                    </ListItemIcon>
+                                    <ListItemText primary={"Login"} />
+                                </ListItemButton>
+                            </ListItem>
                             <Link href={"/contact"} passHref>
                                 <ListItem disablePadding>
                                     <ListItemButton>

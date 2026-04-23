@@ -1,5 +1,28 @@
-import { LinkEntityType, LinkStatus, LinkType, PrismaClient } from "@prisma/client";
+import { LinkEntityType, LinkStatus, LinkType } from "@prisma/client";
 import prisma from "../../config/database";
+
+/**
+ * Get settings for a teacher
+ */
+export const getTeacherSettingsService = async (teacherId: string) => {
+  const teacher = await prisma.teacher.findUnique({
+    where: { id: teacherId },
+    select: { settings: true },
+  });
+  return teacher?.settings || {};
+};
+
+/**
+ * Update settings for a teacher
+ */
+export const updateTeacherSettingsService = async (teacherId: string, settings: any) => {
+  const teacher = await prisma.teacher.update({
+    where: { id: teacherId },
+    data: { settings },
+    select: { settings: true },
+  });
+  return teacher.settings;
+};
 
 /**
  * Fetch dashboard stats for a teacher, optionally filtered by school
@@ -823,5 +846,108 @@ export const getTeacherSubjectsService = async (teacherId: string, schoolId: str
             }
         },
         orderBy: { name: 'asc' }
+    });
+};
+
+/**
+ * Fetch teacher profile
+ */
+export const getTeacherProfileService = async (teacherId: string) => {
+    return prisma.teacher.findUnique({
+        where: { id: teacherId },
+        include: {
+            school: { select: { id: true, name: true, schoolCode: true } },
+            currentSchool: { select: { id: true, name: true, schoolCode: true } }
+        }
+    });
+};
+
+/**
+ * Update teacher profile
+ */
+export const updateTeacherProfileService = async (teacherId: string, data: {
+    name?: string;
+    gender?: any;
+    dateOfBirth?: string | Date;
+    profileImage?: string;
+    bannerImage?: string;
+}) => {
+    const updateData: any = {};
+    if (data.name) updateData.name = data.name;
+    if (data.gender) updateData.gender = data.gender;
+    if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth);
+    if (data.profileImage !== undefined) updateData.profileImage = data.profileImage;
+    if (data.bannerImage !== undefined) updateData.bannerImage = data.bannerImage;
+
+    return prisma.teacher.update({
+        where: { id: teacherId },
+        data: updateData,
+        include: {
+            school: true,
+            currentSchool: true
+        }
+    });
+};
+
+/**
+ * Request email update for teacher
+ */
+export const requestTeacherEmailUpdateService = async (teacherId: string, newEmail: string) => {
+    // Check if email is already taken in the teacher table
+    const existingUser = await prisma.teacher.findUnique({ where: { email: newEmail } });
+    if (existingUser) {
+        throw new Error("This email is already registered with another account");
+    }
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await prisma.teacher.update({
+        where: { id: teacherId },
+        data: {
+            // @ts-ignore - pending fields exist in schema
+            pendingEmail: newEmail,
+            emailVerificationCode: code,
+            emailVerificationExpiry: expiry,
+        } as any,
+    });
+
+    return code;
+};
+
+/**
+ * Verify and finalize email update for teacher
+ */
+export const verifyTeacherEmailUpdateService = async (teacherId: string, code: string) => {
+    const teacher = await prisma.teacher.findUnique({
+        where: { id: teacherId },
+    });
+
+    if (!teacher) throw new Error("Teacher not found");
+    
+    const t = teacher as any;
+
+    if (t.emailVerificationCode !== code) {
+        throw new Error("Invalid verification code");
+    }
+
+    if (new Date() > new Date(t.emailVerificationExpiry)) {
+        throw new Error("Verification code has expired");
+    }
+
+    if (!t.pendingEmail) {
+        throw new Error("No pending email update found");
+    }
+
+    return prisma.teacher.update({
+        where: { id: teacherId },
+        data: {
+            email: t.pendingEmail,
+            // @ts-ignore - fields exist in schema
+            pendingEmail: null,
+            emailVerificationCode: null,
+            emailVerificationExpiry: null,
+        } as any,
     });
 };

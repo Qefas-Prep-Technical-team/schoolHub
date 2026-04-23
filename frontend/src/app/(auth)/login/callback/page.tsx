@@ -64,10 +64,11 @@ export default function GoogleAuthCallback() {
                 // Supabase does not forward the Google ID token (provider_id_token) reliably,
                 // so we verify the Supabase access_token on the backend instead.
                 // It's a proper signed JWT containing the user's email, name, and Google sub.
-                const supabaseToken = session.access_token;
-
+                const supabaseToken = session?.access_token;
+                console.log("Supabase session token present:", !!supabaseToken, "Length:", supabaseToken?.length);
+                
                 if (!supabaseToken) {
-                    throw new Error("No session token found. Please sign in again.");
+                    throw new Error("No session token found. Please try logging in again.");
                 }
 
                 // 3. Finalize authentication with our custom backend

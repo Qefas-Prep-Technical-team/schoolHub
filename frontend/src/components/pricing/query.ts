@@ -3,30 +3,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { PricingData } from "../Types/Pricing";
 import { FrequentlyAskedQuestions } from "../Types/Home";
+import { paymentService } from "@/lib/api/services/paymentService";
 
-const fetchPricing = async (): Promise<PricingData[]> => {
-    const res = await fetch("/json/PricingPlans.json");
-    return res.json();
-};
 export const useFetchPricing = () => {
     const { data, isLoading, error } = useQuery<PricingData[]>({
         queryKey: ["fetchPricing"],
-        queryFn: fetchPricing,
+        queryFn: paymentService.getPlans,
     })
     return { data, isLoading, error };
 }
+
 // fetch fetch pricing faq
-
-
-
-const fetchPricingFAQ = async (): Promise<FrequentlyAskedQuestions[]> => {
-    const res = await fetch("/json/PricingFAQ.json");
-    return res.json();
-};
 export const useFetchPricingFAQ = () => {
     const { data, isLoading, error } = useQuery<FrequentlyAskedQuestions[]>({
         queryKey: ["fetchPricingFAQ"],
-        queryFn: fetchPricingFAQ,
+        queryFn: paymentService.getFAQ,
     })
     return { data, isLoading, error };
 }

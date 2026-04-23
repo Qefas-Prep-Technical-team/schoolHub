@@ -57,20 +57,21 @@ function NavBar() {
     };
     const { theme } = useTheme();
     return (
-        !isDashboard && <>
-            <AppBar position="static" sx={{ backgroundColor: theme === "dark" ? 'black' : "white", color: theme === "dark" ? 'white' : "black", padding: 0 }}>
-                <Toolbar className='justify-between flex p-0' disableGutters >
-                    <BigNavBar pages={pages} handleCloseNavMenu={handleCloseNavMenu} />
-                    <MiniNav
-                        handleOpenNavMenu={handleOpenNavMenu}
-                        pages={pages}
-                        handleCloseNavMenu={handleCloseNavMenu}
-                    />
-                </Toolbar>
-            </AppBar>
-            <NextTopLoader showSpinner={false} />
-        </>
-
+        !isDashboard && (
+            <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
+                <div className="max-w-[1440px] mx-auto">
+                    <Toolbar className="justify-between flex min-h-[72px] px-4 md:px-8" disableGutters>
+                        <BigNavBar pages={pages} handleCloseNavMenu={handleCloseNavMenu} />
+                        <MiniNav
+                            handleOpenNavMenu={handleOpenNavMenu}
+                            pages={pages}
+                            handleCloseNavMenu={handleCloseNavMenu}
+                        />
+                    </Toolbar>
+                </div>
+                <NextTopLoader showSpinner={false} color="#2563eb" height={3} />
+            </header>
+        )
     );
 }
 export default NavBar;

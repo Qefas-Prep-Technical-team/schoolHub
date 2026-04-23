@@ -1,116 +1,82 @@
 import * as React from 'react';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import { useTheme } from 'next-themes';
 import EachPriceCard from './EachPriceCard';
 import { useFetchPricing } from './query';
 import { useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 
-
-interface TabPanelProps {
-    children?: React.ReactNode;
-    index: number;
-    value: number;
-
-}
 interface PricingTabProps {
     billingType: 'monthly' | 'yearly';
     setBillingType: (type: 'monthly' | 'yearly') => void;
 }
 
-function CustomTabPanel(props: TabPanelProps) {
-    const { children, value, index, ...other } = props;
-
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`simple-tabpanel-${index}`}
-            aria-labelledby={`simple-tab-${index}`}
-            {...other}
-        >
-            {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-        </div>
-    );
-}
-
-function a11yProps(index: number) {
-    return {
-        id: `simple-tab-${index}`,
-        'aria-controls': `simple-tabpanel-${index}`,
-    };
-}
-
 export default function PricingTab({ billingType, setBillingType }: PricingTabProps) {
     const queryClient = useQueryClient();
-    const { data, isLoading } = useFetchPricing()
+    const { data, isLoading } = useFetchPricing();
     const [value, setValue] = React.useState(0);
-    const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-        setValue(newValue);
-    };
-    const { theme, setTheme } = useTheme();
-    const [selectedCategory, setSelectedCategory] = React.useState('individuals');
-    console.log("Selected Category:", selectedCategory);
-    const individuals = data && data?.find(d => d.category === "individuals");
-    const schools = data?.find(d => d.category === "schools");
-    const teachers = data?.find(d => d.category === "teachers");
+    const { theme } = useTheme();
+
+    const categories = ['individuals', 'schools', 'teachers'];
+    const filteredData = data?.find(d => d.category === categories[value]);
+
     return (
-        <Box
-            className="container mx-auto flex-col items-center justify-center md:p-4   "
-            sx={{ display: 'flex', backgroundColor: theme === "dark" ? "" : '#fff', color: theme === "dark" ? '#fff' : '#000' }}>
-            <Box className=" justify-center items-center border-2" sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs
-                    sx={{
-                        '& .MuiTabs-indicator': {
-                            backgroundColor: theme === "dark" ? '#fff' : '#000',
-                        },
-                        '& .MuiTab-root': {
-                            color: theme === "dark" ? '#fff' : '#000',
-                        },
-                    }}
-                    value={value} onChange={handleChange} aria-label="basic tabs example">
-                    <Tab onClick={() => { setSelectedCategory("indviduals"); queryClient.invalidateQueries({ queryKey: ['fetchPricing'] }); }} label="individuals" {...a11yProps(0)} />
-                    <Tab onClick={() => { setSelectedCategory("schools"); queryClient.invalidateQueries({ queryKey: ['fetchPricing'] }); }} label="schools" {...a11yProps(1)} />
-                    <Tab onClick={() => { setSelectedCategory("teachers"); queryClient.invalidateQueries({ queryKey: ['fetchPricing'] }); }} label="teachers" {...a11yProps(2)} />
-                </Tabs>
-            </Box>
+        <Box className="w-full flex flex-col items-center">
+            {/* Category Switcher */}
+            <div className="flex items-center justify-center mb-16 p-1.5 bg-slate-100/50 dark:bg-slate-800/30 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-2xl shadow-sm">
+                {categories.map((cat, index) => (
+                    <button
+                        key={cat}
+                        onClick={() => {
+                            setValue(index);
+                            queryClient.invalidateQueries({ queryKey: ['fetchPricing'] });
+                        }}
+                        className={`relative px-8 md:px-12 py-3 text-sm font-bold capitalize transition-all duration-300 rounded-xl ${
+                            value === index 
+                            ? 'text-white' 
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                        }`}
+                    >
+                        {value === index && (
+                            <motion.div 
+                                layoutId="category-pill"
+                                className="absolute inset-0 bg-slate-900 dark:bg-blue-600 rounded-xl shadow-lg"
+                                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                            />
+                        )}
+                        <span className="relative z-10">{cat}</span>
+                    </button>
+                ))}
+            </div>
 
-            <CustomTabPanel value={value} index={0}>
-                <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 px-6 md:px-14">
-                    {
-                        individuals && individuals.tabs.map((tabs) => {
-                            return <EachPriceCard key={tabs.type} {...tabs} />
-                        }
-                        )
-                    }
-
-                </div>
-            </CustomTabPanel>
-            <CustomTabPanel value={value} index={1}>
-                <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 px-4 md:px-14">
-                    {
-                        schools && schools.tabs.map((tabs) => {
-                            console.log("Tabs Data:", tabs);
-                            return <EachPriceCard key={tabs.type} {...tabs} />
-                        }
-                        )
-                    }
-
-                </div>
-            </CustomTabPanel>
-            <CustomTabPanel value={value} index={2}>
-                <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 px-14">
-                    {
-                        teachers && teachers.tabs.map((tabs) => {
-                            console.log("Tabs Data:", tabs);
-                            return <EachPriceCard key={tabs.type} {...tabs} />
-                        }
-                        )
-                    }
-
-                </div>
-            </CustomTabPanel>
+            {/* Bento Pricing Cards Grid */}
+            <div className="w-full max-w-7xl mx-auto">
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={value}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4"
+                    >
+                        {isLoading ? (
+                            Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className={`h-[500px] rounded-[2.5rem] bg-slate-100 dark:bg-slate-800 animate-pulse border border-slate-200 dark:border-slate-700 ${i === 1 ? 'lg:-mt-8 lg:mb-8' : ''}`}></div>
+                            ))
+                        ) : (
+                            filteredData?.tabs.map((tab, index) => (
+                                <EachPriceCard 
+                                    key={tab.type} 
+                                    {...tab} 
+                                    category={filteredData.category} 
+                                    index={index}
+                                />
+                            ))
+                        )}
+                    </motion.div>
+                </AnimatePresence>
+            </div>
         </Box>
     );
 }

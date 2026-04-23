@@ -35,7 +35,8 @@ export const useLoginMutation = () => {
       // Use the name for the toast!
       authToast.loginSuccess(userWithType.name);
 
-      const userDash = variables.userType.toLowerCase();
+      const actualRole = response.data.userRole || variables.userType;
+      const userDash = actualRole.toLowerCase().replace('_', '-');
 
       setTimeout(() => {
         router.push(`/dashboard/${userDash}`);

@@ -5,27 +5,47 @@ import InAction from "@/components/Home/InAction";
 import IntroSection from "@/components/Home/IntroSection";
 import KeyBenefits from "@/components/Home/KeyBenefits";
 import UsersSay from "@/components/Home/UsersSay";
-import Box from "@mui/material/Box";
-import Container from "@mui/material/Container";
+import MobileExperience from "@/components/Home/MobileExperience";
+import FinalCTA from "@/components/Home/FinalCTA";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from "react";
-
+import { motion, useScroll } from "framer-motion";
 
 export default function Home() {
   const [queryClient] = useState(() => new QueryClient());
+  const { scrollYProgress } = useScroll();
  
   return (
     <QueryClientProvider client={queryClient}>
-      <Box component={"main"} className="min-h-screen flex items-center flex-col justify-center bg-white dark:bg-black text-black dark:text-gray-200 transition-all duration-300">
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-1 bg-blue-600 z-[100] origin-left"
+        style={{ scaleX: scrollYProgress }}
+      />
+      <main className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-500 overflow-x-hidden noise-bg">
+        {/* Hero Section */}
         <IntroSection />
-        <Container maxWidth="xl" className="mt-10 mb-10" component={"section"}>
-          <KeyBenefits />
-          <Features />
-          <UsersSay />
-          <InAction />
-          <FrequentlyAskedQuestion />
-        </Container>
-      </Box>
+        
+        {/* Institutional Partners & Value Props */}
+        <KeyBenefits />
+
+        {/* Mobile Experience Showcase */}
+        <MobileExperience />
+
+        {/* Features Grid */}
+        <Features />
+
+        {/* Testimonials */}
+        <UsersSay />
+
+        {/* Video Showcase */}
+        <InAction />
+
+        {/* FAQ Section */}
+        <FrequentlyAskedQuestion />
+
+        {/* Final CTA Section */}
+        <FinalCTA />
+      </main>
     </QueryClientProvider>
   );
 }
