@@ -2,11 +2,23 @@ import prisma from "../../config/database";
 import { PRICING_PLANS } from "./plans.data";
 import { LinkEntityType } from "@prisma/client";
 
+import { PricingService } from "./pricing.service";
+
 /**
  * Get limits for a specific entity based on their current plan
+ * If planData is provided (already fetched from DB), uses it. 
+ * Otherwise falls back to PRICING_PLANS constants.
  */
-export const getEntityLimits = (role: string, plan: string) => {
-    // Map role to category for lookup in plans.data
+export const getEntityLimits = (role: string, planName: string, dbPlanData?: any) => {
+    if (dbPlanData) {
+        return {
+            students: dbPlanData.maxStudents || 0,
+            classes: dbPlanData.maxClasses || 0,
+            storageGB: dbPlanData.maxStorageGb || 1
+        };
+    }
+
+    // Fallback to constants if no DB data provided
     const categoryMap: Record<string, string> = {
         'ADMIN': 'schools',
         'SCHOOL': 'schools',
@@ -17,10 +29,8 @@ export const getEntityLimits = (role: string, plan: string) => {
     
     const category = categoryMap[role.toUpperCase()] || 'schools';
     const planGroup = PRICING_PLANS.find(p => p.category === category);
-    const planData = planGroup?.tabs.find(t => t.type.toLowerCase() === plan.toLowerCase());
+    const planData = planGroup?.tabs.find(t => t.type.toLowerCase() === planName.toLowerCase());
 
-    // Extract limits from features text if not explicitly defined (for robustness)
-    // Most limits are in the 'features' array for schools
     const limits = {
         students: 0,
         classes: 0,
@@ -28,31 +38,31 @@ export const getEntityLimits = (role: string, plan: string) => {
     };
 
     if (category === 'schools') {
-        if (plan.toLowerCase() === 'free') {
+        if (planName.toLowerCase() === 'free') {
             limits.students = 50;
             limits.classes = 3;
-        } else if (plan.toLowerCase() === 'starter') {
+        } else if (planName.toLowerCase() === 'starter') {
             limits.students = 200;
             limits.classes = 20;
-        } else if (plan.toLowerCase() === 'growth') {
-            limits.students = 1000000; // Virtually unlimited
+        } else if (planName.toLowerCase() === 'growth') {
+            limits.students = 1000000;
             limits.classes = 1000;
         }
     } else if (category === 'teachers') {
-        if (plan.toLowerCase() === 'free') {
+        if (planName.toLowerCase() === 'free') {
             limits.classes = 1;
-            limits.students = 50; // Default limit for free educator
-        } else if (plan.toLowerCase() === 'essential') {
+            limits.students = 50;
+        } else if (planName.toLowerCase() === 'essential') {
             limits.classes = 5;
             limits.students = 200;
         } else {
-            limits.classes = 100; // Pro
+            limits.classes = 100;
             limits.students = 1000;
         }
     } else if (category === 'parents') {
-        if (plan.toLowerCase() === 'free') limits.students = 1;
-        else if (plan.toLowerCase() === 'essential') limits.students = 3;
-        else limits.students = 100; // Pro
+        if (planName.toLowerCase() === 'free') limits.students = 1;
+        else if (planName.toLowerCase() === 'essential') limits.students = 3;
+        else limits.students = 100;
     }
 
     return limits;
@@ -67,7 +77,7 @@ export const canSchoolAcceptStudent = async (schoolId: string) => {
     // Use the robust stats service that handles ID resolution and diverse links
     const stats = await getSchoolStatsService(schoolId);
     
-    // Fetch school to get current plan
+    // Fetch school to get current plan and its limits
     const school = await prisma.school.findFirst({
         where: {
             OR: [
@@ -75,12 +85,12 @@ export const canSchoolAcceptStudent = async (schoolId: string) => {
                 { tenantId: schoolId }
             ]
         },
-        select: { plan: true }
+        include: { subscriptionPlan: true }
     });
 
     if (!school) return false;
 
-    const limits = getEntityLimits('SCHOOL', school.plan);
+    const limits = getEntityLimits('SCHOOL', school.plan, school.subscriptionPlan);
     
     return stats.students < limits.students;
 };

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../../config/database";
-import { generateUniqueCode } from "../../utils/code-generator";
+import { generateUniqueCode, generateRandomSixDigit } from "../../utils/code-generator";
 import {
   loginUser,
   sendPasswordResetEmail,
@@ -28,6 +28,7 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9\s-]/g, "") // remove special chars
     .replace(/\s+/g, "-") // spaces to hyphen
     .replace(/-+/g, "-"); // collapse multiple hyphens
+
 
 export const registerSchool = async (req: Request, res: Response) => {
   try {
@@ -939,8 +940,6 @@ export const registerParent = async (
     });
   }
 };
-const generateCode = () =>
-  Math.floor(100000 + Math.random() * 900000).toString();
 
 export const requestVerificationCode = async (req: Request, res: Response) => {
   try {
@@ -967,7 +966,7 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
       where: { email, userType: userType as UserRole, used: false },
     });
 
-    const code = generateCode();
+    const code = generateRandomSixDigit();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     // Save code WITH userType
@@ -1994,8 +1993,8 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
     else userType = UserRole.PARENT;
 
     // Generate reset token (6-digit code like your verification)
-    const resetCode = generateCode();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const resetCode = generateRandomSixDigit();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 60 minutes
 
     // Delete any existing reset tokens for this email
     await prisma.passwordReset.deleteMany({

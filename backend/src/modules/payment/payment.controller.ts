@@ -135,11 +135,19 @@ export const getPaymentHistory = async (req: Request, res: Response) => {
   }
 };
 
+import { PricingService } from "../platform/billing/pricing.service";
+
 /**
- * Get all pricing plans
+ * Get all pricing plans (Dynamic Resolver)
  */
 export const getPricingPlans = async (req: Request, res: Response) => {
-  return res.status(200).json(PRICING_PLANS);
+    try {
+        const plans = await PricingService.resolveAllPlans();
+        return res.status(200).json(plans);
+    } catch (error) {
+        console.error("Pricing Resolution Error:", error);
+        return res.status(500).json({ success: false, message: "Error fetching pricing plans" });
+    }
 };
 
 /**

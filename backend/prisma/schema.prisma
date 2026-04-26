@@ -46,6 +46,10 @@ model School {
   trialEndsAt                             DateTime?
   trialPlan                               String?
   trialUsed                               Boolean            @default(false)
+  maxStudentsOverride                     Int?
+  maxExamsOverride                        Int?
+  maxClassesOverride                      Int?
+  maxStorageGbOverride                    Float?
   FileMetric                              FileMetric[]
   payments                                Payment[]
   transactionHistories                    TransactionHistory[]
@@ -55,8 +59,8 @@ model School {
   Teacher_Teacher_activeSchoolIdToSchool  Teacher[]          @relation("Teacher_activeSchoolIdToSchool")
   Teacher_Teacher_primarySchoolIdToSchool Teacher[]          @relation("Teacher_primarySchoolIdToSchool")
   Tenant                                  Tenant?
-  subscriptionPlan                        SubscriptionPlan?  @relation(fields: [subscriptionPlanId], references: [id])
-  subscriptionPlanId                      String?
+  subscriptionPlan       SubscriptionPlan?  @relation(fields: [subscriptionPlanId], references: [id])
+  subscriptionPlanId     String?
   classes                                 Class[]
   departments                             Department[]
   exams                                   Exam[]
@@ -1029,6 +1033,13 @@ enum UserRole {
   PARENT
 }
 
+enum PlatformRole {
+  OWNER
+  FINANCE_ADMIN
+  SUPPORT_AGENT
+  TECH_ADMIN
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -1252,15 +1263,62 @@ model SettlementAccount {
 }
 
 model SubscriptionPlan {
-  id           String   @id @default(uuid())
-  name         String   @unique
-  maxStudents  Int
-  maxExams     Int
-  maxClasses   Int
-  maxStorageGb Float
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  schools      School[]
+  id            String   @id @default(uuid())
+  name          String
+  type          String   // e.g., 'free', 'starter', 'growth', 'pro'
+  category      String   // 'schools', 'teachers', 'parents', 'students'
+  monthlyPrice  Float    @default(0)
+  yearlyPrice   Float    @default(0)
+  description   String?
+  maxStudents   Int      @default(0)
+  maxExams      Int      @default(0)
+  maxClasses    Int      @default(0)
+  maxStorageGb  Float    @default(1)
+  maxTeachers   Int      @default(0)
+  maxParents    Int      @default(0)
+  maxAiUsage    Int      @default(0)
+  features      String[] // Stored as array of strings
+  badgeLabel    String?
+  buttonText    String   @default("Get Started")
+  isActive      Boolean  @default(true)
+  isPopular     Boolean  @default(false)
+  hasTrial      Boolean  @default(false)
+  trialDays     Int      @default(0)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  schools       School[]
 
+  @@unique([category, type])
   @@map("subscription_plans")
+}
+
+model PlatformStaff {
+  id           String               @id @default(uuid())
+  fullName     String
+  email        String               @unique
+  password     String?
+  role         PlatformRole
+  isActive     Boolean              @default(true)
+  inviteToken  String?              @unique
+  inviteExpires DateTime?
+  lastLoginAt  DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  activityLogs PlatformActivityLog[]
+
+  @@map("platform_staff")
+}
+
+model PlatformActivityLog {
+  id         String        @id @default(uuid())
+  staffId    String
+  action     String
+  entityType String
+  entityId   String?
+  details    Json?
+  createdAt  DateTime      @default(now())
+  staff      PlatformStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@map("platform_activity_logs")
 }

@@ -25,7 +25,7 @@ export const getSchoolUsageService = async (schoolId: string) => {
 
   // 2. Resolve limits - normalize to consistent internal names
   const planName = (school.plan || DEFAULT_PLAN).toUpperCase();
-  const rawLimits = school.subscriptionPlan 
+  const baseLimits = school.subscriptionPlan 
     ? {
         maxStudents: school.subscriptionPlan.maxStudents,
         maxExams: school.subscriptionPlan.maxExams,
@@ -35,10 +35,10 @@ export const getSchoolUsageService = async (schoolId: string) => {
     : (PLAN_LIMITS[planName] || PLAN_LIMITS[DEFAULT_PLAN]);
 
   const limits = {
-    students: rawLimits.maxStudents,
-    exams: rawLimits.maxExams,
-    classes: rawLimits.maxClasses,
-    storageGb: rawLimits.maxStorageGb,
+    students: (school as any).maxStudentsOverride ?? baseLimits.maxStudents,
+    exams: (school as any).maxExamsOverride ?? baseLimits.maxExams,
+    classes: (school as any).maxClassesOverride ?? baseLimits.maxClasses,
+    storageGb: (school as any).maxStorageGbOverride ?? baseLimits.maxStorageGb,
   };
 
   // 3. Fetch real-time usage stats in parallel using the resolved UUID

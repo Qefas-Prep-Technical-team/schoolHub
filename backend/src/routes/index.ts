@@ -17,10 +17,12 @@ import teacherRoutes from "../modules/teacher/teacher.route";
 import paymentRoutes from "../modules/payment/payment.route";
 import financeRoutes from "../modules/finance/finance.route";
 import subscriptionRoutes from "../modules/subscription/subscription.route";
+import platformRoutes from "../modules/platform";
 
 const router = Router();
 
 router.get("/health", (req, res) => res.status(200).send("API OK"));
+router.use("/platform", platformRoutes);
 router.use("/auth", authRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/subscription", subscriptionRoutes);

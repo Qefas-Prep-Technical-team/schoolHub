@@ -23,7 +23,7 @@ const normalizeNamePart = (value: string): string => {
   return cleaned.padEnd(3, "x");
 };
 
-const generateRandomSixDigit = (): string =>
+export const generateRandomSixDigit = (): string =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
 export const buildCode = (entity: CodeEntity, name: string): string => {

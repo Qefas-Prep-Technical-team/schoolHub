@@ -223,7 +223,7 @@ export const sendSetupCompleteEmail = async (email: string) => {
         </div>
         
         <div style="text-align: center; margin-bottom: 32px;">
-          <a href="${process.env.FRONTEND_URL}/auth/login" style="display: inline-block; background: #2563eb; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Access Your Dashboard</a>
+          <a href="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/auth/login" style="display: inline-block; background: #2563eb; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Access Your Dashboard</a>
         </div>
         
         <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center;">
@@ -297,7 +297,8 @@ export const loginUser = async (email: string, password: string) => {
 };
 
 export const sendPasswordResetEmail = async (email: string, code: string) => {
-  const resetLink = `${process.env.FRONTEND_URL}/auth/forgot-password/ResetPassword?token=${code}`;
+  const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const resetLink = `${baseUrl}/auth/forgot-password/ResetPassword?token=${code}`;
   
   if (!email) {
     throw new Error("Email is required to send reset link");
