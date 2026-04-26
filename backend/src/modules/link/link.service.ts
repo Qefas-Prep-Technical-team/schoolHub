@@ -1,6 +1,7 @@
 // src/modules/link/link.service.ts
 import prisma from "../../config/database";
 import { LinkEntityType, LinkType, LinkRequestStatus } from "@prisma/client";
+import { checkLinkCapacity } from "../payment/subscription.utils";
 
 type FindEntityResult = {
   type: LinkEntityType;
@@ -231,6 +232,20 @@ export const createLinkRequestService = async ({
     throw new Error(
       `Invalid link combination: ${requester.type} cannot create ${linkType} request for ${target.type}`
     );
+  }
+
+  // Capacity Check: If the request involves linking a student, ensure the target has capacity
+  if (linkType === 'SCHOOL_STUDENT' || linkType === 'TEACHER_STUDENT' || linkType === 'PARENT_STUDENT') {
+      const capacityTargetId = (linkType === 'SCHOOL_STUDENT' && target.type === 'SCHOOL') ? target.id : 
+                               (linkType === 'TEACHER_STUDENT' && target.type === 'TEACHER') ? target.id :
+                               (linkType === 'PARENT_STUDENT' && target.type === 'PARENT') ? target.id : null;
+      
+      if (capacityTargetId) {
+          const hasSpace = await checkLinkCapacity(capacityTargetId, target.type);
+          if (!hasSpace) {
+              throw new Error(`The target ${target.type.toLowerCase()} has reached its student capacity for their current plan.`);
+          }
+      }
   }
 
   const existingActiveLink = await prisma.relationshipLink.findFirst({

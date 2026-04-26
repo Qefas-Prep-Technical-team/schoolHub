@@ -146,7 +146,7 @@ export const registerAdminSelf = async (
             email: email.toLowerCase().trim(),
             password: hashedPassword,
             role: UserRole.ADMIN,
-            tenantIds: [tenantId],
+            tenantId: tenantId,
             verified: false, // Not verified yet
             status: "PENDING", // Waiting for approval
             adminCode: `ADM${Math.floor(1000 + Math.random() * 9000)}`,
@@ -467,7 +467,8 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
       where: {
         OR: [
           { schoolId: schoolId as string },
-          { currentSchoolId: schoolId as string },
+          { activeSchoolId: schoolId as string },
+          { primarySchoolId: schoolId as string },
         ],
       },
       select: {

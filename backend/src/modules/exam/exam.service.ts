@@ -1,4 +1,5 @@
 import prisma from "../../config/database";
+import { enforceExamLimit } from "../subscription/quota.helpers";
 import { createNotification } from "../notification/notification.service";
 import {
   AssessmentStatus,
@@ -51,6 +52,7 @@ export const createExamService = async ({
   endDate?: Date | string;
   teacherId?: string;
 }) => {
+  if (schoolId) await enforceExamLimit(schoolId);
   console.log("LOG: [createExamService] Data received:", { title, scope, schoolId });
   return prisma.exam.create({
     data: {

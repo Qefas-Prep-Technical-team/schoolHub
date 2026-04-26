@@ -5,7 +5,8 @@ import {
     verifyPayment, 
     getPaymentHistory,
     getPricingPlans,
-    getPricingFAQ
+    getPricingFAQ,
+    getUserBilling
 } from "./payment.controller";
 
 const router = Router();
@@ -24,22 +25,33 @@ router.get("/plans", getPricingPlans);
  */
 router.get("/faq", getPricingFAQ);
 
-// Authentication required for the following routes
-router.use(authenticateToken);
-
 /**
  * @route   POST /api/v1/payment/initialize
  * @desc    Initialize a payment transaction
- * @access  Private
+ * @access  Public (Guest support needed for checkout)
  */
-router.post("/initialize", initializePayment);
+router.post("/initialize", (req, res, next) => {
+    // If authenticated, authenticateToken will populate req.user
+    // If guest, it proceeds without req.user
+    next();
+}, initializePayment);
 
 /**
  * @route   POST /api/v1/payment/verify
  * @desc    Verify a payment transaction from Paystack
- * @access  Private
+ * @access  Public (Guest support needed for checkout)
  */
 router.post("/verify", verifyPayment);
+
+// Authentication required for the following routes
+router.use(authenticateToken);
+
+/**
+ * @route   GET /api/v1/payment/billing
+ * @desc    Get subscription and billing data for the current user
+ * @access  Private
+ */
+router.get("/billing", getUserBilling);
 
 /**
  * @route   GET /api/v1/payment/history

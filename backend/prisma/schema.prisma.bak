@@ -8,69 +8,66 @@ datasource db {
 }
 
 model School {
-  id                                      String             @id @default(uuid())
-  name                                    String
-  subdomain                               String?            @unique
-  tenantId                                String             @unique
-  schoolCode                              String             @unique
-  address                                 String?
-  phone                                   String?
-  schoolEmail                             String?
-  motto                                   String?
-  logo                                    String?
-  foundedYear                             Int?
-  principal                               String?
-  schoolType                              String?
-  website                                 String?
-  description                             String?
-  createdAt                               DateTime           @default(now())
-  updatedAt                               DateTime           @updatedAt
-  bannerImage                             String?
-  favicon                                 String?
-  mapLocation                             String?
-  operatingHours                          String?
-  socialLinks                             Json?
-  isTrialActive                           Boolean            @default(false)
-  lastPaymentDate                         DateTime?
-  paystackCustomerCode                    String?
-  paystackSubaccountCode                  String?
-  paystackSubaccountStatus                String             @default("pending")
-  bankName                                String?
-  accountNumber                           String?
-  accountName                             String?
-  percentageCharge                        Float?             @default(0)
-  plan                                    String             @default("FREE")
-  planId                                  String?
-  subscriptionEnd                         DateTime?
-  subscriptionStatus                      String             @default("INACTIVE")
-  trialEndsAt                             DateTime?
-  trialPlan                               String?
-  trialUsed                               Boolean            @default(false)
-  FileMetric                              FileMetric[]
-  payments                                Payment[]
-  transactionHistories                    TransactionHistory[]
-  settlementAccounts                      SettlementAccount[]
-  settings                                SchoolSetting?
-  students                                Student[]
-  Teacher_Teacher_activeSchoolIdToSchool  Teacher[]          @relation("Teacher_activeSchoolIdToSchool")
-  Teacher_Teacher_primarySchoolIdToSchool Teacher[]          @relation("Teacher_primarySchoolIdToSchool")
-  Tenant                                  Tenant?
-  subscriptionPlan                        SubscriptionPlan?  @relation(fields: [subscriptionPlanId], references: [id])
-  subscriptionPlanId                      String?
-  classes                                 Class[]
-  departments                             Department[]
-  exams                                   Exam[]
-  grades                                  Grade[]
-  requesterLinkRequests                   LinkRequest[]      @relation("requesterSchool")
-  targetLinkRequests                      LinkRequest[]      @relation("targetSchool")
-  quizzes                                 Quiz[]
-  relationshipLinks                       RelationshipLink[]
-  admins                                  SchoolAdmin[]
-  sessions                                Session[]
-  subjectPapers                           SubjectExamPaper[]
-  subjects                                Subject[]
-  teacherSubjects                         TeacherSubject[]
-  transactions                            Transaction[]
+  id                    String             @id @default(uuid())
+  name                  String
+  subdomain             String?            @unique
+  tenantId              String             @unique
+  schoolCode            String             @unique
+  address               String?
+  phone                 String?
+  schoolEmail           String?
+  motto                 String?
+  logo                  String?
+  foundedYear           Int?
+  principal             String?
+  schoolType            String?
+  website               String?
+  description           String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  bannerImage           String?
+  favicon               String?
+  mapLocation           String?
+  operatingHours        String?
+  socialLinks           Json?
+  isTrialActive         Boolean            @default(false)
+  lastPaymentDate       DateTime?
+  paystackCustomerCode  String?
+  plan                  String             @default("FREE")
+  planId                String?
+  subscriptionEnd       DateTime?
+  subscriptionStatus    String             @default("INACTIVE")
+  trialEndsAt           DateTime?
+  paystackSubaccountCode String?
+  bankName               String?
+  accountNumber          String?
+  accountName            String?
+  percentageCharge       Float?             @default(0)
+
+  payments               Payment[]
+  transactionHistories   TransactionHistory[]
+  trialPlan             String?
+  trialUsed             Boolean            @default(false)
+  settings              SchoolSetting?
+  students              Student[]
+  activeTeachers        Teacher[]          @relation("TeacherActiveSchool")
+  primaryTeachers       Teacher[]          @relation("SchoolToPrimaryTeacher")
+  classes               Class[]
+  departments           Department[]
+  exams                 Exam[]
+  file_metrics          FileMetric[]
+  grades                Grade[]
+  requesterLinkRequests LinkRequest[]      @relation("requesterSchool")
+  targetLinkRequests    LinkRequest[]      @relation("targetSchool")
+  quizzes               Quiz[]
+  relationshipLinks     RelationshipLink[]
+  tenant                Tenant?
+  transactions          Transaction[]
+  admins                SchoolAdmin[]
+  sessions              Session[]
+  subjectPapers         SubjectExamPaper[]
+  subjects              Subject[]
+  teacherSubjects       TeacherSubject[]
 }
 
 model SchoolSetting {
@@ -119,17 +116,15 @@ model Admin {
   createdAt               DateTime            @default(now())
   updatedAt               DateTime            @updatedAt
   gender                  Gender?
-  isTrialActive           Boolean            @default(false)
+  isTrialActive           Boolean             @default(false)
   lastPaymentDate         DateTime?
-  paystackCustomerCode    String?
-  paystackSubaccountCode  String?
-  plan                    String             @default("FREE")
+  plan                    String              @default("FREE")
   planId                  String?
   subscriptionEnd         DateTime?
-  subscriptionStatus      String             @default("INACTIVE")
+  subscriptionStatus      String              @default("INACTIVE")
   trialEndsAt             DateTime?
   trialPlan               String?
-  trialUsed               Boolean            @default(false)
+  trialUsed               Boolean             @default(false)
   emailVerificationCode   String?
   emailVerificationExpiry DateTime?
   pendingEmail            String?
@@ -142,55 +137,53 @@ model Admin {
 }
 
 model Teacher {
-  id                                     String             @id @default(uuid())
-  name                                   String
-  email                                  String?            @unique
-  password                               String?
-  isClaimed                              Boolean            @default(false)
-  invitationToken                        String?            @unique
-  role                                   UserRole
-  tenantId                               String             @default("default-tenant-id")
-  teacherCode                            String             @unique
-  googleId                               String?            @unique
-  authProvider                           String             @default("EMAIL")
-  subject                                String?
-  department                             String?
-  primarySchoolId                        String?
-  activeSchoolId                         String?
-  verified                               Boolean            @default(false)
-  createdAt                              DateTime           @default(now())
-  updatedAt                              DateTime           @updatedAt
-  gender                                 Gender?
-  isTrialActive                          Boolean            @default(false)
-  lastPaymentDate                        DateTime?
-  paystackCustomerCode                   String?
-  paystackSubaccountCode                 String?
-  plan                                   String             @default("FREE")
-  planId                                 String?
-  subscriptionEnd                        DateTime?
-  subscriptionStatus                     String             @default("INACTIVE")
-  trialEndsAt                            DateTime?
-  trialPlan                              String?
-  trialUsed                              Boolean            @default(false)
-  emailVerificationCode                  String?
-  emailVerificationExpiry                DateTime?
-  pendingEmail                           String?
-  bannerImage                            String?
-  profileImage                           String?
-  FileMetric                             FileMetric[]
-  School_Teacher_activeSchoolIdToSchool  School?            @relation("Teacher_activeSchoolIdToSchool", fields: [activeSchoolId], references: [id])
-  School_Teacher_primarySchoolIdToSchool School?            @relation("Teacher_primarySchoolIdToSchool", fields: [primarySchoolId], references: [id])
-  reportedAlerts                         BehaviourAlert[]
-  classTeachers                          ClassTeacher[]
-  departments                            Department[]
-  exams                                  Exam[]
-  grades                                 Grade[]
-  outgoingLinkRequests                   LinkRequest[]      @relation("requesterTeacher")
-  incomingLinkRequests                   LinkRequest[]      @relation("targetTeacher")
-  subjectExamPapers                      SubjectExamPaper[]
-  subjects                               Subject[]
-  teacherSubjects                        TeacherSubject[]
-  timetablePeriods                       TimetablePeriod[]
+  id                      String             @id @default(uuid())
+  name                    String
+  email                   String?            @unique
+  password                String?
+  isClaimed               Boolean            @default(false)
+  invitationToken         String?            @unique
+  role                    UserRole
+  tenantId                String             @default("default-tenant-id")
+  teacherCode             String             @unique
+  googleId                String?            @unique
+  authProvider            String             @default("EMAIL")
+  subject                 String?
+  department              String?
+  primarySchoolId         String?
+  activeSchoolId          String?
+  verified                Boolean            @default(false)
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  gender                  Gender?
+  isTrialActive           Boolean            @default(false)
+  lastPaymentDate         DateTime?
+  plan                    String             @default("FREE")
+  planId                  String?
+  subscriptionEnd         DateTime?
+  subscriptionStatus      String             @default("INACTIVE")
+  trialEndsAt             DateTime?
+  trialPlan               String?
+  trialUsed               Boolean            @default(false)
+  emailVerificationCode   String?
+  emailVerificationExpiry DateTime?
+  pendingEmail            String?
+  bannerImage             String?
+  profileImage            String?
+  activeSchool            School?            @relation("TeacherActiveSchool", fields: [activeSchoolId], references: [id])
+  primarySchool           School?            @relation("SchoolToPrimaryTeacher", fields: [primarySchoolId], references: [id])
+  reportedAlerts          BehaviourAlert[]
+  classTeachers           ClassTeacher[]
+  departments             Department[]
+  exams                   Exam[]
+  file_metrics          FileMetric[]
+  grades                  Grade[]
+  outgoingLinkRequests    LinkRequest[]      @relation("requesterTeacher")
+  incomingLinkRequests    LinkRequest[]      @relation("targetTeacher")
+  subjectExamPapers       SubjectExamPaper[]
+  subjects                Subject[]
+  teacherSubjects         TeacherSubject[]
+  timetablePeriods        TimetablePeriod[]
 }
 
 model Student {
@@ -207,9 +200,6 @@ model Student {
   role                    UserRole
   schoolId                String?
   originalSchoolId        String?
-  paystackCustomerCode    String?
-  paystackSubaccountCode  String?
-  planId                  String?
   verified                Boolean           @default(false)
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
@@ -229,18 +219,18 @@ model Student {
   pendingEmail            String?
   bannerImage             String?
   profileImage            String?
-  FileMetric              FileMetric[]
-  payments                Payment[]
   department              Department?       @relation(fields: [departmentId], references: [id])
   school                  School?           @relation(fields: [schoolId], references: [id])
   attendances             Attendance[]
   behaviourAlerts         BehaviourAlert[]
   classes                 ClassEnrollment[]
   examAttempts            ExamAttempt[]
+  file_metrics            FileMetric[]
   grades                  Grade[]
   outgoingLinkRequests    LinkRequest[]     @relation("requesterStudent")
   incomingLinkRequests    LinkRequest[]     @relation("targetStudent")
   parentLinks             ParentChildLink[]
+  payments                Payment[]
 }
 
 model Parent {
@@ -260,10 +250,7 @@ model Parent {
   gender                  Gender?
   isTrialActive           Boolean           @default(false)
   lastPaymentDate         DateTime?
-  paystackCustomerCode    String?
-  paystackSubaccountCode  String?
   plan                    String            @default("FREE")
-  planId                  String?
   subscriptionEnd         DateTime?
   subscriptionStatus      String            @default("INACTIVE")
   trialEndsAt             DateTime?
@@ -274,11 +261,11 @@ model Parent {
   pendingEmail            String?
   bannerImage             String?
   profileImage            String?
-  FileMetric              FileMetric[]
-  payments                Payment[]
+  file_metrics            FileMetric[]
   outgoingLinkRequests    LinkRequest[]     @relation("requesterParent")
   incomingLinkRequests    LinkRequest[]     @relation("targetParent")
   children                ParentChildLink[]
+  payments                Payment[]
 
   @@map("parents")
 }
@@ -976,52 +963,6 @@ model BehaviourAlert {
   @@map("behaviour_alerts")
 }
 
-model Transaction {
-  id                 Int       @id @default(autoincrement())
-  schoolId           String?
-  planId             String?
-  amount             Float
-  currency           String    @default("GHS")
-  status             String    @default("PENDING")
-  reference          String    @unique
-  authorizationToken String?
-  paymentMethod      String?
-  paidAt             DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  billingCycle       String?
-  plan               String?
-  userId             String?
-  userType           UserRole?
-  School             School?   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-
-  @@map("transactions")
-}
-
-model FileMetric {
-  id        String   @id
-  fileName  String
-  fileSize  BigInt
-  fileType  String
-  schoolId  String?
-  studentId String?
-  teacherId String?
-  parentId  String?
-  createdAt DateTime @default(now())
-  parents   Parent?  @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  School    School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  Student   Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  Teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-}
-
-model Tenant {
-  id        String   @id
-  name      String
-  schoolId  String   @unique
-  createdAt DateTime @default(now())
-  School    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-}
-
 enum UserRole {
   ADMIN
   TEACHER
@@ -1185,6 +1126,55 @@ enum GradeStatus {
   ARCHIVED
 }
 
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  schoolId  String   @unique
+  createdAt DateTime @default(now())
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+}
+
+model FileMetric {
+  id        String   @id @default(uuid())
+  fileName  String
+  fileSize  BigInt
+  fileType  String
+
+  schoolId  String?
+  studentId String?
+  teacherId String?
+  parentId  String?
+
+  createdAt DateTime @default(now())
+
+  school    School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student   Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  parent    Parent?  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id                Int      @id @default(autoincrement())
+  schoolId          String?
+  planId            String?
+  amount            Float
+  currency          String   @default("NGN")
+  status            String   @default("PENDING")
+  reference         String   @unique
+  authorizationToken String?
+  paymentMethod     String?
+  paidAt            DateTime?
+  userId            String?
+  userType          UserRole?
+  plan              String?
+  billingCycle      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  school            School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
 model Payment {
   id               String   @id @default(uuid())
   paymentReference String   @unique
@@ -1198,13 +1188,12 @@ model Payment {
   status           String   @default("PENDING")
   paymentMethod    String?
   paidAt           DateTime?
+  createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-  settlementAccountId String?
 
   student          Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   school           School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   parent           Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  settlementAccount SettlementAccount? @relation(fields: [settlementAccountId], references: [id])
   transactionHistories TransactionHistory[]
 
   @@map("payments")
@@ -1226,41 +1215,5 @@ model TransactionHistory {
   school               School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   payment              Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 
-  settlementAccountId  String?
-  settlementAccount    SettlementAccount? @relation(fields: [settlementAccountId], references: [id])
-
   @@map("transaction_histories")
-}
-
-model SettlementAccount {
-  id                      String   @id @default(uuid())
-  schoolId                String
-  paystackSubaccountCode  String?
-  paystackSubaccountStatus String   @default("pending")
-  bankName                String?
-  accountNumber           String?
-  accountName             String?
-  percentageCharge        Float?   @default(0)
-  isDefault               Boolean  @default(false)
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-  school                  School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  transactionHistories    TransactionHistory[]
-  payments                Payment[]
-
-  @@map("settlement_accounts")
-}
-
-model SubscriptionPlan {
-  id           String   @id @default(uuid())
-  name         String   @unique
-  maxStudents  Int
-  maxExams     Int
-  maxClasses   Int
-  maxStorageGb Float
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  schools      School[]
-
-  @@map("subscription_plans")
 }

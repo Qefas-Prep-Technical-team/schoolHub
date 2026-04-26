@@ -1,5 +1,6 @@
 import { hasActiveSchoolAccess } from "utils/school-access";
 import prisma from "../../config/database";
+import { enforceClassLimit } from "../subscription/quota.helpers";
 import { generateUniqueClassCode } from "../../utils/class-code-generator";
 import {
   ClassScope,
@@ -37,6 +38,7 @@ export const createClassService = async ({
   teacherIds = [],
   studentIds = [],
 }: CreateClassInput) => {
+  if (schoolId) await enforceClassLimit(schoolId);
   const classCode = await generateUniqueClassCode(name);
 
   if (currentUserType === UserRole.ADMIN) {

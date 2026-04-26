@@ -9,6 +9,7 @@ import {
   getSchoolStatsService,
   getSchoolPerformanceAnalysisService,
   getDashboardRecentActivityService,
+  getSchoolBillingService,
 } from "./school.service";
 
 /**
@@ -239,6 +240,30 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to fetch dashboard summary",
+    });
+  }
+};
+
+/**
+ * Handle fetching school billing data
+ */
+export const getSchoolBilling = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 5;
+
+    if (!schoolId) {
+      return res.status(400).json({ success: false, message: "schoolId is required" });
+    }
+
+    const data = await getSchoolBillingService(schoolId as string, page, limit);
+    return res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    console.error(`[School Controller Error]`, error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to fetch billing data",
     });
   }
 };

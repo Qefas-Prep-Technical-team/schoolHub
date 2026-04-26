@@ -30,13 +30,13 @@ export const getSchoolTeachersService = async (schoolId: string) => {
     link.leftEntityType === LinkEntityType.TEACHER ? link.leftEntityId : link.rightEntityId
   );
 
-  // We also check for teachers who have a direct schoolId record
+  // We also check for teachers who have a direct school record
   return prisma.teacher.findMany({
     where: {
       OR: [
         { id: { in: linkedTeacherIds } },
-        { schoolId: schoolId },
-        { currentSchoolId: schoolId }
+        { primarySchoolId: schoolId },
+        { activeSchoolId: schoolId }
       ]
     },
     select: {
@@ -63,22 +63,28 @@ export const getSchoolStudentsService = async (
   schoolId: string,
   filters: { classId?: string; gender?: any; verified?: boolean; search?: string } = {}
 ) => {
+  // 0. Resolve canonical school UUID
+  const school = await prisma.school.findFirst({
+    where: {
+      OR: [
+        { id: schoolId },
+        { tenantId: schoolId }
+      ]
+    },
+    select: { id: true }
+  });
+  
+  if (!school) return { data: [], total: 0 };
+  const resolvedId = school.id;
+
   // Find active school-student links from RelationshipLink
   const links = await prisma.relationshipLink.findMany({
     where: {
       linkType: LinkType.SCHOOL_STUDENT,
       status: LinkStatus.ACTIVE,
       OR: [
-        {
-          leftEntityType: LinkEntityType.SCHOOL,
-          leftEntityId: schoolId,
-          rightEntityType: LinkEntityType.STUDENT,
-        },
-        {
-          rightEntityType: LinkEntityType.SCHOOL,
-          rightEntityId: schoolId,
-          leftEntityType: LinkEntityType.STUDENT,
-        },
+        { leftEntityId: resolvedId },
+        { rightEntityId: resolvedId },
       ],
     },
   });
@@ -87,13 +93,20 @@ export const getSchoolStudentsService = async (
     link.leftEntityType === LinkEntityType.STUDENT ? link.leftEntityId : link.rightEntityId
   );
 
+  // Also include students from class enrollments
+  const enrollments = await prisma.classEnrollment.findMany({
+    where: { class: { schoolId: resolvedId } },
+    select: { studentId: true }
+  });
+  const enrolledStudentIds = enrollments.map(e => e.studentId);
+
   const where: any = {
     AND: [
       {
         OR: [
-          { id: { in: linkedStudentIds } },
-          { schoolId: schoolId },
-          { originalSchoolId: schoolId }
+          { id: { in: [...new Set([...linkedStudentIds, ...enrolledStudentIds])] } },
+          { schoolId: resolvedId },
+          { originalSchoolId: resolvedId }
         ]
       }
     ]
@@ -154,21 +167,89 @@ export const getSchoolStudentsService = async (
   });
 };
 
-/**
- * Fetch high-level stats for a school
- */
 export const getSchoolStatsService = async (schoolId: string) => {
-  const [students, teachers, classes, exams, subjects] = await Promise.all([
-    prisma.student.count({ where: { OR: [{ schoolId }, { originalSchoolId: schoolId }] } }),
-    prisma.teacher.count({ where: { OR: [{ schoolId }, { currentSchoolId: schoolId }] } }),
-    prisma.class.count({ where: { schoolId } }),
-    prisma.exam.count({ where: { schoolId } }),
-    prisma.subject.count({ where: { schoolId } }),
-  ]);
+  // 0. Resolve canonical school UUID (schoolId could be tenantId or id)
+  const school = await prisma.school.findFirst({
+    where: {
+      OR: [
+        { id: schoolId },
+        { tenantId: schoolId }
+      ]
+    },
+    select: { id: true }
+  });
+  
+  if (!school) return { students: 0, teachers: 0, classes: 0, exams: 0, subjects: 0 };
+  const resolvedId = school.id;
+
+  // 1. Gather all student IDs associated with this school
+  // A. From RelationshipLinks
+  const studentLinks = await prisma.relationshipLink.findMany({
+    where: {
+      linkType: LinkType.SCHOOL_STUDENT,
+      status: LinkStatus.ACTIVE,
+      OR: [
+        { leftEntityId: resolvedId },
+        { rightEntityId: resolvedId },
+      ],
+    },
+    select: { leftEntityType: true, leftEntityId: true, rightEntityId: true }
+  });
+  const linkedStudentIds = studentLinks.map((link) => 
+    link.leftEntityType === LinkEntityType.STUDENT ? link.leftEntityId : link.rightEntityId
+  );
+
+  // B. From Class Enrollments
+  const enrollments = await prisma.classEnrollment.findMany({
+    where: { class: { schoolId: resolvedId } },
+    select: { studentId: true }
+  });
+  const enrolledStudentIds = enrollments.map(e => e.studentId);
+
+  // C. Final Student Count (Direct + Linked + Enrolled)
+  const studentCount = await prisma.student.count({
+    where: {
+      OR: [
+        { id: { in: [...new Set([...linkedStudentIds, ...enrolledStudentIds])] } },
+        { schoolId: resolvedId },
+        { originalSchoolId: resolvedId }
+      ]
+    }
+  });
+
+  // 2. Count Teachers (Direct + Linked)
+  const teacherLinks = await prisma.relationshipLink.findMany({
+    where: {
+      linkType: LinkType.SCHOOL_TEACHER,
+      status: LinkStatus.ACTIVE,
+      OR: [
+        { leftEntityId: resolvedId },
+        { rightEntityId: resolvedId },
+      ],
+    },
+    select: { leftEntityType: true, leftEntityId: true, rightEntityId: true }
+  });
+  const linkedTeacherIds = teacherLinks.map((link) => 
+    link.leftEntityType === LinkEntityType.TEACHER ? link.leftEntityId : link.rightEntityId
+  );
+
+  const teacherCount = await prisma.teacher.count({
+    where: {
+      OR: [
+        { id: { in: linkedTeacherIds } },
+        { primarySchoolId: resolvedId },
+        { activeSchoolId: resolvedId }
+      ]
+    }
+  });
+
+  const classes = await prisma.class.count({ where: { schoolId: resolvedId } });
+  const exams = await prisma.exam.count({ where: { schoolId: resolvedId } });
+  const subjects = await prisma.subject.count({ where: { schoolId: resolvedId } });
 
   return {
-    students,
-    teachers,
+    students: studentCount,
+    teachers: teacherCount,
     classes,
     exams,
     subjects,
@@ -413,7 +494,10 @@ export const getDashboardRecentActivityService = async (schoolId: string) => {
     // 2. Find teachers not linked to any class (simplified logic)
     prisma.teacher.findMany({
       where: {
-        schoolId,
+        OR: [
+          { primarySchoolId: schoolId },
+          { activeSchoolId: schoolId }
+        ],
         classTeachers: { none: {} }
       },
       select: { id: true, name: true }
@@ -440,5 +524,73 @@ export const getDashboardRecentActivityService = async (schoolId: string) => {
       studentCount: (c as any)._count.enrollments,
       teacherCount: (c as any)._count.teachers,
     }))
+  };
+};
+/**
+ * Fetch consolidated billing data for a school
+ */
+export const getSchoolBillingService = async (schoolId: string, page = 1, limit = 5) => {
+  // Resolve school by UUID or tenantId (frontend may pass either)
+  const school = await prisma.school.findFirst({
+    where: {
+      OR: [
+        { id: schoolId },
+        { tenantId: schoolId },
+      ]
+    },
+    select: {
+      id: true,
+      plan: true,
+      planId: true,
+      subscriptionStatus: true,
+      subscriptionEnd: true,
+      isTrialActive: true,
+      lastPaymentDate: true,
+      paystackCustomerCode: true,
+    }
+  });
+
+  if (!school) {
+    throw new Error(`School not found for ID: "${schoolId}". Billing data cannot be fetched.`);
+  }
+
+  const resolvedId = school.id;
+  const skip = (page - 1) * limit;
+
+  // Fetch billing data sequentially to minimize concurrent connections
+  const stats = await getSchoolStatsService(resolvedId);
+  const transactions = await prisma.transaction.findMany({
+    where: { schoolId: resolvedId },
+    orderBy: { createdAt: "desc" },
+    skip,
+    take: limit,
+  });
+  const totalTransactions = await prisma.transaction.count({
+    where: { schoolId: resolvedId }
+  });
+  const storageMetric = await prisma.fileMetric.aggregate({
+    where: { schoolId: resolvedId },
+    _sum: { fileSize: true }
+  });
+
+    const latestTransaction = transactions[0];
+
+    return {
+        subscription: {
+            plan: school.plan,
+            planId: school.planId,
+            subscriptionStatus: school.subscriptionStatus,
+            subscriptionEnd: school.subscriptionEnd,
+            isTrialActive: school.isTrialActive,
+            lastPaymentDate: school.lastPaymentDate,
+            paystackCustomerCode: school.paystackCustomerCode,
+            billingCycle: latestTransaction?.billingCycle || 'monthly',
+        },
+    usage: {
+      ...stats,
+      storageBytes: storageMetric._sum.fileSize ? Number(storageMetric._sum.fileSize) : 0,
+    },
+    transactions,
+    totalTransactions,
   };
 };

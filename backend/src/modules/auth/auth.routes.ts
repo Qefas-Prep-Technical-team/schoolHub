@@ -16,6 +16,7 @@ import {
   verifyResetToken,
   completePasswordReset,
   googleAuth,
+  finalizeCheckoutSetup,
 } from "./auth.controller";
 import { validateRequest } from "../../middleware/validateRequest";
 import {
@@ -86,5 +87,7 @@ router.post(
   validateRequest(completePasswordResetSchema),
   completePasswordReset
 );
+
+router.post("/finalize-checkout-setup", finalizeCheckoutSetup);
 
 export default router;

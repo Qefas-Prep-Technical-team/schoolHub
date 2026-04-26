@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { generateAccessToken } from "../../services/authService";
 import { generateUniqueCode } from "../../utils/code-generator";
 import { UserRole } from "@prisma/client";
+import { enforceStudentLimit } from "../subscription/quota.helpers";
 
 // Get student by code (for parent to verify before linking)
 export const getStudentByCode = async (req: Request, res: Response) => {
@@ -116,9 +117,9 @@ export const sendEmailUpdateVerification = async (email: string, code: string) =
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <div style="width: 48px; height: 48px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 24px;">S</div>
+          <div style="width: 48px; height: 48px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 24px;">Q</div>
           <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">SchoolHub <span style="color: #2563eb;">Identity</span></h2>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub <span style="color: #2563eb;">Identity</span></h2>
             <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
           </div>
         </div>
@@ -153,10 +154,10 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
   const recipient = isTest ? process.env.TEST_EMAIL as string : email;
 
   const subject = type === 'welcome' 
-    ? `Welcome to SchoolHub - Verify Your Account ${isTest ? `(Original: ${email})` : ''}` 
-    : `[SchoolHub] Payment Identity Verification ${isTest ? `(Original: ${email})` : ''}`;
+    ? `Welcome to Qefas Hub - Verify Your Account ${isTest ? `(Original: ${email})` : ''}` 
+    : `[Qefas Hub] Payment Identity Verification ${isTest ? `(Original: ${email})` : ''}`;
 
-  const title = type === 'welcome' ? "Welcome to SchoolHub" : "Confirm Your Payment";
+  const title = type === 'welcome' ? "Welcome to Qefas Hub" : "Confirm Your Payment";
   const description = type === 'welcome'
     ? "Thank you for joining our academic community. Please use the verification code below to activate your account and proceed with your subscription."
     : "Please use the secure verification code below to confirm your identity and proceed with your payment confirmation.";
@@ -168,9 +169,9 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <div style="width: 48px; height: 48px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 24px;">S</div>
+          <div style="width: 48px; height: 48px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 24px;">Q</div>
           <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">SchoolHub</h2>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
             <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Academic Management System</p>
           </div>
         </div>
@@ -186,6 +187,46 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
         </div>
         
         <div style="border-top: 1px solid #f1f5f9; pt-32; padding-top: 24px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
+          ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
+        </div>
+      </div>
+    `,
+  });
+};
+
+export const sendSetupCompleteEmail = async (email: string) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? process.env.TEST_EMAIL as string : email;
+
+  return await resend.emails.send({
+    from: process.env.MAIL_FROM as string,
+    to: recipient,
+    subject: `Your Account is Ready - Qefas Hub ${isTest ? `(Original: ${email})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
+          <div style="width: 48px; height: 48px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 24px;">Q</div>
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
+            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
+          </div>
+        </div>
+        
+        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">Account Fully Setup</h3>
+        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">Welcome to the fleet! Your institutional identity has been successfully established and your password is now active.</p>
+        
+        <div style="padding: 24px; background: #f0fdf4; border-radius: 16px; border-left: 4px solid #10b981; margin-bottom: 32px;">
+          <p style="margin: 0; color: #065f46; font-size: 14px; line-height: 1.5; font-weight: 500;">
+            <b>Deployment Success:</b> You can now proceed to your dashboard or complete your payment/trial initialization if you haven't already.
+          </p>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 32px;">
+          <a href="${process.env.FRONTEND_URL}/auth/login" style="display: inline-block; background: #2563eb; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Access Your Dashboard</a>
+        </div>
+        
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center;">
           <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
           ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
         </div>
@@ -265,18 +306,18 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
   return await resend.emails.send({
     from: process.env.MAIL_FROM as string,
     to: email, // Changed from [email] to email to match working OTP flow
-    subject: "Reset Your SchoolHub Password",
+    subject: "Reset Your Qefas Hub Password",
     html: `
       <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #2563eb; margin: 0;">SchoolHub</h1>
+          <h1 style="color: #2563eb; margin: 0;">Qefas Hub</h1>
           <p style="color: #6b7280; margin: 5px 0 0 0;">Password Reset Request</p>
         </div>
         
         <div style="background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <h2 style="color: #1f2937; margin-top: 0;">Reset Your Password</h2>
           
-          <p>You requested to reset your password for your SchoolHub account. Click the button below to create a new password:</p>
+          <p>You requested to reset your password for your Qefas Hub account. Click the button below to create a new password:</p>
           
           <div style="text-align: center; margin: 30px 0;">
             <a href="${resetLink}" 
@@ -300,7 +341,7 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
         </div>
         
         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
-          <p>© 2025 SchoolHub. All rights reserved.</p>
+          <p>© 2025 Qefas Hub. All rights reserved.</p>
         </div>
       </div>
     `,
@@ -387,6 +428,8 @@ export const googleAuthService = async (
     switch (userRole) {
       case UserRole.STUDENT: {
         const studentCode = await generateUniqueCode(prisma, "student", name || "Student");
+        // Note: Google student signup doesn't have schoolCode in this context initially
+        // but if it did, we would enforce it here. 
         user = await prisma.student.create({
           data: {
             name: name || "Google User",

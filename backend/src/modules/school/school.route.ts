@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/authMiddleware";
-import { getSchoolTeachers, getSchoolStudents, getSchoolStats, getSchoolPerformanceAnalysis, getSchoolProfile, updateSchoolProfile, getSchoolSettings, updateSchoolSettings, getDashboardSummary } from "./school.controller";
+import { getSchoolTeachers, getSchoolStudents, getSchoolStats, getSchoolPerformanceAnalysis, getSchoolProfile, updateSchoolProfile, getSchoolSettings, updateSchoolSettings, getDashboardSummary, getSchoolBilling } from "./school.controller";
 
 const router = Router();
 
@@ -64,5 +64,12 @@ router.get("/:schoolId/settings", getSchoolSettings);
  * @access  Private-Admin
  */
 router.patch("/:schoolId/settings", updateSchoolSettings);
+
+/**
+ * @route   GET /api/v1/schools/:schoolId/billing
+ * @desc    Get consolidated billing and subscription data
+ * @access  Private-Admin
+ */
+router.get("/:schoolId/billing", getSchoolBilling);
 
 export default router;

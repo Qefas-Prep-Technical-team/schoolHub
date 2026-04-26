@@ -6,6 +6,7 @@ import {
   loginUser,
   sendPasswordResetEmail,
   sendVerificationEmail,
+  sendSetupCompleteEmail,
   googleAuthService,
 } from "./auth.service";
 import {
@@ -17,6 +18,7 @@ import jwt from "jsonwebtoken";
 import { AdminRole, UserRole } from "@prisma/client";
 import { getIO } from "../../socket";
 import { createNotification } from "../notification/notification.service";
+import { enforceStudentLimit } from "../subscription/quota.helpers";
 
 // Simple slugify helper (no extra package)
 const slugify = (value: string) =>
@@ -120,8 +122,7 @@ export const registerSchool = async (req: Request, res: Response) => {
           password: hashedPassword,
           role: UserRole.ADMIN,
           adminCode,
-          tenantIds: [tenantId],
-          defaultTenantId: tenantId,
+          tenantId,
         },
       });
 
@@ -270,12 +271,12 @@ export const registerTeacher = async (req: Request, res: Response) => {
           email,
           password: hashedPassword,
           role: UserRole.TEACHER,
-          tenantIds: schoolToConnect ? [schoolToConnect.tenantId] : [],
-          defaultTenantId: schoolToConnect
+          tenantId: schoolToConnect
             ? schoolToConnect.tenantId
             : "default-tenant-id",
           teacherCode,
-          schoolId: schoolToConnect ? schoolToConnect.id : null,
+          primarySchoolId: schoolToConnect ? schoolToConnect.id : null,
+          activeSchoolId: schoolToConnect ? schoolToConnect.id : null,
         },
       });
 
@@ -417,7 +418,7 @@ export const registerTeacher = async (req: Request, res: Response) => {
           name: result.teacher.name,
           email: result.teacher.email,
           role: result.teacher.role,
-          tenantIds: result.teacher.tenantIds,
+          tenantId: result.teacher.tenantId,
           teacherCode: result.teacher.teacherCode,
         },
         userRole: result.teacher.role,
@@ -570,8 +571,14 @@ export const registerStudent = async (
       }
     }
 
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Enforce quota if registering to a school
+    if (school) {
+      await enforceStudentLimit(school.id);
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       // Create student
@@ -582,8 +589,7 @@ export const registerStudent = async (
           password: hashedPassword,
           studentCode,
           role: UserRole.STUDENT,
-          tenantIds: school ? [school.tenantId] : [],
-          defaultTenantId: school ? school.tenantId : "default-tenant-id",
+          tenantId: school ? school.tenantId : "default-tenant-id",
           schoolId: school ? school.id : null,
         },
       });
@@ -938,7 +944,8 @@ const generateCode = () =>
 
 export const requestVerificationCode = async (req: Request, res: Response) => {
   try {
-    const { email, userType } = req.body;
+    const { userType } = req.body;
+    const email = req.body.email?.toLowerCase().trim();
 
     if (!email || !userType) {
       return res.status(400).json({
@@ -1399,17 +1406,27 @@ export const login = async (req: Request, res: Response) => {
     let actualRole: UserRole = userType as UserRole;
 
     const fetchUserWithRelations = async (role: UserRole, email: string) => {
+      console.log(`Fetching user for role: ${role}, email: [${email}]`);
       switch (role) {
         case UserRole.ADMIN:
           return await prisma.admin.findUnique({
             where: { email },
             include: { schoolAdmins: { include: { school: true } } },
           });
-        case UserRole.TEACHER:
-          return await prisma.teacher.findUnique({
+        case UserRole.TEACHER: {
+          const teacher = await prisma.teacher.findUnique({
             where: { email },
-            include: { school: true },
+            include: { 
+              School_Teacher_activeSchoolIdToSchool: true,
+              School_Teacher_primarySchoolIdToSchool: true 
+            },
           });
+          if (teacher) {
+            // Normalize school for compatibility with existing code
+            (teacher as any).school = teacher.School_Teacher_activeSchoolIdToSchool || teacher.School_Teacher_primarySchoolIdToSchool;
+          }
+          return teacher;
+        }
         case UserRole.STUDENT:
           return await prisma.student.findUnique({
             where: { email },
@@ -1431,14 +1448,17 @@ export const login = async (req: Request, res: Response) => {
       }
     };
 
+    // Normalize email
+    const normalizedEmail = email.toLowerCase().trim();
+
     // 1. Try fetching based on provided type
-    user = await fetchUserWithRelations(userType as UserRole, email);
+    user = await fetchUserWithRelations(userType as UserRole, normalizedEmail);
 
     // 2. If not found, search across other roles (Smart Search)
     if (!user) {
       const rolesToSearch = Object.values(UserRole).filter((r) => r !== userType);
       for (const role of rolesToSearch) {
-        user = await fetchUserWithRelations(role as UserRole, email);
+        user = await fetchUserWithRelations(role as UserRole, normalizedEmail);
         if (user) {
           actualRole = role as UserRole;
           break;
@@ -1466,40 +1486,8 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // ===== Set defaultTenantId if missing =====
-    if (
-      user.defaultTenantId === "default-tenant-id" &&
-      user.tenantIds &&
-      user.tenantIds.length > 0
-    ) {
-      user.defaultTenantId = user.tenantIds[0];
-      // Persist the update to DB
-      switch (userType) {
-        case UserRole.ADMIN:
-          await prisma.admin.update({
-            where: { id: user.id },
-            data: { defaultTenantId: user.defaultTenantId },
-          });
-          break;
-        case UserRole.TEACHER:
-          await prisma.teacher.update({
-            where: { id: user.id },
-            data: { defaultTenantId: user.defaultTenantId },
-          });
-          break;
-        case UserRole.STUDENT:
-          await prisma.student.update({
-            where: { id: user.id },
-            data: { defaultTenantId: user.defaultTenantId },
-          });
-          break;
-        case UserRole.PARENT:
-          await prisma.parent.update({
-            where: { id: user.id },
-            data: { defaultTenantId: user.defaultTenantId },
-          });
-          break;
-      }
-    }
+    // Removed obsolete multi-tenant array fixing logic
+
     // ========================================
 
     // IMPORTANT: Generate token with ACTUAL role, not the one from the portal
@@ -1549,7 +1537,6 @@ export const login = async (req: Request, res: Response) => {
           bannerImage: user.bannerImage,
           gender: user.gender,
           schools,
-          defaultTenantId: user.defaultTenantId,
         },
         userRole: user.role,
         accessToken,
@@ -1566,7 +1553,6 @@ export const login = async (req: Request, res: Response) => {
           bannerImage: user.bannerImage,
           gender: user.gender,
           school: user.school,
-          defaultTenantId: user.defaultTenantId,
         },
         userRole: user.role,
         accessToken,
@@ -1583,7 +1569,6 @@ export const login = async (req: Request, res: Response) => {
           bannerImage: user.bannerImage,
           gender: user.gender,
           school: user.school,
-          defaultTenantId: user.defaultTenantId,
         },
         userRole: user.role,
         accessToken,
@@ -1598,7 +1583,7 @@ export const login = async (req: Request, res: Response) => {
           profileImage: user.profileImage,
           bannerImage: user.bannerImage,
           gender: user.gender,
-          defaultTenantId: user.defaultTenantId,
+          parentCode: user.parentCode,
         },
         children: user.children?.map((child: any) => ({
           studentId: child.student.id,
@@ -1624,7 +1609,9 @@ export const login = async (req: Request, res: Response) => {
 // =========================
 export const verifyCheckoutCode = async (req: Request, res: Response) => {
   try {
-    const { email, code, userType } = req.body;
+    const rawEmail = req.body.email;
+    const email = rawEmail?.toLowerCase().trim();
+    const { code, userType } = req.body;
     console.log("Verifying checkout code for:", { email, userType, code });
 
     if (!email || !code || !userType) {
@@ -1712,7 +1699,7 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
 
 export const checkEmail = async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const email = req.body.email?.toLowerCase().trim();
     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
@@ -2409,6 +2396,8 @@ export const googleAuth = async (req: Request, res: Response) => {
           name: user.name || user.fullName,
           email: user.email,
           role: user.role,
+          adminCode: user.adminCode || undefined,
+          teacherCode: user.teacherCode || undefined,
           studentCode: user.studentCode || undefined,
           parentCode: user.parentCode || undefined,
         },
@@ -2422,5 +2411,49 @@ export const googleAuth = async (req: Request, res: Response) => {
       success: false,
       message: error.message || "Google Authentication failed",
     });
+  }
+};
+
+export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
+  try {
+    const { userType, password } = req.body;
+    const email = req.body.email?.toLowerCase().trim();
+    console.log("Finalizing account setup for:", { email, userType });
+
+    if (!email || !password || !userType) {
+      return res.status(400).json({ success: false, message: "Email, password, and user type are required" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const role = userType as UserRole;
+
+    // Update user based on role
+    const updateData = { password: hashedPassword, verified: true };
+    
+    switch (role) {
+      case UserRole.ADMIN:
+        await prisma.admin.update({ where: { email }, data: updateData });
+        break;
+      case UserRole.TEACHER:
+        await prisma.teacher.update({ where: { email }, data: updateData });
+        break;
+      case UserRole.STUDENT:
+        await prisma.student.update({ where: { email }, data: updateData });
+        break;
+      case UserRole.PARENT:
+        await prisma.parent.update({ where: { email }, data: updateData });
+        break;
+    }
+
+    // Send confirmation email
+    await sendSetupCompleteEmail(email);
+
+    return res.status(200).json({
+      success: true,
+      message: "Account setup finalized and confirmation email sent.",
+    });
+  } catch (error: any) {
+    console.error("Finalize Setup Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to finalize account setup" });
   }
 };

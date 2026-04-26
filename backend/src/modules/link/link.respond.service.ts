@@ -7,6 +7,7 @@ import {
   Prisma,
 } from "@prisma/client";
 import { createNotification } from "../notification/notification.service";
+import { checkLinkCapacity } from "../payment/subscription.utils";
 
 type RespondToLinkRequestInput = {
   requestId: string;
@@ -372,6 +373,21 @@ export const respondToLinkRequestService = async ({
       request: rejectedRequest,
       relationship: null,
     };
+  }
+
+  // Final Capacity Check before accepting
+  if (request.linkType === 'SCHOOL_STUDENT' || request.linkType === 'TEACHER_STUDENT' || request.linkType === 'PARENT_STUDENT') {
+      const targetEntityId = request.targetType === 'SCHOOL' || request.targetType === 'TEACHER' || request.targetType === 'PARENT' ? request.targetId : 
+                             request.requesterType === 'SCHOOL' || request.requesterType === 'TEACHER' || request.requesterType === 'PARENT' ? request.requesterId : null;
+      const targetEntityType = request.targetType === 'SCHOOL' || request.targetType === 'TEACHER' || request.targetType === 'PARENT' ? request.targetType : 
+                               request.requesterType === 'SCHOOL' || request.requesterType === 'TEACHER' || request.requesterType === 'PARENT' ? request.requesterType : null;
+      
+      if (targetEntityId && targetEntityType) {
+          const hasSpace = await checkLinkCapacity(targetEntityId, targetEntityType);
+          if (!hasSpace) {
+              throw new Error("Cannot accept: Capacity limit reached for the current plan.");
+          }
+      }
   }
 
   const result = await prisma.$transaction(async (tx) => {

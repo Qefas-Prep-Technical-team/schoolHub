@@ -20,6 +20,7 @@ import {
   cancelLinkRequestService,
   revokeActiveLinkService,
 } from "./link.manage.service";
+import { getSchoolStatsService } from "../school/school.service";
 import { getIO } from "../../socket";
 
 const isClassLinkType = (type: string) =>
@@ -767,7 +768,16 @@ export const getMyProfile = async (req: Request, res: Response) => {
             bannerImage: true,
             schoolAdmins: {
               where: { active: true },
-              include: { school: { select: { schoolCode: true } } },
+              include: { 
+                school: { 
+                  select: { 
+                    id: true,
+                    schoolCode: true,
+                    plan: true,
+                    subscriptionStatus: true
+                  } 
+                } 
+              },
               take: 1,
             },
           },
@@ -832,7 +842,44 @@ export const getMyProfile = async (req: Request, res: Response) => {
       profileData.teacherCode ||
       profileData.studentCode ||
       profileData.parentCode;
-    const schoolCode = profileData.schoolAdmins?.[0]?.school?.schoolCode;
+    
+    const activeSchoolLink = profileData.schoolAdmins?.[0];
+    const schoolCode = activeSchoolLink?.school?.schoolCode;
+    
+    let usage = null;
+    let limits = null;
+
+    if (userType === UserRole.ADMIN) {
+      let schoolId = activeSchoolLink?.school?.id;
+      let plan = activeSchoolLink?.school?.plan || 'free';
+
+      // Fallback: If no direct school link found, try resolving via admin's tenantId
+      if (!schoolId && profileData?.tenantId && profileData.tenantId !== 'default-tenant-id') {
+        const fallbackSchool = await prisma.school.findUnique({
+          where: { tenantId: profileData.tenantId }
+        });
+        if (fallbackSchool) {
+          schoolId = fallbackSchool.id;
+          plan = fallbackSchool.plan;
+        }
+      }
+
+      if (schoolId) {
+        // Get current usage using the robust school stats service
+        const stats = await getSchoolStatsService(schoolId);
+        const studentCount = stats.students;
+
+        // Get limits based on plan
+        const { getEntityLimits } = require("../payment/subscription.utils");
+        const planLimits = getEntityLimits('SCHOOL', plan);
+
+        usage = {
+          students: studentCount,
+          plan: plan,
+        };
+        limits = planLimits;
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -840,6 +887,8 @@ export const getMyProfile = async (req: Request, res: Response) => {
         ...profileData,
         linkingCode,
         schoolCode,
+        usage,
+        limits,
       },
     });
   } catch (error: any) {

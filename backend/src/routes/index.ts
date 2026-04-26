@@ -1,5 +1,7 @@
 import { Router } from "express";
 import authRoutes from "../modules/auth/auth.routes";
+import { authenticateToken } from "../middleware/authMiddleware";
+import { checkSubscription } from "../middleware/subscriptionMiddleware";
 import notificationRoutes from "../modules/notification/notification.route";
 import linkRoutes from "../modules/link/link.route";
 import classRoutes from "../modules/class/class.route";
@@ -13,23 +15,27 @@ import uploadRoutes from "../modules/upload/upload.route";
 import gradeRoutes from "../modules/grade/grade.route";
 import teacherRoutes from "../modules/teacher/teacher.route";
 import paymentRoutes from "../modules/payment/payment.route";
+import financeRoutes from "../modules/finance/finance.route";
+import subscriptionRoutes from "../modules/subscription/subscription.route";
 
 const router = Router();
 
 router.get("/health", (req, res) => res.status(200).send("API OK"));
 router.use("/auth", authRoutes);
 router.use("/notifications", notificationRoutes);
-router.use("/links", linkRoutes);
-router.use("/classes", classRoutes);
-router.use("/academic", academicRoutes);
-router.use("/admin", adminRoutes);
-router.use("/sessions", sessionRoutes);
-router.use("/exams", examRoutes);
-router.use("/schools", schoolRoutes);
-router.use("/students", studentRoutes);
-router.use("/upload", uploadRoutes);
-router.use("/grades", gradeRoutes);
-router.use("/teacher", teacherRoutes);
+router.use("/subscription", subscriptionRoutes);
+router.use("/links", authenticateToken, checkSubscription, linkRoutes);
+router.use("/classes", authenticateToken, checkSubscription, classRoutes);
+router.use("/academic", authenticateToken, checkSubscription, academicRoutes);
+router.use("/admin", authenticateToken, adminRoutes);
+router.use("/sessions", authenticateToken, checkSubscription, sessionRoutes);
+router.use("/exams", authenticateToken, checkSubscription, examRoutes);
+router.use("/schools", authenticateToken, schoolRoutes);
+router.use("/students", authenticateToken, studentRoutes);
+router.use("/upload", authenticateToken, uploadRoutes);
+router.use("/grades", authenticateToken, checkSubscription, gradeRoutes);
+router.use("/teacher", authenticateToken, teacherRoutes);
+router.use("/finance", financeRoutes);
 router.use("/payment", paymentRoutes);
 
 export default router;

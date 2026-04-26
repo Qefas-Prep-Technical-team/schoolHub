@@ -24,25 +24,29 @@ export const authenticateToken = async (
 
     const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET!);
     
-    // Fetch schoolId based on user type
+    // Fetch schoolId and tenantId based on user type
     let schoolId: string | undefined;
+    let tenantId: string | undefined;
     
     if (decoded.userType === "ADMIN") {
       const admin = await prisma.admin.findUnique({
         where: { id: decoded.userId },
         include: { schoolAdmins: { where: { active: true }, take: 1 } }
       });
-      schoolId = admin?.schoolAdmins[0]?.schoolId || admin?.defaultTenantId;
+      schoolId = admin?.schoolAdmins[0]?.schoolId;
+      tenantId = admin?.tenantId;
     } else if (decoded.userType === "TEACHER") {
       const teacher = await prisma.teacher.findUnique({
         where: { id: decoded.userId }
       });
-      schoolId = teacher?.schoolId || teacher?.currentSchoolId || teacher?.defaultTenantId;
+      schoolId = teacher?.activeSchoolId || teacher?.primarySchoolId;
+      tenantId = teacher?.tenantId;
     } else if (decoded.userType === "STUDENT") {
       const student = await prisma.student.findUnique({
         where: { id: decoded.userId }
       });
-      schoolId = student?.schoolId || student?.defaultTenantId;
+      schoolId = student?.schoolId;
+      tenantId = student?.tenantId;
     }
 
     console.log("LOG: [authMiddleware] User verified", { 
@@ -54,10 +58,11 @@ export const authenticateToken = async (
     req.user = {
       id: decoded.userId,
       userType: decoded.userType,
-      schoolId: schoolId || undefined
+      schoolId: schoolId || undefined,
+      tenantId: tenantId || undefined
     };
 
-    console.log("LOG: [authMiddleware] Proceeding to next handler for user:", req.user.id);
+    console.log("LOG: [authMiddleware] Proceeding to next handler for user:", req.user.id, "Context:", { schoolId, tenantId });
     next();
   } catch (error: any) {
     console.error("LOG ERROR: [authMiddleware] failure:", error);

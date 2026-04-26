@@ -37,7 +37,13 @@ export const proxyUpload = async (req: Request, res: Response) => {
 
     console.log(`[Proxy Upload] Received file: ${file.originalname} (${file.size} bytes, ${file.mimetype})`);
 
-    const data = await uploadBufferToBunnyService(file.buffer, file.mimetype);
+    const user = (req as any).user;
+    const data = await uploadBufferToBunnyService(file.buffer, file.mimetype, {
+      userId: user.id,
+      userType: user.userType,
+      schoolId: user.schoolId,
+      fileName: file.originalname
+    });
     
     return res.status(200).json({
       success: true,

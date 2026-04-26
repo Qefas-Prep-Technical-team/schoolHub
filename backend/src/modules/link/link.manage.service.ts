@@ -40,11 +40,33 @@ export const getSingleLinkRequestService = async ({
     throw new Error("Link request not found");
   }
 
-  const canAccess =
+  let canAccess =
     (request.requesterType === currentUserType &&
       request.requesterId === currentUserId) ||
     (request.targetType === currentUserType &&
       request.targetId === currentUserId);
+
+  // If still no access, check if user is an Admin for one of the schools involved
+  if (!canAccess && currentUserType === "ADMIN") {
+    const schoolIds = [
+      request.schoolId,
+      request.targetSchoolId,
+      request.requesterSchoolId,
+    ].filter(Boolean) as string[];
+
+    if (schoolIds.length > 0) {
+      const adminOfSchool = await prisma.schoolAdmin.findFirst({
+        where: {
+          adminId: currentUserId,
+          schoolId: { in: schoolIds },
+          active: true,
+        },
+      });
+      if (adminOfSchool) {
+        canAccess = true;
+      }
+    }
+  }
 
   if (!canAccess) {
     throw new Error("You are not allowed to view this request");
