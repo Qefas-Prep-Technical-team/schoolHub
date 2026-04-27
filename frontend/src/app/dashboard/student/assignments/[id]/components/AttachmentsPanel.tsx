@@ -28,7 +28,7 @@ export default function AttachmentsPanel({ attachments, onDownload }: Props) {
   const getIconColor = (color: string) => {
     const colorMap: Record<string, string> = {
       red: 'text-red-600 dark:text-red-400',
-      blue: 'text-blue-600 dark:text-blue-400',
+      blue: 'text-pink-600 dark:text-blue-400',
       green: 'text-green-600 dark:text-green-400',
       yellow: 'text-yellow-600 dark:text-yellow-400',
       purple: 'text-purple-600 dark:text-purple-400',

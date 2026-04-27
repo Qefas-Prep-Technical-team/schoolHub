@@ -61,7 +61,7 @@ export default function DocumentGrid({
             onClick={() => setFilter('unread')}
             className={`px-3 py-1 text-xs rounded-full transition-colors ${
               filter === 'unread'
-                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200'
+                ? 'bg-blue-100 text-pink-800 dark:bg-pink-900/50 dark:text-blue-200'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
           >
@@ -107,3 +107,4 @@ export default function DocumentGrid({
     </div>
   );
 }
+

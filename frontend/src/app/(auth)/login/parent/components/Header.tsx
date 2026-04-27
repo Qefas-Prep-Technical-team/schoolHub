@@ -8,7 +8,7 @@ export default function Header() {
                             <path d="M4 4H17.3334V17.3334H30.6666V30.6666H44V44H4V4Z" fill="currentColor" />
                         </svg>
                     </div>
-                    <h2 className="text-xl font-bold leading-tight tracking-[-0.015em]">SchoolHub</h2>
+                    <h2 className="text-xl font-bold leading-tight tracking-[-0.015em]">Qefas Hub</h2>
                 </div>
                 <div className="flex items-center">
                     <a className="text-sm font-medium text-text-light dark:text-text-dark" href="#">

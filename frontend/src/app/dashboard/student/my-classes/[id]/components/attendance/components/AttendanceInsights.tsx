@@ -30,7 +30,7 @@ export default function AttendanceInsights({ insights, title = "Summary & Insigh
             case 'warning':
                 return 'text-amber-600 dark:text-amber-500';
             case 'info':
-                return 'text-blue-600 dark:text-blue-500';
+                return 'text-pink-600 dark:text-blue-500';
             default:
                 return 'text-slate-700 dark:text-slate-300';
         }

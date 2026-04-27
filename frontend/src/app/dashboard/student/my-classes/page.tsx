@@ -166,7 +166,7 @@ export default function StudentClassesPage() {
         {/* Highlight Stats Row */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-                { label: 'Classes Enrolled', value: classesList.length, icon: Layers, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+                { label: 'Classes Enrolled', value: classesList.length, icon: Layers, color: 'text-pink-500', bg: 'bg-pink-500/10' },
                 { label: 'Weekly Hours', value: `${classesList.length * 4}h`, icon: Clock, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                 { label: 'Attendance Rate', value: '98%', icon: TrendingUp, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
                 { label: 'Learning Velocity', value: 'High', icon: Sparkles, color: 'text-amber-500', bg: 'bg-amber-500/10' },
@@ -348,3 +348,4 @@ export default function StudentClassesPage() {
     </div>
   );
 }
+

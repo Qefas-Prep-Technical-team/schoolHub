@@ -13,6 +13,7 @@ import { StudentFormData, studentSchema } from '../../services/regSchema';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
 import { useMemo } from 'react';
 import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
+import RedirectOverlay from '@/components/ui/RedirectOverlay';
 
 
 export default function StudentRegisterForm() {
@@ -22,6 +23,7 @@ export default function StudentRegisterForm() {
   const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
   const [showOptional, setShowOptional] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -104,9 +106,10 @@ export default function StudentRegisterForm() {
           const backendMessage = response.data.message || 'Registration successful!';
           setSuccessMessage(backendMessage);
 
-          reset();
-
           const email = response.data.data?.student?.email || data.email;
+
+          setShowOverlay(true);
+          reset();
 
           setTimeout(() => {
             router.push(
@@ -131,11 +134,13 @@ export default function StudentRegisterForm() {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-center p-6 sm:p-10 lg:p-12 xl:p-16">
+    <>
+      <RedirectOverlay isVisible={showOverlay} />
+      <div className="flex-1 flex flex-col justify-center p-6 sm:p-10 lg:p-12 xl:p-16">
       <div className="max-w-md mx-auto w-full">
         <div className="mb-8">
           <h1 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-white">
-            Join SchoolHub as a Student
+            Join Qefas Hub as a Student
           </h1>
           <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
             Access your lessons, assignments, and teachers all in one place.
@@ -476,6 +481,7 @@ export default function StudentRegisterForm() {
           </a>
         </p>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

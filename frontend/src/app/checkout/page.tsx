@@ -4,51 +4,135 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle2, Lock, ShieldCheck, Mail, KeyRound, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Lock, ShieldCheck, Mail, KeyRound, Loader2, Zap, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { usePaystackPayment } from 'react-paystack';
 import { paymentService } from '@/lib/api/services/paymentService';
 import { apiClient } from '@/lib/api/client';
 import { useFetchPricing } from '@/components/pricing/query';
+import { useCheckoutStore } from '@/utils/CheckoutStore';
+import { useQueryClient } from '@tanstack/react-query';
+import { schoolQueryKeys } from '@/lib/api/hooks/useSchool';
 import Link from 'next/link';
 
-type CheckoutState = 'EMAIL_ENTRY' | 'VERIFY_OTP' | 'PAYMENT_READY' | 'POST_PAYMENT_SETUP' | 'SUCCESS';
+type CheckoutState = 'EMAIL_ENTRY' | 'VERIFY_OTP' | 'PASSWORD_SETUP' | 'PAYMENT_READY' | 'POST_PAYMENT_SETUP' | 'SUCCESS';
 
 export default function CheckoutPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { user, isAuthenticated } = useAuthStore();
-    
-    const plan = searchParams.get('plan') || '';
-    const billing = searchParams.get('billing') || 'monthly';
-    const role = searchParams.get('role') || 'STUDENT';
+    const updateUser = useAuthStore((s) => s.updateUser);
+    const { plan, billing, role, discountedAmount, isUpgrade, redirectBackUrl, clearCheckout } = useCheckoutStore();
+    const queryClient = useQueryClient();
 
     const [email, setEmail] = useState(user?.email || '');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [otp, setOtp] = useState('');
     const [step, setStep] = useState<CheckoutState>('EMAIL_ENTRY');
     const [isLoading, setIsLoading] = useState(false);
     const [isReturningUser, setIsReturningUser] = useState(false);
     const [resendTimer, setResendTimer] = useState(0);
+    const [registeredUserId, setRegisteredUserId] = useState<string | null>(null);
 
     // Fetch real pricing to securely compute amount based on URL plan
     const { data: pricingData } = useFetchPricing();
     let amount = 0;
+    let selectedPlanFeatures: string[] = [];
+    let hasPlanTrial = false;
+    let trialDaysCount = 0;
+    let selectedPlanName = '';
+
     if (pricingData) {
+        // Map role to category for lookup
+        const roleToCategory: Record<string, string> = {
+            'ADMIN': 'schools',
+            'TEACHER': 'teachers',
+            'PARENT': 'parents',
+            'STUDENT': 'students'
+        };
+        const targetCategory = roleToCategory[role] || 'students';
+
+        let selectedPlanTab = null;
+
         for (const cat of pricingData) {
-            const foundTab = cat.tabs.find(t => t.type === plan);
-            if (foundTab) {
-                amount = billing === 'monthly' ? foundTab.pricing.monthly : foundTab.pricing.yearly;
-                break;
+            // First try matching category AND type
+            if (cat.category.toLowerCase() === targetCategory.toLowerCase()) {
+                const foundTab = cat.tabs.find(t => t.type.toLowerCase() === plan.toLowerCase());
+                if (foundTab) {
+                    selectedPlanTab = foundTab;
+                    break;
+                }
             }
+        }
+        
+        // Fallback to any category if role-specific lookup failed
+        if (!selectedPlanTab) {
+            for (const cat of pricingData) {
+                const foundTab = cat.tabs.find(t => t.type.toLowerCase() === plan.toLowerCase());
+                if (foundTab) {
+                    selectedPlanTab = foundTab;
+                    break;
+                }
+            }
+        }
+
+        if (selectedPlanTab) {
+            amount = billing === 'monthly' ? selectedPlanTab.pricing.monthly : selectedPlanTab.pricing.yearly;
+            selectedPlanFeatures = selectedPlanTab.features || [];
+            hasPlanTrial = selectedPlanTab.hasTrial;
+            trialDaysCount = selectedPlanTab.trialDays;
+            // Use the actual name from the plan data
+            selectedPlanName = selectedPlanTab.name;
         }
     }
 
+    const planDisplayName = selectedPlanName || (plan ? `${plan.charAt(0).toUpperCase() + plan.slice(1)}` : 'Standard');
+
+    // Secure re-verification of trial eligibility - Disallow trials for existing authenticated users or upgrades
+    const canUseTrial = hasPlanTrial && !isAuthenticated && !isUpgrade;
+    
+    // Apply pro-rated discount if this is an upgrade
+    const finalAmount = (isUpgrade && discountedAmount !== undefined) ? discountedAmount : amount;
+
+    // Paystack requires a minimum amount for card storage. We'll use ₦100 as a validation fee.
+    const checkoutAmount = canUseTrial ? 100 : finalAmount;
+
     useEffect(() => {
+        if (!plan) {
+            router.push('/pricing');
+            return;
+        }
         if (isAuthenticated && user?.email) {
             setStep('PAYMENT_READY');
         }
-    }, [isAuthenticated, user]);
+    }, [isAuthenticated, user, plan, router]);
+
+    useEffect(() => {
+        if (step === 'SUCCESS') {
+            // Invalidate all school queries (billing, stats, etc.) with the correct key
+            if (queryClient) {
+                const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId;
+                if (schoolId) {
+                    queryClient.invalidateQueries({ queryKey: schoolQueryKeys.billing(schoolId) });
+                } else {
+                    queryClient.invalidateQueries({ queryKey: ['school'] });
+                }
+                queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+            }
+            const timer = setTimeout(() => {
+                // Determine target URL: Admins go to billing, others follow redirectBackUrl or dashboard
+                let targetUrl = (role === 'ADMIN') 
+                    ? '/dashboard/admin/billing' 
+                    : (redirectBackUrl || '/dashboard');
+                
+                clearCheckout();
+                router.push(targetUrl);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [step, router, clearCheckout, queryClient, user, role, redirectBackUrl]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -106,13 +190,22 @@ export default function CheckoutPage() {
 
         setIsLoading(true);
         try {
-            await apiClient.post('/auth/verify-checkout-code', {
+            const res = await apiClient.post('/auth/verify-checkout-code', {
                 email,
                 code: otp,
                 userType: role
             });
+            
+            if (res.data.userId) {
+                setRegisteredUserId(res.data.userId);
+            }
+
             toast.success("Verified successfully!");
-            setStep('PAYMENT_READY');
+            if (!isAuthenticated && !isReturningUser) {
+                setStep('PASSWORD_SETUP');
+            } else {
+                setStep('PAYMENT_READY');
+            }
         } catch (error: any) {
             toast.error(error?.response?.data?.message || "Invalid or expired OTP");
         } finally {
@@ -140,12 +233,20 @@ export default function CheckoutPage() {
     const handleSavePassword = async (e: React.FormEvent) => {
         e.preventDefault();
         if (password.length < 6) return toast.error("Password must be at least 6 characters");
+        if (password !== confirmPassword) return toast.error("Passwords do not match");
         
         setIsLoading(true);
         try {
-            // Mock API call to convert shadow account to real account
-            toast.success("Account created successfully!");
-            setStep('SUCCESS');
+            await apiClient.post('/auth/finalize-checkout-setup', {
+                email,
+                userType: role,
+                password
+            });
+            toast.success("Account setup successful! Proceeding to payment.");
+            setStep('PAYMENT_READY');
+        } catch (error: any) {
+            console.error("Setup error:", error);
+            toast.error(error.response?.data?.message || "Failed to finalize account setup");
         } finally {
             setIsLoading(false);
         }
@@ -155,11 +256,15 @@ export default function CheckoutPage() {
     const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_placeholder";
     const paystackProps = {
         email: email,
-        amount: amount * 100,
+        amount: checkoutAmount * 100,
         metadata: {
             custom_fields: [
                 { display_name: "Plan", variable_name: "plan", value: plan },
-                { display_name: "Billing", variable_name: "billing", value: billing }
+                { display_name: "Billing", variable_name: "billing", value: billing },
+                { display_name: "Is Trial", variable_name: "is_trial", value: canUseTrial.toString() },
+                { display_name: "Is Upgrade", variable_name: "is_upgrade", value: isUpgrade?.toString() || 'false' },
+                { display_name: "User ID", variable_name: "user_id", value: user?.id || registeredUserId || "" },
+                { display_name: "User Role", variable_name: "user_role", value: role }
             ],
         },
         publicKey,
@@ -167,8 +272,25 @@ export default function CheckoutPage() {
         onSuccess: async (reference: any) => {
             try {
                 toast.loading("Verifying payment...", { toastId: "verify" });
-                await paymentService.verify({ reference: reference.reference, plan, billingType: billing });
+                await paymentService.verify({ reference: reference.reference, plan, billingType: billing as "monthly" | "yearly" });
+                
+                // Refresh billing status immediately
+                if (queryClient) {
+                    queryClient.invalidateQueries({ queryKey: ['school'] });
+                    queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+                    queryClient.invalidateQueries({ queryKey: schoolQueryKeys.billing(user?.schools?.[0]?.schoolId || user?.tenantId || "") });
+                }
+
                 toast.update("verify", { render: "Payment verified!", type: "success", isLoading: false, autoClose: 2000 });
+                
+                // Sync updated plan to auth store so pricing page reflects it immediately
+                updateUser({
+                    plan: plan || undefined,
+                    subscriptionStatus: 'ACTIVE',
+                    trialUsed: canUseTrial ? true : user?.trialUsed,
+                });
+                
+                setIsLoading(false); // Clear initializing state
                 
                 if (!isAuthenticated && !isReturningUser) {
                     setStep('POST_PAYMENT_SETUP');
@@ -176,13 +298,29 @@ export default function CheckoutPage() {
                     setStep('SUCCESS');
                 }
             } catch (error) {
+                setIsLoading(false);
                 toast.update("verify", { render: "Verification failed.", type: "error", isLoading: false, autoClose: 3000 });
             }
         },
-        onClose: () => toast.info("Payment cancelled"),
+        onClose: () => {
+            setIsLoading(false);
+            toast.info("Payment cancelled");
+        },
     };
 
-    const initializePayment = usePaystackPayment(paystackProps as any);
+    const initializePaystack = usePaystackPayment(paystackProps as any);
+
+    const handlePayment = () => {
+        if (!email) return toast.error("Please provide an email");
+        setIsLoading(true);
+        try {
+            initializePaystack(paystackProps as any);
+        } catch (error: any) {
+            setIsLoading(false);
+            toast.error("Payment initialization failed");
+            console.error("Paystack Init Error:", error);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
@@ -263,6 +401,50 @@ export default function CheckoutPage() {
                             </motion.div>
                         )}
 
+                        {step === 'PASSWORD_SETUP' && (
+                            <motion.div key="password-setup" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                                <div className="mb-8">
+                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white font-lexend mb-2">Create Account</h2>
+                                    <p className="text-slate-500">Choose a secure password to protect your institutional identity.</p>
+                                </div>
+                                <form onSubmit={handleSavePassword} className="space-y-6">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Password</label>
+                                        <div className="relative">
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                            <input 
+                                                type={showPassword ? "text" : "password"} required minLength={6}
+                                                value={password} onChange={(e) => setPassword(e.target.value)}
+                                                className="w-full pl-12 pr-12 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none"
+                                                placeholder="••••••••"
+                                            />
+                                            <button 
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                            >
+                                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Confirm Password</label>
+                                        <div className="relative">
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                            <input 
+                                                type={showPassword ? "text" : "password"} required minLength={6}
+                                                value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                                                className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                    </div>
+                                    <Button type="submit" disabled={isLoading} className="w-full py-6 text-lg rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2">
+                                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save & Continue to Payment"}
+                                    </Button>
+                                </form>
+                            </motion.div>
+                        )}
                         {step === 'PAYMENT_READY' && (
                             <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                                 <div className="mb-8">
@@ -273,11 +455,22 @@ export default function CheckoutPage() {
                                     <ShieldCheck className="w-8 h-8 text-blue-600" />
                                     <div>
                                         <p className="font-bold text-slate-900 dark:text-white text-sm">Secure Payment</p>
-                                        <p className="text-slate-500 text-xs">Protected by Paystack</p>
+                                        <p className="text-slate-500 text-xs">Protected by Secure Gateway</p>
                                     </div>
                                 </div>
-                                <Button onClick={() => initializePayment(paystackProps as any)} className="w-full py-8 text-xl rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 font-black shadow-xl transition-all">
-                                    Pay ₦{amount.toLocaleString()}
+                                <Button 
+                                    onClick={handlePayment} 
+                                    disabled={isLoading}
+                                    className="w-full py-8 text-xl rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 font-black shadow-xl transition-all flex items-center justify-center gap-2"
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="w-6 h-6 animate-spin" />
+                                            Initializing...
+                                        </>
+                                    ) : (
+                                        canUseTrial ? "Initialize Free Trial" : `Pay ₦${checkoutAmount.toLocaleString()}`
+                                    )}
                                 </Button>
                             </motion.div>
                         )}
@@ -319,7 +512,9 @@ export default function CheckoutPage() {
                                     <CheckCircle2 className="w-12 h-12" />
                                 </div>
                                 <h2 className="text-4xl font-black text-slate-900 dark:text-white font-lexend mb-4">You're all set!</h2>
-                                <p className="text-slate-500 mb-10 text-lg">Redirecting you to your dashboard...</p>
+                                <p className="text-slate-500 mb-10 text-lg">
+                                    {role === 'ADMIN' ? 'Redirecting you to the billing page...' : 'Redirecting you to your dashboard...'}
+                                </p>
                                 <Link href="/dashboard">
                                     <Button className="px-10 py-6 text-lg rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black shadow-xl">
                                         Go to Dashboard
@@ -343,16 +538,41 @@ export default function CheckoutPage() {
                                 <ShieldCheck className="w-8 h-8 text-blue-400" />
                             </div>
                             <div>
-                                <h4 className="text-2xl font-black capitalize font-lexend leading-tight">{plan || 'Standard'} Plan</h4>
+                                <h4 className="text-2xl font-black capitalize font-lexend leading-tight">{planDisplayName} Plan</h4>
                                 <p className="text-blue-400 font-bold capitalize text-sm">{billing} Billing</p>
                             </div>
                         </div>
 
                         <div className="space-y-4 mb-8">
                             <div className="flex justify-between items-center text-slate-400">
-                                <span>Subtotal</span>
+                                <span>Plan Subtotal ({billing})</span>
                                 <span>₦{amount.toLocaleString()}</span>
                             </div>
+
+                            {isUpgrade && discountedAmount !== undefined && amount > discountedAmount && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    className="flex justify-between items-center text-emerald-400 font-bold bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/20"
+                                >
+                                    <span className="flex items-center gap-2 text-xs">
+                                        <Zap className="w-4 h-4" /> 
+                                        Upgrade Credit (Pro-rated)
+                                    </span>
+                                    <span className="text-sm">- ₦{(amount - discountedAmount).toLocaleString()}</span>
+                                </motion.div>
+                            )}
+
+                            {isUpgrade && (discountedAmount === undefined || amount === discountedAmount) && (
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="text-[10px] text-amber-400 font-black uppercase tracking-widest bg-amber-400/10 p-3 rounded-xl text-center border border-amber-400/20"
+                                >
+                                    Cycle Reset: Full price applies (Used &gt; 15 days or no previous payment found)
+                                </motion.div>
+                            )}
+
                             <div className="flex justify-between items-center text-slate-400">
                                 <span>Taxes</span>
                                 <span>Calculated at checkout</span>
@@ -361,10 +581,44 @@ export default function CheckoutPage() {
 
                         <div className="h-px w-full bg-slate-800 mb-8" />
 
+                        {selectedPlanFeatures.length > 0 && (
+                            <div className="mb-8">
+                                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4 text-blue-400" /> What you'll gain
+                                </h4>
+                                <ul className="space-y-3">
+                                    {selectedPlanFeatures.slice(0, 5).map((feature, i) => (
+                                        <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
+                                            <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                            <span>{feature}</span>
+                                        </li>
+                                    ))}
+                                    {selectedPlanFeatures.length > 5 && (
+                                        <li className="text-slate-500 text-xs italic pl-7">+ and many more premium features</li>
+                                    )}
+                                </ul>
+                            </div>
+                        )}
+
+                        <div className="h-px w-full bg-slate-800 mb-8" />
+
                         <div className="flex justify-between items-end">
-                            <div>
+                            <div className="w-full">
                                 <p className="text-sm text-slate-400 mb-1">Total Due Today</p>
-                                <p className="text-5xl font-black tracking-tighter">₦{amount.toLocaleString()}</p>
+                                {canUseTrial ? (
+                                    <div className="flex flex-col">
+                                        <span className="text-2xl font-black text-slate-500 line-through opacity-50">₦{amount.toLocaleString()}</span>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-5xl font-black tracking-tighter text-white">₦0</span>
+                                            <span className="text-blue-400 text-sm font-bold uppercase">({trialDaysCount} Days Free)</span>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 mt-2 flex items-center gap-1 italic">
+                                            <Lock className="w-3 h-3" /> ₦100 nominal card verification fee applies
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <p className="text-5xl font-black tracking-tighter">₦{checkoutAmount.toLocaleString()}</p>
+                                )}
                             </div>
                         </div>
                     </div>

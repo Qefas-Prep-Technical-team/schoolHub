@@ -1,82 +1,125 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import { useTheme } from 'next-themes';
 import EachPriceCard from './EachPriceCard';
 import { useFetchPricing } from './query';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { pricingResolver } from '@/lib/pricingResolver';
 
 interface PricingTabProps {
     billingType: 'monthly' | 'yearly';
     setBillingType: (type: 'monthly' | 'yearly') => void;
+    isUpgradeFlow?: boolean;
+    currentPlanPrice?: number;
+    lastPaymentDate?: string | Date | null;
 }
 
-export default function PricingTab({ billingType, setBillingType }: PricingTabProps) {
+export default function PricingTab({
+    billingType,
+    setBillingType,
+    isUpgradeFlow,
+    currentPlanPrice,
+    lastPaymentDate
+}: PricingTabProps) {
     const queryClient = useQueryClient();
-    const { data, isLoading } = useFetchPricing();
+    const { data: rawData, isLoading } = useFetchPricing();
+    const data = React.useMemo(() => pricingResolver(rawData), [rawData]);
+    const { userType, isAuthenticated } = useAuthStore();
     const [value, setValue] = React.useState(0);
-    const { theme } = useTheme();
 
-    const categories = ['individuals', 'schools', 'teachers'];
-    const filteredData = data?.find(d => d.category === categories[value]);
+    const categories = React.useMemo(() => {
+        const allCategories = ['students', 'parents', 'schools', 'teachers'];
+        if (!isAuthenticated || !userType) return allCategories;
+
+        switch (userType) {
+            case 'PARENT':   return ['parents'];
+            case 'STUDENT':  return ['students'];
+            case 'TEACHER':  return ['teachers'];
+            case 'ADMIN':    return ['schools'];
+            default:         return allCategories;
+        }
+    }, [isAuthenticated, userType]);
+
+    React.useEffect(() => {
+        if (value >= categories.length) setValue(0);
+    }, [categories, value]);
+
+    const filteredData = data?.find((d: any) => 
+        d.category?.toLowerCase() === categories[value]?.toLowerCase()
+    );
+
+    const categoryLabels: Record<string, string> = {
+        students: 'Students',
+        parents: 'Parents',
+        schools: 'Schools',
+        teachers: 'Teachers',
+    };
 
     return (
         <Box className="w-full flex flex-col items-center">
-            {/* Category Switcher */}
-            <div className="flex items-center justify-center mb-16 p-1.5 bg-slate-100/50 dark:bg-slate-800/30 backdrop-blur-md border border-slate-200 dark:border-slate-700/50 rounded-2xl shadow-sm">
-                {categories.map((cat, index) => (
-                    <button
-                        key={cat}
-                        onClick={() => {
-                            setValue(index);
-                            queryClient.invalidateQueries({ queryKey: ['fetchPricing'] });
-                        }}
-                        className={`relative px-8 md:px-12 py-3 text-sm font-bold capitalize transition-all duration-300 rounded-xl ${
-                            value === index 
-                            ? 'text-white' 
-                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                        }`}
-                    >
-                        {value === index && (
-                            <motion.div 
-                                layoutId="category-pill"
-                                className="absolute inset-0 bg-slate-900 dark:bg-blue-600 rounded-xl shadow-lg"
-                                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                            />
-                        )}
-                        <span className="relative z-10">{cat}</span>
-                    </button>
-                ))}
-            </div>
 
-            {/* Bento Pricing Cards Grid */}
-            <div className="w-full max-w-7xl mx-auto">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={value}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4"
-                    >
-                        {isLoading ? (
-                            Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className={`h-[500px] rounded-[2.5rem] bg-slate-100 dark:bg-slate-800 animate-pulse border border-slate-200 dark:border-slate-700 ${i === 1 ? 'lg:-mt-8 lg:mb-8' : ''}`}></div>
-                            ))
-                        ) : (
-                            filteredData?.tabs.map((tab, index) => (
-                                <EachPriceCard 
-                                    key={tab.type} 
-                                    {...tab} 
-                                    category={filteredData.category} 
+            {/* Category Switcher — only show when more than one category */}
+            {categories.length > 1 && (
+                <div className="flex items-center justify-center mb-12 p-1 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/70 rounded-2xl">
+                    {categories.map((cat, index) => (
+                        <button
+                            key={cat}
+                            onClick={() => {
+                                setValue(index);
+                                queryClient.invalidateQueries({ queryKey: ['fetchPricing'] });
+                            }}
+                            className={`relative px-6 py-2.5 text-sm font-bold capitalize transition-all duration-200 rounded-xl
+                                ${value === index
+                                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                }`}
+                        >
+                            {categoryLabels[cat] ?? cat}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Cards Grid */}
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={value}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -16 }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                    className="w-full max-w-6xl"
+                >
+                    {isLoading ? (
+                        /* Skeleton loaders */
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="h-[520px] rounded-3xl bg-slate-100 dark:bg-slate-800/60 animate-pulse border border-slate-200 dark:border-slate-700"
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className={`grid gap-6
+                            ${filteredData?.tabs.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' : ''}
+                            ${filteredData?.tabs.length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto' : ''}
+                            ${(filteredData?.tabs.length ?? 0) >= 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : ''}
+                        `}>
+                            {filteredData?.tabs.map((tab, index) => (
+                                <EachPriceCard
+                                    key={tab.type}
+                                    {...tab}
+                                    category={filteredData.category}
                                     index={index}
                                 />
-                            ))
-                        )}
-                    </motion.div>
-                </AnimatePresence>
-            </div>
+                            ))}
+                        </div>
+                    )}
+                </motion.div>
+            </AnimatePresence>
+
         </Box>
     );
 }

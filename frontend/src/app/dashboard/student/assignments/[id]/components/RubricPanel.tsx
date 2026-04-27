@@ -58,7 +58,7 @@ export default function RubricPanel({ rubric, totalPoints }: Props) {
       
       <div className="mt-6 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4">
         <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">
+          <span className="material-symbols-outlined text-pink-600 dark:text-blue-400">
             info
           </span>
           <div>

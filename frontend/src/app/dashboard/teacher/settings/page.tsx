@@ -188,7 +188,7 @@ export default function TeacherSettingsPage() {
                                 </CardHeader>
                                 <CardContent className="relative z-10 p-8 pt-0 space-y-6">
                                     <div className="space-y-1">
-                                        <p className="text-3xl font-black italic leading-tight">{profile?.school?.name || 'SchoolHub Academy'}</p>
+                                        <p className="text-3xl font-black italic leading-tight">{profile?.school?.name || 'Qefas Hub Academy'}</p>
                                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50">{profile?.school?.schoolCode || 'SH-2024'}</p>
                                     </div>
                                     <Button variant="outline" className="w-full rounded-2xl h-12 bg-white/10 border-white/20 text-white hover:bg-white/20 font-black text-[10px] uppercase tracking-widest">

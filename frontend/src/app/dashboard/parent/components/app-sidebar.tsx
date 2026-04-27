@@ -11,7 +11,9 @@ import {
     SidebarMenu,
     SidebarMenuItem,
     SidebarMenuButton,
+    useSidebar,
 } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -39,7 +41,12 @@ import {
     User2,
     ChevronUp,
     ChevronDown,
-    LucideIcon
+    ChevronRight,
+    ChevronLeft,
+    LogOut,
+    Copy,
+    LucideIcon,
+    CreditCard
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
@@ -72,7 +79,7 @@ export const parentMenuItems: ParentMenuItem[] = [
     { icon: BellRing, label: "Notifications", href: "/parent/notifications", featureKey: "notifications", section: "monitoring" },
 
     // === FINANCIAL & RESOURCES ===
-    { icon: WalletCards, label: "Payments", href: "/parent/payments", featureKey: "payments", section: "financial" },
+    { icon: CreditCard, label: "Subscription", href: "/dashboard/parent/billing", featureKey: "billing", section: "financial" },
     { icon: BookMarked, label: "Resources", href: "/parent/resources", featureKey: "resources", section: "financial" },
 
     // === ADVANCED TOOLS ===
@@ -109,12 +116,9 @@ const PARENT_SECTION_TITLES = {
     profile: "Account Settings"
 };
 
-interface ParentSidebarProps {
-    isCollapsed: boolean;
-    setIsCollapsed: (collapsed: boolean) => void;
-}
-
-export function ParentSidebar({ isCollapsed, setIsCollapsed }: ParentSidebarProps) {
+export function ParentSidebar() {
+    const { state, toggleSidebar } = useSidebar()
+    const isCollapsed = state === "collapsed"
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const pathname = usePathname()
@@ -125,65 +129,51 @@ export function ParentSidebar({ isCollapsed, setIsCollapsed }: ParentSidebarProp
     return (
         <Sidebar
             collapsible="icon"
-            className={cn(
-                "transition-all duration-300 ease-in-out",
-                isCollapsed ? "w-[80px]" : "w-[260px]"
-            )}
+            className="border-r border-slate-200 dark:border-white/5 bg-white dark:bg-slate-950 transition-all duration-300 ease-in-out"
         >
             {/* Header */}
-            <SidebarHeader className="pt-8 flex items-center justify-between px-4">
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                            className="flex items-center justify-between hover:bg-transparent cursor-default"
-                            asChild
-                        >
-                            <Box className="flex items-center justify-start">
-                                <Box className="flex items-center justify-center mr-3">
-                                    <School className="h-5 w-5 shrink-0 text-blue-500" />
-                                </Box>
-                                {!isCollapsed && (
-                                    <Link href="/" passHref>
-                                        <Typography
-                                            variant="h6"
-                                            noWrap
-                                            component="h2"
-                                            sx={{
-                                                fontFamily: "monospace",
-                                                fontWeight: 700,
-                                                letterSpacing: ".2rem",
-                                                color: "inherit",
-                                                textDecoration: "none",
-                                            }}
-                                        >
-                                            SCHOOLHUB
-                                        </Typography>
-                                    </Link>
-                                )}
-                            </Box>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+            <SidebarHeader className="h-20 flex flex-row items-center justify-between px-4 border-b border-slate-100 dark:border-white/5 relative">
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-600 shadow-lg shadow-orange-600/20 group-hover:scale-110 transition-transform duration-500">
+                        <School className="h-6 w-6 text-white" />
+                    </div>
+                    {!isCollapsed && (
+                        <div className="flex flex-col leading-none transition-all duration-300">
+                            <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">QEFAS HUB</span>
+                            <span className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-0.5">Parent Portal</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Floating Absolute Toggle Button */}
+                <button
+                    onClick={toggleSidebar}
+                    className="absolute -right-3 top-7 h-6 w-6 rounded-full border border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800 flex items-center justify-center shadow-md hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-all z-50 group hover:scale-110 active:scale-95"
+                    aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                    {isCollapsed ? (
+                        <ChevronRight className="h-3.5 w-3.5 text-orange-600" />
+                    ) : (
+                        <ChevronLeft className="h-3.5 w-3.5 text-orange-600" />
+                    )}
+                </button>
             </SidebarHeader>
 
             {/* Main Menu */}
-            <SidebarContent className="mt-10">
-                <SidebarMenu>
+            <SidebarContent className="py-6 px-3 custom-scrollbar">
+                <SidebarMenu className="gap-6">
                     {/* Render each section */}
                     {Object.entries(menuSections).map(([sectionKey, items]) => {
                         if (items.length === 0) return null;
 
                         return (
-                            <div key={sectionKey} className="mb-6">
+                            <div key={sectionKey} className="flex flex-col gap-1.5">
                                 {/* Section Header (only show when not collapsed) */}
                                 {!isCollapsed && (
-                                    <div className="px-4 mb-2">
-                                        <Typography
-                                            variant="caption"
-                                            className="text-xs font-semibold text-gray-500 uppercase tracking-wide"
-                                        >
+                                    <div className="px-3 mb-1">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
                                             {PARENT_SECTION_TITLES[sectionKey as keyof typeof PARENT_SECTION_TITLES]}
-                                        </Typography>
+                                        </span>
                                     </div>
                                 )}
 
@@ -193,30 +183,40 @@ export function ParentSidebar({ isCollapsed, setIsCollapsed }: ParentSidebarProp
                                     const isDisabled = !PARENT_FEATURE_FLAGS[featureKey];
 
                                     return (
-                                        <SidebarMenuItem key={label} className="my-1">
-                                            <Link href={isDisabled ? "#" : href}>
+                                        <SidebarMenuItem key={label}>
+                                            <Link href={isDisabled ? "#" : href} className="w-full">
                                                 <SidebarMenuButton
                                                     className={cn(
-                                                        "relative flex items-center gap-3 text-[1rem] font-medium rounded-lg px-4 py-3 transition-all",
+                                                        "relative flex items-center gap-3 h-11 px-3 rounded-xl transition-all duration-200 group overflow-hidden",
                                                         isDisabled
-                                                            ? "text-gray-400 cursor-not-allowed opacity-60"
+                                                            ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50"
                                                             : isActive
-                                                                ? "bg-accent text-accent-foreground shadow-sm cursor-pointer"
-                                                                : "hover:bg-accent/40 cursor-pointer"
+                                                                ? "bg-orange-600/10 text-orange-600 dark:text-orange-400 font-bold shadow-[0_4px_12px_rgba(234,113,10,0.1)]"
+                                                                : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
                                                     )}
                                                     disabled={isDisabled}
                                                 >
                                                     {isActive && !isDisabled && (
-                                                        <span className="absolute left-0 top-0 h-full w-[4px] bg-primary rounded-r-md" />
+                                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-orange-600 rounded-r-full shadow-[2px_0_8px_rgba(234,113,10,0.6)]" />
                                                     )}
-                                                    <Icon className="h-5 w-5 shrink-0" />
+                                                    <Icon className={cn(
+                                                        "h-5 w-5 transition-all duration-300 group-hover:scale-110",
+                                                        isActive && !isDisabled ? "text-orange-600 dark:text-orange-400" : "group-hover:text-amber-500"
+                                                    )} />
                                                     {!isCollapsed && (
-                                                        <span className="flex-1">{label}</span>
+                                                        <span className="text-[13.5px] tracking-tight truncate">{label}</span>
                                                     )}
+                                                    
                                                     {isDisabled && !isCollapsed && (
-                                                        <span className="text-xs bg-gray-200 text-gray-500 px-2 py-1 rounded">
+                                                        <span className="ml-auto text-[8px] font-black uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded text-slate-400">
                                                             Soon
                                                         </span>
+                                                    )}
+
+                                                    {!isCollapsed && !isActive && !isDisabled && (
+                                                        <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
+                                                            <ChevronRight className="h-3.5 w-3.5 text-amber-500/50" />
+                                                        </div>
                                                     )}
                                                 </SidebarMenuButton>
                                             </Link>
@@ -230,43 +230,63 @@ export function ParentSidebar({ isCollapsed, setIsCollapsed }: ParentSidebarProp
             </SidebarContent>
 
             {/* Footer */}
-            <SidebarFooter>
+            <SidebarFooter className="p-3 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <DropdownMenu onOpenChange={setIsUserOpen}>
                             <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton className="flex items-center justify-between hover:bg-accent/60 transition-colors py-3 px-4 rounded-lg">
-                                    <div className="flex items-center">
-                                        <User2 className="mr-2 h-5 w-5" />
-                                        {!isCollapsed && (
-                                            <span className="font-medium text-[1rem]">Parent</span>
-                                        )}
+                                <SidebarMenuButton className={cn(
+                                    "flex items-center gap-2.5 h-14 w-full rounded-2xl transition-all duration-300 px-2 py-2 group",
+                                    isUserOpen ? "bg-white dark:bg-slate-900 shadow-lg ring-1 ring-orange-500/20" : "hover:bg-white dark:hover:bg-white/5 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+                                )}>
+                                    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl ring-2 ring-orange-500/10 group-hover:ring-orange-500/30 transition-all duration-500">
+                                        <div className="h-full w-full bg-orange-600 flex items-center justify-center text-white">
+                                            <User2 className="h-5 w-5" />
+                                        </div>
                                     </div>
-                                    {!isCollapsed &&
-                                        (isUserOpen ? (
-                                            <ChevronDown className="ml-auto h-4 w-4 opacity-70" />
-                                        ) : (
-                                            <ChevronUp className="ml-auto h-4 w-4 opacity-70" />
-                                        ))}
+
+                                    {!isCollapsed && (
+                                        <div className="flex flex-col items-start min-w-0 flex-1">
+                                            <span className="font-bold text-xs text-slate-900 dark:text-white leading-none truncate w-full">Parent Account</span>
+                                            <span className="text-[9px] text-orange-500 font-bold uppercase tracking-widest mt-1">Management Hub</span>
+                                        </div>
+                                    )}
+
+                                    {!isCollapsed && (
+                                        <div className={cn("transition-transform duration-500 ml-auto mr-1", isUserOpen ? "rotate-180" : "")}>
+                                            <ChevronDown className="h-3.5 w-3.5 text-slate-400 group-hover:text-orange-500" />
+                                        </div>
+                                    )}
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
 
                             <DropdownMenuContent
                                 side="top"
                                 align="end"
-                                className="w-[220px] rounded-lg shadow-lg border border-border bg-background p-1"
+                                sideOffset={12}
+                                className="w-[240px] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl p-2 animate-in slide-in-from-bottom-2 duration-300"
                             >
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    Family Profile
+                                <DropdownMenuItem className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 focus:bg-orange-500/10 focus:text-orange-600 transition-all font-medium">
+                                    <Users className="h-4 w-4" />
+                                    <span>Family Profile</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    Payment History
+                                <DropdownMenuItem className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 focus:bg-orange-500/10 focus:text-orange-600 transition-all font-medium">
+                                    <CreditCard className="h-4 w-4" />
+                                    <span>Payment History</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    Notification Settings
+                                <DropdownMenuItem className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 focus:bg-orange-500/10 focus:text-orange-600 transition-all font-medium">
+                                    <Settings className="h-4 w-4" />
+                                    <span>Notifications</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => logout()} className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
-                                    Sign out
+
+                                <div className="h-px bg-slate-100 dark:bg-white/5 my-1.5" />
+
+                                <DropdownMenuItem
+                                    onClick={() => logout()}
+                                    className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-rose-500 focus:bg-rose-500/10 focus:text-rose-600 transition-all font-bold"
+                                >
+                                    <LogOut className="h-4 w-4" />
+                                    <span>Sign Out</span>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

@@ -20,7 +20,7 @@ export default function ClassStats({
       icon: CheckCircle,
       value: `${attendance}%`,
       label: 'Attendance',
-      color: 'text-blue-600'
+      color: 'text-pink-600'
     },
     {
       icon: Calendar,

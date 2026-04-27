@@ -103,6 +103,12 @@ export const linkService = {
     return response.data;
   },
 
+  // Get single link request by ID
+  getLinkRequestById: async (id: string) => {
+    const response = await apiClient.get<any>(`/links/request/${id}`);
+    return response.data;
+  },
+
   // Accept all requests by category (network | classroom)
   acceptAllRequests: async (category?: "network" | "classroom") => {
     const response = await apiClient.post("/links/requests/accept-all", {

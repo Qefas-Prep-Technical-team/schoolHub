@@ -70,8 +70,32 @@ export default function RoleBaseFlow({
   };
 
   return (
-    <MotionConfig transition={{ duration: 0.4, type: "spring", bounce: 0.2 }}>
-      <div className="relative w-full min-h-[100dvh] bg-slate-50 dark:bg-zinc-950 flex flex-col text-slate-900 dark:text-zinc-100">
+    <MotionConfig transition={{ duration: 0.6, type: "spring", bounce: 0.1 }}>
+      <div className="relative w-full min-h-[100dvh] bg-[#fafafa] dark:bg-[#050505] flex flex-col text-slate-900 dark:text-zinc-100 overflow-hidden font-sans selection:bg-blue-500/30">
+        
+        {/* Premium Background Accents */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.2, 1],
+              rotate: [0, 90, 0],
+              opacity: [0.1, 0.2, 0.1]
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] rounded-full bg-blue-400/20 dark:bg-blue-600/10 blur-[120px]"
+          />
+          <motion.div 
+            animate={{ 
+              scale: [1.2, 1, 1.2],
+              rotate: [0, -90, 0],
+              opacity: [0.1, 0.15, 0.1]
+            }}
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+            className="absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] rounded-full bg-indigo-400/20 dark:bg-indigo-600/10 blur-[120px]"
+          />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
+        </div>
+
         {/* Redirecting Overlay */}
         <AnimatePresence>
           {isRedirecting && (
@@ -79,29 +103,39 @@ export default function RoleBaseFlow({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 z-50 flex items-center justify-center bg-white/70 dark:bg-zinc-950/70 backdrop-blur"
+              className="absolute inset-0 z-50 flex items-center justify-center bg-white/40 dark:bg-black/40 backdrop-blur-2xl"
             >
               <motion.div
-                initial={{ scale: 0.96, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.98, opacity: 0 }}
-                className="w-[min(420px,92vw)] rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl p-8 text-center"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                className="w-[min(400px,90vw)] rounded-[2.5rem] border border-white/20 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-900/80 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.1)] p-10 text-center backdrop-blur-xl"
               >
-                {/* Spinner */}
-                <div className="mx-auto mb-4 h-10 w-10 rounded-full border-2 border-slate-200 dark:border-zinc-800 border-t-slate-900 dark:border-t-white animate-spin" />
+                {/* Custom Premium Spinner */}
+                <div className="relative mx-auto mb-8 h-16 w-16">
+                  <div className="absolute inset-0 rounded-full border-[3px] border-slate-100 dark:border-zinc-800" />
+                  <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-blue-600 dark:border-t-blue-500"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-500 animate-pulse" />
+                  </div>
+                </div>
 
-                <p className="text-base font-semibold">Redirecting to you to login page...</p>
-                <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
-                  Finishing setup, please don’t close this tab.
+                <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Setting up your space</h3>
+                <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
+                  We're busy preparing everything for you. This will only take a moment.
                 </p>
 
-                {/* subtle progress bar */}
-                <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
+                {/* Refined Progress Indicator */}
+                <div className="mt-8 relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
                   <motion.div
                     initial={{ width: "0%" }}
                     animate={{ width: "100%" }}
-                    transition={{ duration: 0.9, ease: "easeInOut" }}
-                    className="h-full bg-slate-900 dark:bg-white"
+                    transition={{ duration: 1.2, ease: [0.65, 0, 0.35, 1] }}
+                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500"
                   />
                 </div>
               </motion.div>
@@ -109,24 +143,35 @@ export default function RoleBaseFlow({
           )}
         </AnimatePresence>
 
-        {/* Header / Progress */}
-        <header className="sticky top-0 z-20 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border-b border-slate-200 dark:border-zinc-800/50">
-          <div className="max-w-2xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500">
-                Step {active + 1} of {total}
-              </span>
-              <span className="text-xs font-medium tabular-nums text-blue-600 dark:text-blue-400">
-                {Math.round(pct)}%
-              </span>
+        {/* Header / Progress bar */}
+        <header className="sticky top-0 z-20 transition-all duration-300">
+          <div className="max-w-2xl mx-auto px-6 pt-8 pb-4">
+            <div className="flex items-center justify-between mb-4 px-1">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-500 mb-0.5">
+                  Onboarding
+                </span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">
+                  Step {active + 1} <span className="text-slate-400 dark:text-zinc-500 font-medium">/ {total}</span>
+                </span>
+              </div>
+              <div className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-100/50 dark:border-blue-500/20">
+                <span className="text-xs font-bold tabular-nums text-blue-600 dark:text-blue-400">
+                  {Math.round(pct)}% <span className="font-medium opacity-70">Complete</span>
+                </span>
+              </div>
             </div>
 
-            <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden">
+            <div className="relative h-1 w-full rounded-full bg-slate-200 dark:bg-zinc-800/50 overflow-hidden group">
               <motion.div
                 initial={false}
                 animate={{ width: `${pct}%` }}
-                className="h-full bg-blue-600 dark:bg-blue-500 shadow-[0_0_8px_rgba(37,99,235,0.4)]"
-              />
+                className="relative h-full bg-blue-600 dark:bg-blue-500"
+                transition={{ type: "spring", stiffness: 50, damping: 20 }}
+              >
+                {/* Glow effect at the end of progress */}
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 bg-blue-400 dark:bg-blue-400 blur-md rounded-full opacity-60" />
+              </motion.div>
             </div>
           </div>
         </header>
@@ -149,32 +194,53 @@ export default function RoleBaseFlow({
         </main>
 
         {/* Navigation Bar */}
-        <footer className="sticky bottom-0 z-20 pb-8 pt-4 px-6 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent dark:from-zinc-950 dark:via-zinc-950">
-          <div className="max-w-2xl mx-auto flex gap-4">
+        <footer className="sticky bottom-0 z-20 pb-10 pt-6 px-6">
+          {/* Subtle gradient to mask content behind footer */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#fafafa] via-[#fafafa]/90 to-transparent dark:from-[#050505] dark:via-[#050505]/95 pointer-events-none" />
+          
+          <div className="max-w-2xl mx-auto flex gap-4 relative z-10">
             {active > 0 && (
               <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileTap={{ scale: isRedirecting ? 1 : 0.97 }}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
+                whileTap={{ scale: 0.98 }}
                 onClick={back}
                 disabled={isRedirecting}
-                className="px-6 py-3 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-medium text-sm transition-colors hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-4 rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md font-bold text-sm transition-all hover:border-slate-300 dark:hover:border-zinc-700 disabled:opacity-50"
               >
                 Back
               </motion.button>
             )}
 
             <motion.button
+              whileHover={{ 
+                scale: isRedirecting ? 1 : 1.01,
+                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+              }}
               whileTap={{ scale: isRedirecting ? 1 : 0.98 }}
               onClick={next}
               disabled={isRedirecting}
-              className="flex-1 px-6 cursor-pointer py-3 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-black font-semibold text-sm shadow-lg shadow-slate-200 dark:shadow-none transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 px-8 py-4 rounded-3xl bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm shadow-xl shadow-slate-200/50 dark:shadow-none transition-all disabled:opacity-60 overflow-hidden relative group"
             >
-              {isRedirecting
-                ? "Redirecting..."
-                : active === total - 1
-                  ? "Complete Setup"
-                  : "Continue"}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-10 transition-opacity" />
+              <span className="relative flex items-center justify-center gap-2">
+                {isRedirecting
+                  ? "Redirecting..."
+                  : active === total - 1
+                    ? "Complete Setup"
+                    : "Continue"}
+                {!isRedirecting && active !== total - 1 && (
+                  <motion.svg 
+                    initial={{ x: 0 }}
+                    animate={{ x: [0, 4, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70"
+                  >
+                    <path d="M5 12h14m-7-7 7 7-7 7"/>
+                  </motion.svg>
+                )}
+              </span>
             </motion.button>
           </div>
         </footer>

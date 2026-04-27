@@ -15,6 +15,7 @@ export const PARENT_FEATURE_FLAGS = {
   
   // === FINANCIAL & RESOURCES ===
   payments: false,
+  billing: true,
   resources: false,
   
   // === ADVANCED TOOLS ===

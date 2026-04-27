@@ -126,9 +126,10 @@ export const documents: Document[] = [
 
 export const iconColors = {
   red: 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400',
-  blue: 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400',
+  blue: 'bg-blue-100 dark:bg-pink-900/40 text-pink-600 dark:text-pink-400',
   green: 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400',
   yellow: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-600 dark:text-yellow-400',
   purple: 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400',
   indigo: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400',
 };
+

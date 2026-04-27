@@ -6,7 +6,7 @@ export default function ParentHeader() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <span className="text-2xl font-bold text-primary">SchoolHub</span>
+            <span className="text-2xl font-bold text-primary">Qefas Hub</span>
           </div>
         </div>
       </div>

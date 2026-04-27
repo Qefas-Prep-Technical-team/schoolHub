@@ -36,7 +36,7 @@ import { Badge } from '@/components/ui/badge';
 export default function SchoolProfilePage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || '';
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
   const { data: school, isLoading: schoolLoading } = useSchoolProfile(schoolId);
   const { data: stats, isLoading: statsLoading } = useSchoolStats(schoolId);
@@ -126,7 +126,7 @@ export default function SchoolProfilePage() {
                    </p>
                    <div className="hidden lg:block h-8 w-px bg-slate-200 dark:bg-slate-800" />
                    <span className="hidden md:flex items-center gap-2 text-primary font-black uppercase tracking-[0.3em] text-[10px]">
-                      <Navigation size={14} /> {school?.subdomain ? `${school.subdomain}.schoolhub.com` : 'Digital Presence Active'}
+                      <Navigation size={14} /> {school?.subdomain ? `${school.subdomain}.qefashub.com` : 'Digital Presence Active'}
                    </span>
                 </div>
               </div>
@@ -264,7 +264,7 @@ export default function SchoolProfilePage() {
                 <div className="p-10 bg-white/5 rounded-[3rem] backdrop-blur-3xl border border-white/5 group hover:bg-white/10 transition-all">
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-3">Digital Subdomain</p>
                   <div className="flex items-center justify-between gap-4">
-                     <p className="text-xl font-bold truncate text-primary-foreground/90">{school?.subdomain ? `${school.subdomain}.schoolhub.com` : 'NOT PROVISIONED'}</p>
+                     <p className="text-xl font-bold truncate text-primary-foreground/90">{school?.subdomain ? `${school.subdomain}.qefashub.com` : 'NOT PROVISIONED'}</p>
                      <Globe size={28} className="text-slate-400 shrink-0" />
                   </div>
                 </div>

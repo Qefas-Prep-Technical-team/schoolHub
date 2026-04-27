@@ -26,7 +26,7 @@ export const StudentConnectionModal: React.FC<StudentConnectionModalProps> = ({
   onClose,
   studentCode,
 }) => {
-  const baseUrl = "https://www.schoolhub.flexitistudio.com";
+  const baseUrl = "https://www.qefashub.com";
   const parentLink = `${baseUrl}/signup/parent?studentCode=${studentCode}`;
   const teacherLink = `${baseUrl}/signup/teacher?studentCode=${studentCode}`;
 
@@ -41,7 +41,7 @@ export const StudentConnectionModal: React.FC<StudentConnectionModalProps> = ({
           <DialogHeader>
             <DialogTitle className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
               <UserPlus className="text-primary" size={32} />
-              Connect with SchoolHub
+              Connect with Qefas Hub
             </DialogTitle>
             <DialogDescription className="text-slate-500 font-medium text-lg mt-2">
               Invite your parents and teachers to join your academic journey.

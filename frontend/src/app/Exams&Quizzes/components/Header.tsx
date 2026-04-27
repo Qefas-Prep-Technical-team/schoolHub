@@ -16,7 +16,7 @@ export default function Header({ userAvatar, onNotifications, onHelp }: HeaderPr
                     <svg className="h-6 w-6 text-primary-action" fill="currentColor" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                         <path d="M4 4H17.3334V17.3334H30.6666V30.6666H44V44H4V4Z" />
                     </svg>
-                    <h2 className="text-xl font-bold leading-tight tracking-[-0.015em]">SchoolHub</h2>
+                    <h2 className="text-xl font-bold leading-tight tracking-[-0.015em]">Qefas Hub</h2>
                 </div>
 
                 {/* Navigation */}

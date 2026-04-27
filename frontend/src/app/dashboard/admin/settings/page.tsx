@@ -32,7 +32,7 @@ import { Input } from '@/components/ui/input';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || '';
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
   const { data: settings, isLoading } = useSchoolSettings(schoolId);
   const updateMutation = useUpdateSchoolSettings();

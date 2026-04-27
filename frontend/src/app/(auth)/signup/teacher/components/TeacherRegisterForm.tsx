@@ -10,6 +10,7 @@ import { useTeacherRegistration } from '../../services/useRegistrationMutations'
 import { TeacherFormData, teacherSchema } from '../../services/regSchema';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
 import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
+import RedirectOverlay from '@/components/ui/RedirectOverlay';
 
 
 export default function TeacherRegisterForm() {
@@ -18,6 +19,7 @@ export default function TeacherRegisterForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
+  const [showOverlay, setShowOverlay] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -107,9 +109,10 @@ export default function TeacherRegisterForm() {
           const backendMessage = response.data.message || 'Registration successful!';
           setSuccessMessage(backendMessage);
 
-          reset();
-
           const email = response.data.data?.teacher?.email || data.email;
+
+          setShowOverlay(true);
+          reset();
 
           setTimeout(() => {
             router.push(
@@ -134,10 +137,12 @@ export default function TeacherRegisterForm() {
   };
 
   return (
-    <div className="flex flex-col justify-center">
+    <>
+      <RedirectOverlay isVisible={showOverlay} />
+      <div className="flex flex-col justify-center">
       <div className="flex flex-col gap-3 p-4">
         <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] text-[#0d171b] dark:text-white">
-          Join SchoolHub as a Teacher
+          Join Qefas Hub as a Teacher
         </h1>
         <p className="text-lg font-normal leading-normal text-[#4c809a] dark:text-gray-400">
           Empower your students and manage your classroom efficiently.
@@ -419,6 +424,7 @@ export default function TeacherRegisterForm() {
           </a>
         </p>
       </form>
-    </div>
+      </div>
+    </>
   );
 }

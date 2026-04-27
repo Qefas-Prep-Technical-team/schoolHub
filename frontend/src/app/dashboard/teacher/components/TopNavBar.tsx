@@ -56,7 +56,7 @@ export default function TopNavBar() {
 
 
   return (
-    <header className="sticky top-0 z-30 h-20 flex items-center bg-white/60 dark:bg-slate-950/60 backdrop-blur-xl border-b border-white/20 dark:border-slate-800/10 transition-all duration-500 px-4 md:px-6">
+    <header className="sticky top-0 z-30 h-20 flex items-center bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 transition-all duration-500 px-4 md:px-8">
       <div className="flex items-center justify-between w-full max-w-[1600px] mx-auto gap-4">
         {/* Left Section */}
         <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
@@ -67,17 +67,17 @@ export default function TopNavBar() {
                   variant="ghost"
                   size="icon"
                   onClick={toggleSidebar}
-                  className="hidden md:flex h-9 w-9 items-center justify-center rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all active:scale-95 shadow-sm"
+                  className="hidden md:flex h-10 w-10 items-center justify-center rounded-xl hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-slate-500 hover:text-emerald-600 transition-all duration-300"
                 >
                   {isCollapsed ? (
-                    <ChevronRight className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                    <ChevronRight className="h-5 w-5" />
                   ) : (
-                    <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                    <ChevronLeft className="h-5 w-5" />
                   )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right">
-                <p className="text-xs font-medium">{isCollapsed ? "Expand" : "Collapse"}</p>
+              <TooltipContent side="right" className="bg-emerald-600 font-bold border-none text-white px-3 py-1.5 rounded-lg shadow-xl animate-in zoom-in-95">
+                <p className="text-[11px] uppercase tracking-widest">{isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -94,16 +94,16 @@ export default function TopNavBar() {
 
         {/* Central Search Section */}
         <div className="hidden md:flex flex-1 justify-center px-8">
-          <div className="relative w-full max-w-6xl group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-primary" size={22} />
+          <div className="relative w-full max-w-2xl group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 transition-all duration-300 group-focus-within:text-emerald-500 group-focus-within:scale-110" size={18} />
             <input 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search anything: students, classes, or activity..." 
-              className="w-full pl-16 pr-18 py-4 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 text-base font-semibold border border-transparent focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all duration-300 outline-none shadow-inner" 
+              placeholder="Search students, classes, or resources..." 
+              className="w-full pl-12 pr-16 py-3 rounded-2xl bg-slate-100 dark:bg-white/5 text-sm font-medium border border-transparent focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all duration-300 outline-none shadow-sm" 
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-black text-slate-400 select-none shadow-sm">
-              <span className="text-[9px] mt-0.5 opacity-60">⌘</span>K
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-[9px] font-black text-slate-400 select-none shadow-sm group-focus-within:border-emerald-500/30">
+              <span className="opacity-50">⌘</span>K
             </div>
           </div>
         </div>
@@ -116,25 +116,28 @@ export default function TopNavBar() {
           </div>
 
           <div 
-            className="flex items-center gap-2.5 p-1 pr-3 bg-slate-100/50 dark:bg-slate-900/50 rounded-full border border-slate-200/50 dark:border-slate-800/50 hover:bg-white dark:hover:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-700 cursor-pointer transition-all group overflow-hidden shadow-sm" 
+            className="flex items-center gap-2.5 p-1 pr-3 bg-white dark:bg-white/5 rounded-full border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 cursor-pointer transition-all duration-300 group shadow-sm" 
             onClick={() => setIsProfileOpen(!isProfileOpen)}
           >
-            <div className="relative w-7 h-7 rounded-full overflow-hidden bg-white dark:bg-slate-800 shadow-sm transition-transform group-hover:scale-110 duration-500">
-              {displayImage ? (
-                <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                  <User className="h-3.5 w-3.5 text-slate-400" />
-                </div>
-              )}
+            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-emerald-600 p-0.5 transition-transform group-hover:scale-105 duration-500 ring-2 ring-emerald-500/10 group-hover:ring-emerald-500/30">
+              <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-slate-900">
+                {displayImage ? (
+                  <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-emerald-600 text-white">
+                    <User className="h-4 w-4" />
+                  </div>
+                )}
+              </div>
             </div>
             
-            <div className="hidden lg:flex flex-col">
-              <p className="text-[10px] font-black uppercase tracking-tighter leading-none text-slate-900 dark:text-slate-100 max-w-[80px] truncate">{displayName}</p>
+            <div className="hidden lg:flex flex-col min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-tight leading-none text-slate-900 dark:text-white truncate max-w-[100px]">{displayName}</p>
+              <p className="text-[9px] font-bold text-emerald-500 tracking-widest uppercase mt-0.5">Teacher</p>
             </div>
 
             <ChevronDown
-              className={`h-3 w-3 text-slate-400 transition-transform duration-500 ${isProfileOpen ? 'rotate-180' : ''}`}
+              className={cn("h-3.5 w-3.5 text-slate-400 transition-transform duration-500", isProfileOpen ? "rotate-180 text-emerald-500" : "group-hover:text-emerald-500")}
             />
           </div>
         </div>

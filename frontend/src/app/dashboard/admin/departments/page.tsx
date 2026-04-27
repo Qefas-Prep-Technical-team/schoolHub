@@ -43,7 +43,7 @@ export default function DepartmentsPage() {
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
   
   const { user } = useAuthStore()
-  // As discussed, admins have a defaultTenantId. We need to fetch the school record to get its UUID 'id'.
+  // As discussed, admins have a tenantId. We need to fetch the school record to get its UUID 'id'.
   // However, for this implementation, we'll try to get departments using the current context.
   // We'll call checkAdminStatus to get the school record which contains the UUID.
   const [schoolId, setSchoolId] = useState<string | null>(null)

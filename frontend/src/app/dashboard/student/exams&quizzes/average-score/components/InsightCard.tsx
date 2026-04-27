@@ -18,8 +18,8 @@ const InsightCardComponent: React.FC<InsightCard> = ({
             text: 'text-amber-600 dark:text-amber-400',
         },
         blue: {
-            bg: 'bg-blue-100 dark:bg-blue-900/50',
-            text: 'text-blue-600 dark:text-blue-400',
+            bg: 'bg-blue-100 dark:bg-pink-900/50',
+            text: 'text-pink-600 dark:text-pink-400',
         },
         red: {
             bg: 'bg-red-100 dark:bg-red-900/50',
@@ -43,3 +43,4 @@ const InsightCardComponent: React.FC<InsightCard> = ({
 };
 
 export default InsightCardComponent;
+

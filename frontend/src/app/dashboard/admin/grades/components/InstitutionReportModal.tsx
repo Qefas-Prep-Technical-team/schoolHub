@@ -36,7 +36,7 @@ interface InstitutionReportModalProps {
 
 export default function InstitutionReportModal({ isOpen, onClose, school }: InstitutionReportModalProps) {
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || '';
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
   const { data: classes } = useClasses(schoolId);
   const { data: sessionsData } = useSessions(schoolId);

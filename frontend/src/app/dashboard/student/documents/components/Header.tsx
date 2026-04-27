@@ -95,7 +95,7 @@ export default function Header({
                 Student ID: 12345
               </p>
             </div>
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600"></div>
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600"></div>
           </div>
         </div>
       </div>
@@ -114,3 +114,4 @@ export default function Header({
     </div>
   );
 }
+

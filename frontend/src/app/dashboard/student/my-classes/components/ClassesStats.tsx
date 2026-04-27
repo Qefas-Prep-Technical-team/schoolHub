@@ -17,7 +17,7 @@ export default function ClassesStats({
       label: 'Total Classes',
       value: totalClasses.toString(),
       icon: '📚',
-      color: 'text-blue-600'
+      color: 'text-pink-600'
     },
     {
       label: 'Active Classes',
@@ -60,3 +60,4 @@ export default function ClassesStats({
     </div>
   )
 }
+

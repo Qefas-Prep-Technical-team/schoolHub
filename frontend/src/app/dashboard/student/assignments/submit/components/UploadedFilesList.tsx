@@ -27,7 +27,7 @@ export default function UploadedFilesList({ files, onRemove, onPreview }: Props)
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'uploading':
-        return 'text-blue-500';
+        return 'text-pink-500';
       case 'completed':
         return 'text-green-500';
       case 'error':
@@ -66,7 +66,7 @@ export default function UploadedFilesList({ files, onRemove, onPreview }: Props)
                     {file.name}
                   </p>
                   {file.status === 'uploading' && (
-                    <span className="material-symbols-outlined text-blue-500 animate-spin text-sm">
+                    <span className="material-symbols-outlined text-pink-500 animate-spin text-sm">
                       progress_activity
                     </span>
                   )}
@@ -118,3 +118,4 @@ export default function UploadedFilesList({ files, onRemove, onPreview }: Props)
     </div>
   );
 }
+

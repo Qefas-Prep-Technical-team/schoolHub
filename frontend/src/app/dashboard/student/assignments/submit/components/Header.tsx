@@ -30,7 +30,7 @@ export default function Header({ assignment, onViewInstructions }: Props) {
           <p className="text-sm text-[#506795] dark:text-white/60">
             {assignment.course} • {assignment.instructor}
           </p>
-          <div className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-3 py-1 text-xs font-medium text-blue-800 dark:text-blue-300">
+          <div className="inline-flex items-center rounded-full bg-blue-100 dark:bg-pink-900/30 px-3 py-1 text-xs font-medium text-pink-800 dark:text-blue-300">
             {assignment.points} points
           </div>
         </div>
@@ -47,3 +47,4 @@ export default function Header({ assignment, onViewInstructions }: Props) {
     </div>
   );
 }
+

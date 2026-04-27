@@ -1,20 +1,21 @@
-import CoreValues from '@/components/About/CoreValues';
-import HeroSection from '@/components/About/HeroSection';
-import OurTeam from '@/components/About/OurTeam';
-import VisionStory from '@/components/About/VisionStory';
-import { Container } from '@mui/material';
+"use client"
 import React, { FC } from 'react';
+import Box from '@mui/material/Box';
+import AboutHero from './components/AboutHero';
+import MissionVision from './components/MissionVision';
+import OurStory from './components/OurStory';
+import CoreValues from './components/CoreValues';
+import AboutCTA from './components/AboutCTA';
 
 const AboutPage: FC = () => {
     return (
-        <main className='flex h-full w-full items-center justify-center flex-col'>
-            <HeroSection />
-            <Container maxWidth="xl" component={"section"} >
-                <VisionStory />
-                <OurTeam />
-                <CoreValues />
-            </Container>
-        </main>
+        <Box component="main" className="bg-white dark:bg-slate-950">
+            <AboutHero />
+            <MissionVision />
+            <OurStory />
+            <CoreValues />
+            <AboutCTA />
+        </Box>
     );
 };
 

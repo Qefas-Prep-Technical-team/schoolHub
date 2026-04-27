@@ -18,7 +18,7 @@ export default function ProgressBar({
   const colorClasses = {
     primary: 'bg-primary',
     green: 'bg-green-500',
-    blue: 'bg-blue-500',
+    blue: 'bg-pink-500',
     yellow: 'bg-yellow-500',
     orange: 'bg-orange-500',
     red: 'bg-red-500',
@@ -43,3 +43,4 @@ export default function ProgressBar({
     </div>
   );
 }
+

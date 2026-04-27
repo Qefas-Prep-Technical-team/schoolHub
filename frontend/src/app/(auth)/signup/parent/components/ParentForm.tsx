@@ -10,6 +10,7 @@ import { useParentRegistration } from '../../services/useRegistrationMutations';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
 import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
+import RedirectOverlay from '@/components/ui/RedirectOverlay';
 
 
 export default function ParentRegistrationForm() {
@@ -18,6 +19,7 @@ export default function ParentRegistrationForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
+  const [showOverlay, setShowOverlay] = useState(false);
   const searchParams = useSearchParams();
 
   const { mutate: registerParent, isPending } = useParentRegistration();
@@ -93,11 +95,11 @@ export default function ParentRegistrationForm() {
           const backendMessage = response.data.message || 'Registration successful!';
           setSuccessMessage(backendMessage);
 
-          // Reset form
-          reset();
-
           // Redirect to login after delay
           const email = response.data.data.parent.email
+
+          setShowOverlay(true);
+          reset();
 
           setTimeout(() => {
             router.push(
@@ -123,10 +125,12 @@ export default function ParentRegistrationForm() {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-center p-6 sm:p-10 lg:p-12 xl:p-16">
+    <>
+      <RedirectOverlay isVisible={showOverlay} />
+      <div className="flex-1 flex flex-col justify-center p-6 sm:p-10 lg:p-12 xl:p-16">
       <div className="flex flex-col gap-3 p-4">
         <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] text-[#0d171b] dark:text-white">
-          Join SchoolHub as a Parent
+          Join Qefas Hub as a Parent
         </h1>
         <p className="text-lg font-normal leading-normal text-[#4c809a] dark:text-gray-400">
           Stay connected to your child&apos;s progress and school updates.
@@ -355,5 +359,6 @@ export default function ParentRegistrationForm() {
         </p>
       </form>
     </div>
+    </>
   );
 }

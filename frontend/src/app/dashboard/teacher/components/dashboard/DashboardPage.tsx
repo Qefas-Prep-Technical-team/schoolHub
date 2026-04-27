@@ -10,6 +10,8 @@ import StatsCards from './StatsCards';
 import AssignmentsExams from './AssignmentsExams';
 import PerformanceAnalytics from './PerformanceAnalytics';
 import StudentPerformanceWidget from './StudentPerformanceWidget';
+import TeacherHero from './TeacherHero';
+import InsightsGrid from './InsightsGrid';
 import MessagesAnnouncements from './MessagesAnnouncements';
 import TeacherSchedule from './TeacherSchedule';
 import RecentPersonalActivity from './RecentPersonalActivity';
@@ -128,40 +130,10 @@ export default function DashboardPage() {
       <main className="p-4 md:p-6 lg:p-10">
         <div className="max-w-[1600px] mx-auto">
           {/* Header Section */}
-          <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="flex items-center gap-2 text-primary font-black uppercase tracking-[0.2em] text-[10px] mb-2">
-                <Sparkles size={14} />
-                Command Center
-              </div>
-              <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">
-                Welcome back, <span className="text-primary">{user?.name?.split(' ')[0] || 'Teacher'}!</span>
-              </h1>
-              <div className="flex items-center gap-3 mt-4">
-                <div className="px-4 py-1.5 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[11px] font-black uppercase tracking-wider shadow-xl">
-                  {isPersonal ? "Personal Overview" : selectedSchoolName}
-                </div>
-                {isPersonal && (
-                  <span className="text-slate-400 dark:text-slate-500 text-[11px] font-black uppercase tracking-widest italic">
-                    • Aggregating your unique data cross-school
-                  </span>
-                )}
-              </div>
-            </motion.div>
-
-            <div className="flex items-center gap-3">
-              <Button className="h-12 px-6 rounded-2xl bg-white dark:bg-slate-800 border-none shadow-xl shadow-slate-200/50 dark:shadow-none text-slate-900 dark:text-white hover:bg-slate-50 font-black tracking-tight">
-                <Calendar className="mr-2 h-4 w-4" />
-                Timetable
-              </Button>
-              <Button className="h-12 w-12 p-0 rounded-2xl bg-white dark:bg-slate-800 border-none shadow-xl shadow-slate-200/50 dark:shadow-none text-slate-900 dark:text-white hover:bg-slate-50">
-                <Settings className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
+          <TeacherHero 
+            selectedSchoolName={selectedSchoolName} 
+            isPersonal={isPersonal} 
+          />
 
           <AnimatePresence mode="wait">
             <motion.div
@@ -169,9 +141,10 @@ export default function DashboardPage() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4 }}
+              className="mt-10"
             >
-              {/* Stats Row */}
-              <StatsCards stats={stats} />
+              {/* Insights Grid */}
+              <InsightsGrid stats={stats} />
 
               {/* Bento Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8">

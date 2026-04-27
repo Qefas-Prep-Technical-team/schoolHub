@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { usePlatformStaffStore } from "@/store/usePlatformStaffStore";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -24,9 +25,13 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
+  const { staff, isAuthenticated: isPlatformAuthenticated } = usePlatformStaffStore();
+
+  const anyAuthenticated = isAuthenticated || isPlatformAuthenticated;
+  const currentUserId = user?.id || staff?.id;
 
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    if (!anyAuthenticated || !currentUserId) {
       if (socket) {
         socket.disconnect();
         setSocket(null);
@@ -44,6 +49,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       autoConnect: true,
+      transports: ["websocket", "polling"], // Try websocket first
     });
 
     newSocket.on("connect", () => {
@@ -51,7 +57,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       setIsConnected(true);
       
       // Join user-specific room
-      newSocket.emit("join:user", user.id);
+      newSocket.emit("join:user", currentUserId);
     });
 
     newSocket.on("disconnect", () => {
@@ -68,7 +74,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     return () => {
       newSocket.disconnect();
     };
-  }, [isAuthenticated, user?.id]);
+  }, [anyAuthenticated, currentUserId, isPlatformAuthenticated]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

@@ -50,7 +50,7 @@ import { useGradeHub } from '@/lib/api/hooks/useGrades';
 
 export default function AdminGradesDashboard() {
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || '';
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
 
   const router = useRouter();
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);

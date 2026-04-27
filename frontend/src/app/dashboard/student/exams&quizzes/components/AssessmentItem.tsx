@@ -162,4 +162,4 @@ export default function AssessmentItem({ assessment }: AssessmentItemProps) {
                 <div className="absolute -right-4 -bottom-4 h-16 w-16 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
         </div>
     );
-}
+}

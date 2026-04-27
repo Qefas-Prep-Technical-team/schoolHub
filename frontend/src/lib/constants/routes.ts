@@ -1,5 +1,5 @@
 /**
- * Centralized Route Configuration for SchoolHub
+ * Centralized Route Configuration for Qefas Hub
  */
 export const ROUTES = {
   AUTH: {

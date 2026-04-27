@@ -29,4 +29,5 @@ export interface PricingTab {
   hasTrial: boolean;
   trialDays: number;
   isPopular: boolean;
+  storage?: string;
 }

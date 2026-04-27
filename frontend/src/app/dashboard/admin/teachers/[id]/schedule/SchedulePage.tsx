@@ -12,7 +12,7 @@ export default function SchedulePage() {
   const { id: teacherId } = useParams()
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || ''
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ''
   
   const [currentWeek, setCurrentWeek] = useState('Current Semester Schedule')
   const [isModalOpen, setIsModalOpen] = useState(false)

@@ -37,7 +37,8 @@ import {
     School,
     LucideIcon,
     FileText,
-    Link2
+    Link2,
+    CreditCard
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
@@ -45,7 +46,7 @@ import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutation
 import { STUDENT_FEATURE_FLAGS, StudentFeatureFlagKey } from "./studentFeatureFlags"
 import { linkService } from "@/lib/api/services/linkService"
 import { toast } from "react-toastify"
-import { Copy, User2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { Copy, User2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, LogOut } from "lucide-react"
 import { useEffect } from "react"
 
 // Define the menu item type
@@ -80,8 +81,7 @@ export const studentMenuItems: StudentMenuItem[] = [
     { icon: LifeBuoy, label: "Support", href: "/dashboard/student/support", featureKey: "support", section: "profile" },
 
     // === OPTIONAL/ADVANCED FEATURES ===
-    { icon: BookMarked, label: "Library", href: "/student/library", featureKey: "library", section: "advanced" },
-    { icon: WalletCards, label: "Payments", href: "/student/payments", featureKey: "payments", section: "advanced" },
+    { icon: CreditCard, label: "Subscription", href: "/dashboard/student/billing", featureKey: "billing", section: "profile" },
     { icon: Brain, label: "AI Study Assistant", href: "/student/ai-study", featureKey: "aiStudy", section: "advanced" },
     { icon: CalendarClock, label: "Timetable", href: "/student/timetable", featureKey: "timetable", section: "advanced" },
 ];
@@ -136,44 +136,23 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
         <Sidebar
             collapsible="icon"
             className={cn(
-                "transition-all duration-300 ease-in-out",
-                isCollapsed ? "w-[80px]" : "w-[260px]"
+                "transition-all duration-300 ease-in-out border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-0",
+                isCollapsed ? "w-[64px]" : "w-[260px]"
             )}
         >
             {/* Header */}
-            <SidebarHeader className="pt-8 flex items-center justify-between px-4">
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                            className="flex items-center justify-between hover:bg-transparent cursor-default"
-                            asChild
-                        >
-                            <Box className="flex items-center justify-start">
-                                <Box className="flex items-center justify-center mr-3">
-                                    <School className="h-5 w-5 shrink-0 text-blue-500" />
-                                </Box>
-                                {!isCollapsed && (
-                                    <Link href="/" passHref>
-                                        <Typography
-                                            variant="h6"
-                                            noWrap
-                                            component="h2"
-                                            sx={{
-                                                fontFamily: "monospace",
-                                                fontWeight: 700,
-                                                letterSpacing: ".2rem",
-                                                color: "inherit",
-                                                textDecoration: "none",
-                                            }}
-                                        >
-                                            SCHOOLHUB
-                                        </Typography>
-                                    </Link>
-                                )}
-                            </Box>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+            <SidebarHeader className="pt-8 flex items-center justify-between px-4 relative">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-600 shadow-lg shadow-pink-600/20">
+                        <School className="h-5 w-5 text-white" />
+                    </div>
+                    {!isCollapsed && (
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">QEFAS HUB</span>
+                            <span className="text-[10px] text-pink-500 font-bold uppercase tracking-widest">Student Portal</span>
+                        </div>
+                    )}
+                </div>
                 
                 {/* Retractable Toggle Button */}
                 <button
@@ -181,64 +160,62 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                         e.preventDefault();
                         setIsCollapsed(!isCollapsed);
                     }}
-                    className="absolute -right-4 top-10 z-[100] h-8 w-8 rounded-full border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 flex items-center justify-center shadow-xl text-gray-600 hover:text-blue-600 hover:scale-110 active:scale-95 transition-all"
+                    className="absolute -right-3 top-20 z-50 h-6 w-6 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400 hover:text-pink-500 dark:hover:text-pink-400 flex items-center justify-center transition-all shadow-sm group"
                     title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                 >
                     {isCollapsed ? (
-                        <ChevronRight size={18} />
+                        <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
                     ) : (
-                        <ChevronLeft size={18} />
+                        <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
                     )}
                 </button>
             </SidebarHeader>
 
             {/* Main Menu */}
-            <SidebarContent className="mt-10">
+            <SidebarContent className="mt-10 px-2 flex-1 outline-none">
                 <SidebarMenu>
                     {/* Render each section */}
                     {Object.entries(menuSections).map(([sectionKey, items]) => {
-                        // This check ensures empty sections are not rendered
                         if (items.length === 0) return null;
 
                         return (
                             <div key={sectionKey} className="mb-6">
-                                {/* Section Header (only show when not collapsed) */}
+                                {/* Section Header */}
                                 {!isCollapsed && (
                                     <div className="px-4 mb-2">
-                                        <Typography
-                                            variant="caption"
-                                            className="text-xs font-semibold text-gray-500 uppercase tracking-wide"
-                                        >
+                                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
                                             {STUDENT_SECTION_TITLES[sectionKey as keyof typeof STUDENT_SECTION_TITLES]}
-                                        </Typography>
+                                        </span>
                                     </div>
                                 )}
 
-                                {/* Section Items - ONLY filtered items appear here */}
-                                {items.map(({ icon: Icon, label, href, featureKey }) => {
+                                {items.map(({ icon: Icon, label, href }) => {
                                     const isActive = pathname === href;
-                                    // Since items are already filtered, this should always be true
-                                    const isDisabled = !STUDENT_FEATURE_FLAGS[featureKey];
 
                                     return (
                                         <SidebarMenuItem key={label} className="my-1">
                                             <Link href={href}>
                                                 <SidebarMenuButton
                                                     className={cn(
-                                                        "relative flex items-center gap-3 text-[1rem] font-medium rounded-lg px-4 py-3 transition-all",
+                                                        "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative",
                                                         isActive
-                                                            ? "bg-accent text-accent-foreground shadow-sm cursor-pointer"
-                                                            : "hover:bg-accent/40 cursor-pointer"
+                                                            ? "bg-pink-600/10 text-pink-600 dark:text-pink-400 shadow-sm shadow-pink-600/5"
+                                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100"
                                                     )}
                                                 >
-                                                    {isActive && (
-                                                        <span className="absolute left-0 top-0 h-full w-[4px] bg-primary rounded-r-md" />
-                                                    )}
-                                                    <Icon className="h-5 w-5 shrink-0" />
+                                                    <Icon className={cn(
+                                                        "h-5 w-5 transition-transform group-hover:scale-110",
+                                                        isActive ? "text-pink-500" : "text-slate-400"
+                                                    )} />
                                                     {!isCollapsed && (
-                                                        <span className="flex-1">{label}</span>
+                                                        <span className={cn(
+                                                            "font-semibold tracking-tight",
+                                                            isActive ? "text-pink-600 dark:text-pink-400" : ""
+                                                        )}>{label}</span>
                                                     )}
-                                                    {/* "Soon" badge is removed since disabled items don't appear */}
+                                                    {isActive && (
+                                                        <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-pink-500 shadow-lg shadow-pink-500/50" />
+                                                    )}
                                                 </SidebarMenuButton>
                                             </Link>
                                         </SidebarMenuItem>
@@ -251,65 +228,66 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
             </SidebarContent>
 
             {/* Footer */}
-            <SidebarFooter>
+            <SidebarFooter className="p-4 bg-transparent">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <DropdownMenu onOpenChange={setIsUserOpen}>
                             <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton className="flex items-center justify-between hover:bg-accent/60 transition-colors py-3 px-4 rounded-lg">
-                                    <div className="flex items-center">
-                                        <div className="mr-2 h-8 w-8 rounded-lg overflow-hidden bg-accent flex items-center justify-center shrink-0">
-                                            {profile?.profileImage ? (
-                                                <img src={profile.profileImage} alt={profile.name} className="h-full w-full object-cover" />
-                                            ) : (
-                                                <User2 className="h-5 w-5 text-muted-foreground" />
-                                            )}
-                                        </div>
-                                        {!isCollapsed && (
-                                            <div className="flex flex-col items-start">
-                                                <span className="font-medium text-[0.9rem] leading-none mb-1">{profile?.name || 'Student'}</span>
-                                                {profile?.linkingCode && (
-                                                    <span className="text-[10px] font-black text-primary tracking-widest leading-none bg-primary/10 px-1.5 py-0.5 rounded uppercase">
-                                                        {profile.linkingCode}
-                                                    </span>
-                                                )}
+                                <SidebarMenuButton className="flex items-center gap-3 p-3 h-auto rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-pink-500/30 transition-all group">
+                                    <div className="h-10 w-10 rounded-lg bg-pink-600/10 dark:bg-pink-600/20 flex items-center justify-center border border-pink-500/20 overflow-hidden shrink-0">
+                                        {profile?.profileImage ? (
+                                            <img src={profile.profileImage} alt={profile.name} className="h-full w-full object-cover" />
+                                        ) : (
+                                            <div className="h-full w-full bg-pink-600 flex items-center justify-center">
+                                                <User2 className="h-6 w-6 text-white/60" />
                                             </div>
                                         )}
                                     </div>
-                                    {!isCollapsed &&
-                                        (isUserOpen ? (
-                                            <ChevronDown className="ml-auto h-4 w-4 opacity-70" />
-                                        ) : (
-                                            <ChevronUp className="ml-auto h-4 w-4 opacity-70" />
-                                        ))}
+                                    {!isCollapsed && (
+                                        <div className="flex flex-col items-start flex-1 overflow-hidden">
+                                            <span className="font-black text-xs text-slate-900 dark:text-white truncate leading-tight uppercase tracking-tight">{profile?.name || 'Student'}</span>
+                                            {profile?.linkingCode && (
+                                                <span className="text-[9px] font-black text-pink-500 uppercase tracking-[0.15em] mt-1">
+                                                    ID: {profile.linkingCode}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                    {!isCollapsed && (
+                                        <div className="text-slate-400 group-hover:text-pink-400 transition-colors">
+                                            {isUserOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                                        </div>
+                                    )}
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
 
                             <DropdownMenuContent
-                                side="top"
+                                side="right"
                                 align="end"
-                                className="w-[220px] rounded-lg shadow-lg border border-border bg-background p-1"
+                                className="w-[220px] rounded-2xl shadow-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 ml-2"
                             >
                                 {profile?.linkingCode && (
                                     <DropdownMenuItem 
                                         onClick={() => copyCode(profile.linkingCode)}
-                                        className="cursor-pointer hover:bg-accent/60 rounded-md font-black text-xs p-3 justify-between"
+                                        className="cursor-pointer hover:bg-pink-500/10 rounded-xl font-bold text-xs p-4 flex flex-col items-start gap-1 group"
                                     >
-                                        <div className="flex flex-col">
-                                            <span className="text-gray-400 uppercase tracking-widest text-[10px]">Your Code</span>
-                                            <span className="text-primary tracking-widest">{profile.linkingCode}</span>
+                                        <span className="text-[10px] text-slate-400 uppercase tracking-widest font-black">Quick Link Code</span>
+                                        <div className="flex items-center justify-between w-full">
+                                            <span className="text-pink-500 tracking-[0.2em] font-black text-base">{profile.linkingCode}</span>
+                                            <Copy size={16} className="text-slate-400 group-hover:text-pink-500 transition-colors" />
                                         </div>
-                                        <Copy className="h-4 w-4 text-gray-400" />
                                     </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    My Profile
+                                <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-2 mx-2" />
+                                <DropdownMenuItem className="rounded-xl py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 font-medium text-slate-600 dark:text-slate-300">
+                                    <User2 className="mr-3 h-4 w-4" /> My Profile
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    Academic Progress
+                                <DropdownMenuItem className="rounded-xl py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 font-medium text-slate-600 dark:text-slate-300">
+                                    <BarChart3 className="mr-3 h-4 w-4" /> Academic Progress
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => logout()} className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
-                                    Sign out
+                                <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-2 mx-2" />
+                                <DropdownMenuItem onClick={() => logout()} className="rounded-xl py-3 cursor-pointer hover:bg-red-500/10 font-bold text-red-500">
+                                    <LogOut size={16} className="mr-3" /> Sign out
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -319,3 +297,4 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
         </Sidebar>
     )
 }
+

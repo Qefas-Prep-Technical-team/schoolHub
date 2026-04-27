@@ -25,6 +25,14 @@ export const paymentService = {
     const response = await apiClient.post("/payment/verify", data);
     return response.data;
   },
+  
+  /**
+   * Get subscription and billing data for the current user
+   */
+  getBilling: async (params?: { page?: number; limit?: number }) => {
+    const response = await apiClient.get("/payment/billing", { params });
+    return response.data;
+  },
 
   /**
    * Get payment history

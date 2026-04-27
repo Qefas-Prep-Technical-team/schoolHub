@@ -8,7 +8,7 @@ export function getClassStatusColor(status: ClassStatus): string {
     case 'completed':
       return 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
     case 'ongoing':
-      return 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+      return 'bg-blue-100 dark:bg-pink-900/50 text-pink-700 dark:text-blue-300'
     case 'next':
       return 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
     case 'upcoming':
@@ -25,7 +25,7 @@ export function getAssignmentStatusColor(status: AssignmentStatus): string {
     case 'not-started':
       return 'text-red-600 dark:text-red-400'
     case 'submitted':
-      return 'text-blue-600 dark:text-blue-400'
+      return 'text-pink-600 dark:text-pink-400'
     case 'graded':
       return 'text-green-600 dark:text-green-400'
     case 'late':
@@ -38,7 +38,7 @@ export function getAssignmentStatusColor(status: AssignmentStatus): string {
 export function getSubjectColor(subject: string): string {
   const colors: Record<string, string> = {
     'history': 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300',
-    'mathematics': 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300',
+    'mathematics': 'bg-blue-100 dark:bg-pink-900/50 text-pink-700 dark:text-blue-300',
     'chemistry': 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300',
     'physics': 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300',
     'english': 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300',
@@ -68,3 +68,4 @@ export function formatTimeRange(start: Date, end: Date): string {
 export function calculatePercentage(score: number, total: number): number {
   return Math.round((score / total) * 100)
 }
+

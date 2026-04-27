@@ -7,7 +7,7 @@ export default function AuthIllustration() {
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm border border-white/10">
                         <span className="material-symbols-outlined !text-3xl text-white">school</span>
                     </div>
-                    <span className="text-2xl font-bold">SchoolHub</span>
+                    <span className="text-2xl font-bold">Qefas Hub</span>
                 </div>
 
                 <div className="flex flex-col gap-4">
@@ -15,7 +15,7 @@ export default function AuthIllustration() {
                         Learn Smarter.<br />Achieve More.
                     </h1>
                     <p className="text-base lg:text-lg text-white/90 font-light">
-                        Welcome back to SchoolHub, your personal gateway to a world of knowledge.
+                        Welcome back to Qefas Hub, your personal gateway to a world of knowledge.
                     </p>
                 </div>
 

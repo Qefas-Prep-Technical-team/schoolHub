@@ -22,7 +22,7 @@ interface Exam {
 
 export default function ExamStatus() {
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || '';
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
   const { data: examsData, isLoading } = useExams({ schoolId });
 

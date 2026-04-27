@@ -124,7 +124,7 @@ export default function PingOverlay() {
           transition={{ delay: 2 }}
           className="absolute bottom-10 text-[12px] text-muted-foreground/50 font-medium"
         >
-          Secure Session Initializing &bull; SchoolHub Infrastructure
+          Secure Session Initializing &bull; Qefas Hub Infrastructure
         </motion.div>
       </motion.div>
     </AnimatePresence>

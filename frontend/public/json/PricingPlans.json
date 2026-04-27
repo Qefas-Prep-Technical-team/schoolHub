@@ -70,7 +70,8 @@
           "Admin dashboard",
           "2 admins",
           "Up to 100 students",
-          "Basic analytics"
+          "Basic analytics",
+          "Result tracking via Email and SMS"
         ],
         "hasTrial": true,
         "trialDays": 14,
@@ -88,7 +89,8 @@
           "Unlimited admins",
           "Up to 500 students",
           "Email notifications",
-          "Basic integrations"
+          "Basic integrations",
+          "Result tracking via Email"
         ],
         "hasTrial": true,
         "trialDays": 21,
@@ -106,7 +108,8 @@
           "Full access",
           "Advanced reporting",
           "Custom domain",
-          "Integration with LMS"
+          "Integration with LMS",
+          "Result tracking via Email and SMS"
         ],
         "hasTrial": true,
         "trialDays": 30,
@@ -128,7 +131,8 @@
         "features": [
           "Upload lessons",
           "Quiz generator",
-          "Track student progress"
+          "Track student progress",
+          "Result tracking via Email and SMS"
         ],
         "hasTrial": true,
         "trialDays": 7,
@@ -145,7 +149,8 @@
         "features": [
           "Custom teacher profile",
           "Multiple class support",
-          "Certificate generator"
+          "Certificate generator",
+          "Result tracking via Email"
         ],
         "hasTrial": true,
         "trialDays": 14,
@@ -162,7 +167,8 @@
         "features": [
           "Team collaboration",
           "Live class scheduling",
-          "Earnings dashboard"
+          "Earnings dashboard",
+          "Result tracking via Email and SMS"
         ],
         "hasTrial": true,
         "trialDays": 21,

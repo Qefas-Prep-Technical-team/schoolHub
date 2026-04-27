@@ -84,8 +84,8 @@ export const improvementTips: ImprovementTip[] = [
     title: 'Review History Notes',
     description: 'Your lowest grades are in History. Spend an extra 30 minutes reviewing notes before starting the next essay.',
     icon: 'menu_book',
-    iconBgColor: 'bg-blue-100 dark:bg-blue-900/50',
-    iconColor: 'text-blue-600 dark:text-blue-400',
+    iconBgColor: 'bg-blue-100 dark:bg-pink-900/50',
+    iconColor: 'text-pink-600 dark:text-pink-400',
   },
   {
     id: '3',
@@ -104,3 +104,4 @@ export const performanceData: PerformanceData[] = [
   { month: 'Dec', score: 92 },
   { month: 'Jan', score: 90 },
 ];
+

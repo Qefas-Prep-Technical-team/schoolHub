@@ -5,7 +5,9 @@ import React, { FC } from 'react';
 
 const Footer: FC = () => {
     const pathname = usePathname()
-    const isDashboard = pathname.startsWith("/dashboard") // for example
+    const isDashboard = pathname.startsWith("/dashboard") || 
+                        pathname.startsWith("/console") || 
+                        pathname.startsWith("/platform");
     return (
         !isDashboard && <Box
             className='bg-slate-900 text-white py-16'

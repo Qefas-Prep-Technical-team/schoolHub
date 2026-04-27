@@ -168,10 +168,10 @@ export default function LinkingHub() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2 mb-2">
-              <div className="p-1.5 bg-blue-600 rounded-lg shadow-blue-200 shadow-lg">
+              <div className="p-1.5 bg-pink-600 rounded-lg shadow-blue-200 shadow-lg">
                 <Zap size={16} className="text-white fill-current" />
               </div>
-              <span className="text-[10px] font-black text-blue-600 tracking-widest uppercase">Network</span>
+              <span className="text-[10px] font-black text-pink-600 tracking-widest uppercase">Network</span>
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Linking Hub
@@ -191,7 +191,7 @@ export default function LinkingHub() {
 
         {/* Profile Stats / Code Bento Card - SHRUNK */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="md:col-span-2 relative overflow-hidden border-none bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-2xl shadow-blue-200/50 rounded-[1.5rem]">
+          <Card className="md:col-span-2 relative overflow-hidden border-none bg-gradient-to-br from-pink-600 to-indigo-700 text-white shadow-2xl shadow-blue-200/50 rounded-[1.5rem]">
             <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
               <div className="space-y-3 text-center sm:text-left">
                 <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-wider">
@@ -207,7 +207,7 @@ export default function LinkingHub() {
                   onClick={() => copyToClipboard(profile.linkingCode, "Linking code")}
                   variant="secondary"
                   size="sm"
-                  className="w-full h-9 bg-white text-blue-600 hover:bg-blue-50 font-black text-[11px] uppercase tracking-widest rounded-lg"
+                  className="w-full h-9 bg-white text-pink-600 hover:bg-rose-50 font-black text-[11px] uppercase tracking-widest rounded-lg"
                 >
                   <Copy size={14} className="mr-2" /> Copy Code
                 </Button>
@@ -237,7 +237,7 @@ export default function LinkingHub() {
                   onClick={() => setMainTab('network')}
                   className={cn(
                     "px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
-                    mainTab === 'network' ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600" : "text-slate-500 hover:text-slate-700"
+                    mainTab === 'network' ? "bg-white dark:bg-slate-700 shadow-sm text-pink-600" : "text-slate-500 hover:text-slate-700"
                   )}
                 >
                   Network
@@ -289,7 +289,7 @@ export default function LinkingHub() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <Input
                 placeholder={`Search ${mainTab}...`}
-                className="pl-11 h-11 rounded-xl border-none bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-blue-500/20 text-xs font-medium"
+                className="pl-11 h-11 rounded-xl border-none bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-pink-500/20 text-xs font-medium"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -300,7 +300,7 @@ export default function LinkingHub() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoadingActive || isLoadingRequests || isLoadingProfile ? (
               <div className="col-span-full py-20 flex flex-col items-center justify-center text-center space-y-4">
-                <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+                <Loader2 className="w-12 h-12 text-pink-600 animate-spin" />
                 <p className="text-slate-500 font-black uppercase text-[10px] tracking-widest">Synchronizing your network...</p>
               </div>
             ) : subTab === 'active' ? (
@@ -405,19 +405,19 @@ function ConnectionCard({ link, onRevoke, isRevoking }: any) {
   return (
     <Card className={cn(
       "group border-none bg-white dark:bg-slate-900 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] overflow-hidden border-l-4",
-      isClass ? "border-l-purple-500 shadow-purple-100/50" : "border-l-blue-500 shadow-blue-100/50"
+      isClass ? "border-l-purple-500 shadow-purple-100/50" : "border-l-pink-500 shadow-blue-100/50"
     )}>
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-4">
             <div className={cn(
                "h-12 w-12 rounded-xl flex items-center justify-center border group-hover:scale-110 transition-transform overflow-hidden",
-               isClass ? "bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800" : "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-700"
+               isClass ? "bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800" : "bg-rose-50 dark:bg-pink-900/20 border-blue-100 dark:border-pink-700"
             )}>
               {link.peerImage ? (
                 <img src={link.peerImage} alt={link.peerName} className="h-full w-full object-cover" />
               ) : (
-                <ShieldCheck size={24} className={isClass ? "text-purple-500" : "text-blue-500"} />
+                <ShieldCheck size={24} className={isClass ? "text-purple-500" : "text-pink-500"} />
               )}
             </div>
             <div>
@@ -455,11 +455,11 @@ function ConnectionCard({ link, onRevoke, isRevoking }: any) {
 
         <div className={cn(
           "flex items-center justify-between p-4 rounded-xl border group/code h-14",
-          isClass ? "bg-purple-50/50 border-purple-100 dark:bg-purple-900/10 dark:border-purple-800/50" : "bg-blue-50/50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-800/50"
+          isClass ? "bg-purple-50/50 border-purple-100 dark:bg-purple-900/10 dark:border-purple-800/50" : "bg-rose-50/50 border-blue-100 dark:bg-pink-900/10 dark:border-pink-800/50"
         )}>
           <div className="flex flex-col">
             <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider mb-0.5">Entity Code</span>
-            <span className={cn("font-black tracking-widest text-sm", isClass ? "text-purple-600" : "text-blue-600")}>
+            <span className={cn("font-black tracking-widest text-sm", isClass ? "text-purple-600" : "text-pink-600")}>
                {link.leftEntityId === link.userId ? link.rightCode : link.leftCode}
             </span>
           </div>
@@ -620,7 +620,7 @@ function ConnectModal({ isOpen, onClose }: any) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[420px] rounded-[2rem] p-8 border-none bg-white dark:bg-slate-900">
         <DialogHeader className="text-left space-y-3">
-          <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+          <div className="h-14 w-14 rounded-2xl bg-rose-50 dark:bg-pink-900/30 flex items-center justify-center text-pink-600">
             <Link2 size={28} />
           </div>
           <DialogTitle className="text-2xl font-extrabold">Join Community</DialogTitle>
@@ -674,14 +674,14 @@ function ConnectModal({ isOpen, onClose }: any) {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Add a message (optional)..."
-              className="w-full h-24 p-4 rounded-xl border-none bg-slate-50 dark:bg-slate-800 dark:border-slate-700 font-medium text-sm focus:ring-2 focus:ring-blue-500/20 resize-none placeholder:text-slate-400 text-slate-900 dark:text-white"
+              className="w-full h-24 p-4 rounded-xl border-none bg-slate-50 dark:bg-slate-800 dark:border-slate-700 font-medium text-sm focus:ring-2 focus:ring-pink-500/20 resize-none placeholder:text-slate-400 text-slate-900 dark:text-white"
             />
           </div>
 
           <Button
             type="submit"
             disabled={isPending}
-            className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base transition-all shadow-lg shadow-blue-200"
+            className="w-full h-12 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-base transition-all shadow-lg shadow-blue-200"
           >
             {isPending ? <Loader2 className="animate-spin" /> : "Request Connection"}
           </Button>
@@ -690,3 +690,4 @@ function ConnectModal({ isOpen, onClose }: any) {
     </Dialog>
   );
 }
+

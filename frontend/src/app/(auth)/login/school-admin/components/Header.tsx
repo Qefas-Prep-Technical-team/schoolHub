@@ -8,7 +8,7 @@ export default function Header() {
           </span>
         </div>
         <h2 className="text-xl font-bold text-[#0A2540] dark:text-background-light">
-          SchoolHub
+          Qefas Hub
         </h2>
       </div>
     </header>

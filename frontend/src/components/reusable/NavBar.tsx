@@ -28,7 +28,10 @@ function NavBar() {
     const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
     const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
     const pathname = usePathname()
-    const isDashboard = pathname.startsWith("/dashboard") // for example
+    const isDashboard = pathname.startsWith("/dashboard") || 
+                        pathname.startsWith("/console") || 
+                        pathname.startsWith("/platform") ||
+                        (pathname.startsWith("/auth/login") && pathname.includes("type=platform"));
     const pages = [
         {
             name: 'Features',

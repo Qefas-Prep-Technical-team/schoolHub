@@ -28,7 +28,7 @@ export default function AssignmentHeader({
     submitted: {
       icon: null,
       text: 'Submitted',
-      className: 'bg-blue-500/20 text-blue-500',
+      className: 'bg-pink-500/20 text-pink-500',
     },
   };
 
@@ -54,3 +54,4 @@ export default function AssignmentHeader({
     </div>
   );
 }
+

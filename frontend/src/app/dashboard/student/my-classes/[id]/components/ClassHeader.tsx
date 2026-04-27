@@ -9,7 +9,7 @@ interface ClassHeaderProps {
 
 export default function ClassHeader({ classItem }: ClassHeaderProps) {
   return (
-    <div className="relative rounded-2xl overflow-hidden min-h-[240px] bg-gradient-to-br from-blue-600 to-purple-700">
+    <div className="relative rounded-2xl overflow-hidden min-h-[240px] bg-gradient-to-br from-pink-600 to-rose-700">
       <div 
         className="absolute inset-0 bg-cover bg-center opacity-20"
         style={{

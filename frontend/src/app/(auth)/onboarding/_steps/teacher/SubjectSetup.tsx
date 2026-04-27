@@ -10,6 +10,7 @@ import {
   Settings,
   Shield,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import ButtonGroup from "../../_components/ButtonGroup";
 
 export default function SubjectSetup() {
@@ -35,66 +36,82 @@ export default function SubjectSetup() {
         </div>
 
         {/* Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Card 1 */}
-          <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4">
-              <BookOpen size={20} />
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            whileHover={{ y: -5, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.05)" }}
+            className="p-8 rounded-[2.5rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:border-indigo-500/30 group"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-6 group-hover:scale-110 transition-transform">
+              <BookOpen size={24} />
             </div>
-            <h3 className="font-bold text-slate-900 dark:text-white">Your Assigned Classes</h3>
-            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Your Assigned Classes</h3>
+            <p className="mt-3 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
               Access your subjects and class sections instantly. Upload materials, manage attendance,
               and structure lessons efficiently.
             </p>
-          </div>
+          </motion.div>
 
           {/* Card 2 */}
-          <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4">
-              <Users size={20} />
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            whileHover={{ y: -5, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.05)" }}
+            className="p-8 rounded-[2.5rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:border-emerald-500/30 group"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-6 group-hover:scale-110 transition-transform">
+              <Users size={24} />
             </div>
-            <h3 className="font-bold text-slate-900 dark:text-white">Student Management</h3>
-            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Student Management</h3>
+            <p className="mt-3 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
               View enrolled students, track participation, manage submissions, and communicate with
               learners seamlessly.
             </p>
-          </div>
+          </motion.div>
 
           {/* Card 3 */}
-          <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-4">
-              <BarChart3 size={20} />
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            whileHover={{ y: -5, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.05)" }}
+            className="p-8 rounded-[2.5rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:border-purple-500/30 group"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-6 group-hover:scale-110 transition-transform">
+              <BarChart3 size={24} />
             </div>
-            <h3 className="font-bold text-slate-900 dark:text-white">Performance Insights</h3>
-            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Performance Insights</h3>
+            <p className="mt-3 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
               Monitor grades, assessment trends, and academic progress through structured
               performance analytics.
             </p>
-          </div>
-          <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-4">
-              <BarChart3 size={20} />
-            </div>
-            <h3 className="font-bold text-slate-900 dark:text-white">Performance Insights</h3>
-            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
-              Monitor grades, assessment trends, and academic progress through structured
-              performance analytics.
-            </p>
-          </div>
+          </motion.div>
 
           {/* Wide Card */}
-          <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md md:col-span-2 flex flex-col md:flex-row items-start md:items-center gap-6">
-            <div className="w-12 h-12 shrink-0 rounded-2xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-600 dark:text-orange-400">
-              <LayoutDashboard size={24} />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            className="p-8 rounded-[2.5rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm transition-all hover:border-orange-500/30 md:col-span-2 flex flex-col md:flex-row items-start md:items-center gap-8 group"
+          >
+            <div className="w-16 h-16 shrink-0 rounded-[1.5rem] bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-600 dark:text-orange-400 group-hover:rotate-6 transition-transform">
+              <LayoutDashboard size={32} />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white">Centralized Control Panel</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Centralized Control Panel</h3>
+              <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
                 Attendance, grading, materials, and communication are all managed from one unified
                 dashboard — no switching tools, no confusion.
               </p>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Footer */}

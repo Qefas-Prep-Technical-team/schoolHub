@@ -63,18 +63,21 @@ export default function PerformanceAnalytics() {
   };
 
   return (
-    <div className="p-6 bg-white/70 dark:bg-gray-800/40 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Activity className="w-5 h-5 text-primary" />
+    <div className="p-8 bg-white dark:bg-slate-900/50 rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 shadow-2xl shadow-slate-200/40 dark:shadow-none hover:border-emerald-500/20 transition-all duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-emerald-500/10 rounded-2xl">
+            <Activity className="w-6 h-6 text-emerald-600" />
           </div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-            Performance Analytics
-          </h2>
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+              Academic <span className="text-emerald-600">Velocity</span>
+            </h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mt-1">Growth & Trends</p>
+          </div>
         </div>
         
-        <div className="flex gap-1.5 bg-gray-100/50 dark:bg-gray-900/50 p-1 rounded-xl">
+        <div className="flex gap-1.5 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
           {['week', 'month', 'semester'].map((range) => (
             <button
               key={range}
@@ -96,12 +99,12 @@ export default function PerformanceAnalytics() {
           <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorAvg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3670e2" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#3670e2" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
               </linearGradient>
               <linearGradient id="colorTop" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#059669" stopOpacity={0.2}/>
+                <stop offset="95%" stopColor="#059669" stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#94a3b8" strokeOpacity={0.1} />
@@ -124,7 +127,7 @@ export default function PerformanceAnalytics() {
             <Area
               type="monotone"
               dataKey="top"
-              stroke="#10b981"
+              stroke="#059669"
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#colorTop)"
@@ -134,7 +137,7 @@ export default function PerformanceAnalytics() {
             <Area
               type="monotone"
               dataKey="average"
-              stroke="#3670e2"
+              stroke="#10b981"
               strokeWidth={3}
               fillOpacity={1}
               fill="url(#colorAvg)"
@@ -193,4 +196,4 @@ export default function PerformanceAnalytics() {
       </div>
     </div>
   );
-}
+}

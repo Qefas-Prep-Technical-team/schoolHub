@@ -94,7 +94,7 @@ export default function StudentGradesPage() {
               </div>
             </div>
 
-            <div className="col-span-4 bg-gradient-to-br from-[#0856c8] to-[#3670e2] rounded-3xl p-10 text-white flex flex-col justify-between relative overflow-hidden group shadow-2xl shadow-blue-500/10">
+            <div className="col-span-4 bg-gradient-to-br from-[#0856c8] to-[#3670e2] rounded-3xl p-10 text-white flex flex-col justify-between relative overflow-hidden group shadow-2xl shadow-pink-500/10">
               <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
                 <Trophy size={160} strokeWidth={1} />
               </div>
@@ -235,7 +235,7 @@ export default function StudentGradesPage() {
                 </div>
               </div>
             </div>
-            <div className="relative bg-gradient-to-br from-[#0856C8] to-[#3670E2] rounded-3xl p-8 text-white shadow-2xl shadow-blue-500/20 overflow-hidden group">
+            <div className="relative bg-gradient-to-br from-[#0856C8] to-[#3670E2] rounded-3xl p-8 text-white shadow-2xl shadow-pink-500/20 overflow-hidden group">
               <div className="relative z-10 space-y-2">
                 <h3 className="text-2xl font-black italic tracking-tight">Dean's List Track</h3>
                 <p className="opacity-90 max-w-[240px] text-sm font-medium leading-relaxed">You are in the top 5% of the Sophomore class this term.</p>
@@ -587,3 +587,4 @@ function DetailedStudentResult({ examId, onBack }: { examId: string, onBack: () 
     </div>
   );
 }
+
