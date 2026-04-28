@@ -6,20 +6,18 @@ interface LoginButtonProps {
 export default function LoginButton({ disabled = false, onClick }: LoginButtonProps) {
     return (
         <button
-            className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white font-bold mt-4 hover:bg-opacity-90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex h-14 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-indigo-500/25 transition-all duration-300 hover:bg-indigo-500 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
             disabled={disabled}
             onClick={onClick}
             type={onClick ? "button" : "submit"}
         >
             <span className="truncate">
                 {disabled ?
-                    <div
-                        className="flex items-center justify-center"
-                    >
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Signing In...
+                    <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-b-white mr-3"></div>
+                        Authenticating...
                     </div>
-                    : "Login as Parent"}
+                    : "Establish Session"}
             </span>
         </button>
     );

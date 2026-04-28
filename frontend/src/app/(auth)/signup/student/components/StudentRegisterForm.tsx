@@ -14,6 +14,7 @@ import { getPasswordStrength } from '../../school/components/SchoolCard';
 import { useMemo } from 'react';
 import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
 import RedirectOverlay from '@/components/ui/RedirectOverlay';
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 
 export default function StudentRegisterForm() {
@@ -28,7 +29,7 @@ export default function StudentRegisterForm() {
   const searchParams = useSearchParams();
 
   const { mutate: registerStudent, isPending } = useStudentRegistration();
-
+  const { data: globalFeatures } = useGlobalFeatures('student');
   const {
     register,
     handleSubmit,
@@ -454,18 +455,22 @@ export default function StudentRegisterForm() {
             )}
           </button>
 
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-100 dark:border-gray-800" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
-                Or continue with
-              </span>
-            </div>
-          </div>
+          {globalFeatures?.googleLogin !== false && (
+            <>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-100 dark:border-gray-800" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
 
-          <GoogleLoginButton userType={UserRole.STUDENT} />
+              <GoogleLoginButton userType={UserRole.STUDENT} />
+            </>
+          )}
         </form>
 
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">

@@ -4,21 +4,21 @@ import { motion } from "framer-motion";
 
 const PortalsHero: React.FC = () => {
   return (
-    <div className="text-center mb-20 font-['Lexend']">
+    <div className="text-center mb-16 md:mb-24">
       <motion.h1 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-[40px] leading-tight font-bold text-[#0b1c30] mb-3 tracking-tight"
+        className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white mb-6 tracking-tighter"
       >
-        Qefas Hub Portals
+        Qefas <span className="text-indigo-600">Hub</span> Portals
       </motion.h1>
       <motion.p 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="text-lg text-[#45464d] max-w-2xl mx-auto font-medium"
+        className="text-base md:text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed"
       >
-        Select your entry point to access specialized management and learning tools.
+        Select your specialized entry point to access the unified management and learning ecosystem.
       </motion.p>
     </div>
   );

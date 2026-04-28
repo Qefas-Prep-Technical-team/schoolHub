@@ -74,17 +74,17 @@ export function AdminMobileDrawer() {
       <SheetContent side="left" className="p-0 w-[88vw] max-w-[380px] flex flex-col">
         {/* Header */}
         <div className="px-6 py-8 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50">
-          <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
-              <School className="h-6 w-6 text-white" />
+          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-4 group/logo">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 group-hover/logo:scale-105 transition-transform duration-500">
+              <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
             </div>
             <div className="flex flex-col">
-              <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase">
+              <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase group-hover/logo:text-indigo-500 transition-colors">
                 {school?.name || "QEFAS HUB"}
               </span>
               <span className="text-[10px] text-indigo-500 font-black uppercase tracking-[0.2em]">Admin Portal</span>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Menu */}

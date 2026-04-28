@@ -21,6 +21,7 @@ export default function ImageLightbox({ isOpen, onClose, src, alt }: ImageLightb
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black/90 border-none sm:rounded-3xl">
+        <DialogTitle className="sr-only">{alt || "Image Preview"}</DialogTitle>
         <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
           <button 
             onClick={onClose}

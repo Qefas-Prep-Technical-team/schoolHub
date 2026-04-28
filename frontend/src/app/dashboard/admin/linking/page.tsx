@@ -100,6 +100,10 @@ function LinkingHub() {
   const { user } = useAuthStore();
 
   const filteredActiveLinks = activeLinks.filter((link: any) => {
+    // Hide private links that don't directly involve the school as an entity
+    const privateTypes = ['PARENT_STUDENT', 'PEER_STUDENT'];
+    if (privateTypes.includes(link.linkType)) return false;
+
     const details = getMemberDetails(link, user?.id);
     const matchesSearch = (details.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       details.email.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -108,6 +112,11 @@ function LinkingHub() {
 
   const filteredRequests = requests.filter((req: any) => {
     if (req.status !== 'PENDING') return false;
+    
+    // Hide private requests in admin hub
+    const privateTypes = ['PARENT_STUDENT', 'PEER_STUDENT'];
+    if (privateTypes.includes(req.linkType)) return false;
+
     const details = getMemberDetails(req, user?.id);
     const matchesSearch = (details.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       details.email.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -133,7 +142,14 @@ function LinkingHub() {
   };
 
   const handleRespond = async (id: string, action: 'ACCEPT' | 'REJECT') => {
-    respondMutation.mutate({ id, action });
+    respondMutation.mutate({ id, action }, {
+      onSuccess: () => {
+        // Query invalidation is handled in the hook
+      },
+      onError: (err: any) => {
+        console.error('Failed to respond:', err);
+      }
+    });
   };
 
   const copyToClipboard = (text: string) => {

@@ -20,8 +20,8 @@ export const MiniNav: FC<MiniNavProps> = ({ pages }) => {
             <div className="flex items-center gap-3">
                 <NavBarDrawer pages={pages} />
                 <Link href="/" className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 shadow-md shadow-blue-600/20">
-                        <Image src="/schoolhub.png" alt="Qefas Hub" width={18} height={18} className="brightness-0 invert" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white dark:bg-slate-900 shadow-md shadow-blue-600/10 border border-slate-200 dark:border-slate-800 p-1">
+                        <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
                     </div>
                     <span className="text-lg font-black tracking-tight text-slate-900 dark:text-white uppercase font-sans">
                         Qefas <span className="text-blue-600">Hub</span>

@@ -52,7 +52,8 @@ import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
 import { PARENT_FEATURE_FLAGS, ParentFeatureFlagKey } from "./parentFeatureFlags"
-
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures"
+import { useEffect, useMemo } from "react"
 
 // Define the menu item type
 interface ParentMenuItem {
@@ -92,21 +93,6 @@ export const parentMenuItems: ParentMenuItem[] = [
     { icon: LifeBuoy, label: "Support", href: "/parent/support", featureKey: "support", section: "profile" },
 ];
 
-// Filter menu items based on feature flags and group by section
-const getFilteredParentMenuItemsBySection = () => {
-    const filtered = parentMenuItems.filter(item => PARENT_FEATURE_FLAGS[item.featureKey]);
-
-    const sections = {
-        core: filtered.filter(item => item.section === 'core'),
-        monitoring: filtered.filter(item => item.section === 'monitoring'),
-        financial: filtered.filter(item => item.section === 'financial'),
-        advanced: filtered.filter(item => item.section === 'advanced'),
-        profile: filtered.filter(item => item.section === 'profile'),
-    };
-
-    return sections;
-};
-
 // Section titles
 const PARENT_SECTION_TITLES = {
     core: "Children's Progress",
@@ -123,8 +109,27 @@ export function ParentSidebar() {
     const [isUserOpen, setIsUserOpen] = useState(false)
     const pathname = usePathname()
 
-    // Get filtered menu items grouped by section
-    const menuSections = getFilteredParentMenuItemsBySection()
+    // Fetch dynamic feature toggles from platform config
+    const { data: dynamicFeatures } = useGlobalFeatures('parent')
+
+    // Get filtered menu items grouped by section based on dynamic or static flags
+    const menuSections = useMemo(() => {
+        const currentFeatures = dynamicFeatures || PARENT_FEATURE_FLAGS;
+
+        const filtered = parentMenuItems.filter(item => {
+            // Map 'results' to 'grades' for consistency with schema/seed
+            const key = item.featureKey === 'results' ? 'grades' : item.featureKey;
+            return !!(currentFeatures as any)[key];
+        });
+
+        return {
+            core: filtered.filter(item => item.section === 'core'),
+            monitoring: filtered.filter(item => item.section === 'monitoring'),
+            financial: filtered.filter(item => item.section === 'financial'),
+            advanced: filtered.filter(item => item.section === 'advanced'),
+            profile: filtered.filter(item => item.section === 'profile'),
+        };
+    }, [dynamicFeatures]);
 
     return (
         <Sidebar
@@ -133,9 +138,9 @@ export function ParentSidebar() {
         >
             {/* Header */}
             <SidebarHeader className="h-20 flex flex-row items-center justify-between px-4 border-b border-slate-100 dark:border-white/5 relative">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-600 shadow-lg shadow-orange-600/20 group-hover:scale-110 transition-transform duration-500">
-                        <School className="h-6 w-6 text-white" />
+                <Link href="/" className="flex items-center gap-3 overflow-hidden">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 transition-transform duration-500 group-hover:scale-105">
+                        <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
                     </div>
                     {!isCollapsed && (
                         <div className="flex flex-col leading-none transition-all duration-300">
@@ -143,7 +148,7 @@ export function ParentSidebar() {
                             <span className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-0.5">Parent Portal</span>
                         </div>
                     )}
-                </div>
+                </Link>
 
                 {/* Floating Absolute Toggle Button */}
                 <button
@@ -180,14 +185,16 @@ export function ParentSidebar() {
                                 {/* Section Items */}
                                 {items.map(({ icon: Icon, label, href, featureKey }) => {
                                     const isActive = pathname === href;
-                                    const isDisabled = !PARENT_FEATURE_FLAGS[featureKey];
+                                    // Map 'results' to 'grades' for consistency
+                                    const key = (featureKey === 'results' ? 'grades' : featureKey) as ParentFeatureFlagKey;
+                                    const isDisabled = !(dynamicFeatures || PARENT_FEATURE_FLAGS)[key];
 
                                     return (
                                         <SidebarMenuItem key={label}>
                                             <Link href={isDisabled ? "#" : href} className="w-full">
                                                 <SidebarMenuButton
                                                     className={cn(
-                                                        "relative flex items-center gap-3 h-11 px-3 rounded-xl transition-all duration-200 group overflow-hidden",
+                                                        "relative flex items-center gap-3 h-11 px-3 rounded-xl transition-all duration-200 group overflow-hidden cursor-pointer",
                                                         isDisabled
                                                             ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50"
                                                             : isActive
@@ -236,7 +243,7 @@ export function ParentSidebar() {
                         <DropdownMenu onOpenChange={setIsUserOpen}>
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton className={cn(
-                                    "flex items-center gap-2.5 h-14 w-full rounded-2xl transition-all duration-300 px-2 py-2 group",
+                                    "flex items-center gap-2.5 h-14 w-full rounded-2xl transition-all duration-300 px-2 py-2 group cursor-pointer",
                                     isUserOpen ? "bg-white dark:bg-slate-900 shadow-lg ring-1 ring-orange-500/20" : "hover:bg-white dark:hover:bg-white/5 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-white/10"
                                 )}>
                                     <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl ring-2 ring-orange-500/10 group-hover:ring-orange-500/30 transition-all duration-500">

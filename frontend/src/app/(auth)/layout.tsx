@@ -54,9 +54,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-950">
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 animate-in fade-in duration-500">
       <PingWrapper>
-
         {children}
       </PingWrapper>
     </main>

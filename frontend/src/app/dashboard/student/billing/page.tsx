@@ -74,15 +74,19 @@ export default function StudentBillingPage() {
     const cycle = subscription?.billingCycle || "monthly";
 
     // Dynamic pricing retrieval
-    const studentPricing = pricingData?.find((d: PricingData) => (d.category as string) === 'individuals');
-    const activePlanData = studentPricing?.tabs.find((t: any) => t.type.toLowerCase() === currentPlan.toLowerCase());
+    const studentPricing = pricingData?.find((d: PricingData) => (d.category as string) === 'students');
+    const activePlanData = studentPricing?.tabs.find((t: any) => 
+        t.type.toLowerCase() === plan.toLowerCase() || 
+        t.name.toLowerCase() === plan.toLowerCase()
+    );
     const dynamicAmount = activePlanData 
         ? (cycle === 'monthly' ? activePlanData.pricing.monthly : activePlanData.pricing.yearly) 
         : 0;
 
+    const isTrial = subscription?.isTrialActive === true;
     const subscriptionInfo = {
         plan: subscription?.plan || "Free Plan",
-        status: subscription?.subscriptionStatus || "INACTIVE",
+        status: isTrial ? "TRIAL" : (subscription?.subscriptionStatus || "INACTIVE"),
         renewalDate: subscription?.subscriptionEnd ? new Date(subscription.subscriptionEnd).toLocaleDateString() : "N/A",
         amount: dynamicAmount,
         billingCycle: cycle,
@@ -181,7 +185,9 @@ export default function StudentBillingPage() {
 
                 <div className="space-y-6">
                     <Card className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden bg-gradient-to-br from-indigo-600 to-indigo-800 text-white p-8">
-                        <h4 className="text-sm font-black uppercase tracking-widest opacity-80 mb-1">Pricing</h4>
+                        <h4 className="text-sm font-black uppercase tracking-widest opacity-80 mb-1">
+                            {isTrial ? "Upcoming Payment" : "Pricing"}
+                        </h4>
                         <div className="flex items-baseline gap-2 mb-4">
                             <span className="text-4xl font-black tracking-tighter">₦{subscriptionInfo.amount.toLocaleString()}</span>
                             <span className="text-sm font-bold opacity-70">/ {subscriptionInfo.billingCycle}</span>

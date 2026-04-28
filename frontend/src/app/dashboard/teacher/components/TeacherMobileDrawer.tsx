@@ -9,10 +9,11 @@ import { Menu, School, ChevronRight, User2, LogOut, type LucideIcon } from "luci
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
 
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations";
 import { FEATURE_FLAGS_TEACHERS, type FeatureTeacherFlagKey } from "@/lib/config/featureFlags";
-import { menuItems } from "./app-sidebar";
+import { menuGroups } from "./app-sidebar";
 
 // ✅ import from where you export it (your sidebar file)
 
@@ -42,8 +43,6 @@ export function TeacherMobileDrawer() {
   const { mutate: logout } = useLogoutMutation();
   const [open, setOpen] = React.useState(false);
 
-  const items = React.useMemo(() => getFilteredMenuItems(menuItems as any), []);
-
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -55,47 +54,68 @@ export function TeacherMobileDrawer() {
       <SheetContent side="left" className="p-0 w-[88vw] max-w-[380px] flex flex-col">
         {/* Header */}
         <div className="px-6 py-6 border-b border-slate-100 dark:border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 shadow-lg shadow-emerald-600/20">
-              <School className="h-6 w-6 text-white" />
+          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3 group/logo">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 group-hover/logo:scale-105 transition-transform duration-500">
+              <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">QEFAS HUB</span>
+              <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover/logo:text-emerald-500 transition-colors">QEFAS HUB</span>
               <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-0.5">Teacher Hub</span>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Menu */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar">
-          <div className="px-3 pb-3 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
-            Teaching Tools
-          </div>
+        <div className="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar space-y-8">
+            {menuGroups.map((group) => (
+                <div key={group.label} className="space-y-2">
+                    <div className="px-3 pb-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+                        {group.label}
+                    </div>
 
-          <div className="space-y-1.5">
-            {items.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
+                    <div className="space-y-1.5">
+                        {group.items.map((item) => {
+                            const Icon = item.icon;
+                            const isEnabled = !!(FEATURE_FLAGS_TEACHERS as any)[item.featureKey];
+                            const isActive = pathname === item.href;
 
-              return (
-                <Link
-                  key={item.href + item.label}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-3.5 transition-all duration-200",
-                    isActive 
-                      ? "bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-sm" 
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 active:scale-[0.98]"
-                  )}
-                >
-                  <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-emerald-600" : "text-slate-400")} />
-                  <span className="text-[14px] flex-1 tracking-tight">{item.label}</span>
-                  <ChevronRight className={cn("h-4 w-4 transition-transform", isActive ? "opacity-100 translate-x-0" : "opacity-30 -translate-x-1")} />
-                </Link>
-              );
-            })}
-          </div>
+                            return (
+                                <Link
+                                    key={item.href + item.label}
+                                    href={isEnabled ? item.href : "#"}
+                                    onClick={(e) => {
+                                        if (!isEnabled) {
+                                            e.preventDefault();
+                                            return;
+                                        }
+                                        setOpen(false);
+                                    }}
+                                    className={cn(
+                                        "flex items-center gap-3 rounded-xl px-3 py-3.5 transition-all duration-200",
+                                        isActive 
+                                            ? "bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-sm" 
+                                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 active:scale-[0.98]",
+                                        !isEnabled && "opacity-50 grayscale-[0.5] cursor-not-allowed"
+                                    )}
+                                >
+                                    <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-emerald-600" : "text-slate-400")} />
+                                    <div className="flex flex-1 items-center justify-between min-w-0">
+                                        <span className="text-[14px] tracking-tight truncate">{item.label}</span>
+                                        {!isEnabled && (
+                                            <Badge className="ml-auto text-[8px] px-1.5 py-0 bg-slate-100 text-slate-500 border-none font-black uppercase tracking-tighter shrink-0">
+                                                Soon
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    {isEnabled && (
+                                        <ChevronRight className={cn("h-4 w-4 transition-transform", isActive ? "opacity-100 translate-x-0" : "opacity-30 -translate-x-1")} />
+                                    )}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </div>
+            ))}
         </div>
 
         {/* Footer */}

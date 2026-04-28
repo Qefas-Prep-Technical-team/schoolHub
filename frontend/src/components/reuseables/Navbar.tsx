@@ -31,7 +31,10 @@ export default function Navbar() {
             }}
         >
             {/* Logo */}
-            <div className="font-bold text-lg">Flex Savy Studio</div>
+            <Link href="/" className="flex items-center gap-2">
+                <img src="/logo/favicon.svg" alt="Qefas Hub Logo" className="h-8 w-8" />
+                <span className="font-bold text-lg tracking-tight">Qefas Hub</span>
+            </Link>
 
             {/* Links */}
             <div className="flex items-center space-x-6">

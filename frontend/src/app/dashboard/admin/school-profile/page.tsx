@@ -101,7 +101,7 @@ export default function SchoolProfilePage() {
                 {school?.logo ? (
                   <img src={school.logo} alt={school.name} className="h-full w-full object-cover rounded-[2rem]" />
                 ) : (
-                  <Building2 size={80} className="text-primary" />
+                  <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-24 w-24 object-contain opacity-50" />
                 )}
               </div>
 

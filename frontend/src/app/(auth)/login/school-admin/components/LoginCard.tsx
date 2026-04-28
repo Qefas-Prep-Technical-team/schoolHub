@@ -3,12 +3,12 @@ import LoginForm from "./LoginForm";
 export default function LoginCard() {
   return (
     <div className="flex flex-col">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl lg:text-4xl font-extrabold text-[#0A2540] dark:text-white tracking-tight">
+      <div className="text-left mb-10">
+        <h1 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
           Admin Portal
         </h1>
-        <p className="mt-2 text-base text-[#525F7F] dark:text-gray-400">
-          Oversee, Analyze, and Lead with Insight.
+        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-sm">
+          Welcome back. Overseas, analyze, and manage your institution from the global main HQ.
         </p>
       </div>
 

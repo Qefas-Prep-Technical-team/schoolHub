@@ -73,15 +73,15 @@ export function ParentMobileDrawer() {
       <SheetContent side="left" className="p-0 w-[88vw] max-w-[380px] flex flex-col">
         {/* Header */}
         <div className="px-6 py-6 border-b border-slate-100 dark:border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-600 shadow-lg shadow-orange-600/20">
-              <School className="h-6 w-6 text-white" />
+          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3 group/logo">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 group-hover/logo:scale-105 transition-transform duration-500">
+              <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">QEFAS HUB</span>
+              <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover/logo:text-orange-500 transition-colors">QEFAS HUB</span>
               <span className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-0.5">Parent Hub</span>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Menu */}

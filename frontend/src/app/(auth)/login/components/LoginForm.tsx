@@ -10,6 +10,7 @@ import LoginButton from "./LoginButton";
 import Link from "next/link";
 import { ROUTES } from "@/lib/constants/routes";
 import GoogleLoginButton from "./GoogleLoginButton";
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 
 
@@ -37,6 +38,8 @@ export default function LoginForm({
     forgotPasswordLink,
     onForgotPassword
 }: LoginFormProps) {
+    const { data: globalFeatures } = useGlobalFeatures(userType.toLowerCase() as any);
+
     const [serverError, setServerError] = useState("");
     const [isPending, setIsPending] = useState(false);
 
@@ -181,7 +184,9 @@ export default function LoginForm({
                     </div>
                 </div>
 
-                <GoogleLoginButton userType={userType} />
+                {globalFeatures?.googleLogin !== false && (
+                    <GoogleLoginButton userType={userType} />
+                )}
             </form>
         </div>
     );

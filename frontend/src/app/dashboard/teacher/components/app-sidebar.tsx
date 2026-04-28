@@ -57,9 +57,10 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
 import { FEATURE_FLAGS_TEACHERS, FeatureTeacherFlagKey } from "@/lib/config/featureFlags"
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures"
 import { linkService } from "@/lib/api/services/linkService"
 import { toast } from "react-toastify"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 
 // Define the menu item type
 interface MenuItem {
@@ -69,33 +70,53 @@ interface MenuItem {
     featureKey: FeatureTeacherFlagKey;
 }
 
-// Complete menu items with feature keys
-export const menuItems: MenuItem[] = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/teacher", featureKey: "dashboard" },
-    { icon: Users, label: "Students", href: "/dashboard/teacher/students", featureKey: "students" },
-    { icon: User2, label: "Parents", href: "/dashboard/teacher/parents", featureKey: "parents" },
-    { icon: Award, label: "Grades", href: "/dashboard/teacher/grades", featureKey: "grades" },
-    { icon: BookOpenCheck, label: "My Classes", href: "/dashboard/teacher/my-classes", featureKey: "classes" },
-    { icon: ClipboardList, label: "Assignments", href: "/dashboard/dashboard/teacher/assignments", featureKey: "assignments" },
-    { icon: FileCheck2, label: "Exams/Quizzes", href: "/dashboard/teacher/exams&quizzes", featureKey: "exams" },
-    { icon: FileText, label: "Documents", href: "/dashboard/teacher/documents", featureKey: "documents" },
-    { icon: MessageSquare, label: "Messages", href: "/dashboard/teacher/messages", featureKey: "messages" },
-    { icon: BellRing, label: "Notifications", href: "/dashboard/teacher/notifications", featureKey: "notifications" },
-    { icon: Share2, label: "Linking Hub", href: "/dashboard/teacher/linking", featureKey: "linking" },
-    { icon: BarChart3, label: "Reports", href: "/dashboard/teacher/reports", featureKey: "reports" },
-    { icon: BookMarked, label: "Resources", href: "/dashboard/teacher/resources", featureKey: "resources" },
-    { icon: Brain, label: "AI Assistant", href: "/dashboard/teacher/ai-tools", featureKey: "aiTools" },
-    { icon: CalendarClock, label: "Timetable", href: "/dashboard/teacher/timetable", featureKey: "timetable" },
-    { icon: UserCircle, label: "Profile", href: "/dashboard/teacher/profile", featureKey: "profile" },
-    { icon: CreditCard, label: "Subscription", href: "/dashboard/teacher/billing", featureKey: "billing" },
-    { icon: Settings, label: "Settings", href: "/dashboard/teacher/settings", featureKey: "settings" },
-    { icon: LifeBuoy, label: "Support", href: "/dashboard/teacher/support", featureKey: "support" },
+// Corrected menu items with feature keys
+export const menuGroups = [
+    {
+        label: "Primary",
+        items: [
+            { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/teacher", featureKey: "dashboard" },
+            { icon: Users, label: "Students", href: "/dashboard/teacher/students", featureKey: "students" },
+            { icon: User2, label: "Parents", href: "/dashboard/teacher/parents", featureKey: "parents" },
+            { icon: BookOpenCheck, label: "My Classes", href: "/dashboard/teacher/my-classes", featureKey: "classes" },
+        ]
+    },
+    {
+        label: "Academic",
+        items: [
+            { icon: ClipboardList, label: "Assignments", href: "/dashboard/teacher/assignments", featureKey: "assignments" },
+            { icon: Award, label: "Grades", href: "/dashboard/teacher/grades", featureKey: "grades" },
+            { icon: FileCheck2, label: "Exams & Quizzes", href: "/dashboard/teacher/exams&quizzes", featureKey: "exams" },
+            { icon: CalendarClock, label: "Timetable", href: "/dashboard/teacher/timetable", featureKey: "timetable" },
+            { icon: BarChart3, label: "Performance Reports", href: "/dashboard/teacher/reports", featureKey: "reports" },
+        ]
+    },
+    {
+        label: "Ecosystem",
+        items: [
+            { icon: Share2, label: "Linking Hub", href: "/dashboard/teacher/linking", featureKey: "linking" },
+            { icon: Brain, label: "AI Tools", href: "/dashboard/teacher/ai-tools", featureKey: "aiTools" },
+            { icon: BookMarked, label: "Resources", href: "/dashboard/teacher/resources", featureKey: "resources" },
+            { icon: FileText, label: "Documents", href: "/dashboard/teacher/documents", featureKey: "documents" },
+        ]
+    },
+    {
+        label: "Communication",
+        items: [
+            { icon: MessageSquare, label: "Messages", href: "/dashboard/teacher/messages", featureKey: "messages" },
+            { icon: BellRing, label: "Notifications", href: "/dashboard/teacher/notifications", featureKey: "notifications" },
+        ]
+    },
+    {
+        label: "Account",
+        items: [
+            { icon: UserCircle, label: "My Profile", href: "/dashboard/teacher/profile", featureKey: "profile" },
+            { icon: CreditCard, label: "Subscription", href: "/dashboard/teacher/billing", featureKey: "billing" },
+            { icon: Settings, label: "System Settings", href: "/dashboard/teacher/settings", featureKey: "settings" },
+            { icon: LifeBuoy, label: "Help & Support", href: "/dashboard/teacher/support", featureKey: "support" },
+        ]
+    }
 ];
-
-// Filter menu items based on feature flags
-const getFilteredMenuItems = (): MenuItem[] => {
-    return menuItems.filter(item => FEATURE_FLAGS_TEACHERS[item.featureKey]);
-};
 
 export function AppSidebar() {
     const { state, toggleSidebar } = useSidebar()
@@ -105,13 +126,18 @@ export function AppSidebar() {
     const { data: profile } = useTeacherProfile()
     const pathname = usePathname()
 
+    // Fetch dynamic feature toggles from platform config
+    const { data: dynamicFeatures } = useGlobalFeatures('teacher')
+
     const copyCode = (code: string) => {
         navigator.clipboard.writeText(code)
         toast.success("Code copied to clipboard")
     }
 
-    // Get filtered menu items based on feature flags
-    const filteredMenuItems = getFilteredMenuItems()
+    // Get the current features configuration
+    const currentFeatures = useMemo(() => {
+        return dynamicFeatures || FEATURE_FLAGS_TEACHERS;
+    }, [dynamicFeatures]);
 
     return (
         <Sidebar
@@ -119,10 +145,10 @@ export function AppSidebar() {
             className="border-r border-slate-200 dark:border-white/5 bg-white dark:bg-slate-950 transition-all duration-300 ease-in-out"
         >
             {/* Header */}
-            <SidebarHeader className="h-20 flex flex-row items-center justify-between px-4 border-b border-slate-100 dark:border-white/5 relative">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 shadow-lg shadow-emerald-600/20 group-hover:scale-110 transition-transform duration-500">
-                        <School className="h-6 w-6 text-white" />
+            <SidebarHeader className="h-20 flex flex-row items-center justify-between px-4 border-b border-slate-100 dark:border-white/5 relative text-inherit">
+                <Link href="/" className="flex items-center gap-3 overflow-hidden">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 transition-transform duration-500 group-hover:scale-105">
+                        <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
                     </div>
                     {!isCollapsed && (
                         <div className="flex flex-col leading-none transition-all duration-300">
@@ -130,7 +156,7 @@ export function AppSidebar() {
                             <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-0.5">Teacher Hub</span>
                         </div>
                     )}
-                </div>
+                </Link>
 
                 {/* Floating Absolute Toggle Button */}
                 <button
@@ -147,43 +173,60 @@ export function AppSidebar() {
             </SidebarHeader>
 
             {/* Main Menu */}
-            <SidebarContent className="py-6 px-3 custom-scrollbar">
-                <SidebarMenu className="gap-1.5">
-                    {filteredMenuItems.map(({ icon: Icon, label, href }) => {
-                        const isActive = pathname === href
-                        return (
-                            <SidebarMenuItem key={label}>
-                                <Link href={href} className="w-full">
-                                    <SidebarMenuButton
-                                        className={cn(
-                                            "relative flex items-center gap-3 h-11 px-3 rounded-xl transition-all duration-200 group overflow-hidden",
-                                            isActive
-                                                ? "bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-[0_4px_12px_rgba(5,150,105,0.1)]"
-                                                : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
-                                        )}
-                                    >
-                                        {isActive && (
-                                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-emerald-600 rounded-r-full shadow-[2px_0_8px_rgba(5,150,105,0.6)]" />
-                                        )}
-                                        <Icon className={cn(
-                                            "h-5 w-5 transition-all duration-300 group-hover:scale-110",
-                                            isActive ? "text-emerald-600 dark:text-emerald-400" : "group-hover:text-emerald-500"
-                                        )} />
-                                        {!isCollapsed && (
-                                            <span className="text-[13.5px] tracking-tight truncate">{label}</span>
-                                        )}
-                                        
-                                        {!isCollapsed && !isActive && (
-                                            <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
-                                                <ChevronRight className="h-3.5 w-3.5 text-emerald-500/50" />
-                                            </div>
-                                        )}
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                        )
-                    })}
-                </SidebarMenu>
+            <SidebarContent className="py-6 px-3 custom-scrollbar flex flex-col gap-6">
+                {menuGroups.map((group) => (
+                    <div key={group.label} className="space-y-2">
+                        {!isCollapsed && (
+                            <h3 className="px-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3">
+                                {group.label}
+                            </h3>
+                        )}
+                        <SidebarMenu className="gap-1.5 font-inherit">
+                            {group.items.map(({ icon: Icon, label, href, featureKey }) => {
+                                const isEnabled = !!(currentFeatures as any)[featureKey];
+                                const isActive = pathname === href;
+
+                                // If feature is disabled, don't render it at all
+                                if (!isEnabled) return null;
+                                
+                                return (
+                                    <SidebarMenuItem key={label}>
+                                        <Link 
+                                            href={href} 
+                                            className="w-full"
+                                        >
+                                            <SidebarMenuButton
+                                                className={cn(
+                                                    "relative flex items-center gap-3 h-11 px-3 rounded-xl transition-all duration-200 group overflow-hidden",
+                                                    isActive
+                                                        ? "bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-[0_4px_12px_rgba(5,150,105,0.1)]"
+                                                        : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white",
+                                                )}
+                                            >
+                                                {isActive && (
+                                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-emerald-600 rounded-r-full shadow-[2px_0_8px_rgba(5,150,105,0.6)]" />
+                                                )}
+                                                <Icon className={cn(
+                                                    "h-5 w-5 transition-all duration-300 group-hover:scale-110",
+                                                    isActive ? "text-emerald-600 dark:text-emerald-400" : "group-hover:text-emerald-500",
+                                                )} />
+                                                {!isCollapsed && (
+                                                    <span className="text-[13.5px] tracking-tight truncate flex-1">{label}</span>
+                                                )}
+                                                
+                                                {!isCollapsed && !isActive && (
+                                                    <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
+                                                        <ChevronRight className="h-3.5 w-3.5 text-emerald-500/50" />
+                                                    </div>
+                                                )}
+                                            </SidebarMenuButton>
+                                        </Link>
+                                    </SidebarMenuItem>
+                                )
+                            })}
+                        </SidebarMenu>
+                    </div>
+                ))}
             </SidebarContent>
 
             {/* Footer */}
@@ -193,7 +236,7 @@ export function AppSidebar() {
                         <DropdownMenu onOpenChange={setIsUserOpen}>
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton className={cn(
-                                    "flex items-center gap-2.5 h-14 w-full rounded-2xl transition-all duration-300 px-2 py-2 group",
+                                    "flex items-center gap-2.5 h-14 w-full rounded-2xl transition-all duration-300 px-2 py-2 group cursor-pointer",
                                     isUserOpen ? "bg-white dark:bg-slate-900 shadow-lg ring-1 ring-emerald-500/20" : "hover:bg-white dark:hover:bg-white/5 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-white/10"
                                 )}>
                                     <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl ring-2 ring-emerald-500/10 group-hover:ring-emerald-500/30 transition-all duration-500">

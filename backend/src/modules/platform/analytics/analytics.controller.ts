@@ -56,27 +56,18 @@ export const getGlobalStats = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       data: {
-        schools: {
-          total: schoolCount,
-          active: activeSchoolCount,
-          suspended: schoolCount - activeSchoolCount,
-        },
-        users: {
-          students: studentCount,
-          teachers: teacherCount,
-          parents: parentCount,
-          admins: adminCount,
-          total: studentCount + teacherCount + parentCount + adminCount,
-        },
-        finance: {
-          mrr: (recentRevenue._sum.amount || 0),
-          totalVolume: (totalRevenue._sum.amount || 0),
-          currency: "NGN"
-        },
-        infrastructure: {
-          totalStorageBytes: (storageUsage._sum.fileSize || 0),
-          activeSessions
-        }
+        totalSchools: schoolCount,
+        activeSchools: activeSchoolCount,
+        totalStudents: studentCount,
+        totalTeachers: teacherCount,
+        totalParents: parentCount,
+        totalAdmins: adminCount,
+        totalUsers: studentCount + teacherCount + parentCount + adminCount,
+        totalRevenue: (totalRevenue._sum.amount || 0),
+        mrr: (recentRevenue._sum.amount || 0),
+        currency: "NGN",
+        totalStorageBytes: (storageUsage._sum.fileSize || 0),
+        activeSessions
       }
     });
   } catch (error: any) {
@@ -89,7 +80,7 @@ export const getGlobalStats = async (req: Request, res: Response) => {
 };
 
 /**
- * Get school growth data over time
+ * Get school growth data over time (last 6 months)
  */
 export const getGrowthStats = async (req: Request, res: Response) => {
   try {
@@ -98,20 +89,25 @@ export const getGrowthStats = async (req: Request, res: Response) => {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const start = new Date(date.getFullYear(), date.getMonth(), 1);
-      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
 
-      const count = await prisma.school.count({
-        where: {
-          createdAt: {
-            gte: start,
-            lte: end
-          }
-        }
-      });
+      const [schoolCount, revenueData] = await Promise.all([
+        prisma.school.count({
+          where: { createdAt: { gte: start, lte: end } }
+        }),
+        prisma.transactionHistory.aggregate({
+          where: {
+            status: 'SUCCESS',
+            createdAt: { gte: start, lte: end }
+          },
+          _sum: { amount: true }
+        })
+      ]);
 
       last6Months.push({
         month: date.toLocaleString('default', { month: 'short' }),
-        schools: count
+        totalSchools: schoolCount,
+        revenue: revenueData._sum.amount || 0
       });
     }
 

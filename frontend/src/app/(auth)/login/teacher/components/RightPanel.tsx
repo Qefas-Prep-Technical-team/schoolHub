@@ -4,24 +4,20 @@ export default function RightPanel() {
     return (
         <div className="flex-1 flex flex-col justify-center p-8 sm:p-10 lg:p-12">
             <div className="w-full max-w-md mx-auto">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl lg:text-4xl font-extrabold text-[#0A2540] dark:text-white tracking-tight pb-2">
+                <div className="text-left mb-10">
+                    <h1 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
                         Teacher Portal
                     </h1>
-                    <p className="text-[#525F7F] dark:text-gray-400 text-base">
-                        Inspire, Teach, and Track Every Learner’s Journey.
+                    <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-sm">
+                        Welcome back, Instructor. Access your educational workspace to inspire and track every learner's journey.
                     </p>
                 </div>
 
-                <h2 className="text-[#0A2540] dark:text-white text-[20px] font-bold pb-6 text-center">
-                    Welcome back, Teacher!
-                </h2>
-
                 <TeacherLoginForm />
 
-                <div className="mt-8 text-center">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        “Over 200 teachers inspiring daily.”
+                <div className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800">
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.2em] italic">
+                        “Educating the next generation of global innovators.”
                     </p>
                 </div>
             </div>

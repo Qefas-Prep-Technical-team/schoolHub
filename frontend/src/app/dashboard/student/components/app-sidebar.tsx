@@ -44,10 +44,11 @@ import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
 import { STUDENT_FEATURE_FLAGS, StudentFeatureFlagKey } from "./studentFeatureFlags"
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures"
 import { linkService } from "@/lib/api/services/linkService"
 import { toast } from "react-toastify"
 import { Copy, User2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, LogOut } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 
 // Define the menu item type
 interface StudentMenuItem {
@@ -86,21 +87,6 @@ export const studentMenuItems: StudentMenuItem[] = [
     { icon: CalendarClock, label: "Timetable", href: "/student/timetable", featureKey: "timetable", section: "advanced" },
 ];
 
-// Filter menu items based on feature flags and group by section
-const getFilteredStudentMenuItemsBySection = () => {
-    // This filters out disabled items completely
-    const filtered = studentMenuItems.filter(item => STUDENT_FEATURE_FLAGS[item.featureKey]);
-
-    const sections = {
-        core: filtered.filter(item => item.section === 'core'),
-        communication: filtered.filter(item => item.section === 'communication'),
-        profile: filtered.filter(item => item.section === 'profile'),
-        advanced: filtered.filter(item => item.section === 'advanced'),
-    };
-
-    return sections;
-};
-
 // Section titles
 const STUDENT_SECTION_TITLES = {
     core: "Learning",
@@ -120,6 +106,9 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
     const [profile, setProfile] = useState<any>(null)
     const pathname = usePathname()
 
+    // Fetch dynamic feature toggles from platform config
+    const { data: dynamicFeatures } = useGlobalFeatures('student')
+
     useEffect(() => {
         linkService.getProfile().then(setProfile).catch(() => {})
     }, [])
@@ -129,8 +118,23 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
         toast.success("Code copied to clipboard")
     }
 
-    // Get filtered menu items grouped by section
-    const menuSections = getFilteredStudentMenuItemsBySection()
+    // Get filtered menu items grouped by section based on dynamic or static flags
+    const menuSections = useMemo(() => {
+        const currentFeatures = dynamicFeatures || STUDENT_FEATURE_FLAGS;
+        
+        const filtered = studentMenuItems.filter(item => {
+            // Map 'results' to 'grades' for consistency with schema/seed
+            const key = item.featureKey === 'results' ? 'grades' : item.featureKey;
+            return !!(currentFeatures as any)[key];
+        });
+
+        return {
+            core: filtered.filter(item => item.section === 'core'),
+            communication: filtered.filter(item => item.section === 'communication'),
+            profile: filtered.filter(item => item.section === 'profile'),
+            advanced: filtered.filter(item => item.section === 'advanced'),
+        };
+    }, [dynamicFeatures]);
 
     return (
         <Sidebar
@@ -142,17 +146,17 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
         >
             {/* Header */}
             <SidebarHeader className="pt-8 flex items-center justify-between px-4 relative">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-600 shadow-lg shadow-pink-600/20">
-                        <School className="h-5 w-5 text-white" />
+                <Link href="/" className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 transition-transform duration-500 group-hover:scale-105">
+                        <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
                     </div>
                     {!isCollapsed && (
                         <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">QEFAS HUB</span>
+                            <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight uppercase">QEFAS HUB</span>
                             <span className="text-[10px] text-pink-500 font-bold uppercase tracking-widest">Student Portal</span>
                         </div>
                     )}
-                </div>
+                </Link>
                 
                 {/* Retractable Toggle Button */}
                 <button
@@ -197,7 +201,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                                             <Link href={href}>
                                                 <SidebarMenuButton
                                                     className={cn(
-                                                        "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative",
+                                                        "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative cursor-pointer",
                                                         isActive
                                                             ? "bg-pink-600/10 text-pink-600 dark:text-pink-400 shadow-sm shadow-pink-600/5"
                                                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100"
@@ -233,7 +237,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                     <SidebarMenuItem>
                         <DropdownMenu onOpenChange={setIsUserOpen}>
                             <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton className="flex items-center gap-3 p-3 h-auto rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-pink-500/30 transition-all group">
+                                <SidebarMenuButton className="flex items-center gap-3 p-3 h-auto rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-pink-500/30 transition-all group cursor-pointer">
                                     <div className="h-10 w-10 rounded-lg bg-pink-600/10 dark:bg-pink-600/20 flex items-center justify-center border border-pink-500/20 overflow-hidden shrink-0">
                                         {profile?.profileImage ? (
                                             <img src={profile.profileImage} alt={profile.name} className="h-full w-full object-cover" />

@@ -7,7 +7,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import SchoolImageSlider from "./SchoolSlider";
 import SchoolHeader from "./SchoolHeader";
 import RedirectOverlay from '@/components/ui/RedirectOverlay';
-
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 import { useRouter } from 'next/navigation';
 import { useSchoolRegistration } from '../../services/useRegistrationMutations';
 import { SchoolFormData, schoolSchema } from '../../services/regSchema';
@@ -58,7 +58,7 @@ export default function SchoolCard() {
   const router = useRouter();
 
   const { mutate: registerSchool, isPending } = useSchoolRegistration();
-
+  const { data: globalFeatures } = useGlobalFeatures('admin');
   const {
     register,
     handleSubmit,
@@ -401,18 +401,22 @@ export default function SchoolCard() {
               )}
             </button>
 
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-100 dark:border-gray-800" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
-                  Or continue with
-                </span>
-              </div>
-            </div>
+            {globalFeatures?.googleLogin !== false && (
+              <>
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-gray-100 dark:border-gray-800" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
 
-            <GoogleLoginButton userType={UserRole.ADMIN} />
+                <GoogleLoginButton userType={UserRole.ADMIN} />
+              </>
+            )}
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               Already have a school account?{' '}
               <a

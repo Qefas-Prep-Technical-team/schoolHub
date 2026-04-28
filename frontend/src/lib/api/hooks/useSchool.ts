@@ -102,6 +102,7 @@ export const useSchoolBilling = (schoolId: string, params?: { page?: number; lim
     enabled: !!schoolId,
     staleTime: 0,                // Always consider data stale — re-fetch on every mount
     refetchOnWindowFocus: true,  // Re-fetch when user returns to tab/page after checkout
+    refetchInterval: 30000,      // Refetch every 30 seconds
   });
 };
 

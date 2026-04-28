@@ -22,6 +22,27 @@ export const initSocket = (server: http.Server) => {
       console.log(`Socket ${socket.id} joined room user:${userId}`);
     });
 
+    socket.on("join:ticket", (ticketId: string) => {
+      socket.join(`ticket:${ticketId}`);
+      console.log(`Socket ${socket.id} joined room ticket:${ticketId}`);
+    });
+
+    socket.on("leave:ticket", (ticketId: string) => {
+      socket.leave(`ticket:${ticketId}`);
+      console.log(`Socket ${socket.id} left room ticket:${ticketId}`);
+    });
+
+    // Generic room join/leave for platform rooms (e.g. platform:support)
+    socket.on("join:room", (room: string) => {
+      socket.join(room);
+      console.log(`Socket ${socket.id} joined room ${room}`);
+    });
+
+    socket.on("leave:room", (room: string) => {
+      socket.leave(room);
+      console.log(`Socket ${socket.id} left room ${room}`);
+    });
+
     socket.on("disconnect", () => {
       console.log("User disconnected:", socket.id);
     });

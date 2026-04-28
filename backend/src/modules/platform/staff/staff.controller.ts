@@ -221,8 +221,10 @@ export const verifyStaffInvite = async (req: Request, res: Response) => {
     const { token } = req.query;
     if (!token) return res.status(400).json({ success: false, message: "Token required" });
 
+    const cleanToken = (token as string).trim();
+
     const staff = await prisma.platformStaff.findUnique({
-      where: { inviteToken: token as string }
+      where: { inviteToken: cleanToken }
     });
 
     if (!staff || !staff.inviteExpires || staff.inviteExpires < new Date()) {
@@ -248,8 +250,10 @@ export const completeStaffSetup = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Token and password required" });
     }
 
+    const cleanToken = (token as string).trim();
+
     const staff = await prisma.platformStaff.findUnique({
-      where: { inviteToken: token }
+      where: { inviteToken: cleanToken }
     });
 
     if (!staff || !staff.inviteExpires || staff.inviteExpires < new Date()) {
@@ -264,7 +268,7 @@ export const completeStaffSetup = async (req: Request, res: Response) => {
         password: hashedPassword,
         inviteToken: null,
         inviteExpires: null,
-        isActive: true, // activate account
+        isActive: true,
       }
     });
 
@@ -335,7 +339,8 @@ export const requestCredentialReset = async (req: Request, res: Response) => {
       }
     });
 
-    const setupLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/setup?token=${inviteToken}`;
+    const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const setupLink = `${baseUrl}/auth/setup?token=${inviteToken}`;
     const isTest = process.env.RESEND_TEST?.trim() === 'true';
     const recipient = isTest ? process.env.TEST_EMAIL as string : staff.email;
 

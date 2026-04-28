@@ -90,8 +90,15 @@ export default function CheckoutPage() {
 
     const planDisplayName = selectedPlanName || (plan ? `${plan.charAt(0).toUpperCase() + plan.slice(1)}` : 'Standard');
 
-    // Secure re-verification of trial eligibility - Disallow trials for existing authenticated users or upgrades
-    const canUseTrial = hasPlanTrial && !isAuthenticated && !isUpgrade;
+    // Secure re-verification of trial eligibility
+    // Allow trials if:
+    // 1. Plan supports trials (hasPlanTrial)
+    // 2. Not an upgrade flow (isUpgrade)
+    // 3. User is NOT authenticated (New registration) OR User is authenticated but on FREE plan and hasn't used trial
+    const canUseTrial = hasPlanTrial && !isUpgrade && (
+        !isAuthenticated || 
+        (user?.plan?.toUpperCase() === 'FREE' && !user?.trialUsed)
+    );
     
     // Apply pro-rated discount if this is an upgrade
     const finalAmount = (isUpgrade && discountedAmount !== undefined) ? discountedAmount : amount;
@@ -152,7 +159,13 @@ export default function CheckoutPage() {
         try {
             // Check if email exists and confirm role
             const checkRes = await apiClient.post('/auth/check-email', { email });
-            const { exists, role: userRole } = checkRes.data;
+            const { exists, role: userRole, plan: userPlan, trialUsed } = checkRes.data;
+
+            if (exists) {
+                if (userPlan || trialUsed !== undefined) {
+                    updateUser({ plan: userPlan, trialUsed });
+                }
+            }
 
             if (exists && userRole !== role) {
                 setIsLoading(false);
@@ -198,6 +211,10 @@ export default function CheckoutPage() {
             
             if (res.data.userId) {
                 setRegisteredUserId(res.data.userId);
+            }
+
+            if (res.data.plan || res.data.trialUsed !== undefined) {
+                updateUser({ plan: res.data.plan, trialUsed: res.data.trialUsed });
             }
 
             toast.success("Verified successfully!");

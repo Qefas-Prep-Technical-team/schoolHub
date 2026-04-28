@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Clock, Zap, AlertTriangle, ArrowUpRight } from 'lucide-react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useSubscriptionUsage } from '@/lib/api/hooks/useSubscriptionUsage';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,16 +40,9 @@ export default function UsageLimitsCard() {
     );
   }
 
-  const { usage, limits, percentages, planName } = data;
+  const { usage, limits, percentages, planName, subscriptionStatus, isTrial } = data;
 
-  const PLAN_DISPLAY_NAMES: Record<string, string> = {
-    'FREE': 'Free Tier',
-    'STARTER': 'Institutional Starter',
-    'GROWTH': 'Institutional Growth',
-    'PRO': 'Institutional Professional',
-  };
-
-  const displayPlanName = PLAN_DISPLAY_NAMES[planName.toUpperCase()] || planName;
+  const displayPlanName = planName;
 
   const getBarColor = (percentage: number) => {
     if (percentage >= 90) return "bg-rose-500";
@@ -66,6 +60,7 @@ export default function UsageLimitsCard() {
     { label: "Students", count: usage.students, limit: limits.students, percent: percentages.students, color: "bg-blue-500" },
     { label: "Exams", count: usage.exams, limit: limits.exams, percent: percentages.exams, color: "bg-indigo-500" },
     { label: "Classes", count: usage.classes, limit: limits.classes, percent: percentages.classes, color: "bg-purple-500" },
+    { label: "Teachers", count: usage.teachers, limit: limits.teachers, percent: percentages.teachers, color: "bg-rose-500" },
     { label: "Storage", count: `${usage.storageGb}GB`, limit: `${limits.storageGb}GB`, percent: percentages.storage, color: "bg-emerald-500" },
   ];
 
@@ -87,8 +82,15 @@ export default function UsageLimitsCard() {
             {hasWarning ? <AlertTriangle className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
           </div>
           <div>
-            <h4 className="font-black text-slate-900 dark:text-white leading-tight">Usage Limits</h4>
-            <p className="text-xs text-slate-500 font-medium tracking-tight uppercase">{displayPlanName} Capacity</p>
+            <div className="flex items-center gap-2">
+              <h4 className="font-black text-slate-900 dark:text-white leading-tight">Usage Limits</h4>
+              {isTrial ? (
+                <Badge className="bg-amber-500 hover:bg-amber-500 text-[9px] h-4 px-1.5 font-black uppercase text-white border-none">Trial</Badge>
+              ) : (
+                <Badge variant="secondary" className="text-[9px] h-4 px-1.5 font-black uppercase">{subscriptionStatus}</Badge>
+              )}
+            </div>
+            <p className="text-[10px] text-slate-500 font-bold tracking-tight uppercase mt-0.5">Current Plan: {displayPlanName}</p>
           </div>
         </div>
         

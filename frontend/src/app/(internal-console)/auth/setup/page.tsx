@@ -15,7 +15,7 @@ export default function StaffSetupPage() {
     const searchParams = useSearchParams()
     const token = searchParams.get("token")
     
-    const [isLoading, setIsLoading] = useState(true)
+    const [isLoading, setIsLoading] = useState(false)
     const [isVerifying, setIsVerifying] = useState(true)
     const [staffData, setStaffData] = useState<{ email: string, fullName: string } | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -33,7 +33,7 @@ export default function StaffSetupPage() {
             return
         }
 
-        api.get(`/api/platform/staff/invite/verify?token=${token}`)
+        api.get(`/platform/staff/invite/verify?token=${token}`)
             .then(res => {
                 setStaffData(res.data.data)
                 setIsVerifying(false)
@@ -59,12 +59,13 @@ export default function StaffSetupPage() {
 
         setIsLoading(true)
         try {
-            await api.post('/api/platform/staff/invite/complete', {
+            await api.post('/platform/staff/invite/complete', {
                 token,
                 password: formData.password
             })
             toast.success("Account setup securely! You can now log in.")
-            router.push("/auth/login") // redirect to internal console login
+            setIsLoading(false)
+            window.location.href = "/auth/login" // force hard redirect to avoid router push hanging
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Failed to set up account")
             setIsLoading(false)

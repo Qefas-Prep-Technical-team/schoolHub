@@ -15,6 +15,8 @@ import {
 import {
     LayoutDashboard,
     Building2,
+    GraduationCap,
+    Presentation,
     Users,
     ShieldCheck,
     CreditCard,
@@ -26,7 +28,9 @@ import {
     ChevronLeft,
     ChevronRight,
     Terminal,
-    PieChart
+    PieChart,
+    UserCheck,
+    Wrench
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
@@ -34,11 +38,15 @@ import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
 export const consoleMenuItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/console" },
     { icon: Building2, label: "Schools", href: "/console/schools" },
+    { icon: GraduationCap, label: "Students", href: "/console/students" },
+    { icon: Presentation, label: "Teachers", href: "/console/teachers" },
+    { icon: Users, label: "Parents", href: "/console/parents" },
+    { icon: Wrench, label: "Features", href: "/console/features" },
     { icon: CreditCard, label: "Subscription Tiers", href: "/console/billing/pricing" },
     { icon: PieChart, label: "Global Revenue", href: "/console/transactions" },
     { icon: MessageSquare, label: "Support Center", href: "/console/support" },
     { icon: Activity, label: "Monitoring", href: "/console/monitoring" },
-    { icon: Users, label: "Staff Accounts", href: "/console/staff" },
+    { icon: UserCheck, label: "Staff Accounts", href: "/console/staff" },
     { icon: Terminal, label: "Activity Logs", href: "/console/logs" },
     { icon: Settings, label: "Platform Settings", href: "/console/settings" },
 ]

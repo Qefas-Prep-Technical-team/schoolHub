@@ -51,9 +51,10 @@ import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
 import { ADMIN_FEATURE_FLAGS, AdminFeatureFlagKey } from "./adminFeatureFlags"
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures"
 import { linkService } from "@/lib/api/services/linkService"
 import { toast } from "react-toastify"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 
 
 // Define the menu item type
@@ -86,10 +87,8 @@ export const adminMenuItems: AdminMenuItem[] = [
 
     // === ADMINISTRATION ===
     { icon: CreditCard, label: "Finance", href: "/dashboard/admin/finance", featureKey: "finance", section: "administration" },
-    { icon: WalletCards, label: "Subscription", href: "/dashboard/admin/billing", featureKey: "billing", section: "administration" },
     { icon: WalletCards, label: "Payments", href: "/dashboard/admin/payments", featureKey: "payments", section: "administration" },
     { icon: CreditCard, label: "Transaction History", href: "/dashboard/admin/transactions", featureKey: "transactionHistory", section: "administration" },
-    { icon: Globe, label: "Global Transactions", href: "/dashboard/admin/finance/global-transactions", featureKey: "globalTransactions", section: "administration" },
     { icon: BarChart3, label: "Reports & Analytics", href: "/dashboard/admin/reports", featureKey: "reports", section: "administration" },
 
     // === COMMUNICATION ===
@@ -102,23 +101,8 @@ export const adminMenuItems: AdminMenuItem[] = [
 
     // === SETTINGS ===
     { icon: Settings, label: "Settings", href: "/dashboard/admin/settings", featureKey: "settings", section: "settings" },
+    { icon: MessageSquare, label: "Help & Support", href: "/dashboard/admin/support", featureKey: "support", section: "settings" },
 ];
-
-// Filter menu items based on feature flags and group by section
-const getFilteredMenuItemsBySection = () => {
-    const filtered = adminMenuItems.filter(item => ADMIN_FEATURE_FLAGS[item.featureKey]);
-
-    const sections = {
-        core: filtered.filter(item => item.section === 'core'),
-        academics: filtered.filter(item => item.section === 'academics'),
-        administration: filtered.filter(item => item.section === 'administration'),
-        communication: filtered.filter(item => item.section === 'communication'),
-        advanced: filtered.filter(item => item.section === 'advanced'),
-        settings: filtered.filter(item => item.section === 'settings'),
-    };
-
-    return sections;
-};
 
 // Section titles
 const SECTION_TITLES = {
@@ -141,6 +125,9 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
     const [profile, setProfile] = useState<any>(null)
     const pathname = usePathname()
 
+    // Fetch dynamic feature toggles from platform config
+    const { data: dynamicFeatures } = useGlobalFeatures('admin')
+
     useEffect(() => {
         linkService.getProfile().then(setProfile).catch(() => {})
     }, [])
@@ -150,8 +137,21 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
         toast.success("Code copied to clipboard")
     }
 
-    // Get filtered menu items grouped by section
-    const menuSections = getFilteredMenuItemsBySection()
+    // Get filtered menu items grouped by section based on dynamic or static flags
+    const menuSections = useMemo(() => {
+        const currentFeatures = dynamicFeatures || ADMIN_FEATURE_FLAGS;
+
+        const filtered = adminMenuItems.filter(item => !!(currentFeatures as any)[item.featureKey]);
+
+        return {
+            core: filtered.filter(item => item.section === 'core'),
+            academics: filtered.filter(item => item.section === 'academics'),
+            administration: filtered.filter(item => item.section === 'administration'),
+            communication: filtered.filter(item => item.section === 'communication'),
+            advanced: filtered.filter(item => item.section === 'advanced'),
+            settings: filtered.filter(item => item.section === 'settings'),
+        };
+    }, [dynamicFeatures]);
 
     return (
         <Sidebar
@@ -164,15 +164,17 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
             {/* Header */}
             <SidebarHeader className="pt-8 flex items-center justify-between px-4 relative">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 shadow-lg shadow-indigo-600/20">
-                        <School className="h-5 w-5 text-white" />
-                    </div>
-                    {!isCollapsed && (
-                        <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">QEFAS HUB</span>
-                            <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest">Admin Portal</span>
+                    <Link href="/" className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/5 shadow-sm border border-indigo-500/10 overflow-hidden p-1">
+                            <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
                         </div>
-                    )}
+                        {!isCollapsed && (
+                            <div className="flex flex-col">
+                                <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight uppercase">QEFAS HUB</span>
+                                <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest">Admin Portal</span>
+                            </div>
+                        )}
+                    </Link>
                 </div>
                 
                 {/* Floating Toggle Button */}
@@ -212,14 +214,15 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
 
                                 {items.map(({ icon: Icon, label, href, featureKey }) => {
                                     const isActive = pathname === href;
-                                    const isDisabled = !ADMIN_FEATURE_FLAGS[featureKey];
+                                    const features = (dynamicFeatures || ADMIN_FEATURE_FLAGS) as any;
+                                    const isDisabled = !features[featureKey];
 
                                     return (
                                         <SidebarMenuItem key={label} className="my-1">
                                             <Link href={isDisabled ? "#" : href}>
                                                 <SidebarMenuButton
                                                     className={cn(
-                                                        "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative",
+                                                        "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative cursor-pointer",
                                                         isActive
                                                             ? "bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 shadow-sm shadow-indigo-600/5"
                                                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100"
@@ -261,7 +264,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                     <SidebarMenuItem>
                         <DropdownMenu onOpenChange={setIsUserOpen}>
                             <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton className="flex items-center gap-3 p-3 h-auto rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/30 transition-all group">
+                                <SidebarMenuButton className="flex items-center gap-3 p-3 h-auto rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/30 transition-all group cursor-pointer">
                                     <div className="h-10 w-10 rounded-lg bg-indigo-600/10 dark:bg-indigo-600/20 flex items-center justify-center border border-indigo-500/20 overflow-hidden shrink-0">
                                         {profile?.profileImage ? (
                                             <img src={profile.profileImage} alt={profile.name} className="h-full w-full object-cover" />

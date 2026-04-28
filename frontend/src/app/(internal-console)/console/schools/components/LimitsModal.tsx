@@ -13,7 +13,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useUpdateSchoolLimits } from "@/lib/api/hooks/usePlatformSchools"
-import { Users, BookOpen, Presentation, HardDrive, ShieldCheck } from "lucide-react"
+import { 
+    Users as UsersIcon, 
+    BookOpen as BookOpenIcon, 
+    Presentation as PresentationIcon, 
+    HardDrive as HardDriveIcon, 
+    ShieldCheck as ShieldCheckIcon 
+} from "lucide-react"
 
 interface LimitsModalProps {
     isOpen: boolean
@@ -55,7 +61,7 @@ export function LimitsModal({ isOpen, onClose, school }: LimitsModalProps) {
             <DialogContent className="max-w-md bg-slate-900 border-slate-800 text-slate-200 rounded-[2rem]">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-black text-white flex items-center gap-2">
-                        <ShieldCheck className="text-indigo-400" />
+                        <ShieldCheckIcon className="text-indigo-400" />
                         Infrastructure Quota
                     </DialogTitle>
                     <DialogDescription className="text-slate-500 font-medium pt-1">
@@ -67,7 +73,7 @@ export function LimitsModal({ isOpen, onClose, school }: LimitsModalProps) {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                                <Users size={12} className="text-indigo-400" />
+                                <UsersIcon size={12} className="text-indigo-400" />
                                 Max Students
                             </Label>
                             <Input 
@@ -80,7 +86,7 @@ export function LimitsModal({ isOpen, onClose, school }: LimitsModalProps) {
                         </div>
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                                <BookOpen size={12} className="text-indigo-400" />
+                                <BookOpenIcon size={12} className="text-indigo-400" />
                                 Max Exams
                             </Label>
                             <Input 
@@ -96,7 +102,7 @@ export function LimitsModal({ isOpen, onClose, school }: LimitsModalProps) {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                                <Presentation size={12} className="text-indigo-400" />
+                                <PresentationIcon size={12} className="text-indigo-400" />
                                 Max Classes
                             </Label>
                             <Input 
@@ -109,12 +115,12 @@ export function LimitsModal({ isOpen, onClose, school }: LimitsModalProps) {
                         </div>
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                                <HardDrive size={12} className="text-indigo-400" />
+                                <HardDriveIcon size={12} className="text-indigo-400" />
                                 Storage (GB)
                             </Label>
                             <Input 
                                 type="number" 
-                                step="0.1"
+                                step="0.1" 
                                 value={formData.maxStorageGb}
                                 onChange={(e) => setFormData({ ...formData, maxStorageGb: e.target.value })}
                                 className="bg-slate-950 border-slate-800 rounded-xl h-12"

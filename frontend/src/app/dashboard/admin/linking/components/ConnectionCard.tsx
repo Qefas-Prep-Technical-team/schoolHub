@@ -57,7 +57,11 @@ export function ConnectionCard({
 }: ConnectionCardProps) {
   const details = getMemberDetails(item, currentUserId);
   const isClass = isClassLink(item.linkType);
-  const isOutgoing = type === 'pending' && item.requesterId === currentUserId;
+  const schoolId = item.schoolId || (item as any).targetSchoolId || (item as any).requesterSchoolId;
+  const isOutgoing = type === 'pending' && (
+      item.requesterId === currentUserId || 
+      (item.requesterType === 'SCHOOL' && schoolId)
+  );
 
   if (type === 'active') {
     return (

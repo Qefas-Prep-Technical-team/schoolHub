@@ -56,8 +56,8 @@ export default function NavBarDrawer(props: NavBarDrawerProps) {
     const DrawerList = (
         <Box sx={{ width: 250, backgroundColor: theme == "dark" ? "black" : "white", flex: 1, color: theme == "dark" ? "white" : "black" }} role="presentation" onClick={toggleDrawer(false)}>
             <Box className='flex items-center gap-3 px-6 py-8'>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-600/20">
-                    <Image src="/schoolhub.png" alt="Qefas Hub" width={22} height={22} className="brightness-0 invert" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-lg shadow-blue-600/10 border border-slate-200 dark:border-slate-800 p-1.5">
+                    <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
                 </div>
                 <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase font-sans">
                     Qefas <span className="text-blue-600">Hub</span>

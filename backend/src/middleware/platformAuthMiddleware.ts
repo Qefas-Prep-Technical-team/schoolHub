@@ -53,6 +53,7 @@ export const authenticatePlatformStaff = async (
     (req as any).staff = {
       id: staff.id,
       email: staff.email,
+      fullName: staff.fullName,
       role: staff.role,
     };
 

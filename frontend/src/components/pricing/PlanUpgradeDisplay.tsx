@@ -87,6 +87,7 @@ export default function PlanUpgradeDisplay({
                                 <UpgradePriceCard 
                                     {...plan}
                                     index={index}
+                                    currentPlan={currentPlan}
                                     currentPlanPrice={currentPlanPrice}
                                     lastPaymentDate={lastPaymentDate}
                                 />

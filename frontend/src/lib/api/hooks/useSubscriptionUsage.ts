@@ -7,21 +7,25 @@ interface SubscriptionUsageData {
     students: number;
     exams: number;
     classes: number;
+    teachers: number;
     storageGb: number;
   };
   usage: {
     students: number;
     exams: number;
     classes: number;
+    teachers: number;
     storageGb: number;
   };
   percentages: {
     students: number;
     exams: number;
     classes: number;
+    teachers: number;
     storage: number;
   };
   isTrial: boolean;
+  subscriptionStatus: string;
 }
 
 export const useSubscriptionUsage = () => {
@@ -32,7 +36,8 @@ export const useSubscriptionUsage = () => {
       const { data } = await apiClient.get<{ success: boolean, data: SubscriptionUsageData }>('/subscription/usage');
       return data.data;
     },
-    // Refresh every 5 minutes or when the window is refocused
-    staleTime: 5 * 60 * 1000,
+    // Always consider data stale — re-fetch on every mount
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 };

@@ -18,6 +18,28 @@ export const usePlatformPlans = () => {
     })
 }
 
+export const useResetStudentSubscription = () => {
+    const { platform_token } = usePlatformStaffStore()
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (payload: { studentId: string }) => {
+            const { data } = await platformClient.post(`/platform/billing/reset-student`, payload, {
+                headers: { Authorization: `Bearer ${platform_token}` }
+            });
+            return data;
+        },
+        onSuccess: (res) => {
+            queryClient.invalidateQueries({ queryKey: ["platform-students"] })
+            queryClient.invalidateQueries({ queryKey: ["platform-student-details"] })
+            toast.success(res.message)
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to reset student subscription")
+        }
+    })
+}
+
 export const useUpdatePlatformPlan = () => {
     const { platform_token } = usePlatformStaffStore()
     const queryClient = useQueryClient()
@@ -77,6 +99,70 @@ export const useAssignSchoolPlan = () => {
         },
         onError: (err: any) => {
             toast.error(err.response?.data?.message || "Failed to assign plan")
+        }
+    })
+}
+
+export const useResetSchoolSubscription = () => {
+    const { platform_token } = usePlatformStaffStore()
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (payload: { schoolId: string }) => {
+            const { data } = await platformClient.post(`/platform/billing/reset`, payload, {
+                headers: { Authorization: `Bearer ${platform_token}` }
+            });
+            return data;
+        },
+        onSuccess: (res) => {
+            queryClient.invalidateQueries({ queryKey: ["platform-schools"] })
+            queryClient.invalidateQueries({ queryKey: ["platform-school-detail"] })
+            toast.success(res.message)
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to reset subscription")
+        }
+    })
+}
+export const useResetTeacherSubscription = () => {
+    const { platform_token } = usePlatformStaffStore()
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (payload: { teacherId: string }) => {
+            const { data } = await platformClient.post(`/platform/billing/reset-teacher`, payload, {
+                headers: { Authorization: `Bearer ${platform_token}` }
+            });
+            return data;
+        },
+        onSuccess: (res) => {
+            queryClient.invalidateQueries({ queryKey: ["platform-teachers"] })
+            queryClient.invalidateQueries({ queryKey: ["platform-teacher-details"] })
+            toast.success(res.message)
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to reset teacher subscription")
+        }
+    })
+}
+export const useResetParentSubscription = () => {
+    const { platform_token } = usePlatformStaffStore()
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (payload: { id: string }) => {
+            const { data } = await platformClient.post(`/platform/billing/reset-parent`, payload, {
+                headers: { Authorization: `Bearer ${platform_token}` }
+            });
+            return data;
+        },
+        onSuccess: (res) => {
+            queryClient.invalidateQueries({ queryKey: ["platform-parents"] })
+            queryClient.invalidateQueries({ queryKey: ["platform-parent-details"] })
+            toast.success(res.message)
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to reset parent subscription")
         }
     })
 }

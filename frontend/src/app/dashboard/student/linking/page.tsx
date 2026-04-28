@@ -5,8 +5,9 @@ import React, { useState } from 'react';
 import {
   Link2, Search, MoreVertical, X,
   Clock, ShieldCheck, Copy, ArrowUpRight, Hash,
-  Zap, Globe, Shield, Loader2
+  Zap, Globe, Shield, Loader2, QrCode
 } from 'lucide-react';
+import StudentQRCodeModal from './components/StudentQRCodeModal';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import QRCode from "react-qr-code";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLinkRequests, useActiveLinks, useLinkProfile, useRespondToLinkRequest, useRevokeActiveLink, useCreateLinkRequest, useCancelLinkRequest } from '@/lib/api/hooks/useLinks';
 import { useRequestToJoinClass } from '@/lib/api/hooks/useClasses';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
@@ -35,14 +38,24 @@ export default function LinkingHub() {
   const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
   const [subTab, setSubTab] = useState<'active' | 'pending'>('active');
 
-  const { data: requestsData, isLoading: isLoadingRequests } = useLinkRequests({ page: currentPage, category: mainTab });
+  const { data: requestsData, isLoading: isLoadingRequests } = useLinkRequests({ 
+    page: currentPage, 
+    category: mainTab,
+    status: subTab === 'pending' ? 'PENDING' : undefined
+  });
   const { data: activeLinksData, isLoading: isLoadingActive } = useActiveLinks({ page: currentPage, category: mainTab });
   const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
 
-  const requests = requestsData?.items || [];
-  const activeLinks = activeLinksData?.items || [];
+  // For badges and static stats card - always fetch total counts for both categories
+  const { data: networkPendingRaw } = useLinkRequests({ status: 'PENDING', category: 'network', limit: 1 });
+  const { data: classroomPendingRaw } = useLinkRequests({ status: 'PENDING', category: 'classroom', limit: 1 });
+  const { data: networkActiveRaw } = useActiveLinks({ category: 'network', limit: 1 });
+  const { data: classroomActiveRaw } = useActiveLinks({ category: 'classroom', limit: 1 });
+
+  const requests = (requestsData as any)?.items || [];
+  const activeLinks = (activeLinksData as any)?.items || [];
   
-  const pagination = subTab === 'active' ? activeLinksData?.pagination : requestsData?.pagination;
+  const pagination = subTab === 'active' ? (activeLinksData as any)?.pagination : (requestsData as any)?.pagination;
   
   const profile = profileResponse?.data || {};
 
@@ -53,6 +66,7 @@ export default function LinkingHub() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+  const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
 
   // Reset page when tabs change
   useEffect(() => {
@@ -80,21 +94,29 @@ export default function LinkingHub() {
   // Helper to pick the "other" person or entity from a link or request
   const getPeer = (item: any) => {
     const r = item.approvedFromRequest || item;
-    
-    // Explicitly check for school relation first if it's an institutional link
-    if (item.school) return item.school;
-    if (r.targetSchool) return r.targetSchool;
-    if (r.requesterSchool) return r.requesterSchool;
+    const type = item.linkType || r.linkType;
 
-    // Collect all personal participants
+    // 1. For institutional connections, prioritize the institution/class
+    const isInstitutional = type?.includes('SCHOOL') || isClassLink(type);
+    
+    if (isInstitutional) {
+      if (type?.includes('SCHOOL') && (item.school || r.targetSchool || r.requesterSchool)) {
+        return item.school || r.targetSchool || r.requesterSchool;
+      }
+      if (isClassLink(type) && r.class) {
+        return r.class;
+      }
+    }
+
+    // 2. Otherwise, look for human participants
     const participants = [
       r.targetStudent, r.targetTeacher, r.targetParent, r.approverAdmin,
-      r.requesterStudent, r.requesterTeacher, r.requesterParent, r.requesterAdmin
+      r.requesterStudent, r.requesterTeacher, r.requesterParent, r.requesterAdmin,
+      r.sender, r.receiver
     ].filter(Boolean);
 
-    // Filter out the current user
-    const peer = participants.find((p: any) => p.id !== user?.id) || participants[0] || r.class;
-    return peer;
+    const peer = participants.find((p: any) => p.id !== user?.id);
+    return peer || null;
   };
 
   // Normalize Active Links
@@ -104,24 +126,39 @@ export default function LinkingHub() {
     const peerCode = isLeft ? link.rightCode : link.leftCode;
     
     let peerName = peer?.name || peer?.fullName || peer?.username || peerCode || "Verified Member";
-    let peerEmail = peer?.email || (link.school ? (link.school.email || "School Entity") : "---");
     
+    // Better identifier logic - dynamic fallback based on link type
+    let peerEmail = peer?.email || peer?.schoolEmail || (isClassLink(link.linkType) ? "Classroom Entity" : (link.linkType?.includes('SCHOOL') ? "School Entity" : "---"));
+    
+    // Explicitly enforce school details ONLY for school links
+    if (link.linkType?.includes('SCHOOL') && link.school) {
+        peerName = link.school.name || peerName;
+        peerEmail = link.school.email || link.school.schoolEmail || "School Entity";
+    }
+
     // Classroom specific logic
     if (link.linkType === 'STUDENT_CLASS' || link.linkType === 'TEACHER_CLASS') {
       peerName = link.class?.name || link.class?.classCode || peerName;
-      peerEmail = "Classroom Entity";
     }
 
     const isClass = isClassLink(link.linkType);
+
+    // Refine role display to avoid redundant school labels
+    let roleDisplay = link.linkType?.replace('_', ' ');
+    if (link.linkType === 'SCHOOL_STUDENT') roleDisplay = 'School';
+    if (link.linkType === 'PARENT_STUDENT') roleDisplay = 'Parent';
+    if (link.linkType === 'STUDENT_CLASS') roleDisplay = 'Classroom';
 
     return {
       ...link,
       peerName,
       peerEmail,
+      peerCode, // Pass the pre-calculated peer code
+      roleDisplay,
       peerImage: peer?.logo || peer?.profileImage || peer?.avatar,
       variant: isClass ? 'classroom' : 'network'
     };
-  });
+  }).filter((link: any) => link.peerName !== "Verified Member" || link.linkType.includes('CLASS'));
 
   // Normalize Requests
   const normalizedRequests = requests.map((req: any) => {
@@ -130,7 +167,14 @@ export default function LinkingHub() {
     const peerCode = isOutgoing ? req.targetCode : req.requesterCode;
 
     let peerName = peer?.name || peer?.fullName || peer?.username || peerCode || "Verified Member";
-    let peerEmail = peer?.email || "---";
+    let peerEmail = peer?.email || peer?.schoolEmail || (isClassLink(req.linkType) ? "Classroom Entity" : (req.linkType?.includes('SCHOOL') ? "School Entity" : "---"));
+
+    // Explicitly enforce school details ONLY for school requests
+    if (req.linkType?.includes('SCHOOL') && (req.targetSchool || req.requesterSchool)) {
+      const school = req.targetSchool || req.requesterSchool;
+      peerName = school.name || peerName;
+      peerEmail = school.email || school.schoolEmail || "School Entity";
+    }
 
     return {
       ...req,
@@ -139,7 +183,7 @@ export default function LinkingHub() {
       peerImage: peer?.logo || peer?.profileImage || peer?.avatar,
       variant: isClassLink(req.linkType) ? 'classroom' : 'network'
     };
-  });
+  }).filter((req: any) => req.peerName !== "Verified Member" || req.linkType.includes('CLASS'));
 
   const filteredActiveLinks = normalizedActiveLinks.filter((link: any) => {
     const matchesTab = link.variant === mainTab;
@@ -156,9 +200,11 @@ export default function LinkingHub() {
     return matchesTab && matchesSearch;
   });
 
-  const networkPendingCount = subTab === 'pending' && mainTab === 'network' ? (requestsData?.pagination?.total || 0) : 0;
-  const classroomPendingCount = subTab === 'pending' && mainTab === 'classroom' ? (requestsData?.pagination?.total || 0) : 0;
-
+  const networkPendingCount = (networkPendingRaw as any)?.pagination?.total || 0;
+  const classroomPendingCount = (classroomPendingRaw as any)?.pagination?.total || 0;
+  const networkActiveCount = (networkActiveRaw as any)?.pagination?.total || 0;
+  const classroomActiveCount = (classroomActiveRaw as any)?.pagination?.total || 0;
+  const totalActiveCount = networkActiveCount + classroomActiveCount;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-black/95 p-4 md:p-8">
@@ -168,18 +214,25 @@ export default function LinkingHub() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2 mb-2">
-              <div className="p-1.5 bg-pink-600 rounded-lg shadow-blue-200 shadow-lg">
-                <Zap size={16} className="text-white fill-current" />
+              <div className="p-1.5 bg-indigo-600 rounded-lg shadow-indigo-200 shadow-lg">
+                <Globe size={16} className="text-white" />
               </div>
-              <span className="text-[10px] font-black text-pink-600 tracking-widest uppercase">Network</span>
+              <span className="text-[10px] font-black text-indigo-600 tracking-widest uppercase">Your Network</span>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              Linking Hub
+            <h1 className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white">
+              Student <span className="text-indigo-600">Connect</span> Hub
             </h1>
-            <p className="text-sm text-slate-500 font-medium">Connect and manage your academic ecosystem.</p>
+            <p className="text-sm text-slate-500 font-medium max-w-md">Your digital gateway to classes, teachers, and your verified academic circle.</p>
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
+            <Button
+              onClick={() => setIsQRCodeModalOpen(true)}
+              variant="outline"
+              className="flex-1 md:flex-none h-11 px-5 rounded-xl bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-bold text-sm text-slate-900 dark:text-white"
+            >
+              <QrCode className="mr-2 h-4 w-4 text-indigo-600" /> View QR Codes
+            </Button>
             <Button
               onClick={() => setIsConnectModalOpen(true)}
               className="flex-1 md:flex-none h-11 px-5 rounded-xl bg-slate-900 dark:bg-white dark:text-black hover:opacity-90 transition-all shadow-xl font-bold text-sm"
@@ -189,42 +242,119 @@ export default function LinkingHub() {
           </div>
         </header>
 
-        {/* Profile Stats / Code Bento Card - SHRUNK */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="md:col-span-2 relative overflow-hidden border-none bg-gradient-to-br from-pink-600 to-indigo-700 text-white shadow-2xl shadow-blue-200/50 rounded-[1.5rem]">
-            <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="space-y-3 text-center sm:text-left">
-                <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-wider">
-                  <Shield size={12} className="mr-1.5" /> Verified Profile
+        {/* Digital Student ID Section */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main ID Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="lg:col-span-2"
+          >
+            <Card className="relative overflow-hidden border-none bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 text-white shadow-2xl rounded-[2.5rem] min-h-[320px] group">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+              
+              <CardContent className="relative p-8 h-full flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-4">
+                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest border border-white/30">
+                      <Shield size={12} className="mr-2" /> Digital Student Passport
+                    </div>
+                    <div>
+                      <h2 className="text-4xl font-black tracking-tight mb-1">{profile.name || user?.name}</h2>
+                      <p className="text-indigo-100/80 font-bold tracking-wide flex items-center gap-2">
+                         Student ID: <span className="text-white font-black">{profile.studentCode || user?.studentCode || "---"}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="h-24 w-24 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center p-1.5 shadow-2xl relative group-hover:rotate-3 transition-transform overflow-hidden">
+                     {profile.profileImage || user?.profileImage ? (
+                        <img 
+                          src={profile.profileImage || user?.profileImage} 
+                          alt={profile.name} 
+                          className="h-full w-full object-cover rounded-xl"
+                        />
+                     ) : (
+                        <Zap size={40} className="text-yellow-300 fill-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.5)]" />
+                     )}
+                  </div>
                 </div>
-                <h2 className="text-xl font-extrabold">Your Linking Code</h2>
-                <p className="text-blue-100/70 text-sm max-w-[280px]">Share this code with teachers or parents to link your accounts.</p>
-              </div>
 
-              <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-5 rounded-2xl flex flex-col items-center gap-3 min-w-[180px]">
-                <span className="text-3xl font-black tracking-widest leading-none">{profile.linkingCode || "---"}</span>
-                <Button
-                  onClick={() => copyToClipboard(profile.linkingCode, "Linking code")}
-                  variant="secondary"
-                  size="sm"
-                  className="w-full h-9 bg-white text-pink-600 hover:bg-rose-50 font-black text-[11px] uppercase tracking-widest rounded-lg"
-                >
-                  <Copy size={14} className="mr-2" /> Copy Code
-                </Button>
-              </div>
-            </CardContent>
-            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-          </Card>
+                <div className="flex flex-col sm:flex-row items-end justify-between gap-6 pt-8">
+                  <div className="flex flex-col gap-4 w-full sm:w-auto">
+                    <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl inline-block group-hover:bg-white/20 transition-all">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-100/60 mb-2">Personal Linking Code</p>
+                      <div className="flex items-center gap-4">
+                        <span className="text-3xl font-black tracking-[0.2em] font-mono leading-none">{profile.linkingCode || "---"}</span>
+                        <Button
+                          onClick={() => copyToClipboard(profile.linkingCode, "Linking code")}
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-lg bg-white/10 hover:bg-white text-white hover:text-indigo-600 transition-colors"
+                        >
+                          <Copy size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
 
-          <Card className="border-none bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-none rounded-[1.5rem] p-6 flex flex-col justify-center items-center text-center space-y-3">
-            <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-              <Globe className="text-slate-400 font-bold" size={24} />
+                  {/* QR Code Container */}
+                  <div className="bg-white p-3 rounded-2xl shadow-2xl flex flex-col items-center gap-2 group-hover:scale-105 transition-transform">
+                    <div className="bg-white p-1 rounded-lg">
+                      {profile.linkingCode ? (
+                        <QRCode
+                          value={profile.linkingCode}
+                          size={100}
+                          level="H"
+                          style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                        />
+                      ) : (
+                        <div className="w-[100px] h-[100px] bg-slate-100 animate-pulse rounded-lg" />
+                      )}
+                    </div>
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Scan to connect</span>
+                  </div>
+                </div>
+              </CardContent>
+              
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-400/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl" />
+            </Card>
+          </motion.div>
+
+          {/* Quick Stats sidebar */}
+          <div className="space-y-6">
+            <Card className="border-none bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-none rounded-[2rem] p-8 flex flex-col items-center text-center space-y-4 hover:shadow-2xl transition-all border-b-4 border-indigo-500">
+               <div className="h-16 w-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 mb-2">
+                 <Globe size={32} />
+               </div>
+               <div>
+                 <p className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">{totalActiveCount}</p>
+                 <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">Verified Connections</p>
+               </div>
+               <div className="w-full pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-4">
+                  <div className="text-left">
+                    <p className="font-black text-lg text-purple-600">{classroomActiveCount}</p>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase">Classroom</p>
+                  </div>
+                  <div className="text-right border-l dark:border-slate-800 pl-4">
+                    <p className="font-black text-lg text-pink-600">{networkActiveCount}</p>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase">Network</p>
+                  </div>
+               </div>
+            </Card>
+
+            <div className="bg-slate-900 dark:bg-indigo-600 rounded-[2rem] p-6 text-white flex items-center justify-between group cursor-pointer hover:scale-[1.02] transition-all shadow-xl shadow-indigo-200/20"
+                 onClick={() => setIsConnectModalOpen(true)}>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200/60">New Action</p>
+                <p className="text-lg font-extrabold tracking-tight">Join a Class</p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                <ArrowUpRight size={24} />
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-black">{activeLinks.length}</p>
-              <p className="text-slate-400 font-black text-[9px] uppercase tracking-[0.2em]">Active Links</p>
-            </div>
-          </Card>
+          </div>
         </section>
 
         {/* NEW Tab Structure & Search */}
@@ -382,6 +512,13 @@ export default function LinkingHub() {
       />
 
       <ConnectModal isOpen={isConnectModalOpen} onClose={() => setIsConnectModalOpen(false)} />
+
+      <StudentQRCodeModal 
+        isOpen={isQRCodeModalOpen} 
+        onClose={() => setIsQRCodeModalOpen(false)} 
+        studentCode={profile?.linkingCode || ''}
+        studentName={profile?.name || user?.name}
+      />
     </div>
   );
 }
@@ -460,7 +597,7 @@ function ConnectionCard({ link, onRevoke, isRevoking }: any) {
           <div className="flex flex-col">
             <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider mb-0.5">Entity Code</span>
             <span className={cn("font-black tracking-widest text-sm", isClass ? "text-purple-600" : "text-pink-600")}>
-               {link.leftEntityId === link.userId ? link.rightCode : link.leftCode}
+               {link.peerCode}
             </span>
           </div>
           <Button
@@ -524,7 +661,7 @@ function PendingCard({ req, onRespond, onCancel, userId, isResponding, isCancell
           </div>
           <div>
             <h4 className="font-extrabold text-lg text-slate-900 dark:text-white leading-tight">{req.peerName}</h4>
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{isOutgoing ? "Outgoing Connection" : "Incoming Request"}</p>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{isOutgoing ? "Outgoing Connection To" : "Incoming Request From"}</p>
           </div>
         </div>
 
@@ -623,9 +760,9 @@ function ConnectModal({ isOpen, onClose }: any) {
           <div className="h-14 w-14 rounded-2xl bg-rose-50 dark:bg-pink-900/30 flex items-center justify-center text-pink-600">
             <Link2 size={28} />
           </div>
-          <DialogTitle className="text-2xl font-extrabold">Join Community</DialogTitle>
-          <DialogDescription className="font-medium">
-            Enter a unique code to connect with your school, class, or parents.
+          <DialogTitle className="text-2xl font-black tracking-tight">Expand Your Network</DialogTitle>
+          <DialogDescription className="font-medium text-slate-500">
+            Link up with your school, join a new classroom, or connect with your parents using a secure code.
           </DialogDescription>
         </DialogHeader>
 

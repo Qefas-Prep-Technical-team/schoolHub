@@ -18,6 +18,8 @@ import paymentRoutes from "../modules/payment/payment.route";
 import financeRoutes from "../modules/finance/finance.route";
 import subscriptionRoutes from "../modules/subscription/subscription.route";
 import platformRoutes from "../modules/platform";
+import parentRoutes from "../modules/parent/parent.route";
+import supportRoutes from "../modules/support/support.route";
 
 const router = Router();
 
@@ -37,7 +39,9 @@ router.use("/students", authenticateToken, studentRoutes);
 router.use("/upload", authenticateToken, uploadRoutes);
 router.use("/grades", authenticateToken, checkSubscription, gradeRoutes);
 router.use("/teacher", authenticateToken, teacherRoutes);
+router.use("/parents", authenticateToken, checkSubscription, parentRoutes);
 router.use("/finance", financeRoutes);
 router.use("/payment", paymentRoutes);
+router.use("/support", supportRoutes);
 
 export default router;

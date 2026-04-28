@@ -12,13 +12,14 @@ import { calculateProRatedAmount } from '@/utils/pricingUtils';
 interface UpgradePriceCardProps extends PricingTabType {
     category?: string;
     index?: number;
+    currentPlan?: string;
     currentPlanPrice?: number;
     lastPaymentDate?: string | Date | null;
 }
 
 const UpgradePriceCard: FC<UpgradePriceCardProps> = ({ 
     name, description, pricing, type, trialDays, features, hasTrial, isPopular, category, index = 0,
-    storage, currentPlanPrice, lastPaymentDate
+    storage, currentPlan, currentPlanPrice, lastPaymentDate
 }) => {
     const { billingType } = useBillingStore();
     const { isAuthenticated, user } = useAuthStore();
@@ -39,9 +40,9 @@ const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
     const targetPlanLevel = planOrder[type?.toLowerCase() || 'free'] ?? 0;
     const isLowerPlan = targetPlanLevel < currentPlanLevel;
 
-    // Logic to check if this is the current plan
+    // Logic to check if this is the current plan - use prop for real-time accuracy
     const isCurrentPlan = isAuthenticated && 
-        user?.plan?.toLowerCase() === type?.toLowerCase();
+        (currentPlan?.toLowerCase() === type?.toLowerCase() || user?.plan?.toLowerCase() === type?.toLowerCase());
 
     const isDeactivated = isLowerPlan && !isCurrentPlan;
 
@@ -128,6 +129,11 @@ const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
                         <div className="flex items-center gap-2 mt-2">
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-[9px] font-black rounded-lg uppercase tracking-widest animate-pulse">Pro-rated Price</span>
                             <span className="text-[10px] font-bold text-slate-400">Saved for current plan</span>
+                        </div>
+                    ) : isCurrentPlan ? (
+                        <div className="text-[10px] font-bold text-blue-500 mt-2 flex items-center gap-2">
+                            <Sparkles className="w-3 h-3" />
+                            <span>Your current active subscription price</span>
                         </div>
                     ) : (
                         <div className="text-[10px] font-bold text-slate-400 mt-2">Full pricing (Billing Reset)</div>

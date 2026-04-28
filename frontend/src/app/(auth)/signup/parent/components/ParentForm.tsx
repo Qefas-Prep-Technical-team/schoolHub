@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
 import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
 import RedirectOverlay from '@/components/ui/RedirectOverlay';
-
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 export default function ParentRegistrationForm() {
   const [serverError, setServerError] = useState('');
@@ -23,7 +23,7 @@ export default function ParentRegistrationForm() {
   const searchParams = useSearchParams();
 
   const { mutate: registerParent, isPending } = useParentRegistration();
-
+  const { data: globalFeatures } = useGlobalFeatures('parent');
   const {
     register,
     handleSubmit,
@@ -332,18 +332,22 @@ export default function ParentRegistrationForm() {
           )}
         </button>
 
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-100 dark:border-gray-800" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
-              Or continue with
-            </span>
-          </div>
-        </div>
+        {globalFeatures?.googleLogin !== false && (
+          <>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-100 dark:border-gray-800" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
+                  Or continue with
+                </span>
+              </div>
+            </div>
 
-        <GoogleLoginButton userType={UserRole.PARENT} />
+            <GoogleLoginButton userType={UserRole.PARENT} />
+          </>
+        )}
 
         <p className="text-center text-sm text-[#4c809a] dark:text-gray-400">
           Already have an account?{" "}

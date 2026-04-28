@@ -32,11 +32,11 @@ export default function SignInPage() {
   ];
 
   return (
-    <div className="min-h-[80vh] bg-[#f8f9ff] dark:bg-slate-950 transition-colors duration-300">
-      <main className="max-w-7xl mx-auto px-6 py-20">
+    <div className="w-full transition-colors duration-300">
+      <main className="max-w-7xl mx-auto px-6 py-12 md:py-20">
         <PortalsHero />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {portals.map((portal, idx) => (
             <PortalCard
               key={portal.title}

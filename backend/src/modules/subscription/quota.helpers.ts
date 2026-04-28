@@ -1,5 +1,5 @@
 import prisma from "../../config/database";
-import { getSchoolUsageService } from "./quota.service";
+import { EntitlementService } from "./entitlement.service";
 import { createNotification } from "../notification/notification.service";
 
 /**
@@ -33,56 +33,40 @@ const triggerQuotaNotifications = async (schoolId: string, metric: string, perce
 };
 
 export const enforceStudentLimit = async (schoolId: string) => {
-  const { usage, limits, percentages } = await getSchoolUsageService(schoolId);
-  
-  if (percentages.students >= 80 && percentages.students < 100) {
-    await triggerQuotaNotifications(schoolId, "Student", 80);
-  }
-
-  if (usage.students >= limits.students) {
+  try {
+    await EntitlementService.validateSchoolQuota(schoolId, "students", 1);
+  } catch (error: any) {
+    // If it throws, it means limit reached. 
+    // Legacy behavior: trigger notifications
     await triggerQuotaNotifications(schoolId, "Student", 100);
-    throw new Error(`Student capacity reached (${limits.students}) for your current subscription plan. Please upgrade to add more students.`);
+    throw error;
   }
 };
 
 export const enforceExamLimit = async (schoolId: string) => {
-  const { usage, limits, percentages } = await getSchoolUsageService(schoolId);
-
-  if (percentages.exams >= 80 && percentages.exams < 100) {
-    await triggerQuotaNotifications(schoolId, "Exam", 80);
-  }
-
-  if (usage.exams >= limits.exams) {
+  try {
+    await EntitlementService.validateSchoolQuota(schoolId, "exams", 1);
+  } catch (error: any) {
     await triggerQuotaNotifications(schoolId, "Exam", 100);
-    throw new Error(`Exam limit reached (${limits.exams}) for your current subscription plan. Please upgrade to create more exams.`);
+    throw error;
   }
 };
 
 export const enforceClassLimit = async (schoolId: string) => {
-  const { usage, limits, percentages } = await getSchoolUsageService(schoolId);
-
-  if (percentages.classes >= 80 && percentages.classes < 100) {
-    await triggerQuotaNotifications(schoolId, "Class", 80);
-  }
-
-  if (usage.classes >= limits.classes) {
+  try {
+    await EntitlementService.validateSchoolQuota(schoolId, "classes", 1);
+  } catch (error: any) {
     await triggerQuotaNotifications(schoolId, "Class", 100);
-    throw new Error(`Class limit reached (${limits.classes}) for your current subscription plan. Please upgrade to manage more classes.`);
+    throw error;
   }
 };
 
 export const enforceStorageLimit = async (schoolId: string, newFileSize: number) => {
-  const { usage, limits } = await getSchoolUsageService(schoolId);
-  
-  const newUsageGb = usage.storageGb + (newFileSize / (1024 * 1024 * 1024));
-  const newPercentage = Math.round((newUsageGb / limits.storageGb) * 100);
-
-  if (newPercentage >= 80 && newPercentage < 100) {
-    await triggerQuotaNotifications(schoolId, "Storage", 80);
-  }
-
-  if (newUsageGb >= limits.storageGb) {
+  const newFileSizeGb = newFileSize / (1024 * 1024 * 1024);
+  try {
+    await EntitlementService.validateSchoolQuota(schoolId, "storageGb", newFileSizeGb);
+  } catch (error: any) {
     await triggerQuotaNotifications(schoolId, "Storage", 100);
-    throw new Error(`Cloud storage limit reached (${limits.storageGb}GB) for your current plan. Please upgrade to upload more institutional files.`);
+    throw error;
   }
 };

@@ -200,15 +200,15 @@ export const getTeacherLinkedSchoolsService = async (teacherId: string) => {
   const teacher = await prisma.teacher.findUnique({
     where: { id: teacherId },
     include: {
-        school: true,
-        currentSchool: true
+        School_Teacher_primarySchoolIdToSchool: true,
+        School_Teacher_activeSchoolIdToSchool: true
     }
   });
 
   const schoolsMap = new Map();
 
-  if (teacher?.school) schoolsMap.set(teacher.school.id, teacher.school);
-  if (teacher?.currentSchool) schoolsMap.set(teacher.currentSchool.id, teacher.currentSchool);
+  if (teacher?.School_Teacher_primarySchoolIdToSchool) schoolsMap.set(teacher.School_Teacher_primarySchoolIdToSchool.id, teacher.School_Teacher_primarySchoolIdToSchool);
+  if (teacher?.School_Teacher_activeSchoolIdToSchool) schoolsMap.set(teacher.School_Teacher_activeSchoolIdToSchool.id, teacher.School_Teacher_activeSchoolIdToSchool);
 
   links.forEach(link => {
       // Find which side is the school

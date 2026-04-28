@@ -5,6 +5,8 @@ import { Search, Bell, Shield, ChevronLeft, ChevronRight, User } from "lucide-re
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/app/theme-toggle"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
+import { usePlatformSupportNotifications } from "@/lib/hooks/usePlatformSupportNotifications"
+import { useRouter } from "next/navigation"
 
 interface ConsoleTopBarProps {
     onToggleSidebar: () => void;
@@ -13,6 +15,8 @@ interface ConsoleTopBarProps {
 
 export default function ConsoleTopBar({ onToggleSidebar, isCollapsed }: ConsoleTopBarProps) {
     const { staff } = usePlatformStaffStore()
+    const { unreadCount, clearUnread } = usePlatformSupportNotifications()
+    const router = useRouter()
 
     return (
         <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
@@ -48,9 +52,18 @@ export default function ConsoleTopBar({ onToggleSidebar, isCollapsed }: ConsoleT
             <div className="flex items-center justify-end gap-4 flex-1">
                 <ThemeToggle />
                 
-                <button className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
+                <button 
+                    onClick={() => { clearUnread(); router.push('/console/support') }}
+                    className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+                >
                     <Bell size={20} />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full border-2 border-white dark:border-slate-950"></span>
+                    {unreadCount > 0 ? (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[9px] font-black rounded-full px-1 border-2 border-white dark:border-slate-950 animate-bounce">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                    ) : (
+                        <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full border-2 border-white dark:border-slate-950"></span>
+                    )}
                 </button>
 
                 <div className="h-6 w-[1px] bg-slate-200 dark:bg-white/10 mx-2" />

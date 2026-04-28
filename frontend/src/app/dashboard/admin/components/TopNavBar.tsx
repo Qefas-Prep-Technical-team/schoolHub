@@ -1,6 +1,8 @@
 "use client";
 import React, { useState } from "react";
-import { Search, Bell, Settings, LayoutGrid, ChevronLeft, ChevronRight, User, School } from "lucide-react";
+import Link from "next/link";
+import { Search, Bell, Settings, LayoutGrid, ChevronLeft, ChevronRight, User, School, QrCode } from "lucide-react";
+import { UserQRModal } from "@/components/reusable/UserQRModal";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/app/theme-toggle";
 import NotificationCenter from "./NotificationCenter";
@@ -16,6 +18,7 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
     const [searchQuery, setSearchQuery] = useState("");
     const [notifications] = useState(5);
     const [profile, setProfile] = useState<any>(null);
+    const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const { userType, user } = useAuthStore();
 
     useEffect(() => {
@@ -30,10 +33,10 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
         <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
             <div className="flex items-center gap-6 flex-1">
                 {/* Dashboard Badge */}
-                <div className="hidden lg:flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
-                    <School size={14} className="text-indigo-400" />
+                <Link href="/" className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-full shadow-sm hover:border-indigo-500/30 transition-all group/badge">
+                    <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-4 w-4 object-contain group-hover/badge:scale-110 transition-transform" />
                     <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Admin Hub</span>
-                </div>
+                </Link>
 
                 {/* Desktop collapse */}
                 <div className="hidden md:block">
@@ -66,10 +69,15 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
             </div>
 
             <div className="flex items-center justify-end gap-4 flex-1">
-                {/* Quick Actions */}
-                <button className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">
-                    <LayoutGrid className="w-5 h-5" />
+                {/* Quick Actions / QR Code */}
+                <button 
+                  onClick={() => setIsQRModalOpen(true)}
+                  className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-slate-200 dark:border-white/5 shadow-sm"
+                >
+                    <QrCode className="w-5 h-5 text-indigo-500" />
                 </button>
+
+                <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} />
 
                 <ThemeToggle />
 

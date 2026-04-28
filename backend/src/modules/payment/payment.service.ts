@@ -121,7 +121,8 @@ export const verifyPaymentService = async (
         lastPaymentDate: new Date(),
         isTrialActive: isTrial,
         trialUsed: true,
-        trialEndsAt: isTrial ? subscriptionEnd : undefined
+        trialEndsAt: isTrial ? subscriptionEnd : undefined,
+        billingCycle: billingType
     };
 
     if (isUpgrade) {
@@ -250,6 +251,7 @@ export const getUserBillingService = async (userId: string, role: string, page =
             isTrialActive: true,
             lastPaymentDate: true,
             paystackCustomerCode: true,
+            billingCycle: true,
         }
     });
 
@@ -315,7 +317,7 @@ export const getUserBillingService = async (userId: string, role: string, page =
             isTrialActive: user.isTrialActive,
             lastPaymentDate: user.lastPaymentDate,
             paystackCustomerCode: user.paystackCustomerCode,
-            billingCycle: latestTransaction?.billingCycle || 'monthly',
+            billingCycle: user.billingCycle || 'monthly',
         },
         usage,
         transactions,

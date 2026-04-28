@@ -1,12 +1,8 @@
-'use client'
-
-import React from 'react'
+import React, { useState } from 'react'
+import PendingRequestsDialog from './PendingRequestsDialog'
 
 export default function PageHeading() {
-  const handleAddChild = () => {
-    // Add child logic here
-    console.log('Add child clicked')
-  }
+  const [showPending, setShowPending] = useState(false)
 
   return (
     <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -20,12 +16,17 @@ export default function PageHeading() {
       </div>
       
       <button
-        onClick={handleAddChild}
-        className="group flex items-center justify-center gap-2 h-11 px-6 bg-primary hover:bg-primary-dark text-white rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95"
+        onClick={() => setShowPending(true)}
+        className="group flex items-center justify-center gap-2 h-11 px-6 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-100 dark:border-slate-700/50 rounded-xl shadow-sm hover:border-orange-500/50 hover:text-orange-500 transition-all active:scale-95"
       >
-        <span className="material-symbols-outlined text-[20px]">add</span>
-        <span className="text-sm font-bold">Add Child</span>
+        <span className="material-symbols-outlined text-[20px]">group</span>
+        <span className="text-sm font-bold tracking-tight">View Requests</span>
       </button>
+
+      <PendingRequestsDialog 
+        isOpen={showPending} 
+        onOpenChange={setShowPending} 
+      />
     </div>
   )
 }

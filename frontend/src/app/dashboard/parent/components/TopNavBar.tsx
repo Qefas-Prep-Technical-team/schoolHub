@@ -2,7 +2,9 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Bell, Search, ChevronDown, ChevronLeft, ChevronRight, User, LayoutGrid } from "lucide-react";
+import { Bell, Search, ChevronDown, ChevronLeft, ChevronRight, User, LayoutGrid, QrCode } from "lucide-react";
+import Link from "next/link";
+import { UserQRModal } from "@/components/reusable/UserQRModal";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/app/theme-toggle";
@@ -13,6 +15,8 @@ import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+import { useParentChildren } from "@/lib/api/hooks/useParentChildren";
+
 export default function TopNavBar() {
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -20,6 +24,8 @@ export default function TopNavBar() {
   const [profile, setProfile] = useState<any>(null);
   const { userType, user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const { data: children = [], isLoading: isChildrenLoading } = useParentChildren();
 
   useEffect(() => {
     linkService.getProfile().then(setProfile).catch(() => {});
@@ -56,20 +62,39 @@ export default function TopNavBar() {
           </TooltipProvider>
         </div>
 
+        {/* Dashboard Badge */}
+        <Link href="/" className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-full shadow-sm mr-4 hover:border-orange-500/30 transition-all group/badge">
+            <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-4 w-4 object-contain group-hover/badge:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Parent Hub</span>
+        </Link>
+
         {/* Mobile hamburger */}
         <ParentMobileDrawer />
 
         {/* Child Selector */}
         <div className="relative hidden xl:block min-w-[200px] group">
-          <select className="w-full appearance-none bg-slate-100 dark:bg-white/5 border border-transparent hover:border-orange-500/30 rounded-xl px-4 py-2.5 text-xs font-black text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer outline-none uppercase tracking-tight">
-            <option>Emily Johnson</option>
-            <option>Michael Johnson</option>
+          <select 
+            disabled={isChildrenLoading || children.length === 0}
+            className="w-full appearance-none bg-slate-100 dark:bg-white/5 border border-transparent hover:border-orange-500/30 rounded-xl px-4 py-2.5 text-xs font-black text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer outline-none uppercase tracking-tight disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isChildrenLoading ? (
+              <option>Loading children...</option>
+            ) : children.length === 0 ? (
+              <option>No children linked</option>
+            ) : (
+              children.map((child) => (
+                <option key={child.id} value={child.id}>
+                  {child.name}
+                </option>
+              ))
+            )}
           </select>
           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-orange-500 transition-colors">
             <ChevronDown className="h-4 w-4" />
           </div>
         </div>
       </div>
+
 
       {/* Central Search Section */}
       <div className="hidden md:flex flex-1 justify-center px-8">
@@ -88,10 +113,15 @@ export default function TopNavBar() {
       </div>
 
       <div className="flex items-center justify-end gap-4 flex-1">
-        {/* Quick Actions */}
-        <button className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">
-          <LayoutGrid className="w-5 h-5" />
+        {/* Quick Actions / QR Code */}
+        <button 
+          onClick={() => setIsQRModalOpen(true)}
+          className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-slate-200 dark:border-white/5 shadow-sm"
+        >
+          <QrCode className="w-5 h-5 text-orange-500" />
         </button>
+
+        <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} />
 
         <ThemeToggle />
 

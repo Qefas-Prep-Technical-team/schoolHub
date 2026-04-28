@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { 
   Search, 
   ChevronLeft, 
   ChevronRight, 
   User, 
-  ChevronDown 
+  ChevronDown,
+  QrCode
 } from "lucide-react";
+import { UserQRModal } from "@/components/reusable/UserQRModal";
 import { cn } from "@/lib/utils";
 import { useTeacherProfile } from "@/lib/api/hooks/useTeacher";
 
@@ -38,6 +41,7 @@ export default function TopNavBar() {
   
   const { selectedSchoolId, schools, setSelectedSchoolId, setSchools } = useDashboardStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   useEffect(() => {
     teacherService.getLinkedSchools()
@@ -82,6 +86,12 @@ export default function TopNavBar() {
             </Tooltip>
           </TooltipProvider>
 
+          {/* Dashboard Badge */}
+          <Link href="/" className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-full shadow-sm mr-2 hover:border-emerald-500/30 transition-all group/badge">
+            <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-4 w-4 object-contain group-hover/badge:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Faculty Hub</span>
+          </Link>
+
           <TeacherMobileDrawer />
 
           <SchoolSwitcher 
@@ -110,10 +120,18 @@ export default function TopNavBar() {
 
         {/* Right Section */}
         <div className="flex items-center justify-end gap-3 flex-1 shrink-0">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setIsQRModalOpen(true)}
+              className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-emerald-500/10 hover:text-emerald-600 transition-all border border-slate-200 dark:border-white/5 shadow-sm"
+            >
+              <QrCode className="w-5 h-5 text-emerald-500" />
+            </button>
             <NotificationCenter />
             <ThemeToggle />
           </div>
+
+          <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} />
 
           <div 
             className="flex items-center gap-2.5 p-1 pr-3 bg-white dark:bg-white/5 rounded-full border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 cursor-pointer transition-all duration-300 group shadow-sm" 

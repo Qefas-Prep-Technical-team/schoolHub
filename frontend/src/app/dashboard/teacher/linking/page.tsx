@@ -83,30 +83,32 @@ function LinkingHub() {
 
   // -- State for School Mode (Global) --
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // -- State for Personal Mode --
-  const [instTab, setInstTab] = useState<'active' | 'pending'>('active');
+  const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
+  const [subTab, setSubTab] = useState<'active' | 'pending'>('active');
   const [instPage, setInstPage] = useState(1);
-  const [classTab, setClassTab] = useState<'active' | 'pending'>('active');
   const [classPage, setClassPage] = useState(1);
 
   // -- Modal State --
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
 
-  // -- Hooks: Global/School --
-  const { data: globalActiveData, isLoading: isLoadingGlobalActive } = useActiveLinks({ page: currentPage }, { enabled: !isPersonal });
-  const { data: globalRequestsData, isLoading: isLoadingGlobalRequests } = useLinkRequests({ page: currentPage }, { enabled: !isPersonal });
+  // -- Hooks: Personal Mode (Centralized) --
+  const { data: activeLinksData, isLoading: isLoadingActive } = useActiveLinks(
+    { page: isPersonal ? (mainTab === 'network' ? instPage : classPage) : currentPage, category: isPersonal ? mainTab : undefined },
+    { enabled: isPersonal || !isPersonal } // Always enabled for current context essentially
+  );
+  
+  const { data: requestsData, isLoading: isLoadingRequests } = useLinkRequests(
+    { page: isPersonal ? (mainTab === 'network' ? instPage : classPage) : currentPage, category: isPersonal ? mainTab : undefined },
+    { enabled: isPersonal || !isPersonal }
+  );
 
-  // -- Hooks: Institutional --
-  const { data: instActiveData, isLoading: isLoadingInstActive } = useActiveLinks({ page: instPage, category: 'network' }, { enabled: isPersonal });
-  const { data: instRequestsData, isLoading: isLoadingInstRequests } = useLinkRequests({ page: instPage, category: 'network' }, { enabled: isPersonal });
-
-  // -- Hooks: Classroom --
-  const { data: classActiveData, isLoading: isLoadingClassActive } = useActiveLinks({ page: classPage, category: 'classroom' }, { enabled: isPersonal });
-  const { data: classRequestsData, isLoading: isLoadingClassRequests } = useLinkRequests({ page: classPage, category: 'classroom' }, { enabled: isPersonal });
+  // Independent fetches for persistent badges (counts)
+  const { data: networkTotalData } = useLinkRequests({ category: 'network', status: 'PENDING', limit: 1 }, { enabled: isPersonal });
+  const { data: classroomTotalData } = useLinkRequests({ category: 'classroom', status: 'PENDING', limit: 1 }, { enabled: isPersonal });
 
   const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
   const profile = profileResponse?.data || {};
@@ -142,19 +144,16 @@ function LinkingHub() {
   });
 
   // Normalized Data
-  const schoolActive = normalizeList(globalActiveData?.items);
-  const schoolRequests = normalizeList(globalRequestsData?.items);
-  const schoolPending = schoolRequests.filter(r => r.status === 'PENDING');
+  const activeLinks = normalizeList((activeLinksData as any)?.items);
+  const requests = normalizeList((requestsData as any)?.items);
+  const pendingRequests = requests.filter(r => r.status === 'PENDING');
 
-  const instActive = normalizeList(instActiveData?.items);
-  const instPending = normalizeList(instRequestsData?.items).filter(r => r.status === 'PENDING');
+  const networkPendingCount = (networkTotalData as any)?.pagination?.total || 0;
+  const classroomPendingCount = (classroomTotalData as any)?.pagination?.total || 0;
 
-  const classActive = normalizeList(classActiveData?.items);
-  const classPending = normalizeList(classRequestsData?.items).filter(r => r.status === 'PENDING');
-
-  const pendingTotal = !isPersonal 
-    ? schoolPending.length 
-    : instPending.length + classPending.length;
+  const currentPagination = subTab === 'active' 
+    ? (activeLinksData as any)?.pagination 
+    : (requestsData as any)?.pagination;
 
   const handleRespond = async (id: string, action: 'ACCEPT' | 'REJECT') => {
     respondMutation.mutate({ id, action });
@@ -198,11 +197,11 @@ function LinkingHub() {
               <ShieldCheck size={24} />
               <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-none shadow-none font-bold text-[10px]">Active</Badge>
             </div>
-            <p className="text-3xl font-black text-gray-900 dark:text-white">
-              {isLoadingInstActive || isLoadingClassActive || isLoadingGlobalActive ? <Skeleton className="h-9 w-12" /> : (isPersonal ? (instActive.length + classActive.length) : (schoolActive.length))}
-            </p>
+            <div className="text-3xl font-black text-gray-900 dark:text-white">
+              {isLoadingActive ? <Skeleton className="h-9 w-12" /> : activeLinks.length}
+            </div>
             <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-[0.10em]">
-              {isPersonal ? 'Total Active' : 'School Connections'}
+              {isPersonal ? 'Current Tab Active' : 'School Connections'}
             </p>
           </CardContent>
         </Card>
@@ -213,10 +212,10 @@ function LinkingHub() {
               <Clock size={24} />
               <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-none shadow-none font-bold text-[10px]">Waiting</Badge>
             </div>
-            <p className="text-3xl font-black text-gray-900 dark:text-white">
-               {isLoadingInstRequests || isLoadingClassRequests || isLoadingGlobalRequests ? <Skeleton className="h-9 w-12" /> : pendingTotal}
-            </p>
-            <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-[0.10em]">Pending Requests</p>
+            <div className="text-3xl font-black text-gray-900 dark:text-white">
+               {isLoadingRequests ? <Skeleton className="h-9 w-12" /> : pendingRequests.length}
+            </div>
+            <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-[0.10em]">Current Tab Pending</p>
           </CardContent>
         </Card>
 
@@ -227,7 +226,7 @@ function LinkingHub() {
               <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-none shadow-none font-bold text-[10px]">Context</Badge>
             </div>
             <p className="text-3xl font-black text-gray-900 dark:text-white truncate">
-               {isPersonal ? 'Personal' : (currentSchool?.name || 'School')}
+               {isPersonal ? 'Personal Hub' : (currentSchool?.name || 'School')}
             </p>
             <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-[0.10em]">Active Workspace</p>
           </CardContent>
@@ -247,193 +246,116 @@ function LinkingHub() {
       />
 
       {/* Main Content Area */}
-      {isPersonal ? (
-        <div className="space-y-16">
-          {/* Section 1: Personal/Institutional */}
-          <section className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-0.5">
-                <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Institutional Network</h2>
-                <p className="text-xs font-medium text-gray-500">Your professional links with schools.</p>
-              </div>
-              
-              <div className="flex bg-white dark:bg-gray-800 p-1 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm h-10">
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white dark:bg-gray-800/50 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            {/* Category Toggle (Personal Mode Only) */}
+            {isPersonal && (
+              <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-xl">
                 <button
-                  onClick={() => setInstTab('active')}
+                  onClick={() => setMainTab('network')}
                   className={cn(
-                    "px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                    instTab === 'active' ? "bg-primary text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                    "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                    mainTab === 'network' ? "bg-white dark:bg-gray-800 shadow-sm text-primary" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
                   )}
                 >
-                  Active ({instActive.length})
+                  Network
                 </button>
                 <button
-                  onClick={() => setInstTab('pending')}
+                  onClick={() => setMainTab('classroom')}
                   className={cn(
-                    "px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all relative",
-                    instTab === 'pending' ? "bg-primary text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                    "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                    mainTab === 'classroom' ? "bg-white dark:bg-gray-800 shadow-sm text-purple-600" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
                   )}
                 >
-                  Pending ({instPending.length})
+                  Classroom
                 </button>
               </div>
-            </div>
+            )}
 
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {isLoadingInstActive || isLoadingInstRequests ? <LinkingSkeleton count={4} /> : (
-                  instTab === 'active' ? (
-                    instActive.length === 0 ? <EmptyState message="No active institutional connections." /> :
-                    instActive.map((link: any) => <MemberCard key={link.id} link={link} onRevoke={handleRevoke} onCopy={copyToClipboard} />)
-                  ) : (
-                    instPending.length === 0 ? <EmptyState message="No pending institutional requests." /> :
-                    instPending.map((req: any) => <RequestCard key={req.id} req={req} user={user} onRespond={handleRespond} onCancel={handleCancel} />)
-                  )
-                )}
-              </div>
-
-              {instActiveData?.pagination && (
-                <Pagination
-                  currentPage={instPage}
-                  totalPages={instTab === 'active' ? instActiveData.pagination.totalPages : instRequestsData.pagination.totalPages}
-                  totalItems={instTab === 'active' ? instActiveData.pagination.total : instRequestsData.pagination.total}
-                  itemsPerPage={instTab === 'active' ? instActiveData.pagination.limit : instRequestsData.pagination.limit}
-                  onPageChange={setInstPage}
-                />
-              )}
-            </div>
-          </section>
-
-          {/* Section 2: Classroom */}
-          <section className="space-y-6">
-             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-t border-gray-100 dark:border-gray-800 pt-16">
-              <div className="space-y-0.5">
-                <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Classroom Network</h2>
-                <p className="text-xs font-medium text-gray-500">Direct student and class connections.</p>
-              </div>
-
-              <div className="flex bg-white dark:bg-gray-800 p-1 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm h-10">
-                <button
-                  onClick={() => setClassTab('active')}
-                  className={cn(
-                    "px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                    classTab === 'active' ? "bg-primary text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
-                  )}
-                >
-                  Active ({classActive.length})
-                </button>
-                <button
-                  onClick={() => setClassTab('pending')}
-                  className={cn(
-                    "px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all relative",
-                    classTab === 'pending' ? "bg-primary text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
-                  )}
-                >
-                  Pending ({classPending.length})
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {isLoadingClassActive || isLoadingClassRequests ? <LinkingSkeleton count={4} /> : (
-                  classTab === 'active' ? (
-                    classActive.length === 0 ? <EmptyState message="No students or classes connected." /> :
-                    classActive.map((link: any) => <MemberCard key={link.id} link={link} onRevoke={handleRevoke} onCopy={copyToClipboard} />)
-                  ) : (
-                    classPending.length === 0 ? <EmptyState message="No pending student requests." /> :
-                    classPending.map((req: any) => <RequestCard key={req.id} req={req} user={user} onRespond={handleRespond} onCancel={handleCancel} />)
-                  )
-                )}
-              </div>
-
-              {classActiveData?.pagination && (
-                <Pagination
-                  currentPage={classPage}
-                  totalPages={classTab === 'active' ? classActiveData.pagination.totalPages : classRequestsData.pagination.totalPages}
-                  totalItems={classTab === 'active' ? classActiveData.pagination.total : classRequestsData.pagination.total}
-                  itemsPerPage={classTab === 'active' ? classActiveData.pagination.limit : classRequestsData.pagination.limit}
-                  onPageChange={setClassPage}
-                />
-              )}
-            </div>
-          </section>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex bg-white dark:bg-gray-800 p-1.5 rounded-2xl h-14 border border-gray-100 dark:border-gray-700 shadow-sm">
+            {/* Status Toggle */}
+            <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-xl">
               <button
-                onClick={() => setActiveTab('all')}
+                onClick={() => setSubTab('active')}
                 className={cn(
-                  "px-6 rounded-xl font-bold transition-all text-sm",
-                  activeTab === 'all' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                  "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                  subTab === 'active' ? "bg-white dark:bg-gray-800 shadow-sm text-primary" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
                 )}
               >
-                Active Connections
+                Connected ({isLoadingActive ? '...' : activeLinks.length})
               </button>
               <button
-                onClick={() => setActiveTab('pending')}
+                onClick={() => setSubTab('pending')}
                 className={cn(
-                  "px-6 rounded-xl font-bold transition-all relative text-sm",
-                  activeTab === 'pending' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                  "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all relative",
+                  subTab === 'pending' ? "bg-white dark:bg-gray-800 shadow-sm text-orange-500" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
                 )}
               >
-                Pending Requests
-                {schoolPending.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white rounded-full text-[10px] flex items-center justify-center font-black animate-bounce shadow-md">
-                    {schoolPending.length}
+                Pending ({isLoadingRequests ? '...' : pendingRequests.length})
+                {(isPersonal ? (mainTab === 'network' ? networkPendingCount : classroomPendingCount) : pendingRequests.length) > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white rounded-full text-[8px] flex items-center justify-center font-black shadow-sm">
+                   {isPersonal ? (mainTab === 'network' ? networkPendingCount : classroomPendingCount) : pendingRequests.length}
                   </span>
                 )}
               </button>
             </div>
-
-            <div className="relative group max-w-xs w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-primary transition-colors" size={18} />
-              <Input
-                placeholder="Search..."
-                className="pl-12 h-14 rounded-2xl border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm font-medium focus:ring-primary/20 transition-all text-sm"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {isLoadingGlobalActive || isLoadingGlobalRequests ? <LinkingSkeleton count={8} /> : (
-                activeTab === 'all' ? (
-                  schoolActive.length === 0 ? (
-                    <EmptyState message="No active school connections found." />
-                  ) : (
-                    schoolActive.map((link: any) => (
-                      <MemberCard key={link.id} link={link} onRevoke={handleRevoke} onCopy={copyToClipboard} />
-                    ))
+          <div className="relative group w-full sm:w-64">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-primary transition-colors" size={16} />
+            <Input
+              placeholder="Search links..."
+              className="pl-10 h-11 rounded-xl border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 shadow-none font-medium focus:ring-primary/20 transition-all text-xs"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {isLoadingActive || isLoadingRequests ? (
+              <LinkingSkeleton count={8} />
+            ) : subTab === 'active' ? (
+              activeLinks.length === 0 ? (
+                <EmptyState message={`No active ${isPersonal ? mainTab : ''} connections found.`} />
+              ) : (
+                activeLinks
+                  .filter((link: any) => 
+                    link.peerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                    link.peerEmail.toLowerCase().includes(searchQuery.toLowerCase())
                   )
-                ) : (
-                  schoolPending.length === 0 ? (
-                    <EmptyState message="No pending requests for this school." />
-                  ) : (
-                    schoolPending.map((req: any) => (
-                      <RequestCard key={req.id} req={req} user={user} onRespond={handleRespond} onCancel={handleCancel} />
-                    ))
+                  .map((link: any) => (
+                    <MemberCard key={link.id} link={link} onRevoke={handleRevoke} onCopy={copyToClipboard} />
+                  ))
+              )
+            ) : (
+              pendingRequests.length === 0 ? (
+                <EmptyState message={`No pending ${isPersonal ? mainTab : ''} requests found.`} />
+              ) : (
+                pendingRequests
+                  .filter((req: any) => 
+                    req.peerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                    req.peerEmail.toLowerCase().includes(searchQuery.toLowerCase())
                   )
-                )
-              )}
-            </div>
+                  .map((req: any) => (
+                    <RequestCard key={req.id} req={req} user={user} onRespond={handleRespond} onCancel={handleCancel} />
+                  ))
+              )
+            )}
           </div>
 
-          {!isPersonal && (globalActiveData?.pagination || globalRequestsData?.pagination) && (
+          {currentPagination && (
             <Pagination
-              currentPage={currentPage}
-              totalPages={activeTab === 'all' ? globalActiveData?.pagination?.totalPages : globalRequestsData?.pagination?.totalPages}
-              totalItems={activeTab === 'all' ? globalActiveData?.pagination?.total : globalRequestsData?.pagination?.total}
-              itemsPerPage={activeTab === 'all' ? globalActiveData?.pagination?.limit : globalRequestsData?.pagination?.limit}
-              onPageChange={setCurrentPage}
+              currentPage={isPersonal ? (mainTab === 'network' ? instPage : classPage) : currentPage}
+              totalPages={currentPagination.totalPages}
+              totalItems={currentPagination.total}
+              itemsPerPage={currentPagination.limit}
+              onPageChange={isPersonal ? (mainTab === 'network' ? setInstPage : setClassPage) : setCurrentPage}
             />
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

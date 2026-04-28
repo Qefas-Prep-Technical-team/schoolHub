@@ -242,8 +242,13 @@ export const respondToLinkRequest = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("respondToLinkRequest error:", error);
-    return res.status(400).json({
+    console.error("respondToLinkRequest error:", {
+      requestId: req.params.id,
+      body: req.body,
+      error: error.message,
+      stack: error.stack
+    });
+    return res.status(error.status || 400).json({
       success: false,
       message: error.message || "Failed to respond to link request",
     });
@@ -625,7 +630,10 @@ export const acceptAllRequestsByCategory = async (req: Request, res: Response) =
         OR: [
           { targetType: LinkEntityType.ADMIN, targetId: req.user.id },
           { targetSchoolId: { in: schoolIds } },
-          { schoolId: { in: schoolIds } },
+          { 
+            targetType: { in: [LinkEntityType.SCHOOL, LinkEntityType.CLASS] },
+            schoolId: { in: schoolIds } 
+          },
           {
             targetType: LinkEntityType.SCHOOL,
             targetSchool: {
@@ -772,6 +780,8 @@ export const getMyProfile = async (req: Request, res: Response) => {
                 school: { 
                   select: { 
                     id: true,
+                    name: true,
+                    logo: true,
                     schoolCode: true,
                     plan: true,
                     subscriptionStatus: true

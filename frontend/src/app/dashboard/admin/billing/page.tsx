@@ -87,8 +87,9 @@ export default function AdminBillingPage() {
         );
     }
 
-    const { subscription, transactions } = (billingData as any).data || {};
+    const { subscription, transactions } = billingData || {};
 
+    // Prioritize the plan name from subscription metadata if available (covers trials of higher plans)
     const currentPlan = (subscription?.plan || "FREE").toUpperCase();
     const cycle = subscription?.billingCycle || "monthly";
 
@@ -99,26 +100,15 @@ export default function AdminBillingPage() {
         ? (cycle === 'monthly' ? activePlanData.pricing.monthly : activePlanData.pricing.yearly) 
         : 0;
 
-    const PLAN_DISPLAY_NAMES: Record<string, string> = {
-        'FREE': 'Free Tier',
-        'STARTER': 'Institutional Starter',
-        'GROWTH': 'Institutional Growth',
-        'PRO': 'Institutional Professional',
-    };
+    const isTrial = subscription?.isTrialActive === true;
 
     const subscriptionInfo = {
-        plan: PLAN_DISPLAY_NAMES[currentPlan] || subscription?.plan || "Free Tier",
-        status: subscription?.subscriptionStatus || "INACTIVE",
+        plan: activePlanData?.name || (isTrial ? `${currentPlan} Plan` : null) || subscription?.plan || "Free Tier",
+        status: isTrial ? "TRIAL" : (subscription?.subscriptionStatus || "INACTIVE"),
         renewalDate: subscription?.subscriptionEnd ? new Date(subscription.subscriptionEnd).toLocaleDateString() : "N/A",
         amount: dynamicAmount,
         billingCycle: cycle,
-        features: activePlanData?.features || [
-                "Institutional Management",
-                "Up to 50 Students",
-                "No AI Analytics",
-                "Max 5 Exams",
-                "3 Class Management"
-            ]
+        features: (subscription?.features && subscription.features.length > 0) ? subscription.features : (activePlanData?.features || [])
     };
 
     return (
@@ -160,7 +150,10 @@ export default function AdminBillingPage() {
                                 <Badge className="bg-blue-500/20 text-blue-400 border-none px-3 py-1 font-black uppercase tracking-widest text-[10px]">
                                     Current Plan
                                 </Badge>
-                                <CardTitle className="text-4xl font-black capitalize">{subscriptionInfo.plan}</CardTitle>
+                                <CardTitle className="text-4xl font-black capitalize flex items-center gap-3">
+                                    {subscriptionInfo.plan}
+                                    <span className="text-xl opacity-60 font-medium">₦{subscriptionInfo.amount.toLocaleString()}</span>
+                                </CardTitle>
                                 <CardDescription className="text-slate-400 font-medium text-lg">
                                     {subscriptionInfo.billingCycle === 'monthly' ? 'Billed Monthly' : 'Billed Yearly'}
                                 </CardDescription>

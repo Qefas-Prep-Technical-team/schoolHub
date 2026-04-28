@@ -41,7 +41,10 @@ const buildIncomingWhere = async ({
       OR: [
         { targetType: LinkEntityType.ADMIN, targetId: currentUserId },
         { targetSchoolId: { in: schoolIds } },
-        { schoolId: { in: schoolIds } },
+        {
+          targetType: { in: [LinkEntityType.SCHOOL, LinkEntityType.CLASS] },
+          schoolId: { in: schoolIds }
+        },
         {
           targetType: LinkEntityType.SCHOOL,
           targetSchool: {

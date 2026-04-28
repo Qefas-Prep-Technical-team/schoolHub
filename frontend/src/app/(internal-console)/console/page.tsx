@@ -9,19 +9,20 @@ import {
     TrendingUp, 
     ArrowUpRight, 
     ShieldAlert,
-    Cpu
+    Cpu,
+    GraduationCap,
+    BookUser,
+    UserRound
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
-    LineChart, 
-    Line, 
+    AreaChart,
+    Area,
     XAxis, 
     YAxis, 
     CartesianGrid, 
     Tooltip, 
-    ResponsiveContainer,
-    AreaChart,
-    Area 
+    ResponsiveContainer
 } from "recharts"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -32,35 +33,75 @@ export default function PlatformDashboard() {
     const metricCards = [
         { 
             title: "Global Schools", 
-            value: stats?.totalSchools || 0, 
+            value: stats?.totalSchools ?? 0, 
             icon: Building2, 
-            color: "text-blue-400", 
-            trend: "+12%",
-            description: "Active institutions on platform"
+            color: "text-blue-400",
+            bg: "bg-blue-500/5",
+            sub: `${stats?.activeSchools ?? 0} active`,
+            description: "Institutions on platform"
         },
         { 
             title: "Total Students", 
-            value: stats?.totalStudents || 0, 
-            icon: Users, 
-            color: "text-emerald-400", 
-            trend: "+8%",
+            value: stats?.totalStudents ?? 0, 
+            icon: GraduationCap, 
+            color: "text-emerald-400",
+            bg: "bg-emerald-500/5",
+            sub: null,
             description: "Cross-tenant student population"
         },
         { 
+            title: "Total Teachers", 
+            value: stats?.totalTeachers ?? 0, 
+            icon: BookUser, 
+            color: "text-violet-400",
+            bg: "bg-violet-500/5",
+            sub: null,
+            description: "Registered teaching staff"
+        },
+        { 
+            title: "Total Parents", 
+            value: stats?.totalParents ?? 0, 
+            icon: UserRound, 
+            color: "text-pink-400",
+            bg: "bg-pink-500/5",
+            sub: null,
+            description: "Parent accounts"
+        },
+        { 
+            title: "Total Users", 
+            value: stats?.totalUsers ?? 0, 
+            icon: Users, 
+            color: "text-amber-400",
+            bg: "bg-amber-500/5",
+            sub: null,
+            description: "All registered users"
+        },
+        { 
             title: "Platform Revenue", 
-            value: `₦${(stats?.totalRevenue || 0).toLocaleString()}`, 
+            value: `₦${((stats?.totalRevenue ?? 0)).toLocaleString()}`, 
             icon: CreditCard, 
-            color: "text-indigo-400", 
-            trend: "+24%",
-            description: "Gross volume (All currencies normalized)"
+            color: "text-indigo-400",
+            bg: "bg-indigo-500/5",
+            sub: `₦${((stats?.mrr ?? 0)).toLocaleString()} MRR`,
+            description: "Gross volume (All time)"
         },
         { 
             title: "System Health", 
             value: "99.98%", 
             icon: Activity, 
-            color: "text-amber-400", 
-            trend: "Optimal",
-            description: "Average uptime (Last 30 days)"
+            color: "text-teal-400",
+            bg: "bg-teal-500/5",
+            sub: "Optimal",
+            description: "Average uptime (30 days)"
+        },
+        { 
+            title: "Currency", 
+            value: stats?.currency ?? "NGN", 
+            icon: CreditCard, 
+            color: "text-orange-400",
+            bg: "bg-orange-500/5",
+            sub: null,
+            description: "Primary settlement currency"
         },
     ]
 
@@ -70,7 +111,7 @@ export default function PlatformDashboard() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Main HQ Overview</h1>
-                    <p className="text-slate-500 font-medium mt-1">Global ecosystem performance & health monitoring.</p>
+                    <p className="text-slate-500 font-medium mt-1">Global ecosystem performance &amp; health monitoring.</p>
                 </div>
                 <div className="flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl shadow-sm">
                     <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -79,11 +120,11 @@ export default function PlatformDashboard() {
             </div>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {metricCards.map((card, i) => (
-                    <Card key={i} className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 overflow-hidden relative group shadow-sm">
-                        <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
-                           <card.icon size={120} />
+                    <Card key={i} className={`bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 overflow-hidden relative group shadow-sm ${card.bg}`}>
+                        <div className="absolute top-0 right-0 p-6 opacity-[0.04] group-hover:scale-110 transition-transform duration-500">
+                           <card.icon size={100} />
                         </div>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
@@ -95,11 +136,13 @@ export default function PlatformDashboard() {
                             <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                                 {statsLoading ? <Skeleton className="h-8 w-20 bg-slate-100 dark:bg-slate-800" /> : card.value}
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className={`text-[10px] font-bold ${card.trend.startsWith('+') ? 'text-emerald-400' : 'text-slate-400'} flex items-center`}>
-                                    {card.trend} <ArrowUpRight size={10} className="ml-0.5" />
-                                </span>
-                                <span className="text-[10px] text-slate-600 font-medium truncate">{card.description}</span>
+                            <div className="flex items-center gap-2 mt-1.5">
+                                {card.sub && (
+                                    <span className={`text-[10px] font-bold ${card.color} flex items-center`}>
+                                        {card.sub} <ArrowUpRight size={10} className="ml-0.5" />
+                                    </span>
+                                )}
+                                <span className="text-[10px] text-slate-500 font-medium truncate">{card.description}</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -153,13 +196,24 @@ export default function PlatformDashboard() {
                                         tickLine={false}
                                     />
                                     <YAxis 
+                                        yAxisId="left"
                                         stroke="currentColor" 
                                         className="text-slate-400 dark:text-slate-600"
                                         fontSize={10} 
                                         fontWeight="500"
                                         axisLine={false}
                                         tickLine={false}
-                                        tickFormatter={(val) => `₦${val}`}
+                                    />
+                                    <YAxis 
+                                        yAxisId="right"
+                                        orientation="right"
+                                        stroke="currentColor" 
+                                        className="text-slate-400 dark:text-slate-600"
+                                        fontSize={10} 
+                                        fontWeight="500"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tickFormatter={(val) => `₦${(val / 1000).toFixed(0)}k`}
                                     />
                                     <Tooltip 
                                         contentStyle={{ 
@@ -168,9 +222,14 @@ export default function PlatformDashboard() {
                                             borderRadius: '12px' 
                                         }}
                                         itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                                        formatter={(value: any, name: string) => {
+                                            if (name === 'revenue') return [`₦${Number(value).toLocaleString()}`, 'Revenue'];
+                                            if (name === 'totalSchools') return [value, 'New Schools'];
+                                            return [value, name];
+                                        }}
                                     />
-                                    <Area type="monotone" dataKey="totalSchools" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorSchools)" />
-                                    <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+                                    <Area yAxisId="left" type="monotone" dataKey="totalSchools" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorSchools)" />
+                                    <Area yAxisId="right" type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         )}
@@ -184,16 +243,37 @@ export default function PlatformDashboard() {
                             <TrendingUp size={200} />
                         </div>
                         <div className="relative z-10 space-y-6">
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">Growth <br/> Efficiency</h3>
-                            <div className="h-28 w-28 rounded-full border-4 border-indigo-500/20 flex items-center justify-center bg-indigo-500/5 mx-auto">
-                                <span className="text-3xl font-black text-indigo-400">A+</span>
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">Platform <br/> Summary</h3>
+                            <div className="space-y-3">
+                                {statsLoading ? (
+                                    <>
+                                        <Skeleton className="h-5 w-full bg-slate-100 dark:bg-slate-800" />
+                                        <Skeleton className="h-5 w-full bg-slate-100 dark:bg-slate-800" />
+                                        <Skeleton className="h-5 w-full bg-slate-100 dark:bg-slate-800" />
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-bold text-slate-500">Active Schools</span>
+                                            <span className="text-xs font-black text-blue-400">{stats?.activeSchools ?? 0} / {stats?.totalSchools ?? 0}</span>
+                                        </div>
+                                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-blue-500 rounded-full transition-all duration-700"
+                                                style={{ width: stats?.totalSchools ? `${Math.round(((stats?.activeSchools ?? 0) / stats.totalSchools) * 100)}%` : '0%' }}
+                                            />
+                                        </div>
+                                        <div className="flex justify-between items-center pt-1">
+                                            <span className="text-xs font-bold text-slate-500">Total MRR</span>
+                                            <span className="text-xs font-black text-emerald-400">₦{((stats?.mrr ?? 0)).toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-bold text-slate-500">Total Revenue</span>
+                                            <span className="text-xs font-black text-indigo-400">₦{((stats?.totalRevenue ?? 0)).toLocaleString()}</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
-                            <p className="text-xs font-medium text-slate-500 text-center leading-relaxed">
-                                Subscription conversion is trending 15% above target for this quarter. Growth is nominal.
-                            </p>
-                            <button className="w-full py-3 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/20">
-                                Global Growth Report
-                            </button>
                         </div>
                     </Card>
 
@@ -205,12 +285,15 @@ export default function PlatformDashboard() {
                             <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">System Alerts</h4>
                         </div>
                         <div className="space-y-4">
-                            {[1, 2].map((i) => (
+                            {[
+                                { title: "Payment Gateway Latency", detail: "Paystack webhook delays observed in West-1 node." },
+                                { title: "Monitoring Active", detail: "All nodes are being monitored. No critical failures." }
+                            ].map((alert, i) => (
                                 <div key={i} className="flex gap-3 pb-4 border-b border-slate-100 dark:border-white/5 last:border-0 last:pb-0">
                                     <div className="h-2 w-2 rounded-full bg-amber-500 mt-1.5 shrink-0"></div>
                                     <div>
-                                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Payment Gateway Latency</p>
-                                        <p className="text-[10px] text-slate-500 font-medium">Paystack webhook delays observed in West-1 node.</p>
+                                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{alert.title}</p>
+                                        <p className="text-[10px] text-slate-500 font-medium">{alert.detail}</p>
                                     </div>
                                 </div>
                             ))}
@@ -221,6 +304,10 @@ export default function PlatformDashboard() {
                          <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500">
                              <Cpu size={16} />
                              <span className="text-[10px] font-bold uppercase tracking-widest leading-none">Internal Node 01 Status</span>
+                         </div>
+                         <div className="mt-3 flex items-center gap-2">
+                             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                             <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">All Systems Operational</span>
                          </div>
                     </Card>
                 </div>
