@@ -27,7 +27,7 @@ const GradeStatsCards: React.FC<GradeStatsCardsProps> = ({ grades }) => {
       }, 0) / totalStudents)
     : 0;
 
-  const topPerformers = grades.filter(g => g.grade === 'A+' || g.grade === 'A').length;
+  const topPerformers = grades.filter(g => g.grade === 'A').length;
   const pendingCount = grades.filter(g => g.status === 'Pending' || g.status === 'Missing').length;
 
   const stats = [

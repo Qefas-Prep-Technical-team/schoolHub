@@ -8,6 +8,8 @@ export interface Student {
   gender: Gender
   status: StudentStatus
   avatar: string
+  performance?: string
+  attendance?: string
 }
 
 export interface ClassInfo {

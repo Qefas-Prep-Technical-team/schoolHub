@@ -34,7 +34,7 @@ model School {
   lastPaymentDate                         DateTime?
   paystackCustomerCode                    String?
   paystackSubaccountCode                  String?
-  paystackSubaccountStatus                String             @default("pending")
+  paystackSubaccountStatus                String?            @default("pending")
   bankName                                String?
   accountNumber                           String?
   accountName                             String?
@@ -75,6 +75,7 @@ model School {
   subjects                                Subject[]
   teacherSubjects                         TeacherSubject[]
   transactions                            Transaction[]
+  schemeOfWork                            SchemeOfWork[]
 }
 
 model SchoolSetting {
@@ -181,9 +182,10 @@ model Teacher {
   pendingEmail                           String?
   bannerImage                            String?
   profileImage                           String?
+  settings                               Json?
+  school                                 School?            @relation("Teacher_activeSchoolIdToSchool", fields: [activeSchoolId], references: [id])
+  currentSchool                          School?            @relation("Teacher_primarySchoolIdToSchool", fields: [primarySchoolId], references: [id])
   FileMetric                             FileMetric[]
-  School_Teacher_activeSchoolIdToSchool  School?            @relation("Teacher_activeSchoolIdToSchool", fields: [activeSchoolId], references: [id])
-  School_Teacher_primarySchoolIdToSchool School?            @relation("Teacher_primarySchoolIdToSchool", fields: [primarySchoolId], references: [id])
   reportedAlerts                         BehaviourAlert[]
   classTeachers                          ClassTeacher[]
   departments                            Department[]
@@ -562,6 +564,7 @@ model Subject {
 
   @@unique([schoolId, code])
   @@map("subjects")
+  schemeOfWork      SchemeOfWork[]
 }
 
 model Department {
@@ -1209,6 +1212,7 @@ model Payment {
   status           String   @default("PENDING")
   paymentMethod    String?
   paidAt           DateTime?
+  createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   settlementAccountId String?
 
@@ -1321,4 +1325,33 @@ model PlatformActivityLog {
   staff      PlatformStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
   @@map("platform_activity_logs")
+}
+
+model SchemeOfWork {
+  id          String   @id @default(uuid())
+  subjectId   String
+  term        Int?     @default(1)
+  week        Int
+  topic       String
+  objectives  String?
+  resources   String?
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schoolId    String
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@map("schemes_of_work")
+}
+
+model PlatformSettings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_settings")
 }

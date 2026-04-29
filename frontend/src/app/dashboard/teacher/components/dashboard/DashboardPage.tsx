@@ -82,7 +82,7 @@ export default function DashboardPage() {
 
   const { data: notifications = [] } = useNotifications({ limit: 5 });
 
-  const messages = notifications.map(n => ({
+  const messages = notifications.map((n: any) => ({
     id: n.id,
     title: n.title,
     description: n.message,

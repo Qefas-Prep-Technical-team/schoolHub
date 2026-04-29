@@ -13,7 +13,7 @@ export default function PingOverlay() {
         className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-4 overflow-hidden"
       >
         {/* Animated Background Elements */}
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-xl" />
+        <div className="absolute inset-0 bg-[#F8FAFC]/80 dark:bg-slate-950/80 backdrop-blur-xl" />
         
         {/* Moving Gradient Orbs */}
         <motion.div
@@ -32,7 +32,7 @@ export default function PingOverlay() {
             y: [0, -50, 0],
           }}
           transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-          className="absolute -bottom-24 -right-24 w-96 h-96 bg-accent/20 rounded-full blur-[120px]"
+          className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px]"
         />
 
         {/* Central Content Card */}
@@ -75,7 +75,7 @@ export default function PingOverlay() {
               }}
               className="relative w-24 h-24 flex items-center justify-center rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-white/20"
             >
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/20 to-accent/20 animate-pulse" />
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/20 to-indigo-500/20 animate-pulse" />
               <ShieldCheck size={48} className="text-primary relative z-10" />
               
               <motion.div
@@ -83,7 +83,7 @@ export default function PingOverlay() {
                 transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                 className="absolute -right-2 -top-2 w-8 h-8 rounded-full bg-white dark:bg-slate-800 shadow-md flex items-center justify-center border border-white/10"
               >
-                <Lock size={14} className="text-accent" />
+                <Lock size={14} className="text-indigo-500" />
               </motion.div>
             </motion.div>
           </div>

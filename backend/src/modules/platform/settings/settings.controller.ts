@@ -9,7 +9,7 @@ export const getPlatformSettings = async (req: Request, res: Response) => {
   try {
     const settings = await prisma.platformSettings.findMany();
     // Convert to a handy key-value object for frontend
-    const settingsMap = settings.reduce((acc: any, s) => {
+    const settingsMap = settings.reduce((acc: any, s: any) => {
       acc[s.key] = s.value;
       return acc;
     }, {});
@@ -68,7 +68,7 @@ export const batchUpdateSettings = async (req: Request, res: Response) => {
         return res.status(400).json({ success: false, message: "Settings array required" });
     }
 
-    const updates = settings.map(s => 
+    const updates = settings.map((s: { key: string, value: any }) => 
         prisma.platformSettings.upsert({
             where: { key: s.key },
             update: { value: s.value },
@@ -85,7 +85,7 @@ export const batchUpdateSettings = async (req: Request, res: Response) => {
             loggingStaff.id,
             "BATCH_UPDATE_SETTINGS",
             "PlatformSettings",
-            null,
+            undefined,
             { count: settings.length }
         );
     }

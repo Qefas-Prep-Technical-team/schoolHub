@@ -141,30 +141,35 @@ export const getSchoolStudentsService = async (
   }
 
   // Also include students with direct schoolId or originalSchoolId
-  return prisma.student.findMany({
-    where,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      studentCode: true,
-      authProvider: true,
-      verified: true,
-      role: true,
-      gender: true,
-      profileImage: true,
-      bannerImage: true,
-      classes: {
-        include: {
-          class: true,
+  const [data, total] = await Promise.all([
+    prisma.student.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        studentCode: true,
+        authProvider: true,
+        verified: true,
+        role: true,
+        gender: true,
+        profileImage: true,
+        bannerImage: true,
+        classes: {
+          include: {
+            class: true,
+          },
         },
+        department: true,
       },
-      department: true,
-    },
-    orderBy: {
-      name: "asc",
-    },
-  });
+      orderBy: {
+        name: "asc",
+      },
+    }),
+    prisma.student.count({ where })
+  ]);
+
+  return { data, total };
 };
 
 export const getSchoolStatsService = async (schoolId: string) => {

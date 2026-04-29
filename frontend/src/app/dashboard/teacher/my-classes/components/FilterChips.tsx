@@ -41,7 +41,7 @@ export default function FilterChips({ filters, onFilterChange, onClearFilters }:
                 icon={Calendar} 
                 isOpen={openFilter === 'year'}
                 onToggle={() => toggleFilter('year')}
-                onChange={(val) => { onFilterChange('academicYear', val); setOpenFilter(null); }}
+                onChange={(val: string) => { onFilterChange('academicYear', val); setOpenFilter(null); }}
             />
             <FilterPill 
                 label="Term" 
@@ -50,7 +50,7 @@ export default function FilterChips({ filters, onFilterChange, onClearFilters }:
                 icon={Clock} 
                 isOpen={openFilter === 'term'}
                 onToggle={() => toggleFilter('term')}
-                onChange={(val) => { onFilterChange('term', val); setOpenFilter(null); }}
+                onChange={(val: string) => { onFilterChange('term', val); setOpenFilter(null); }}
             />
              <FilterPill 
                 label="Level" 
@@ -59,7 +59,7 @@ export default function FilterChips({ filters, onFilterChange, onClearFilters }:
                 icon={Layers} 
                 isOpen={openFilter === 'level'}
                 onToggle={() => toggleFilter('level')}
-                onChange={(val) => { onFilterChange('level', val); setOpenFilter(null); }}
+                onChange={(val: string) => { onFilterChange('level', val); setOpenFilter(null); }}
             />
              <FilterPill 
                 label="Class" 
@@ -68,7 +68,7 @@ export default function FilterChips({ filters, onFilterChange, onClearFilters }:
                 icon={GraduationCap} 
                 isOpen={openFilter === 'class'}
                 onToggle={() => toggleFilter('class')}
-                onChange={(val) => { onFilterChange('class', val); setOpenFilter(null); }}
+                onChange={(val: string) => { onFilterChange('class', val); setOpenFilter(null); }}
             />
              <FilterPill 
                 label="Subject" 
@@ -77,7 +77,7 @@ export default function FilterChips({ filters, onFilterChange, onClearFilters }:
                 icon={BookOpen} 
                 isOpen={openFilter === 'subject'}
                 onToggle={() => toggleFilter('subject')}
-                onChange={(val) => { onFilterChange('subject', val); setOpenFilter(null); }}
+                onChange={(val: string) => { onFilterChange('subject', val); setOpenFilter(null); }}
             />
 
             {/* Clear Filters Button Modernized */}

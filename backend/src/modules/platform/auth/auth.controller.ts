@@ -29,7 +29,7 @@ export const platformLogin = async (req: Request, res: Response) => {
     }
 
     // Verify password
-    const isMatch = await comparePassword(password, staff.password);
+    const isMatch = await comparePassword(password, staff.password || "");
     if (!isMatch) {
       return res.status(401).json({
         success: false,

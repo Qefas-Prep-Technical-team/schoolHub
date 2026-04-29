@@ -14,7 +14,7 @@ export const updateCurrentSchoolContext = async ({
     await prisma.teacher.update({
       where: { id: userId },
       data: {
-        schoolId, // temporary: use as current/default school context
+        activeSchoolId: schoolId,
       },
     });
   }

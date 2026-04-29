@@ -1,13 +1,14 @@
 import prisma from "../../config/database";
 import { Request, Response } from "express";
 import { getTeacherTimetableService, upsertTimetablePeriodService } from "../class/timetable.service";
+import { getSingleString } from "../../utils/request-utils";
 
 /**
  * Get detailed teacher information by ID
  */
 export const getTeacherById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = getSingleString(req.params.id as string | string[] | undefined);
 
     const teacher = await prisma.teacher.findFirst({
       where: {
@@ -58,8 +59,8 @@ export const getTeacherById = async (req: Request, res: Response) => {
       },
       professionalInfo: {
           department: teacher.department || "General",
-          subjects: teacher.teacherSubjects.map(ts => ts.subject.name),
-          assignedClasses: teacher.classTeachers.map(ct => ct.class.name)
+          subjects: teacher.teacherSubjects.map((ts: any) => ts.subject.name),
+          assignedClasses: teacher.classTeachers.map((ct: any) => ct.class.name)
       },
       statistics: {
           classPerformance: '85%', // Placeholder
@@ -87,7 +88,7 @@ export const getTeacherById = async (req: Request, res: Response) => {
  */
 export const assignTeacherToClass = async (req: Request, res: Response) => {
   try {
-    const { id: inputId } = req.params;
+    const inputId = getSingleString(req.params.id as string | string[] | undefined);
     const { classId, isLead = false } = req.body;
 
     if (!classId) {
@@ -150,7 +151,7 @@ export const assignTeacherToClass = async (req: Request, res: Response) => {
  */
 export const updateTeacher = async (req: Request, res: Response) => {
   try {
-    const { id: inputId } = req.params;
+    const inputId = getSingleString(req.params.id as string | string[] | undefined);
     const { department, name, gender } = req.body;
 
     // Resolve real teacher ID if inputId is a teacherCode
@@ -197,7 +198,7 @@ export const updateTeacher = async (req: Request, res: Response) => {
  */
 export const getTeacherTimetable = async (req: Request, res: Response) => {
   try {
-    const { id: inputId } = req.params;
+    const inputId = getSingleString(req.params.id as string | string[] | undefined);
 
     // Resolve real teacher ID if inputId is a teacherCode
     const teacher = await prisma.teacher.findFirst({
@@ -234,7 +235,7 @@ export const getTeacherTimetable = async (req: Request, res: Response) => {
  */
 export const createTimetablePeriod = async (req: Request, res: Response) => {
   try {
-    const { id: inputId } = req.params;
+    const inputId = getSingleString(req.params.id as string | string[] | undefined);
     const { classId, day, startTime, endTime, subjectId, room } = req.body;
 
     // Resolve real teacher ID if inputId is a teacherCode

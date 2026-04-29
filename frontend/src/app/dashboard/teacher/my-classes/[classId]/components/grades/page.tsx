@@ -1,3 +1,4 @@
+'use client'
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -72,9 +73,8 @@ export default function GradesPage() {
   }
 
   const handleSaveGrade = (updatedGrade: StudentGrade) => {
-    setGrades(prev => prev.map(g => 
-      g.id === updatedGrade.id ? updatedGrade : g
-    ))
+    console.log('Save grade:', updatedGrade)
+    // TODO: Implement update mutation
     setIsEditDialogOpen(false)
     setEditingGrade(null)
   }

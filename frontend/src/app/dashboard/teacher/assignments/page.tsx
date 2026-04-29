@@ -181,7 +181,7 @@ export default function AssignmentsPage() {
                                 <p className="text-slate-500 dark:text-slate-400 max-w-sm text-sm font-bold uppercase tracking-widest leading-relaxed">
                                     Adjust your search or start a new task for your students.
                                 </p>
-                            </motion.button>
+                            </motion.div>
                         )}
                     </AnimatePresence>
                 </div>

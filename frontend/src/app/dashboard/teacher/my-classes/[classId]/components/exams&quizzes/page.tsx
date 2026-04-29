@@ -78,20 +78,14 @@ export default function ExamsPage() {
 
   const handleDeleteExam = (exam: Exam) => {
     if (confirm(`Are you sure you want to delete "${exam.title}"?`)) {
-      setExams(prev => prev.filter(e => e.id !== exam.id))
+      console.log('Delete exam:', exam.id)
+      // TODO: Implement deletion mutation
     }
   }
 
   const handleDuplicateExam = (exam: Exam) => {
-    const duplicate = {
-      ...exam,
-      id: Math.random().toString(36).substr(2, 9),
-      title: `${exam.title} (Copy)`,
-      status: 'draft' as const,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-    setExams(prev => [duplicate, ...prev])
+    console.log('Duplicate exam:', exam.id)
+    // TODO: Implement duplication mutation
   }
 
   const handleExportExam = (exam: Exam) => {

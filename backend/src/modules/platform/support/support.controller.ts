@@ -2,13 +2,14 @@ import { Request, Response } from "express";
 import prisma from "../../../config/database";
 import jwt from "jsonwebtoken";
 import { createActivityLog } from "../logs/logs.controller";
+import { getSingleString } from "../../../utils/request-utils";
 
 /**
  * Search schools for support purposes
  */
 export const searchSchools = async (req: Request, res: Response) => {
   try {
-    const { query } = req.query;
+    const query = getSingleString(req.query.query as string);
     const schools = await prisma.school.findMany({
       where: {
         OR: [
@@ -39,7 +40,7 @@ export const searchSchools = async (req: Request, res: Response) => {
  */
 export const toggleSchoolStatus = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = getSingleString(req.params.id);
     const { status } = req.body; // 'ACTIVE', 'SUSPENDED', etc.
 
     const school = await prisma.school.update({
@@ -147,7 +148,7 @@ export const listTickets = async (req: Request, res: Response) => {
  */
 export const updateSchoolLimits = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = getSingleString(req.params.id);
     const { maxStudents, maxExams, maxClasses, maxStorageGb } = req.body;
 
     const school = await prisma.school.update({

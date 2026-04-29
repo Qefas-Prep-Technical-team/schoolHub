@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { $Enums, AdminRole, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { updateAdminProfileService } from "./admin.service";
+import { getSingleString } from "../../utils/request-utils";
 
 // controllers/auth.controller.ts
 
@@ -437,7 +438,7 @@ const sendRejectionNotification = async (
 
 export const getSchoolTeachers = async (req: Request, res: Response) => {
   try {
-    const { schoolId } = req.query;
+    const schoolId = getSingleString(req.query.schoolId as string | string[] | undefined);
 
     if (!schoolId) {
       return res.status(400).json({
@@ -466,9 +467,8 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
     const teachers = await prisma.teacher.findMany({
       where: {
         OR: [
-          { schoolId: schoolId as string },
-          { activeSchoolId: schoolId as string },
-          { primarySchoolId: schoolId as string },
+          { activeSchoolId: schoolId },
+          { primarySchoolId: schoolId },
         ],
       },
       select: {
@@ -497,7 +497,9 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
 
 export const getSchoolStudents = async (req: Request, res: Response) => {
   try {
-    const { schoolId, page = "1", limit = "10" } = req.query;
+    const schoolId = getSingleString(req.query.schoolId as string | string[] | undefined);
+    const page = getSingleString(req.query.page as string | string[] | undefined) || "1";
+    const limit = getSingleString(req.query.limit as string | string[] | undefined) || "10";
 
     if (!schoolId) {
       return res.status(400).json({
@@ -567,7 +569,7 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
 
 export const getSchoolMembers = async (req: Request, res: Response) => {
   try {
-    const { schoolId } = req.query;
+    const schoolId = getSingleString(req.query.schoolId as string | string[] | undefined);
 
     if (!schoolId) {
       return res.status(400).json({
@@ -596,8 +598,8 @@ export const getSchoolMembers = async (req: Request, res: Response) => {
       prisma.teacher.findMany({
         where: {
           OR: [
-            { schoolId: schoolId as string },
-            { currentSchoolId: schoolId as string },
+            { activeSchoolId: schoolId },
+            { primarySchoolId: schoolId },
           ],
         },
         select: {

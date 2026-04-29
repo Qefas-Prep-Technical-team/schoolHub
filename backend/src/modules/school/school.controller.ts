@@ -66,12 +66,12 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
     }
     if (search) filters.search = search as string;
 
-    const data = await getSchoolStudentsService(schoolId as string, filters);
+    const result = await getSchoolStudentsService(schoolId as string, filters);
 
     return res.status(200).json({
       success: true,
-      count: data.length,
-      data,
+      count: result.total,
+      data: result.data,
     });
   } catch (error: any) {
     console.error(`[School Controller Error]`, error);

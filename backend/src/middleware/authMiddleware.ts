@@ -39,13 +39,13 @@ export const authenticateToken = async (
       const teacher = await prisma.teacher.findUnique({
         where: { id: decoded.userId }
       });
-      schoolId = teacher?.activeSchoolId || teacher?.primarySchoolId;
+      schoolId = teacher?.activeSchoolId || teacher?.primarySchoolId || undefined;
       tenantId = teacher?.tenantId;
     } else if (decoded.userType === "STUDENT") {
       const student = await prisma.student.findUnique({
         where: { id: decoded.userId }
       });
-      schoolId = student?.schoolId;
+      schoolId = student?.schoolId || undefined;
       tenantId = student?.tenantId;
     }
 

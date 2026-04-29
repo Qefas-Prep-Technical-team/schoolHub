@@ -1,19 +1,16 @@
 'use client';
 import React, { FC, useState } from 'react';
-import SchoolIcon from '@mui/icons-material/School';
-import PersonIcon from '@mui/icons-material/Person';
-import CastForEducationIcon from '@mui/icons-material/CastForEducation';
+import { GraduationCap, User, Presentation } from 'lucide-react';
 import { useRouter } from 'next/navigation'; // ✅ App Router
 import Link from 'next/link';
-
 
 const Buttons: FC = () => {
     const [activeRole, setActiveRole] = useState<'school' | 'individual' | 'teacher' | null>(null);
     const router = useRouter();
     const roles = [
-        { key: 'school', icon: <SchoolIcon fontSize="large" />, label: 'School' },
-        { key: 'individual', icon: <PersonIcon fontSize="large" />, label: 'Individual' },
-        { key: 'teacher', icon: <CastForEducationIcon fontSize="large" />, label: 'Teacher' },
+        { key: 'school', icon: <GraduationCap size={32} />, label: 'School' },
+        { key: 'individual', icon: <User size={32} />, label: 'Individual' },
+        { key: 'teacher', icon: <Presentation size={32} />, label: 'Teacher' },
     ] as const;
 
     return (

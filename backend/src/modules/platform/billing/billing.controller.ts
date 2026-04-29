@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../../../config/database";
 import { createActivityLog } from "../logs/logs.controller";
+import { getSingleString } from "../../../utils/request-utils";
 
 /**
  * List all subscription plans
@@ -22,12 +23,35 @@ export const listPlans = async (req: Request, res: Response) => {
  */
 export const updatePlan = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { name, maxStudents, maxExams, maxClasses, maxStorageGb } = req.body;
+    const id = getSingleString(req.params.id);
+    const { 
+      name, type, category, monthlyPrice, yearlyPrice, description, 
+      maxStudents, maxExams, maxClasses, maxStorageGb, maxTeachers, 
+      maxParents, maxAiUsage, features, badgeLabel, buttonText, 
+      isActive, isPopular, hasTrial, trialDays, sortOrder 
+    } = req.body;
+
+    const planData = {
+      name, type: type || 'custom', category: category || 'schools', 
+      monthlyPrice: Number(monthlyPrice) || 0, 
+      yearlyPrice: Number(yearlyPrice) || 0, 
+      description, maxStudents: Number(maxStudents) || 0, 
+      maxExams: Number(maxExams) || 0, maxClasses: Number(maxClasses) || 0, 
+      maxStorageGb: Number(maxStorageGb) || 1, 
+      maxTeachers: Number(maxTeachers) || 0, 
+      maxParents: Number(maxParents) || 0, 
+      maxAiUsage: Number(maxAiUsage) || 0, 
+      features: features || [], badgeLabel, 
+      buttonText: buttonText || "Get Started", 
+      isActive: isActive !== undefined ? isActive : true, 
+      isPopular: !!isPopular, hasTrial: !!hasTrial, 
+      trialDays: Number(trialDays) || 0, 
+      sortOrder: Number(sortOrder) || 0
+    };
 
     if (id === 'new') {
       const plan = await prisma.subscriptionPlan.create({
-        data: { name, maxStudents, maxExams, maxClasses, maxStorageGb }
+        data: planData
       });
 
       // Activity Log
@@ -47,7 +71,7 @@ export const updatePlan = async (req: Request, res: Response) => {
 
     const plan = await prisma.subscriptionPlan.update({
       where: { id },
-      data: { name, maxStudents, maxExams, maxClasses, maxStorageGb }
+      data: planData
     });
 
     // Activity Log

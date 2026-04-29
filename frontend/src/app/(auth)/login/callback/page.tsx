@@ -87,8 +87,7 @@ export default function GoogleAuthCallback() {
                     // Handle "Wrong Portal" detection feedback
                     if (role && role !== actualRole) {
                         toast.info(`Detected as ${actualRole}. Redirecting to the correct portal...`, {
-                            autoClose: 5000,
-                            icon: "🚀"
+                            autoClose: 5000
                         });
                     } else {
                         toast.success(`Welcome back, ${user.name}!`);

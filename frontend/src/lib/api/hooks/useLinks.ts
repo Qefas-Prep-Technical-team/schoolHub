@@ -11,7 +11,7 @@ export const queryKeys = {
 };
 
 export const useLinkRequests = (params: { page?: number; limit?: number; category?: string; status?: string } = {}, options: any = {}) => {
-  return useQuery({
+  return useQuery<any>({
     queryKey: queryKeys.requests(params),
     queryFn: () => linkService.getLinkRequests(params),
     ...options
@@ -19,7 +19,7 @@ export const useLinkRequests = (params: { page?: number; limit?: number; categor
 };
 
 export const usePendingLinkRequests = (params: { page?: number; limit?: number; category?: string } = {}, options: any = {}) => {
-  return useQuery({
+  return useQuery<any>({
     queryKey: queryKeys.pending(params),
     queryFn: () => linkService.getPendingLinkRequests(params),
     ...options
@@ -27,7 +27,7 @@ export const usePendingLinkRequests = (params: { page?: number; limit?: number; 
 };
 
 export const useActiveLinks = (params: { page?: number; limit?: number; category?: string } = {}, options: any = {}) => {
-  return useQuery({
+  return useQuery<any>({
     queryKey: queryKeys.active(params),
     queryFn: () => linkService.getActiveLinks(params),
     ...options
@@ -35,7 +35,7 @@ export const useActiveLinks = (params: { page?: number; limit?: number; category
 };
 
 export const useLinkProfile = () => {
-  return useQuery({
+  return useQuery<any>({
     queryKey: queryKeys.profile(),
     queryFn: linkService.getProfile,
   });

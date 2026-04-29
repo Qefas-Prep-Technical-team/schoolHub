@@ -7,10 +7,10 @@ interface AuthModalState {
     isOpen: boolean;
     view: AuthView;
     selectedRole: UserType | 'school' | null;
-    openModal: (view?: AuthView, role?: UserType | 'school') => void;
+    openModal: (view?: AuthView, role?: UserType | 'school' | null) => void;
     closeModal: () => void;
     setView: (view: AuthView) => void;
-    setRole: (role: UserType | 'school') => void;
+    setRole: (role: UserType | 'school' | null) => void;
 }
 
 export const useAuthModalStore = create<AuthModalState>((set) => ({

@@ -43,7 +43,8 @@ const ensureTeacherCanWorkInSchool = async (
     where: { id: teacherId },
   });
 
-  return !!teacher && teacher.schoolId === schoolId;
+  return !!teacher &&
+    (teacher.activeSchoolId === schoolId || teacher.primarySchoolId === schoolId);
 };
 
 export const createDepartment = async (req: Request, res: Response) => {

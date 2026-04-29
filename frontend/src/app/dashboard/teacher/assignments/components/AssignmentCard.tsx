@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Assignment, AssignmentCardProps } from './types';
 import { motion } from 'framer-motion';
-import { Edit, GradualingIcon as Grading, Trash2, Calendar, FileText, ExternalLink, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Edit, GraduationCap as Grading, Trash2, Calendar, FileText, ExternalLink, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export default function AssignmentCard({
     assignment,

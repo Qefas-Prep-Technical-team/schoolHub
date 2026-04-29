@@ -157,7 +157,7 @@ export default function ProfessionalInfoCard({ teacherId, professionalInfo }: Pr
                 className="flex-1 text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-2 py-1"
               >
                 <option value="">Select Subject</option>
-                {subjects?.filter(s => !professionalInfo.subjects.includes(s.name)).map(subject => (
+                {subjects?.filter((s: any) => !professionalInfo.subjects.includes(s.name)).map((subject: any) => (
                   <option key={subject.id} value={subject.id}>{subject.name}</option>
                 ))}
               </select>
@@ -203,7 +203,7 @@ export default function ProfessionalInfoCard({ teacherId, professionalInfo }: Pr
                 className="flex-1 text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-2 py-1"
               >
                 <option value="">Select Class</option>
-                {classes?.filter(c => !professionalInfo.assignedClasses.includes(c.name)).map(cls => (
+                {classes?.filter((c: any) => !professionalInfo.assignedClasses.includes(c.name)).map((cls: any) => (
                   <option key={cls.id} value={cls.id}>{cls.name}</option>
                 ))}
               </select>

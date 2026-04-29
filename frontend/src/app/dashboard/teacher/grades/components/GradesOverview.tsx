@@ -11,7 +11,7 @@ import {
   LayoutGrid
 } from 'lucide-react';
 
-import { FilterOption, Pagination, StudentGrade } from './types';
+import { FilterOption, GradeLetter, Pagination, StudentGrade } from './types';
 import PageHeader from './PageHeader';
 import Filters from './Filters';
 import GradesTable from './GradesTable';
@@ -110,7 +110,7 @@ const GradesOverview: React.FC = () => {
         rawScore: score,
         maxMarks: maxMarks,
         totalScore: `${percentage.toFixed(1)}%`,
-        grade: calculateGrade(score, maxMarks, gradingScale),
+        grade: calculateGrade(score, maxMarks, gradingScale) as GradeLetter,
         status: item.status || 'Graded',
         remarks: item.remarks || ''
       };

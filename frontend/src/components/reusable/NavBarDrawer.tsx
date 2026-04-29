@@ -8,22 +8,23 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import InboxIcon from '@mui/icons-material/MoveToInbox';
-import MailIcon from '@mui/icons-material/Mail';
 import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
 import Typography from '@mui/material/Typography';
 import Image from 'next/image';
-import DocumentScannerOutlinedIcon from '@mui/icons-material/DocumentScannerOutlined';
-import CurrencyExchangeOutlinedIcon from '@mui/icons-material/CurrencyExchangeOutlined';
-import EmojiPeopleOutlinedIcon from '@mui/icons-material/EmojiPeopleOutlined';
-import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import { mainTab } from '../Types/Nav';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
-import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
-import PhoneCallbackOutlinedIcon from '@mui/icons-material/PhoneCallbackOutlined';
-import { LayoutDashboard, Rocket } from 'lucide-react';
+import { 
+    LayoutDashboard, 
+    Rocket, 
+    Menu, 
+    FileText, 
+    CreditCard, 
+    Info, 
+    Shield, 
+    LogIn, 
+    Phone 
+} from 'lucide-react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useAuthModalStore } from '@/utils/AuthModalStore';
 
@@ -43,15 +44,14 @@ export default function NavBarDrawer(props: NavBarDrawerProps) {
 
     const handleIcon = (type: string) => {
         if (type === "Features") {
-            return <DocumentScannerOutlinedIcon />
+            return <FileText size={20} />
         } else if (type === "Pricing") {
-            return <CurrencyExchangeOutlinedIcon />
+            return <CreditCard size={20} />
         } else if (type === "About Us") {
-            return <EmojiPeopleOutlinedIcon />
+            return <Info size={20} />
         } else {
-            return <AdminPanelSettingsOutlinedIcon />
+            return <Shield size={20} />
         }
-
     }
     const DrawerList = (
         <Box sx={{ width: 250, backgroundColor: theme == "dark" ? "black" : "white", flex: 1, color: theme == "dark" ? "white" : "black" }} role="presentation" onClick={toggleDrawer(false)}>
@@ -93,7 +93,7 @@ export default function NavBarDrawer(props: NavBarDrawerProps) {
                             <ListItem disablePadding onClick={() => openModal('login-role')}>
                                 <ListItemButton>
                                     <ListItemIcon sx={{ color: theme == "dark" ? "white" : "black" }}>
-                                        <LoginOutlinedIcon />
+                                        <LogIn size={20} />
                                     </ListItemIcon>
                                     <ListItemText primary={"Login"} />
                                 </ListItemButton>
@@ -102,7 +102,7 @@ export default function NavBarDrawer(props: NavBarDrawerProps) {
                                 <ListItem disablePadding>
                                     <ListItemButton>
                                         <ListItemIcon sx={{ color: theme == "dark" ? "white" : "black" }}>
-                                            <PhoneCallbackOutlinedIcon />
+                                            <Phone size={20} />
                                         </ListItemIcon>
                                         <ListItemText primary={"Contact Us"} />
                                     </ListItemButton>
@@ -137,7 +137,7 @@ export default function NavBarDrawer(props: NavBarDrawerProps) {
                 onClick={toggleDrawer(true)}
                 color="inherit"
             >
-                <MenuIcon />
+                <Menu />
             </IconButton>
             <Drawer open={open} onClose={toggleDrawer(false)}>
                 {DrawerList}

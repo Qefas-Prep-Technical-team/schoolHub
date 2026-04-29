@@ -3,6 +3,7 @@ import prisma from "../../../config/database";
 import { hashPassword } from "../auth/auth.service";
 import crypto from "crypto";
 import { Resend } from "resend";
+import { getSingleString } from "../../../utils/request-utils";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -147,7 +148,7 @@ export const listStaff = async (req: Request, res: Response) => {
  */
 export const toggleStaffStatus = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = getSingleString(req.params.id);
     const { isActive } = req.body;
 
     if (id === (req as any).staff?.id) {
@@ -184,7 +185,7 @@ export const toggleStaffStatus = async (req: Request, res: Response) => {
  */
 export const deleteStaff = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = getSingleString(req.params.id);
 
     if (id === (req as any).staff?.id) {
        return res.status(400).json({ success: false, message: "Cannot delete yourself" });
@@ -290,7 +291,7 @@ export const completeStaffSetup = async (req: Request, res: Response) => {
  */
 export const updateStaffRole = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = getSingleString(req.params.id);
     const { role } = req.body;
 
     if (!role) {
@@ -317,7 +318,7 @@ export const updateStaffRole = async (req: Request, res: Response) => {
  */
 export const requestCredentialReset = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = getSingleString(req.params.id);
 
     const staff = await prisma.platformStaff.findUnique({ where: { id } });
     if (!staff) {

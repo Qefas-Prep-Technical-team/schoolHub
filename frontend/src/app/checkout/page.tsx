@@ -167,7 +167,7 @@ export default function CheckoutPage() {
         onSuccess: async (reference: any) => {
             try {
                 toast.loading("Verifying payment...", { toastId: "verify" });
-                await paymentService.verify({ reference: reference.reference, plan, billingType: billing });
+                await paymentService.verify({ reference: reference.reference, plan, billingType: billing as 'monthly' | 'yearly' });
                 toast.update("verify", { render: "Payment verified!", type: "success", isLoading: false, autoClose: 2000 });
                 
                 if (!isAuthenticated && !isReturningUser) {

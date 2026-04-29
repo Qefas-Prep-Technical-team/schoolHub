@@ -55,14 +55,14 @@ const resolveSchoolIdForRequest = async ({
     const teacher = await prisma.teacher.findUnique({
       where: { id: requester.id },
     });
-    if (teacher?.schoolId) return teacher.schoolId;
+    if (teacher?.activeSchoolId) return teacher.activeSchoolId;
   }
 
   if (target.type === "TEACHER") {
     const teacher = await prisma.teacher.findUnique({
       where: { id: target.id },
     });
-    if (teacher?.schoolId) return teacher.schoolId;
+    if (teacher?.activeSchoolId) return teacher.activeSchoolId;
   }
 
   if (requester.type === "STUDENT") {
@@ -195,7 +195,7 @@ const applyDomainSideEffects = async (
       ) {
         await tx.teacher.update({
           where: { id: request.targetId },
-          data: { schoolId: request.requesterId },
+          data: { activeSchoolId: request.requesterId },
         });
       }
 
@@ -205,7 +205,7 @@ const applyDomainSideEffects = async (
       ) {
         await tx.teacher.update({
           where: { id: request.requesterId },
-          data: { schoolId: request.targetId },
+          data: { activeSchoolId: request.targetId },
         });
       }
       break;

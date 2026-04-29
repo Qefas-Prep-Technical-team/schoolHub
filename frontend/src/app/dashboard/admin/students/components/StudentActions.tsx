@@ -6,13 +6,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { MoreVertical } from "lucide-react";
 
 export function StudentActions() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="p-2 rounded hover:bg-background-light dark:hover:bg-background-dark">
-        <MoreVertIcon fontSize="small" />
+        <MoreVertical className="w-4 h-4" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end">

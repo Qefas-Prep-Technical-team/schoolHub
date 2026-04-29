@@ -108,7 +108,7 @@ export const createDepartmentService = async ({
         name,
         code,
         description: description || null,
-        schoolId: teacher.schoolId,
+        schoolId: teacher.activeSchoolId || teacher.primarySchoolId || undefined,
         teacherId: null,
         scope: "SCHOOL",
       },

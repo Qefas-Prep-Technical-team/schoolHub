@@ -113,7 +113,7 @@ export default function CreatePaperForm({ onSuccess }: CreatePaperFormProps) {
             <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Your Assigned Subjects in this School:</p>
                 <div className="flex flex-wrap gap-2">
-                    {subjects.map(s => (
+                    {subjects.map((s: any) => (
                         <span key={s.id} className="px-3 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full text-[10px] font-bold text-slate-600 dark:text-slate-300">
                             {s.name}
                         </span>
@@ -138,7 +138,7 @@ export default function CreatePaperForm({ onSuccess }: CreatePaperFormProps) {
                 className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner disabled:opacity-50 appearance-none"
               >
                 <option value="">{isLoadingSubjects ? "Loading subjects..." : "Select a subject..."}</option>
-                {!isLoadingSubjects && subjects.map((s) => (
+                {!isLoadingSubjects && subjects.map((s: any) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>

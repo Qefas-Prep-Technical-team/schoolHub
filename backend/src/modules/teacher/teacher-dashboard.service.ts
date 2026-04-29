@@ -104,7 +104,6 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
         date: { gte: new Date(new Date().setHours(0,0,0,0)) },
       },
       _count: { status: true },
-      _sum: { id: true }, // We'll count present separately
     })
   ]);
 
@@ -331,10 +330,10 @@ export const getTeacherStudentsService = async (options: {
   if (targetSchoolId) {
       const teacherProfile = await prisma.teacher.findUnique({
           where: { id: teacherId },
-          select: { schoolId: true, currentSchoolId: true }
+          select: { activeSchoolId: true, primarySchoolId: true }
       });
 
-      const isDirectlyAssociated = teacherProfile?.schoolId === targetSchoolId || teacherProfile?.currentSchoolId === targetSchoolId;
+      const isDirectlyAssociated = teacherProfile?.activeSchoolId === targetSchoolId || teacherProfile?.primarySchoolId === targetSchoolId;
       
       if (!isDirectlyAssociated) {
           const link = await prisma.relationshipLink.findFirst({
@@ -464,10 +463,10 @@ export const getTeacherClassesService = async (teacherId: string, schoolId?: str
         // 1. Check direct association in Teacher profile
         const teacherProfile = await prisma.teacher.findUnique({
             where: { id: teacherId },
-            select: { schoolId: true, currentSchoolId: true }
+            select: { activeSchoolId: true, primarySchoolId: true }
         });
 
-        const isDirectlyAssociated = teacherProfile?.schoolId === schoolId || teacherProfile?.currentSchoolId === schoolId;
+        const isDirectlyAssociated = teacherProfile?.activeSchoolId === schoolId || teacherProfile?.primarySchoolId === schoolId;
 
         if (!isDirectlyAssociated) {
             // 2. Check relationship links (robust bidirectional check)

@@ -53,7 +53,7 @@ export const createActivityLog = async (staffId: string, action: string, entityT
       data: {
         staffId,
         action,
-        entityType,
+        entityType: entityType || "GENERAL",
         entityId,
         details: details as any
       }

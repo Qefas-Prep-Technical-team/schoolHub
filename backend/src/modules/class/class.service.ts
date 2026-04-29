@@ -160,7 +160,7 @@ export const createClassService = async ({
     data: {
       name,
       section: section || null,
-      schoolId: schoolId || teacher.schoolId,
+      schoolId: schoolId || teacher.activeSchoolId || teacher.primarySchoolId,
       teachers: {
         create: { teacherId: teacher.id, isLead: true }
       },

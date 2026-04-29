@@ -65,7 +65,7 @@ export const findEntityByCode = async (code: string): Promise<FindEntityResult |
       type: LinkEntityType.TEACHER,
       id: teacher.id,
       code: teacher.teacherCode,
-      schoolId: teacher.schoolId,
+      schoolId: teacher.activeSchoolId,
       data: teacher,
     };
   }
@@ -157,7 +157,7 @@ export const getRequesterByType = async (
         type: LinkEntityType.TEACHER,
         id: teacher.id,
         code: teacher.teacherCode,
-        schoolId: teacher.schoolId,
+        schoolId: teacher.activeSchoolId,
         data: teacher,
       };
     }
