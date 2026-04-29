@@ -8,7 +8,7 @@ const VisionStory: FC = () => {
           <div>
             <h2 className="text-3xl font-bold leading-tight tracking-tighter sm:text-4xl">Our Vision</h2>
             <p className="mt-4 text-lg text-[var(--text-secondary)]">
-              SchoolHub envisions a future where every school in Africa, regardless of location or resources, has access to cutting-edge technology that enhances educational
+              Qefas Hub envisions a future where every school in Africa, regardless of location or resources, has access to cutting-edge technology that enhances educational
               outcomes. We believe that by providing a comprehensive, user-friendly platform, we can bridge the digital divide and empower educators to focus on what matters
               most: nurturing the next generation of leaders.
             </p>
@@ -16,9 +16,9 @@ const VisionStory: FC = () => {
           <div>
             <h2 className="text-3xl font-bold leading-tight tracking-tighter sm:text-4xl">Our Story</h2>
             <p className="mt-4 text-lg text-[var(--text-secondary)]">
-              SchoolHub began with a simple observation: many schools in Africa lacked the digital tools necessary to manage their operations effectively. Founded by a team of
-              passionate educators and technologists, SchoolHub was created to address this gap. We started by listening to the needs of schools, understanding their
-              challenges, and developing a platform that is both powerful and easy to use. Today, SchoolHub is a trusted partner for schools across the continent, helping them
+              Qefas Hub began with a simple observation: many schools in Africa lacked the digital tools necessary to manage their operations effectively. Founded by a team of
+              passionate educators and technologists, Qefas Hub was created to address this gap. We started by listening to the needs of schools, understanding their
+              challenges, and developing a platform that is both powerful and easy to use. Today, Qefas Hub is a trusted partner for schools across the continent, helping them
               streamline their processes, improve communication, and ultimately, provide a better educational experience for their students.
             </p>
           </div>

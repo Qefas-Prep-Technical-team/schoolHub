@@ -34,26 +34,24 @@ export default function StudentPerformanceWidget({ performanceMetrics }: Student
   };
 
   return (
-    <div className="flex flex-col rounded-[2rem] border border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none h-full transition-all duration-500 hover:shadow-primary/5">
-      <div className="flex items-center justify-between mb-8">
+    <div className="flex flex-col rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50 p-8 shadow-2xl shadow-slate-200/40 dark:shadow-none h-full transition-all duration-500 hover:border-emerald-500/20">
+      <div className="flex items-center justify-between mb-10">
         <div>
-          <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
-            Academic Performance
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+            Academic <span className="text-emerald-600">Pulse</span>
           </h2>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1">Student Insights</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-2">
+            <span className="size-1.5 rounded-full bg-emerald-500" />
+            Top Performer Tracking
+          </p>
         </div>
-        <div className="p-2.5 bg-primary/10 rounded-xl">
-          <BarChart3 className="w-5 h-5 text-primary" />
+        <div className="p-3 bg-emerald-500/10 rounded-2xl">
+          <BarChart3 className="w-6 h-6 text-emerald-600" />
         </div>
       </div>
 
       {/* Top Students Section */}
       <div className="space-y-4 mb-10">
-        <div className="flex items-center gap-2 mb-4">
-          <Award className="w-4 h-4 text-amber-500" />
-          <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Top Performers</h3>
-        </div>
-        
         {topStudents.length > 0 ? (
           topStudents.map((student, index) => (
             <motion.div 
@@ -61,72 +59,72 @@ export default function StudentPerformanceWidget({ performanceMetrics }: Student
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="flex items-center justify-between group p-2 rounded-2xl hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all"
+              className="flex items-center justify-between group p-3 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-800/30 border border-transparent hover:border-emerald-100 dark:hover:border-emerald-900/30 hover:bg-white dark:hover:bg-slate-800/60 transition-all duration-500"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-transform duration-500">
+                  <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-all duration-500 shadow-sm">
                     {student.image ? (
                       <Image src={student.image} alt={student.name} fill className="object-cover" />
                     ) : (
-                      <span className="text-xs font-black text-primary uppercase">
+                      <span className="text-sm font-black text-emerald-600 uppercase">
                         {student.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                       </span>
                     )}
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white dark:bg-slate-900 rounded-lg flex items-center justify-center shadow-lg border border-slate-50 dark:border-slate-800">
-                    <span className="text-[10px] font-black text-primary">#{index + 1}</span>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-600 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900 scale-90">
+                    <span className="text-[10px] font-black italic">{index + 1}</span>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-black text-slate-900 dark:text-white truncate">
+                  <p className="text-sm font-black text-slate-900 dark:text-white truncate tracking-tight">
                     {student.name}
                   </p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">#{student.studentCode || 'N/A'}</p>
+                  <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{student.studentCode || 'N/A'}</p>
                 </div>
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-sm font-black text-slate-900 dark:text-white">
+                <span className="text-base font-black text-emerald-600">
                   {student.average}%
                 </span>
-                <div className="flex items-center text-[9px] text-emerald-500 font-black uppercase tracking-widest bg-emerald-500/10 px-1.5 py-0.5 rounded-md mt-1">
-                  <Star className="w-2.5 h-2.5 mr-1 fill-current" />
-                  <span>Elite</span>
+                <div className="flex items-center text-[7px] font-black text-emerald-500/70 border border-emerald-500/20 px-1.5 py-0.5 rounded-full mt-1.5 uppercase tracking-tighter">
+                   Elite
                 </div>
               </div>
             </motion.div>
           ))
         ) : (
-          <div className="py-8 text-center bg-slate-50/50 dark:bg-slate-800/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No Leaderboard Data</p>
+          <div className="py-12 text-center bg-slate-50/50 dark:bg-slate-800/20 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700">
+             <Star className="w-8 h-8 text-slate-300 mx-auto mb-3 opacity-50" />
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Awaiting Leaderboard Data</p>
           </div>
         )}
       </div>
 
       {/* Grade Distribution Section */}
-      <div className="pt-8 border-t border-slate-100 dark:border-slate-800/50">
-        <div className="flex items-center gap-2 mb-6">
-          <TrendingUp className="w-4 h-4 text-primary" />
-          <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Grade Distribution</h3>
+      <div className="pt-8 border-t border-slate-100 dark:border-slate-800/50 mt-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <TrendingUp className="w-4 h-4 text-emerald-600" />
+          <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Class Distribution</h3>
         </div>
         
-        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-6">
           {[
-            { label: 'Grade A', count: distribution.A, color: 'bg-emerald-500' },
-            { label: 'Grade B', count: distribution.B, color: 'bg-blue-500' },
-            { label: 'Grade C', count: distribution.C, color: 'bg-amber-500' },
-            { label: 'Grade D/F', count: distribution.D + distribution.F, color: 'bg-red-500' },
+            { label: 'Grade A', count: distribution.A, color: 'bg-emerald-600' },
+            { label: 'Grade B', count: distribution.B, color: 'bg-emerald-400/70' },
+            { label: 'Grade C', count: distribution.C, color: 'bg-teal-500/50' },
+            { label: 'Grade D/F', count: distribution.D + distribution.F, color: 'bg-slate-300' },
           ].map((item) => (
-            <div key={item.label} className="space-y-2">
-              <div className="flex justify-between text-[10px] font-black uppercase tracking-tight">
-                <span className="text-slate-500 dark:text-slate-400">{item.label}</span>
-                <span className="text-slate-900 dark:text-white">{item.count}</span>
+            <div key={item.label} className="space-y-2.5">
+              <div className="flex justify-between items-end">
+                <span className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tighter">{item.label}</span>
+                <span className="text-xs font-black text-slate-900 dark:text-white">{item.count}</span>
               </div>
-              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: getDistributionWidth(item.count) }}
-                  transition={{ duration: 1, ease: "easeOut" }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
                   className={`h-full ${item.color} rounded-full`}
                 />
               </div>

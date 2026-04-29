@@ -43,21 +43,26 @@ function LinkingHub() {
     page: currentPage,
     category: mainTab
   });
+
+  // Independent fetches for persistent badges
+  const { data: networkTotalData } = usePendingLinkRequests({ category: 'network', limit: 1 });
+  const { data: classroomTotalData } = usePendingLinkRequests({ category: 'classroom', limit: 1 });
+
   const { data: activeLinksData, isLoading: isLoadingActive } = useActiveLinks({
     page: currentPage,
     category: mainTab
   });
   const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
 
-  const requests = requestsData?.items || [];
-  const activeLinks = activeLinksData?.items || [];
-  const pendingRequests = pendingRequestsData?.items || [];
+  const requests = (requestsData as any)?.items || [];
+  const activeLinks = (activeLinksData as any)?.items || [];
+  const pendingRequests = (pendingRequestsData as any)?.items || [];
   
   const pagination = subTab === 'active' 
-    ? activeLinksData?.pagination 
+    ? (activeLinksData as any)?.pagination 
     : subTab === 'pending' 
-      ? pendingRequestsData?.pagination 
-      : requestsData?.pagination;
+      ? (pendingRequestsData as any)?.pagination 
+      : (requestsData as any)?.pagination;
 
   const profile = profileResponse?.data || {};
 
@@ -95,6 +100,10 @@ function LinkingHub() {
   const { user } = useAuthStore();
 
   const filteredActiveLinks = activeLinks.filter((link: any) => {
+    // Hide private links that don't directly involve the school as an entity
+    const privateTypes = ['PARENT_STUDENT', 'PEER_STUDENT'];
+    if (privateTypes.includes(link.linkType)) return false;
+
     const details = getMemberDetails(link, user?.id);
     const matchesSearch = (details.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       details.email.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -103,17 +112,19 @@ function LinkingHub() {
 
   const filteredRequests = requests.filter((req: any) => {
     if (req.status !== 'PENDING') return false;
+    
+    // Hide private requests in admin hub
+    const privateTypes = ['PARENT_STUDENT', 'PEER_STUDENT'];
+    if (privateTypes.includes(req.linkType)) return false;
+
     const details = getMemberDetails(req, user?.id);
     const matchesSearch = (details.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       details.email.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesSearch;
   });
 
-  const networkPendingCount = subTab === 'pending' && mainTab === 'network' ? (pendingRequestsData?.pagination?.total || 0) : 0;
-  const classroomPendingCount = subTab === 'pending' && mainTab === 'classroom' ? (pendingRequestsData?.pagination?.total || 0) : 0;
-  // Note: These counts might be stale if we're not on the right tab. 
-  // For a better UX, we might need a separate "stats" hook or fetch counts independently.
-  // But for now, let's just use what we have.
+  const networkPendingCount = (networkTotalData as any)?.pagination?.total || 0;
+  const classroomPendingCount = (classroomTotalData as any)?.pagination?.total || 0;
 
   const handleAcceptAll = () => {
     const category = mainTab === 'classroom' ? 'classroom' : 'network';
@@ -131,7 +142,14 @@ function LinkingHub() {
   };
 
   const handleRespond = async (id: string, action: 'ACCEPT' | 'REJECT') => {
-    respondMutation.mutate({ id, action });
+    respondMutation.mutate({ id, action }, {
+      onSuccess: () => {
+        // Query invalidation is handled in the hook
+      },
+      onError: (err: any) => {
+        console.error('Failed to respond:', err);
+      }
+    });
   };
 
   const copyToClipboard = (text: string) => {
@@ -163,17 +181,24 @@ function LinkingHub() {
     });
   };
 
+  const studentUsage = (profile?.usage as any)?.students || 0;
+  const studentLimit = (profile?.limits as any)?.students || 0;
+  const isLimitReached = studentLimit > 0 && studentUsage >= studentLimit;
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-gray-50/30 dark:bg-transparent min-h-screen">
       <LinkingHeader 
         onConnectClick={() => setIsConnectModalOpen(true)} 
         onShowQRCodeClick={() => setIsQRCodeModalOpen(true)}
+        isLimitReached={isLimitReached}
       />
 
       <LinkingStats 
         activeCount={activeLinks.length}
         pendingCount={pendingRequests.length}
         totalCount={requests.length}
+        usage={profile?.usage as any}
+        limits={profile?.limits as any}
       />
 
       <ConnectModal 

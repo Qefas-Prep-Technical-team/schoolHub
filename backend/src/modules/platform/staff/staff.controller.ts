@@ -18,7 +18,7 @@ export const createStaff = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Name, email, and role are required" });
     }
 
-    const existing = await prisma.platformStaff.findUnique({ where: { email } });
+    const existing = await (prisma as any).platformStaff.findUnique({ where: { email } });
     if (existing) {
       return res.status(400).json({ success: false, message: "Staff email already exists" });
     }
@@ -26,7 +26,7 @@ export const createStaff = async (req: Request, res: Response) => {
     const inviteToken = crypto.randomBytes(32).toString("hex");
     const inviteExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    const staff = await prisma.platformStaff.create({
+    const staff = await (prisma as any).platformStaff.create({
       data: {
         fullName,
         email,
@@ -111,7 +111,7 @@ export const listStaff = async (req: Request, res: Response) => {
     const skip = (page - 1) * limit;
 
     const [staff, total] = await Promise.all([
-      prisma.platformStaff.findMany({
+      (prisma as any).platformStaff.findMany({
         select: {
           id: true,
           fullName: true,
@@ -125,7 +125,7 @@ export const listStaff = async (req: Request, res: Response) => {
         skip,
         take: limit
       }),
-      prisma.platformStaff.count()
+      (prisma as any).platformStaff.count()
     ]);
 
     return res.status(200).json({ 
@@ -148,14 +148,18 @@ export const listStaff = async (req: Request, res: Response) => {
  */
 export const toggleStaffStatus = async (req: Request, res: Response) => {
   try {
+<<<<<<< HEAD
     const id = getSingleString(req.params.id);
+=======
+    const { id } = req.params as { id: string };
+>>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
     const { isActive } = req.body;
 
     if (id === (req as any).staff?.id) {
        return res.status(400).json({ success: false, message: "Cannot deactivate yourself" });
     }
 
-    const staff = await prisma.platformStaff.update({
+    const staff = await (prisma as any).platformStaff.update({
       where: { id },
       data: { isActive: !!isActive }
     });
@@ -185,14 +189,18 @@ export const toggleStaffStatus = async (req: Request, res: Response) => {
  */
 export const deleteStaff = async (req: Request, res: Response) => {
   try {
+<<<<<<< HEAD
     const id = getSingleString(req.params.id);
+=======
+    const { id } = req.params as { id: string };
+>>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
 
     if (id === (req as any).staff?.id) {
        return res.status(400).json({ success: false, message: "Cannot delete yourself" });
     }
 
-    const targetStaff = await prisma.platformStaff.findUnique({ where: { id } });
-    await prisma.platformStaff.delete({ where: { id } });
+    const targetStaff = await (prisma as any).platformStaff.findUnique({ where: { id } });
+    await (prisma as any).platformStaff.delete({ where: { id } });
 
     // Activity Log
     const loggingStaff = (req as any).staff;
@@ -222,8 +230,10 @@ export const verifyStaffInvite = async (req: Request, res: Response) => {
     const { token } = req.query;
     if (!token) return res.status(400).json({ success: false, message: "Token required" });
 
+    const cleanToken = (token as string).trim();
+
     const staff = await prisma.platformStaff.findUnique({
-      where: { inviteToken: token as string }
+      where: { inviteToken: cleanToken }
     });
 
     if (!staff || !staff.inviteExpires || staff.inviteExpires < new Date()) {
@@ -249,8 +259,10 @@ export const completeStaffSetup = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Token and password required" });
     }
 
+    const cleanToken = (token as string).trim();
+
     const staff = await prisma.platformStaff.findUnique({
-      where: { inviteToken: token }
+      where: { inviteToken: cleanToken }
     });
 
     if (!staff || !staff.inviteExpires || staff.inviteExpires < new Date()) {
@@ -265,7 +277,7 @@ export const completeStaffSetup = async (req: Request, res: Response) => {
         password: hashedPassword,
         inviteToken: null,
         inviteExpires: null,
-        isActive: true, // activate account
+        isActive: true,
       }
     });
 
@@ -291,7 +303,11 @@ export const completeStaffSetup = async (req: Request, res: Response) => {
  */
 export const updateStaffRole = async (req: Request, res: Response) => {
   try {
+<<<<<<< HEAD
     const id = getSingleString(req.params.id);
+=======
+    const { id } = req.params as { id: string };
+>>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
     const { role } = req.body;
 
     if (!role) {
@@ -318,7 +334,11 @@ export const updateStaffRole = async (req: Request, res: Response) => {
  */
 export const requestCredentialReset = async (req: Request, res: Response) => {
   try {
+<<<<<<< HEAD
     const id = getSingleString(req.params.id);
+=======
+    const { id } = req.params as { id: string };
+>>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
 
     const staff = await prisma.platformStaff.findUnique({ where: { id } });
     if (!staff) {
@@ -336,7 +356,8 @@ export const requestCredentialReset = async (req: Request, res: Response) => {
       }
     });
 
-    const setupLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/setup?token=${inviteToken}`;
+    const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const setupLink = `${baseUrl}/auth/setup?token=${inviteToken}`;
     const isTest = process.env.RESEND_TEST?.trim() === 'true';
     const recipient = isTest ? process.env.TEST_EMAIL as string : staff.email;
 

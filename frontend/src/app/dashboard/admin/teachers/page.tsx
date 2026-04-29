@@ -31,7 +31,7 @@ export default function ManageTeachersPage() {
   const [selectedTeachers, setSelectedTeachers] = useState<string[]>([])
   
   const { user } = useAuthStore()
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || ''
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ''
   
   const { data: teachersData, isLoading } = useSchoolTeachers(schoolId)
 

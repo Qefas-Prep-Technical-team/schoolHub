@@ -1,22 +1,31 @@
 // app/dashboard/layout.tsx
 "use client"
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
 import { ParentSidebar } from "./components/app-sidebar"
 import TopNavBar from "./components/TopNavBar"
+import { TrialBanner } from "@/components/subscription/TrialBanner"
 import { useState, useEffect } from "react"
 import { ProtectedParentRoute } from "./components/ProtectedParentRoute"
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-    const [isCollapsed, setIsCollapsed] = useState(false)
-
     return (
         // <ProtectedParentRoute>
-        <SidebarProvider>
-            <ParentSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-            <main className="flex-1">
-                <TopNavBar onToggleSidebar={() => setIsCollapsed(!isCollapsed)} isCollapsed={isCollapsed} />
-                {children}
-            </main>
+        <SidebarProvider
+            style={{
+                "--sidebar-width": "280px",
+                "--sidebar-width-icon": "64px",
+            } as React.CSSProperties}
+        >
+            <ParentSidebar />
+            <SidebarInset className="flex flex-col h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-950/50 transition-all duration-300 ease-in-out">
+                <TopNavBar />
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    <div className="p-4 md:p-6 lg:p-10">
+                        <TrialBanner />
+                        {children}
+                    </div>
+                </div>
+            </SidebarInset>
         </SidebarProvider>
         // </ProtectedParentRoute>
     )

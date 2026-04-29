@@ -27,7 +27,6 @@ export interface User {
 
 export interface AdminUser extends User {
   status: "PENDING" | "APPROVED" | "REJECTED";
-  tenantIds: string[];
   adminRole?: AdminRole;
   schoolId?: string;
 }
@@ -37,7 +36,6 @@ export interface TeacherUser extends User {
   subject?: string;
   department?: string;
   schoolId?: string;
-  tenantIds: string[];
 }
 
 export interface StudentUser extends User {
@@ -45,7 +43,6 @@ export interface StudentUser extends User {
   gradeLevel?: string;
   dateOfBirth?: Date;
   schoolId?: string;
-  tenantIds: string[];
   teacherCode?: string;
 }
 

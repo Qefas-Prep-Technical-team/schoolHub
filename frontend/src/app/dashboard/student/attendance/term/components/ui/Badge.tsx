@@ -29,8 +29,8 @@ const Badge: React.FC<BadgeProps> = ({ status }:{status:string}) => {
             case 'excused':
                 return {
                     text: 'Excused',
-                    bgColor: 'bg-blue-100 dark:bg-blue-900',
-                    textColor: 'text-blue-800 dark:text-blue-300',
+                    bgColor: 'bg-blue-100 dark:bg-pink-900',
+                    textColor: 'text-pink-800 dark:text-blue-300',
                 };
             default:
                 return {
@@ -51,3 +51,4 @@ const Badge: React.FC<BadgeProps> = ({ status }:{status:string}) => {
 };
 
 export default Badge;
+

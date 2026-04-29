@@ -20,7 +20,7 @@ const GetInTouch: FC = () => {
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-400">Email</h3>
                                     <p className="text-gray-600 dark:text-gray-200">Our support team will get back to you within 24 hours.</p>
-                                    <a className="font-medium text-blue-500 hover:underline" href="mailto:support@schoolhub.com">support@schoolhub.com</a>
+                                    <a className="font-medium text-blue-500 hover:underline" href="mailto:support@qefashub.com">support@qefashub.com</a>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">

@@ -314,7 +314,7 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Institutional Analytics • SchoolHub Nigeria</Text>
+          <Text style={styles.footerText}>Institutional Analytics • Qefas Hub Nigeria</Text>
           <Text style={styles.footerText}>Generated: {new Date().toLocaleString()}</Text>
         </View>
       </Page>

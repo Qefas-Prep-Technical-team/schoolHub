@@ -7,7 +7,7 @@ const CoreValues: FC = () => {
                 <div className="text-center">
                     <h2 className="text-3xl font-bold leading-tight tracking-tighter sm:text-4xl">Our Core Values</h2>
                     <p className="mt-4 max-w-2xl mx-auto text-lg text-[var(--text-secondary)]">
-                        At SchoolHub, our core values guide everything we do. We are dedicated to providing a platform that is not only effective but also aligns with the needs and values
+                        At Qefas Hub, our core values guide everything we do. We are dedicated to providing a platform that is not only effective but also aligns with the needs and values
                         of the schools we serve.
                     </p>
                 </div>

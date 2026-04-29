@@ -8,8 +8,8 @@ interface StatusBadgeProps {
 const statusConfig = {
   unread: {
     label: 'Unread',
-    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
-    dotColor: 'bg-blue-500',
+    className: 'bg-blue-100 text-pink-800 dark:bg-pink-900/50 dark:text-blue-200',
+    dotColor: 'bg-pink-500',
   },
   important: {
     label: 'Important',
@@ -38,3 +38,4 @@ export default function StatusBadge({ type, className = '' }: StatusBadgeProps) 
     </div>
   );
 }
+

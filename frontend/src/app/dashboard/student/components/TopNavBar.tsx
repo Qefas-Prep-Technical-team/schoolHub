@@ -2,15 +2,16 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Bell, ChevronDown, Search, ChevronLeft, ChevronRight, User } from "lucide-react";
+import { Bell, ChevronDown, Search, ChevronLeft, ChevronRight, User, LayoutGrid, School, QrCode } from "lucide-react";
+import Link from "next/link";
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { ThemeToggle } from "@/app/theme-toggle";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { StudentMobileDrawer } from "./StudentMobileDrawer";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { useRouter } from "next/navigation";
 import { linkService } from "@/lib/api/services/linkService";
+import { UserQRModal } from "@/components/reusable/UserQRModal";
 
 export default function TopNavBar({
   onToggleSidebar,
@@ -23,6 +24,7 @@ export default function TopNavBar({
   const { userType, user } = useAuthStore();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   useEffect(() => {
     linkService.getProfile().then(setProfile).catch(() => {});
@@ -36,66 +38,77 @@ export default function TopNavBar({
   };
 
   return (
-    <header className="sticky top-0 z-40 h-20 flex items-center bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-all duration-300">
-      <div className="flex items-center justify-between w-full px-4 md:px-8 gap-4">
-        {/* Left */}
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          {/* Desktop collapse button */}
-          <div className="hidden md:block">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onToggleSidebar}
-              className="rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
-            >
-              {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-            </Button>
-          </div>
-
-          {/* Mobile hamburger */}
-          <StudentMobileDrawer />
-
-          {/* Search */}
-          <div className="relative w-full max-w-sm hidden sm:block">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search subjects, assignments..." 
-              className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-500 border-none focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm transition-all" 
-            />
-          </div>
+    <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
+      <div className="flex items-center gap-6 flex-1">
+        {/* Desktop collapse */}
+        <div className="hidden md:block">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleSidebar}
+            className="h-9 w-9 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 transition-all border border-slate-200 dark:border-white/5"
+          >
+            {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </Button>
         </div>
 
-        {/* Right */}
-        <div className="flex items-center gap-2 md:gap-5 shrink-0">
-          <NotificationCenter />
-          <ThemeToggle />
+        {/* Dashboard Badge */}
+        <Link href="/" className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-full shadow-sm hover:border-pink-500/30 transition-all group/badge">
+            <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-4 w-4 object-contain group-hover/badge:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-pink-400 uppercase tracking-widest">Academic Hub</span>
+        </Link>
 
-          <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-800 hidden md:block" />
+        {/* Mobile hamburger */}
+        <StudentMobileDrawer />
+      </div>
 
-          {/* Profile Pill */}
-          <div 
-            className="flex items-center gap-3 p-1.5 pl-1.5 pr-4 bg-gray-100 dark:bg-gray-800 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer transition-all group" 
-            onClick={handleProfileClick}
-          >
-            <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-700 group-hover:scale-105 transition-transform">
-              {displayImage ? (
-                <Image
-                  src={displayImage}
-                  alt="Student Profile"
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <User className="h-5 w-5 text-gray-400" />
-              )}
-            </div>
+      {/* Central Search Section */}
+      <div className="hidden md:flex flex-1 justify-center max-w-2xl px-8">
+        <div className="relative w-full group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-pink-400 transition-colors" size={18} />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search subjects, assignments, resources..."
+            className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-slate-200 dark:focus:bg-white/10 transition-all text-sm font-medium"
+          />
+        </div>
+      </div>
 
-            <div className="hidden md:flex flex-col text-left">
-              <p className="text-[11px] font-black uppercase tracking-widest leading-none text-gray-900 dark:text-white mb-1">{displayName}</p>
-              <p className="text-[10px] font-bold text-gray-500 dark:text-gray-500 leading-none capitalize">{userType?.toLowerCase()}</p>
-            </div>
+      <div className="flex items-center justify-end gap-4 flex-1">
+        {/* Quick Actions / QR Code */}
+        <button 
+          onClick={() => setIsQRModalOpen(true)}
+          className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-slate-200 dark:border-white/5 shadow-sm"
+        >
+          <QrCode className="w-5 h-5 text-pink-500" />
+        </button>
+
+        <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} />
+
+        <ThemeToggle />
+
+        <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-800 mx-1 hidden md:block" />
+
+        <NotificationCenter />
+
+        {/* Profile Pill */}
+        <div 
+          className="flex items-center gap-3 p-1.5 pl-1.5 pr-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 transition-all cursor-pointer group rounded-xl"
+          onClick={handleProfileClick}
+        >
+          <div className="relative h-9 w-9 rounded-lg bg-pink-600/10 dark:bg-pink-600/20 flex items-center justify-center border border-pink-500/20 dark:border-pink-500/30 overflow-hidden">
+            {displayImage ? (
+                <img src={displayImage} alt={displayName} className="h-full w-full object-cover group-hover:scale-110 transition-transform" />
+            ) : (
+                <User size={18} className="text-pink-600 dark:text-pink-400" />
+            )}
+            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-slate-900" />
+          </div>
+          <div className="hidden lg:flex flex-col text-left">
+            <p className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-none mb-1 truncate max-w-[120px]">{displayName}</p>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">{userType?.toLowerCase()} hub</p>
           </div>
         </div>
       </div>

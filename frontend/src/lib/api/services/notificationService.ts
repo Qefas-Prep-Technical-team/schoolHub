@@ -12,6 +12,7 @@ export interface Notification {
   message: string;
   data?: any;
   link?: string;
+  linkRequestId?: string;
   isRead: boolean;
   readAt?: string;
   expiresAt?: string;

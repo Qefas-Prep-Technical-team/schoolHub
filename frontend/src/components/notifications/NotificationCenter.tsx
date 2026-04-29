@@ -68,10 +68,14 @@ export default function NotificationCenter() {
 
   const handleOpenModal = (notification: Notification) => {
     setSelectedNotification(notification);
-    setIsModalOpen(true);
-    if (!notification.isRead) {
-      handleMarkAsRead(notification.id);
-    }
+    // Add a small delay to ensure DropdownMenu closes before Dialog opens
+    // This fixes focus/z-index issues in Radix UI
+    setTimeout(() => {
+      setIsModalOpen(true);
+      if (!notification.isRead) {
+        handleMarkAsRead(notification.id);
+      }
+    }, 150);
   };
 
   const handleLinkAction = async (notificationId: string, linkId: string, action: 'ACCEPT' | 'REJECT') => {
@@ -86,15 +90,18 @@ export default function NotificationCenter() {
     );
   };
 
-  // Filter for Messages & Announcements
+  // Filter for Messages, Announcements, Link Requests & more
   const filteredNotifications = notifications.filter((n: Notification) => 
-    n.type === 'MESSAGE' || n.type === 'ANNOUNCEMENT'
+    ['MESSAGE', 'ANNOUNCEMENT', 'LINK_REQUEST', 'LINK_RESPONSE', 'LINK_ACCEPTED', 'LINK_REJECTED', 'SYSTEM', 'ACADEMIC'].includes(n.type)
   );
 
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'LINK_REQUEST': return <Info className="h-4 w-4 text-blue-500" />;
       case 'SYSTEM': return <AlertCircle className="h-4 w-4 text-orange-500" />;
+      case 'LINK_ACCEPTED': return <Check className="h-4 w-4 text-green-500" />;
+      case 'LINK_REJECTED': return <X className="h-4 w-4 text-red-500" />;
+      case 'LINK_RESPONSE': return <Activity className="h-4 w-4 text-primary" />;
       case 'MESSAGE': return <Mail className="h-4 w-4 text-primary" />;
       case 'ANNOUNCEMENT': return <Megaphone className="h-4 w-4 text-purple-500" />;
       case 'ACADEMIC': return <Activity className="h-4 w-4 text-green-500" />;
@@ -118,7 +125,7 @@ export default function NotificationCenter() {
         
         <DropdownMenuContent align="end" className="w-[380px] p-0 shadow-2xl border-border bg-background rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b">
-            <DropdownMenuLabel className="p-0 font-bold text-base">Messages & Announcements</DropdownMenuLabel>
+            <DropdownMenuLabel className="p-0 font-bold text-base">Recent Notifications</DropdownMenuLabel>
             {unreadCount > 0 && (
               <Button 
                 variant="ghost" 

@@ -12,7 +12,7 @@ const StatCard: React.FC<AttendanceStat> = ({ type, count, icon, label }) => {
             case 'late':
                 return 'text-yellow-600 dark:text-yellow-400';
             case 'excused':
-                return 'text-blue-600 dark:text-blue-400';
+                return 'text-pink-600 dark:text-pink-400';
             default:
                 return 'text-slate-600 dark:text-slate-400';
         }
@@ -32,3 +32,4 @@ const StatCard: React.FC<AttendanceStat> = ({ type, count, icon, label }) => {
 };
 
 export default StatCard;
+

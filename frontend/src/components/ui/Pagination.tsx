@@ -44,8 +44,7 @@ const Pagination: React.FC<PaginationProps> = ({
         Showing <span className="text-gray-900 dark:text-white font-bold">{startItem}</span> to <span className="text-gray-900 dark:text-white font-bold">{endItem}</span> of <span className="text-gray-900 dark:text-white font-bold">{totalItems}</span> results
       </p>
       
-      {totalPages > 1 && (
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
           <button
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             onClick={() => onPageChange(currentPage - 1)}
@@ -82,7 +81,6 @@ const Pagination: React.FC<PaginationProps> = ({
             <ChevronRight size={20} />
           </button>
         </div>
-      )}
     </div>
   );
 };

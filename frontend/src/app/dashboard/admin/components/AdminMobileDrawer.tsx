@@ -58,7 +58,7 @@ export function AdminMobileDrawer() {
   const [open, setOpen] = React.useState(false);
   
   const user = useAuthStore((state) => state.user);
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || "";
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
   const { data: school } = useSchoolProfile(schoolId);
 
   const sections = React.useMemo(() => getFilteredMenuItemsBySection(adminMenuItems as any), []);
@@ -73,44 +73,33 @@ export function AdminMobileDrawer() {
 
       <SheetContent side="left" className="p-0 w-[88vw] max-w-[380px] flex flex-col">
         {/* Header */}
-        <div className="px-5 py-6 border-b border-white/10 bg-slate-50 dark:bg-slate-900/50">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-primary p-0.5 shadow-lg shadow-primary/20">
-              <div className="w-full h-full rounded-[0.9rem] bg-white flex items-center justify-center overflow-hidden">
-                {school?.logo ? (
-                  <img src={school.logo} alt="School Logo" className="w-full h-full object-cover" />
-                ) : (
-                  <School className="h-6 w-6 text-primary" />
-                )}
-              </div>
+        <div className="px-6 py-8 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50">
+          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-4 group/logo">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 group-hover/logo:scale-105 transition-transform duration-500">
+              <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-lg font-black tracking-tight uppercase truncate">
-                {school?.name || "SCHOOLHUB"}
+            <div className="flex flex-col">
+              <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase group-hover/logo:text-indigo-500 transition-colors">
+                {school?.name || "QEFAS HUB"}
               </span>
-              <div className="flex items-center gap-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Admin Terminal
-                </span>
-              </div>
+              <span className="text-[10px] text-indigo-500 font-black uppercase tracking-[0.2em]">Admin Portal</span>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Menu */}
-        <div className="flex-1 overflow-y-auto px-2 py-3">
+        <div className="flex-1 overflow-y-auto px-4 py-6 bg-white dark:bg-slate-950">
           {Object.entries(sections).map(([key, items]) => {
             if (!items.length) return null;
             const sectionKey = key as keyof typeof SECTION_TITLES;
 
             return (
-              <div key={key} className="mb-5">
-                <div className="px-3 pb-2 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <div key={key} className="mb-8">
+                <div className="px-4 pb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                   {SECTION_TITLES[sectionKey]}
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {items.map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
@@ -121,13 +110,15 @@ export function AdminMobileDrawer() {
                         href={item.href}
                         onClick={() => setOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl px-3 py-3 transition-colors",
-                          isActive ? "bg-accent text-accent-foreground" : "hover:bg-accent/60"
+                          "flex items-center gap-4 rounded-xl px-4 py-4 transition-all duration-200 border border-transparent",
+                          isActive 
+                            ? "bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 shadow-sm shadow-indigo-600/5" 
+                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
                         )}
                       >
-                        <Icon className="h-5 w-5 shrink-0" />
-                        <span className="text-sm font-medium flex-1">{item.label}</span>
-                        <ChevronRight className="h-4 w-4 opacity-60" />
+                        <Icon className={cn("h-5 w-5 shrink-0 transition-transform", isActive && "scale-110")} />
+                        <span className={cn("text-sm font-bold tracking-tight flex-1", isActive && "text-indigo-600 dark:text-indigo-400")}>{item.label}</span>
+                        <ChevronRight className={cn("h-4 w-4 opacity-40 transition-transform", isActive && "translate-x-1 opacity-80")} />
                       </Link>
                     );
                   })}
@@ -138,18 +129,20 @@ export function AdminMobileDrawer() {
         </div>
 
         {/* Footer */}
-        <div className="px-3 py-3 border-t border-border">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border">
-            <User2 className="h-5 w-5" />
-            <div className="flex-1">
-              <div className="text-sm font-medium">Admin</div>
-              <div className="text-[11px] text-muted-foreground">Account & settings</div>
+        <div className="px-6 py-6 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50">
+          <div className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-indigo-600/10 dark:bg-indigo-600/20 flex items-center justify-center border border-indigo-500/20 overflow-hidden shrink-0">
+               <User2 className="h-6 w-6 text-indigo-500/60" />
+            </div>
+            <div className="flex-1 flex flex-col min-w-0">
+              <span className="text-sm font-black text-slate-900 dark:text-white truncate uppercase tracking-tight">Admin Hub</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Account & settings</span>
             </div>
 
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-xl text-destructive hover:text-destructive"
+              className="rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
               onClick={() => logout()}
               aria-label="Sign out"
             >

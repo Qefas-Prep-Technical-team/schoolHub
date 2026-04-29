@@ -99,7 +99,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, schoolCode }
 
         <div className="bg-slate-50 dark:bg-slate-800/30 p-6 flex justify-center border-t border-slate-100 dark:border-slate-800">
           <p className="text-[10px] uppercase tracking-widest font-black text-slate-400">
-            Powered by SchoolHub Security System
+            Powered by Qefas Hub Security System
           </p>
         </div>
       </DialogContent>

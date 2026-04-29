@@ -28,8 +28,8 @@ const BigNavBar: FC<BigNavBarProps> = ({ pages, handleCloseNavMenu }) => {
         >
             {/* Left: Logo */}
             <Link href="/" className="group flex items-center gap-3 transition-transform duration-300 hover:scale-105">
-                <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-600/20 group-hover:rotate-6 transition-transform">
-                    <Image src="/schoolhub.png" alt="Qefas Hub Logo" width={24} height={24} className="brightness-0 invert" />
+                <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-lg shadow-blue-600/10 group-hover:rotate-6 transition-transform overflow-hidden p-1.5 border border-slate-200 dark:border-slate-800">
+                    <img src="/logo/favicon.svg" alt="Qefas Hub Logo" className="h-full w-full object-contain" />
                 </div>
                 <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase font-sans">
                     Qefas <span className="text-blue-600">Hub</span>

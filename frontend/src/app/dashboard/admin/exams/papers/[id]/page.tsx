@@ -120,7 +120,7 @@ export default function StandalonePaperDetailPage() {
 
   // Fetch subjects and teachers for the edit modal
   const paperSchoolId = paper?.schoolId;
-  const fallbackSchoolId = (user as any)?.schools?.[0]?.schoolId || (user as any)?.defaultTenantId || "";
+  const fallbackSchoolId = (user as any)?.schools?.[0]?.schoolId || (user as any)?.tenantId || "";
   const { data: school } = useSchoolProfile(paperSchoolId || fallbackSchoolId);
   const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery({
     queryKey: ["subjects", paperSchoolId],

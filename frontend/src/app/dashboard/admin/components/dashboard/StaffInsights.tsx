@@ -24,7 +24,7 @@ interface StaffInsight {
 
 export default function StaffInsights() {
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || '';
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
   const { data: summary, isLoading } = useSchoolDashboardSummary(schoolId);
 

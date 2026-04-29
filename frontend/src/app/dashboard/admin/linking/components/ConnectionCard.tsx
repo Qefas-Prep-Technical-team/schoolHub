@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
-import { 
-  Link2, 
-  UserPlus, 
-  MoreVertical, 
-  Info, 
-  X, 
-  Copy, 
-  Clock, 
-  Hash, 
+import {
+  Link2,
+  UserPlus,
+  MoreVertical,
+  Info,
+  X,
+  Copy,
+  Clock,
+  Hash,
   ChevronRight,
   Loader2,
   User
@@ -16,12 +16,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -57,7 +57,11 @@ export function ConnectionCard({
 }: ConnectionCardProps) {
   const details = getMemberDetails(item, currentUserId);
   const isClass = isClassLink(item.linkType);
-  const isOutgoing = type === 'pending' && item.requesterId === currentUserId;
+  const schoolId = item.schoolId || (item as any).targetSchoolId || (item as any).requesterSchoolId;
+  const isOutgoing = type === 'pending' && (
+      item.requesterId === currentUserId || 
+      (item.requesterType === 'SCHOOL' && schoolId)
+  );
 
   if (type === 'active') {
     return (
@@ -67,7 +71,7 @@ export function ConnectionCard({
       )}>
         <CardHeader className="p-6 flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-4">
-            <div 
+            <div
               className="relative cursor-pointer group/avatar"
               onClick={() => onViewProfile?.(item, details)}
             >
@@ -85,7 +89,7 @@ export function ConnectionCard({
                 </AvatarFallback>
               </Avatar>
             </div>
-            <div 
+            <div
               className="cursor-pointer"
               onClick={() => onViewProfile?.(item, details)}
             >
@@ -105,8 +109,8 @@ export function ConnectionCard({
               <DropdownMenuItem className="p-3 font-semibold rounded-lg focus:bg-slate-100 dark:focus:bg-slate-800">
                 <Info className="mr-3 h-4 w-4" /> View Details
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="p-3 font-semibold rounded-lg text-red-500 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer" 
+              <DropdownMenuItem
+                className="p-3 font-semibold rounded-lg text-red-500 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer"
                 onClick={() => !isLoading && onRevoke?.(item.id)}
                 disabled={isLoading}
               >
@@ -126,7 +130,7 @@ export function ConnectionCard({
               <span className="font-bold text-sm text-slate-900 dark:text-white block">{new Date(item.createdAt).toLocaleDateString()}</span>
             </div>
           </div>
-          
+
           <div className={cn(
             "flex items-center justify-between p-4 rounded-xl border group/code h-14",
             isClass ? "bg-purple-50/50 border-purple-100 dark:bg-purple-900/10 dark:border-purple-800/50" : "bg-blue-50/50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-800/50"
@@ -145,8 +149,8 @@ export function ConnectionCard({
             </Button>
           </div>
 
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => onViewProfile?.(item, details)}
             className="w-full justify-between h-12 rounded-xl border-slate-100 dark:border-slate-800 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all group/btn"
           >
@@ -165,7 +169,7 @@ export function ConnectionCard({
       isClass ? "shadow-purple-100/50" : "shadow-orange-100/50"
     )}>
       <div className={cn(
-        "h-1.5 w-full absolute top-0 z-20", 
+        "h-1.5 w-full absolute top-0 z-20",
         isOutgoing ? "bg-slate-300 shadow-sm" : (isClass ? "bg-purple-500 shadow-purple-500/20" : "bg-orange-500 shadow-orange-500/20")
       )} />
 
@@ -174,7 +178,7 @@ export function ConnectionCard({
           "border-none px-3 py-1 font-black uppercase text-[8px] tracking-widest rounded-lg",
           isClass ? "bg-purple-600 text-white" : "bg-orange-600 text-white"
         )}>
-           {details.className || item.linkType.replace('_', ' ')}
+          {details.className || item.linkType.replace('_', ' ')}
         </Badge>
         <span className="px-2 py-1 rounded-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-[8px] font-black tracking-widest border border-slate-100 dark:border-slate-800 shadow-sm text-slate-500">
           {isOutgoing ? 'SENT' : 'INCOMING'}
@@ -183,11 +187,11 @@ export function ConnectionCard({
 
       <CardHeader className="p-6 pb-2 mt-2">
         <div className="flex items-center gap-4 mb-5">
-          <div 
+          <div
             className="relative cursor-pointer group/avatar"
             onClick={() => onViewProfile?.(item, details)}
           >
-             <div className={cn(
+            <div className={cn(
               "absolute -inset-1 rounded-2xl blur-md opacity-0 group-hover/avatar:opacity-40 transition-opacity",
               isClass ? "bg-purple-500" : "bg-orange-500"
             )} />
@@ -205,7 +209,7 @@ export function ConnectionCard({
             <span className="text-[11px] text-slate-400 font-black tracking-wider uppercase">
               {new Date(item.createdAt).toLocaleDateString()}
             </span>
-            <CardTitle 
+            <CardTitle
               className="text-xl font-black truncate max-w-[150px] text-slate-900 dark:text-white leading-tight cursor-pointer hover:text-primary transition-colors"
               onClick={() => onViewProfile?.(item, details)}
             >
@@ -220,11 +224,11 @@ export function ConnectionCard({
 
         {item.note && (
           <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 relative overflow-hidden group/note">
-             <div className={cn("absolute top-0 left-0 w-1 h-full opacity-50 transition-opacity group-hover/note:opacity-100", isClass ? "bg-purple-300" : "bg-orange-300")} />
+            <div className={cn("absolute top-0 left-0 w-1 h-full opacity-50 transition-opacity group-hover/note:opacity-100", isClass ? "bg-purple-300" : "bg-orange-300")} />
             <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 italic line-clamp-2 leading-relaxed">"{item.note}"</p>
           </div>
         )}
-        
+
         <div className="mt-5 flex items-center gap-2">
           <Badge variant="secondary" className="bg-slate-50 dark:bg-slate-900 text-[9px] font-black tracking-widest text-slate-500 border border-slate-100 dark:border-slate-800 px-3 py-1 rounded-lg">
             CODE: {isOutgoing ? item.targetCode : item.requesterCode}

@@ -2,140 +2,258 @@
 import React, { FC, useState } from 'react';
 import { PricingTab } from '../Types/Pricing';
 import { useBillingStore } from '@/utils/PricingPage';
-import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Zap, Shield, Rocket, Loader2 } from 'lucide-react';
-import { useAuthModalStore } from '@/utils/AuthModalStore';
+import {
+    CheckCircle2, Zap, Shield, Rocket, Loader2,
+    Cloud, ArrowRight, Sparkles, Star, BadgeCheck
+} from 'lucide-react';
+import { useCheckoutStore } from '@/utils/CheckoutStore';
 
 interface EachPriceCardProps extends PricingTab {
     category?: string;
     index?: number;
 }
 
-const EachPriceCard: FC<EachPriceCardProps> = ({ name, description, pricing, type, trialDays, features, hasTrial, isPopular, category, index = 0 }) => {
-    const { theme } = useTheme();
+const EachPriceCard: FC<EachPriceCardProps> = ({
+    name, description, pricing, type, trialDays, features, hasTrial,
+    isPopular, category, index = 0, storage
+}) => {
     const { billingType } = useBillingStore();
     const { user, isAuthenticated } = useAuthStore();
+    const { setCheckoutDetails } = useCheckoutStore();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
     const amount = billingType === 'monthly' ? pricing?.monthly : pricing?.yearly;
+    const canUseTrial = hasTrial && (!isAuthenticated || !user?.trialUsed);
+
+    const planOrder: Record<string, number> = {
+        'free': 0,
+        'starter': 1,
+        'growth': 2,
+        'pro': 3
+    };
+
+    const currentPlanLevel = planOrder[user?.plan?.toLowerCase() || 'free'] ?? 0;
+    const targetPlanLevel = planOrder[type?.toLowerCase() || 'free'] ?? 0;
+    const isLowerPlan = targetPlanLevel < currentPlanLevel;
+
+    const isCurrentPlan =
+        isAuthenticated &&
+        !!user?.plan &&
+        user.plan.toLowerCase() === type?.toLowerCase();
+
+    const isDeactivated = isLowerPlan && !isCurrentPlan;
+    const isTrialPlan = isCurrentPlan && !!user?.trialUsed;
 
     const handleAction = (e: React.MouseEvent) => {
+        if (isCurrentPlan || isDeactivated) return;
         e.stopPropagation();
-        
+
         const lowerCategory = category?.toLowerCase() || '';
         const lowerType = type.toLowerCase();
-        
+
         let role = 'STUDENT';
         if (lowerCategory === 'schools') role = 'ADMIN';
         else if (lowerCategory === 'teachers') role = 'TEACHER';
-        else if (lowerCategory === 'individuals') {
-            if (lowerType.includes('parent')) role = 'PARENT';
-        }
+        else if (lowerCategory === 'parents') role = 'PARENT';
+        else if (lowerCategory === 'individuals' && lowerType.includes('parent')) role = 'PARENT';
 
-        const queryParams = new URLSearchParams({
-            plan: type,
-            billing: billingType,
-            role: role
-        });
-
+        const redirectBackUrl = window.location.pathname + window.location.search;
+        setCheckoutDetails({ plan: type, billing: billingType, role, redirectBackUrl });
         setIsLoading(true);
-        router.push(`/checkout?${queryParams.toString()}`);
+        router.push('/checkout');
     };
 
-    // Icon mapping based on plan type
     const getIcon = () => {
-        const lowerType = type.toLowerCase();
-        if (lowerType.includes('starter') || lowerType.includes('student')) return <Rocket className="w-6 h-6 text-blue-500" />;
-        if (lowerType.includes('growth') || lowerType.includes('pro')) return <Zap className="w-6 h-6 text-orange-500" />;
-        if (lowerType.includes('enterprise')) return <Shield className="w-6 h-6 text-purple-500" />;
-        return <Rocket className="w-6 h-6 text-blue-500" />;
+        const t = type.toLowerCase();
+        if (t.includes('starter') || t.includes('student') || t.includes('essential'))
+            return <Rocket className="w-5 h-5" />;
+        if (t.includes('growth') || t.includes('professional'))
+            return <Zap className="w-5 h-5" />;
+        if (t.includes('pro') || t.includes('enterprise') || t.includes('team'))
+            return <Shield className="w-5 h-5" />;
+        return <Star className="w-5 h-5" />;
     };
 
-    // Bento Grid styling: Make the middle/popular card stand out structurally
-    const bentoLayoutClass = isPopular || index === 1 
-        ? "lg:-mt-8 lg:mb-8 lg:scale-105 z-10" 
-        : "mt-0 z-0";
+    // ─── State Derivations ────────────────────────────────────────────────────
+    const isHighlighted = isPopular && !isCurrentPlan;
 
     return (
-        <motion.div 
-            whileHover={{ y: -10, scale: isPopular || index === 1 ? 1.06 : 1.02 }}
+        <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
+            className={`relative flex flex-col rounded-3xl border transition-all duration-300 overflow-hidden
+                ${isCurrentPlan
+                    ? 'border-emerald-400 dark:border-emerald-500 bg-white dark:bg-slate-900 shadow-[0_0_0_4px_rgba(52,211,153,0.15)] ring-0'
+                    : isDeactivated
+                    ? 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 opacity-50 grayscale pointer-events-none'
+                    : isHighlighted
+                    ? 'border-blue-500 dark:border-blue-400 bg-white dark:bg-slate-900 shadow-[0_20px_60px_-10px_rgba(37,99,235,0.25)]'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-700'
+                }
+                ${!isCurrentPlan && !isDeactivated ? 'cursor-pointer' : ''}
+            `}
+            whileHover={!isCurrentPlan && !isDeactivated ? { y: -4 } : {}}
             onClick={handleAction}
-            className={`group relative flex flex-col rounded-[3rem] border p-8 transition-all duration-500 overflow-hidden cursor-pointer ${bentoLayoutClass} ${
-                isPopular 
-                ? 'border-blue-600 bg-blue-50/30 dark:bg-blue-900/10 shadow-2xl shadow-blue-500/20' 
-                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-xl shadow-slate-200/50 dark:shadow-none'
-            }`}
         >
-            {/* Background Decorations */}
-            {isPopular && (
-                <div className="absolute -right-20 -top-20 h-64 w-64 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/20 transition-colors duration-500"></div>
+            {/* Top accent bar */}
+            {(isCurrentPlan || isHighlighted) && (
+                <div className={`h-1 w-full ${isCurrentPlan ? 'bg-gradient-to-r from-emerald-400 to-teal-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'}`} />
             )}
 
-            {/* Popular Badge */}
-            {isPopular && (
-                <div className="absolute top-6 right-6">
-                    <span className="inline-flex items-center rounded-full bg-blue-600 px-4 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-lg shadow-blue-600/30">
-                        Most Popular
-                    </span>
-                </div>
-            )}
-
-            <div className="flex-grow relative z-10">
-                <div className="flex items-center gap-4 mb-8">
-                    <div className={`p-4 rounded-2xl ${isPopular ? 'bg-blue-600/10 dark:bg-blue-600/20' : 'bg-slate-100 dark:bg-slate-800'}`}>
+            {/* Badge row */}
+            <div className="flex items-center justify-between px-8 pt-8 pb-0 min-h-[40px]">
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider
+                    ${isCurrentPlan
+                        ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                        : isDeactivated 
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 opacity-60'
+                        : isHighlighted
+                        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                    }`}
+                >
+                    <span className={isCurrentPlan ? 'text-emerald-500' : isDeactivated ? 'text-slate-400' : isHighlighted ? 'text-blue-500' : 'text-slate-400'}>
                         {getIcon()}
-                    </div>
-                    <div>
-                        <h3 className="text-2xl font-black text-slate-900 dark:text-white capitalize leading-tight">{type}</h3>
-                        {hasTrial && <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tighter">Free {trialDays}-day trial</span>}
-                    </div>
+                    </span>
+                    {isCurrentPlan
+                        ? (isTrialPlan ? 'Trial Active' : 'Current Plan')
+                        : isDeactivated
+                        ? 'Not Available'
+                        : isHighlighted
+                        ? 'Most Popular'
+                        : 'Standard'}
                 </div>
 
-                <div className="mb-8">
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white">₦{amount?.toLocaleString()}</span>
-                        <span className="text-lg font-bold text-slate-500 dark:text-slate-400">/{billingType === 'monthly' ? 'mo' : 'yr'}</span>
-                    </div>
-                    <p className="mt-4 text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                {isCurrentPlan && (
+                    <BadgeCheck className="w-5 h-5 text-emerald-500" />
+                )}
+                {canUseTrial && !isCurrentPlan && (
+                    <span className="text-[11px] font-black text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full uppercase tracking-wide">
+                        {trialDays}-day trial
+                    </span>
+                )}
+            </div>
+
+            {/* Main content */}
+            <div className="flex flex-col flex-grow px-8 pt-6 pb-8 gap-6">
+
+                {/* Plan name & description */}
+                <div>
+                    <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white capitalize mb-1">
+                        {name || type}
+                    </h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
                         {description}
                     </p>
                 </div>
 
-                <div className="h-px w-full bg-slate-100 dark:bg-slate-800 mb-8"></div>
+                {/* Price */}
+                <div className="flex items-end gap-1">
+                    <span className="text-base font-black text-slate-400 dark:text-slate-500 mb-0.5">₦</span>
+                    <span className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white leading-none">
+                        {amount === 0 ? 'Free' : amount?.toLocaleString()}
+                    </span>
+                    {amount !== 0 && (
+                        <span className="text-sm font-bold text-slate-400 dark:text-slate-500 mb-0.5">
+                            /{billingType === 'monthly' ? 'mo' : 'yr'}
+                        </span>
+                    )}
+                </div>
 
-                <ul className="space-y-4">
+                {/* Yearly savings badge */}
+                {billingType === 'yearly' && amount !== 0 && (
+                    <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest -mt-4">
+                        ✦ Save 20% vs monthly
+                    </p>
+                )}
+
+                {/* Divider */}
+                <div className="h-px w-full bg-slate-100 dark:bg-slate-800" />
+
+                {/* Storage */}
+                {storage && (
+                    <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold
+                        ${isCurrentPlan
+                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
+                            : isHighlighted
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                            : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}
+                    >
+                        <Cloud className="w-4 h-4 flex-shrink-0" />
+                        <span>{storage} Data Capacity</span>
+                    </div>
+                )}
+
+                {/* Features */}
+                <ul className="space-y-3 flex-grow">
                     {features?.map((feature) => (
-                        <li key={feature} className="flex items-start gap-3 group/item">
-                            <div className="mt-1 flex-shrink-0">
-                                <CheckCircle2 className={`w-5 h-5 ${isPopular ? 'text-blue-600' : 'text-green-500'} transition-transform group-hover/item:scale-110`} />
-                            </div>
-                            <span className="text-slate-700 dark:text-slate-300 font-medium leading-snug">{feature}</span>
+                        <li key={feature} className="flex items-start gap-3">
+                            <CheckCircle2 className={`w-4 h-4 mt-0.5 flex-shrink-0
+                                ${isCurrentPlan
+                                    ? 'text-emerald-500'
+                                    : isHighlighted
+                                    ? 'text-blue-500'
+                                    : 'text-slate-400 dark:text-slate-500'
+                                }`}
+                            />
+                            <span className="text-slate-600 dark:text-slate-300 text-sm leading-snug">
+                                {feature}
+                            </span>
                         </li>
                     ))}
                 </ul>
-            </div>
-            
-            <button 
-                onClick={handleAction}
-                disabled={isLoading}
-                className={`mt-10 relative group/btn w-full overflow-hidden rounded-2xl py-4 text-lg font-black transition-all duration-300 flex items-center justify-center gap-2 ${
-                    isPopular 
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 hover:bg-blue-700 hover:shadow-blue-600/50 active:scale-95 disabled:bg-blue-400' 
-                    : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 active:scale-95 disabled:opacity-70'
-                }`}
-            >
-                {isLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                    <span className="relative z-10">{isAuthenticated ? 'Upgrade Now' : (hasTrial ? `Start ${trialDays}-Day Free Trial` : "Get Started")}</span>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
-            </button>
 
+                {/* CTA Button */}
+                <button
+                    onClick={handleAction}
+                    disabled={isLoading || isCurrentPlan || isDeactivated || (isAuthenticated && type.toLowerCase() === 'free')}
+                    className={`relative w-full py-4 rounded-2xl font-black text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden
+                        ${(isCurrentPlan || isDeactivated || (isAuthenticated && type.toLowerCase() === 'free'))
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 cursor-not-allowed'
+                            : isHighlighted
+                            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/30 active:scale-[0.98]'
+                            : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100 active:scale-[0.98]'
+                        }`}
+                >
+                    {isLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                        <>
+                            {(isCurrentPlan || (isAuthenticated && type.toLowerCase() === 'free')) && <CheckCircle2 className="w-4 h-4" />}
+                            <span>
+                                {isCurrentPlan
+                                    ? (isTrialPlan ? 'Trial Active' : 'Current Plan')
+                                    : isDeactivated
+                                    ? 'Existing Subscriber'
+                                    : (isAuthenticated && type.toLowerCase() === 'free')
+                                    ? 'Plan Unavailable'
+                                    : canUseTrial
+                                    ? `Start ${trialDays}-Day Free Trial`
+                                    : amount === 0
+                                    ? 'Get Started Free'
+                                    : 'Get Started'}
+                            </span>
+                            {(!isCurrentPlan && !isDeactivated && !(isAuthenticated && type.toLowerCase() === 'free')) && <ArrowRight className="w-4 h-4" />}
+                        </>
+                    )}
+                    {/* Shine sweep on hover for non-current non-disabled */}
+                    {!(isCurrentPlan || isDeactivated || (isAuthenticated && type.toLowerCase() === 'free')) && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+                    )}
+                </button>
+
+                {hasTrial && !isAuthenticated && (
+                    <p className="text-center text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest -mt-2">
+                        No credit card required
+                    </p>
+                )}
+            </div>
         </motion.div>
     );
 };

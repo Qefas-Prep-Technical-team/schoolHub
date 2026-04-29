@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { schoolService } from "../services/schoolService";
+import { paymentService } from "../services/paymentService";
 
 export const schoolQueryKeys = {
   all: ["school"] as const,
@@ -8,6 +9,8 @@ export const schoolQueryKeys = {
   performance: (schoolId: string) => [...schoolQueryKeys.all, "performance", schoolId] as const,
   students: (schoolId: string, params?: any) => [...schoolQueryKeys.all, "students", schoolId, params] as const,
   dashboardSummary: (schoolId: string) => [...schoolQueryKeys.all, "dashboard-summary", schoolId] as const,
+  billing: (schoolId: string, params?: any) => [...schoolQueryKeys.all, "billing", schoolId, params] as const,
+  userBilling: (userId: string, params?: any) => ["user", "billing", userId, params] as const,
 };
 
 export const useSchoolStats = (schoolId: string) => {
@@ -89,5 +92,26 @@ export const useSchoolDashboardSummary = (schoolId: string) => {
     queryFn: () => schoolService.getDashboardSummary(schoolId),
     enabled: !!schoolId,
     refetchInterval: 30000, // Refetch every 30 seconds
+  });
+};
+
+export const useSchoolBilling = (schoolId: string, params?: { page?: number; limit?: number }) => {
+  return useQuery({
+    queryKey: schoolQueryKeys.billing(schoolId, params),
+    queryFn: () => schoolService.getBilling(schoolId, params),
+    enabled: !!schoolId,
+    staleTime: 0,                // Always consider data stale — re-fetch on every mount
+    refetchOnWindowFocus: true,  // Re-fetch when user returns to tab/page after checkout
+    refetchInterval: 30000,      // Refetch every 30 seconds
+  });
+};
+
+export const useUserBilling = (userId: string, params?: { page?: number; limit?: number }) => {
+  return useQuery({
+    queryKey: schoolQueryKeys.userBilling(userId, params),
+    queryFn: () => paymentService.getBilling(params),
+    enabled: !!userId,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 };

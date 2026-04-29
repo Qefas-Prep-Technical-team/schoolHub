@@ -26,26 +26,23 @@ interface ChildCardProps {
   }
 }
 
-const mockChild: ChildData = {
-  id: '1',
-  name: 'Sarah Johnson',
-  class: 'Class 5-B',
-  studentId: '#88291',
-  imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBmbtPV3Svqpl7Xy7SDHeGBMLhNBFXRzMPBnOj00_ampuAD02z5DVLCtNdMD7SKdaDP4PxU9proxV_rflTzvnPTpZ7HMT7miuN_3ddTYsEixCJFKMSBUGud8C4khRjmxs8xbArEZ5gB6QxY3ZAHpsUl_FjBmK3Z1Nd__SVvfWvPlXEqdZIy7hLybzZKFUJQDVVbDuJ87oWwb4ksvevECmdyfagm1bKLepXZALKmaRlqlBh8DtGqVQF-MhGxNu7DJa0zfcwN6Zxe4vQ',
-  isActive: true,
-  stats: {
-    averageGrade: '88%',
-    attendance: '95%',
-    behavior: 'Good',
-  },
-}
-
 export default function ChildCard({ child }: ChildCardProps) {
-
   const { isOpen, selectedChild, openDrawer, closeDrawer } = useChildDetailsDrawer()
 
   const handleViewChildDetails = () => {
-    openDrawer(mockChild)
+    openDrawer({
+      id: child.id,
+      name: child.name,
+      class: child.class,
+      studentId: child.studentId,
+      imageUrl: child.imageUrl,
+      isActive: child.status === 'active',
+      stats: {
+        averageGrade: child.gradePercentage || 'N/A',
+        attendance: `${child.attendance}%`,
+        behavior: 'Good',
+      },
+    })
   }
 
   const handleMoreActions = (e: React.MouseEvent) => {

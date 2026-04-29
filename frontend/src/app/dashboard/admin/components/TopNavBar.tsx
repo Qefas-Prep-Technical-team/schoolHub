@@ -1,6 +1,8 @@
 "use client";
 import React, { useState } from "react";
-import { Search, Bell, Settings, LayoutGrid, ChevronLeft, ChevronRight, User } from "lucide-react";
+import Link from "next/link";
+import { Search, Bell, Settings, LayoutGrid, ChevronLeft, ChevronRight, User, School, QrCode } from "lucide-react";
+import { UserQRModal } from "@/components/reusable/UserQRModal";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/app/theme-toggle";
 import NotificationCenter from "./NotificationCenter";
@@ -16,6 +18,7 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
     const [searchQuery, setSearchQuery] = useState("");
     const [notifications] = useState(5);
     const [profile, setProfile] = useState<any>(null);
+    const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const { userType, user } = useAuthStore();
 
     useEffect(() => {
@@ -24,10 +27,17 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
 
     const displayImage = profile?.data?.profileImage || user?.profileImage;
     const displayName = profile?.data?.name || user?.name || user?.email;
+    const handleProfileClick = () => {};
 
     return (
-        <header className="sticky top-0 z-30 flex items-center justify-between h-20 px-4 md:px-8 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-all duration-300">
+        <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
             <div className="flex items-center gap-6 flex-1">
+                {/* Dashboard Badge */}
+                <Link href="/" className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-full shadow-sm hover:border-indigo-500/30 transition-all group/badge">
+                    <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-4 w-4 object-contain group-hover/badge:scale-110 transition-transform" />
+                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Admin Hub</span>
+                </Link>
+
                 {/* Desktop collapse */}
                 <div className="hidden md:block">
                   <Button
@@ -45,24 +55,29 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
             </div>
 
             {/* Central Search Section */}
-            <div className="hidden md:flex flex-1 justify-center px-8">
-                <div className="relative w-full max-w-6xl group">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={22} />
+            <div className="hidden md:flex flex-1 justify-center max-w-2xl px-8">
+                <div className="relative w-full group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
                     <input
                         type="search"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search students, teachers, schools..."
-                        className="w-full pl-14 pr-8 py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-500 border-none focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 text-base font-semibold transition-all shadow-inner"
+                        placeholder="Search teachers, students, sessions..."
+                        className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-slate-200 dark:focus:bg-white/10 transition-all text-sm font-medium"
                     />
                 </div>
             </div>
 
             <div className="flex items-center justify-end gap-4 flex-1">
-                {/* Quick Actions */}
-                <button className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">
-                    <LayoutGrid className="w-5 h-5" />
+                {/* Quick Actions / QR Code */}
+                <button 
+                  onClick={() => setIsQRModalOpen(true)}
+                  className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-slate-200 dark:border-white/5 shadow-sm"
+                >
+                    <QrCode className="w-5 h-5 text-indigo-500" />
                 </button>
+
+                <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} />
 
                 <ThemeToggle />
 
@@ -71,21 +86,21 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
                 <NotificationCenter />
 
                 {/* Profile Pill */}
-                <div className="flex items-center gap-3 p-1.5 pl-1.5 pr-4 bg-gray-100 dark:bg-gray-800 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer transition-all group">
-                    <div className="relative">
-                        <div
-                            className="bg-center bg-no-repeat bg-cover rounded-lg size-9 border border-white dark:border-gray-700 group-hover:scale-105 transition-transform bg-gray-200 dark:bg-gray-700"
-                            style={{
-                                backgroundImage: displayImage ? `url("${displayImage}")` : "none",
-                            }}
-                        >
-                          {!displayImage && <User className="h-5 w-5 text-gray-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
-                        </div>
-                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800" />
+                <div 
+                    className="flex items-center gap-3 p-1.5 pl-1.5 pr-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 transition-all cursor-pointer group rounded-xl"
+                    onClick={handleProfileClick}
+                >
+                    <div className="relative h-9 w-9 rounded-lg bg-indigo-600/10 dark:bg-indigo-600/20 flex items-center justify-center border border-indigo-500/20 dark:border-indigo-500/30 overflow-hidden">
+                        {displayImage ? (
+                            <img src={displayImage} alt={displayName} className="h-full w-full object-cover group-hover:scale-110 transition-transform" />
+                        ) : (
+                            <User size={18} className="text-indigo-600 dark:text-indigo-400" />
+                        )}
+                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-slate-900" />
                     </div>
-                    <div className="hidden md:block text-left text-nowrap">
-                        <p className="text-xs font-bold text-gray-900 dark:text-white leading-tight">{displayName}</p>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-500 font-medium">System Administrator</p>
+                    <div className="hidden lg:flex flex-col text-left">
+                        <p className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-none mb-1 truncate max-w-[120px]">{displayName}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Admin Terminal</p>
                     </div>
                 </div>
             </div>

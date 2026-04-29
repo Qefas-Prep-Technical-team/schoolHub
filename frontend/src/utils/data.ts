@@ -1,1 +1,1 @@
-export const  currentName = "SchoolHub"
+export const  currentName = "Qefas Hub"

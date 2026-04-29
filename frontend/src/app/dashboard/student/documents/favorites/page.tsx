@@ -114,8 +114,8 @@ export default function ImportantDocumentsPage() {
                       {pinnedDocuments.filter(d => d.isUnread).length}
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                    <span className="text-blue-500 dark:text-blue-300 text-lg">🔔</span>
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-pink-900/50 flex items-center justify-center">
+                    <span className="text-pink-500 dark:text-blue-300 text-lg">🔔</span>
                   </div>
                 </div>
               </div>
@@ -193,3 +193,4 @@ export default function ImportantDocumentsPage() {
     </div>
   );
 }
+

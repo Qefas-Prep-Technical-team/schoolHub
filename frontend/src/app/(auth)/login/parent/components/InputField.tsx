@@ -36,12 +36,14 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
         };
 
         return (
-            <label className="flex flex-col min-w-40 flex-1">
-                <p className="text-sm font-medium pb-2 text-text-light dark:text-text-dark">{label}</p>
-                <div className="flex w-full items-stretch rounded-lg">
+            <label className="flex flex-col min-w-40 flex-1 group">
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-2 ml-1 transition-colors group-focus-within:text-indigo-500">
+                    {label}
+                </p>
+                <div className="flex w-full items-stretch rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 overflow-hidden focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all duration-300">
                     {/* Left Icon */}
-                    <div className="flex items-center justify-center pl-4 border border-input-border-light dark:border-input-border-dark bg-input-light dark:bg-input-dark rounded-l-lg border-r-0 text-gray-400 dark:text-placeholder-dark">
-                        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                    <div className="flex items-center justify-center pl-5 text-slate-400 dark:text-slate-600 group-focus-within:text-indigo-500 transition-colors">
+                        <span className="material-symbols-outlined !text-xl">
                             {icon}
                         </span>
                     </div>
@@ -57,7 +59,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
                         required={required}
                         name={name}
                         {...props}
-                        className="flex w-full h-12 p-3 border-y border-input-border-light dark:border-input-border-dark bg-input-light dark:bg-input-dark text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 text-base"
+                        className="flex w-full h-14 px-4 bg-transparent text-slate-900 dark:text-white focus:outline-0 text-base font-medium placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
 
                     {/* Password Toggle Button */}
@@ -65,20 +67,16 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
                         <button
                             type="button"
                             onClick={togglePasswordVisibility}
-                            className="flex items-center justify-center pr-4 border border-input-border-light dark:border-input-border-dark bg-input-light dark:bg-input-dark rounded-r-lg border-l-0 text-gray-400 dark:text-placeholder-dark hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                            className="flex items-center justify-center pr-5 text-slate-400 dark:text-slate-600 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
                         >
-                            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                            <span className="material-symbols-outlined !text-xl">
                                 {showPassword ? 'visibility_off' : 'visibility'}
                             </span>
                         </button>
                     )}
 
-                    {/* Non-password field right border */}
-                    {!isPasswordField && (
-                        <div className="flex items-center justify-center pr-4 border border-input-border-light dark:border-input-border-dark bg-input-light dark:bg-input-dark rounded-r-lg border-l-0">
-                            <div className="w-4"></div>
-                        </div>
-                    )}
+                    {/* Non-password field right spacer */}
+                    {!isPasswordField && <div className="pr-5" />}
                 </div>
             </label>
         );

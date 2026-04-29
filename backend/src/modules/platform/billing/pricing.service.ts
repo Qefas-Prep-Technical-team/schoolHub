@@ -73,32 +73,40 @@ export class PricingService {
      * CRUD: Create or Update a plan
      */
     static async savePlan(data: any) {
+        // Sanitize data: remove non-model fields and read-only/relational fields
+        const { 
+            id, pricing, tabs, storage, 
+            schools, schoolSubscriptions, userSubscriptions, histories,
+            createdAt, updatedAt, 
+            ...cleanData 
+        } = data;
+
         // Check if ID is a UUID (length 36, contains dashes)
-        const isUuid = data.id && typeof data.id === 'string' && data.id.length === 36 && data.id.includes('-');
+        const isUuid = id && typeof id === 'string' && id.length === 36 && id.includes('-');
 
         if (isUuid) {
-            const exists = await prisma.subscriptionPlan.findUnique({ where: { id: data.id }});
+            const exists = await prisma.subscriptionPlan.findUnique({ where: { id }});
             if (exists) {
                 return await prisma.subscriptionPlan.update({
-                    where: { id: data.id },
-                    data
+                    where: { id },
+                    data: cleanData
                 });
             }
         }
 
         // If it's an unsynced hardcoded plan or a new plan with category and type
         if (data.category && data.type) {
-            const { id, ...cleanData } = data; // Remove hardcoded string ID
+            // Ensure ID is not passed to upsert if it's not a UUID
             return await prisma.subscriptionPlan.upsert({
                 where: { category_type: { category: data.category, type: data.type } },
                 update: cleanData,
-                create: cleanData
+                create: { ...cleanData, category: data.category, type: data.type }
             });
         }
 
         // Fallback for completely new manual creations without ID
         return await prisma.subscriptionPlan.create({
-            data
+            data: cleanData
         });
     }
 
@@ -153,6 +161,8 @@ export class PricingService {
                             isActive: true,
                             maxStudents: this.parseLimit(tab.features, "student"),
                             maxClasses: this.parseLimit(tab.features, "class"),
+                            maxExams: this.parseLimit(tab.features, "exam"),
+                            maxTeachers: this.parseLimit(tab.features, "teacher"),
                         },
                         create: {
                             name: tab.name,
@@ -169,6 +179,8 @@ export class PricingService {
                             isActive: true,
                             maxStudents: this.parseLimit(tab.features, "student"),
                             maxClasses: this.parseLimit(tab.features, "class"),
+                            maxExams: this.parseLimit(tab.features, "exam"),
+                            maxTeachers: this.parseLimit(tab.features, "teacher"),
                         }
                     })
                 );
@@ -184,9 +196,23 @@ export class PricingService {
     }
 
     private static parseLimit(features: string[], keyword: string): number {
-        const feat = features.find(f => f.toLowerCase().includes(keyword));
+        const feat = features.find(f => f.toLowerCase().includes(keyword.toLowerCase()));
         if (!feat) return 0;
+        
+        // Handle "Unlimited" cases
+        if (feat.toLowerCase().includes('unlimited')) {
+            return 999999;
+        }
+
         const match = feat.match(/\d+/);
-        return match ? parseInt(match[0]) : 0;
+        if (match) return parseInt(match[0]);
+
+        // Default if keyword exists but no number (e.g. "Core Examination Tools")
+        if (keyword.toLowerCase().includes("exam")) return 10;
+        if (keyword.toLowerCase().includes("teacher")) return 5;
+        if (keyword.toLowerCase().includes("class")) return 5;
+        if (keyword.toLowerCase().includes("student")) return 50;
+
+        return 0;
     }
 }

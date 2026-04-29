@@ -41,6 +41,15 @@ export const useLinkProfile = () => {
   });
 };
 
+export const useSingleLinkRequest = (id: string, options: any = {}) => {
+  return useQuery({
+    queryKey: [...queryKeys.all, "request", id],
+    queryFn: () => linkService.getLinkRequestById(id),
+    enabled: !!id,
+    ...options
+  });
+};
+
 export const useCreateLinkRequest = () => {
   const queryClient = useQueryClient();
   return useMutation({

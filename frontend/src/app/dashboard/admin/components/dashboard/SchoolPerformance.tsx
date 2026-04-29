@@ -1,0 +1,117 @@
+"use client";
+
+import { Award, TrendingUp, Sparkles, Activity, ShieldCheck, BarChart3 } from "lucide-react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+import DonutChart from "./DonutChart";
+import { useMemo } from "react";
+
+interface SchoolPerformanceProps {
+    analysis?: {
+        averageScore: number;
+        totalAssessments: number;
+        subjectBreakdown?: { name: string; average: number }[];
+        insight?: string;
+    };
+    isLoading?: boolean;
+}
+
+export default function SchoolPerformance({ analysis, isLoading }: SchoolPerformanceProps) {
+    const chartData = useMemo(() => {
+        if (!analysis || !analysis.subjectBreakdown) return [
+            { name: 'Excellence', value: 0, color: '#6366f1' },
+            { name: 'Competency', value: 0, color: '#3b82f6' },
+            { name: 'Review', value: 0, color: '#f43f5e' },
+        ];
+
+        const excellentCount = analysis.subjectBreakdown.filter(s => s.average >= 75).length;
+        const goodCount = analysis.subjectBreakdown.filter(s => s.average >= 50 && s.average < 75).length;
+        const atRiskCount = analysis.subjectBreakdown.filter(s => s.average < 50).length;
+        const total = excellentCount + goodCount + atRiskCount || 1;
+
+        return [
+            { name: 'Excellence', value: Math.round((excellentCount / total) * 100), color: '#6366f1' },
+            { name: 'Competency', value: Math.round((goodCount / total) * 100), color: '#3b82f6' },
+            { name: 'Review', value: Math.round((atRiskCount / total) * 100), color: '#f43f5e' },
+        ];
+    }, [analysis]);
+
+    return (
+        <section className="bg-white/70 dark:bg-slate-900/80 border border-white/50 dark:border-slate-800/50 rounded-[3rem] p-8 md:p-12 backdrop-blur-3xl shadow-xl overflow-hidden relative group">
+            {/* Ambient glow */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-80 transition-opacity duration-1000 -translate-y-20 translate-x-20 pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col xl:flex-row gap-12 items-center">
+                <div className="flex-1 space-y-8">
+                    <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                            <Sparkles size={24} className="animate-pulse" />
+                        </div>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">Academic <span className="text-indigo-600">Trajectory</span></h2>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 shadow-inner italic relative overflow-hidden group/insight">
+                            <div className="absolute left-0 top-0 w-1.5 h-full bg-indigo-500" />
+                            <p className="text-slate-600 dark:text-slate-300 font-bold leading-relaxed text-sm relative z-10">
+                                "{analysis?.insight || "Analyzing institutional data clusters to generate strategic performance telemetry..."}"
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="p-6 rounded-[2rem] bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/10 shadow-sm transition-colors hover:bg-indigo-500/10">
+                                <div className="flex items-center gap-2 text-indigo-500 mb-2">
+                                    <Activity size={16} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Institutional Mastery</span>
+                                </div>
+                                <p className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">{analysis?.averageScore || 0}% <span className="text-xs text-slate-400 font-bold ml-1">AVG</span></p>
+                            </div>
+                            <div className="p-6 rounded-[2rem] bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/10 shadow-sm transition-colors hover:bg-blue-500/10">
+                                <div className="flex items-center gap-2 text-blue-500 mb-2">
+                                    <ShieldCheck size={16} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600">Validation Status</span>
+                                </div>
+                                <p className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">NOMINAL</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="w-full xl:w-80 h-80 shrink-0 relative p-6 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-xl flex items-center justify-center">
+                    <div className="absolute inset-0 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl scale-125 pointer-events-none" />
+                    {isLoading ? (
+                        <div className="h-48 w-48 rounded-full border-4 border-dashed border-slate-100 dark:border-slate-800 animate-pulse" />
+                    ) : (
+                        <DonutChart 
+                            data={chartData}
+                            innerRadius={75}
+                            outerRadius={100}
+                            centerLabel={{
+                                title: 'System Grade',
+                                value: analysis ? (analysis.averageScore >= 75 ? 'A+' : analysis.averageScore >= 60 ? 'B' : 'C') : '--'
+                            }}
+                        />
+                    )}
+                </div>
+            </div>
+
+            {/* Sub-metrics Summary */}
+            <div className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                     <div className="flex -space-x-3">
+                        {chartData.map((item, i) => (
+                            <div key={i} className="h-10 w-10 rounded-full border-4 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-black text-white shadow-lg" style={{ backgroundColor: item.color }}>
+                                {item.value}%
+                            </div>
+                        ))}
+                     </div>
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mastery Distribution Matrix</p>
+                </div>
+                <div className="flex items-center gap-3 bg-slate-950 px-5 py-2 rounded-full shadow-2xl">
+                    <BarChart3 className="text-indigo-500" size={16} />
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{analysis?.totalAssessments || 0} Data Points Captured</span>
+                </div>
+            </div>
+        </section>
+    );
+}

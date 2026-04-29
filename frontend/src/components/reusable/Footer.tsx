@@ -5,7 +5,9 @@ import React, { FC } from 'react';
 
 const Footer: FC = () => {
     const pathname = usePathname()
-    const isDashboard = pathname.startsWith("/dashboard") // for example
+    const isDashboard = pathname.startsWith("/dashboard") || 
+                        pathname.startsWith("/console") || 
+                        pathname.startsWith("/platform");
     return (
         !isDashboard && <Box
             className='bg-slate-900 text-white py-16'
@@ -22,8 +24,13 @@ const Footer: FC = () => {
 
             <div className="container mx-auto px-10">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                    <div>
-                        <h3 className="text-lg font-bold mb-4">Qefas <span className="text-blue-500">Hub</span></h3>
+                    <div className="flex flex-col items-center md:items-start">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center p-1.5 shadow-lg shadow-blue-500/20">
+                                <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
+                            </div>
+                            <h3 className="text-xl font-black text-white tracking-tight uppercase">Qefas <span className="text-blue-500">Hub</span></h3>
+                        </div>
                         <p className="text-slate-400">The modern solution for academic excellence and school management.</p>
                     </div>
                     <div>

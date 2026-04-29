@@ -68,22 +68,40 @@ export default function FeatureSection() {
       </div>
       
       {/* Feature Grid with Entrance Animation */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-3xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-3xl relative">
+        {/* Subtle mesh accent behind grid */}
+        <div className="absolute -inset-10 bg-blue-500/5 blur-3xl rounded-full pointer-events-none" />
+        
         {features.map((f, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="group relative p-6 rounded-[2.5rem] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 transition-all hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/5"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1, duration: 0.6 }}
+            whileHover={{ 
+              y: -8, 
+              scale: 1.02,
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.08)"
+            }}
+            className="group relative p-8 rounded-[2.5rem] bg-white/50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 transition-all hover:border-blue-500/40 backdrop-blur-sm"
           >
-            <div className={`mb-4 w-12 h-12 rounded-2xl bg-slate-50 dark:bg-zinc-950 flex items-center justify-center ${f.color} group-hover:scale-110 transition-transform`}>
-              {iconMap[f.icon as keyof typeof iconMap]}
+            <div className={`mb-6 w-14 h-14 rounded-2xl bg-white dark:bg-zinc-950 flex items-center justify-center ${f.color} shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}>
+              {React.cloneElement(iconMap[f.icon as keyof typeof iconMap], { size: 24 })}
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">{f.title}</h3>
-            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{f.title}</h3>
+            <p className="mt-3 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
               {f.description}
             </p>
+
+            {/* Subtle arrow indicator on hover */}
+            <div className="absolute bottom-8 right-8 opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0">
+               <motion.div 
+                 animate={{ x: [0, 5, 0] }}
+                 transition={{ duration: 1.5, repeat: Infinity }}
+               >
+                 <Sparkles size={16} className="text-blue-500" />
+               </motion.div>
+            </div>
           </motion.div>
         ))}
       </div>

@@ -11,16 +11,8 @@ const PricingCard: FC = () => {
     const { theme } = useTheme();
 
     return (
-        <Box className="container mx-auto md:p-6 py-12">
-            {/* Header Section */}
-            <div className="text-center space-y-4 mb-16 px-4">
-                <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 dark:text-white">
-                    Simple, <span className="text-blue-600">Transparent</span> Pricing
-                </h1>
-                <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                    Choose the plan that's right for you. Whether you're a student, a teacher, or a large institution, we've got you covered.
-                </p>
-            </div>
+        <Box className="container mx-auto md:p-6 pb-24 relative z-20">
+            {/* Billing Toggle - Modernized */}
 
             {/* Billing Toggle */}
             <div className="flex flex-col items-center justify-center gap-6 mb-16">

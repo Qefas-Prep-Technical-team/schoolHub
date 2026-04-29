@@ -9,6 +9,8 @@ import {
   sendSetupCompleteEmail,
   googleAuthService,
 } from "./auth.service";
+import { SchoolSubscriptionService } from "../subscription/school-subscription.service";
+import { UserSubscriptionService } from "../subscription/user-subscription.service";
 import {
   comparePassword,
   generateAccessToken,
@@ -115,6 +117,9 @@ export const registerSchool = async (req: Request, res: Response) => {
           schoolCode,
         },
       });
+
+      // Initialize School Subscription
+      await SchoolSubscriptionService.initializeFreePlan(school.id);
 
       const admin = await tx.admin.create({
         data: {
@@ -280,6 +285,9 @@ export const registerTeacher = async (req: Request, res: Response) => {
           activeSchoolId: schoolToConnect ? schoolToConnect.id : null,
         },
       });
+
+      // Initialize Teacher Subscription
+      await UserSubscriptionService.initializeFreePlan(teacher.id, UserRole.TEACHER);
 
       if (schoolToConnect) {
         await tx.linkRequest.create({
@@ -595,6 +603,9 @@ export const registerStudent = async (
         },
       });
 
+      // Initialize Student Subscription
+      await UserSubscriptionService.initializeFreePlan(student.id, UserRole.STUDENT);
+
       const note = "i would like to connect with you";
 
       // Auto-linking for School
@@ -838,6 +849,9 @@ export const registerParent = async (
           parentCode,
         },
       });
+
+      // Initialize Parent Subscription
+      await UserSubscriptionService.initializeFreePlan(parent.id, UserRole.PARENT);
 
       let linkResult = null;
       let studentData = null;
@@ -1416,13 +1430,22 @@ export const login = async (req: Request, res: Response) => {
           const teacher = await prisma.teacher.findUnique({
             where: { email },
             include: { 
+<<<<<<< HEAD
               school: true,
               currentSchool: true 
+=======
+              currentSchool: true,
+              primarySchool: true 
+>>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
             },
           });
           if (teacher) {
             // Normalize school for compatibility with existing code
+<<<<<<< HEAD
             (teacher as any).school = teacher.school || teacher.currentSchool;
+=======
+            (teacher as any).school = teacher.currentSchool || teacher.primarySchool;
+>>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
           }
           return teacher;
         }
@@ -1536,6 +1559,8 @@ export const login = async (req: Request, res: Response) => {
           bannerImage: user.bannerImage,
           gender: user.gender,
           schools,
+          plan: primarySchool?.plan || user.plan,
+          trialUsed: primarySchool?.trialUsed ?? user.trialUsed,
         },
         userRole: user.role,
         accessToken,
@@ -1552,6 +1577,8 @@ export const login = async (req: Request, res: Response) => {
           bannerImage: user.bannerImage,
           gender: user.gender,
           school: user.school,
+          plan: user.plan,
+          trialUsed: user.trialUsed,
         },
         userRole: user.role,
         accessToken,
@@ -1568,6 +1595,8 @@ export const login = async (req: Request, res: Response) => {
           bannerImage: user.bannerImage,
           gender: user.gender,
           school: user.school,
+          plan: user.plan,
+          trialUsed: user.trialUsed,
         },
         userRole: user.role,
         accessToken,
@@ -1583,6 +1612,8 @@ export const login = async (req: Request, res: Response) => {
           bannerImage: user.bannerImage,
           gender: user.gender,
           parentCode: user.parentCode,
+          plan: user.plan,
+          trialUsed: user.trialUsed,
         },
         children: user.children?.map((child: any) => ({
           studentId: child.student.id,
@@ -1688,7 +1719,9 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
       success: true,
       message: "Email verified successfully for checkout.",
       userRole: userType,
-      userId: user?.id
+      userId: user?.id,
+      plan: user?.plan,
+      trialUsed: user?.trialUsed
     });
   } catch (error) {
     console.error("Error verifying checkout code:", error);
@@ -1703,17 +1736,17 @@ export const checkEmail = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
 
-    const admin = await prisma.admin.findUnique({ where: { email }, select: { id: true } });
-    if (admin) return res.status(200).json({ success: true, exists: true, role: UserRole.ADMIN });
+    const admin = await prisma.admin.findUnique({ where: { email }, select: { id: true, plan: true, trialUsed: true } });
+    if (admin) return res.status(200).json({ success: true, exists: true, role: UserRole.ADMIN, plan: admin.plan, trialUsed: admin.trialUsed });
 
-    const teacher = await prisma.teacher.findUnique({ where: { email }, select: { id: true } });
-    if (teacher) return res.status(200).json({ success: true, exists: true, role: UserRole.TEACHER });
+    const teacher = await prisma.teacher.findUnique({ where: { email }, select: { id: true, plan: true, trialUsed: true } });
+    if (teacher) return res.status(200).json({ success: true, exists: true, role: UserRole.TEACHER, plan: teacher.plan, trialUsed: teacher.trialUsed });
 
-    const student = await prisma.student.findUnique({ where: { email }, select: { id: true } });
-    if (student) return res.status(200).json({ success: true, exists: true, role: UserRole.STUDENT });
+    const student = await prisma.student.findUnique({ where: { email }, select: { id: true, plan: true, trialUsed: true } });
+    if (student) return res.status(200).json({ success: true, exists: true, role: UserRole.STUDENT, plan: student.plan, trialUsed: student.trialUsed });
 
-    const parent = await prisma.parent.findUnique({ where: { email }, select: { id: true } });
-    if (parent) return res.status(200).json({ success: true, exists: true, role: UserRole.PARENT });
+    const parent = await prisma.parent.findUnique({ where: { email }, select: { id: true, plan: true, trialUsed: true } });
+    if (parent) return res.status(200).json({ success: true, exists: true, role: UserRole.PARENT, plan: parent.plan, trialUsed: parent.trialUsed });
 
     return res.status(200).json({ success: true, exists: false });
   } catch (error) {

@@ -8,6 +8,7 @@ import { generateAccessToken } from "../../services/authService";
 import { generateUniqueCode } from "../../utils/code-generator";
 import { UserRole } from "@prisma/client";
 import { enforceStudentLimit } from "../subscription/quota.helpers";
+import { UserSubscriptionService } from "../subscription/user-subscription.service";
 
 // Get student by code (for parent to verify before linking)
 export const getStudentByCode = async (req: Request, res: Response) => {
@@ -117,7 +118,7 @@ export const sendEmailUpdateVerification = async (email: string, code: string) =
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <div style="width: 48px; height: 48px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 24px;">Q</div>
+          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub <span style="color: #2563eb;">Identity</span></h2>
             <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
@@ -169,7 +170,7 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <div style="width: 48px; height: 48px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 24px;">Q</div>
+          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
             <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Academic Management System</p>
@@ -206,7 +207,7 @@ export const sendSetupCompleteEmail = async (email: string) => {
     html: `
       <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <div style="width: 48px; height: 48px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 24px;">Q</div>
+          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
           <div>
             <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
             <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
@@ -311,8 +312,9 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
     html: `
       <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #2563eb; margin: 0;">Qefas Hub</h1>
-          <p style="color: #6b7280; margin: 5px 0 0 0;">Password Reset Request</p>
+          <img src="${baseUrl}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
+          <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">Qefas Hub</h1>
+          <p style="color: #6b7280; margin: 5px 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;">Password Reset Request</p>
         </div>
         
         <div style="background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -392,7 +394,11 @@ export const googleAuthService = async (
   if (!email) throw new Error("Google account must have an email");
 
   let user: any;
+<<<<<<< HEAD
   let actualRole: UserRole = userRole as UserRole;
+=======
+  let actualRole: any = userRole;
+>>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
 
   // Global lookup to detect "Wrong Portal" logins
   const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
@@ -429,8 +435,6 @@ export const googleAuthService = async (
     switch (userRole) {
       case UserRole.STUDENT: {
         const studentCode = await generateUniqueCode(prisma, "student", name || "Student");
-        // Note: Google student signup doesn't have schoolCode in this context initially
-        // but if it did, we would enforce it here. 
         user = await prisma.student.create({
           data: {
             name: name || "Google User",
@@ -442,6 +446,7 @@ export const googleAuthService = async (
             verified: true,
           },
         });
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.STUDENT);
         break;
       }
 
@@ -458,6 +463,7 @@ export const googleAuthService = async (
             verified: true,
           },
         });
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.TEACHER);
         break;
       }
 
@@ -475,6 +481,7 @@ export const googleAuthService = async (
             status: "APPROVED",
           },
         });
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.ADMIN);
         break;
       }
 
@@ -491,6 +498,7 @@ export const googleAuthService = async (
             verified: true,
           },
         });
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.PARENT);
         break;
       }
 

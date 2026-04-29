@@ -79,7 +79,7 @@ export default function StudentNotificationsPage() {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'LINK_REQUEST': return <Info className="h-5 w-5 text-blue-500" />;
+      case 'LINK_REQUEST': return <Info className="h-5 w-5 text-pink-500" />;
       case 'SYSTEM': return <AlertCircle className="h-5 w-5 text-orange-500" />;
       case 'LINK_ACCEPTED': return <Check className="h-5 w-5 text-green-500" />;
       default: return <Bell className="h-5 w-5 text-indigo-500" />;
@@ -89,7 +89,7 @@ export default function StudentNotificationsPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-10 w-10 text-blue-600 animate-spin mb-4" />
+        <Loader2 className="h-10 w-10 text-pink-600 animate-spin mb-4" />
         <p className="text-slate-500 font-bold animate-pulse">Synchronizing notifications...</p>
       </div>
     );
@@ -103,10 +103,10 @@ export default function StudentNotificationsPage() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2 mb-2">
-              <div className="p-1.5 bg-blue-600 rounded-lg shadow-blue-200 shadow-lg">
+              <div className="p-1.5 bg-pink-600 rounded-lg shadow-blue-200 shadow-lg">
                 <Bell size={16} className="text-white fill-current" />
               </div>
-              <span className="text-[10px] font-black text-blue-600 tracking-widest uppercase">Inbox</span>
+              <span className="text-[10px] font-black text-pink-600 tracking-widest uppercase">Inbox</span>
             </div>
             <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">
               Notifications
@@ -120,7 +120,7 @@ export default function StudentNotificationsPage() {
                 onClick={() => markAllAsReadMutation.mutate()}
                 disabled={markAllAsReadMutation.isPending}
                 variant="outline"
-                className="h-11 px-6 rounded-xl border-dashed border-2 border-slate-300 hover:border-blue-500 hover:text-blue-600 transition-all font-bold text-xs uppercase tracking-widest"
+                className="h-11 px-6 rounded-xl border-dashed border-2 border-slate-300 hover:border-pink-500 hover:text-pink-600 transition-all font-bold text-xs uppercase tracking-widest"
               >
                 {markAllAsReadMutation.isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : <Check className="mr-2" size={16} />}
                 Mark all read
@@ -139,7 +139,7 @@ export default function StudentNotificationsPage() {
                 className={cn(
                   "flex-1 lg:flex-none px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
                   filter === t 
-                    ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600" 
+                    ? "bg-white dark:bg-slate-700 shadow-sm text-pink-600" 
                     : "text-slate-500 hover:text-slate-700"
                 )}
               >
@@ -152,7 +152,7 @@ export default function StudentNotificationsPage() {
             <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <Input
               placeholder="Search notifications..."
-              className="pl-11 h-11 rounded-xl border-none bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-blue-500/20 text-xs font-medium"
+              className="pl-11 h-11 rounded-xl border-none bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-pink-500/20 text-xs font-medium"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -178,7 +178,7 @@ export default function StudentNotificationsPage() {
                 className={cn(
                   "rounded-2xl border-none transition-all duration-300 group overflow-hidden cursor-pointer",
                   !n.isRead 
-                    ? "bg-white dark:bg-slate-800 shadow-xl shadow-blue-500/5 ring-1 ring-blue-500/10" 
+                    ? "bg-white dark:bg-slate-800 shadow-xl shadow-pink-500/5 ring-1 ring-pink-500/10" 
                     : "bg-slate-50/50 dark:bg-slate-900/50 opacity-80"
                 )}
                 onClick={() => handleOpenModal(n)}
@@ -186,7 +186,7 @@ export default function StudentNotificationsPage() {
                 <CardContent className="p-5 flex gap-5 items-start">
                   <div className={cn(
                     "p-3 rounded-xl shrink-0 h-12 w-12 flex items-center justify-center transition-all shadow-sm",
-                    !n.isRead ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                    !n.isRead ? "bg-pink-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
                   )}>
                     {getTypeIcon(n.type)}
                   </div>
@@ -200,7 +200,7 @@ export default function StudentNotificationsPage() {
                         )}>
                           {n.title}
                         </h3>
-                        {!n.isRead && <Badge className="bg-blue-600 text-white text-[8px] font-black tracking-widest uppercase py-0.5 px-1.5">New</Badge>}
+                        {!n.isRead && <Badge className="bg-pink-600 text-white text-[8px] font-black tracking-widest uppercase py-0.5 px-1.5">New</Badge>}
                       </div>
                       <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1.5 shrink-0 ml-4 uppercase tracking-tighter">
                         <Clock size={12} /> {new Date(n.createdAt).toLocaleDateString()}
@@ -215,7 +215,7 @@ export default function StudentNotificationsPage() {
                     </p>
 
                     <div className="flex items-center justify-between">
-                       <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1">
+                       <span className="text-[10px] font-black text-pink-600 uppercase tracking-widest flex items-center gap-1">
                          View details <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
                        </span>
 
@@ -252,3 +252,4 @@ export default function StudentNotificationsPage() {
     </div>
   );
 }
+

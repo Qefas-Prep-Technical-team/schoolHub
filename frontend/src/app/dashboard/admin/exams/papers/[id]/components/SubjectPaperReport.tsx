@@ -386,7 +386,7 @@ const SubjectPaperReport: React.FC<SubjectPaperReportProps> = ({
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Certified Subject Assessment Record • SchoolHub Nigeria</Text>
+          <Text style={styles.footerText}>Certified Subject Assessment Record • Qefas Hub Nigeria</Text>
           <Text style={styles.footerText}>
             Generated: {new Date().toLocaleDateString()} • {new Date().getFullYear()} Session
           </Text>

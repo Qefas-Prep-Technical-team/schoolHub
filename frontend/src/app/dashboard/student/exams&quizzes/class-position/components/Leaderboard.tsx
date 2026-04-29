@@ -14,7 +14,7 @@ const leaderboardData: LeaderboardEntry[] = [
 const getPerformanceBadge = (performance: string) => {
     const badgeClasses: Record<string, string> = {
         'Excellent': 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300',
-        'Very Good': 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300',
+        'Very Good': 'bg-blue-100 dark:bg-pink-900/50 text-pink-800 dark:text-blue-300',
         'Needs Improvement': 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300',
     };
 
@@ -81,3 +81,4 @@ const Leaderboard: React.FC = () => {
 };
 
 export default Leaderboard;
+

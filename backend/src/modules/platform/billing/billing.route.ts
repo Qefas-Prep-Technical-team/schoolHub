@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { listPlans, updatePlan, assignSchoolToPlan, listSchoolSubscriptions } from "./billing.controller";
+import { listPlans, updatePlan, assignSchoolToPlan, listSchoolSubscriptions, resetSchoolSubscription, resetStudentSubscription, resetTeacherSubscription, resetParentSubscription } from "./billing.controller";
 import { authenticatePlatformStaff, authorizePlatformRole } from "../../../middleware/platformAuthMiddleware";
 
 const router = Router();
@@ -25,5 +25,13 @@ router.post("/assign", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), assign
  * @route   GET /api/platform/billing/schools
  */
 router.get("/schools", listSchoolSubscriptions);
+
+/**
+ * @route   POST /api/platform/billing/reset
+ */
+router.post("/reset", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), resetSchoolSubscription);
+router.post("/reset-student", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), resetStudentSubscription);
+router.post("/reset-teacher", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), resetTeacherSubscription);
+router.post("/reset-parent", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), resetParentSubscription);
 
 export default router;

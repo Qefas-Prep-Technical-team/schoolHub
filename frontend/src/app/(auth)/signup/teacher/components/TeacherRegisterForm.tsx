@@ -10,7 +10,8 @@ import { useTeacherRegistration } from '../../services/useRegistrationMutations'
 import { TeacherFormData, teacherSchema } from '../../services/regSchema';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
 import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
-
+import RedirectOverlay from '@/components/ui/RedirectOverlay';
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 export default function TeacherRegisterForm() {
   const [serverError, setServerError] = useState('');
@@ -18,11 +19,12 @@ export default function TeacherRegisterForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
+  const [showOverlay, setShowOverlay] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const { mutate: registerTeacher, isPending } = useTeacherRegistration();
-
+  const { data: globalFeatures } = useGlobalFeatures('teacher');
   const {
     register,
     handleSubmit,
@@ -107,9 +109,10 @@ export default function TeacherRegisterForm() {
           const backendMessage = response.data.message || 'Registration successful!';
           setSuccessMessage(backendMessage);
 
-          reset();
-
           const email = response.data.data?.teacher?.email || data.email;
+
+          setShowOverlay(true);
+          reset();
 
           setTimeout(() => {
             router.push(
@@ -134,10 +137,12 @@ export default function TeacherRegisterForm() {
   };
 
   return (
-    <div className="flex flex-col justify-center">
+    <>
+      <RedirectOverlay isVisible={showOverlay} />
+      <div className="flex flex-col justify-center">
       <div className="flex flex-col gap-3 p-4">
         <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] text-[#0d171b] dark:text-white">
-          Join SchoolHub as a Teacher
+          Join Qefas Hub as a Teacher
         </h1>
         <p className="text-lg font-normal leading-normal text-[#4c809a] dark:text-gray-400">
           Empower your students and manage your classroom efficiently.
@@ -393,18 +398,22 @@ export default function TeacherRegisterForm() {
           )}
         </button>
 
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-100 dark:border-gray-800" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
-              Or continue with
-            </span>
-          </div>
-        </div>
+        {globalFeatures?.googleLogin !== false && (
+          <>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-100 dark:border-gray-800" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
+                  Or continue with
+                </span>
+              </div>
+            </div>
 
-        <GoogleLoginButton userType={UserRole.TEACHER} />
+            <GoogleLoginButton userType={UserRole.TEACHER} />
+          </>
+        )}
 
         <p className="text-center text-sm text-[#4c809a] dark:text-gray-400">
           Already have an account?{" "}
@@ -419,6 +428,7 @@ export default function TeacherRegisterForm() {
           </a>
         </p>
       </form>
-    </div>
+      </div>
+    </>
   );
 }

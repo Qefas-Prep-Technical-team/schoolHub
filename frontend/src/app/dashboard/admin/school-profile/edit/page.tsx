@@ -27,7 +27,7 @@ import {
 export default function EditSchoolProfilePage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || '';
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
   const { data: school, isLoading } = useSchoolProfile(schoolId);
   const updateMutation = useUpdateSchoolProfile();

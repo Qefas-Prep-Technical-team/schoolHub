@@ -144,7 +144,7 @@ export default function AssignmentsPage() {
               {/* Analytics Button */}
               <Link href={'/dashboard/student/assignments/analytics'}>
                 <button
-                  className="flex items-center gap-2 bg-blue-600 cursor-pointer hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+                  className="flex items-center gap-2 bg-pink-600 cursor-pointer hover:bg-pink-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
                 >
                   <span className="material-symbols-outlined">analytics</span>
                   Analytics
@@ -251,3 +251,4 @@ export default function AssignmentsPage() {
     </ComingSoonWrapper>
   );
 }
+

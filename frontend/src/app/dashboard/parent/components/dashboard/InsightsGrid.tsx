@@ -1,4 +1,6 @@
+'use client'
 import React from 'react'
+
 import AttendanceCard from './AttendanceCard'
 import PerformanceCard from './PerformanceCard'
 import ExamsCard from './ExamsCard'

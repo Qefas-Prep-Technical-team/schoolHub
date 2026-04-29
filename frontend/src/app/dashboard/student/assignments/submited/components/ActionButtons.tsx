@@ -84,11 +84,11 @@ export default function ActionButtons({
             <button
               onClick={handleViewSubmission}
               disabled={isViewing}
-              className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg h-11 px-6 text-sm font-bold bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg h-11 px-6 text-sm font-bold bg-blue-100 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400 hover:bg-blue-200 dark:hover:bg-pink-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isViewing ? (
                 <>
-                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent"></span>
+                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-pink-400 border-t-transparent"></span>
                   <span>Loading...</span>
                 </>
               ) : (
@@ -104,3 +104,4 @@ export default function ActionButtons({
     </div>
   );
 }
+

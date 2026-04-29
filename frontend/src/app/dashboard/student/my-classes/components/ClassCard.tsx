@@ -12,14 +12,14 @@ interface ClassCardProps {
 export default function ClassCard({ classItem }: ClassCardProps) {
   const getProgressColor = (progress: number) => {
     if (progress >= 80) return 'bg-green-500'
-    if (progress >= 50) return 'bg-blue-500'
+    if (progress >= 50) return 'bg-pink-500'
     if (progress >= 30) return 'bg-yellow-500'
     return 'bg-orange-500'
   }
 
   const getProgressTextColor = (progress: number) => {
     if (progress >= 80) return 'text-green-600'
-    if (progress >= 50) return 'text-blue-600'
+    if (progress >= 50) return 'text-pink-600'
     if (progress >= 30) return 'text-yellow-600'
     return 'text-orange-600'
   }
@@ -57,8 +57,8 @@ export default function ClassCard({ classItem }: ClassCardProps) {
         {/* Class Info */}
         <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
-              <span className="text-blue-600 dark:text-blue-400">📝</span>
+            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-pink-900/20 flex items-center justify-center shrink-0">
+              <span className="text-pink-600 dark:text-pink-400">📝</span>
             </div>
             <span className="line-clamp-1">
               {classItem.assignmentsDue === 0 
@@ -91,3 +91,4 @@ export default function ClassCard({ classItem }: ClassCardProps) {
     </Card>
   )
 }
+

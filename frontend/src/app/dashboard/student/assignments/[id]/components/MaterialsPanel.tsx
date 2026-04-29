@@ -33,7 +33,7 @@ export default function MaterialsPanel({ materials }: Props) {
       case 'video':
         return 'text-red-600 dark:text-red-400';
       case 'article':
-        return 'text-blue-600 dark:text-blue-400';
+        return 'text-pink-600 dark:text-blue-400';
       case 'guide':
         return 'text-orange-600 dark:text-orange-400';
       case 'link':

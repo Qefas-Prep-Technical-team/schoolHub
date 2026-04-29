@@ -17,8 +17,11 @@ export const ADMIN_FEATURE_FLAGS = {
   subjects: true,
 
   // === ADMINISTRATION ===
-  finance: false,
-  payments: false,
+  finance: true,
+  payments: true,
+  transactionHistory: true,
+  globalTransactions: true,
+  billing: true,
   reports: false,
 
   // === COMMUNICATION ===
@@ -32,6 +35,7 @@ export const ADMIN_FEATURE_FLAGS = {
 
   // === SETTINGS ===
   settings: true,
+  support: true,
 };
 
 export type AdminFeatureFlagKey = keyof typeof ADMIN_FEATURE_FLAGS;

@@ -7,7 +7,7 @@ export default function CompletionText() {
         You’re All Set!
       </h1>
       <p className="text-text-muted-light dark:text-text-muted-dark text-base font-normal leading-relaxed pb-8 text-center">
-        Your SchoolHub dashboard is ready. Let’s begin your journey.
+        Your Qefas Hub dashboard is ready. Let’s begin your journey.
       </p>
     </>
   );

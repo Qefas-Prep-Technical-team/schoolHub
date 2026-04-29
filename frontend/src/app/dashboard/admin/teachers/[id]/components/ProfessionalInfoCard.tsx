@@ -32,7 +32,7 @@ export default function ProfessionalInfoCard({ teacherId, professionalInfo }: Pr
 
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || ''
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ''
 
   // Fetch available classes and subjects
   const { data: classes } = useClasses(schoolId)

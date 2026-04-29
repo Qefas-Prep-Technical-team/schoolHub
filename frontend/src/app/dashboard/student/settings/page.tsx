@@ -114,7 +114,7 @@ export default function StudentSettingsPage() {
       <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
         {/* Modern Header / Profile Banner */}
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-8 md:p-12 text-white shadow-2xl shadow-blue-500/20">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-pink-600 via-rose-600 to-pink-700 p-8 md:p-12 text-white shadow-2xl shadow-pink-500/20">
           <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
             <div className="relative group">
               <Avatar className="size-28 md:size-32 border-4 border-white/20 shadow-2xl ring-4 ring-white/10 group-hover:scale-105 transition-transform duration-500">
@@ -123,7 +123,7 @@ export default function StudentSettingsPage() {
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <button className="absolute bottom-1 right-1 bg-white text-blue-600 p-2 rounded-full shadow-lg hover:bg-blue-50 transition-colors">
+              <button className="absolute bottom-1 right-1 bg-white text-pink-600 p-2 rounded-full shadow-lg hover:bg-rose-50 transition-colors">
                 <Camera size={18} />
               </button>
             </div>
@@ -139,7 +139,7 @@ export default function StudentSettingsPage() {
                   </Badge>
                 )}
               </div>
-              <p className="text-blue-100 font-medium text-lg opacity-90">{profile?.email}</p>
+              <p className="text-rose-100 font-medium text-lg opacity-90">{profile?.email}</p>
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
                 <Badge variant="outline" className="border-white/30 text-white font-bold text-xs">
                   ID: {profile?.studentCode}
@@ -153,19 +153,19 @@ export default function StudentSettingsPage() {
 
           {/* Abstract Background Shapes */}
           <div className="absolute top-0 right-0 -mr-20 -mt-20 size-80 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 size-80 bg-indigo-400/20 rounded-full blur-3xl opacity-50" />
+          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 size-80 bg-rose-400/20 rounded-full blur-3xl opacity-50" />
         </div>
 
         {/* Settings Tabs */}
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="grid w-full grid-cols-3 md:w-auto md:flex p-1 bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-none rounded-2xl h-14 mb-8">
-            <TabsTrigger value="general" className="rounded-xl px-8 font-black uppercase tracking-widest text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+            <TabsTrigger value="general" className="rounded-xl px-8 font-black uppercase tracking-widest text-[10px] data-[state=active]:bg-pink-600 data-[state=active]:text-white transition-all">
               General
             </TabsTrigger>
-            <TabsTrigger value="academic" className="rounded-xl px-8 font-black uppercase tracking-widest text-[10px] data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all">
+            <TabsTrigger value="academic" className="rounded-xl px-8 font-black uppercase tracking-widest text-[10px] data-[state=active]:bg-rose-600 data-[state=active]:text-white transition-all">
               Academic
             </TabsTrigger>
-            <TabsTrigger value="account" className="rounded-xl px-8 font-black uppercase tracking-widest text-[10px] data-[state=active]:bg-violet-600 data-[state=active]:text-white transition-all">
+            <TabsTrigger value="account" className="rounded-xl px-8 font-black uppercase tracking-widest text-[10px] data-[state=active]:bg-pink-500 data-[state=active]:text-white transition-all">
               Account
             </TabsTrigger>
           </TabsList>
@@ -178,7 +178,7 @@ export default function StudentSettingsPage() {
                   <Card className="rounded-3xl border-0 shadow-lg bg-white dark:bg-slate-900 overflow-hidden">
                     <CardHeader className="border-b bg-slate-50/50 dark:bg-slate-800/50 px-8 py-6">
                       <div className="flex items-center gap-3">
-                        <User className="text-blue-600" size={20} />
+                        <User className="text-pink-600" size={20} />
                         <CardTitle className="text-lg font-black uppercase tracking-wider">Personal Information</CardTitle>
                       </div>
                     </CardHeader>
@@ -213,14 +213,14 @@ export default function StudentSettingsPage() {
                     </CardContent>
                   </Card>
 
-                  <div className="p-8 rounded-[2rem] bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-100/50 dark:border-indigo-500/10">
+                  <div className="p-8 rounded-[2rem] bg-rose-50/50 dark:bg-rose-500/5 border border-rose-100/50 dark:border-rose-500/10">
                     <div className="flex gap-4">
                       <div className="size-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center shrink-0">
-                        <Settings className="text-indigo-500" size={24} />
+                        <Settings className="text-pink-500" size={24} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-indigo-900 dark:text-indigo-200 text-lg">Quick Preferences</h3>
-                        <p className="text-indigo-700/70 dark:text-indigo-400/60 text-sm leading-relaxed mb-4">
+                        <h3 className="font-bold text-rose-900 dark:text-rose-200 text-lg">Quick Preferences</h3>
+                        <p className="text-rose-700/70 dark:text-rose-400/60 text-sm leading-relaxed mb-4">
                           Looking to update your profile picture or security details? Head over to the Account tab.
                         </p>
                       </div>
@@ -255,7 +255,7 @@ export default function StudentSettingsPage() {
                     <CardHeader className="border-b bg-slate-50/50 dark:bg-slate-800/50 px-8 py-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Building2 className="text-indigo-500" size={20} />
+                          <Building2 className="text-pink-500" size={20} />
                           <CardTitle className="text-lg font-black uppercase tracking-wider">Department Configuration</CardTitle>
                         </div>
                         {isLocked && (
@@ -311,7 +311,7 @@ export default function StudentSettingsPage() {
                                     <SelectItem 
                                       key={dept.id} 
                                       value={dept.id}
-                                      className="rounded-xl my-1 focus:bg-indigo-50 dark:focus:bg-indigo-900/40 text-sm cursor-pointer py-3"
+                                      className="rounded-xl my-1 focus:bg-pink-50 dark:focus:bg-pink-900/40 text-sm cursor-pointer py-3"
                                     >
                                       <div className="flex flex-col">
                                         <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight">{dept.name}</span>
@@ -327,7 +327,7 @@ export default function StudentSettingsPage() {
                               <Button
                                 onClick={handleUpdate}
                                 disabled={updateMutation.isPending || !selectedDept}
-                                className="h-14 px-8 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-lg shadow-indigo-200 transition-all hover:-translate-y-1 active:scale-95 group"
+                                className="h-14 px-8 rounded-2xl bg-pink-600 hover:bg-pink-700 text-white font-black shadow-lg shadow-pink-200 transition-all hover:-translate-y-1 active:scale-95 group"
                               >
                                 {updateMutation.isPending ? "Syncing..." : "Lock In Selection"}
                                 <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={18} />
@@ -341,13 +341,13 @@ export default function StudentSettingsPage() {
                 </div>
 
                 <div className="space-y-8">
-                  <Card className="rounded-3xl border-0 shadow-lg bg-indigo-600 p-8 text-white relative overflow-hidden group">
+                  <Card className="rounded-3xl border-0 shadow-lg bg-pink-600 p-8 text-white relative overflow-hidden group">
                     <div className="relative z-10 space-y-4">
                       <div className="size-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center">
                         <School size={24} />
                       </div>
                       <h3 className="text-xl font-black">Institution</h3>
-                      <p className="text-indigo-100 text-sm font-medium leading-relaxed opacity-80">
+                      <p className="text-rose-100 text-sm font-medium leading-relaxed opacity-80">
                         Primary: <span className="font-bold text-white">{profile?.school?.name || "No School Linked"}</span>
                       </p>
                       {profile?.classes && profile.classes.length > 0 && (
@@ -424,7 +424,7 @@ export default function StudentSettingsPage() {
                           
                           <div className="mt-12 p-6 rounded-2xl bg-violet-600 text-white relative flex items-center justify-between group overflow-hidden cursor-pointer">
                              <div className="relative z-10">
-                                <h4 className="font-black text-sm uppercase tracking-widest">SchoolHub Pro</h4>
+                                <h4 className="font-black text-sm uppercase tracking-widest">Qefas Hub Pro</h4>
                                 <p className="text-[10px] opacity-80 font-bold">Standard Student License</p>
                              </div>
                              <BookOpen size={24} className="opacity-20 group-hover:scale-125 transition-transform" />
@@ -442,3 +442,4 @@ export default function StudentSettingsPage() {
     </div>
   );
 }
+

@@ -376,7 +376,7 @@ const ExamGradeReport: React.FC<ExamGradeReportProps> = ({ exam, attempts, schoo
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Certified Academic Record • Powered by SchoolHub Nigeria</Text>
+          <Text style={styles.footerText}>Certified Academic Record • Powered by Qefas Hub Nigeria</Text>
           <Text style={styles.footerText}>Report Generation Hub • {new Date().toLocaleDateString()}</Text>
         </View>
       </Page>

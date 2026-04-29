@@ -37,39 +37,39 @@ export default function StudentBottomNav() {
   const pathname = usePathname();
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-3xl border-t border-slate-200/50 dark:border-slate-800/50 pb-safe">
-      <nav className="flex items-center justify-around h-16 w-full max-w-md mx-auto px-2">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-3xl border-t border-slate-200 dark:border-white/5 pb-safe rounded-t-2xl shadow-lg shadow-black/5">
+      <nav className="flex items-center justify-around h-16 w-full max-w-md mx-auto px-4">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
               key={item.name}
               href={item.href}
-              className="flex flex-col items-center justify-center w-full h-full space-y-1 relative group"
+              className="flex flex-col items-center justify-center w-full h-full relative group transition-all duration-300"
             >
               {isActive && (
-                <div className="absolute top-0 w-8 h-1 bg-primary rounded-b-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                <div className="absolute top-0 w-8 h-1 bg-pink-500 rounded-b-full shadow-[0_0_12px_rgba(59,130,246,0.6)]" />
               )}
               <div
                 className={cn(
-                  "p-1.5 rounded-full transition-all duration-300",
+                  "p-2 rounded-xl transition-all duration-300",
                   isActive
-                    ? "bg-primary/10 text-primary scale-110"
-                    : "text-slate-500 dark:text-slate-400 group-hover:text-primary group-hover:bg-slate-100 dark:group-hover:bg-slate-800"
+                    ? "bg-pink-500/10 text-pink-600 dark:text-pink-400 scale-110"
+                    : "text-slate-400 dark:text-slate-500 hover:text-pink-500 hover:bg-slate-50 dark:hover:bg-white/5"
                 )}
               >
                 <item.icon
-                  size={22}
+                  size={20}
                   strokeWidth={isActive ? 2.5 : 2}
                   className="transition-transform duration-300"
                 />
               </div>
               <span
                 className={cn(
-                  "text-[10px] font-bold tracking-wide transition-colors duration-300",
+                  "text-[9px] font-black uppercase tracking-[0.1em] mt-1 transition-colors duration-300",
                   isActive
-                    ? "text-primary"
-                    : "text-slate-500 dark:text-slate-400"
+                    ? "text-pink-600 dark:text-pink-400"
+                    : "text-slate-400 dark:text-slate-500"
                 )}
               >
                 {item.name}
@@ -81,3 +81,4 @@ export default function StudentBottomNav() {
     </div>
   );
 }
+

@@ -9,6 +9,8 @@ export const useFetchPricing = () => {
     const { data, isLoading, error } = useQuery<PricingData[]>({
         queryKey: ["fetchPricing"],
         queryFn: paymentService.getPlans,
+        staleTime: 0,
+        refetchOnWindowFocus: true,
     })
     return { data, isLoading, error };
 }

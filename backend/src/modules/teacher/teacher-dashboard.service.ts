@@ -9,7 +9,7 @@ export const getTeacherSettingsService = async (teacherId: string) => {
     where: { id: teacherId },
     select: { settings: true },
   });
-  return teacher?.settings || {};
+  return (teacher?.settings as any) || {};
 };
 
 /**
@@ -199,14 +199,14 @@ export const getTeacherLinkedSchoolsService = async (teacherId: string) => {
   const teacher = await prisma.teacher.findUnique({
     where: { id: teacherId },
     include: {
-        school: true,
+        primarySchool: true,
         currentSchool: true
     }
   });
 
   const schoolsMap = new Map();
 
-  if (teacher?.school) schoolsMap.set(teacher.school.id, teacher.school);
+  if (teacher?.primarySchool) schoolsMap.set(teacher.primarySchool.id, teacher.primarySchool);
   if (teacher?.currentSchool) schoolsMap.set(teacher.currentSchool.id, teacher.currentSchool);
 
   links.forEach(link => {

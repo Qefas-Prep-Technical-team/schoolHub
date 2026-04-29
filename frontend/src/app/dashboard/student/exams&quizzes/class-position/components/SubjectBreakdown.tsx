@@ -5,7 +5,7 @@ import ProgressBar from './ui/ProgressBar';
 
 const subjects: SubjectPosition[] = [
     { position: '2nd', subject: 'Science', percentage: 95.2, color: 'bg-green-600', darkColor: 'dark:bg-green-500' },
-    { position: '3rd', subject: 'Mathematics', percentage: 92.8, color: 'bg-blue-600', darkColor: 'dark:bg-blue-500' },
+    { position: '3rd', subject: 'Mathematics', percentage: 92.8, color: 'bg-pink-600', darkColor: 'dark:bg-pink-500' },
     { position: '4th', subject: 'Art', percentage: 88.1, color: 'bg-indigo-600', darkColor: 'dark:bg-indigo-500' },
     { position: '5th', subject: 'History', percentage: 85.5, color: 'bg-purple-600', darkColor: 'dark:bg-purple-500' },
     { position: '8th', subject: 'English', percentage: 76.3, color: 'bg-yellow-500', darkColor: 'dark:bg-yellow-400' },
@@ -15,7 +15,7 @@ const subjects: SubjectPosition[] = [
 const getPositionColor = (position: string): string => {
     const colors: Record<string, string> = {
         '2nd': 'text-green-600 dark:text-green-400',
-        '3rd': 'text-blue-600 dark:text-blue-400',
+        '3rd': 'text-pink-600 dark:text-pink-400',
         '4th': 'text-indigo-600 dark:text-indigo-400',
         '5th': 'text-purple-600 dark:text-purple-400',
         '8th': 'text-yellow-600 dark:text-yellow-400',
@@ -54,3 +54,4 @@ const SubjectBreakdown: React.FC = () => {
 };
 
 export default SubjectBreakdown;
+

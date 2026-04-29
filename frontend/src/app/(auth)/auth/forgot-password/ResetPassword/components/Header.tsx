@@ -15,7 +15,7 @@ export default function Header() {
           </svg>
         </div>
         <h2 className="text-[#0e121b] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
-          SchoolHub
+          Qefas Hub
         </h2>
       </div>
     </header>

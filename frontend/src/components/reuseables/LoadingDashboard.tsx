@@ -18,10 +18,11 @@ const TYPE_DISPLAY: Record<string, string> = {
   TEACHER: "Teacher",
   ADMIN: "Administrator",
   STUDENT: "Student",
+  USER: "User",
 };
 
 export default function LoadingDashboard({
-  userType = "STUDENT",
+  userType = "USER" as any,
   duration = 3200,
 }: { userType?: UserType | null; duration?: number }) {
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
@@ -89,7 +90,7 @@ export default function LoadingDashboard({
               </div>
 
               <h2 className="mt-3 text-xl font-semibold text-slate-900 dark:text-zinc-100">
-                Hello, {TYPE_DISPLAY[userType ?? "STUDENT"]}
+                Hello, {TYPE_DISPLAY[userType ?? "USER"]}
               </h2>
 
               <div className="relative mt-3 h-7 overflow-hidden">

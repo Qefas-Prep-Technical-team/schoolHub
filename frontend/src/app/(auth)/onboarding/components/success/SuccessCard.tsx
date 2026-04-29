@@ -28,7 +28,7 @@ export default function SuccessCard() {
             Email Verified Successfully 🎉
           </h1>
           <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
-            Welcome to SchoolHub — your journey in smarter learning starts here.
+            Welcome to Qefas Hub — your journey in smarter learning starts here.
           </p>
         </div>
       </div>

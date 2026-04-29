@@ -11,7 +11,8 @@ const PricingPage: FC = () => {
 
     return (
         <QueryClientProvider client={queryClient}>
-            <Box component={"main"} className='flex h-full items-center justify-center flex-col'>
+            <Box component={"main"} className='flex h-full items-center justify-center flex-col overflow-x-hidden'>
+                <HeroSection />
                 <PricingCard />
                 <FrequentlyAskedQuestions />
             </Box>

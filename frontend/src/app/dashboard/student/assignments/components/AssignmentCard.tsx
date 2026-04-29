@@ -12,7 +12,7 @@ export default function AssignmentCard({ assignment, viewMode, onClick }: Props)
   const getStatusColor = (status: string, color: string) => {
     const colorMap: Record<string, string> = {
       green: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-      blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
+      blue: 'bg-blue-100 text-pink-800 dark:bg-pink-900/50 dark:text-blue-300',
       orange: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300',
       red: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
     };
@@ -67,7 +67,7 @@ export default function AssignmentCard({ assignment, viewMode, onClick }: Props)
   const getProgressColor = (color: string) => {
     const colorMap: Record<string, string> = {
       green: 'text-green-500',
-      blue: 'text-blue-500',
+      blue: 'text-pink-500',
       orange: 'text-orange-500',
       red: 'text-red-500',
     };
@@ -160,3 +160,4 @@ export default function AssignmentCard({ assignment, viewMode, onClick }: Props)
     </Link>
   );
 }
+

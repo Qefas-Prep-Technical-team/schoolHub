@@ -35,6 +35,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations";
 import { ADMIN_FEATURE_FLAGS, type AdminFeatureFlagKey } from "./adminFeatureFlags";
+import { AdminMobileDrawer } from "./AdminMobileDrawer";
 
 /* =========================
    Types
@@ -79,7 +80,7 @@ export const adminMenuItems: AdminMenuItem[] = [
   { icon: LibraryBig, label: "Library", href: "/dashboard/admin/library", featureKey: "library", section: "academics" },
 
   // === ADMINISTRATION ===
-  { icon: CreditCard, label: "Finance & Billing", href: "/dashboard/admin/finance", featureKey: "finance", section: "administration" },
+  { icon: CreditCard, label: "Subscription", href: "/dashboard/admin/billing", featureKey: "billing", section: "administration" },
   { icon: WalletCards, label: "Payments", href: "/dashboard/admin/payments", featureKey: "payments", section: "administration" },
   { icon: BarChart3, label: "Reports & Analytics", href: "/dashboard/admin/reports", featureKey: "reports", section: "administration" },
 
@@ -139,109 +140,25 @@ export function AdminMobileNav() {
   return (
     <>
       {/* Top bar (mobile only) */}
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur  md:hidden">
-        <div className="h-14 px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* <div className="w-9 h-9 rounded-xl border border-border bg-background flex items-center justify-center">
-              <School className="h-5 w-5 text-blue-500" />
-            </div> */}
-            {/* <div className="leading-tight">
-              <div className="text-sm font-bold tracking-wide">SCHOOLHUB</div>
-              <div className="text-[11px] text-muted-foreground">Admin Dashboard</div>
-            </div> */}
+      <div className="sticky top-0 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 md:hidden">
+        <div className="h-16 px-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 shadow-lg shadow-indigo-600/20">
+              <School className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">QEFAS HUB</span>
+              <span className="text-[9px] text-indigo-500 font-bold uppercase tracking-widest">Admin Hub</span>
+            </div>
           </div>
 
-          {/* Drawer trigger */}
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="rounded-xl">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-
-            {/* Drawer content (NO ScrollArea) */}
-            <SheetContent side="left" className="p-0 w-[88vw] max-w-[380px] flex flex-col">
-              {/* Header */}
-              <div className="px-4 py-4 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl border border-border bg-background flex items-center justify-center">
-                    <School className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-base font-bold">SCHOOLHUB</span>
-                    <span className="text-xs text-muted-foreground">Admin navigation</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Scrollable menu content */}
-              <div className="flex-1 overflow-y-auto px-2 py-3">
-                {Object.entries(sections).map(([key, items]) => {
-                  if (!items.length) return null;
-
-                  const sectionKey = key as keyof typeof SECTION_TITLES;
-
-                  return (
-                    <div key={key} className="mb-5">
-                      <div className="px-3 pb-2 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        {SECTION_TITLES[sectionKey]}
-                      </div>
-
-                      <div className="space-y-1">
-                        {items.map((item) => {
-                          const Icon = item.icon;
-                          const isActive = pathname === item.href;
-
-                          return (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={() => setOpen(false)}
-                              className={cn(
-                                "flex items-center gap-3 rounded-xl px-3 py-3 transition-colors",
-                                isActive ? "bg-accent text-accent-foreground" : "hover:bg-accent/60"
-                              )}
-                            >
-                              <Icon className="h-5 w-5 shrink-0" />
-                              <span className="text-sm font-medium flex-1">{item.label}</span>
-                              <ChevronRight className="h-4 w-4 opacity-60" />
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Footer */}
-              <div className="px-3 py-3 border-t border-border">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border">
-                  <User2 className="h-5 w-5" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Admin</div>
-                    <div className="text-[11px] text-muted-foreground">Account & settings</div>
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-xl text-destructive hover:text-destructive"
-                    onClick={() => logout()}
-                    aria-label="Sign out"
-                  >
-                    <LogOut className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+          <AdminMobileDrawer />
         </div>
       </div>
 
       {/* Bottom tabs (mobile only) */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/90 backdrop-blur md:hidden">
-        <div className="h-16 px-2 flex items-center justify-around">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/5 px-4 pb-safe md:hidden">
+        <div className="flex items-center justify-around h-16">
           {bottomTabs.map((t) => {
             const Icon = t.icon;
             const isActive = pathname === t.href;
@@ -251,12 +168,15 @@ export function AdminMobileNav() {
                 key={t.href}
                 href={t.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  "flex flex-col items-center justify-center gap-1.5 px-3 transition-all relative py-1",
+                  isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                 )}
               >
-                <Icon className="h-5 w-5" />
-                <span className="text-[10px] font-medium">{t.label}</span>
+                {isActive && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-indigo-500 shadow-[0_-2px_10px_rgba(99,102,241,0.5)]" />
+                )}
+                <Icon className={cn("h-5 w-5 transition-transform", isActive ? "scale-110" : "scale-100")} />
+                <span className={cn("text-[9px] font-black uppercase tracking-widest", isActive ? "opacity-100" : "opacity-70")}>{t.label}</span>
               </Link>
             );
           })}

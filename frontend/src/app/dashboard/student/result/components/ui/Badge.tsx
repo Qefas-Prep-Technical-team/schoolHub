@@ -26,8 +26,8 @@ export default function Badge({
       outline: 'bg-transparent text-green-700 dark:text-green-300 ring-green-700/30 dark:ring-green-500/30',
     },
     blue: {
-      solid: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200 ring-blue-600/20 dark:ring-blue-500/30',
-      outline: 'bg-transparent text-blue-700 dark:text-blue-300 ring-blue-700/30 dark:ring-blue-500/30',
+      solid: 'bg-blue-100 dark:bg-pink-900/50 text-pink-700 dark:text-blue-200 ring-pink-600/20 dark:ring-pink-500/30',
+      outline: 'bg-transparent text-pink-700 dark:text-blue-300 ring-pink-700/30 dark:ring-pink-500/30',
     },
     yellow: {
       solid: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-200 ring-yellow-600/20 dark:ring-yellow-500/30',
@@ -55,3 +55,4 @@ const resolvedVariant = variant === "default" ? "solid" : variant;
     </span>
   );
 }
+

@@ -5,7 +5,7 @@ export default function Header() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary">
                     <span className="material-symbols-outlined text-lg">school</span>
                 </div>
-                <p className="text-xl font-bold text-text-light dark:text-text-dark">SchoolHub</p>
+                <p className="text-xl font-bold text-text-light dark:text-text-dark">Qefas Hub</p>
             </div>
         </header>
     );

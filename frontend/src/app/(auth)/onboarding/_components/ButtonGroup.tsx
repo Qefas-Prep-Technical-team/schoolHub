@@ -1,3 +1,5 @@
+"use client";
+
 import { useSwiper } from 'swiper/react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";

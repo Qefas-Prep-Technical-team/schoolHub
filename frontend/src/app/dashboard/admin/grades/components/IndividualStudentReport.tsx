@@ -374,7 +374,7 @@ export const ReportPageContent: React.FC<{ result: any; school: any }> = ({ resu
             <Text style={styles.footerText}>Date Generated: {new Date().toLocaleDateString()}</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={styles.footerText}>Powered by SchoolHub Nigeria</Text>
+            <Text style={styles.footerText}>Powered by Qefas Hub Nigeria</Text>
             <Text style={styles.footerText}>Doc ID: {result.id?.slice(0,12).toUpperCase()}</Text>
           </View>
         </View>

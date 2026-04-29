@@ -25,6 +25,7 @@ export const FEATURE_FLAGS_TEACHERS = {
   // Feature Set 4: System & Profile (ENABLE AS NEEDED)
   profile: true,
   settings: true,
+  billing: true,
   support: false,
 };
 

@@ -27,6 +27,39 @@ export interface DashboardSummary {
   }[];
 }
 
+export interface SchoolBilling {
+  subscription: {
+    plan: string;
+    subscriptionStatus: string;
+    subscriptionEnd: string | null;
+    isTrialActive: boolean;
+    lastPaymentDate: string | null;
+    paystackCustomerCode: string | null;
+    billingCycle: string | null;
+    features: string[];
+  };
+  usage: {
+    students: number;
+    teachers: number;
+    classes: number;
+    exams: number;
+    subjects: number;
+    storageBytes: number;
+  };
+  transactions: {
+    id: number;
+    reference: string;
+    amount: number;
+    status: string;
+    paymentMethod: string | null;
+    paidAt: string | null;
+    plan: string | null;
+    billingCycle: string | null;
+    createdAt: string;
+  }[];
+  totalTransactions: number;
+}
+
 export const schoolService = {
   getStats: async (schoolId: string): Promise<SchoolStats> => {
     const response = await apiClient.get(`/schools/${schoolId}/stats`);
@@ -70,6 +103,11 @@ export const schoolService = {
 
   getDashboardSummary: async (schoolId: string): Promise<DashboardSummary> => {
     const response = await apiClient.get(`/schools/${schoolId}/dashboard-summary`);
+    return response.data.data;
+  },
+
+  getBilling: async (schoolId: string, params?: { page?: number; limit?: number }): Promise<SchoolBilling> => {
+    const response = await apiClient.get(`/schools/${schoolId}/billing`, { params });
     return response.data.data;
   },
 };

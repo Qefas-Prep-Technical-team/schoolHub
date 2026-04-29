@@ -29,9 +29,9 @@ export default function SuccessMessage({ status, title, message }: Props) {
         return {
           icon: 'assignment_returned',
           text: 'Returned for Revision',
-          iconColor: 'text-blue-600 dark:text-blue-400',
-          bgColor: 'bg-blue-100 dark:bg-blue-500/20',
-          textColor: 'text-blue-600 dark:text-blue-400',
+          iconColor: 'text-pink-600 dark:text-pink-400',
+          bgColor: 'bg-blue-100 dark:bg-pink-500/20',
+          textColor: 'text-pink-600 dark:text-pink-400',
         };
       default:
         return {
@@ -71,3 +71,4 @@ export default function SuccessMessage({ status, title, message }: Props) {
     </>
   );
 }
+

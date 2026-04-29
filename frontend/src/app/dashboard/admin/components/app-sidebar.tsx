@@ -33,6 +33,7 @@ import {
     BarChart3,
     MessageSquare,
     Landmark,
+    Globe,
     BrainCircuit,
     Workflow,
     Settings,
@@ -42,16 +43,18 @@ import {
     ChevronDown,
     ChevronLeft,
     ChevronRight,
-    LucideIcon
+    LucideIcon,
+    LogOut,
+    Copy
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations"
 import { ADMIN_FEATURE_FLAGS, AdminFeatureFlagKey } from "./adminFeatureFlags"
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures"
 import { linkService } from "@/lib/api/services/linkService"
 import { toast } from "react-toastify"
-import { Copy } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 
 
 // Define the menu item type
@@ -83,8 +86,9 @@ export const adminMenuItems: AdminMenuItem[] = [
     { icon: LibraryBig, label: "Library", href: "/dashboard/admin/library", featureKey: "library", section: "academics" },
 
     // === ADMINISTRATION ===
-    { icon: CreditCard, label: "Finance & Billing", href: "/dashboard/admin/finance", featureKey: "finance", section: "administration" },
+    { icon: CreditCard, label: "Finance", href: "/dashboard/admin/finance", featureKey: "finance", section: "administration" },
     { icon: WalletCards, label: "Payments", href: "/dashboard/admin/payments", featureKey: "payments", section: "administration" },
+    { icon: CreditCard, label: "Transaction History", href: "/dashboard/admin/transactions", featureKey: "transactionHistory", section: "administration" },
     { icon: BarChart3, label: "Reports & Analytics", href: "/dashboard/admin/reports", featureKey: "reports", section: "administration" },
 
     // === COMMUNICATION ===
@@ -97,23 +101,8 @@ export const adminMenuItems: AdminMenuItem[] = [
 
     // === SETTINGS ===
     { icon: Settings, label: "Settings", href: "/dashboard/admin/settings", featureKey: "settings", section: "settings" },
+    { icon: MessageSquare, label: "Help & Support", href: "/dashboard/admin/support", featureKey: "support", section: "settings" },
 ];
-
-// Filter menu items based on feature flags and group by section
-const getFilteredMenuItemsBySection = () => {
-    const filtered = adminMenuItems.filter(item => ADMIN_FEATURE_FLAGS[item.featureKey]);
-
-    const sections = {
-        core: filtered.filter(item => item.section === 'core'),
-        academics: filtered.filter(item => item.section === 'academics'),
-        administration: filtered.filter(item => item.section === 'administration'),
-        communication: filtered.filter(item => item.section === 'communication'),
-        advanced: filtered.filter(item => item.section === 'advanced'),
-        settings: filtered.filter(item => item.section === 'settings'),
-    };
-
-    return sections;
-};
 
 // Section titles
 const SECTION_TITLES = {
@@ -136,6 +125,9 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
     const [profile, setProfile] = useState<any>(null)
     const pathname = usePathname()
 
+    // Fetch dynamic feature toggles from platform config
+    const { data: dynamicFeatures } = useGlobalFeatures('admin')
+
     useEffect(() => {
         linkService.getProfile().then(setProfile).catch(() => {})
     }, [])
@@ -145,77 +137,65 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
         toast.success("Code copied to clipboard")
     }
 
-    // Get filtered menu items grouped by section
-    const menuSections = getFilteredMenuItemsBySection()
+    // Get filtered menu items grouped by section based on dynamic or static flags
+    const menuSections = useMemo(() => {
+        const currentFeatures = dynamicFeatures || ADMIN_FEATURE_FLAGS;
+
+        const filtered = adminMenuItems.filter(item => !!(currentFeatures as any)[item.featureKey]);
+
+        return {
+            core: filtered.filter(item => item.section === 'core'),
+            academics: filtered.filter(item => item.section === 'academics'),
+            administration: filtered.filter(item => item.section === 'administration'),
+            communication: filtered.filter(item => item.section === 'communication'),
+            advanced: filtered.filter(item => item.section === 'advanced'),
+            settings: filtered.filter(item => item.section === 'settings'),
+        };
+    }, [dynamicFeatures]);
 
     return (
         <Sidebar
             collapsible="icon"
             className={cn(
-                "transition-all duration-300 ease-in-out no-print",
-                isCollapsed ? "w-[80px]" : "w-[260px]"
+                "transition-all duration-300 ease-in-out no-print border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-0",
+                isCollapsed ? "w-[64px]" : "w-[260px]"
             )}
         >
             {/* Header */}
-            <SidebarHeader className="pt-8 flex items-center justify-between px-4 relative group overflow-visible">
-                <SidebarMenu className="flex-1">
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                            className="flex items-center justify-between hover:bg-transparent cursor-default"
-                            asChild
-                        >
-                            <Box className="flex items-center justify-start">
-                                <Box className="flex items-center justify-center mr-3">
-                                    <School className="h-5 w-5 shrink-0 text-blue-500" />
-                                </Box>
-                                {!isCollapsed && (
-                                    <Link href="/" passHref>
-                                        <Typography
-                                            variant="h6"
-                                            noWrap
-                                            component="h2"
-                                            sx={{
-                                                fontFamily: "monospace",
-                                                fontWeight: 700,
-                                                letterSpacing: ".2rem",
-                                                color: "inherit",
-                                                textDecoration: "none",
-                                            }}
-                                        >
-                                            SCHOOLHUB
-                                        </Typography>
-                                    </Link>
-                                )}
-                            </Box>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-
-                {/* Retractable Toggle Button - Premium Style */}
+            <SidebarHeader className="pt-8 flex items-center justify-between px-4 relative">
+                <div className="flex items-center gap-3">
+                    <Link href="/" className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/5 shadow-sm border border-indigo-500/10 overflow-hidden p-1">
+                            <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
+                        </div>
+                        {!isCollapsed && (
+                            <div className="flex flex-col">
+                                <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight uppercase">QEFAS HUB</span>
+                                <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest">Admin Portal</span>
+                            </div>
+                        )}
+                    </Link>
+                </div>
+                
+                {/* Floating Toggle Button */}
                 <button
                     onClick={(e) => {
                         e.preventDefault();
                         setIsCollapsed(!isCollapsed);
                     }}
-                    className={cn(
-                        "absolute -right-4 top-24 z-50 h-8 w-8 rounded-full border border-border bg-background shadow-xl hidden md:flex items-center justify-center transition-all duration-300",
-                        "hover:scale-110 active:scale-95 group-hover:opacity-100",
-                        !isCollapsed ? "opacity-100" : "opacity-100 md:opacity-0"
-                    )}
+                    className="absolute -right-3 top-20 z-50 h-6 w-6 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 flex items-center justify-center transition-all shadow-sm group"
                     title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                 >
-                    <div className="bg-primary/10 rounded-full p-1 group-hover:bg-primary/20 transition-colors">
-                        {isCollapsed ? (
-                            <ChevronRight size={16} className="text-primary" />
-                        ) : (
-                            <ChevronLeft size={16} className="text-primary" />
-                        )}
-                    </div>
+                    {isCollapsed ? (
+                        <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                    ) : (
+                        <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+                    )}
                 </button>
             </SidebarHeader>
 
             {/* Main Menu */}
-            <SidebarContent className="mt-10">
+            <SidebarContent className="mt-10 px-2 flex-1 outline-none">
                 <SidebarMenu>
                     {/* Render each section */}
                     {Object.entries(menuSections).map(([sectionKey, items]) => {
@@ -223,48 +203,49 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
 
                         return (
                             <div key={sectionKey} className="mb-6">
-                                {/* Section Header (only show when not collapsed) */}
+                                {/* Section Header */}
                                 {!isCollapsed && (
                                     <div className="px-4 mb-2">
-                                        <Typography
-                                            variant="caption"
-                                            className="text-xs font-semibold text-gray-500 uppercase tracking-wide"
-                                        >
+                                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
                                             {SECTION_TITLES[sectionKey as keyof typeof SECTION_TITLES]}
-                                        </Typography>
+                                        </span>
                                     </div>
                                 )}
 
-                                {/* Section Items */}
                                 {items.map(({ icon: Icon, label, href, featureKey }) => {
                                     const isActive = pathname === href;
-                                    const isDisabled = !ADMIN_FEATURE_FLAGS[featureKey];
+                                    const features = (dynamicFeatures || ADMIN_FEATURE_FLAGS) as any;
+                                    const isDisabled = !features[featureKey];
 
                                     return (
                                         <SidebarMenuItem key={label} className="my-1">
                                             <Link href={isDisabled ? "#" : href}>
                                                 <SidebarMenuButton
                                                     className={cn(
-                                                        "relative flex items-center gap-3 text-[1rem] font-medium rounded-lg px-4 py-3 transition-all",
-                                                        isDisabled
-                                                            ? "text-gray-400 cursor-not-allowed opacity-60"
-                                                            : isActive
-                                                                ? "bg-accent text-accent-foreground shadow-sm cursor-pointer"
-                                                                : "hover:bg-accent/40 cursor-pointer"
+                                                        "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative cursor-pointer",
+                                                        isActive
+                                                            ? "bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 shadow-sm shadow-indigo-600/5"
+                                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100"
                                                     )}
                                                     disabled={isDisabled}
                                                 >
-                                                    {isActive && !isDisabled && (
-                                                        <span className="absolute left-0 top-0 h-full w-[4px] bg-primary rounded-r-md" />
-                                                    )}
-                                                    <Icon className="h-5 w-5 shrink-0" />
+                                                    <Icon className={cn(
+                                                        "h-5 w-5 transition-transform group-hover:scale-110",
+                                                        isActive ? "text-indigo-500" : "text-slate-400"
+                                                    )} />
                                                     {!isCollapsed && (
-                                                        <span className="flex-1">{label}</span>
+                                                        <span className={cn(
+                                                            "font-semibold tracking-tight flex-1",
+                                                            isActive ? "text-indigo-600 dark:text-indigo-400" : ""
+                                                        )}>{label}</span>
                                                     )}
                                                     {isDisabled && !isCollapsed && (
-                                                        <span className="text-xs bg-gray-200 text-gray-500 px-2 py-1 rounded">
+                                                        <span className="text-[9px] bg-slate-100 dark:bg-white/5 text-slate-500 font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter">
                                                             Soon
                                                         </span>
+                                                    )}
+                                                    {isActive && (
+                                                        <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/50" />
                                                     )}
                                                 </SidebarMenuButton>
                                             </Link>
@@ -278,59 +259,71 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
             </SidebarContent>
 
             {/* Footer */}
-            <SidebarFooter>
+            <SidebarFooter className="p-4 bg-transparent">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <DropdownMenu onOpenChange={setIsUserOpen}>
                             <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton className="flex items-center justify-between hover:bg-accent/60 transition-colors py-3 px-4 rounded-lg">
-                                    <div className="flex items-center">
-                                        <User2 className="mr-2 h-5 w-5" />
-                                        {!isCollapsed && (
-                                            <div className="flex flex-col items-start">
-                                                <span className="font-medium text-[0.9rem] leading-none mb-1">Admin</span>
-                                                {profile?.linkingCode && (
-                                                    <span className="text-[10px] font-black text-primary tracking-widest leading-none bg-primary/10 px-1.5 py-0.5 rounded uppercase">
-                                                        {profile.linkingCode}
-                                                    </span>
-                                                )}
-                                            </div>
+                                <SidebarMenuButton className="flex items-center gap-3 p-3 h-auto rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/30 transition-all group cursor-pointer">
+                                    <div className="h-10 w-10 rounded-lg bg-indigo-600/10 dark:bg-indigo-600/20 flex items-center justify-center border border-indigo-500/20 overflow-hidden shrink-0">
+                                        {profile?.profileImage ? (
+                                            <img src={profile.profileImage} alt={profile.name} className="h-full w-full object-cover" />
+                                        ) : (
+                                            <User2 className="h-6 w-6 text-indigo-500/60" />
                                         )}
                                     </div>
-                                    {!isCollapsed &&
-                                        (isUserOpen ? (
-                                            <ChevronDown className="ml-auto h-4 w-4 opacity-70 cursor-pointer" />
-                                        ) : (
-                                            <ChevronUp className="ml-auto h-4 w-4 opacity-70 cursor-pointer" />
-                                        ))}
+                                    {!isCollapsed && (
+                                        <div className="flex-1 flex flex-col items-start min-w-0 overflow-hidden">
+                                            <span className="font-black text-xs text-slate-900 dark:text-white truncate leading-tight uppercase tracking-tight">{profile?.name || 'Admin'}</span>
+                                            {profile?.linkingCode && (
+                                                <span className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.15em] mt-1">
+                                                    ID: {profile.linkingCode}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                    {!isCollapsed && (
+                                        <div className="text-slate-400 group-hover:text-indigo-400 transition-colors">
+                                            {isUserOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                                        </div>
+                                    )}
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
 
                             <DropdownMenuContent
-                                side="top"
+                                side="right"
                                 align="end"
-                                className="w-[220px] rounded-lg shadow-lg border border-border bg-background p-1"
+                                className="w-[220px] rounded-2xl shadow-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 ml-2"
                             >
                                 {profile?.linkingCode && (
                                     <DropdownMenuItem 
                                         onClick={() => copyCode(profile.linkingCode)}
-                                        className="cursor-pointer hover:bg-accent/60 rounded-md font-black text-xs p-3 justify-between"
+                                        className="cursor-pointer hover:bg-indigo-500/10 rounded-xl font-bold text-xs p-4 flex flex-col items-start gap-1 group"
                                     >
-                                        <div className="flex flex-col">
-                                            <span className="text-gray-400 uppercase tracking-widest text-[10px]">Your Code</span>
-                                            <span className="text-primary tracking-widest">{profile.linkingCode}</span>
+                                        <span className="text-[10px] text-slate-400 uppercase tracking-widest font-black">Quick Link Code</span>
+                                        <div className="flex items-center justify-between w-full">
+                                            <span className="text-indigo-500 tracking-[0.2em] font-black text-base">{profile.linkingCode}</span>
+                                            <Copy size={16} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
                                         </div>
-                                        <Copy className="h-4 w-4 text-gray-400" />
                                     </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    Admin Account
+                                <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-2 mx-2" />
+                                <DropdownMenuItem asChild className="rounded-xl py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 font-medium text-slate-600 dark:text-slate-300">
+                                    <Link href="/dashboard/admin/school-profile" className="w-full flex items-center">
+                                        <Building2 className="mr-3 h-4 w-4" /> School Profile
+                                    </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer hover:bg-accent/60 rounded-md">
-                                    System Settings
+                                <DropdownMenuItem asChild className="rounded-xl py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 font-medium text-slate-600 dark:text-slate-300">
+                                    <Link href="/dashboard/admin/billing" className="w-full flex items-center">
+                                        <CreditCard className="mr-3 h-4 w-4" /> Subscription
+                                    </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => logout()} className="cursor-pointer hover:bg-accent/60 rounded-md text-destructive">
-                                    Sign out
+                                <DropdownMenuItem className="rounded-xl py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 font-medium text-slate-600 dark:text-slate-300">
+                                    <Settings className="mr-3 h-4 w-4" /> System Settings
+                                </DropdownMenuItem>
+                                <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-2 mx-2" />
+                                <DropdownMenuItem onClick={() => logout()} className="rounded-xl py-3 cursor-pointer hover:bg-red-500/10 font-bold text-red-500">
+                                    <LogOut size={16} className="mr-3" /> Sign out
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

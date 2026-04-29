@@ -10,14 +10,13 @@ import { LoginFormData, loginSchema } from "../../services/auth-schema";
 import Link from "next/link";
 import { ROUTES } from "@/lib/constants/routes";
 import GoogleLoginButton from "../../components/GoogleLoginButton";
-
-
-const ENABLE_GOOGLE_AUTH = true; // Toggle this to false to disable Google Auth in the UI
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 export default function LoginForm() {
     const [serverError, setServerError] = useState("");
 
     const { mutate: login, isPending } = useLoginMutation();
+    const { data: globalFeatures } = useGlobalFeatures('parent');
 
     const {
         register,
@@ -75,26 +74,28 @@ export default function LoginForm() {
     console.log("Form state:", { isValid, isDirty, isSubmitDisabled, errors });
 
     return (
-        <div className="flex w-full max-w-md mx-auto flex-col justify-center gap-6 p-8 sm:p-10 lg:p-12">
-            <div className="flex flex-col gap-2 text-center md:text-left mb-2">
-                <h2 className="text-3xl lg:text-4xl font-extrabold text-[#0A2540] dark:text-white tracking-tight">Parent Portal</h2>
-                <p className="text-base text-[#525F7F] dark:text-gray-400">Track Your Child&apos;s Progress</p>
+        <div className="flex w-full max-w-md mx-auto flex-col justify-center gap-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div className="flex flex-col gap-3 text-left mb-4">
+                <h2 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tighter">Parent Portal</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-sm">
+                    Enter your guardian credentials to access real-time insights into your child&apos;s academic ecosystem.
+                </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
                 <div>
                     <InputField
-                        label="Email"
+                        label="Guardian Email"
                         icon="mail"
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder="parent@school.edu"
                         value={emailValue || ""}
                         onChange={handleInputChange('email')}
                         onBlur={handleBlur('email')}
                         required
                     />
                     {errors.email && (
-                        <p className="text-red-500 text-xs mt-1 ml-1 animate-fadeIn">
+                        <p className="text-red-500 text-[10px] font-bold mt-2 ml-2 uppercase tracking-wide animate-fadeIn">
                             {errors.email.message}
                         </p>
                     )}
@@ -102,48 +103,50 @@ export default function LoginForm() {
 
                 <div>
                     <InputField
-                        label="Password"
+                        label="Security Phrase"
                         icon="lock"
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder="••••••••••••"
                         value={passwordValue || ""}
                         onChange={handleInputChange('password')}
                         onBlur={handleBlur('password')}
                         required
                     />
                     {errors.password && (
-                        <p className="text-red-500 text-xs mt-1 ml-1 animate-fadeIn">
+                        <p className="text-red-500 text-[10px] font-bold mt-2 ml-2 uppercase tracking-wide animate-fadeIn">
                             {errors.password.message}
                         </p>
                     )}
                 </div>
 
                 {serverError && (
-                    <div className="p-3 text-sm text-red-500 bg-red-50 rounded-lg dark:bg-red-900/20 dark:text-red-400 animate-fadeIn">
+                    <div className="p-4 text-xs font-bold text-red-500 bg-red-500/5 border border-red-500/20 rounded-2xl dark:bg-red-900/10 dark:text-red-400 animate-fadeIn">
                         {serverError}
                     </div>
                 )}
 
-                <LoginButton disabled={isSubmitDisabled} />
+                <div className="pt-2">
+                    <LoginButton disabled={isSubmitDisabled} />
+                </div>
 
-                {ENABLE_GOOGLE_AUTH && (
+                {globalFeatures?.googleLogin !== false && (
                     <>
-                        <div className="relative flex items-center py-2">
-                            <div className="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
-                            <span className="flex-shrink-0 mx-4 text-gray-400 dark:text-gray-500 text-sm">Or continue with</span>
-                            <div className="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+                        <div className="relative flex items-center py-4">
+                            <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
+                            <span className="flex-shrink-0 mx-6 text-[10px] uppercase font-black tracking-[0.2em] text-slate-400 dark:text-slate-500">Secure SSO</span>
+                            <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
                         </div>
                         
                         <GoogleLoginButton userType="PARENT" />
                     </>
                 )}
 
-                <div className="flex justify-end mt-1">
+                <div className="flex justify-end mt-2">
                     <Link 
                         href={ROUTES.AUTH.FORGOT_PASSWORD} 
-                        className="text-xs font-medium text-blue-500 hover:underline transition-colors duration-200"
+                        className="text-[10px] font-black text-indigo-500 hover:text-indigo-400 uppercase tracking-widest transition-colors duration-200"
                     >
-                        Forgot Password?
+                        Recover Access
                     </Link>
                 </div>
             </form>

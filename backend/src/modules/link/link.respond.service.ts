@@ -97,12 +97,16 @@ const canRespondToRequest = async ({
     const schoolAdmin = await prisma.schoolAdmin.findFirst({
       where: {
         adminId: currentUserId,
-        schoolId: request.targetSchoolId,
+        schoolId: request.targetSchoolId || request.schoolId || "",
         active: true,
       },
     });
 
-    return !!schoolAdmin;
+    if (!schoolAdmin) {
+        throw new Error("You are not an active admin of the target school.");
+    }
+
+    return true;
   }
   if (request.targetType === LinkEntityType.CLASS) {
     const classId = request.targetId || request.classId;
@@ -140,9 +144,22 @@ const canRespondToRequest = async ({
 
     return false;
   }
-  return (
-    request.targetType === currentUserType && request.targetId === currentUserId
-  );
+
+  // For individuals (STUDENT, TEACHER, PARENT), the ID must match the current user
+  const individualTypes = [LinkEntityType.STUDENT, LinkEntityType.TEACHER, LinkEntityType.PARENT];
+  if (individualTypes.includes(request.targetType)) {
+    if (request.targetType !== currentUserType) {
+        throw new Error(`Authorization mismatch: This request is targeting a ${request.targetType}, but you are logged in as a ${currentUserType}.`);
+    }
+
+    if (request.targetId !== currentUserId) {
+        throw new Error(`Access Denied: This request was sent specifically to another user ID.`);
+    }
+  }
+
+  // If it's a SCHOOL or CLASS target, the specific handlers above already verified 
+  // that the user is an authorized admin/teacher.
+  return true;
 };
 
 const applyDomainSideEffects = async (
@@ -195,7 +212,14 @@ const applyDomainSideEffects = async (
       ) {
         await tx.teacher.update({
           where: { id: request.targetId },
+<<<<<<< HEAD
           data: { activeSchoolId: request.requesterId },
+=======
+          data: { 
+            primarySchoolId: request.requesterId,
+            activeSchoolId: request.requesterId
+          },
+>>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
         });
       }
 
@@ -205,7 +229,14 @@ const applyDomainSideEffects = async (
       ) {
         await tx.teacher.update({
           where: { id: request.requesterId },
+<<<<<<< HEAD
           data: { activeSchoolId: request.targetId },
+=======
+          data: { 
+            primarySchoolId: request.targetId,
+            activeSchoolId: request.targetId
+          },
+>>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
         });
       }
       break;

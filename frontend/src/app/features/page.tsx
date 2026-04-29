@@ -1,21 +1,24 @@
 "use client"
-import Features from '@/components/features/Features';
-import HeroHead from '@/components/features/HeroHead';
+import React, { FC } from 'react';
 import Box from '@mui/material/Box';
-import { QueryClientProvider } from '@tanstack/react-query';
-import React, { FC, useState } from 'react';
-import { QueryClient } from '@tanstack/react-query';
+import FeaturesHero from './components/FeaturesHero';
+import AcademicManagement from './components/AcademicManagement';
+import CommunicationHub from './components/CommunicationHub';
+import FinancialSuite from './components/FinancialSuite';
+import BentoGrid from './components/BentoGrid';
+import FinalCTA from './components/FinalCTA';
 
-const FeatursPage: FC = () => {
-    const [queryClient] = useState(() => new QueryClient());
+const FeaturesPage: FC = () => {
     return (
-        <QueryClientProvider client={queryClient}>
-            <Box component="main" className="container mx-auto px-6 py-16 flex flex-col items-center">
-                <HeroHead />
-                <Features />
-            </Box>
-        </QueryClientProvider>
+        <Box component="main" className="bg-white dark:bg-slate-950">
+            <FeaturesHero />
+            <AcademicManagement />
+            <CommunicationHub />
+            <FinancialSuite />
+            <BentoGrid />
+            <FinalCTA />
+        </Box>
     );
 };
 
-export default FeatursPage;
+export default FeaturesPage;

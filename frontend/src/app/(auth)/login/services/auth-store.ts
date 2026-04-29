@@ -14,7 +14,11 @@ interface User {
   name: string; // Add this to store the "fullName"
   role: string | null;
   userType: UserType;
-  defaultTenantId?: string;
+  tenantId?: string; // Internal UUID
+  adminCode?: string;
+  teacherCode?: string;
+  studentCode?: string;
+  parentCode?: string;
   schools?: { schoolId: string; name: string }[];
   profileImage?: string;
   bannerImage?: string;
@@ -25,6 +29,10 @@ interface User {
     studentImage?: string;
     linkStatus: string;
   }[];
+  trialUsed?: boolean;
+  trialEndsAt?: string;
+  plan?: string;
+  subscriptionStatus?: string;
 }
 
 interface AuthState {
@@ -34,12 +42,11 @@ interface AuthState {
   hasCompletedOnboarding: boolean;
   isInitialized: boolean;
   userType: UserType | null;
-  defaultTenantId: string | null; // Store separately for easy access
   setAuth: (user: User, token: string) => void;
   setHasCompletedOnboarding: (value: boolean) => void;
+  updateUser: (updates: Partial<User>) => void;
 
   setUserType: (userType: UserType) => void;
-  setDefaultTenantId: (tenantId: string) => void; // New setter
   clearAuth: () => void;
   initialize: () => void;
   // Helper selectors
@@ -58,7 +65,6 @@ export const useAuthStore = create<AuthState>()(
       hasCompletedOnboarding: false,
       isInitialized: false,
       userType: null,
-      defaultTenantId: null,
 
       setAuth: (user: User, token: string) => {
         Cookies.set("token", token, {
@@ -73,11 +79,16 @@ export const useAuthStore = create<AuthState>()(
           accessToken: token,
           isAuthenticated: true,
           userType: user.userType,
-          defaultTenantId: user.defaultTenantId || null,
         });
       },
       setHasCompletedOnboarding: (value: boolean) => {
         set({ hasCompletedOnboarding: value });
+      },
+
+      updateUser: (updates: Partial<User>) => {
+        const state = get();
+        if (!state.user) return;
+        set({ user: { ...state.user, ...updates } });
       },
 
       setUserType: (userType: UserType) => {
@@ -89,17 +100,6 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      setDefaultTenantId: (tenantId: string) => {
-        const state = get();
-        const updatedUser = state.user
-          ? { ...state.user, defaultTenantId: tenantId }
-          : null;
-        set({
-          user: updatedUser,
-          defaultTenantId: tenantId,
-        });
-      },
-
       clearAuth: () => {
         Cookies.remove("token", { path: "/" });
         set({
@@ -108,7 +108,6 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           hasCompletedOnboarding: false,
           userType: null,
-          defaultTenantId: null,
         });
       },
 

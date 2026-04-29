@@ -15,13 +15,13 @@ export default function FeedbackSection({ submission }: Props) {
         Instructor Feedback
       </h3>
       
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+      <div className="bg-rose-50 dark:bg-pink-900/20 border border-blue-200 dark:border-pink-800 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-blue-500 dark:text-blue-400 mt-0.5">
+          <span className="material-symbols-outlined text-pink-500 dark:text-pink-400 mt-0.5">
             comment
           </span>
           <div className="flex-1">
-            <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-2">
+            <p className="text-sm text-pink-800 dark:text-blue-300 font-medium mb-2">
               Comments from your instructor:
             </p>
             <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
@@ -33,3 +33,4 @@ export default function FeedbackSection({ submission }: Props) {
     </div>
   );
 }
+

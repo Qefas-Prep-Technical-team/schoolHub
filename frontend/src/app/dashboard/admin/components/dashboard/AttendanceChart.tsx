@@ -32,7 +32,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 export default function AcademicPerformanceChart() {
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId || '';
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
   const { data: analysis, isLoading } = useSchoolPerformanceAnalysis(schoolId);
 

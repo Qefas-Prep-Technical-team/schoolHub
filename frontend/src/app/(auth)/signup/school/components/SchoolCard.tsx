@@ -6,7 +6,8 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import SchoolImageSlider from "./SchoolSlider";
 import SchoolHeader from "./SchoolHeader";
-
+import RedirectOverlay from '@/components/ui/RedirectOverlay';
+import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 import { useRouter } from 'next/navigation';
 import { useSchoolRegistration } from '../../services/useRegistrationMutations';
 import { SchoolFormData, schoolSchema } from '../../services/regSchema';
@@ -53,10 +54,11 @@ export default function SchoolCard() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
+  const [showOverlay, setShowOverlay] = useState(false);
   const router = useRouter();
 
   const { mutate: registerSchool, isPending } = useSchoolRegistration();
-
+  const { data: globalFeatures } = useGlobalFeatures('admin');
   const {
     register,
     handleSubmit,
@@ -140,13 +142,16 @@ export default function SchoolCard() {
           const backendMessage = response.data.message || 'Registration successful!';
           setSuccessMessage(backendMessage);
 
-          reset();
-
           const email = response.data.data?.school?.email || data.email;
 
-          router.push(
-            `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}&requestCode=true`,
-          );
+          setShowOverlay(true);
+          reset();
+
+          setTimeout(() => {
+            router.push(
+              `/verification?email=${encodeURIComponent(email)}&userType=${UserRole.ADMIN}&requestCode=true`,
+            );
+          }, 2000);
         },
         onError: (error: any) => {
           console.error('❌ School registration failed:', error);
@@ -165,7 +170,9 @@ export default function SchoolCard() {
   };
 
   return (
-    <div className="w-[95vw] lg:w-[80vw] mx-auto bg-white dark:bg-gray-900 md:rounded-[2.5rem] rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-gray-100 dark:border-gray-800 overflow-hidden">
+    <>
+      <RedirectOverlay isVisible={showOverlay} />
+      <div className="w-[95vw] lg:w-[80vw] mx-auto bg-white dark:bg-gray-900 md:rounded-[2.5rem] rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-gray-100 dark:border-gray-800 overflow-hidden">
       <div className="flex flex-col lg:flex-row min-h-[700px]">
         {/* Left Form */}
         <div className="flex-1 flex flex-col justify-center p-6 sm:p-10 lg:p-12 xl:p-16">
@@ -211,7 +218,7 @@ export default function SchoolCard() {
           </label>
 
           <p className="text-gray-500 dark:text-gray-400 text-sm font-normal pt-0 -mt-2">
-            Your school&apos;s web address will be: {schoolNameValue ? `${watch('subdomain') || 'your-school'}.schoolhub.com` : '[schoolname].schoolhub.com'}
+            Your school&apos;s web address will be: {schoolNameValue ? `${watch('subdomain') || 'your-school'}.qefashub.com` : '[schoolname].qefashub.com'}
           </p>
 
           {/* Admin Name */}
@@ -366,7 +373,7 @@ export default function SchoolCard() {
                 disabled={isPending}
               />
               <span className="inline-flex items-center px-4 h-12 rounded-r-lg border border-l-0 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-sm">
-                .schoolhub.com
+                .qefashub.com
               </span>
             </div>
             {errors.subdomain && (
@@ -394,18 +401,22 @@ export default function SchoolCard() {
               )}
             </button>
 
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-100 dark:border-gray-800" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
-                  Or continue with
-                </span>
-              </div>
-            </div>
+            {globalFeatures?.googleLogin !== false && (
+              <>
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-gray-100 dark:border-gray-800" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white dark:bg-gray-900 px-4 text-gray-400 font-bold tracking-widest">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
 
-            <GoogleLoginButton userType={UserRole.ADMIN} />
+                <GoogleLoginButton userType={UserRole.ADMIN} />
+              </>
+            )}
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               Already have a school account?{' '}
               <a
@@ -427,6 +438,7 @@ export default function SchoolCard() {
           <SchoolImageSlider />
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

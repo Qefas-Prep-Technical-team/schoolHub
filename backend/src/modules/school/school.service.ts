@@ -74,7 +74,7 @@ export const getSchoolStudentsService = async (
     select: { id: true }
   });
   
-  if (!school) return { data: [], total: 0 };
+  if (!school) return [];
   const resolvedId = school.id;
 
   // Find active school-student links from RelationshipLink
@@ -552,6 +552,8 @@ export const getSchoolBillingService = async (schoolId: string, page = 1, limit 
       isTrialActive: true,
       lastPaymentDate: true,
       paystackCustomerCode: true,
+      billingCycle: true,
+      subscriptionPlanId: true,
     }
   });
 
@@ -578,18 +580,27 @@ export const getSchoolBillingService = async (schoolId: string, page = 1, limit 
     _sum: { fileSize: true }
   });
 
-    const latestTransaction = transactions[0];
+  // Always fetch the absolute latest transaction for cycle/status reliability
+  const absoluteLatestTransaction = await prisma.transaction.findFirst({
+    where: { schoolId: resolvedId },
+    orderBy: { createdAt: "desc" }
+  });
+
+    const subscriptionPlan = school.subscriptionPlanId 
+    ? await prisma.subscriptionPlan.findUnique({ where: { id: school.subscriptionPlanId } })
+    : null;
 
     return {
         subscription: {
-            plan: school.plan,
+            plan: (school.isTrialActive && subscriptionPlan) ? subscriptionPlan.type : school.plan,
             planId: school.planId,
-            subscriptionStatus: school.subscriptionStatus,
+            subscriptionStatus: school.isTrialActive ? 'TRIAL' : school.subscriptionStatus,
             subscriptionEnd: school.subscriptionEnd,
             isTrialActive: school.isTrialActive,
             lastPaymentDate: school.lastPaymentDate,
             paystackCustomerCode: school.paystackCustomerCode,
-            billingCycle: latestTransaction?.billingCycle || 'monthly',
+            billingCycle: school.billingCycle || absoluteLatestTransaction?.billingCycle || 'monthly',
+            features: subscriptionPlan?.features || [],
         },
     usage: {
       ...stats,
