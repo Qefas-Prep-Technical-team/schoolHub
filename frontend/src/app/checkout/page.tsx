@@ -289,9 +289,6 @@ export default function CheckoutPage() {
         onSuccess: async (reference: any) => {
             try {
                 toast.loading("Verifying payment...", { toastId: "verify" });
-<<<<<<< HEAD
-                await paymentService.verify({ reference: reference.reference, plan, billingType: billing as 'monthly' | 'yearly' });
-=======
                 await paymentService.verify({ reference: reference.reference, plan, billingType: billing as "monthly" | "yearly" });
                 
                 // Refresh billing status immediately
@@ -301,7 +298,6 @@ export default function CheckoutPage() {
                     queryClient.invalidateQueries({ queryKey: schoolQueryKeys.billing(user?.schools?.[0]?.schoolId || user?.tenantId || "") });
                 }
 
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
                 toast.update("verify", { render: "Payment verified!", type: "success", isLoading: false, autoClose: 2000 });
                 
                 // Sync updated plan to auth store so pricing page reflects it immediately

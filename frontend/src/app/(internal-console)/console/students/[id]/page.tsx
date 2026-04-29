@@ -99,9 +99,11 @@ export default function StudentDetailsPage() {
     const handleSavePlan = async () => {
         try {
             await updatePlanMutation.mutateAsync({
-                studentId: student.id,
-                ...editData,
-                subscriptionEnd: editData.subscriptionEnd ? new Date(editData.subscriptionEnd).toISOString() : null
+                id: student.id,
+                planData: {
+                    ...editData,
+                    subscriptionEnd: editData.subscriptionEnd ? new Date(editData.subscriptionEnd).toISOString() : null
+                }
             })
             setIsEditingPlan(false)
         } catch (error) {
@@ -124,8 +126,10 @@ export default function StudentDetailsPage() {
         
         try {
             await updatePlanMutation.mutateAsync({
-                studentId: student.id,
-                subscriptionStatus: newStatus
+                id: student.id,
+                planData: {
+                    subscriptionStatus: newStatus
+                }
             })
         } catch (error) {
             console.error("Failed to toggle status:", error)

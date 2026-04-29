@@ -12,6 +12,8 @@ interface PaymentStatusCardProps {
     status: {
         color: string;
         message: string;
+        label: string;
+        status: string;
     };
     schoolId?: string;
     onRefresh?: () => void;

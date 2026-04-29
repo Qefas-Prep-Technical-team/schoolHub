@@ -24,6 +24,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://qefashub.com'),
   title: 'Qefas Hub – Smart Academic Management',
   description: 'An all-in-one SaaS for modern schools, students, and parents to achieve academic excellence.',
   icons: {
@@ -75,9 +76,6 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* <!-- Primary Meta Tags --> */}
-        <title>Qefas Hub – Smart Academic Management</title>
-        <meta name="title" content="Qefas Hub – Smart Academic Management" />
-        <meta name="description" content="An all-in-one SaaS for modern schools, students, and parents to achieve academic excellence." />
         {/* <link rel="icon" href="/favicon.ico" /> */}
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1"
@@ -88,24 +86,6 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/npm/katex@0.16.44/dist/katex.min.css"
           crossOrigin="anonymous"
         />
-
-
-
-        {/* <!-- Open Graph / Facebook --> */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://qefashub.com" />
-        <meta property="og:title" content="Qefas Hub – Empowering Education" />
-        <meta property="og:description" content="An all-in-one SaaS for modern schools, students, and parents to achieve academic excellence." />
-        <meta property="og:image" content="/meta-image.png" />
-
-        {/* <!-- X (Twitter) --> */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://qefashub.com" />
-        <meta property="twitter:title" content="Qefas Hub – Empowering Education" />
-        <meta property="twitter:description" content="An all-in-one SaaS for modern schools, students, and parents to achieve academic excellence." />
-        <meta property="twitter:image" content="/meta-image.png" />
-
-        {/* <!-- Meta Tags Generated with https://metatags.io --> */}
       </head>
       <body
         className={`
