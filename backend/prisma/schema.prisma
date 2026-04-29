@@ -34,18 +34,7 @@ model School {
   isTrialActive                           Boolean              @default(false)
   lastPaymentDate                         DateTime?
   paystackCustomerCode                    String?
-<<<<<<< HEAD
-  paystackSubaccountCode                  String?
-  paystackSubaccountStatus                String?            @default("pending")
-  bankName                                String?
-  accountNumber                           String?
-  accountName                             String?
-  percentageCharge                        Float?             @default(0)
-  plan                                    String             @default("FREE")
-  planId                                  String?
-=======
   plan                                    String               @default("FREE")
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
   subscriptionEnd                         DateTime?
   subscriptionStatus                      String               @default("INACTIVE")
   trialEndsAt                             DateTime?
@@ -90,12 +79,8 @@ model School {
   teacherSubjects                         TeacherSubject[]
   transactionHistories                    TransactionHistory[]
   transactions                            Transaction[]
-<<<<<<< HEAD
-  schemeOfWork                            SchemeOfWork[]
-=======
   schemeOfWorks                           SchemeOfWork[]
   teachers                                Teacher[]
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
 }
 
 model SchoolSetting {
@@ -205,17 +190,11 @@ model Teacher {
   pendingEmail                           String?
   bannerImage                            String?
   profileImage                           String?
-<<<<<<< HEAD
-  settings                               Json?
-  school                                 School?            @relation("Teacher_activeSchoolIdToSchool", fields: [activeSchoolId], references: [id])
-  currentSchool                          School?            @relation("Teacher_primarySchoolIdToSchool", fields: [primarySchoolId], references: [id])
-=======
   paystackCustomerCode                   String?
   paystackSubaccountCode                 String?
   planId                                 String?
   subscriptionPlanId                     String?
   billingCycle                           String             @default("monthly")
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
   FileMetric                             FileMetric[]
   reportedAlerts                         BehaviourAlert[]
   classTeachers                          ClassTeacher[]
@@ -608,7 +587,6 @@ model Subject {
 
   @@unique([schoolId, code])
   @@map("subjects")
-  schemeOfWork      SchemeOfWork[]
 }
 
 model Department {
@@ -1508,38 +1486,11 @@ enum GradeStatus {
   ARCHIVED
 }
 
-<<<<<<< HEAD
-model Payment {
-  id               String   @id @default(uuid())
-  paymentReference String   @unique
-  studentId        String
-  schoolId         String
-  parentId         String
-  amount           Float
-  term             String
-  session          String
-  paymentType      String
-  status           String   @default("PENDING")
-  paymentMethod    String?
-  paidAt           DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  settlementAccountId String?
-
-  student          Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  school           School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  parent           Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  settlementAccount SettlementAccount? @relation(fields: [settlementAccountId], references: [id])
-  transactionHistories TransactionHistory[]
-
-  @@map("payments")
-=======
 enum PlanScope {
   SCHOOL
   TEACHER
   PARENT
   STUDENT
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
 }
 
 enum SubscriptionType {
@@ -1583,41 +1534,14 @@ model SchemeOfWork {
   activities  String?
   resources   String?
   status      String   @default("DRAFT")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  subject     Subject  @relation(fields: [subjectId], references: [id])
-  schoolClass Class    @relation(fields: [classId], references: [id])
-  school      School?  @relation(fields: [schoolId], references: [id])
-
-  @@map("scheme_of_works")
-}
-
-model SchemeOfWork {
-  id          String   @id @default(uuid())
-  subjectId   String
-  term        Int?     @default(1)
-  week        Int
-  topic       String
-  objectives  String?
-  resources   String?
   isCompleted Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  schoolId    String
   subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolClass Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  school      School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
-  @@map("schemes_of_work")
+  @@map("scheme_of_works")
 }
 
-model PlatformSettings {
-  id        String   @id @default(uuid())
-  key       String   @unique
-  value     Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("platform_settings")
-}
