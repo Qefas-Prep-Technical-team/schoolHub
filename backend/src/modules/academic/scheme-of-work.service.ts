@@ -21,7 +21,6 @@ export const createSchemeEntryService = async (data: {
   objectives?: string;
   resources?: string;
 }) => {
-<<<<<<< HEAD
   const subject = await prisma.subject.findUnique({
     where: { id: data.subjectId },
     select: { schoolId: true }
@@ -32,12 +31,10 @@ export const createSchemeEntryService = async (data: {
   return prisma.schemeOfWork.create({
     data: {
       ...data,
+      term: data.term ?? 1,
       schoolId: subject.schoolId
     }
-=======
-  return (prisma as any).schemeOfWork.create({
-    data
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
+
   });
 };
 
@@ -65,7 +62,6 @@ export const deleteSchemeEntryService = async (id: string) => {
 };
 
 export const bulkSyncSchemeService = async (subjectId: string, entries: any[]) => {
-<<<<<<< HEAD
   const subject = await prisma.subject.findUnique({
     where: { id: subjectId },
     select: { schoolId: true }
@@ -78,15 +74,7 @@ export const bulkSyncSchemeService = async (subjectId: string, entries: any[]) =
   await prisma.$transaction([
     prisma.schemeOfWork.deleteMany({ where: { subjectId } }),
     prisma.schemeOfWork.createMany({
-=======
-  // Simple strategy: Delete all and replace if they don't have IDs, or sync properly
-  // For now, let's allow individual CRUD from the UI as it's cleaner.
-  // But for the SubjectModal bulk edit, we might need this.
-  
-  await (prisma as any).$transaction([
-    (prisma as any).schemeOfWork.deleteMany({ where: { subjectId } }),
-    (prisma as any).schemeOfWork.createMany({
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
+
       data: entries.map(e => ({
         title: e.title || `Week ${e.week} - ${e.topic}`,
         tenantId: e.tenantId,

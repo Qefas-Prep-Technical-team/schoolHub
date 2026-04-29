@@ -3,39 +3,15 @@ import prisma from "../../../config/database";
 import { Prisma } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { createActivityLog } from "../logs/logs.controller";
-<<<<<<< HEAD
 import { getSingleString } from "../../../utils/request-utils";
-=======
 import { PricingService } from "../billing/pricing.service";
 import { getIO } from "../../../socket";
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
 
 /**
  * Search schools for support purposes
  */
 export const searchSchools = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
-    const query = getSingleString(req.query.query as string);
-    const schools = await prisma.school.findMany({
-      where: {
-        OR: [
-          { name: { contains: query as string, mode: 'insensitive' } },
-          { tenantId: { contains: query as string, mode: 'insensitive' } },
-          { schoolCode: { contains: query as string, mode: 'insensitive' } },
-        ]
-      },
-      select: {
-        id: true,
-        name: true,
-        tenantId: true,
-        schoolCode: true,
-        subscriptionStatus: true,
-        plan: true,
-        createdAt: true
-      },
-      take: 20
-=======
     const { query, page = 1, limit = 10 } = req.query as { query?: string; page?: string; limit?: string };
     const skip = (Number(page) - 1) * Number(limit);
     
@@ -81,7 +57,6 @@ export const searchSchools = async (req: Request, res: Response) => {
         limit: Number(limit),
         totalPages: Math.ceil(total / Number(limit))
       }
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
     });
   } catch (error) {
     console.error("Search schools failed:", error);
@@ -94,11 +69,7 @@ export const searchSchools = async (req: Request, res: Response) => {
  */
 export const toggleSchoolStatus = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
     const id = getSingleString(req.params.id);
-=======
-    const { id } = req.params as { id: string };
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
     const { status } = req.body; // 'ACTIVE', 'SUSPENDED', etc.
 
     const school = await prisma.school.update({
@@ -302,11 +273,7 @@ export const replyToTicket = async (req: Request, res: Response) => {
  */
 export const updateSchoolLimits = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
     const id = getSingleString(req.params.id);
-=======
-    const id = req.params.id as string;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
     const { maxStudents, maxExams, maxClasses, maxStorageGb } = req.body;
 
     const school = await prisma.school.update({

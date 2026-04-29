@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../../config/database";
 import { getIO } from "../../socket";
+import { getSingleString } from "../../utils/request-utils";
 
 export const getMyTickets = async (req: Request, res: Response) => {
   try {
@@ -67,7 +68,7 @@ export const createTicket = async (req: Request, res: Response) => {
 
 export const getTicketMessages = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = getSingleString(req.params.id);
     const userId = (req as any).user.userId || (req as any).user.id;
 
     const ticket = await prisma.supportTicket.findUnique({
@@ -88,7 +89,7 @@ export const getTicketMessages = async (req: Request, res: Response) => {
 
 export const sendTicketMessage = async (req: Request, res: Response) => {
   try {
-    const { id: ticketId } = req.params;
+    const ticketId = getSingleString(req.params.id);
     const { content } = req.body;
     const user = (req as any).user;
     const senderId = user.userId || user.id;
@@ -111,7 +112,7 @@ export const sendTicketMessage = async (req: Request, res: Response) => {
 
     // Also update ticket updatedAt
     await prisma.supportTicket.update({
-      where: { id: ticketId },
+      where: { id: ticketId as string },
       data: { updatedAt: new Date(), status: "OPEN" } // reopen if closed
     });
 

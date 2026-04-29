@@ -74,7 +74,7 @@ export const getSchoolStudentsService = async (
     select: { id: true }
   });
   
-  if (!school) return [];
+  if (!school) return { data: [], total: 0 };
   const resolvedId = school.id;
 
   // Find active school-student links from RelationshipLink

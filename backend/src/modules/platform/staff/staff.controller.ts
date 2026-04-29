@@ -148,11 +148,7 @@ export const listStaff = async (req: Request, res: Response) => {
  */
 export const toggleStaffStatus = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
     const id = getSingleString(req.params.id);
-=======
-    const { id } = req.params as { id: string };
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
     const { isActive } = req.body;
 
     if (id === (req as any).staff?.id) {
@@ -189,11 +185,7 @@ export const toggleStaffStatus = async (req: Request, res: Response) => {
  */
 export const deleteStaff = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
     const id = getSingleString(req.params.id);
-=======
-    const { id } = req.params as { id: string };
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
 
     if (id === (req as any).staff?.id) {
        return res.status(400).json({ success: false, message: "Cannot delete yourself" });
@@ -303,11 +295,7 @@ export const completeStaffSetup = async (req: Request, res: Response) => {
  */
 export const updateStaffRole = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
     const id = getSingleString(req.params.id);
-=======
-    const { id } = req.params as { id: string };
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
     const { role } = req.body;
 
     if (!role) {
@@ -334,11 +322,7 @@ export const updateStaffRole = async (req: Request, res: Response) => {
  */
 export const requestCredentialReset = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
     const id = getSingleString(req.params.id);
-=======
-    const { id } = req.params as { id: string };
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
 
     const staff = await prisma.platformStaff.findUnique({ where: { id } });
     if (!staff) {

@@ -8,11 +8,7 @@ import { getSingleString } from "../../utils/request-utils";
  */
 export const getTeacherById = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
     const id = getSingleString(req.params.id as string | string[] | undefined);
-=======
-    const id = req.params.id as string;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
 
     const teacher = await prisma.teacher.findFirst({
       where: {
@@ -92,11 +88,7 @@ export const getTeacherById = async (req: Request, res: Response) => {
  */
 export const assignTeacherToClass = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
     const inputId = getSingleString(req.params.id as string | string[] | undefined);
-=======
-    const inputId = req.params.id as string;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
     const { classId, isLead = false } = req.body;
 
     if (!classId) {
@@ -159,11 +151,7 @@ export const assignTeacherToClass = async (req: Request, res: Response) => {
  */
 export const updateTeacher = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
     const inputId = getSingleString(req.params.id as string | string[] | undefined);
-=======
-    const inputId = req.params.id as string;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
     const { department, name, gender } = req.body;
 
     // Resolve real teacher ID if inputId is a teacherCode
@@ -210,11 +198,7 @@ export const updateTeacher = async (req: Request, res: Response) => {
  */
 export const getTeacherTimetable = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
     const inputId = getSingleString(req.params.id as string | string[] | undefined);
-=======
-    const inputId = req.params.id as string;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
 
     // Resolve real teacher ID if inputId is a teacherCode
     const teacher = await prisma.teacher.findFirst({
@@ -251,11 +235,7 @@ export const getTeacherTimetable = async (req: Request, res: Response) => {
  */
 export const createTimetablePeriod = async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
     const inputId = getSingleString(req.params.id as string | string[] | undefined);
-=======
-    const inputId = req.params.id as string;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
     const { classId, day, startTime, endTime, subjectId, room } = req.body;
 
     // Resolve real teacher ID if inputId is a teacherCode

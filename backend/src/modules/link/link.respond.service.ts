@@ -212,14 +212,10 @@ const applyDomainSideEffects = async (
       ) {
         await tx.teacher.update({
           where: { id: request.targetId },
-<<<<<<< HEAD
-          data: { activeSchoolId: request.requesterId },
-=======
           data: { 
             primarySchoolId: request.requesterId,
             activeSchoolId: request.requesterId
           },
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
         });
       }
 
@@ -229,14 +225,10 @@ const applyDomainSideEffects = async (
       ) {
         await tx.teacher.update({
           where: { id: request.requesterId },
-<<<<<<< HEAD
-          data: { activeSchoolId: request.targetId },
-=======
           data: { 
             primarySchoolId: request.targetId,
             activeSchoolId: request.targetId
           },
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
         });
       }
       break;

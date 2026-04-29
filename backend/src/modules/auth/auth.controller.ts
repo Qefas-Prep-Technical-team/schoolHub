@@ -1430,22 +1430,15 @@ export const login = async (req: Request, res: Response) => {
           const teacher = await prisma.teacher.findUnique({
             where: { email },
             include: { 
-<<<<<<< HEAD
               school: true,
-              currentSchool: true 
-=======
               currentSchool: true,
               primarySchool: true 
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
+
             },
           });
           if (teacher) {
             // Normalize school for compatibility with existing code
-<<<<<<< HEAD
-            (teacher as any).school = teacher.school || teacher.currentSchool;
-=======
-            (teacher as any).school = teacher.currentSchool || teacher.primarySchool;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
+            (teacher as any).school = teacher.currentSchool || teacher.primarySchool || (teacher as any).school;
           }
           return teacher;
         }

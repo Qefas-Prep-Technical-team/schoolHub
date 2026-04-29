@@ -9,11 +9,7 @@ export class FinanceController {
    */
   static async setupBank(req: Request, res: Response) {
     try {
-<<<<<<< HEAD
       const schoolId = getSingleString(req.params.schoolId);
-=======
-      const schoolId = req.params.schoolId as string;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
       console.log(`[FinanceController] Setting up bank for school: ${schoolId}`, req.body);
       const account = await FinanceService.setupBank(schoolId, req.body);
       res.status(200).json({
@@ -59,11 +55,7 @@ export class FinanceController {
    */
   static async verifyPayment(req: Request, res: Response) {
     try {
-<<<<<<< HEAD
       const reference = getSingleString(req.params.reference);
-=======
-      const reference = req.params.reference as string;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
       const result = await FinanceService.verifyPayment(reference);
       res.status(200).json(result);
     } catch (error: any) {
@@ -76,11 +68,7 @@ export class FinanceController {
    */
   static async getSchoolAnalytics(req: Request, res: Response) {
     try {
-<<<<<<< HEAD
       const schoolId = getSingleString(req.params.schoolId);
-=======
-      const schoolId = req.params.schoolId as string;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
       console.log(`[FinanceController] Fetching analytics for school: ${schoolId}`);
       const analytics = await FinanceService.getSchoolAnalytics(schoolId);
       res.status(200).json({ success: true, data: analytics });
@@ -139,11 +127,7 @@ export class FinanceController {
    */
   static async removeSubaccount(req: Request, res: Response) {
     try {
-<<<<<<< HEAD
       const accountId = getSingleString(req.params.accountId);
-=======
-      const accountId = req.params.accountId as string;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
       const result = await FinanceService.removeSubaccount(accountId);
       res.status(200).json(result);
     } catch (error: any) {
@@ -156,11 +140,7 @@ export class FinanceController {
    */
   static async syncSubaccountStatus(req: Request, res: Response) {
     try {
-<<<<<<< HEAD
       const schoolId = getSingleString(req.params.schoolId);
-=======
-      const schoolId = req.params.schoolId as string;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
       const { accountId } = req.body;
       const result = await FinanceService.syncSubaccountStatus(schoolId, accountId);
       res.status(200).json(result);

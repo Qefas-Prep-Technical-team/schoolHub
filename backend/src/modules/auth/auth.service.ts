@@ -394,11 +394,8 @@ export const googleAuthService = async (
   if (!email) throw new Error("Google account must have an email");
 
   let user: any;
-<<<<<<< HEAD
   let actualRole: UserRole = userRole as UserRole;
-=======
-  let actualRole: any = userRole;
->>>>>>> be22764e1e3563322c0acc4c834adbfe0d64c76e
+
 
   // Global lookup to detect "Wrong Portal" logins
   const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
