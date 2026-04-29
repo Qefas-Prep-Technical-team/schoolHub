@@ -17,7 +17,7 @@ export const createStaff = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Name, email, and role are required" });
     }
 
-    const existing = await prisma.platformStaff.findUnique({ where: { email } });
+    const existing = await (prisma as any).platformStaff.findUnique({ where: { email } });
     if (existing) {
       return res.status(400).json({ success: false, message: "Staff email already exists" });
     }
@@ -25,7 +25,7 @@ export const createStaff = async (req: Request, res: Response) => {
     const inviteToken = crypto.randomBytes(32).toString("hex");
     const inviteExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    const staff = await prisma.platformStaff.create({
+    const staff = await (prisma as any).platformStaff.create({
       data: {
         fullName,
         email,
@@ -110,7 +110,7 @@ export const listStaff = async (req: Request, res: Response) => {
     const skip = (page - 1) * limit;
 
     const [staff, total] = await Promise.all([
-      prisma.platformStaff.findMany({
+      (prisma as any).platformStaff.findMany({
         select: {
           id: true,
           fullName: true,
@@ -124,7 +124,7 @@ export const listStaff = async (req: Request, res: Response) => {
         skip,
         take: limit
       }),
-      prisma.platformStaff.count()
+      (prisma as any).platformStaff.count()
     ]);
 
     return res.status(200).json({ 
@@ -147,14 +147,14 @@ export const listStaff = async (req: Request, res: Response) => {
  */
 export const toggleStaffStatus = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { isActive } = req.body;
 
     if (id === (req as any).staff?.id) {
        return res.status(400).json({ success: false, message: "Cannot deactivate yourself" });
     }
 
-    const staff = await prisma.platformStaff.update({
+    const staff = await (prisma as any).platformStaff.update({
       where: { id },
       data: { isActive: !!isActive }
     });
@@ -184,14 +184,14 @@ export const toggleStaffStatus = async (req: Request, res: Response) => {
  */
 export const deleteStaff = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     if (id === (req as any).staff?.id) {
        return res.status(400).json({ success: false, message: "Cannot delete yourself" });
     }
 
-    const targetStaff = await prisma.platformStaff.findUnique({ where: { id } });
-    await prisma.platformStaff.delete({ where: { id } });
+    const targetStaff = await (prisma as any).platformStaff.findUnique({ where: { id } });
+    await (prisma as any).platformStaff.delete({ where: { id } });
 
     // Activity Log
     const loggingStaff = (req as any).staff;
@@ -294,7 +294,7 @@ export const completeStaffSetup = async (req: Request, res: Response) => {
  */
 export const updateStaffRole = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { role } = req.body;
 
     if (!role) {
@@ -321,7 +321,7 @@ export const updateStaffRole = async (req: Request, res: Response) => {
  */
 export const requestCredentialReset = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const staff = await prisma.platformStaff.findUnique({ where: { id } });
     if (!staff) {

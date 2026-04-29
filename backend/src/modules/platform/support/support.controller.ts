@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../../config/database";
+import { Prisma } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { createActivityLog } from "../logs/logs.controller";
 import { PricingService } from "../billing/pricing.service";
@@ -10,7 +11,7 @@ import { getIO } from "../../../socket";
  */
 export const searchSchools = async (req: Request, res: Response) => {
   try {
-    const { query, page = 1, limit = 10 } = req.query;
+    const { query, page = 1, limit = 10 } = req.query as { query?: string; page?: string; limit?: string };
     const skip = (Number(page) - 1) * Number(limit);
     
     const [schools, total] = await Promise.all([
@@ -67,7 +68,7 @@ export const searchSchools = async (req: Request, res: Response) => {
  */
 export const toggleSchoolStatus = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { status } = req.body; // 'ACTIVE', 'SUSPENDED', etc.
 
     const school = await prisma.school.update({
@@ -177,7 +178,7 @@ export const listTickets = async (req: Request, res: Response) => {
  */
 export const getTicketSupportDetails = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const ticket = await prisma.supportTicket.findUnique({
       where: { id },
       include: {
@@ -198,7 +199,7 @@ export const getTicketSupportDetails = async (req: Request, res: Response) => {
  */
 export const updateTicketStatus = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { status, priority } = req.body;
     
     // Convert status/priority if passed, otherwise ignore
@@ -225,7 +226,7 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
  */
 export const replyToTicket = async (req: Request, res: Response) => {
   try {
-    const { id: ticketId } = req.params;
+    const ticketId = req.params.id as string;
     const { content } = req.body;
     const staff = (req as any).staff;
 
@@ -271,7 +272,7 @@ export const replyToTicket = async (req: Request, res: Response) => {
  */
 export const updateSchoolLimits = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { maxStudents, maxExams, maxClasses, maxStorageGb } = req.body;
 
     const school = await prisma.school.update({
@@ -315,7 +316,7 @@ export const updateSchoolLimits = async (req: Request, res: Response) => {
  */
 export const getSchoolDetails = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const school = await prisma.school.findFirst({
       where: {
@@ -362,7 +363,7 @@ export const getSchoolDetails = async (req: Request, res: Response) => {
  */
 export const updateSchoolPlan = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { 
       subscriptionPlanId, 
       plan, 
@@ -458,9 +459,9 @@ export const searchStudents = async (req: Request, res: Response) => {
 
     const where = query ? {
       OR: [
-        { name: { contains: query as string, mode: 'insensitive' } },
-        { studentCode: { contains: query as string, mode: 'insensitive' } },
-        { email: { contains: query as string, mode: 'insensitive' } },
+        { name: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
+        { studentCode: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
+        { email: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
       ]
     } : {};
 
@@ -510,9 +511,9 @@ export const searchTeachers = async (req: Request, res: Response) => {
 
     const where = query ? {
       OR: [
-        { name: { contains: query as string, mode: 'insensitive' } },
-        { teacherCode: { contains: query as string, mode: 'insensitive' } },
-        { email: { contains: query as string, mode: 'insensitive' } },
+        { name: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
+        { teacherCode: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
+        { email: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
       ]
     } : {};
 
@@ -525,7 +526,7 @@ export const searchTeachers = async (req: Request, res: Response) => {
           teacherCode: true,
           email: true,
           subscriptionStatus: true,
-          School_Teacher_primarySchoolIdToSchool: { select: { id: true, name: true } },
+          primarySchool: { select: { id: true, name: true } },
           _count: { select: { teacherSubjects: true } },
           createdAt: true
         },
@@ -562,9 +563,9 @@ export const searchParents = async (req: Request, res: Response) => {
 
     const where = query ? {
       OR: [
-        { fullName: { contains: query as string, mode: 'insensitive' } },
-        { parentCode: { contains: query as string, mode: 'insensitive' } },
-        { email: { contains: query as string, mode: 'insensitive' } },
+        { fullName: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
+        { parentCode: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
+        { email: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
       ]
     } : {};
 
@@ -623,7 +624,7 @@ export const getPlatformFeatures = async (req: Request, res: Response) => {
  */
 export const updatePlatformFeature = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const updateData = req.body;
     
     const feature = await prisma.platformFeature.update({
@@ -645,7 +646,7 @@ export const updatePlatformFeature = async (req: Request, res: Response) => {
  */
 export const getPublicRoleFeatures = async (req: Request, res: Response) => {
     try {
-        const { role } = req.params;
+        const { role } = req.params as { role: string };
         const validRoles = ['student', 'teacher', 'parent', 'admin'];
         
         if (!validRoles.includes(role.toLowerCase())) {
@@ -675,7 +676,7 @@ export const getPublicRoleFeatures = async (req: Request, res: Response) => {
  */
 export const getStudentDetails = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const student = await prisma.student.findUnique({
       where: { id },
@@ -727,7 +728,7 @@ export const getStudentDetails = async (req: Request, res: Response) => {
  */
 export const updateStudentPlan = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { 
       subscriptionPlanId, 
       plan, 
@@ -800,7 +801,7 @@ export const updateStudentPlan = async (req: Request, res: Response) => {
  */
 export const getTeacherDetails = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const teacher = await prisma.teacher.findFirst({
       where: {
@@ -810,7 +811,7 @@ export const getTeacherDetails = async (req: Request, res: Response) => {
         ]
       },
       include: {
-        School_Teacher_primarySchoolIdToSchool: {
+        primarySchool: {
           select: {
             id: true,
             name: true,
@@ -855,7 +856,7 @@ export const getTeacherDetails = async (req: Request, res: Response) => {
  */
 export const updateTeacherPlan = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { 
       subscriptionPlanId, 
       plan, 
@@ -928,7 +929,7 @@ export const updateTeacherPlan = async (req: Request, res: Response) => {
  */
 export const getParentDetails = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const parent = await prisma.parent.findFirst({
       where: {
@@ -982,7 +983,7 @@ export const getParentDetails = async (req: Request, res: Response) => {
  */
 export const updateParentPlan = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { plan, subscriptionStatus, trialEndsAt, subscriptionEnd } = req.body;
 
     const parent = await prisma.parent.update({

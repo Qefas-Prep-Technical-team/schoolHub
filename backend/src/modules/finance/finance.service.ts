@@ -283,7 +283,7 @@ export class FinanceService {
           where: { id: schoolId },
           data: {
             paystackSubaccountCode: null,
-            paystackSubaccountStatus: null,
+            paystackSubaccountStatus: "pending",
             bankName: null,
             accountNumber: null,
             accountName: null

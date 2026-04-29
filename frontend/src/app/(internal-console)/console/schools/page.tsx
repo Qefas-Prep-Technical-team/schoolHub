@@ -225,7 +225,7 @@ export default function SchoolsManagementPage() {
             </div>
 
             {/* Pagination Controls */}
-            {pagination.totalPages > 1 && (
+            {pagination.total > 0 && (
                 <div className="flex justify-center pt-8">
                     <Pagination 
                         currentPage={page}

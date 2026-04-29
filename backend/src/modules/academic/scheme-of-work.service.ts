@@ -1,7 +1,7 @@
 import prisma from "../../config/database";
 
 export const getSubjectSchemesService = async (subjectId: string) => {
-  return prisma.schemeOfWork.findMany({
+  return (prisma as any).schemeOfWork.findMany({
     where: { subjectId },
     orderBy: [
       { term: "asc" },
@@ -11,6 +11,9 @@ export const getSubjectSchemesService = async (subjectId: string) => {
 };
 
 export const createSchemeEntryService = async (data: {
+  title: string;
+  tenantId: string;
+  classId: string;
   subjectId: string;
   term?: number;
   week: number;
@@ -18,7 +21,7 @@ export const createSchemeEntryService = async (data: {
   objectives?: string;
   resources?: string;
 }) => {
-  return prisma.schemeOfWork.create({
+  return (prisma as any).schemeOfWork.create({
     data
   });
 };
@@ -34,14 +37,14 @@ export const updateSchemeEntryService = async (
     isCompleted?: boolean;
   }
 ) => {
-  return prisma.schemeOfWork.update({
+  return (prisma as any).schemeOfWork.update({
     where: { id },
     data
   });
 };
 
 export const deleteSchemeEntryService = async (id: string) => {
-  return prisma.schemeOfWork.delete({
+  return (prisma as any).schemeOfWork.delete({
     where: { id }
   });
 };
@@ -51,17 +54,20 @@ export const bulkSyncSchemeService = async (subjectId: string, entries: any[]) =
   // For now, let's allow individual CRUD from the UI as it's cleaner.
   // But for the SubjectModal bulk edit, we might need this.
   
-  await prisma.$transaction([
-    prisma.schemeOfWork.deleteMany({ where: { subjectId } }),
-    prisma.schemeOfWork.createMany({
+  await (prisma as any).$transaction([
+    (prisma as any).schemeOfWork.deleteMany({ where: { subjectId } }),
+    (prisma as any).schemeOfWork.createMany({
       data: entries.map(e => ({
+        title: e.title || `Week ${e.week} - ${e.topic}`,
+        tenantId: e.tenantId,
+        classId: e.classId,
         subjectId,
         term: e.term || 1,
         week: e.week,
         topic: e.topic,
         objectives: e.objectives,
         resources: e.resources,
-        isCompleted: e.isCompleted || false
+        status: e.status || "DRAFT"
       }))
     })
   ]);

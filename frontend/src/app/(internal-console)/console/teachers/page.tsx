@@ -183,12 +183,12 @@ export default function PlatformTeachersPage() {
             </div>
 
             {/* Pagination Controls */}
-            {!isLoading && pagination && pagination.totalPages > 1 && (
+            {!isLoading && pagination && pagination.total > 0 && (
                 <Pagination 
                     currentPage={currentPage}
                     totalPages={pagination.totalPages}
-                    totalItems={pagination.totalItems}
-                    itemsPerPage={pagination.itemsPerPage}
+                    totalItems={pagination.total}
+                    itemsPerPage={pagination.limit || 10}
                     onPageChange={setCurrentPage}
                 />
             )}

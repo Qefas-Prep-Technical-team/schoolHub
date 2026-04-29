@@ -150,8 +150,10 @@ export default function PlatformDashboard() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Growth Chart */}
-                <Card className="lg:col-span-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                {/* Left Column Charts */}
+                <div className="lg:col-span-2 space-y-8">
+                    {/* Growth Chart */}
+                    <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Ecosystem Growth</h3>
@@ -235,6 +237,85 @@ export default function PlatformDashboard() {
                         )}
                     </div>
                 </Card>
+
+                {/* User Growth Chart */}
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">User Registration Trends</h3>
+                            <p className="text-xs text-slate-500 font-medium">Monthly acquisition for Students, Teachers & Parents</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
+                                <span className="text-[10px] font-medium text-slate-400">Students</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full bg-violet-500"></div>
+                                <span className="text-[10px] font-medium text-slate-400">Teachers</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full bg-pink-500"></div>
+                                <span className="text-[10px] font-medium text-slate-400">Parents</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="h-[350px] w-full">
+                        {growthLoading ? (
+                            <Skeleton className="h-full w-full bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={growth || []}>
+                                    <defs>
+                                        <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                        </linearGradient>
+                                        <linearGradient id="colorTeachers" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                                        </linearGradient>
+                                        <linearGradient id="colorParents" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#ec4899" stopOpacity={0.3}/>
+                                            <stop offset="95%" stopColor="#ec4899" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
+                                    <XAxis 
+                                        dataKey="month" 
+                                        stroke="currentColor" 
+                                        className="text-slate-400 dark:text-slate-600"
+                                        fontSize={10} 
+                                        fontWeight="500"
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <YAxis 
+                                        stroke="currentColor" 
+                                        className="text-slate-400 dark:text-slate-600"
+                                        fontSize={10} 
+                                        fontWeight="500"
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <Tooltip 
+                                        contentStyle={{ 
+                                            backgroundColor: 'var(--tooltip-bg, #fff)', 
+                                            border: '1px solid var(--tooltip-border, #e2e8f0)', 
+                                            borderRadius: '12px' 
+                                        }}
+                                        itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                                    />
+                                    <Area type="monotone" dataKey="totalStudents" name="Students" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorStudents)" />
+                                    <Area type="monotone" dataKey="totalTeachers" name="Teachers" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorTeachers)" />
+                                    <Area type="monotone" dataKey="totalParents" name="Parents" stroke="#ec4899" strokeWidth={3} fillOpacity={1} fill="url(#colorParents)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
+                </Card>
+                </div>
 
                 {/* Right Column Status */}
                 <div className="space-y-6">

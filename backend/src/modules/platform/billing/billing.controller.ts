@@ -46,6 +46,7 @@ export const updatePlan = async (req: Request, res: Response) => {
       return res.status(201).json({ success: true, message: "Plan created", data: plan });
     }
 
+    //const id = req.params.id as string;
     const plan = await prisma.subscriptionPlan.update({
       where: { id },
       data: { name, maxStudents, maxExams, maxClasses, maxStorageGb }
@@ -58,7 +59,7 @@ export const updatePlan = async (req: Request, res: Response) => {
             loggingStaff.id,
             "UPDATE_PLAN",
             "SubscriptionPlan",
-            id,
+            id as string,
             { planName: plan.name }
         );
     }
@@ -84,7 +85,7 @@ export const assignSchoolToPlan = async (req: Request, res: Response) => {
       where: { id: schoolId },
       data: {
         subscriptionPlanId: planId,
-        subscriptionStatus: status || 'ACTIVE',
+        subscriptionStatus: (status as SubscriptionStatus) || SubscriptionStatus.ACTIVE,
         subscriptionEnd: endDate ? new Date(endDate) : null,
         isTrialActive: false
       }
@@ -161,7 +162,7 @@ export const resetSchoolSubscription = async (req: Request, res: Response) => {
       data: {
         plan: "FREE",
         subscriptionPlanId: null,
-        subscriptionStatus: "INACTIVE",
+        subscriptionStatus: SubscriptionStatus.INACTIVE,
         isTrialActive: false,
         trialUsed: false,
         trialEndsAt: null,
@@ -232,7 +233,7 @@ export const resetStudentSubscription = async (req: Request, res: Response) => {
       data: {
         plan: "FREE",
         subscriptionPlanId: null,
-        subscriptionStatus: "INACTIVE",
+        subscriptionStatus: SubscriptionStatus.INACTIVE,
         isTrialActive: false,
         trialUsed: false,
         trialEndsAt: null,
@@ -296,7 +297,7 @@ export const resetTeacherSubscription = async (req: Request, res: Response) => {
       data: {
         plan: "FREE",
         subscriptionPlanId: null,
-        subscriptionStatus: "INACTIVE",
+        subscriptionStatus: SubscriptionStatus.INACTIVE,
         isTrialActive: false,
         trialUsed: false,
         trialEndsAt: null,
@@ -350,7 +351,7 @@ export const resetParentSubscription = async (req: Request, res: Response) => {
       where: { id },
       data: {
         plan: "FREE",
-        subscriptionStatus: "INACTIVE",
+        subscriptionStatus: SubscriptionStatus.INACTIVE,
         isTrialActive: false,
         trialEndsAt: null,
         subscriptionEnd: null,
@@ -360,7 +361,7 @@ export const resetParentSubscription = async (req: Request, res: Response) => {
 
     // Delete any active user_subscriptions for this parent
     await prisma.userSubscription.deleteMany({
-      where: { parentId: id }
+      where: { userId: id, userType: "PARENT" }
     });
 
     // Log the action

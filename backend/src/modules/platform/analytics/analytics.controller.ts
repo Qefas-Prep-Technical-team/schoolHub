@@ -91,7 +91,7 @@ export const getGrowthStats = async (req: Request, res: Response) => {
       const start = new Date(date.getFullYear(), date.getMonth(), 1);
       const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
 
-      const [schoolCount, revenueData] = await Promise.all([
+      const [schoolCount, revenueData, studentCount, teacherCount, parentCount] = await Promise.all([
         prisma.school.count({
           where: { createdAt: { gte: start, lte: end } }
         }),
@@ -101,13 +101,25 @@ export const getGrowthStats = async (req: Request, res: Response) => {
             createdAt: { gte: start, lte: end }
           },
           _sum: { amount: true }
+        }),
+        prisma.student.count({
+          where: { createdAt: { gte: start, lte: end } }
+        }),
+        prisma.teacher.count({
+          where: { createdAt: { gte: start, lte: end } }
+        }),
+        prisma.parent.count({
+          where: { createdAt: { gte: start, lte: end } }
         })
       ]);
 
       last6Months.push({
         month: date.toLocaleString('default', { month: 'short' }),
         totalSchools: schoolCount,
-        revenue: revenueData._sum.amount || 0
+        revenue: revenueData._sum.amount || 0,
+        totalStudents: studentCount,
+        totalTeachers: teacherCount,
+        totalParents: parentCount
       });
     }
 

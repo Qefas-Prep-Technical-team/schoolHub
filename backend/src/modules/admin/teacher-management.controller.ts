@@ -7,7 +7,7 @@ import { getTeacherTimetableService, upsertTimetablePeriodService } from "../cla
  */
 export const getTeacherById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const teacher = await prisma.teacher.findFirst({
       where: {
@@ -87,7 +87,7 @@ export const getTeacherById = async (req: Request, res: Response) => {
  */
 export const assignTeacherToClass = async (req: Request, res: Response) => {
   try {
-    const { id: inputId } = req.params;
+    const inputId = req.params.id as string;
     const { classId, isLead = false } = req.body;
 
     if (!classId) {
@@ -150,7 +150,7 @@ export const assignTeacherToClass = async (req: Request, res: Response) => {
  */
 export const updateTeacher = async (req: Request, res: Response) => {
   try {
-    const { id: inputId } = req.params;
+    const inputId = req.params.id as string;
     const { department, name, gender } = req.body;
 
     // Resolve real teacher ID if inputId is a teacherCode
@@ -197,7 +197,7 @@ export const updateTeacher = async (req: Request, res: Response) => {
  */
 export const getTeacherTimetable = async (req: Request, res: Response) => {
   try {
-    const { id: inputId } = req.params;
+    const inputId = req.params.id as string;
 
     // Resolve real teacher ID if inputId is a teacherCode
     const teacher = await prisma.teacher.findFirst({
@@ -234,7 +234,7 @@ export const getTeacherTimetable = async (req: Request, res: Response) => {
  */
 export const createTimetablePeriod = async (req: Request, res: Response) => {
   try {
-    const { id: inputId } = req.params;
+    const inputId = req.params.id as string;
     const { classId, day, startTime, endTime, subjectId, room } = req.body;
 
     // Resolve real teacher ID if inputId is a teacherCode

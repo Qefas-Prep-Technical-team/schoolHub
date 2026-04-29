@@ -2,7 +2,7 @@ import prisma from "../../config/database";
 import { PRICING_PLANS } from "./plans.data";
 import { LinkEntityType } from "@prisma/client";
 
-import { PricingService } from "./pricing.service";
+// Unused import removed
 
 /**
  * Get limits for a specific entity based on their current plan

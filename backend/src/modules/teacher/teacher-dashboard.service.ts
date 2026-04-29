@@ -9,7 +9,7 @@ export const getTeacherSettingsService = async (teacherId: string) => {
     where: { id: teacherId },
     select: { settings: true },
   });
-  return teacher?.settings || {};
+  return (teacher?.settings as any) || {};
 };
 
 /**
@@ -104,7 +104,6 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
         date: { gte: new Date(new Date().setHours(0,0,0,0)) },
       },
       _count: { status: true },
-      _sum: { id: true }, // We'll count present separately
     })
   ]);
 
@@ -200,15 +199,15 @@ export const getTeacherLinkedSchoolsService = async (teacherId: string) => {
   const teacher = await prisma.teacher.findUnique({
     where: { id: teacherId },
     include: {
-        School_Teacher_primarySchoolIdToSchool: true,
-        School_Teacher_activeSchoolIdToSchool: true
+        primarySchool: true,
+        currentSchool: true
     }
   });
 
   const schoolsMap = new Map();
 
-  if (teacher?.School_Teacher_primarySchoolIdToSchool) schoolsMap.set(teacher.School_Teacher_primarySchoolIdToSchool.id, teacher.School_Teacher_primarySchoolIdToSchool);
-  if (teacher?.School_Teacher_activeSchoolIdToSchool) schoolsMap.set(teacher.School_Teacher_activeSchoolIdToSchool.id, teacher.School_Teacher_activeSchoolIdToSchool);
+  if (teacher?.primarySchool) schoolsMap.set(teacher.primarySchool.id, teacher.primarySchool);
+  if (teacher?.currentSchool) schoolsMap.set(teacher.currentSchool.id, teacher.currentSchool);
 
   links.forEach(link => {
       // Find which side is the school

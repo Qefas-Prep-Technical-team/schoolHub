@@ -19,7 +19,7 @@ export const getChildDetails = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-    const { childId } = req.params;
+    const childId = req.params.childId as string;
     const child = await getChildDetailsService(req.user.id, childId);
     return res.status(200).json({ success: true, message: "Child details fetched successfully", data: child });
   } catch (error: any) {

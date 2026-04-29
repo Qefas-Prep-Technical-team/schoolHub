@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model School {
@@ -78,6 +79,8 @@ model School {
   teacherSubjects                         TeacherSubject[]
   transactionHistories                    TransactionHistory[]
   transactions                            Transaction[]
+  schemeOfWorks                           SchemeOfWork[]
+  teachers                                Teacher[]
 }
 
 model SchoolSetting {
@@ -142,6 +145,7 @@ model Admin {
   paystackCustomerCode    String?
   paystackSubaccountCode  String?
   planId                  String?
+  subscriptionPlanId      String?
   billingCycle            String              @default("monthly")
   approvedLinkRequests    LinkRequest[]       @relation("approverAdmin")
   requestedLinkRequests   LinkRequest[]       @relation("requesterAdmin")
@@ -166,6 +170,9 @@ model Teacher {
   department                             String?
   primarySchoolId                        String?
   activeSchoolId                         String?
+  schoolId                               String?
+  currentSchoolId                        String?
+  settings                               Json?              @default("{}")
   verified                               Boolean            @default(false)
   createdAt                              DateTime           @default(now())
   updatedAt                              DateTime           @updatedAt
@@ -186,10 +193,9 @@ model Teacher {
   paystackCustomerCode                   String?
   paystackSubaccountCode                 String?
   planId                                 String?
+  subscriptionPlanId                     String?
   billingCycle                           String             @default("monthly")
   FileMetric                             FileMetric[]
-  School_Teacher_activeSchoolIdToSchool  School?            @relation("Teacher_activeSchoolIdToSchool", fields: [activeSchoolId], references: [id])
-  School_Teacher_primarySchoolIdToSchool School?            @relation("Teacher_primarySchoolIdToSchool", fields: [primarySchoolId], references: [id])
   reportedAlerts                         BehaviourAlert[]
   classTeachers                          ClassTeacher[]
   departments                            Department[]
@@ -202,6 +208,9 @@ model Teacher {
   teacherSubjects                        TeacherSubject[]
   timetablePeriods                       TimetablePeriod[]
   subscription                           UserSubscription?
+  currentSchool                          School?            @relation("Teacher_activeSchoolIdToSchool", fields: [activeSchoolId], references: [id])
+  primarySchool                          School?            @relation("Teacher_primarySchoolIdToSchool", fields: [primarySchoolId], references: [id])
+  school                                 School?            @relation(fields: [schoolId], references: [id])
 }
 
 model Student {
@@ -254,6 +263,7 @@ model Student {
   parentLinks             ParentChildLink[]
   payments                Payment[]
   subscription            UserSubscription?
+  subscriptionPlanId      String?
 }
 
 model Parent {
@@ -294,6 +304,8 @@ model Parent {
   children                ParentChildLink[]
   payments                Payment[]
   subscription            UserSubscription?
+
+  subscriptionPlanId      String?
 
   @@map("parents")
 }
@@ -339,6 +351,7 @@ model Class {
   quizzes           Quiz[]
   relationshipLinks RelationshipLink[]
   timetable         TimetablePeriod[]
+  schemeOfWorks     SchemeOfWork[]
 
   @@unique([schoolId, name, section])
   @@map("classes")
@@ -570,6 +583,7 @@ model Subject {
   teacher           Teacher?               @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   teacherSubjects   TeacherSubject[]
   timetablePeriods  TimetablePeriod[]
+  schemeOfWorks     SchemeOfWork[]
 
   @@unique([schoolId, code])
   @@map("subjects")
@@ -1050,6 +1064,7 @@ model Payment {
   status               String               @default("PENDING")
   paymentMethod        String?
   paidAt               DateTime?
+  createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   settlementAccountId  String?
   parent               Parent               @relation(fields: [parentId], references: [id], onDelete: Cascade)
@@ -1111,7 +1126,7 @@ model SubscriptionPlan {
   updatedAt           DateTime              @updatedAt
   badgeLabel          String?
   buttonText          String                @default("Get Started")
-  category            String
+  category            String                @default("INSTITUTION")
   description         String?
   features            String[]
   isActive            Boolean               @default(true)
@@ -1121,7 +1136,7 @@ model SubscriptionPlan {
   monthlyPrice        Float                 @default(0)
   sortOrder           Int                   @default(0)
   trialDays           Int                   @default(0)
-  type                String
+  type                String                @default("PAID")
   yearlyPrice         Float                 @default(0)
   planScope           PlanScope             @default(SCHOOL)
   hasTrial            Boolean               @default(false)
@@ -1217,14 +1232,14 @@ model SupportTicket {
 }
 
 model SupportMessage {
-  id          String        @id @default(uuid())
-  ticketId    String
-  content     String
-  senderId    String
-  senderName  String
-  senderRole  String
-  createdAt   DateTime      @default(now())
-  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  id         String        @id @default(uuid())
+  ticketId   String
+  content    String
+  senderId   String
+  senderName String
+  senderRole String
+  createdAt  DateTime      @default(now())
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
   @@map("support_messages")
@@ -1274,6 +1289,16 @@ model PlatformFeature {
   createdAt      DateTime @default(now())
 
   @@map("platform_features")
+}
+
+model PlatformSettings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_settings")
 }
 
 model EmailLog {
@@ -1492,4 +1517,29 @@ enum SupportPriority {
   MEDIUM
   HIGH
   URGENT
+}
+
+model SchemeOfWork {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  tenantId    String
+  schoolId    String?
+  subjectId   String
+  classId     String
+  term        Int
+  week        Int
+  topic       String
+  objectives  String?
+  activities  String?
+  resources   String?
+  status      String   @default("DRAFT")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  schoolClass Class    @relation(fields: [classId], references: [id])
+  school      School?  @relation(fields: [schoolId], references: [id])
+
+  @@map("scheme_of_works")
 }

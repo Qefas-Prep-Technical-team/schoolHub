@@ -14,7 +14,7 @@ export class SubscriptionScheduler {
     const now = new Date();
 
     const results = await prisma.$transaction(async (tx) => {
-      const schoolsToNotify = await tx.schoolSubscription.findMany({
+      const schoolsToNotify = await (tx as any).schoolSubscription.findMany({
         where: {
           status: SubscriptionStatus.ACTIVE,
           expiresAt: { lt: now },
@@ -23,17 +23,22 @@ export class SubscriptionScheduler {
         include: { school: true }
       });
 
-      const usersToNotify = await tx.userSubscription.findMany({
+      const usersToNotify = await (tx as any).userSubscription.findMany({
         where: {
           status: SubscriptionStatus.ACTIVE,
           expiresAt: { lt: now },
           autoRenew: false,
         },
-        include: { user: true }
+        include: { 
+          teacher: true, 
+          student: true, 
+          admin: true, 
+          parent: true 
+        }
       });
 
       // 1. Process School Subscriptions
-      const expiredSchools = await tx.schoolSubscription.updateMany({
+      const expiredSchools = await (tx as any).schoolSubscription.updateMany({
         where: {
           status: SubscriptionStatus.ACTIVE,
           expiresAt: { lt: now },
@@ -46,7 +51,7 @@ export class SubscriptionScheduler {
       });
 
       // 2. Process User Subscriptions
-      const expiredUsers = await tx.userSubscription.updateMany({
+      const expiredUsers = await (tx as any).userSubscription.updateMany({
         where: {
           status: SubscriptionStatus.ACTIVE,
           expiresAt: { lt: now },
@@ -112,7 +117,7 @@ export class SubscriptionScheduler {
       const endDate = new Date(targetDate);
       endDate.setHours(23, 59, 59, 999);
 
-      const expiringSoon = await prisma.schoolSubscription.findMany({
+      const expiringSoon = await (prisma as any).schoolSubscription.findMany({
         where: {
           status: SubscriptionStatus.ACTIVE,
           expiresAt: {
@@ -130,7 +135,7 @@ export class SubscriptionScheduler {
         if (!sub.school.schoolEmail) continue;
 
         // Check if we already sent this type of warning recently (to avoid duplicates)
-        const alreadySent = await prisma.emailLog.findFirst({
+        const alreadySent = await (prisma as any).emailLog.findFirst({
           where: {
             schoolId: sub.schoolId,
             type: interval.type,
