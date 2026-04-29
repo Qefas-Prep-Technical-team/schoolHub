@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { getPlatformSettings, updateSetting, batchUpdateSettings } from "./settings.controller";
+import { getPlatformSettings, updateSetting, batchUpdateSettings, getPublicPlatformSettings } from "./settings.controller";
 import { authenticatePlatformStaff, authorizePlatformRole } from "../../../middleware/platformAuthMiddleware";
 
 const router = Router();
+
+router.get("/public", getPublicPlatformSettings);
 
 router.use(authenticatePlatformStaff);
 

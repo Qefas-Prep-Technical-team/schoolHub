@@ -33,6 +33,16 @@ export const usePlatformSettings = () => {
     })
 }
 
+export const usePublicPlatformSettings = () => {
+    return useQuery({
+        queryKey: ["public-platform-settings"],
+        queryFn: async () => {
+            const { data } = await platformClient.get("/platform/settings/public");
+            return data.data;
+        }
+    })
+}
+
 export const useUpdatePlatformSettings = () => {
     const { platform_token } = usePlatformStaffStore()
     const queryClient = useQueryClient()

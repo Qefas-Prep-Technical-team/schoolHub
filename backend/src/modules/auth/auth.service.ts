@@ -355,6 +355,29 @@ export const googleAuthService = async (
   supabaseToken: string,
   userRole?: UserRole,
 ) => {
+  // Check if Google Auth is enabled in platform settings
+  const googleAuthSetting = await prisma.platformSettings.findUnique({
+    where: { key: "google_auth_enabled" }
+  });
+  
+  if (googleAuthSetting && googleAuthSetting.value === "false") {
+    throw new Error("Google Authentication is currently deactivated by the platform administrator.");
+  }
+
+  // Check if Google Auth is enabled for this specific role
+  if (userRole) {
+    const googleAuthFeature = await prisma.platformFeature.findUnique({
+      where: { featureKey: "googleLogin" }
+    });
+    
+    if (googleAuthFeature) {
+      const roleKey = `${userRole.toLowerCase()}Enabled` as keyof typeof googleAuthFeature;
+      if (googleAuthFeature[roleKey] === false) {
+        throw new Error(`Google Authentication is deactivated for ${userRole}s.`);
+      }
+    }
+  }
+
   // Verify Supabase's own signed JWT (the session.access_token from the frontend).
   // This is always present and contains the verified Google user data embedded by Supabase.
   // We verify it with our SUPABASE_JWT_SECRET from the Supabase Dashboard → Settings → API.

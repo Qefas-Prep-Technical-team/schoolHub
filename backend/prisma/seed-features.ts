@@ -53,7 +53,8 @@ const INITIAL_FEATURES = [
   // SYSTEM & PROFILE
   { featureKey: "profile", name: "Profile", label: "User Profile", description: "Account profile management" },
   { featureKey: "settings", name: "Settings", label: "Account Settings", description: "System preferences" },
-  { featureKey: "support", name: "Support", label: "Help & Support", description: "Customer assistance center" }
+  { featureKey: "support", name: "Support", label: "Help & Support", description: "Customer assistance center" },
+  { featureKey: "googleLogin", name: "Google Authentication", label: "Google Login", description: "Enable/Disable Google login and signup for this role." }
 ];
 
 async function main() {

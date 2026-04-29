@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
         setIsSubmitted(true);
         setSubmittedEmail(normalizedEmail);
         // Pass email via URL params
-        router.push(`/auth/forgot-password/CheckYourEmail?email=${encodeURIComponent(normalizedEmail)}`);
+        router.push(`/auth/forgot-password/check-your-email?email=${encodeURIComponent(normalizedEmail)}`);
       },
       onError: (error) => {
         setServerError(error.message);

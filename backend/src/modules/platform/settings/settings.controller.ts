@@ -21,6 +21,53 @@ export const getPlatformSettings = async (req: Request, res: Response) => {
 };
 
 /**
+ * Get public platform settings (no auth required)
+ */
+export const getPublicPlatformSettings = async (req: Request, res: Response) => {
+  try {
+    const publicKeys = ["google_auth_enabled", "platform_name", "maintenance_mode"];
+    const settings = await prisma.platformSettings.findMany({
+      where: { key: { in: publicKeys } }
+    });
+    
+    const settingsMap = settings.reduce((acc: any, s: any) => {
+      acc[s.key] = s.value;
+      return acc;
+    }, {});
+
+    // Ensure defaults if not set
+    if (settingsMap.google_auth_enabled === undefined) settingsMap.google_auth_enabled = "true";
+    if (settingsMap.maintenance_mode === undefined) settingsMap.maintenance_mode = "false";
+
+    // Fetch Google Login feature status for role-specific checks
+    const googleLoginFeature = await prisma.platformFeature.findUnique({
+      where: { featureKey: "googleLogin" }
+    });
+
+    if (googleLoginFeature) {
+      settingsMap.google_login_feature = {
+        student: googleLoginFeature.studentEnabled,
+        teacher: googleLoginFeature.teacherEnabled,
+        parent: googleLoginFeature.parentEnabled,
+        admin: googleLoginFeature.adminEnabled
+      };
+    } else {
+      // Default to enabled if feature not defined in DB yet
+      settingsMap.google_login_feature = {
+        student: true,
+        teacher: true,
+        parent: true,
+        admin: true
+      };
+    }
+    
+    return res.status(200).json({ success: true, data: settingsMap });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Failed to fetch public settings" });
+  }
+};
+
+/**
  * Update a specific platform setting
  */
 export const updateSetting = async (req: Request, res: Response) => {
