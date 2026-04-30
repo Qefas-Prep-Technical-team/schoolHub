@@ -19,6 +19,7 @@ interface User {
   teacherCode?: string;
   studentCode?: string;
   parentCode?: string;
+  phone?: string;
   schools?: { schoolId: string; name: string }[];
   profileImage?: string;
   bannerImage?: string;

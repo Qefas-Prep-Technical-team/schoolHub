@@ -8,7 +8,8 @@ import {
     XCircle, 
     Clock,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    ArrowRight
 } from 'lucide-react';
 
 interface Transaction {
@@ -69,65 +70,55 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900/50 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none">
-            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">Transaction History</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Review your recent payments and subscriptions ({items.length} total)</p>
-                </div>
-                <button className="bg-slate-100 dark:bg-slate-800 p-3 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                    <span className="material-symbols-outlined text-slate-600 dark:text-slate-400">download</span>
-                </button>
-            </div>
-
+        <div className="bg-transparent overflow-hidden">
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-900/30 uppercase text-[10px] font-black tracking-widest text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                            <th className="px-8 py-4">Transaction ID</th>
-                            <th className="px-8 py-4">Date</th>
-                            <th className="px-8 py-4">Plan / Cycle</th>
-                            <th className="px-8 py-4">Amount</th>
-                            <th className="px-8 py-4">Status</th>
-                            <th className="px-8 py-4">Actions</th>
+                        <tr className="bg-slate-900 dark:bg-orange-600 uppercase text-[10px] font-black tracking-[0.2em] text-white border-b border-white/10">
+                            <th className="px-8 py-5">Record Ref</th>
+                            <th className="px-8 py-5">Timestamp</th>
+                            <th className="px-8 py-5">Protocol / Cycle</th>
+                            <th className="px-8 py-5">Credit Value</th>
+                            <th className="px-8 py-5">State</th>
+                            <th className="px-8 py-5 text-right">Review</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                         {paginatedTransactions.map((txn, idx) => (
                             <motion.tr 
                                 key={txn.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: idx * 0.05 }}
-                                className="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
+                                className="group hover:bg-orange-600/[0.02] transition-colors"
                             >
                                 <td className="px-8 py-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-11 h-11 bg-slate-900 dark:bg-white/5 rounded-xl flex items-center justify-center text-white dark:text-orange-500 shadow-lg group-hover:scale-110 transition-transform">
                                             <CreditCard className="w-5 h-5" />
                                         </div>
-                                        <span className="font-bold text-slate-900 dark:text-white truncate max-w-[120px]">{txn.reference || txn.id}</span>
+                                        <span className="font-black text-slate-900 dark:text-white truncate max-w-[150px] uppercase tracking-tight">{txn.reference || txn.id}</span>
                                     </div>
                                 </td>
                                 <td className="px-8 py-6">
-                                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 font-medium">
-                                        <Calendar className="w-4 h-4" />
+                                    <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 font-bold text-[11px] uppercase tracking-widest">
+                                        <Calendar className="w-4 h-4 text-orange-600" />
                                         {new Date(txn.createdAt || txn.date || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </div>
                                 </td>
                                 <td className="px-8 py-6">
                                     <div>
-                                        <p className="font-bold text-slate-900 dark:text-white capitalize">{txn.plan || 'N/A'}</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{txn.billingCycle || 'N/A'}</p>
+                                        <p className="font-black text-slate-900 dark:text-white capitalize text-sm tracking-tight">{txn.plan || 'N/A'}</p>
+                                        <p className="text-[10px] text-orange-600 font-black uppercase tracking-widest">{txn.billingCycle || 'N/A'}</p>
                                     </div>
                                 </td>
                                 <td className="px-8 py-6">
-                                    <span className={`font-black ${txn.amount === 0 ? 'text-green-500' : 'text-slate-900 dark:text-white'}`}>
+                                    <span className={`text-lg font-black tracking-tighter ${txn.amount === 0 ? 'text-green-500' : 'text-slate-900 dark:text-white'}`}>
                                         {txn.amount === 0 ? 'FREE TRIAL' : `₦${txn.amount.toLocaleString()}`}
                                     </span>
                                 </td>
                                 <td className="px-8 py-6">
-                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                    <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] shadow-sm ${
                                         txn.status === 'SUCCESS' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
                                         txn.status === 'PENDING' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' :
                                         'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
@@ -136,9 +127,9 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                                         {txn.status}
                                     </div>
                                 </td>
-                                <td className="px-8 py-6">
-                                    <button className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                        <ArrowUpRight className="w-5 h-5" />
+                                <td className="px-8 py-6 text-right">
+                                    <button className="p-3 text-slate-400 hover:text-orange-600 dark:hover:text-white transition-all bg-slate-50 dark:bg-white/5 rounded-xl hover:shadow-xl active:scale-90">
+                                        <ArrowRight className="w-5 h-5" />
                                     </button>
                                 </td>
                             </motion.tr>
@@ -149,28 +140,28 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-                <div className="px-8 py-6 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
-                    <p className="text-sm font-medium text-slate-500">
-                        Showing <span className="text-slate-900 dark:text-white">{startIndex + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(startIndex + itemsPerPage, totalCount)}</span> of <span className="text-slate-900 dark:text-white">{totalCount}</span> results
+                <div className="px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-transparent">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                        Displaying <span className="text-slate-900 dark:text-white">{startIndex + 1}</span> - <span className="text-slate-900 dark:text-white">{Math.min(startIndex + itemsPerPage, totalCount)}</span> of <span className="text-slate-900 dark:text-white">{totalCount}</span> Transactions
                     </p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <button 
                             onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                             disabled={currentPage === 1}
-                            className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-slate-800 transition-all"
+                            className="h-12 w-12 flex items-center justify-center rounded-[1.2rem] border border-slate-200 dark:border-white/10 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-white/5 hover:border-orange-500 transition-all shadow-sm active:scale-90"
                         >
-                            <ChevronLeft className="w-5 h-5" />
+                            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                         </button>
                         
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                                 <button
                                     key={page}
                                     onClick={() => handlePageChange(page)}
-                                    className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
+                                    className={`w-12 h-12 rounded-[1.2rem] font-black text-xs transition-all uppercase tracking-widest ${
                                         currentPage === page 
-                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
-                                        : 'hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                        ? 'bg-orange-600 text-white shadow-xl shadow-orange-600/30' 
+                                        : 'hover:bg-white dark:hover:bg-white/5 text-slate-600 dark:text-slate-400'
                                     }`}
                                 >
                                     {page}
@@ -181,22 +172,21 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                         <button 
                             onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                             disabled={currentPage === totalPages}
-                            className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-slate-800 transition-all"
+                            className="h-12 w-12 flex items-center justify-center rounded-[1.2rem] border border-slate-200 dark:border-white/10 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-white/5 hover:border-orange-500 transition-all shadow-sm active:scale-90"
                         >
-                            <ChevronRight className="w-5 h-5" />
+                            <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                         </button>
                     </div>
                 </div>
             )}
             
-            <div className="p-8 bg-slate-50 dark:bg-slate-950/20 border-t border-slate-100 dark:border-slate-800">
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                    Note: Transactions are processed securely. Your privacy and security are our top priorities.
-                </p>
-            </div>
             {items.length === 0 && (
-                <div className="p-12 text-center">
-                    <p className="text-slate-500 font-medium italic">No transactions found.</p>
+                <div className="p-24 text-center">
+                    <div className="w-20 h-20 bg-slate-50 dark:bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+                       <CreditCard className="w-8 h-8 text-slate-200 dark:text-slate-800" />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-2">No Records Detected</h3>
+                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Initiate a protocol upgrade to see transactions here.</p>
                 </div>
             )}
         </div>

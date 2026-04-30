@@ -39,7 +39,7 @@ router.use("/students", authenticateToken, studentRoutes);
 router.use("/upload", authenticateToken, uploadRoutes);
 router.use("/grades", authenticateToken, checkSubscription, gradeRoutes);
 router.use("/teacher", authenticateToken, teacherRoutes);
-router.use("/parents", authenticateToken, checkSubscription, parentRoutes);
+router.use("/parents", authenticateToken, parentRoutes);
 router.use("/finance", financeRoutes);
 router.use("/payment", paymentRoutes);
 router.use("/support", supportRoutes);

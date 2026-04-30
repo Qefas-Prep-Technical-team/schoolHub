@@ -1,10 +1,11 @@
-'use client'
 import { format, parseISO } from 'date-fns'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useParentStore } from '@/lib/api/hooks/useParentStore'
 
 export default function ExamsCard() {
-  const { data, isLoading } = useParentDashboard()
+  const { selectedChildId } = useParentStore()
+  const { data, isLoading } = useParentDashboard(selectedChildId)
   const exams = data?.upcomingExams ?? []
 
   return (

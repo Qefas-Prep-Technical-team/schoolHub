@@ -1,10 +1,9 @@
-// components/auth/ProtectedParentRoute.tsx
-
+import ProtectedRoute from "@/components/reuseables/ProtectedRoute";
 
 export function ProtectedParentRoute({ children }: { children: React.ReactNode }) {
   return (
-    <ProtectedParentRoute >
+    <ProtectedRoute userTypes={['PARENT']}>
       {children}
-    </ProtectedParentRoute>
+    </ProtectedRoute>
   );
 }

@@ -9,17 +9,19 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { apiClient } from "@/lib/api/client";
-import { Loader2, LayoutGrid, FileText, Settings2, School, Calendar, ArrowRight, AlertCircle, Check, CheckCircle2 } from "lucide-react";
+import { Loader2, LayoutGrid, FileText, Settings2, School, Calendar, ArrowRight, AlertCircle, Check, CheckCircle2, Zap, ShieldCheck, Cpu, Globe, Target, Layers } from "lucide-react";
 
 import { examService, CreateExamDTO } from "@/lib/api/services/examService";
 import { useExamStore } from "@/store/examStore";
 import { useSessions } from "@/lib/api/hooks/useSessions";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 const examSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -48,7 +50,7 @@ export default function CreateExamForm() {
 
   const { setExamContext } = useExamStore();
   const { user } = useAuthStore();
-
+  
   const {
     register,
     handleSubmit,
@@ -77,6 +79,8 @@ export default function CreateExamForm() {
 
   const watchedSchoolId = watch("schoolId");
   const watchedScope = watch("scope");
+  const { data: settings } = useSchoolSettings(watchedSchoolId);
+  const primaryColor = settings?.themeColor || '#ea580c';
 
   // sessions now represents the Array [{id, name...}]
   const { data: sessions, isLoading: loadingSessions, isError } = useSessions(watchedSchoolId);
@@ -103,9 +107,6 @@ export default function CreateExamForm() {
     },
     enabled: !!watchedSchoolId,
   });
-
-
-
 
   // TRIGGER 1: Auto-select school if exactly 1 school is available
   useEffect(() => {
@@ -168,167 +169,181 @@ export default function CreateExamForm() {
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto space-y-8 pb-20">
-      <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm space-y-8">
-
-        {/* <div className="border-b border-slate-100 dark:border-slate-800 pb-6">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Create New Exam</h2>
-          <p className="text-sm text-slate-500">Initialize your examination settings and link a session.</p>
-        </div> */}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
-          {/* School Selector */}
-          <div className="space-y-3">
-            <Label className="text-sm font-bold flex items-center gap-2">
-              <School size={16} className="text-blue-500" /> Select School
-            </Label>
-            <select
-              {...register("schoolId")}
-              className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 px-4 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-            >
-              <option value="">Choose a school...</option>
-              {(user as any)?.schools?.map((s: any) => (
-                <option key={s.schoolId} value={s.schoolId}>{s.schoolName}</option>
-              ))}
-            </select>
-            {errors.schoolId && <p className="text-red-500 text-xs font-medium">{errors.schoolId.message}</p>}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-12 pb-20">
+      <div className="bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[4rem] p-12 lg:p-16 shadow-2xl space-y-12 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-[100px] opacity-[0.03] pointer-events-none" style={{ backgroundColor: primaryColor }} />
+        
+        <div className="space-y-10">
+          <div className="flex items-center gap-4">
+              <div className="size-14 rounded-2xl flex items-center justify-center border border-slate-100 dark:border-white/10 shadow-inner" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                  <Cpu size={24} strokeWidth={2.5} />
+              </div>
+              <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Core Configuration</h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Ingress Parameters</p>
+              </div>
           </div>
 
-          {/* Session Selector - Now using array logic */}
-          <div className="space-y-3">
-            {sessions && sessions.data?.length > 0 ? (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <Label className="text-sm font-bold flex items-center gap-2 text-emerald-600">
-                  <Calendar size={16} /> Active Session Found (Optional)
-                </Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-end">
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
+                <span>Institutional Node</span>
+                <School size={14} className="text-slate-300" />
+              </Label>
+              <select
+                {...register("schoolId")}
+                className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
+                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+              >
+                <option value="">Choose a school...</option>
+                {(user as any)?.schools?.map((s: any) => (
+                  <option key={s.schoolId} value={s.schoolId}>{s.schoolName}</option>
+                ))}
+              </select>
+              {errors.schoolId && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.schoolId.message}</p>}
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
+                <span>Temporal Registry</span>
+                <Calendar size={14} className="text-slate-300" />
+              </Label>
+              {sessions && sessions.data?.length > 0 ? (
                 <select
                   {...register("sessionId")}
-                  className="w-full h-12 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/30 dark:bg-emerald-900/10 px-4 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
+                  style={{ '--tw-ring-color': `${primaryColor}20` } as any}
                 >
                   <option value="">No Session (Select to link)</option>
                   {sessions.data?.map((session: any) => (
                     <option key={session.id} value={session.id}>{session.name}</option>
                   ))}
                 </select>
-              </div>
-            ) : (
-              <div className="h-12 flex items-center px-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 text-xs italic border border-dashed border-slate-200">
-                {loadingSessions ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 size={14} className="animate-spin" /> Fetching sessions...
-                  </span>
-                ) : isError ? (
-                  <span className="flex items-center gap-2 text-red-400">
-                    <AlertCircle size={14} /> Error loading data
-                  </span>
-                ) : !watchedSchoolId ? (
-                  "Waiting for school selection..."
-                ) : (
-                  "No sessions found for this school"
-                )}
-              </div>
-            )}
-            {errors.sessionId && <p className="text-red-500 text-xs font-medium">{errors.sessionId.message}</p>}
+              ) : (
+                <div className="h-16 flex items-center px-6 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-400 text-xs italic border-2 border-dashed border-slate-100 dark:border-white/5 font-bold uppercase tracking-widest">
+                  {loadingSessions ? (
+                    <span className="flex items-center gap-3">
+                      <Loader2 size={16} className="animate-spin" /> Fetching...
+                    </span>
+                  ) : !watchedSchoolId ? (
+                    "Awaiting School Node..."
+                  ) : (
+                    "No sessions discovered"
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* --- Exam Content --- */}
-        <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-6">
-          <div className="space-y-3">
-            <Label htmlFor="title" className="text-sm font-bold">Exam Title</Label>
-            <Input
-              id="title"
-              placeholder="e.g. 2026 First Term Mock Exam"
-              {...register("title")}
-              className="h-12 rounded-2xl border-slate-200 dark:border-slate-800"
-            />
-            {errors.title && <p className="text-red-500 text-xs font-medium">{errors.title.message}</p>}
+        <div className="pt-12 border-t border-slate-100 dark:border-white/5 space-y-10">
+          <div className="flex items-center gap-4">
+              <div className="size-14 rounded-2xl flex items-center justify-center border border-slate-100 dark:border-white/10 shadow-inner" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                  <FileText size={24} strokeWidth={2.5} />
+              </div>
+              <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Identity & Scope</h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operational Targeting</p>
+              </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div className="space-y-3">
+              <Label htmlFor="title" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Node Designation (Title)</Label>
+              <Input
+                id="title"
+                placeholder="e.g. 2026 FIRST TERM PERFORMANCE SYNC"
+                {...register("title")}
+                className="h-16 px-6 rounded-2xl bg-slate-50/50 dark:bg-white/5 border-2 border-slate-50 dark:border-white/5 focus:border-primary transition-all font-bold text-slate-700 dark:text-slate-200"
+                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+              />
+              {errors.title && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.title.message}</p>}
+            </div>
+
+            <div className="space-y-3">
+                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Assessment Category</Label>
+                <div className="grid grid-cols-2 gap-4">
+                    <button 
+                        type="button"
+                        onClick={() => setValue("category", "EXAM")}
+                        className={cn(
+                            "h-16 rounded-2xl border-2 font-black uppercase tracking-widest text-[10px] transition-all",
+                            watch("category") === "EXAM" ? "bg-slate-900 text-white border-slate-900 shadow-xl" : "bg-slate-50 dark:bg-white/5 border-slate-50 dark:border-white/5 text-slate-400"
+                        )}
+                        style={{ backgroundColor: watch("category") === "EXAM" ? primaryColor : undefined, borderColor: watch("category") === "EXAM" ? primaryColor : undefined }}
+                    >
+                        Formal Exam
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={() => setValue("category", "QUIZ")}
+                        className={cn(
+                            "h-16 rounded-2xl border-2 font-black uppercase tracking-widest text-[10px] transition-all",
+                            watch("category") === "QUIZ" ? "bg-slate-900 text-white border-slate-900 shadow-xl" : "bg-slate-50 dark:bg-white/5 border-slate-50 dark:border-white/5 text-slate-400"
+                        )}
+                        style={{ backgroundColor: watch("category") === "QUIZ" ? primaryColor : undefined, borderColor: watch("category") === "QUIZ" ? primaryColor : undefined }}
+                    >
+                        Tactical Quiz
+                    </button>
+                </div>
+            </div>
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="description" className="text-sm font-bold">Instructions</Label>
+            <Label htmlFor="description" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Instructions</Label>
             <Textarea
               id="description"
-              placeholder="Describe the exam guidelines..."
+              placeholder="Provide tactical guidelines for participants..."
               {...register("description")}
-              className="rounded-2xl border-slate-200 dark:border-slate-800 min-h-[100px]"
+              className="rounded-3xl bg-slate-50/50 dark:bg-white/5 border-2 border-slate-50 dark:border-white/5 focus:border-primary transition-all font-bold text-slate-700 dark:text-slate-200 min-h-[120px] p-6"
             />
           </div>
 
-          <div className="space-y-3">
-            <Label htmlFor="startDate" className="text-sm font-semibold text-slate-500 flex items-center gap-2">
-              <Calendar size={16} className="text-blue-500/50" /> Start Date & Time (Optional)
-            </Label>
-            <Input
-              id="startDate"
-              type="datetime-local"
-              {...register("startDate")}
-              className="h-12 rounded-2xl border-slate-200 dark:border-slate-800"
-            />
-            <p className="text-[10px] text-slate-500 font-medium">If set, students cannot start before this time.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Target size={14} className="text-slate-300" /> Operational Scope
+                </Label>
+                <select 
+                    {...register("scope")} 
+                    className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
+                    style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+                >
+                  <option value="SCHOOL">Whole Institutional Network</option>
+                  <option value="CLASS">Specific Class Cluster</option>
+                  <option value="DEPARTMENT">Departmental Segment</option>
+                </select>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Layers size={14} className="text-slate-300" /> Target Class (Optional)
+                </Label>
+                <select
+                  {...register("classId")}
+                  className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
+                  style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+                >
+                  <option value="">Select Class Module...</option>
+                  {classesData?.map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.name} {c.section}</option>
+                  ))}
+                </select>
+              </div>
           </div>
 
-          <div className="space-y-3">
-            <Label htmlFor="endDate" className="text-sm font-semibold text-slate-500 flex items-center gap-2">
-              <Calendar size={16} className="text-rose-500/50" /> Concludes At (Optional)
-            </Label>
-            <Input
-              id="endDate"
-              type="datetime-local"
-              {...register("endDate")}
-              className="h-12 rounded-2xl border-slate-200 dark:border-slate-800"
-            />
-            <p className="text-[10px] text-slate-500 font-medium">If set, the exam becomes unavailable after this time.</p>
-          </div>
-        </div>
-
-        {/* --- Config --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-500">
-          <div className="space-y-2">
-            <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400">Assessment Type</Label>
-            <select
-              {...register("category")}
-              className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 text-sm outline-none bg-transparent font-bold text-blue-600"
-            >
-              <option value="EXAM">Formal Examination</option>
-              <option value="QUIZ">Quick Quiz</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400">Scope</Label>
-            <select {...register("scope")} className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 text-sm outline-none bg-transparent">
-              <option value="SCHOOL">Whole School</option>
-              <option value="CLASS">By Class</option>
-              <option value="DEPARTMENT">By Department</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[10px] uppercase tracking-widest font-black text-blue-500">Target Class (Optional)</Label>
-            <select
-              {...register("classId")}
-              className="w-full h-12 rounded-2xl border border-blue-100 dark:border-blue-900/30 bg-blue-50/20 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
-            >
-              <option value="">Select a class...</option>
-              {classesData?.map((c: any) => (
-                <option key={c.id} value={c.id}>{c.name} {c.section}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-4 md:col-span-2">
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <Label className="text-[10px] uppercase tracking-widest font-black text-purple-500">
-                Target Departments (Optional) {watchedClassId && "for selected class"}
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                Departmental Targeting
               </Label>
-              <span className="text-[10px] font-bold text-slate-400">
-                {watch("departmentIds")?.length || 0} Selected
-              </span>
+              <div className="px-3 py-1 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                {watch("departmentIds")?.length || 0} Nodes Selected
+              </div>
             </div>
             
             {departmentsData && departmentsData.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {departmentsData.map((d: any) => {
                   const isSelected = watch("departmentIds")?.includes(d.id);
                   return (
@@ -341,98 +356,104 @@ export default function CreateExamForm() {
                           : [...current, d.id];
                         setValue("departmentIds", next);
                       }}
-                      className={`cursor-pointer group flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${
-                        isSelected 
-                          ? "bg-purple-50 border-purple-500/50 text-purple-700 shadow-sm shadow-purple-100" 
-                          : "bg-slate-50 shadow-none border-slate-100 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800"
-                      }`}
+                      className={cn(
+                          "cursor-pointer group flex items-center gap-5 p-5 rounded-3xl border-2 transition-all duration-300",
+                          isSelected 
+                            ? "bg-primary/5 border-primary shadow-xl shadow-primary/10" 
+                            : "bg-slate-50/50 dark:bg-white/5 border-slate-50 dark:border-white/5 hover:border-primary/30"
+                      )}
+                      style={{ 
+                        borderColor: isSelected ? primaryColor : undefined,
+                        backgroundColor: isSelected ? `${primaryColor}10` : undefined,
+                        boxShadow: isSelected ? `0 20px 40px -10px ${primaryColor}20` : undefined
+                      } as any}
                     >
-                      <div className={`w-5 h-5 rounded-lg flex items-center justify-center transition-colors ${
-                        isSelected ? "bg-purple-600 text-white" : "bg-slate-200 dark:bg-slate-800 text-transparent"
-                      }`}>
-                        <Check size={12} strokeWidth={3} />
+                      <div className={cn(
+                          "size-8 rounded-xl flex items-center justify-center transition-all duration-500",
+                          isSelected ? "bg-primary text-white scale-110" : "bg-slate-200 dark:bg-white/10 text-transparent"
+                      )}
+                      style={{ backgroundColor: isSelected ? primaryColor : undefined }}
+                      >
+                        <Check size={14} strokeWidth={4} />
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-bold truncate leading-tight">{d.name}</span>
-                        <span className="text-[10px] uppercase font-black opacity-50 tracking-tighter">{d.code}</span>
+                        <span className={cn("text-xs font-black uppercase tracking-tight truncate", isSelected ? "text-slate-900 dark:text-white" : "text-slate-500")}>{d.name}</span>
+                        <span className="text-[9px] uppercase font-black opacity-40 tracking-widest">{d.code}</span>
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="h-14 flex items-center px-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px] italic border border-dashed border-slate-200">
-                {watchedSchoolId ? "No departments found for this selection" : "Select a school first"}
+              <div className="h-20 flex items-center justify-center rounded-3xl bg-slate-50 dark:bg-white/5 border-2 border-dashed border-slate-100 dark:border-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] italic">
+                {watchedSchoolId ? "No departmental nodes discovered" : "Initialize school node selection"}
               </div>
             )}
-            <p className="text-[10px] text-slate-500 font-medium">Leave empty for a class-wide or school-wide general exam.</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400">Creation</Label>
-            <select {...register("creationMode")} className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 text-sm outline-none bg-transparent">
-              <option value="MANUAL">Manual</option>
-              <option value="AI">AI Assistant</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400">Mode</Label>
-            <select {...register("mode")} className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 text-sm outline-none bg-transparent">
-              <option value="SINGLE_SUBJECT">Single Subject</option>
-              <option value="COMBINED">Combined</option>
-            </select>
           </div>
         </div>
 
-        {/* --- Result Settings --- */}
-        <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-3">
-              <Label className="text-sm font-bold flex items-center gap-2">
-                <FileText size={16} className="text-blue-500" /> Result Visibility
-              </Label>
+        <div className="pt-12 border-t border-slate-100 dark:border-white/5 space-y-10">
+          <div className="flex items-center gap-4">
+              <div className="size-14 rounded-2xl flex items-center justify-center border border-slate-100 dark:border-white/10 shadow-inner" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                  <ShieldCheck size={24} strokeWidth={2.5} />
+              </div>
+              <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Result Protocols</h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Visibility & Authorization</p>
+              </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="space-y-4">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Synchronization Mode</Label>
               <select
                 {...register("allowImmediateResult", {
                   setValueAs: (v) => v === "true",
                 })}
-                className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 px-4 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-medium"
+                className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
+                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
               >
-                <option value="true">Immediate (After Submission)</option>
-                <option value="false">Hidden (Till Release Date)</option>
+                <option value="true">Immediate Sync (Visible On Completion)</option>
+                <option value="false">Temporal Delay (Released on Date)</option>
               </select>
-              <p className="text-[10px] text-slate-500 font-medium">Determines if students see their scores immediately.</p>
             </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="resultReleaseAt" className="text-sm font-bold flex items-center gap-2">
-                <Calendar size={16} className="text-blue-500" /> Result Release Date
-              </Label>
+            <div className="space-y-4">
+              <Label htmlFor="resultReleaseAt" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registry Release (Optional)</Label>
               <Input
                 id="resultReleaseAt"
                 type="datetime-local"
                 disabled={watch("allowImmediateResult") === true}
                 {...register("resultReleaseAt")}
-                className="h-12 rounded-2xl border-slate-200 dark:border-slate-800"
+                className="h-16 px-6 rounded-2xl bg-slate-50/50 dark:bg-white/5 border-2 border-slate-50 dark:border-white/5 focus:border-primary transition-all font-bold text-slate-700 dark:text-slate-200"
               />
-              <p className="text-[10px] text-slate-500 font-medium">If hidden, scores will be revealed at this time.</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl">
-        <div className="text-center sm:text-left">
-          <p className="text-sm font-bold text-slate-900 dark:text-white">Next Step: Papers & Questions</p>
-          <p className="text-xs text-slate-500">Redirecting to paper setup after save.</p>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-8 p-10 bg-white dark:bg-slate-900/60 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3.5rem] shadow-2xl">
+        <div className="text-center sm:text-left space-y-1">
+          <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">PHASE 01 COMPLETED</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Phase: Performance Node Infrastructure (Papers)</p>
         </div>
         <Button
           type="submit"
           disabled={isPending || !watchedSchoolId}
-          className="w-full sm:w-auto px-10 h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all flex gap-3 shadow-lg shadow-blue-200 dark:shadow-none"
+          style={{ backgroundColor: primaryColor }}
+          className="w-full sm:w-auto px-12 h-16 rounded-[2rem] text-white font-black uppercase tracking-widest transition-all flex gap-4 shadow-2xl hover:scale-105 active:scale-95 border-none"
         >
-          {isPending ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}
-          {isPending ? "Initializing..." : "Create & Continue"}
+          {isPending ? (
+              <span className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  INITIALIZING...
+              </span>
+          ) : (
+              <span className="flex items-center gap-3">
+                  INITIALIZE NODE
+                  <ArrowRight size={20} strokeWidth={3} />
+              </span>
+          )}
         </Button>
       </div>
     </form>

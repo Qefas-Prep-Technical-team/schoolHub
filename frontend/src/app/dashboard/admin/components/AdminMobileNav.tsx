@@ -143,12 +143,12 @@ export function AdminMobileNav() {
       <div className="sticky top-0 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 md:hidden">
         <div className="h-16 px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 shadow-lg shadow-indigo-600/20">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/20">
               <School className="h-5 w-5 text-white" />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">QEFAS HUB</span>
-              <span className="text-[9px] text-indigo-500 font-bold uppercase tracking-widest">Admin Hub</span>
+              <span className="text-[9px] text-primary font-bold uppercase tracking-widest">Admin Hub</span>
             </div>
           </div>
 
@@ -169,11 +169,11 @@ export function AdminMobileNav() {
                 href={t.href}
                 className={cn(
                   "flex flex-col items-center justify-center gap-1.5 px-3 transition-all relative py-1",
-                  isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                  isActive ? "text-primary" : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                 )}
               >
                 {isActive && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-indigo-500 shadow-[0_-2px_10px_rgba(99,102,241,0.5)]" />
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-primary shadow-lg shadow-primary/50" />
                 )}
                 <Icon className={cn("h-5 w-5 transition-transform", isActive ? "scale-110" : "scale-100")} />
                 <span className={cn("text-[9px] font-black uppercase tracking-widest", isActive ? "opacity-100" : "opacity-70")}>{t.label}</span>

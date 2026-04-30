@@ -1,5 +1,18 @@
-import React, { useState } from 'react';
-import { Edit2, Trash2, CheckSquare } from 'lucide-react';
+'use client';
+
+import React from 'react';
+import { Edit2, Trash2, CheckSquare, User, MapPin, MoreVertical } from 'lucide-react';
+import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from '@/components/ui/button';
 
 interface TimetableCardProps {
   subject: {
@@ -20,66 +33,70 @@ const TimetableCard: React.FC<TimetableCardProps> = ({
   onDelete, 
   onMarkAttendance 
 }) => {
-  const [showActions, setShowActions] = useState(false);
+  const { user } = useAuthStore();
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const { data: settings } = useSchoolSettings(schoolId);
+  const primaryColor = settings?.themeColor || '#ea580c';
 
   return (
-    <div 
-      className="relative flex flex-col justify-between h-full cursor-pointer rounded-xl p-3 bg-primary/20 dark:bg-primary/30 border border-primary text-gray-800 dark:text-white"
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+    <motion.div 
+      whileHover={{ scale: 1.02 }}
+      className="group relative h-full rounded-2xl p-4 transition-all overflow-hidden border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-xl bg-white dark:bg-slate-900"
     >
-      <div>
-        <p className="font-bold">{subject.name}</p>
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          {subject.teacher}
-        </p>
-      </div>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-        {subject.room}
-      </p>
+      {/* Dynamic Color Accent */}
+      <div 
+        className="absolute top-0 left-0 w-1.5 h-full opacity-80"
+        style={{ backgroundColor: primaryColor }}
+      />
       
-      <div className={`absolute top-2 right-2 flex items-center gap-1 transition-opacity ${
-        showActions ? 'opacity-100' : 'opacity-0'
-      }`}>
-        {onEdit && (
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(subject.id);
-            }}
-            className="p-1 rounded-full bg-white/50 dark:bg-black/20 hover:bg-white/70 dark:hover:bg-black/40"
-            aria-label="Edit"
-          >
-            <Edit2 size={14} />
-          </button>
-        )}
-        {onDelete && (
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(subject.id);
-            }}
-            className="p-1 rounded-full bg-white/50 dark:bg-black/20 hover:bg-white/70 dark:hover:bg-black/40"
-            aria-label="Delete"
-          >
-            <Trash2 size={14} />
-          </button>
-        )}
-        {onMarkAttendance && (
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              onMarkAttendance(subject.id);
-            }}
-            className="p-1 rounded-full bg-white/50 dark:bg-black/20 hover:bg-white/70 dark:hover:bg-black/40"
-            aria-label="Mark Attendance"
-          >
-            <CheckSquare size={14} />
-          </button>
-        )}
+      <div className="flex flex-col h-full justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex justify-between items-start">
+            <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none group-hover:text-orange-600 transition-colors">
+              {subject.name}
+            </h4>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-6 -mr-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MoreVertical size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40 rounded-xl p-1">
+                <DropdownMenuItem onClick={() => onEdit?.(subject.id)} className="rounded-lg gap-2 text-xs font-bold py-2">
+                  <Edit2 size={12} /> Edit Period
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onMarkAttendance?.(subject.id)} className="rounded-lg gap-2 text-xs font-bold py-2">
+                  <CheckSquare size={12} /> Attendance
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete?.(subject.id)} className="rounded-lg gap-2 text-xs font-bold py-2 text-red-500">
+                  <Trash2 size={12} /> Purge Node
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            <User size={10} />
+            <span className="truncate">{subject.teacher}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/5 w-fit">
+          <MapPin size={10} className="text-slate-400" />
+          <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+            {subject.room}
+          </span>
+        </div>
       </div>
-    </div>
+
+      {/* Background Decor */}
+      <div 
+        className="absolute -bottom-4 -right-4 size-16 blur-2xl opacity-0 group-hover:opacity-10 transition-opacity rounded-full"
+        style={{ backgroundColor: primaryColor }}
+      />
+    </motion.div>
   );
 };
 
-export default TimetableCard;
+export default TimetableCard;

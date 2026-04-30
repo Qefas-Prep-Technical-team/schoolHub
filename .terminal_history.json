@@ -1096,7 +1096,37 @@
       "command": "cd ../",
       "timestamp": 1777500451676,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "git add .",
+      "timestamp": 1777500491382,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git commit -m \"google loggin setup \"",
+      "timestamp": 1777500526644,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git push origin",
+      "timestamp": 1777500547946,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd backend",
+      "timestamp": 1777500933443,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1777501525226,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "npx prisma db push",
+      "timestamp": 1777501561208,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
     }
   ],
-  "lastUpdated": 1777500451676
+  "lastUpdated": 1777501561208
 }

@@ -1,9 +1,32 @@
 'use client'
 
-import React from 'react'
-import Image from 'next/image'
-import {  useChildDetailsDrawer } from './ChildDetailsDrawer/components/useChildDetailsDrawer'
-import ChildDetailsDrawer, { ChildData } from './ChildDetailsDrawer/ChildDetailsDrawer'
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useParentStore } from '@/lib/api/hooks/useParentStore';
+import { useChildDetailsDrawer } from './ChildDetailsDrawer/components/useChildDetailsDrawer';
+import ChildDetailsDrawer from './ChildDetailsDrawer/ChildDetailsDrawer';
+import { 
+  User, 
+  ChevronRight, 
+  GraduationCap, 
+  Calendar, 
+  MoreVertical, 
+  Layout, 
+  Edit3,
+  ExternalLink,
+  ShieldCheck
+} from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import EditChildModal from './EditChildModal';
+import { cn } from '@/lib/utils';
 
 interface ChildCardProps {
   child: {
@@ -28,8 +51,20 @@ interface ChildCardProps {
 
 export default function ChildCard({ child }: ChildCardProps) {
   const { isOpen, selectedChild, openDrawer, closeDrawer } = useChildDetailsDrawer()
+  const { setSelectedChildId } = useParentStore()
+  const router = useRouter()
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
-  const handleViewChildDetails = () => {
+  const handleViewDashboard = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedChildId(child.id)
+    router.push('/dashboard/parent')
+  }
+
+  const handleViewChildDetails = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     openDrawer({
       id: child.id,
       name: child.name,
@@ -45,148 +80,134 @@ export default function ChildCard({ child }: ChildCardProps) {
     })
   }
 
-  const handleMoreActions = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    // Show more actions menu
-    console.log(`More actions for ${child.name}`)
-  }
-
-  const getBadgeColorClasses = (color: string) => {
-    switch (color) {
-      case 'green':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-      case 'blue':
-        return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-      case 'purple':
-        return 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-      default:
-        return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-    }
-  }
-
   const getAttendanceColor = (percentage: number) => {
     if (percentage >= 95) return 'bg-green-500'
-    if (percentage >= 85) return 'bg-yellow-400'
+    if (percentage >= 85) return 'bg-orange-500'
     return 'bg-red-500'
   }
 
-  const getGradeColor = (grade: string | number) => {
-    if (grade === 'A' || grade === 'A+') return 'text-green-600 dark:text-green-400'
-    if (grade === 'B' || grade === 'B+') return 'text-yellow-600 dark:text-yellow-400'
-    return 'text-slate-500 dark:text-slate-400'
-  }
+  const placeholderUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(child.name)}&backgroundColor=ea580c&fontFamily=Arial&fontSize=40&fontWeight=900`;
+  const displayImage = (!imgError && child.imageUrl && child.imageUrl !== "null" && child.imageUrl !== "") 
+    ? child.imageUrl 
+    : placeholderUrl;
 
   return (
-    <article className="flex flex-col bg-surface-light dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden hover:shadow-md transition-shadow group">
+    <article className="group relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl rounded-[3rem] border border-slate-200 dark:border-white/5 overflow-hidden shadow-2xl hover:shadow-orange-600/10 transition-all duration-700 animate-in fade-in zoom-in-95">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-600/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      
       {/* Card Header */}
-      <div className="p-6 pb-0 flex items-start justify-between gap-4">
-        <div className="flex gap-4">
+      <div className="p-10 pb-0">
+        <div className="flex justify-between items-start">
           <div className="relative">
-            <div className="relative size-16 rounded-full overflow-hidden shadow-inner">
+            <div className="size-28 rounded-[2.5rem] overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl bg-slate-100 dark:bg-slate-800 relative group-hover:scale-105 transition-transform duration-700">
               <Image
-                src={child.imageUrl}
-                alt={`Portrait of ${child.name}`}
+                src={displayImage}
+                alt={child.name}
                 fill
                 className="object-cover"
-                sizes="64px"
+                sizes="112px"
+                onError={() => setImgError(true)}
+                unoptimized
               />
             </div>
             
             {child.status === 'active' && (
-              <div 
-                className="absolute -bottom-1 -right-1 size-6 bg-green-500 rounded-full border-2 border-white dark:border-surface-dark flex items-center justify-center"
-                title="Active"
-              >
-                <span className="material-symbols-outlined text-white text-[14px] font-bold">
-                  check
-                </span>
+              <div className="absolute -bottom-2 -right-2 size-10 bg-orange-600 rounded-2xl border-4 border-white dark:border-slate-900 flex items-center justify-center text-white shadow-lg animate-bounce-slow">
+                <ShieldCheck size={18} />
               </div>
             )}
           </div>
-          
-          <div className="flex flex-col pt-1">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
-              {child.name}
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              {child.class} • Age {child.age}
-            </p>
-            <p className="text-slate-400 dark:text-slate-500 text-xs mt-1 font-mono">
-              {child.studentId}
-            </p>
-          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-12 rounded-2xl hover:bg-orange-600/10 hover:text-orange-600 transition-all">
+                <MoreVertical size={20} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 p-2 rounded-[1.5rem] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-slate-200 dark:border-white/5 shadow-2xl">
+              <DropdownMenuItem 
+                onClick={(e) => handleViewChildDetails(e as any)}
+                className="flex items-center gap-3 p-3 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-pointer focus:bg-orange-600 focus:text-white transition-all"
+              >
+                <ExternalLink size={14} /> View Node Intelligence
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setIsEditModalOpen(true)}
+                className="flex items-center gap-3 p-3 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-pointer focus:bg-orange-600 focus:text-white transition-all"
+              >
+                <Edit3 size={14} /> Modify Protocol (Edit)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/5 my-1" />
+              <DropdownMenuItem 
+                onClick={handleViewDashboard}
+                className="flex items-center gap-3 p-3 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-pointer text-orange-600 focus:bg-orange-600 focus:text-white transition-all"
+              >
+                <Layout size={14} /> Enter Terminal
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        
-        {/* More Actions Dropdown Trigger */}
-        <button 
-          onClick={handleMoreActions}
-          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          <span className="material-symbols-outlined">more_vert</span>
-        </button>
-      </div>
-      
-      {/* Key Stats */}
-      <div className="px-6 py-5">
-        <div className="grid grid-cols-2 gap-3">
-          {/* Grade Stat */}
-          <div className="flex flex-col gap-1 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
-            <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[16px] text-primary">school</span>
-              Grade
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className={`text-xl font-bold ${getGradeColor(child.gradeValue)}`}>
-                {child.gradeValue}
-              </span>
-              {child.gradePercentage && (
-                <span className={`text-sm font-medium ${getGradeColor(child.gradeValue)}`}>
-                  ({child.gradePercentage})
-                </span>
-              )}
-            </div>
+
+        <div className="mt-8 space-y-2">
+          <div className="flex items-center gap-2 text-[10px] font-black text-orange-600 uppercase tracking-[0.2em]">
+            <span>STU-CODE: {child.studentId}</span>
           </div>
-          
-          {/* Attendance Stat */}
-          <div className="flex flex-col gap-1 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
-            <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[16px] text-primary">calendar_month</span>
-              Attend.
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-bold text-slate-900 dark:text-white">
-                {child.attendance}%
-              </span>
-            </div>
-            {/* Mini Progress Bar */}
-            <div className="h-1 w-full bg-slate-200 dark:bg-slate-700 rounded-full mt-1">
-              <div 
-                className={`h-full rounded-full ${getAttendanceColor(child.attendance)}`}
-                style={{ width: `${child.attendance}%` }}
-              />
-            </div>
+          <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-tight group-hover:text-orange-600 transition-colors">
+            {child.name}
+          </h3>
+          <div className="flex items-center gap-4 text-slate-500 dark:text-slate-400 font-bold text-xs">
+            <span className="flex items-center gap-1.5"><GraduationCap size={14} /> {child.class}</span>
+            <span className="size-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
+            <span className="flex items-center gap-1.5"><User size={14} /> Age {child.age || 'N/A'}</span>
           </div>
         </div>
       </div>
       
-      {/* Footer Actions */}
-      <div className="mt-auto p-6 pt-0 flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md ${getBadgeColorClasses(child.badge.color)} text-xs font-semibold`}>
-            <span className="material-symbols-outlined text-[14px]">{child.badge.icon}</span>
-            {child.badge.text}
-          </span>
+      {/* Visual Analytics */}
+      <div className="p-10 pt-8 space-y-8">
+        <div className="grid grid-cols-2 gap-6">
+          <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 group/stat hover:bg-white dark:hover:bg-white/5 transition-all">
+            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <div className="size-1.5 rounded-full bg-orange-500" /> Academic Level
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{child.gradeValue}</span>
+              <span className="text-[10px] font-black text-orange-600">{child.gradePercentage}</span>
+            </div>
+          </div>
+          
+          <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 group/stat hover:bg-white dark:hover:bg-white/5 transition-all">
+            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <div className="size-1.5 rounded-full bg-green-500" /> Presence Rate
+            </div>
+            <div className="flex flex-col gap-3">
+              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{child.attendance}%</span>
+              <div className="h-1.5 w-full bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className={cn("h-full transition-all duration-1000", getAttendanceColor(child.attendance))}
+                  style={{ width: `${child.attendance}%` }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <button 
-          onClick={handleViewChildDetails}
-          className="w-full flex items-center cursor-pointer justify-center gap-2 h-10 rounded-xl bg-primary/10 hover:bg-primary hover:text-white text-primary font-bold text-sm transition-all group-hover:bg-primary group-hover:text-white"
+
+        <Button 
+          onClick={handleViewDashboard}
+          className="w-full h-16 rounded-[1.5rem] bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-black text-xs uppercase tracking-widest hover:bg-orange-600 dark:hover:bg-orange-600 dark:hover:text-white transition-all shadow-xl hover:shadow-orange-600/30 active:scale-95 group/btn"
         >
-          <span>View Dashboard</span>
-          <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-        </button>
+          Access Terminal
+          <ChevronRight size={18} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
+        </Button>
       </div>
-        {selectedChild && (
+
+      <EditChildModal 
+        isOpen={isEditModalOpen} 
+        onOpenChange={setIsEditModalOpen} 
+        child={{ id: child.id, name: child.name, imageUrl: child.imageUrl }} 
+      />
+
+      {selectedChild && (
         <ChildDetailsDrawer
           isOpen={isOpen}
           onClose={closeDrawer}

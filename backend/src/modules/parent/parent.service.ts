@@ -137,10 +137,14 @@ export const getChildDetailsService = async (parentId: string, childId: string) 
   };
 };
 
-export const getParentDashboardService = async (parentId: string) => {
-  // Find first accepted child with all needed data
-  const firstLink = await prisma.parentChildLink.findFirst({
-    where: { parentId, status: "active" },
+export const getParentDashboardService = async (parentId: string, childId?: string) => {
+  // Find the selected child link (or the first active one if no childId provided)
+  const childLink = await prisma.parentChildLink.findFirst({
+    where: { 
+      parentId, 
+      status: "active",
+      ...(childId ? { studentId: childId } : {}),
+    },
     include: {
       student: {
         include: {
@@ -173,8 +177,9 @@ export const getParentDashboardService = async (parentId: string) => {
     },
   });
 
-  // Attendance rate for the first child
-  const attendanceRecords = firstLink?.student.attendances || [];
+
+  // Attendance rate for the child
+  const attendanceRecords = childLink?.student.attendances || [];
   const totalAttendance = attendanceRecords.length;
   const presentCount = attendanceRecords.filter(
     (a) => a.status.toLowerCase() === "present"
@@ -188,14 +193,14 @@ export const getParentDashboardService = async (parentId: string) => {
     present: r.status.toLowerCase() === "present",
   }));
 
-  // Average grade across all grades of first child
-  const allGrades = firstLink?.student.grades || [];
+  // Average grade across all grades of child
+  const allGrades = childLink?.student.grades || [];
   const totalScore = allGrades.reduce((s, g) => s + g.score, 0);
   const totalMax = allGrades.reduce((s, g) => s + g.maxMarks, 0);
   const averageGrade = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
 
   // Upcoming exams for the student's current class
-  const classId = firstLink?.student.classes[0]?.class?.id;
+  const classId = childLink?.student.classes[0]?.class?.id;
   const upcomingExams = classId
     ? await prisma.exam.findMany({
         where: {
@@ -244,7 +249,7 @@ export const getParentDashboardService = async (parentId: string) => {
     .reduce((s, p) => s + p.amount, 0);
   const totalFees = totalPaid + totalOutstanding;
 
-  const student = firstLink?.student;
+  const student = childLink?.student;
 
   return {
     child: student
@@ -271,4 +276,52 @@ export const getParentDashboardService = async (parentId: string) => {
       totalFees,
     },
   };
+};
+
+export const updateParentProfileService = async (parentId: string, data: {
+  name?: string;
+  email?: string;
+  phone?: string;
+  profileImage?: string;
+  bannerImage?: string;
+}) => {
+  const updateData: any = {};
+  if (data.name) updateData.fullName = data.name;
+  if (data.phone) updateData.phone = data.phone;
+  if (data.profileImage) updateData.profileImage = data.profileImage;
+  if (data.bannerImage) updateData.bannerImage = data.bannerImage;
+
+  // Note: We don't allow email update here as it requires verification
+  
+  const updatedParent = await prisma.parent.update({
+    where: { id: parentId },
+    data: updateData,
+  });
+
+  return updatedParent;
+};
+
+export const updateChildProfileService = async (parentId: string, childId: string, data: {
+  name?: string;
+  profileImage?: string;
+}) => {
+  // First verify the link exists and is accepted
+  const link = await prisma.parentChildLink.findFirst({
+    where: { parentId, studentId: childId, status: "active" },
+  });
+
+  if (!link) {
+    throw new Error("Unauthorized access to child data or child not linked.");
+  }
+
+  const updateData: any = {};
+  if (data.name) updateData.name = data.name;
+  if (data.profileImage) updateData.profileImage = data.profileImage;
+
+  const updatedStudent = await prisma.student.update({
+    where: { id: childId },
+    data: updateData,
+  });
+
+  return updatedStudent;
 };

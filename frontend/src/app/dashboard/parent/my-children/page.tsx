@@ -1,8 +1,5 @@
 "use client"
 
-import Header from './components//Header'
-import ChildDetailsDrawer from './components/ChildDetailsDrawer/ChildDetailsDrawer'
-import { useChildDetailsDrawer } from './components/ChildDetailsDrawer/components/useChildDetailsDrawer'
 import ChildrenGrid from './components/ChildrenGrid'
 import PageHeading from './components/PageHeading'
 

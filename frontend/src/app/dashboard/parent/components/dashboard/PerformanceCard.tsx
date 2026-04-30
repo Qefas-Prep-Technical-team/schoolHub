@@ -1,9 +1,10 @@
-'use client'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useParentStore } from '@/lib/api/hooks/useParentStore'
 
 export default function PerformanceCard() {
-  const { data, isLoading } = useParentDashboard()
+  const { selectedChildId } = useParentStore()
+  const { data, isLoading } = useParentDashboard(selectedChildId)
   const avg = data?.stats?.averageGrade ?? 0
   // The SVG circle circumference is 100 units. strokeDasharray = "pct, 100"
   const dash = `${avg}, 100`

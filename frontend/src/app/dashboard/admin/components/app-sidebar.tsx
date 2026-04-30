@@ -171,7 +171,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                         {!isCollapsed && (
                             <div className="flex flex-col">
                                 <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight uppercase">QEFAS HUB</span>
-                                <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest">Admin Portal</span>
+                                <span className="text-[10px] text-primary font-bold uppercase tracking-widest">Admin Portal</span>
                             </div>
                         )}
                     </Link>
@@ -183,7 +183,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                         e.preventDefault();
                         setIsCollapsed(!isCollapsed);
                     }}
-                    className="absolute -right-3 top-20 z-50 h-6 w-6 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 flex items-center justify-center transition-all shadow-sm group"
+                    className="absolute -right-3 top-20 z-50 h-6 w-6 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400 hover:text-primary flex items-center justify-center transition-all shadow-sm group"
                     title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                 >
                     {isCollapsed ? (
@@ -224,19 +224,19 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                                                     className={cn(
                                                         "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative cursor-pointer",
                                                         isActive
-                                                            ? "bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 shadow-sm shadow-indigo-600/5"
+                                                            ? "bg-primary/10 text-primary shadow-sm shadow-primary/5"
                                                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100"
                                                     )}
                                                     disabled={isDisabled}
                                                 >
                                                     <Icon className={cn(
                                                         "h-5 w-5 transition-transform group-hover:scale-110",
-                                                        isActive ? "text-indigo-500" : "text-slate-400"
+                                                        isActive ? "text-primary" : "text-slate-400"
                                                     )} />
                                                     {!isCollapsed && (
                                                         <span className={cn(
                                                             "font-semibold tracking-tight flex-1",
-                                                            isActive ? "text-indigo-600 dark:text-indigo-400" : ""
+                                                            isActive ? "text-primary" : ""
                                                         )}>{label}</span>
                                                     )}
                                                     {isDisabled && !isCollapsed && (
@@ -245,7 +245,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                                                         </span>
                                                     )}
                                                     {isActive && (
-                                                        <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/50" />
+                                                        <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-primary shadow-lg shadow-primary/50" />
                                                     )}
                                                 </SidebarMenuButton>
                                             </Link>
@@ -264,26 +264,26 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                     <SidebarMenuItem>
                         <DropdownMenu onOpenChange={setIsUserOpen}>
                             <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton className="flex items-center gap-3 p-3 h-auto rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/30 transition-all group cursor-pointer">
-                                    <div className="h-10 w-10 rounded-lg bg-indigo-600/10 dark:bg-indigo-600/20 flex items-center justify-center border border-indigo-500/20 overflow-hidden shrink-0">
+                                <SidebarMenuButton className="flex items-center gap-3 p-3 h-auto rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-primary/30 transition-all group cursor-pointer">
+                                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shrink-0">
                                         {profile?.profileImage ? (
                                             <img src={profile.profileImage} alt={profile.name} className="h-full w-full object-cover" />
                                         ) : (
-                                            <User2 className="h-6 w-6 text-indigo-500/60" />
+                                            <User2 className="h-6 w-6 text-primary/60" />
                                         )}
                                     </div>
                                     {!isCollapsed && (
                                         <div className="flex-1 flex flex-col items-start min-w-0 overflow-hidden">
                                             <span className="font-black text-xs text-slate-900 dark:text-white truncate leading-tight uppercase tracking-tight">{profile?.name || 'Admin'}</span>
                                             {profile?.linkingCode && (
-                                                <span className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.15em] mt-1">
+                                                <span className="text-[9px] font-black text-primary uppercase tracking-[0.15em] mt-1">
                                                     ID: {profile.linkingCode}
                                                 </span>
                                             )}
                                         </div>
                                     )}
                                     {!isCollapsed && (
-                                        <div className="text-slate-400 group-hover:text-indigo-400 transition-colors">
+                                        <div className="text-slate-400 group-hover:text-primary transition-colors">
                                             {isUserOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                                         </div>
                                     )}
@@ -298,12 +298,12 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                                 {profile?.linkingCode && (
                                     <DropdownMenuItem 
                                         onClick={() => copyCode(profile.linkingCode)}
-                                        className="cursor-pointer hover:bg-indigo-500/10 rounded-xl font-bold text-xs p-4 flex flex-col items-start gap-1 group"
+                                        className="cursor-pointer hover:bg-primary/10 rounded-xl font-bold text-xs p-4 flex flex-col items-start gap-1 group"
                                     >
                                         <span className="text-[10px] text-slate-400 uppercase tracking-widest font-black">Quick Link Code</span>
                                         <div className="flex items-center justify-between w-full">
-                                            <span className="text-indigo-500 tracking-[0.2em] font-black text-base">{profile.linkingCode}</span>
-                                            <Copy size={16} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                                            <span className="text-primary tracking-[0.2em] font-black text-base">{profile.linkingCode}</span>
+                                            <Copy size={16} className="text-slate-400 group-hover:text-primary transition-colors" />
                                         </div>
                                     </DropdownMenuItem>
                                 )}

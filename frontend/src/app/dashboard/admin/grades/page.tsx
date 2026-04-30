@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -23,7 +23,14 @@ import {
   History,
   TrendingUp,
   Award,
-  Loader2
+  Loader2,
+  Zap,
+  Layers,
+  ArrowRight,
+  LayoutGrid,
+  List,
+  Printer,
+  ChevronDown
 } from 'lucide-react';
 import {
   Tooltip,
@@ -31,9 +38,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useExams, useExamAttempts, useExamResult, useSubjectPapers } from '@/lib/api/hooks/useExams';
 import { useAdminGrades } from '@/lib/api/hooks/useGrades';
 import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -47,10 +62,13 @@ import { downloadIndividualResultsAsZip } from './utils/batchPDFDownloader';
 import InstitutionReportModal from './components/InstitutionReportModal';
 import GradeHub from './components/GradeHub';
 import { useGradeHub } from '@/lib/api/hooks/useGrades';
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function AdminGradesDashboard() {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const { data: settings } = useSchoolSettings(schoolId);
+  const primaryColor = settings?.themeColor || '#ea580c';
 
   const router = useRouter();
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
@@ -81,81 +99,102 @@ export default function AdminGradesDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 p-4 md:p-6 lg:p-10">
-      <div className="max-w-7xl mx-auto space-y-10">
+    <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
+      <div className="max-w-[1600px] mx-auto space-y-12">
         
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
-          <div className="space-y-1 md:space-y-2">
-            <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-              Academic Performance
-            </h1>
-            <p className="text-sm md:text-base text-slate-500 font-medium">Manage and analyze student performance across the institution.</p>
+        {/* Tactical Header */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+              <div className="size-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Academic Intelligence Terminal</span>
+            </div>
+            <div>
+              <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
+                Performance<span style={{ color: primaryColor }}>.</span>
+              </h1>
+              <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
+                Advanced performance analytics, grade reconciliation, and institutional achievement tracking.
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
-             <Button 
-                onClick={() => setIsInstitutionReportModalOpen(true)}
-                variant="outline" 
-                className="w-full md:w-auto rounded-xl border-slate-200 dark:border-slate-800 h-12 px-6 font-bold bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center"
-              >
-                <Download className="mr-2" size={18} /> Export Institution Report
-             </Button>
+          
+          <div className="flex items-center gap-4">
+            <Button 
+              onClick={() => setIsInstitutionReportModalOpen(true)}
+              style={{ borderColor: primaryColor, color: primaryColor }}
+              variant="outline"
+              className="h-16 px-10 rounded-[2rem] border-2 font-black uppercase tracking-widest gap-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
+            >
+              <Download size={20} strokeWidth={3} />
+              Institution Report
+            </Button>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl w-full md:w-fit border border-slate-200 dark:border-slate-800 shadow-inner overflow-x-auto snap-x hide-scrollbar">
-            <button 
-                onClick={() => setActiveTab('exams')}
-                className={cn(
-                    "px-4 md:px-8 py-3 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap snap-center",
-                    activeTab === 'exams' ? "bg-white dark:bg-slate-800 text-primary shadow-lg" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                )}
-            >
-                Exam Analytics
-            </button>
-            <button 
-                onClick={() => setActiveTab('standalone')}
-                className={cn(
-                    "px-4 md:px-8 py-3 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap snap-center",
-                    activeTab === 'standalone' ? "bg-white dark:bg-slate-800 text-indigo-600 shadow-lg" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                )}
-            >
-                Standalone Grades
-            </button>
-            <button 
-                onClick={() => setActiveTab('papers')}
-                className={cn(
-                    "px-4 md:px-8 py-3 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap snap-center",
-                    activeTab === 'papers' ? "bg-white dark:bg-slate-800 text-emerald-600 shadow-lg" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                )}
-            >
-                Subject Papers
-            </button>
+        {/* Operational Control Tabs */}
+        <div className="flex justify-center">
+            <div className="p-2 bg-slate-50 dark:bg-white/5 rounded-[2.5rem] border border-slate-100 dark:border-white/10 shadow-inner flex items-center gap-2">
+                <button 
+                    onClick={() => setActiveTab('exams')}
+                    className={cn(
+                        "px-10 py-4 rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap",
+                        activeTab === 'exams' ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl scale-105" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    )}
+                >
+                    Exam Analytics
+                </button>
+                <button 
+                    onClick={() => setActiveTab('standalone')}
+                    className={cn(
+                        "px-10 py-4 rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap",
+                        activeTab === 'standalone' ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl scale-105" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    )}
+                >
+                    Standalone Grades
+                </button>
+                <button 
+                    onClick={() => setActiveTab('papers')}
+                    className={cn(
+                        "px-10 py-4 rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap",
+                        activeTab === 'papers' ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl scale-105" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    )}
+                >
+                    Subject Papers
+                </button>
+            </div>
         </div>
 
-        {/* Content Area */}
-        <div className="pb-20">
+        {/* Dynamic Content Terminal */}
+        <AnimatePresence mode="wait">
           {activeTab === 'exams' ? (
-            <section className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-500">
+            <motion.section 
+              key="exams"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
+            >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3 md:gap-4">
-                  <div className="h-10 w-10 md:h-12 md:w-12 shrink-0 rounded-xl md:rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-sm">
-                    <Trophy size={20} className="md:w-6 md:h-6" />
+                <div className="flex items-center gap-4">
+                  <div className="size-14 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-400" style={{ color: primaryColor }}>
+                    <Trophy size={24} />
                   </div>
                   <div>
-                    <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight line-clamp-1">Institution Examinations</h2>
-                    <p className="text-xs md:text-sm font-medium text-slate-500 line-clamp-1">Hierarchical breakdown of major exam performance.</p>
+                    <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Institutional Assessments</h2>
+                    <p className="text-sm font-medium text-slate-500">Hierarchical breakdown of major examination nodes.</p>
                   </div>
                 </div>
                 {selectedExamId && (
-                   <Button variant="ghost" onClick={handleBackToExams} className="text-primary font-bold hover:bg-primary/5 rounded-xl w-full sm:w-auto mt-2 sm:mt-0">
-                      View All Exams
+                   <Button variant="ghost" onClick={handleBackToExams} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-xs gap-2 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                      <ArrowLeft size={16} strokeWidth={3} />
+                      All Hubs
                    </Button>
                 )}
               </div>
               
-              <div className="bg-white dark:bg-slate-900/50 rounded-[3rem] border border-slate-200 dark:border-slate-800 p-2 md:p-6 shadow-xl shadow-slate-200/20 dark:shadow-none min-h-[400px]">
+              <div className="bg-white dark:bg-slate-900/50 rounded-[4rem] border border-slate-100 dark:border-white/5 p-8 lg:p-12 shadow-2xl shadow-slate-200/50 dark:shadow-none min-h-[600px] overflow-hidden relative">
+                <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: primaryColor, opacity: 0.2 }} />
                 <ExamGradesFlow 
                   exams={exams || []} 
                   selectedExamId={selectedExamId}
@@ -168,18 +207,25 @@ export default function AdminGradesDashboard() {
                   onBackToStudents={handleBackToStudents}
                   isLoading={isLoadingExams}
                   school={school}
+                  primaryColor={primaryColor}
                 />
               </div>
-            </section>
+            </motion.section>
           ) : activeTab === 'standalone' ? (
-            <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+            <motion.section 
+              key="standalone"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
+            >
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center shadow-sm">
+                <div className="size-14 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-400" style={{ color: primaryColor }}>
                   <FileText size={24} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Standalone Assessment Grades</h2>
-                  <p className="text-sm font-medium text-slate-500">Individual quiz and assessment entries not linked to major exams.</p>
+                  <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Standalone Terminal</h2>
+                  <p className="text-sm font-medium text-slate-500">Individual quiz and assessment entries not linked to major hubs.</p>
                 </div>
               </div>
               
@@ -188,16 +234,22 @@ export default function AdminGradesDashboard() {
                 isLoading={isLoadingGrades} 
                 schoolId={schoolId}
               />
-            </section>
+            </motion.section>
           ) : (
-            <section className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+            <motion.section 
+              key="papers"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
+            >
                <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shadow-sm">
+                <div className="size-14 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-400" style={{ color: primaryColor }}>
                   <BarChart3 size={24} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Section & Subject Papers</h2>
-                  <p className="text-sm font-medium text-slate-500">Drill down into specific subject paper performance across the institution.</p>
+                  <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Subject Paper Modules</h2>
+                  <p className="text-sm font-medium text-slate-500">Drill down into institutional curriculum performance nodes.</p>
                 </div>
               </div>
 
@@ -205,10 +257,11 @@ export default function AdminGradesDashboard() {
                 papers={subjectPapers || []} 
                 isLoading={isLoadingPapers} 
                 onSelectPaper={handleSelectPaper}
+                primaryColor={primaryColor}
               />
-            </section>
+            </motion.section>
           )}
-        </div>
+        </AnimatePresence>
       </div>
 
       <InstitutionReportModal 
@@ -234,12 +287,13 @@ function ExamGradesFlow({
   onBackToExams,
   onBackToStudents,
   isLoading,
-  school
+  school,
+  primaryColor
 }: any) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   if (selectedStudentId && selectedExamId) {
-    return <DetailedStudentResult examId={selectedExamId} studentId={selectedStudentId} onBack={onBackToStudents} school={school} />;
+    return <DetailedStudentResult examId={selectedExamId} studentId={selectedStudentId} onBack={onBackToStudents} school={school} primaryColor={primaryColor} />;
   }
 
   if (selectedExamId) {
@@ -250,132 +304,115 @@ function ExamGradesFlow({
       selectedPaperId={selectedPaperId}
       setSelectedPaperId={setSelectedPaperId}
       school={school}
+      primaryColor={primaryColor}
     />;
   }
 
   return (
-    <div className="space-y-8 p-4 md:p-6">
-      {/* Search & Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="relative group flex-1 max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={20} />
+    <div className="space-y-10">
+      {/* Search & Actions Terminal */}
+      <div className="flex flex-wrap items-center justify-between gap-6">
+        <div className="relative group flex-1 max-w-xl">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
             <input 
                 type="text" 
-                placeholder="Search exams..."
-                className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium text-slate-700 dark:text-slate-200"
+                placeholder="Refine assessment hub search..."
+                className="w-full h-16 pl-16 pr-6 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-3xl focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
+                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
             />
         </div>
-        <div className="flex items-center gap-2 md:gap-3">
-             <div className="flex bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1">
+        <div className="flex items-center gap-4">
+             <div className="flex bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-1.5 shadow-inner">
                 <button 
                   onClick={() => setViewMode('grid')}
-                  className={cn("p-2 rounded-lg transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-400 hover:text-slate-600")}
+                  className={cn("size-12 rounded-xl flex items-center justify-center transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-900 shadow-xl" : "text-slate-400 hover:text-slate-600")}
+                  style={{ color: viewMode === 'grid' ? primaryColor : undefined }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                  <LayoutGrid size={20} strokeWidth={3} />
                 </button>
                 <button 
                   onClick={() => setViewMode('list')}
-                  className={cn("p-2 rounded-lg transition-all", viewMode === 'list' ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-slate-400 hover:text-slate-600")}
+                  className={cn("size-12 rounded-xl flex items-center justify-center transition-all", viewMode === 'list' ? "bg-white dark:bg-slate-900 shadow-xl" : "text-slate-400 hover:text-slate-600")}
+                  style={{ color: viewMode === 'list' ? primaryColor : undefined }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+                  <List size={20} strokeWidth={3} />
                 </button>
              </div>
-             <Button variant="outline" className="rounded-xl border-slate-200 dark:border-slate-800 h-10 md:h-12 px-4 md:px-6 font-bold hidden sm:flex">
-                <Filter className="mr-2" size={18} /> Filter
+             <Button variant="outline" className="h-16 px-8 rounded-3xl border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-3 hidden sm:flex hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                <Filter size={18} strokeWidth={3} /> Refine Nodes
              </Button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1,2,3,4,5,6].map(i => <div key={i} className="h-64 rounded-[2rem] bg-slate-100 dark:bg-slate-800 animate-pulse" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1,2,3,4,5,6].map(i => <div key={i} className="h-64 rounded-[3rem] bg-slate-50 dark:bg-white/[0.02] animate-pulse border border-slate-100 dark:border-white/5" />)}
         </div>
       ) : exams.length === 0 ? (
-        <div className="text-center py-20 bg-slate-50 dark:bg-slate-900/50 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
-           <Trophy className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-           <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No examination data available</p>
+        <div className="text-center py-40 bg-slate-50 dark:bg-white/[0.02] rounded-[4rem] border-2 border-dashed border-slate-100 dark:border-white/5 flex flex-col items-center justify-center gap-6">
+           <Trophy className="h-20 w-20 text-slate-200 dark:text-slate-800" strokeWidth={1} />
+           <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">No Assessment Hubs Discovered</p>
         </div>
       ) : (
         <div className={cn(
             viewMode === 'grid' 
-                ? "grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6" 
-                : "flex flex-col space-y-4"
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" 
+                : "flex flex-col space-y-6"
         )}>
-            {exams.map((exam: any) => (
-                <div 
+            {exams.map((exam: any, index: number) => (
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
                     key={exam.id} 
                     onClick={() => setSelectedExamId(exam.id)}
-                    className="group relative overflow-hidden bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-slate-800/60 rounded-[2rem] p-8 shadow-sm hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                    className="group relative overflow-hidden bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3rem] p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-500 cursor-pointer"
+                    style={{ '--hover-border': `${primaryColor}40` } as any}
                 >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mt-10 -mr-10 group-hover:bg-primary/20 transition-colors duration-500"></div>
-                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-xl -mb-8 -ml-8 group-hover:bg-indigo-500/10 transition-colors duration-500"></div>
+                    <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[80px] -mt-10 -mr-10 transition-colors duration-700" style={{ backgroundColor: `${primaryColor}10` }} />
                     
-                    {viewMode === 'grid' ? (
-                        <div className="relative z-10 space-y-4 md:space-y-6">
-                            <div className="flex justify-between items-start">
-                                <div className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300 shadow-inner">
-                                    <Trophy size={viewMode === 'grid' ? 24 : 28} className="drop-shadow-sm w-6 h-6 md:w-7 md:h-7" />
-                                </div>
-                                <div className="px-2 py-0.5 md:px-3 md:py-1 rounded-full bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur-sm text-[8px] md:text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/50 line-clamp-1 max-w-[60%] text-center">
-                                    {exam.category || 'General'}
-                                </div>
+                    <div className="relative z-10 space-y-8">
+                        <div className="flex justify-between items-start">
+                            <div className="size-16 rounded-[1.5rem] bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-all duration-500 border border-slate-100 dark:border-white/5" style={{ color: primaryColor }}>
+                                <Trophy size={28} strokeWidth={2.5} />
                             </div>
-
-                            <div>
-                                <h3 className="text-sm md:text-xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-1" title={exam.title}>{exam.title}</h3>
-                                <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mt-1 md:mt-1.5 opacity-80">
-                                    <span className="text-[9px] md:text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-1.5 md:px-2 py-0.5 rounded-md">C {exam.classId || "All"}</span>
-                                    <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden sm:block" />
-                                    <span className="text-[9px] md:text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">{exam.questions?.length || 0} Pprs</span>
-                                </div>
+                            <div className="px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                {exam.category || 'General Assessment'}
                             </div>
+                        </div>
 
-                            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                                <div className="flex -space-x-1 md:-space-x-2">
-                                    {[1,2,3].map(i => (
-                                        <div key={i} className="h-6 w-6 md:h-8 md:w-8 flex items-center justify-center rounded-full border-2 md:border-[3px] border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 text-[8px] md:text-[10px] font-bold text-slate-500 shadow-sm relative z-10">
-                                            <User size={10} className="md:w-3 md:h-3" />
-                                        </div>
-                                    ))}
+                        <div>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors leading-[1.1] uppercase tracking-tighter" style={{ '--primary': primaryColor } as any} title={exam.title}>{exam.title}</h3>
+                            <div className="flex items-center gap-4 mt-3">
+                                <div className="flex items-center gap-2">
+                                  <Layers size={14} className="text-slate-300" />
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest">Class {exam.classId || "Global"}</span>
                                 </div>
-                                <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:bg-primary group-hover:text-white text-slate-400 transition-all duration-300 shadow-sm">
-                                    <ChevronRight size={16} className="translate-x-0.5" />
+                                <div className="size-1 rounded-full bg-slate-200 dark:bg-slate-800" />
+                                <div className="flex items-center gap-2">
+                                  <FileText size={14} className="text-slate-300" />
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest">{exam.questions?.length || 0} Modules</span>
                                 </div>
                             </div>
                         </div>
-                    ) : (
-                        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 flex-1 w-full">
-                                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300 shadow-inner shrink-0">
-                                    <Trophy size={22} className="drop-shadow-sm" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-1">{exam.title}</h3>
-                                    <div className="flex items-center flex-wrap gap-2 mt-1">
-                                        <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[9px] font-black uppercase tracking-widest text-slate-500">{exam.category || 'General'}</span>
-                                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Class {exam.classId || "All"}</span>
-                                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{exam.questions?.length || 0} Papers</span>
+
+                        <div className="flex items-center justify-between pt-8 border-t border-slate-100 dark:border-white/5">
+                            <div className="flex -space-x-3">
+                                {[1,2,3].map(i => (
+                                    <div key={i} className="size-10 rounded-full border-4 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 shadow-sm relative z-10 transition-transform group-hover:-translate-x-1">
+                                        <User size={16} />
                                     </div>
+                                ))}
+                                <div className="size-10 rounded-full border-4 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-black text-white shadow-sm relative z-20" style={{ backgroundColor: primaryColor }}>
+                                    +12
                                 </div>
                             </div>
-                            <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100 dark:border-slate-800">
-                                <div className="flex -space-x-2">
-                                    {[1,2,3].map(i => (
-                                        <div key={i} className="h-8 w-8 rounded-full border-[3px] border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500 shadow-sm relative z-10">
-                                            <User size={12} />
-                                        </div>
-                                    ))}
-                                    <div className="h-8 w-8 rounded-full border-[3px] border-white dark:border-slate-900 bg-primary flex items-center justify-center text-[9px] font-black text-white shadow-sm relative z-10">
-                                        +12
-                                    </div>
-                                </div>
-                                <div className="h-10 w-10 shrink-0 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:bg-primary group-hover:text-white text-slate-400 transition-all duration-300 shadow-sm">
-                                    <ChevronRight size={18} className="translate-x-0.5" />
-                                </div>
+                            <div className="size-12 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center group-hover:text-white text-slate-400 transition-all duration-500 shadow-sm" style={{ '--hover-bg': primaryColor } as any}>
+                                <ChevronRight size={20} strokeWidth={3} className="translate-x-0.5" />
                             </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                </motion.div>
             ))}
         </div>
       )}
@@ -392,7 +429,8 @@ function ExamStudentList({
   onSelectStudent,
   selectedPaperId,
   setSelectedPaperId,
-  school
+  school,
+  primaryColor
 }: any) {
   const { data: attempts, isLoading } = useExamAttempts(examId);
   const { data: exams } = useExams();
@@ -429,57 +467,61 @@ function ExamStudentList({
     }));
   }, [attempts]);
 
+  const filteredAttempts = useMemo(() => {
+    if (selectedPaperId === 'all') return attempts;
+    return attempts?.filter((a: any) => a.subjectAttempts?.some((sa: any) => sa.subjectPaperId === selectedPaperId));
+  }, [attempts, selectedPaperId]);
+
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-      <div className="p-4 md:p-6">
-        <button 
+    <div className="space-y-12 animate-in fade-in slide-in-from-right-8 duration-700">
+      <div>
+        <Button 
           onClick={onBack}
-          className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-xs font-black uppercase tracking-widest group mb-6"
+          variant="ghost"
+          className="h-14 px-8 rounded-2xl bg-slate-50 dark:bg-white/5 text-slate-500 transition-all text-xs font-black uppercase tracking-[0.2em] gap-3 mb-10 border border-slate-100 dark:border-white/5"
+          style={{ '--hover-text': primaryColor } as any}
         >
-          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-          Back to Exams
-        </button>
+          <ArrowLeft size={16} strokeWidth={3} />
+          Protocol Root
+        </Button>
 
-        {/* Paper Summary Toggle (Mobile) */}
-        <div className="w-full md:hidden mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
-            <Button 
-                onClick={() => setShowMobilePapers(!showMobilePapers)} 
-                variant="outline" 
-                className="w-full h-12 rounded-xl border-slate-200 dark:border-slate-800 font-bold bg-white dark:bg-slate-900 shadow-sm"
-            >
-                {showMobilePapers ? "Hide" : "Show"} Subject Papers
-            </Button>
-        </div>
-
-        {/* Paper Summary Cards */}
-        <div className={cn("grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8", showMobilePapers ? "grid animate-in slide-in-from-top-4 duration-300" : "hidden md:grid")}>
+        {/* Tactical Summary Cluster */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <div 
               onClick={() => setSelectedPaperId('all')}
               className={cn(
-                "p-6 rounded-[2rem] border transition-all cursor-pointer group",
+                "p-10 rounded-[3rem] border-2 transition-all cursor-pointer group relative overflow-hidden",
                 selectedPaperId === 'all' 
-                  ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 scale-[1.02]" 
-                  : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-primary/50"
+                  ? "text-white shadow-2xl scale-[1.02]" 
+                  : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5"
               )}
+              style={{ 
+                backgroundColor: selectedPaperId === 'all' ? primaryColor : undefined,
+                borderColor: selectedPaperId === 'all' ? primaryColor : undefined,
+                boxShadow: selectedPaperId === 'all' ? `0 25px 50px -12px ${primaryColor}40` : undefined
+              }}
             >
-                <div className="flex justify-between items-start mb-4">
+                <div className="relative z-10 space-y-6">
                     <div className={cn(
-                        "h-10 w-10 rounded-xl flex items-center justify-center transition-colors",
-                        selectedPaperId === 'all' ? "bg-white/20" : "bg-primary/10 text-primary"
-                    )}>
-                        <Trophy size={20} />
+                        "size-14 rounded-2xl flex items-center justify-center transition-all duration-500 border",
+                        selectedPaperId === 'all' ? "bg-white/20 border-white/30" : "bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5"
+                    )}
+                    style={{ color: selectedPaperId === 'all' ? undefined : primaryColor }}
+                    >
+                        <Trophy size={24} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <p className={cn(
+                          "text-[10px] font-black uppercase tracking-widest opacity-60 mb-1",
+                          selectedPaperId === 'all' ? "text-white" : "text-slate-400"
+                      )}>Registry Mode</p>
+                      <h3 className="text-2xl font-black tracking-tighter uppercase leading-tight">Aggregate View</h3>
                     </div>
                 </div>
-                <p className={cn(
-                    "text-[10px] font-black uppercase tracking-widest opacity-60 mb-1",
-                    selectedPaperId === 'all' ? "text-white" : "text-slate-400"
-                )}>Total Results</p>
-                <h3 className="text-xl font-black tracking-tight leading-tight">Overall Performance</h3>
             </div>
 
             {papers.map((paper: any) => {
                 const isSelected = selectedPaperId === paper.id;
-                // Calculate average for this paper
                 const paperScores = attempts?.map((a: any) => a.subjectAttempts?.find((sa: any) => sa.subjectPaperId === paper.id)?.score).filter((s: any) => s !== undefined) || [];
                 const avg = paperScores.length > 0 ? Math.round(paperScores.reduce((a: number, b: number) => a + b, 0) / paperScores.length) : 0;
 
@@ -488,247 +530,130 @@ function ExamStudentList({
                       key={paper.id}
                       onClick={() => setSelectedPaperId(paper.id)}
                       className={cn(
-                        "p-6 rounded-[2rem] border transition-all cursor-pointer group",
+                        "p-10 rounded-[3rem] border-2 transition-all cursor-pointer group relative overflow-hidden",
                         isSelected 
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xl shadow-indigo-500/20 scale-[1.02]" 
-                          : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-indigo-500/50"
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-2xl shadow-indigo-600/20 scale-[1.02]" 
+                          : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-indigo-600/30"
                       )}
                     >
-                        <div className="flex justify-between items-start mb-4">
-                            <div className={cn(
-                                "h-10 w-10 rounded-xl flex items-center justify-center transition-colors",
-                                isSelected ? "bg-white/20" : "bg-indigo-500/10 text-indigo-600"
-                            )}>
-                                <BarChart3 size={20} />
-                            </div>
-                            <div className="flex flex-col items-end gap-1">
+                        <div className="relative z-10 space-y-6">
+                            <div className="flex justify-between items-start">
                                 <div className={cn(
-                                    "text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg",
-                                    isSelected ? "bg-white/10 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                                    "size-14 rounded-2xl flex items-center justify-center transition-all duration-500 border",
+                                    isSelected ? "bg-white/20 border-white/30" : "bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 text-indigo-600"
                                 )}>
-                                    Avg: {avg}
+                                    <BarChart3 size={24} strokeWidth={2.5} />
                                 </div>
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsNavigating(paper.id);
-                                    router.push(`/dashboard/admin/exams/papers/${paper.id}`);
-                                  }}
-                                  disabled={isNavigating === paper.id}
-                                  className={cn(
-                                    "flex items-center gap-1 text-[9px] font-bold uppercase transition-all hover:underline",
-                                    isSelected ? "text-white/80 hover:text-white" : "text-indigo-600 hover:text-indigo-700",
-                                    isNavigating === paper.id && "opacity-70 cursor-not-allowed"
-                                  )}
-                                >
-                                    {isNavigating === paper.id ? (
-                                      <>
-                                        <div className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                                        Loading
-                                      </>
-                                    ) : (
-                                      "Details →"
-                                    )}
-                                </button>
+                                <div className={cn(
+                                    "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest",
+                                    isSelected ? "bg-white/10 text-white" : "bg-slate-50 dark:bg-white/5 text-slate-400"
+                                )}>
+                                    Avg: {avg}%
+                                </div>
+                            </div>
+                            <div>
+                              <p className={cn(
+                                  "text-[10px] font-black uppercase tracking-widest opacity-60 mb-1",
+                                  isSelected ? "text-white" : "text-slate-400"
+                              )}>Academic Node</p>
+                              <h3 className="text-2xl font-black tracking-tighter uppercase leading-tight truncate">{paper.name}</h3>
                             </div>
                         </div>
-                        <p className={cn(
-                            "text-[10px] font-black uppercase tracking-widest opacity-60 mb-1",
-                            isSelected ? "text-white" : "text-slate-400"
-                        )}>Subject Paper</p>
-                        <h3 className="text-xl font-black tracking-tight leading-tight truncate">{paper.name}</h3>
                     </div>
                 );
             })}
         </div>
 
-        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none">
-          <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-               <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center shadow-inner">
-                      <Users size={24} />
+        <div className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[4rem] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.08)]">
+          <div className="p-10 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] flex flex-col md:flex-row md:items-center justify-between gap-8">
+               <div className="flex items-center gap-6">
+                  <div className="size-16 rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 flex items-center justify-center shadow-xl" style={{ color: primaryColor }}>
+                      <Users size={28} strokeWidth={2.5} />
                   </div>
                   <div>
-                      <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Participant Results</h2>
-                      <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{attempts?.length || 0} Students Attempted</p>
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-tight">Participant Registry</h2>
+                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">{attempts?.length || 0} Synchronized Nodes</p>
                   </div>
                </div>
-               <div className="flex items-center gap-3 no-print">
-                  <div className="relative">
-                      <select 
-                        value={selectedPaperId}
-                        onChange={(e) => setSelectedPaperId(e.target.value)}
-                        className="h-11 pl-4 pr-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer min-w-[160px]"
-                      >
-                          <option value="all">Overall Results</option>
-                          {papers.map((p: any) => (
-                              <option key={p.id} value={p.id}>{p.name}</option>
-                          ))}
-                      </select>
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">▼</span>
-                  </div>
-                  
-                  {selectedPaperId === 'all' ? (
-                    <PDFDownloadLink
-                      document={<ExamGradeReport exam={exams?.find((e: any) => e.id === examId)} attempts={attempts || []} school={school} />}
-                      fileName={`${exams?.find((e: any) => e.id === examId)?.title || 'Exam'}_Report.pdf`}
-                    >
-                      {({ loading }) => (
-                        <Button 
-                          variant="outline" 
-                          disabled={loading || isLoading}
-                          className="rounded-xl font-bold h-11 border-slate-200 dark:border-slate-800 shadow-sm"
-                        >
-                          <Download size={18} className="mr-2" /> {loading ? 'Preparing Download...' : 'Export PDF'}
-                        </Button>
-                      )}
-                    </PDFDownloadLink>
-                  ) : (
-                    <PDFDownloadLink
-                      document={
-                        <SubjectPaperReport 
-                          paper={attempts?.[0]?.subjectAttempts?.find((sa: any) => sa.subjectPaperId === selectedPaperId)?.subjectPaper} 
-                          attempts={(attempts || []).map((a: any) => ({
-                            ...a.subjectAttempts?.find((sa: any) => sa.subjectPaperId === selectedPaperId),
-                            examAttempt: { student: a.student }
-                          }))} 
-                          school={school} 
-                        />
-                      }
-                      fileName={`${papers.find((p: any) => p.id === selectedPaperId)?.name || 'Subject'}_Report.pdf`}
-                    >
-                      {({ loading }) => (
-                        <Button 
-                          variant="outline" 
-                          disabled={loading || isLoading}
-                          className="rounded-xl font-bold h-11 border-slate-200 dark:border-slate-800 shadow-sm"
-                        >
-                          <Download size={18} className="mr-2" /> {loading ? 'Preparing Download...' : 'Export PDF'}
-                        </Button>
-                      )}
-                    </PDFDownloadLink>
-                  )}
+               <div className="flex items-center gap-4">
+                  <Select value={selectedPaperId} onValueChange={setSelectedPaperId}>
+                    <SelectTrigger className="h-14 min-w-[240px] rounded-2xl bg-white dark:bg-slate-900 border-slate-100 dark:border-white/10 font-black uppercase tracking-widest text-[10px] text-slate-500">
+                      <SelectValue placeholder="Protocol Module" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-slate-100 dark:border-white/10 bg-white dark:bg-slate-900">
+                      <SelectItem value="all" className="font-bold uppercase tracking-widest text-[10px] py-3">Aggregate Results</SelectItem>
+                      {papers.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id} className="font-bold uppercase tracking-widest text-[10px] py-3">{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
                   <Button 
-                    variant="outline" 
-                    disabled={isBatchDownloading || isLoading || !attempts?.length}
                     onClick={handleBatchDownloadZip}
-                    className="rounded-xl font-bold h-11 border-slate-200 dark:border-slate-800 shadow-sm bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
+                    disabled={isBatchDownloading}
+                    className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-xs gap-3 hover:scale-105 transition-all disabled:opacity-50"
+                    style={{ backgroundColor: primaryColor, color: 'white' }}
                   >
-                    <Download size={18} className="mr-2" /> 
-                    {isBatchDownloading ? (
-                      <span className="flex items-center">
-                        <Loader2 className="mr-2 animate-spin" size={14} /> Archiving...
-                      </span>
-                    ) : 'Batch Individual PDFs'}
-                  </Button>
-
-                  <Button variant="outline" className="rounded-xl font-bold h-11 border-slate-200 dark:border-slate-800 shadow-sm">
-                     <Download size={18} className="mr-2" /> Export CSV
+                    {isBatchDownloading ? <Loader2 size={18} className="animate-spin" /> : <Printer size={18} strokeWidth={3} />}
+                    Batch Export
                   </Button>
                </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full">
               <thead>
-                <tr className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Student</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Score</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Papers</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Performance</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Actions</th>
+                <tr className="border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-white/[0.01]">
+                  <th className="px-10 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Participant Node</th>
+                  <th className="px-10 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Efficiency Index</th>
+                  <th className="px-10 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Operational Status</th>
+                  <th className="px-10 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Command</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {isLoading ? (
-                  <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-bold animate-pulse">Loading participant data...</td></tr>
-                ) : attempts?.length === 0 ? (
-                  <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No attempts discovered</td></tr>
-                ) : attempts?.map((attempt: any) => {
-                  const paperAttempt = selectedPaperId === 'all' 
-                    ? null 
-                    : attempt.subjectAttempts?.find((sa: any) => sa.subjectPaperId === selectedPaperId);
-                  
-                  const displayScore = paperAttempt ? paperAttempt.score : attempt.totalScore;
-                  const displayTotal = paperAttempt ? paperAttempt.totalMarks : attempt.totalMarks;
-                  const scorePercent = Math.round((displayScore / displayTotal) * 100);
-
-                  return (
-                    <tr 
-                      key={attempt.id} 
-                      onClick={() => onSelectStudent(attempt.studentId)}
-                      className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
-                    >
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 border border-slate-200 dark:border-slate-700 shadow-inner">
-                              <User size={20} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-black text-slate-700 dark:text-slate-200">{attempt.student.name}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{attempt.student.studentCode}</p>
-                          </div>
+              <tbody className="divide-y divide-slate-50 dark:divide-white/5">
+                {filteredAttempts?.map((attempt: any) => (
+                  <tr key={attempt.id} className="group hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => onSelectStudent(attempt.studentId)}>
+                    <td className="px-10 py-8">
+                      <div className="flex items-center gap-4">
+                        <div className="size-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors" style={{ '--primary': primaryColor } as any}>
+                          <User size={20} strokeWidth={2.5} />
                         </div>
-                      </td>
-                      <td className="px-8 py-6">
-                        <span className={cn(
-                          "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                          attempt.status === 'COMPLETED' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10" : "bg-amber-50 text-amber-600 dark:bg-amber-500/10"
-                        )}>
-                          {attempt.status}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6">
-                         <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                          {displayScore}<span className="text-xs text-slate-400 ml-1">/{displayTotal}</span>
-                         </p>
-                      </td>
-                      <td className="px-8 py-6">
-                          <div className="flex flex-wrap gap-2 max-w-xs">
-                              {attempt.subjectAttempts?.map((sa: any) => (
-                                  <div key={sa.id} className={cn(
-                                      "px-2 py-1 rounded-lg border flex flex-col min-w-[80px] transition-all",
-                                      selectedPaperId === sa.subjectPaperId 
-                                        ? "bg-primary/10 border-primary/30" 
-                                        : "bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800"
-                                  )}>
-                                      <span className={cn(
-                                          "text-[9px] font-black uppercase truncate",
-                                          selectedPaperId === sa.subjectPaperId ? "text-primary" : "text-slate-400"
-                                      )}>
-                                          {sa.subjectPaper?.subject?.name || 'Paper'}
-                                      </span>
-                                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                                          {sa.score}/{sa.totalMarks}
-                                      </span>
-                                  </div>
-                              ))}
-                          </div>
-                      </td>
-                      <td className="px-8 py-6">
-                          <div className="flex items-center gap-3 w-40">
-                              <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
-                                  <div 
-                                      className={cn(
-                                          "h-full rounded-full transition-all duration-1000",
-                                          scorePercent >= 70 ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : scorePercent >= 40 ? "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" : "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]"
-                                      )} 
-                                      style={{ width: `${scorePercent}%` }}
-                                  />
-                              </div>
-                              <span className="text-xs font-black text-slate-500">{scorePercent}%</span>
-                          </div>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                          <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:scale-105 transition-all shadow-sm">
-                              <ChevronRight size={20} />
-                          </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        <div>
+                          <p className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">{attempt.student?.user?.firstName} {attempt.student?.user?.lastName}</p>
+                          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{attempt.student?.studentId || "UID-UNSET"}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-10 py-8">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1 h-3 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden max-w-[120px]">
+                          <div 
+                            className="h-full transition-all duration-1000" 
+                            style={{ width: `${Math.round(attempt.percentage || 0)}%`, backgroundColor: primaryColor }} 
+                          />
+                        </div>
+                        <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">{Math.round(attempt.percentage || 0)}%</span>
+                      </div>
+                    </td>
+                    <td className="px-10 py-8">
+                       <div className={cn(
+                         "inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                         attempt.percentage >= 50 ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"
+                       )}>
+                         <div className={cn("size-1.5 rounded-full", attempt.percentage >= 50 ? "bg-emerald-500" : "bg-red-500")} />
+                         {attempt.percentage >= 50 ? "Achieved" : "Underperforming"}
+                       </div>
+                    </td>
+                    <td className="px-10 py-8 text-right">
+                      <Button 
+                        className="h-12 px-6 rounded-xl bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white group-hover:text-white font-black uppercase tracking-widest text-[10px] transition-all border border-slate-100 dark:border-white/5"
+                        style={{ '--hover-bg': primaryColor } as any}
+                      >
+                        Inspect Result
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -741,7 +666,7 @@ function ExamStudentList({
 /**
  * Detailed Student Result - Level 3
  */
-function DetailedStudentResult({ examId, studentId, onBack, school }: any) {
+function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor }: any) {
   const { data: result, isLoading } = useExamResult(examId, studentId);
 
   if (isLoading) return <div className="h-[60vh] flex items-center justify-center text-slate-400 animate-pulse font-black uppercase tracking-widest text-xs">Generating Performance Insights...</div>;
@@ -751,19 +676,21 @@ function DetailedStudentResult({ examId, studentId, onBack, school }: any) {
 
   return (
     <TooltipProvider>
-      <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 p-4 md:p-6 pb-12">
+      <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-12">
         <div className="flex items-center justify-between no-print">
-          <button 
+          <Button 
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors text-xs font-black uppercase tracking-widest group"
+            variant="ghost"
+            className="h-14 px-8 rounded-2xl bg-slate-50 dark:bg-white/5 text-slate-500 transition-all text-xs font-black uppercase tracking-[0.2em] gap-3 border border-slate-100 dark:border-white/5"
+            style={{ '--hover-text': primaryColor } as any}
           >
-            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-            Back to Participant List
-          </button>
+            <ArrowLeft size={16} strokeWidth={3} />
+            Participant Registry
+          </Button>
 
           <div className="flex items-center gap-3">
-             <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest">
-                <ShieldCheck size={14} /> Certified Digital Record
+             <div className="hidden md:flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest">
+                <ShieldCheck size={16} strokeWidth={2.5} /> Certified Digital Record
              </div>
              <PDFDownloadLink
                 document={<IndividualStudentReport result={result} school={school} />}
@@ -772,118 +699,82 @@ function DetailedStudentResult({ examId, studentId, onBack, school }: any) {
                 {({ loading }) => (
                   <Button 
                     disabled={loading}
-                    className="rounded-2xl h-10 px-6 font-bold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm hover:shadow-lg transition-all"
-                    variant="outline"
+                    className="h-14 px-8 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black uppercase tracking-widest text-xs gap-3 hover:scale-105 transition-all shadow-xl"
                   >
-                    <Download className="mr-2" size={16} /> {loading ? 'Preparing Download...' : 'Download Statement'}
+                    <Download className="mr-2" size={18} strokeWidth={3} /> {loading ? 'Preparing...' : 'Download Transcript'}
                   </Button>
                 )}
               </PDFDownloadLink>
           </div>
         </div>
 
-        {/* Main Result Card */}
-        <div className="relative overflow-hidden rounded-[3rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl p-8 md:p-12">
+        {/* Main Result Hub */}
+        <div className="relative overflow-hidden rounded-[4rem] bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 shadow-2xl p-12 lg:p-20">
               <div className="absolute top-0 right-0 p-8 opacity-[0.05] dark:opacity-[0.03] pointer-events-none">
-                  <GraduationCap size={400} className="text-primary rotate-12 -translate-y-20 translate-x-20" />
+                  <GraduationCap size={600} className="text-slate-400 rotate-12 -translate-y-20 translate-x-20" style={{ color: primaryColor }} />
               </div>
               
-              {/* Official Seal Watermark (Nigerian Context) */}
-              <div className="absolute bottom-10 right-10 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
-                  <Award size={200} className="rotate-12" />
-              </div>
-
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 relative z-10">
-                  <div className="space-y-8 max-w-2xl text-center md:text-left">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="inline-flex items-center gap-3 px-5 py-2 rounded-2xl bg-primary/10 text-primary dark:text-primary-400 text-xs font-black uppercase tracking-widest border border-primary/20">
-                            <User size={16} /> Academic Performance Transcript
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-16 relative z-10">
+                  <div className="space-y-12 max-w-3xl">
+                      <div className="flex flex-wrap items-center gap-4">
+                        <div className="inline-flex items-center gap-3 px-6 py-2 rounded-2xl bg-slate-50 dark:bg-white/5 text-slate-500 text-xs font-black uppercase tracking-widest border border-slate-100 dark:border-white/10">
+                            <User size={18} /> Performance Transcript
                         </div>
-                        <div className="px-4 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-black uppercase tracking-widest">
-                           {result.startedAt ? format(new Date(result.startedAt), "yyyy") : new Date().getFullYear()} SESSION
+                        <div className="px-5 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                           {result.startedAt ? format(new Date(result.startedAt), "yyyy") : new Date().getFullYear()} ACADEMIC SESSION
                         </div>
                       </div>
                       
                       <div>
-                          <div className="flex flex-col md:flex-row md:items-baseline gap-2 md:gap-4 mb-2">
-                             <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.05]">
+                          <div className="flex flex-col md:flex-row md:items-baseline gap-4 mb-4">
+                             <h1 className="text-5xl md:text-8xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
                                 {result.student?.name}
                              </h1>
-                             <span className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">
-                                REG: {result.student?.studentCode}
-                             </span>
                           </div>
-                          <p className="text-lg text-slate-500 font-medium border-l-4 border-primary pl-4">
-                            Result for <span className="text-slate-900 dark:text-white font-black underline decoration-primary/30 decoration-4">{result.title}</span> 
-                            <span className="ml-2 text-primary font-black opacity-50">• {result.className}</span>
+                          <p className="text-xl text-slate-500 font-medium border-l-4 pl-6" style={{ borderColor: primaryColor }}>
+                            Validated achievement metrics for <span className="text-slate-900 dark:text-white font-black underline decoration-primary/30 decoration-8" style={{ textDecorationColor: `${primaryColor}40` }}>{result.title}</span> 
+                            <span className="ml-3 font-black opacity-50 uppercase tracking-widest text-sm" style={{ color: primaryColor }}>• {result.className}</span>
                           </p>
                       </div>
 
-                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="p-6 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-inner group hover:border-primary/30 transition-colors cursor-help">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-center md:justify-start gap-1">
-                                Peer Standing <Info size={10} />
-                              </p>
-                              <p className="text-2xl font-black text-slate-900 dark:text-white italic">TOP {100 - (result.globalStanding || 0)}%</p>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
-                            <p className="text-[10px] font-bold">Your rank compared to all attendees of this assessment.</p>
-                          </TooltipContent>
-                        </Tooltip>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                        <div className="p-8 rounded-[2rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 shadow-inner group transition-all">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Efficiency Percentile</p>
+                          <p className="text-4xl font-black text-slate-900 dark:text-white italic tracking-tighter uppercase leading-none" style={{ color: primaryColor }}>Top {100 - (result.globalStanding || 0).toFixed(1)}%</p>
+                        </div>
 
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                             <div className="p-6 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-inner group hover:border-primary/30 transition-colors cursor-help">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-center md:justify-start gap-1">
-                                  Weighted Aggregate <Info size={10} />
-                                </p>
-                                <p className="text-2xl font-black text-slate-900 dark:text-white">{result.totalScore}/{result.totalMarks}</p>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
-                            <p className="text-[10px] font-bold">Total marks achieved across all subject components.</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        <div className="p-8 rounded-[2rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 shadow-inner group transition-all">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Aggregate Index</p>
+                          <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">{result.totalScore}/{result.totalMarks}</p>
+                        </div>
 
-                         <Tooltip>
-                           <TooltipTrigger asChild>
-                              <div className="p-6 rounded-[1.5rem] bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-inner group hover:border-primary/30 transition-colors cursor-help">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-center md:justify-start gap-1">
-                                  Final Grade <Info size={10} />
-                                </p>
-                                <p className={cn(
-                                  "text-2xl font-black uppercase",
-                                  scorePercentage >= 75 ? "text-emerald-500" : scorePercentage >= 40 ? "text-amber-500" : "text-rose-500"
-                                )}>{result.grade || (scorePercentage >= 75 ? 'A1' : scorePercentage >= 40 ? 'C6' : 'F9')}</p>
-                            </div>
-                           </TooltipTrigger>
-                           <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
-                            <p className="text-[10px] font-bold">Nigerian standard alphabetical grade reflection.</p>
-                          </TooltipContent>
-                         </Tooltip>
+                         <div className="p-8 rounded-[2rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 shadow-inner group transition-all">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Validated Grade</p>
+                          <p className={cn(
+                            "text-4xl font-black uppercase tracking-tighter leading-none",
+                            scorePercentage >= 75 ? "text-emerald-500" : scorePercentage >= 40 ? "text-amber-500" : "text-rose-500"
+                          )}>{result.grade || (scorePercentage >= 75 ? 'A1' : scorePercentage >= 40 ? 'C6' : 'F9')}</p>
+                        </div>
                       </div>
                   </div>
 
                   <div className="shrink-0 flex justify-center">
-                      <div className="relative group p-4">
-                          <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full scale-125 opacity-50 dark:opacity-20 animate-pulse" />
-                          <div className="relative z-10 transition-transform duration-700 hover:rotate-6">
+                      <div className="relative group p-10">
+                          <div className="absolute inset-0 blur-[100px] rounded-full scale-125 opacity-30 animate-pulse" style={{ backgroundColor: primaryColor }} />
+                          <div className="relative z-10 transition-transform duration-1000 hover:rotate-12">
                             <ProgressCircle 
                                 value={scorePercentage}
-                                size={280}
-                                strokeWidth={22}
+                                size={320}
+                                strokeWidth={28}
                                 label={`${scorePercentage}%`}
-                                sublabel="Overall Mastery"
+                                sublabel="Mastery Index"
                                 className="drop-shadow-2xl"
+                                primaryColor={primaryColor}
                             />
-                            {/* Inner Grade Hub */}
                             <div className="absolute inset-x-0 bottom-[35%] flex flex-col items-center pointer-events-none">
-                               <div className="px-3 py-1 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-100 dark:border-slate-800">
-                                  <span className="text-[10px] font-black text-primary uppercase tracking-widest animate-bounce inline-block">
-                                    {result.proficiency || "Distinction"}
+                               <div className="px-5 py-2 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-100 dark:border-white/10">
+                                  <span className="text-xs font-black uppercase tracking-[0.2em] animate-bounce inline-block" style={{ color: primaryColor }}>
+                                    {result.proficiency || "Excellence"}
                                   </span>
                                </div>
                             </div>
@@ -893,38 +784,38 @@ function DetailedStudentResult({ examId, studentId, onBack, school }: any) {
               </div>
         </div>
 
-        {/* Breakdown Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                  <div className="flex items-center justify-between px-2">
-                      <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 uppercase tracking-wider">
-                          <BarChart3 className="text-primary" /> Subject Mastery Breakdown
+        {/* Analytic Breakdown Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="space-y-8">
+                  <div className="flex items-center justify-between px-4">
+                      <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter flex items-center gap-4">
+                          <BarChart3 style={{ color: primaryColor }} /> Component Analysis
                       </h3>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                       {result.subjects?.map((sub: any, i: number) => {
                           const percent = Math.round((sub.score / sub.totalMarks) * 100);
                           const subGrade = percent >= 75 ? 'A1' : percent >= 70 ? 'B2' : percent >= 65 ? 'B3' : percent >= 50 ? 'C6' : percent >= 40 ? 'D7' : 'F9';
                           
                           return (
-                              <div key={i} className="p-8 rounded-[2.5rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between group hover:border-primary transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5">
-                                  <div className="flex items-center gap-6">
+                              <div key={i} className="p-10 rounded-[3rem] bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:-translate-y-1 transition-all shadow-xl shadow-slate-200/50 dark:shadow-none">
+                                  <div className="flex items-center gap-8">
                                       <div className={cn(
-                                        "h-12 w-12 rounded-2xl flex items-center justify-center font-black text-lg shadow-inner",
+                                        "size-16 rounded-[1.5rem] flex items-center justify-center font-black text-2xl shadow-inner border border-white/10",
                                         percent >= 75 ? "bg-emerald-500/10 text-emerald-500" : percent >= 40 ? "bg-amber-500/10 text-amber-500" : "bg-rose-500/10 text-rose-500"
                                       )}>
                                         {subGrade}
                                       </div>
-                                      <div className="space-y-1">
-                                          <p className="text-lg font-black text-slate-900 dark:text-white leading-tight">{sub.subjectName}</p>
-                                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Weighted Score: {sub.score} / {sub.totalMarks}</p>
+                                      <div className="space-y-1.5">
+                                          <p className="text-2xl font-black text-slate-900 dark:text-white leading-none uppercase tracking-tighter">{sub.subjectName}</p>
+                                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Validated Node • {sub.score} / {sub.totalMarks}</p>
                                       </div>
                                   </div>
-                                  <div className="flex items-center gap-8 text-right">
-                                      <div className="h-14 w-1 bg-slate-100 dark:bg-slate-800 rounded-full" />
-                                      <div className="w-16">
+                                  <div className="flex items-center gap-10 text-right">
+                                      <div className="h-16 w-1 bg-slate-50 dark:bg-white/5 rounded-full" />
+                                      <div className="w-20">
                                           <p className={cn(
-                                              "text-2xl font-black",
+                                              "text-3xl font-black uppercase tracking-tighter",
                                               percent >= 75 ? "text-emerald-500" : percent >= 45 ? "text-amber-500" : "text-rose-500"
                                           )}>{percent}%</p>
                                       </div>
@@ -935,86 +826,67 @@ function DetailedStudentResult({ examId, studentId, onBack, school }: any) {
                   </div>
               </div>
 
-              <div className="space-y-6">
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 px-2 uppercase tracking-wider">
-                      <Percent className="text-indigo-500" /> Statistical Comparison
+              <div className="space-y-8">
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter flex items-center gap-4 px-4">
+                      <Percent className="text-indigo-500" /> Institution Benchmark
                   </h3>
-                  <div className="p-10 rounded-[2.5rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-10 shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none">
-                         <TrendingUp size={200} />
+                  <div className="p-12 rounded-[4rem] bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 space-y-12 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none">
+                         <TrendingUp size={300} />
                       </div>
 
-                      <div className="space-y-6 relative z-10">
+                      <div className="space-y-8 relative z-10">
                           <div className="flex justify-between items-end">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="cursor-help group">
-                                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1">Global Standing Rank <Info size={10} /></p>
-                                      <p className="text-3xl font-black text-primary group-hover:scale-105 transition-transform duration-300">Superior to {(result.globalStanding || 0).toFixed(1)}%</p>
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
-                                  <p className="text-[10px] font-bold">This percentage indicates how many of your peers scored lower than you globally.</p>
-                                </TooltipContent>
-                              </Tooltip>
+                                <div>
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">Global Standing Vector <Info size={14} /></p>
+                                    <p className="text-4xl font-black uppercase tracking-tighter" style={{ color: primaryColor }}>Superior to {(result.globalStanding || 0).toFixed(1)}%</p>
+                                </div>
                               
                               <div className={cn(
-                                "h-14 w-14 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg border-2",
-                                scorePercentage >= 75 ? "bg-emerald-500 text-white border-emerald-400" : "bg-primary text-white border-primary/50"
-                              )}>
+                                "size-20 rounded-[1.5rem] flex items-center justify-center font-black text-3xl shadow-2xl border-4 border-white/20",
+                                scorePercentage >= 75 ? "bg-emerald-500 text-white" : "text-white"
+                              )}
+                              style={{ backgroundColor: scorePercentage >= 75 ? undefined : primaryColor }}
+                              >
                                   {result.grade || (scorePercentage >= 75 ? 'A1' : 'C6')}
                               </div>
                           </div>
-                          <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner p-0.5">
+                          <div className="h-6 bg-slate-50 dark:bg-white/5 rounded-full overflow-hidden shadow-inner p-1">
                               <div 
-                                className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-all duration-1000" 
-                                style={{ width: `${result.globalStanding || 92}%` }}
+                                className="h-full rounded-full transition-all duration-1000 shadow-lg" 
+                                style={{ width: `${result.globalStanding || 92}%`, background: `linear-gradient(to right, ${primaryColor}, #6366f1)` }}
                               />
                           </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-6 relative z-10">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-center shadow-inner hover:border-primary/20 transition-colors cursor-help">
-                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-1">Class Median <Info size={10} /></p>
-                                  <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{Math.round((result.classAverage / result.totalMarks) * 100) || "76"}%</p>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
-                              <p className="text-[10px] font-bold">The middle score in the entire class for this assessment.</p>
-                            </TooltipContent>
-                          </Tooltip>
+                      <div className="grid grid-cols-2 gap-8 relative z-10">
+                          <div className="p-10 rounded-[2.5rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center shadow-inner hover:scale-[1.02] transition-transform">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Cohort Median</p>
+                              <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-none">{Math.round((result.classAverage / result.totalMarks) * 100) || "76"}%</p>
+                          </div>
 
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                               <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-center shadow-inner hover:border-emerald-500/20 transition-colors cursor-help">
-                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-1">Trend Velocity <Info size={10} /></p>
-                                  <div className="flex items-center justify-center gap-2">
-                                      <span className={cn(
-                                        "h-2 w-2 rounded-full animate-pulse",
-                                        (result.velocity || 0) >= 0 ? "bg-emerald-500" : "bg-rose-500"
-                                      )} />
-                                      <p className={cn(
-                                        "text-2xl font-black",
-                                        (result.velocity || 0) >= 0 ? "text-emerald-500" : "text-rose-500"
-                                      )}>{(result.velocity || 0) >= 0 ? '+' : ''}{result.velocity || "0"}%</p>
-                                  </div>
+                           <div className="p-10 rounded-[2.5rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center shadow-inner hover:scale-[1.02] transition-transform">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Velocity Vector</p>
+                              <div className="flex items-center justify-center gap-3">
+                                  <span className={cn(
+                                    "size-3 rounded-full animate-pulse",
+                                    (result.velocity || 0) >= 0 ? "bg-emerald-500" : "bg-rose-500"
+                                  )} />
+                                  <p className={cn(
+                                    "text-4xl font-black tracking-tighter leading-none",
+                                    (result.velocity || 0) >= 0 ? "text-emerald-500" : "text-rose-500"
+                                  )}>{(result.velocity || 0) >= 0 ? '+' : ''}{result.velocity || "0"}%</p>
                               </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-slate-900 text-white border-none rounded-xl p-3">
-                              <p className="text-[10px] font-bold">Your growth trajectory compared to your previous performance average.</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          </div>
                       </div>
-
-                      <div className="p-8 rounded-[2rem] bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20 relative group overflow-hidden">
-                          <History className="absolute -right-4 -bottom-4 text-indigo-500 opacity-5 group-hover:opacity-10 transition-opacity" size={100} />
-                          <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                             <TrendingUp size={14} /> Analytical Summary
+                      
+                      <div className="p-10 rounded-[3rem] border border-indigo-100 dark:border-indigo-500/20 relative group overflow-hidden" style={{ backgroundColor: `${primaryColor}05` }}>
+                          <History className="absolute -right-8 -bottom-8 opacity-5 transition-opacity duration-700 group-hover:opacity-10" size={200} style={{ color: primaryColor }} />
+                          <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-6 flex items-center gap-3" style={{ color: primaryColor }}>
+                             <Zap size={14} fill="currentColor" /> Operational Intelligence
                           </p>
-                          <p className="text-sm font-medium text-slate-600 dark:text-slate-400 leading-relaxed italic relative z-10">
-                              "{result.performanceInsight || "The student exhibits consistent engagement and has a solid path towards future academic excellence."}"
+                          <p className="text-lg font-medium text-slate-600 dark:text-slate-400 leading-relaxed italic relative z-10">
+                              "{result.performanceInsight || "Analysis indicates consistent node synchronization and high-efficiency performance across all academic sectors."}"
                           </p>
                       </div>
                   </div>
@@ -1028,93 +900,92 @@ function DetailedStudentResult({ examId, studentId, onBack, school }: any) {
 /**
  * Subject Papers View - Level 1 for Papers
  */
-function SubjectPapersView({ papers, isLoading, onSelectPaper }: any) {
+function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor }: any) {
   const [showMobileGrid, setShowMobileGrid] = useState(false);
   const [isNavigating, setIsNavigating] = useState<string | null>(null);
 
   return (
-    <div className="space-y-8">
-      {/* Search & Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="relative group flex-1 max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={20} />
+    <div className="space-y-12">
+      {/* Search Terminal */}
+      <div className="flex flex-wrap items-center justify-between gap-6">
+        <div className="relative group flex-1 max-w-xl">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
             <input 
                 type="text" 
-                placeholder="Search subject papers..."                className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700 dark:text-slate-200"
+                placeholder="Synchronize subject paper nodes..."
+                className="w-full h-16 pl-16 pr-6 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-3xl focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
+                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
             />
         </div>
         <div className="w-full md:hidden">
             <Button 
                 onClick={() => setShowMobileGrid(!showMobileGrid)} 
                 variant="outline" 
-                className="w-full h-12 rounded-xl border-slate-200 dark:border-slate-800 font-bold bg-white dark:bg-slate-900 shadow-sm"
+                className="w-full h-14 rounded-2xl border-slate-200 dark:border-white/5 font-black uppercase tracking-widest bg-white dark:bg-slate-900 shadow-sm"
             >
-                {showMobileGrid ? "Hide" : "Show"} Subject Papers
+                {showMobileGrid ? "Conceal" : "Reveal"} Subject Registry
             </Button>
         </div>
       </div>
 
-      <div className={cn("grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", showMobileGrid ? "grid" : "hidden md:grid")}>
+      <div className={cn("grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8", showMobileGrid ? "grid" : "hidden md:grid")}>
         {isLoading ? (
-          [1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-48 rounded-[2.5rem] bg-white dark:bg-slate-900 animate-pulse border border-slate-100 dark:border-slate-800" />)
+          [1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-64 rounded-[3.5rem] bg-slate-50 dark:bg-white/[0.02] animate-pulse border border-slate-100 dark:border-white/5" />)
         ) : papers.length === 0 ? (
-          <div className="col-span-full py-20 text-center bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-             <BarChart3 className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-             <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No subject papers discovered</p>
+          <div className="col-span-full py-40 text-center bg-slate-50 dark:bg-white/[0.02] rounded-[4rem] border-2 border-dashed border-slate-100 dark:border-white/5 flex flex-col items-center justify-center gap-6">
+             <BarChart3 className="h-20 w-20 text-slate-200 dark:text-slate-800" strokeWidth={1} />
+             <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">No Paper Modules Discovered</p>
           </div>
         ) : (
-          papers.map((paper: any) => (
-            <div 
+          papers.map((paper: any, index: number) => (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
               key={paper.id}
               onClick={() => {
                   setIsNavigating(paper.id);
                   onSelectPaper(paper.exams?.[0]?.examId || 'none', paper.id);
               }}
               className={cn(
-                  "group bg-white dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 rounded-[2rem] p-8 shadow-sm hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 relative overflow-hidden",
-                  isNavigating === paper.id ? "opacity-70 pointer-events-none scale-[0.98] border-emerald-500" : "hover:border-emerald-500/30 hover:-translate-y-1 cursor-pointer"
+                  "group relative overflow-hidden bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3.5rem] p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-500 cursor-pointer",
+                  isNavigating === paper.id ? "opacity-70 pointer-events-none scale-[0.98]" : ""
               )}
             >
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                    <BarChart3 size={150} className="text-emerald-500 -mr-10 -mt-10 rotate-12" />
+                <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
+                    <BarChart3 size={200} className="text-slate-400 -mr-16 -mt-16 rotate-12" style={{ color: primaryColor }} />
                 </div>
                 
-                <div className="relative z-10 space-y-6">
-                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-500/20 dark:to-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black shadow-inner text-xl">
+                <div className="relative z-10 space-y-10">
+                    <div className="size-16 rounded-[1.5rem] bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center font-black shadow-xl text-2xl group-hover:scale-110 transition-all duration-500" style={{ color: primaryColor }}>
                         {paper.subject?.name?.charAt(0) || 'P'}
                     </div>
 
                     <div>
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors line-clamp-1">{paper.title}</h3>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-1.5 bg-slate-100 dark:bg-slate-800 w-fit px-2 py-0.5 rounded-md">{paper.subject?.name || 'Unassigned Subject'}</p>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors leading-tight uppercase tracking-tighter mb-3" style={{ '--primary': primaryColor } as any}>{paper.title}</h3>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-[0.2em] bg-slate-50 dark:bg-white/5 w-fit px-4 py-1.5 rounded-full border border-slate-100 dark:border-white/5">{paper.subject?.name || 'Unassigned Node'}</p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800/80">
+                    <div className="flex items-center justify-between pt-8 border-t border-slate-100 dark:border-white/5">
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Parent Exam</span>
-                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-[140px]">
-                                {paper.exams?.[0]?.exam?.title || 'Standalone Paper'}
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Parent Node</span>
+                            <span className="text-xs font-black text-slate-700 dark:text-slate-300 truncate max-w-[160px] uppercase tracking-tighter">
+                                {paper.exams?.[0]?.exam?.title || 'Standalone Module'}
                             </span>
                         </div>
-                        <div className={cn(
-                            "h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
-                            isNavigating === paper.id 
-                                ? "bg-emerald-500 text-white" 
-                                : "bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:bg-emerald-500 group-hover:text-white hover:scale-105"
-                        )}>
+                        <div className="size-14 rounded-full flex items-center justify-center transition-all duration-500 shadow-xl bg-slate-50 dark:bg-white/5 text-slate-400 group-hover:text-white" style={{ '--hover-bg': primaryColor } as any}>
                             {isNavigating === paper.id ? (
-                                <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                                <Loader2 className="animate-spin" size={20} />
                             ) : (
-                                <ChevronRight size={18} className="translate-x-0.5" />
+                                <ChevronRight size={22} strokeWidth={3} className="translate-x-0.5" />
                             )}
                         </div>
+                    </div>
                 </div>
-              </div>
-            </div>
+            </motion.div>
           ))
         )}
       </div>
     </div>
   );
 }
-

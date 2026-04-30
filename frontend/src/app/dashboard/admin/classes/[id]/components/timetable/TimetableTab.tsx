@@ -1,18 +1,37 @@
 'use client';
 
 import React, { useState } from 'react';
-
 import HeaderActions from './components/HeaderActions';
 import FilterButton from './components/FilterButton';
 import TimetableGrid from './components/TimetableGrid';
 import { Period, Subject } from './components/types';
-
-import { useClassTimetable } from '@/lib/api/hooks/useClasses';
+import { useClassTimetable, useClassDetails } from '@/lib/api/hooks/useClasses';
+import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useParams } from 'next/navigation';
+import { 
+  Calendar, 
+  Clock, 
+  Filter, 
+  Layout, 
+  ChevronRight,
+  Activity,
+  Zap,
+  Layers,
+  ArrowRight
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export default function TimetablePage() {
   const params = useParams();
   const classId = params.id as string;
+  const { user } = useAuthStore();
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const { data: settings } = useSchoolSettings(schoolId);
+  const primaryColor = settings?.themeColor || '#ea580c';
+
+  const { data: classDetails } = useClassDetails(classId);
   
   const [filters, setFilters] = useState({
     term: 'Term 1',
@@ -21,14 +40,11 @@ export default function TimetablePage() {
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
-  // Real Data Hook
   const { data: rawPeriods = [], isLoading } = useClassTimetable(classId);
 
-  // Transform flat backend periods to the structure expected by TimetableGrid
   const periods: Period[] = React.useMemo(() => {
     if (rawPeriods.length === 0) return [];
 
-    // Group by time slot
     const slots = new Map<string, Period>();
 
     rawPeriods.forEach((rp: any) => {
@@ -60,91 +76,93 @@ export default function TimetablePage() {
     setFilters(prev => ({ ...prev, [filterType]: value }));
   };
 
-  const handleAutoGenerate = () => {
-    console.log('Auto-generating timetable...');
-    // Implement auto-generation logic here
-  };
-
-  const handleAddPeriod = () => {
-    console.log('Adding new period...');
-    // Implement add period logic here
-  };
-
-  const handleDownload = () => {
-    console.log('Downloading timetable...');
-    // Implement download logic here
-  };
-
-  const handleCellClick = (day: string, periodId: string) => {
-    console.log(`Clicked ${day} at period ${periodId}`);
-    // Implement cell click logic (e.g., open modal to add/update subject)
-  };
-
-  const handleEditSubject = (subjectId: string) => {
-    console.log(`Editing subject ${subjectId}`);
-    // Implement edit logic
-  };
-
-  const handleDeleteSubject = (subjectId: string) => {
-    console.log(`Deleting subject ${subjectId}`);
-    // Implement delete logic with confirmation
-  };
-
-  const handleMarkAttendance = (subjectId: string) => {
-    console.log(`Marking attendance for subject ${subjectId}`);
-    // Implement attendance marking logic
-  };
-
   return (
-    <div className="relative flex min-h-screen w-full">
-      <main className="flex-1 p-8">
-        <div className="w-full max-w-7xl mx-auto">
-          {/* Header Section */}
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div className="flex flex-col gap-1">
-              <p className="text-gray-900 dark:text-white text-3xl font-bold leading-tight tracking-tight">
-                Class Timetable
-              </p>
-              <p className="text-gray-500 dark:text-[#95a5c6] text-base font-normal leading-normal">
-                Grade 10 – A
-              </p>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
+      <main className="p-8 md:p-12 space-y-12">
+        <div className="w-full max-w-7xl mx-auto space-y-12">
+          {/* Tactical Header */}
+          <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                <span>Chronology protocol</span>
+                <div className="size-1 rounded-full" style={{ backgroundColor: primaryColor }} />
+                <span style={{ color: primaryColor }}>Synchronization Node</span>
+              </div>
+              <div className="flex items-center gap-5">
+                <div className="p-4 rounded-[2rem] shadow-2xl" style={{ backgroundColor: primaryColor }}>
+                  <Calendar size={32} className="text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 dark:text-white uppercase leading-none">
+                    Class Timetable
+                  </h1>
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2 flex items-center gap-2">
+                    <Layers size={12} /> Cluster Node: <span className="text-slate-900 dark:text-white">{classDetails?.name || 'Loading...'}</span>
+                  </p>
+                </div>
+              </div>
             </div>
             
             <HeaderActions
-              onAutoGenerate={handleAutoGenerate}
-              onAddPeriod={handleAddPeriod}
-              onDownload={handleDownload}
+              onAutoGenerate={() => console.log('Auto-generating...')}
+              onAddPeriod={() => console.log('Adding period...')}
+              onDownload={() => console.log('Downloading...')}
             />
           </header>
 
-          {/* Filters */}
-          <div className="flex items-center gap-3 mb-6">
-            <FilterButton
-              label="Term"
-              value={filters.term}
-              options={termOptions}
-              onChange={(value) => handleFilterChange('term', value)}
-            />
-            
-            <FilterButton
-              label="Week"
-              value={filters.week}
-              options={weekOptions}
-              onChange={(value) => handleFilterChange('week', value)}
-            />
+          {/* Operational Control Bar */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl">
+            <div className="flex items-center gap-4">
+              <div className="size-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                <Filter size={18} />
+              </div>
+              <div className="flex items-center gap-3">
+                <FilterButton
+                  label="Phase"
+                  value={filters.term}
+                  options={termOptions}
+                  onChange={(value) => handleFilterChange('term', value)}
+                />
+                <FilterButton
+                  label="Sequence"
+                  value={filters.week}
+                  options={weekOptions}
+                  onChange={(value) => handleFilterChange('week', value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-500 text-[10px] font-black uppercase tracking-widest">
+                <div className="size-1.5 rounded-full bg-green-500 animate-pulse" />
+                Sync Active
+              </div>
+              <div className="flex items-center gap-2 text-slate-400">
+                <Clock size={16} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Last Sync: 2m ago</span>
+              </div>
+            </div>
           </div>
 
-          {/* Timetable Grid */}
-          <TimetableGrid
-            periods={periods}
-            days={days}
-            onCellClick={handleCellClick}
-            onEdit={handleEditSubject}
-            onDelete={handleDeleteSubject}
-            onMarkAttendance={handleMarkAttendance}
-          />
+          {/* Grid Terminal */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-[3.5rem] overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl"
+          >
+            <TimetableGrid
+              periods={periods}
+              days={days}
+              onCellClick={(day, periodId) => console.log(`Clicked ${day} ${periodId}`)}
+              onEdit={(id) => console.log(`Editing ${id}`)}
+              onDelete={(id) => console.log(`Deleting ${id}`)}
+              onMarkAttendance={(id) => console.log(`Attendance for ${id}`)}
+            />
+          </motion.div>
         </div>
       </main>
     </div>
   );
+}
+
 }

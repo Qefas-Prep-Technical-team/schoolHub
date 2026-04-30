@@ -1,13 +1,18 @@
 'use client'
+import { useState } from 'react'
 import Image from 'next/image'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
+import { useParentStore } from '@/lib/api/hooks/useParentStore'
 
 export default function StudentHero() {
-  const { data, isLoading } = useParentDashboard()
+  const { selectedChildId } = useParentStore()
+  const { data, isLoading } = useParentDashboard(selectedChildId)
   const child = data?.child
   const stats = data?.stats
+  const [imgError, setImgError] = useState(false)
+
 
   const gradeLabel = (avg: number) => {
     if (avg >= 90) return 'A+'
@@ -69,6 +74,11 @@ export default function StudentHero() {
     { value: child.currentClass?.name ?? '—', label: 'Class' },
   ]
 
+  const placeholderUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(child.name)}&backgroundColor=ea580c&fontFamily=Arial&fontSize=40&fontWeight=900`;
+  const displayImage = (!imgError && child.profileImage && child.profileImage !== "null" && child.profileImage !== "") 
+    ? child.profileImage 
+    : placeholderUrl;
+
   return (
     <section className="relative overflow-hidden group bg-white/70 dark:bg-slate-900/70 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-slate-200/50 dark:border-white/10 p-8 lg:p-10">
       <div className="absolute top-0 right-0 w-[40%] h-full bg-gradient-to-l from-orange-500/10 via-orange-500/[0.02] to-transparent pointer-events-none transition-opacity duration-1000 group-hover:opacity-60" />
@@ -81,13 +91,15 @@ export default function StudentHero() {
           <div className="relative group/avatar">
             <div className="absolute -inset-2 bg-gradient-to-tr from-orange-600 to-amber-500 rounded-[2rem] blur-xl opacity-20 group-hover/avatar:opacity-40 transition-opacity duration-500" />
             <div className="relative size-32 rounded-[1.8rem] overflow-hidden shadow-2xl ring-4 ring-white dark:ring-slate-800">
-              {child.profileImage ? (
-                <Image src={child.profileImage} alt={child.name} fill className="object-cover" sizes="128px" />
-              ) : (
-                <div className="w-full h-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                  <span className="text-4xl font-black text-orange-600">{child.name.charAt(0)}</span>
-                </div>
-              )}
+              <Image 
+                src={displayImage} 
+                alt={child.name} 
+                fill 
+                className="object-cover" 
+                sizes="128px" 
+                onError={() => setImgError(true)}
+                unoptimized={displayImage.includes('api.dicebear.com')}
+              />
             </div>
           </div>
 

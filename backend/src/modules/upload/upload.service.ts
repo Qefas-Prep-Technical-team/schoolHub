@@ -38,12 +38,20 @@ export const uploadBufferToBunnyService = async (
     "video/mp4": "mp4"
   };
   const extension = extMap[fileType] || "png";
-  const fileName = meta?.fileName || `${uuidv4()}-${Date.now()}.${extension}`;
-  const key = `institutional/${fileName}`;
+  
+  // Sanitize filename to remove spaces and special characters that break HTTP paths
+  const rawFileName = meta?.fileName || `${uuidv4()}-${Date.now()}.${extension}`;
+  const safeFileName = rawFileName
+    .replace(/\s+/g, "-") // Replace spaces with dashes
+    .replace(/[^a-zA-Z0-9.\-_]/g, ""); // Remove other special characters
+  
+  const key = `institutional/${safeFileName}`;
   
   // Regional hostname: storage.bunnycdn.com for default, {region}.storage.bunnycdn.com for others
   const hostname = region ? `${region}.storage.bunnycdn.com` : `storage.bunnycdn.com`;
-  const path     = `/${storageZone}/${key}`;
+  
+  // Ensure path is properly encoded for the HTTP request
+  const path     = encodeURI(`/${storageZone}/${key}`);
 
   console.log(`[Bunny Upload] PUT https://${hostname}${path} (Type: ${fileType})`);
 
@@ -75,6 +83,7 @@ export const uploadBufferToBunnyService = async (
           try {
             if (meta) {
               const metricData: any = {
+                id: uuidv4(),
                 fileName: fileName,
                 fileSize: BigInt(buffer.length),
                 fileType: fileType,

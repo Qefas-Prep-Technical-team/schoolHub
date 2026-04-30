@@ -44,7 +44,10 @@ export default function GradeHub({ grades, isLoading, schoolId }: GradeHubProps)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isOCRModalOpen, setIsOCRModalOpen] = useState(false);
 
-  const filteredGrades = grades.filter(g => 
+  // Safely handle cases where grades might not be an array (e.g. if it's an object from the API)
+  const safeGrades = Array.isArray(grades) ? grades : (grades as any)?.data || [];
+
+  const filteredGrades = safeGrades.filter((g: any) => 
     g.student?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     g.subject?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -100,7 +103,7 @@ export default function GradeHub({ grades, isLoading, schoolId }: GradeHubProps)
           <div className="p-8 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                 <div>
                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Total Records</p>
-                   <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{grades.length}</h3>
+                   <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{safeGrades.length}</h3>
                 </div>
                 <div className="flex gap-2 mt-6">
                    <div className="h-1.5 flex-1 rounded-full bg-emerald-500" />

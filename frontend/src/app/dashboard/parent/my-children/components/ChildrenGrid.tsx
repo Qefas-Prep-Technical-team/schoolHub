@@ -59,11 +59,11 @@ export default function ChildrenGrid() {
     grade: c.stats.averageGrade > 80 ? 'A' : c.stats.averageGrade > 60 ? 'B' : 'C',
     class: c.currentClass ? `${c.currentClass.name} ${c.currentClass.section || ''}` : 'No Class Assigned',
     studentId: c.studentCode,
-    imageUrl: c.profileImage || '/avatars/default-student.png',
+    imageUrl: c.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=ea580c&color=fff`,
     attendance: c.stats.attendanceRate,
     gradeValue: c.stats.averageGrade > 80 ? 'A' : c.stats.averageGrade > 60 ? 'B' : 'C',
     gradePercentage: `${c.stats.averageGrade}%`,
-    status: c.linkStatus === 'ACCEPTED' ? 'active' : 'inactive',
+    status: (c.linkStatus === 'ACCEPTED' || c.linkStatus === 'active') ? 'active' : 'inactive',
     badge: {
       text: c.stats.averageGrade > 90 ? 'Top Performer' : 'Maintained',
       color: c.stats.averageGrade > 90 ? 'green' : 'blue',
@@ -76,7 +76,7 @@ export default function ChildrenGrid() {
       {mappedChildren.map((child) => (
         <ChildCard key={child.id} child={child} />
       ))}
-      <AddChildCard />
+      <AddChildCard childrenCount={mappedChildren.length} />
     </div>
   )
 }

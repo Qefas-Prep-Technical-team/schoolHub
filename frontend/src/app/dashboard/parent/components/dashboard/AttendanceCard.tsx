@@ -1,10 +1,11 @@
-'use client'
 import { cn } from '@/lib/utils'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useParentStore } from '@/lib/api/hooks/useParentStore'
 
 export default function AttendanceCard() {
-  const { data, isLoading } = useParentDashboard()
+  const { selectedChildId } = useParentStore()
+  const { data, isLoading } = useParentDashboard(selectedChildId)
   const attendanceRate = data?.stats?.attendanceRate ?? 0
   const breakdown = data?.stats?.attendanceBreakdown ?? []
 

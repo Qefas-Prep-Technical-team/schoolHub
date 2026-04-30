@@ -1,10 +1,8 @@
 'use client';
 
 import { ClassData } from './types';
-import { Card } from './ui/Card';
-import { Avatar } from './ui/Avatar';
-import { IconButton } from './ui/IconButton';
-import { Badge } from './ui/Badge';
+import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import {
   Users,
   BookOpen,
@@ -12,8 +10,20 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
+  User,
+  ArrowRight,
+  Activity,
+  Layers,
+  Edit2,
+  Trash2,
+  Eye,
+  Zap,
+  Target
 } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface ClassCardProps {
   classData: ClassData;
@@ -24,22 +34,25 @@ interface ClassCardProps {
 
 const statusConfig = {
   complete: {
-    label: 'Timetable: Complete',
+    label: 'SYNC COMPLETE',
     icon: CheckCircle,
-    className: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-    dotColor: 'bg-green-500',
+    color: 'text-emerald-500',
+    bgColor: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-500/20'
   },
   incomplete: {
-    label: 'Timetable: Incomplete',
+    label: 'PARTIAL SYNC',
     icon: AlertCircle,
-    className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-    dotColor: 'bg-orange-500',
+    color: 'text-orange-500',
+    bgColor: 'bg-orange-500/10',
+    borderColor: 'border-orange-500/20'
   },
   pending: {
-    label: 'Timetable: Pending',
+    label: 'SYNC PENDING',
     icon: Clock,
-    className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
-    dotColor: 'bg-yellow-500',
+    color: 'text-amber-500',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/20'
   },
 };
 
@@ -49,143 +62,144 @@ export default function ClassCard({
   onEdit,
   onDelete,
 }: ClassCardProps) {
-  const StatusIcon = statusConfig[classData.timetableStatus].icon;
-  const statusClassName = statusConfig[classData.timetableStatus].className;
-  const dotColor = statusConfig[classData.timetableStatus].dotColor;
+  const { user } = useAuthStore();
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const { data: settings } = useSchoolSettings(schoolId);
+  const primaryColor = settings?.themeColor || '#ea580c';
 
-  const handleMenuClick = (action: 'view' | 'edit' | 'delete') => {
-    switch (action) {
-      case 'view':
-        onView?.(classData.id);
-        break;
-      case 'edit':
-        onEdit?.(classData.id);
-        break;
-      case 'delete':
-        onDelete?.(classData.id);
-        break;
-    }
-  };
+  const status = statusConfig[classData.timetableStatus] || statusConfig.pending;
 
   return (
-    <Link href={`/dashboard/admin/classes/${classData.id}`}>
-    <Card className="hover:shadow-lg transition-shadow group">
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                {classData.name}
-              </h3>
-              {classData.classCode && (
-                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4 font-mono">
-                  {classData.classCode}
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <Avatar
-                src={classData.teachers?.[0]?.teacher?.avatarUrl}
-                alt={classData.teachers?.[0]?.teacher?.name || "Teacher"}
-                size="sm"
-              />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {classData.teachers?.[0]?.teacher?.name || "Not Assigned"}
-                {classData.teachers && classData.teachers.length > 1 && ` +${classData.teachers.length - 1}`}
-              </p>
-            </div>
-            
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {classData.departments?.map((dept) => (
-                <Badge 
-                  key={dept.id} 
-                  variant="custom" 
-                  className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] py-0 px-2 border-emerald-100 dark:border-emerald-800"
-                >
-                  {dept.name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-          
-          <div className="relative">
-            <IconButton
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8"
-              onClick={() => {}} // Will implement dropdown
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="group relative h-full"
+    >
+      <div 
+        className="h-full rounded-[3.5rem] bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col"
+        onClick={() => (window.location.href = `/dashboard/admin/classes/${classData.id}`)}
+      >
+        {/* Dynamic Background Glow */}
+        <div 
+          className="absolute -right-10 -top-10 w-48 h-48 rounded-full blur-[80px] opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-700 pointer-events-none" 
+          style={{ backgroundColor: primaryColor }}
+        />
+
+        <div className="flex justify-between items-start mb-10 relative z-10">
+          <div className="flex items-center gap-5">
+            <div 
+                className="size-16 rounded-[1.5rem] bg-slate-50 dark:bg-white/5 flex items-center justify-center p-4 text-slate-400 group-hover:scale-110 transition-all duration-500 border border-slate-100 dark:border-white/5 shadow-inner"
+                style={{ color: primaryColor }}
             >
-              <MoreVertical className="h-4 w-4" />
-            </IconButton>
-            
-            {/* Dropdown menu (can be implemented with Radix UI or similar) */}
+              <Layers className="size-full" strokeWidth={2.5} />
+            </div>
+            <div className="space-y-1">
+                <div className={cn(
+                    "inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                    status.bgColor, status.color, status.borderColor
+                )}>
+                    {status.label}
+                </div>
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                     STRUCTURAL NODE
+                </div>
+            </div>
           </div>
-        </div>
 
-        {/* Stats */}
-        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-4">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-gray-400" />
-            <span>{classData._count?.enrollments ?? classData.studentCount ?? 0} Students</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-gray-400" />
-            <span>{classData._count?.subjects ?? classData.subjectCount ?? 0} Subjects</span>
-          </div>
-        </div>
-
-        {/* Footer with Status & Live Activity */}
-        <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <Badge
-              variant="custom"
-              className={`inline-flex items-center gap-2 ${statusClassName}`}
-            >
-              <div className={`w-2 h-2 rounded-full ${dotColor}`} />
-              <span className="text-sm font-medium">
-                {statusConfig[classData.timetableStatus].label}
-              </span>
-            </Badge>
-
-            {classData.isLive && (
-              <Badge
-                variant="custom"
-                className="bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-100 dark:border-red-800 animate-pulse flex items-center gap-1.5"
+          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+              <Button 
+                onClick={() => onEdit?.(classData.id)}
+                variant="ghost" 
+                size="icon" 
+                className="size-12 rounded-2xl bg-slate-50/50 dark:bg-white/5 border border-transparent hover:border-slate-100 dark:hover:border-white/10 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Live</span>
-              </Badge>
-            )}
+                <Edit2 size={18} />
+              </Button>
+              <Button 
+                onClick={() => onDelete?.(classData.id)}
+                variant="ghost" 
+                size="icon" 
+                className="size-12 rounded-2xl bg-slate-50/50 dark:bg-white/5 border border-transparent hover:border-rose-100 hover:text-rose-600 transition-all shadow-sm"
+              >
+                <Trash2 size={18} />
+              </Button>
           </div>
-
-          {classData.currentActivity && (
-            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg border border-gray-100 dark:border-gray-700/50">
-              <Clock className="h-3.5 w-3.5 text-primary/70" />
-              <span className="font-medium truncate">
-                Current: <span className="text-gray-900 dark:text-white">{classData.currentActivity}</span>
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* Action Buttons (Visible on Hover) */}
-        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 opacity-0 hover:opacity-100 transition-opacity">
-          <button
-            onClick={() => handleMenuClick('view')}
-            className="flex-1 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 rounded transition-colors"
+        <div className="flex-1 relative z-10">
+          <h3 
+            className="text-2xl font-black text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors leading-[1.1] uppercase tracking-tighter"
+            style={{ '--primary': primaryColor } as any}
           >
-            View Details
-          </button>
-          <button
-            onClick={() => handleMenuClick('edit')}
-            className="flex-1 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-          >
-            Edit
-          </button>
+            {classData.name}
+          </h3>
+          <p className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8">
+            {classData.section} ARM RECOGNITION
+          </p>
+
+          <div className="flex items-center gap-4 p-4 rounded-3xl bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 mb-8">
+            <div className="size-12 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-md">
+                {classData.teacher.avatarUrl ? (
+                  <img src={classData.teacher.avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400">
+                    <User size={20} />
+                  </div>
+                )}
+            </div>
+            <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Lead Personnel</p>
+                <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate max-w-[150px]">
+                  {classData.teacher.name}
+                </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6 pt-8 border-t border-slate-50 dark:border-white/5 relative z-10">
+          <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Occupancy</span>
+                  <div className="flex items-center gap-2">
+                       <Users size={14} className="text-indigo-500" />
+                       <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter uppercase">
+                          {classData.studentCount} Nodes
+                       </span>
+                  </div>
+              </div>
+              <div className="space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Efficiency</span>
+                  <div className="flex items-center gap-2">
+                       <Target size={14} className="text-emerald-500" />
+                       <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter uppercase">
+                          {classData.subjectCount} Syncs
+                       </span>
+                  </div>
+              </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center gap-3">
+                  {classData.isLive ? (
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest animate-pulse border border-emerald-100">
+                        <div className="size-1.5 rounded-full bg-emerald-500" /> Active Channel
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest border border-slate-100">
+                        <Activity size={10} /> Standby
+                    </div>
+                  )}
+              </div>
+              <div 
+                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all"
+                style={{ color: primaryColor }}
+              >
+                  <span>Connect</span>
+                  <ArrowRight size={14} strokeWidth={3} />
+              </div>
+          </div>
         </div>
       </div>
-    </Card>
-    </Link>
+    </motion.div>
   );
 }

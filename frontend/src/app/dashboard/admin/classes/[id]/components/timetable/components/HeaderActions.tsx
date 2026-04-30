@@ -1,6 +1,10 @@
 import React from 'react';
-import { Sparkles, Plus, Download } from 'lucide-react';
+import { Sparkles, Plus, Download, Zap, Layers, ArrowDownToLine } from 'lucide-react';
 import Link from 'next/link';
+import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface HeaderActionsProps {
   onAutoGenerate: () => void;
@@ -13,37 +17,44 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
   onAddPeriod,
   onDownload
 }) => {
+  const { user } = useAuthStore();
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const { data: settings } = useSchoolSettings(schoolId);
+  const primaryColor = settings?.themeColor || '#ea580c';
+
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onAutoGenerate}
-          className="flex items-center gap-2 min-w-[84px] cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
-        >
-          <Sparkles size={18} />
-          <span className="truncate">Auto-generate Timetable</span>
-        </button>
-        <Link href={"/dashboard/admin/classes/class-details/add"}>
-        
-        <button
-          onClick={onAddPeriod}
-          className="flex items-center gap-2 min-w-[84px] cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-200 dark:bg-[#253046] text-gray-800 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-gray-300 dark:hover:bg-[#364563] transition-colors"
-        >
-          <Plus size={18} />
-          <span className="truncate">Add Period</span>
-        </button>
-        </Link>
-      </div>
-      
-      <button
-        onClick={onDownload}
-        className="flex items-center gap-2 min-w-[84px] cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-4 bg-transparent text-gray-800 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] border border-gray-300 dark:border-[#364563] hover:bg-gray-100 dark:hover:bg-[#253046] transition-colors"
+    <div className="flex flex-wrap items-center gap-4">
+      <Button
+        onClick={onAutoGenerate}
+        style={{ backgroundColor: primaryColor }}
+        className="h-14 px-8 rounded-2xl text-white font-black uppercase tracking-widest gap-3 shadow-2xl hover:scale-105 active:scale-95 transition-all"
       >
-        <Download size={18} />
-        <span className="truncate">Download Timetable</span>
-      </button>
+        <Zap size={18} />
+        Initialize Auto-Sync
+      </Button>
+
+      <div className="flex items-center gap-3">
+        <Link href={"/dashboard/admin/classes/class-details/add"}>
+          <Button
+            variant="ghost"
+            className="h-14 px-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-2 hover:border-orange-600/30 transition-all shadow-lg"
+          >
+            <Plus size={18} />
+            Node period
+          </Button>
+        </Link>
+        
+        <Button
+          variant="ghost"
+          onClick={onDownload}
+          className="h-14 px-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-2 hover:border-orange-600/30 transition-all shadow-lg text-slate-400"
+        >
+          <ArrowDownToLine size={18} />
+          Protocol Export
+        </Button>
+      </div>
     </div>
   );
 };
 
-export default HeaderActions;
+export default HeaderActions;

@@ -57,14 +57,17 @@ export interface ParentDashboardData {
   };
 }
 
-export const useParentDashboard = () => {
+export const useParentDashboard = (childId?: string | null) => {
   return useQuery<ParentDashboardData>({
-    queryKey: ["parent-dashboard"],
+    queryKey: ["parent-dashboard", childId],
     queryFn: async () => {
-      const { data } = await apiClient.get("/parents/dashboard");
+      const { data } = await apiClient.get("/parents/dashboard", {
+        params: { childId }
+      });
       return data.data as ParentDashboardData;
     },
     staleTime: 60_000,
     refetchInterval: 60_000,
   });
 };
+

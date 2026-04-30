@@ -1,17 +1,18 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/authMiddleware";
 import { checkSubscription } from "../../middleware/subscriptionMiddleware";
-import { getChildren, getChildDetails, getParentDashboard } from "./parent.controller";
+import { getChildren, getChildDetails, getParentDashboard, updateProfile, updateChildProfile } from "./parent.controller";
 
 const router = Router();
 
-// All parent routes require authentication and an active subscription
+// All parent routes require authentication
 router.use(authenticateToken);
-router.use(checkSubscription);
 
-router.get("/dashboard", getParentDashboard);
-router.get("/children", getChildren);
-router.get("/children/:childId", getChildDetails);
+router.get("/dashboard", checkSubscription, getParentDashboard);
+router.get("/children", checkSubscription, getChildren);
+router.get("/children/:childId", checkSubscription, getChildDetails);
+router.patch("/children/:childId", checkSubscription, updateChildProfile);
+router.patch("/profile", updateProfile);
 
 export default router;
 

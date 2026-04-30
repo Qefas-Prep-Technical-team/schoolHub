@@ -1,7 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["lh3.googleusercontent.com", "api.dicebear.com", "schoolhub-q.b-cdn.net"],
+    domains: [
+      "lh3.googleusercontent.com",
+      "api.dicebear.com",
+      "schoolhub-q.b-cdn.net",
+      "ui-avatars.com"
+    ],
     remotePatterns: [
       {
         protocol: "https",
@@ -10,6 +15,10 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "schoolhub-q.b-cdn.net",
+      },
+      {
+        protocol: "https",
+        hostname: "ui-avatars.com",
       },
     ],
   },

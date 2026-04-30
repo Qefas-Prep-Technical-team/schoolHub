@@ -34,4 +34,20 @@ export const parentService = {
     const response = await apiClient.get<{ success: boolean; data: any }>(`/parents/children/${childId}`);
     return response.data.data;
   },
+
+  updateProfile: async (data: { 
+    name?: string; 
+    email?: string; 
+    phone?: string;
+    profileImage?: string;
+    bannerImage?: string;
+  }) => {
+    const response = await apiClient.patch<{ success: boolean; data: any }>("/parents/profile", data);
+    return response.data.data;
+  },
+
+  updateChild: async (childId: string, data: { name?: string; profileImage?: string }) => {
+    const response = await apiClient.patch<{ success: boolean; data: any }>(`/parents/children/${childId}`, data);
+    return response.data.data;
+  },
 };

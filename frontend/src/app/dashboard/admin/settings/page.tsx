@@ -299,32 +299,67 @@ export default function SettingsPage() {
                                 </div>
                             </div>
                             <CardContent className="p-8 space-y-8">
-                                <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
-                                    <div className="space-y-2 flex-1">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Primary Theme Color</Label>
-                                        <div className="flex gap-4 items-center">
-                                            <Input 
-                                                type="color" 
-                                                value={localSettings.themeColor || '#3670e2'} 
-                                                onChange={(e) => handleChange('themeColor', e.target.value)}
-                                                className="w-16 h-12 p-1 rounded-xl cursor-copy border-none bg-transparent"
-                                            />
-                                            <Input 
-                                                type="text" 
-                                                value={localSettings.themeColor || ''} 
-                                                onChange={(e) => handleChange('themeColor', e.target.value)}
-                                                placeholder="#000000"
-                                                className="h-12 rounded-2xl font-mono font-bold border-slate-200"
-                                            />
+                                <div className="space-y-10">
+                                    <div className="space-y-4">
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Institutional Color Presets</Label>
+                                        <div className="flex flex-wrap gap-4">
+                                            {[
+                                                { name: 'Qefas Orange', hex: '#ea580c' },
+                                                { name: 'Royal Blue', hex: '#2563eb' },
+                                                { name: 'Scholar Indigo', hex: '#4f46e5' },
+                                                { name: 'Emerald Growth', hex: '#10b981' },
+                                                { name: 'Academic Slate', hex: '#475569' },
+                                                { name: 'Rose Excellence', hex: '#e11d48' },
+                                            ].map((preset) => (
+                                                <button
+                                                    key={preset.hex}
+                                                    onClick={() => handleChange('themeColor', preset.hex)}
+                                                    className={cn(
+                                                        "h-12 w-12 rounded-2xl transition-all hover:scale-110 active:scale-95 border-4",
+                                                        localSettings.themeColor === preset.hex ? "border-white dark:border-slate-800 shadow-xl scale-110" : "border-transparent"
+                                                    )}
+                                                    style={{ backgroundColor: preset.hex }}
+                                                    title={preset.name}
+                                                />
+                                            ))}
                                         </div>
-                                        <p className="text-[10px] text-slate-400 font-medium italic mt-2">
-                                            This color will be applied to buttons, accents, and important branding elements across all user dashboards.
-                                        </p>
                                     </div>
-                                    <div 
-                                        className="h-32 w-32 rounded-3xl shadow-inner border-4 border-white dark:border-slate-800"
-                                        style={{ backgroundColor: localSettings.themeColor || '#3670e2' }}
-                                    />
+
+                                    <div className="flex flex-col md:flex-row gap-8 items-start md:items-center pt-8 border-t border-slate-100 dark:border-white/5">
+                                        <div className="space-y-4 flex-1">
+                                            <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Custom System Frequency (Hex)</Label>
+                                            <div className="flex gap-4 items-center">
+                                                <div className="relative">
+                                                    <Input 
+                                                        type="color" 
+                                                        value={localSettings.themeColor || '#ea580c'} 
+                                                        onChange={(e) => handleChange('themeColor', e.target.value)}
+                                                        className="w-16 h-14 p-1 rounded-2xl cursor-copy border-none bg-transparent relative z-10"
+                                                    />
+                                                    <div className="absolute inset-0 rounded-2xl border-2 border-slate-200 dark:border-slate-800 pointer-events-none" />
+                                                </div>
+                                                <Input 
+                                                    type="text" 
+                                                    value={localSettings.themeColor || ''} 
+                                                    onChange={(e) => handleChange('themeColor', e.target.value)}
+                                                    placeholder="#000000"
+                                                    className="h-14 rounded-[1.4rem] font-mono font-black border-slate-200 dark:border-white/10 text-lg uppercase tracking-widest px-6"
+                                                />
+                                            </div>
+                                            <p className="text-[11px] text-slate-500 font-bold italic leading-relaxed">
+                                                Select a preset or enter a custom hex code. This primary frequency will be broadcast across all user dashboard interfaces.
+                                            </p>
+                                        </div>
+                                        <div 
+                                            className="h-40 w-40 rounded-[3rem] shadow-3xl border-[8px] border-white dark:border-slate-800 group relative overflow-hidden"
+                                            style={{ backgroundColor: localSettings.themeColor || '#ea580c' }}
+                                        >
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent" />
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Paintbrush className="text-white" size={32} />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

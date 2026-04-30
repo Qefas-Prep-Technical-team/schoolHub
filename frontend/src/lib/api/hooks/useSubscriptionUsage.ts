@@ -28,7 +28,7 @@ interface SubscriptionUsageData {
   subscriptionStatus: string;
 }
 
-export const useSubscriptionUsage = () => {
+export const useSubscriptionUsage = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['subscription-usage'],
     queryFn: async () => {
@@ -36,6 +36,7 @@ export const useSubscriptionUsage = () => {
       const { data } = await apiClient.get<{ success: boolean, data: SubscriptionUsageData }>('/subscription/usage');
       return data.data;
     },
+    enabled: enabled,
     // Always consider data stale — re-fetch on every mount
     staleTime: 0,
     refetchOnWindowFocus: true,

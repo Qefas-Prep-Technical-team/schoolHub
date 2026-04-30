@@ -3,7 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
-import { useSchoolProfile, useSchoolStats } from '@/lib/api/hooks/useSchool';
+import { useSchoolProfile, useSchoolStats, useSchoolSettings } from '@/lib/api/hooks/useSchool';
 import { 
   Building2, 
   Mail, 
@@ -25,13 +25,18 @@ import {
   Linkedin,
   Youtube,
   Clock,
-  Navigation
+  Navigation,
+  Zap,
+  Target,
+  Award,
+  Fingerprint
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function SchoolProfilePage() {
   const router = useRouter();
@@ -40,6 +45,9 @@ export default function SchoolProfilePage() {
   
   const { data: school, isLoading: schoolLoading } = useSchoolProfile(schoolId);
   const { data: stats, isLoading: statsLoading } = useSchoolStats(schoolId);
+  const { data: settings } = useSchoolSettings(schoolId);
+
+  const primaryColor = settings?.themeColor || '#ea580c'; // Fallback to Qefas Orange
 
   const handleEditProfile = () => {
     router.push('/dashboard/admin/school-profile/edit');
@@ -58,286 +66,351 @@ export default function SchoolProfilePage() {
 
   if (schoolLoading || statsLoading) {
     return (
-      <div className="p-8 space-y-8 animate-pulse bg-slate-50 dark:bg-slate-950 min-h-screen">
-        <Skeleton className="h-[400px] w-full rounded-[4rem] bg-slate-200 dark:bg-slate-900" />
+      <div className="p-8 space-y-10 animate-pulse bg-slate-50 dark:bg-slate-950 min-h-screen">
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-4 w-32 rounded-full" />
+          <Skeleton className="h-16 w-2/3 rounded-3xl" />
+        </div>
+        <Skeleton className="h-[450px] w-full rounded-[4rem] bg-slate-200 dark:bg-slate-900" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <Skeleton className="h-44 rounded-[3rem] bg-slate-200 dark:bg-slate-900" />
-          <Skeleton className="h-44 rounded-[3rem] bg-slate-200 dark:bg-slate-900" />
-          <Skeleton className="h-44 rounded-[3rem] bg-slate-200 dark:bg-slate-900" />
-          <Skeleton className="h-44 rounded-[3rem] bg-slate-200 dark:bg-slate-900" />
+          {[1, 2, 3, 4].map(i => (
+            <Skeleton key={i} className="h-44 rounded-[3rem] bg-slate-200 dark:bg-slate-900" />
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 lg:p-12 space-y-16">
+    <div 
+      className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 space-y-16"
+      style={{ '--theme-primary': primaryColor } as React.CSSProperties}
+    >
       
-      {/* Premium Hero Section with Glassmorphism Overlay */}
-      <motion.section 
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative h-[550px] rounded-[4.5rem] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800"
-      >
-        {/* Banner Image */}
-        <div className="absolute inset-0">
-           {school?.bannerImage ? (
-             <img src={school.bannerImage} alt="Banner" className="w-full h-full object-cover" />
-           ) : (
-             <div className="w-full h-full bg-slate-900 flex items-center justify-center">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-primary/20 blur-3xl" />
-                <Building2 size={200} className="text-white/5" />
-             </div>
-           )}
-           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/10" />
+      {/* Console Header */}
+      <header className="px-6 md:px-12 pt-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">
+            <span>Core Systems</span>
+            <div className="h-1 w-1 rounded-full" style={{ backgroundColor: primaryColor }} />
+            <span style={{ color: primaryColor }}>Institutional Identity</span>
+          </div>
+          <div className="flex items-center gap-5">
+            <div className="p-4 bg-slate-900 dark:bg-slate-800 rounded-[2rem] shadow-2xl group hover:rotate-6 transition-transform" style={{ backgroundColor: primaryColor }}>
+              <Building2 size={32} className="text-white" />
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-slate-900 dark:text-white uppercase leading-none">
+              School Profile
+            </h1>
+          </div>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 font-bold tracking-tight max-w-xl leading-relaxed uppercase opacity-80">
+            Establish and manage your institution's digital footprint and operational parameters.
+          </p>
         </div>
 
-        {/* Header Overlay Content */}
-        <div className="absolute inset-x-8 bottom-8 md:inset-x-12 md:bottom-12">
-           <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-3xl p-8 md:p-12 rounded-[3.5rem] border border-white/20 dark:border-slate-800 shadow-2xl flex flex-col lg:flex-row items-center gap-10">
-              
-              {/* Logo with sophisticated border */}
-              <div className="h-44 w-44 rounded-[2.8rem] bg-white dark:bg-slate-800 p-2 shadow-2xl overflow-hidden flex items-center justify-center border-[6px] border-white/40 dark:border-slate-800/40 shrink-0 transform -translate-y-4 md:-translate-y-8 lg:translate-y-0 relative z-20">
-                {school?.logo ? (
-                  <img src={school.logo} alt={school.name} className="h-full w-full object-cover rounded-[2rem]" />
-                ) : (
-                  <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-24 w-24 object-contain opacity-50" />
-                )}
-              </div>
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+            <Button 
+                onClick={handleEditProfile} 
+                className="h-14 px-10 w-full sm:w-auto rounded-[1.8rem] bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 gap-3 group"
+                style={{ backgroundColor: primaryColor }}
+            >
+                <Edit3 size={18} className="group-hover:rotate-12 transition-transform" />
+                Modify Identity
+            </Button>
+            {school?.website && (
+                <Button 
+                    variant="outline"
+                    className="h-14 px-8 w-full sm:w-auto rounded-[1.8rem] border-2 border-slate-200 dark:border-white/10 font-black uppercase tracking-widest text-[10px] gap-3"
+                    onClick={() => window.open(school.website.startsWith('http') ? school.website : `https://${school.website}`, '_blank')}
+                >
+                    Public Portal
+                    <ExternalLink size={14} />
+                </Button>
+            )}
+        </div>
+      </header>
 
-              {/* Title and Metadata */}
-              <div className="flex-1 text-center lg:text-left space-y-4 relative z-10">
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mb-3">
-                   <Badge className="bg-primary text-white border-none rounded-full px-6 py-2 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/30">
-                      {school?.schoolType || 'Premier Institution'}
-                   </Badge>
-                   <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.25em] border border-emerald-500/10">
-                      <ShieldCheck size={14} strokeWidth={3} /> Certified System
+      <div className="px-6 md:px-12 space-y-16">
+        {/* Premium Hero Section */}
+        <motion.section 
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative h-[600px] rounded-[4.5rem] overflow-hidden shadow-3xl group"
+        >
+          {/* Banner with sophisticated overlays */}
+          <div className="absolute inset-0">
+             {school?.bannerImage ? (
+               <img src={school.bannerImage} alt="Banner" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[2000ms]" />
+             ) : (
+               <div className="w-full h-full bg-slate-900 flex items-center justify-center">
+                  <div className="absolute inset-0 blur-3xl opacity-50" style={{ background: `linear-gradient(to bottom right, ${primaryColor}66, #0f172a)` }} />
+                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+                  <Building2 size={300} className="text-white/[0.03] animate-pulse" />
+               </div>
+             )}
+             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+             <div className="absolute inset-0 bg-gradient-to-r from-slate-950/60 to-transparent" />
+          </div>
+
+          {/* Hero Content Overlay */}
+          <div className="absolute inset-0 p-12 md:p-20 flex flex-col justify-end gap-10">
+             <div className="flex flex-col lg:flex-row items-center lg:items-end gap-12 relative z-10">
+                {/* Logo Node */}
+                <div className="relative group/logo">
+                    <div className="absolute -inset-4 rounded-[3.5rem] blur-2xl transition-colors opacity-30 group-hover/logo:opacity-50" style={{ backgroundColor: primaryColor }} />
+                    <div className="h-48 w-48 rounded-[3.2rem] bg-white dark:bg-slate-800 p-2 shadow-3xl overflow-hidden flex items-center justify-center border-[8px] border-white/20 dark:border-slate-800/20 shrink-0 relative z-20 backdrop-blur-3xl group-hover/logo:-translate-y-2 transition-transform duration-500">
+                        {school?.logo ? (
+                            <img src={school.logo} alt={school.name} className="h-full w-full object-cover rounded-[2.5rem]" />
+                        ) : (
+                            <div className="flex flex-col items-center gap-2 opacity-30">
+                                <Building2 size={64} className="text-slate-400" />
+                                <span className="text-[8px] font-black uppercase tracking-[0.2em]">No Logo</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Identity Info */}
+                <div className="flex-1 text-center lg:text-left space-y-6">
+                    <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
+                       <Badge className="text-white border-none rounded-full px-6 py-2 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl" style={{ backgroundColor: primaryColor, boxShadow: `0 20px 25px -5px ${primaryColor}4D` }}>
+                          {school?.schoolType || 'Premier Institution'}
+                       </Badge>
+                       <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.25em] border border-white/10">
+                          <ShieldCheck size={14} style={{ color: primaryColor }} /> Active System Link
+                       </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <h2 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[0.85] uppercase">
+                            {school?.name}
+                        </h2>
+                        <div className="flex flex-col md:flex-row md:items-center justify-center lg:justify-start gap-6">
+                            <p className="text-2xl font-bold font-lexend italic max-w-2xl leading-tight" style={{ color: primaryColor }}>
+                                "{school?.motto || 'Empowering minds for a better tomorrow.'}"
+                            </p>
+                            <div className="hidden lg:block h-10 w-px bg-white/20" />
+                            <div className="flex items-center gap-3 text-white/60 font-black uppercase tracking-[0.3em] text-[10px]">
+                                <Navigation size={14} style={{ color: primaryColor }} />
+                                <span>Global Campus Protocol</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+             </div>
+          </div>
+        </motion.section>
+
+        {/* Tactical Metrics Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          {[
+            { label: 'Network Students', value: stats?.students || 0, icon: GraduationCap, colorClass: 'text-orange-500', shadowClass: 'shadow-orange-500/10' },
+            { label: 'Faculty Nodes', value: stats?.teachers || 0, icon: Users, colorClass: 'text-blue-500', shadowClass: 'shadow-blue-500/10' },
+            { label: 'Operational Classes', value: stats?.classes || 0, icon: BookOpen, colorClass: 'text-emerald-500', shadowClass: 'shadow-emerald-500/10' },
+            { label: 'Founded Year', value: school?.foundedYear || '---', icon: Trophy, colorClass: 'text-amber-500', shadowClass: 'shadow-amber-500/10' },
+          ].map((stat, idx) => (
+            <motion.div 
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1 }}
+              className={cn(
+                "bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/[0.03] p-10 rounded-[3.5rem] relative overflow-hidden group transition-all shadow-2xl shadow-slate-200/50 dark:shadow-none"
+              )}
+              style={{ boxShadow: idx === 0 ? `0 20px 25px -5px ${primaryColor}1A` : undefined }}
+            >
+              <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 group-hover:scale-125 transition-all duration-700">
+                <stat.icon size={120} />
+              </div>
+              <div 
+                className={cn("h-14 w-14 rounded-2xl flex items-center justify-center mb-8 bg-slate-50 dark:bg-white/[0.03] group-hover:text-white transition-all duration-500")}
+                style={idx === 0 ? { color: primaryColor } : {}}
+              >
+                <stat.icon size={28} strokeWidth={2.5} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">{stat.label}</p>
+                <p className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">{stat.value}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Detailed Institutional Intel */}
+          <Card className="lg:col-span-2 rounded-[4.5rem] border-none shadow-3xl bg-white dark:bg-slate-900/50 backdrop-blur-3xl overflow-hidden relative border-2 border-transparent transition-colors">
+            <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl pointer-events-none opacity-10" style={{ backgroundColor: primaryColor }} />
+            <CardContent className="p-12 md:p-16 space-y-16">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-10 border-b border-slate-100 dark:border-white/5 pb-12">
+                <div className="flex items-center gap-8">
+                   <div className="h-20 w-20 rounded-[2.2rem] flex items-center justify-center shrink-0 shadow-inner" style={{ backgroundColor: `${primaryColor}1A`, color: primaryColor }}>
+                      <Target size={36} strokeWidth={2.5} />
+                   </div>
+                   <div>
+                      <h3 className="text-3xl font-black tracking-tight mb-1 uppercase">Institutional Intel</h3>
+                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.4em]">Operational Parameters & Connectivity</p>
                    </div>
                 </div>
-
-                <h1 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tighter leading-none mb-2">
-                  {school?.name}
-                </h1>
                 
-                <div className="flex flex-col md:flex-row md:items-center justify-center lg:justify-start gap-4 lg:gap-6">
-                   <p className="text-xl font-bold text-slate-600 dark:text-slate-400 font-serif italic max-w-xl truncate">
-                     "{school?.motto || 'Empowering minds for a better tomorrow.'}"
-                   </p>
-                   <div className="hidden lg:block h-8 w-px bg-slate-200 dark:bg-slate-800" />
-                   <span className="hidden md:flex items-center gap-2 text-primary font-black uppercase tracking-[0.3em] text-[10px]">
-                      <Navigation size={14} /> {school?.subdomain ? `${school.subdomain}.qefashub.com` : 'Digital Presence Active'}
-                   </span>
+                {/* Social Footprint */}
+                <div className="flex items-center gap-4">
+                   {socialLinks && Object.entries(socialLinks).map(([platform, url]) => (
+                     url ? (
+                       <a 
+                        key={platform} 
+                        href={url as string} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="h-12 w-12 rounded-2xl bg-slate-50 dark:bg-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white transition-all border border-slate-100 dark:border-white/5"
+                        style={{ '--hover-bg': primaryColor } as any}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = primaryColor)}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '')}
+                        title={platform}
+                       >
+                         <SocialIcon platform={platform} size={20} />
+                       </a>
+                     ) : null
+                   ))}
                 </div>
               </div>
 
-              {/* Action Control */}
-              <div className="shrink-0 flex flex-col gap-4 w-full lg:w-auto">
-                 <Button onClick={handleEditProfile} className="h-16 px-10 rounded-[2.2rem] bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black uppercase tracking-[0.2em] text-[11px] hover:scale-105 active:scale-95 transition-all shadow-2xl dark:shadow-none gap-4">
-                    <Edit3 size={18} strokeWidth={2.5} /> Modify Identity
-                 </Button>
-                 {school?.website && (
-                   <a 
-                    href={school.website.startsWith('http') ? school.website : `https://${school.website}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-all group"
-                   >
-                     View Public Portal <ExternalLink size={12} className="group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
-                   </a>
-                 )}
-              </div>
-           </div>
-        </div>
-      </motion.section>
-
-      {/* Institutional Insights Carousel / Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-        {[
-          { label: 'Students', value: stats?.students || 0, icon: GraduationCap, color: 'text-blue-500', bg: 'bg-blue-500/5' },
-          { label: 'Faculty', value: stats?.teachers || 0, icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
-          { label: 'Classes', value: stats?.classes || 0, icon: BookOpen, color: 'text-amber-500', bg: 'bg-amber-500/5' },
-          { label: 'Founded', value: school?.foundedYear || '---', icon: Trophy, color: 'text-indigo-500', bg: 'bg-indigo-500/5' },
-        ].map((stat, idx) => (
-          <motion.div 
-            key={idx}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 + idx * 0.1 }}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-10 rounded-[3.5rem] shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all group"
-          >
-            <div className={cn("h-16 w-16 rounded-[1.8rem] flex items-center justify-center mb-8 group-hover:rotate-12 transition-transform", stat.bg, stat.color)}>
-              <stat.icon size={36} strokeWidth={2.5} />
-            </div>
-            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-400 mb-3">{stat.label}</p>
-            <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">{stat.value}</p>
-          </motion.div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-        {/* Core Institutional Intel Card */}
-        <Card className="lg:col-span-2 rounded-[4.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-24 opacity-[0.03] pointer-events-none">
-             <Globe size={450} />
-          </div>
-          <CardContent className="p-12 md:p-16 space-y-16 relative z-10">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-10 border-b border-slate-100 dark:border-slate-800 pb-12">
-              <div className="flex items-center gap-8">
-                 <div className="h-20 w-20 rounded-[2.2rem] bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
-                    <Building2 size={40} strokeWidth={2} />
-                 </div>
-                 <div>
-                    <h3 className="text-3xl font-black tracking-tight mb-1">Institutional Intel</h3>
-                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">Operational Metrics & connectivity</p>
-                 </div>
-              </div>
-              
-              {/* Social Footprint Grid */}
-              <div className="flex items-center gap-3">
-                 {socialLinks && Object.entries(socialLinks).map(([platform, url]) => (
-                   url ? (
-                     <a 
-                      key={platform} 
-                      href={url as string} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="h-12 w-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/5 hover:scale-110 transition-all border border-transparent hover:border-primary/10"
-                      title={platform}
-                     >
-                       <SocialIcon platform={platform} size={20} />
-                     </a>
-                   ) : null
-                 ))}
-                 {!Object.values(socialLinks || {}).some(v => v) && (
-                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Social Footprint Pending</span>
-                 )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-x-24">
-              <div className="space-y-12">
-                <InfoItem icon={Mail} label="Academic Email" value={school?.schoolEmail} isLink href={`mailto:${school?.schoolEmail}`} />
-                <InfoItem icon={Phone} label="General Inquiries" value={school?.phone} isLink href={`tel:${school?.phone}`} />
-                <InfoItem icon={Globe} label="Digital Presence" value={school?.website} isLink href={school?.website?.startsWith('http') ? school.website : `https://${school?.website}`} />
-                <InfoItem icon={Clock} label="Standard Operations" value={school?.operatingHours || 'Mon-Fri: 8:00 AM - 4:00 PM'} />
-              </div>
-              <div className="space-y-12">
-                <InfoItem icon={MapPin} label="Global Campus Address" value={school?.address || "No address provided"} />
-                <InfoItem icon={UserIcon} label="Executive Principal" value={school?.principal} />
-                <InfoItem icon={Navigation} label="Institutional Identity" value={school?.schoolType} />
-                <InfoItem icon={ShieldCheck} label="System Infrastructure" value={school?.schoolCode} />
-              </div>
-            </div>
-
-            <div className="pt-12 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-3 mb-8">
-                 <div className="h-2 w-2 rounded-full bg-primary" />
-                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Mission Narrative</h4>
-              </div>
-              <p className="text-2xl font-medium text-slate-700 dark:text-slate-400 leading-relaxed font-serif italic">
-                {school?.description || "A premier educational institution focused on excellence and holistic development. Committed to nurturing future leaders through innovative teaching methodologies."}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Support Infrastructure Sidebars */}
-        <div className="space-y-12">
-          {/* Identity & Subdomain Status */}
-          <Card className="rounded-[4.5rem] border-none shadow-2xl bg-slate-900 text-white overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-16 opacity-10 pointer-events-none">
-              <ShieldCheck size={250} strokeWidth={1} />
-            </div>
-            <CardContent className="p-12 md:p-14 space-y-12 relative z-10">
-              <div className="space-y-3">
-                 <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500">Security & Core</h3>
-                 <p className="text-3xl font-black tracking-tight">Institutional <br />Architecture</p>
-              </div>
-
-              <div className="space-y-6">
-                <div className="p-10 bg-white/5 rounded-[3rem] backdrop-blur-3xl border border-white/5 group hover:bg-white/10 transition-all">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-3">Primary School Identifier</p>
-                  <p className="text-5xl font-black tracking-[0.1em] text-primary-foreground select-all">{school?.schoolCode || '---'}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-x-24">
+                <div className="space-y-12">
+                  <InfoItem icon={Mail} label="Academic Dispatch" value={school?.schoolEmail} isLink href={`mailto:${school?.schoolEmail}`} themeColor={primaryColor} />
+                  <InfoItem icon={Phone} label="Voice Frequency" value={school?.phone} isLink href={`tel:${school?.phone}`} themeColor={primaryColor} />
+                  <InfoItem icon={Globe} label="Digital Portal" value={school?.website} isLink href={school?.website?.startsWith('http') ? school.website : `https://${school?.website}`} themeColor={primaryColor} />
+                  <InfoItem icon={Clock} label="Execution Hours" value={school?.operatingHours || 'Mon-Fri: 8:00 AM - 4:00 PM'} themeColor={primaryColor} />
                 </div>
-                
-                <div className="p-10 bg-white/5 rounded-[3rem] backdrop-blur-3xl border border-white/5 group hover:bg-white/10 transition-all">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-3">Digital Subdomain</p>
-                  <div className="flex items-center justify-between gap-4">
-                     <p className="text-xl font-bold truncate text-primary-foreground/90">{school?.subdomain ? `${school.subdomain}.qefashub.com` : 'NOT PROVISIONED'}</p>
-                     <Globe size={28} className="text-slate-400 shrink-0" />
-                  </div>
+                <div className="space-y-12">
+                  <InfoItem icon={MapPin} label="Physical Coordinate" value={school?.address || "Coordinate Not Mapped"} themeColor={primaryColor} />
+                  <InfoItem icon={UserIcon} label="Executive Officer" value={school?.principal} themeColor={primaryColor} />
+                  <InfoItem icon={Navigation} label="Sector Classification" value={school?.schoolType} themeColor={primaryColor} />
+                  <InfoItem icon={Fingerprint} label="System Identifier" value={school?.schoolCode} themeColor={primaryColor} />
                 </div>
               </div>
 
-              <div className="pt-8 flex flex-col gap-6">
-                 <div className="flex items-center gap-4 bg-emerald-500/10 px-6 py-3 rounded-full w-fit">
-                    <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Current Academic Term</span>
-                 </div>
-                 <p className="text-5xl font-black tracking-tighter leading-none italic text-white/90 truncate">{school?.sessions?.[0]?.name || '---'}</p>
+              <div className="pt-12 border-t border-slate-100 dark:border-white/5">
+                <div className="flex items-center gap-3 mb-6">
+                   <div className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
+                   <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Institutional Narrative</h4>
+                </div>
+                <p className="text-2xl font-bold text-slate-600 dark:text-slate-400 leading-relaxed font-lexend italic">
+                  {school?.description || "A premier educational institution focused on excellence and holistic development. Committed to nurturing future leaders through innovative teaching methodologies."}
+                </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Institutional Governance Profile */}
-          <Card className="rounded-[4.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-12 md:p-14">
-             <div className="flex items-center justify-between mb-12">
-                <div>
-                   <h3 className="text-2xl font-black tracking-tight">Governance</h3>
-                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Administrative Leadership</p>
+          {/* Console Sidebar Modules */}
+          <div className="space-y-12">
+            {/* System Architecture Node */}
+            <Card className="rounded-[4.5rem] border-none shadow-3xl bg-slate-900 text-white overflow-hidden relative group">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" style={{ background: `linear-gradient(to bottom right, ${primaryColor}33, transparent)` }} />
+              <div className="absolute -bottom-24 -right-24 w-64 h-64 rounded-full blur-3xl pointer-events-none opacity-20" style={{ backgroundColor: primaryColor }} />
+              
+              <CardContent className="p-12 md:p-14 space-y-12 relative z-10">
+                <div className="flex justify-between items-start">
+                    <div className="space-y-3">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.5em]" style={{ color: `${primaryColor}99` }}>Console Module</h3>
+                        <p className="text-4xl font-black tracking-tighter uppercase leading-[0.9]">System <br />Architecture</p>
+                    </div>
+                    <Zap style={{ color: primaryColor }} className="animate-pulse" size={40} />
                 </div>
-                <div className="h-14 w-14 rounded-2xl bg-primary/5 text-primary flex items-center justify-center">
-                   <Users size={28} />
-                </div>
-             </div>
-             
-             <div className="space-y-10">
-               {school?.admins?.length > 0 ? (
-                 school.admins.map((sa: any, idx: number) => (
-                   <div key={idx} className="flex items-center gap-8 group">
-                     <div className="h-20 w-20 rounded-[2rem] bg-slate-50 dark:bg-slate-800 flex items-center justify-center font-black text-3xl text-primary border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-transform shadow-sm">
-                       {sa.admin?.name?.charAt(0)}
-                     </div>
-                     <div className="flex-1 min-w-0">
-                       <p className="font-black text-xl text-slate-900 dark:text-white group-hover:text-primary transition-colors truncate">{sa.admin?.name}</p>
-                       <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-500">{sa.role}</p>
-                     </div>
-                   </div>
-                 ))
-               ) : (
-                 <div className="text-center p-12 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-[3rem]">
-                    <p className="text-slate-300 dark:text-slate-700 italic font-medium">No governance records found.</p>
-                 </div>
-               )}
-             </div>
 
-             <div className="mt-16 pt-12 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-3">
-                <ShieldCheck size={14} className="text-emerald-500" />
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Institutional Access Verified</p>
-             </div>
-          </Card>
+                <div className="space-y-6">
+                  <div className="p-10 bg-white/5 rounded-[3.5rem] border border-white/5 group/node hover:bg-white/10 transition-all">
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 mb-4">Institutional Hash</p>
+                    <p className="text-5xl font-black tracking-widest text-white select-all font-mono">{school?.schoolCode || '---'}</p>
+                  </div>
+                  
+                  <div className="p-10 bg-white/5 rounded-[3.5rem] border border-white/5 group/node hover:bg-white/10 transition-all">
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 mb-4">Network Subdomain</p>
+                    <div className="flex items-center justify-between gap-4">
+                       <p className="text-xl font-black truncate uppercase tracking-tighter" style={{ color: primaryColor }}>{school?.subdomain ? `${school.subdomain}.qefashub.com` : 'OFFLINE'}</p>
+                       <Globe size={24} className="text-slate-500 shrink-0" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex flex-col gap-6">
+                   <div className="flex items-center gap-4 px-6 py-3 rounded-full w-fit border" style={{ backgroundColor: `${primaryColor}1A`, borderColor: `${primaryColor}33` }}>
+                      <div className="h-2 w-2 rounded-full animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.8)]" style={{ backgroundColor: primaryColor }} />
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: primaryColor }}>Live Session Active</span>
+                   </div>
+                   <p className="text-5xl font-black tracking-tighter leading-none italic text-white/90 truncate uppercase">{school?.sessions?.[0]?.name || '---'}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Leadership Protocol Card */}
+            <Card className="rounded-[4.5rem] border-none shadow-3xl bg-white dark:bg-slate-900 p-12 md:p-14 border-2 border-transparent transition-colors">
+               <div className="flex items-center justify-between mb-12">
+                  <div className="space-y-1">
+                     <h3 className="text-3xl font-black tracking-tight uppercase leading-none">Leadership</h3>
+                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Administrative Protocol</p>
+                  </div>
+                  <div className="h-16 w-16 rounded-[1.8rem] flex items-center justify-center shadow-inner" style={{ backgroundColor: `${primaryColor}1A`, color: primaryColor }}>
+                     <Award size={32} />
+                  </div>
+               </div>
+               
+               <div className="space-y-10">
+                 {school?.admins?.length > 0 ? (
+                   school.admins.map((sa: any, idx: number) => (
+                     <div key={idx} className="flex items-center gap-8 group">
+                       <div className="h-20 w-20 rounded-[2.2rem] flex items-center justify-center font-black text-3xl text-white shadow-xl group-hover:rotate-6 transition-transform" style={{ backgroundColor: primaryColor }}>
+                         {sa.admin?.name?.charAt(0)}
+                       </div>
+                       <div className="flex-1 min-w-0">
+                         <p className="font-black text-xl text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors truncate uppercase tracking-tight" style={{ '--hover-color': primaryColor } as any} onMouseEnter={(e) => (e.currentTarget.style.color = primaryColor)} onMouseLeave={(e) => (e.currentTarget.style.color = '')}>{sa.admin?.name}</p>
+                         <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 mt-1">{sa.role}</p>
+                       </div>
+                     </div>
+                   ))
+                 ) : (
+                   <div className="text-center p-14 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-[3.5rem] bg-slate-50/50 dark:bg-transparent">
+                      <p className="text-slate-400 italic font-bold uppercase text-[10px] tracking-widest">No leadership data detected</p>
+                   </div>
+                 )}
+               </div>
+
+               <div className="mt-16 pt-12 border-t border-slate-100 dark:border-white/5 flex items-center justify-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Security Access Verified</p>
+               </div>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function InfoItem({ icon: Icon, label, value, isLink, href }: { icon: any, label: string, value?: string, isLink?: boolean, href?: string }) {
+function InfoItem({ icon: Icon, label, value, isLink, href, themeColor }: { icon: any, label: string, value?: string, isLink?: boolean, href?: string, themeColor: string }) {
   if (!value) return null;
   
   return (
-    <div className="space-y-3 group">
-      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 flex items-center gap-4 group-hover:text-primary transition-colors">
-        <Icon size={16} strokeWidth={3} className="text-primary" />
-        {label}
-      </p>
+    <div className="space-y-4 group">
+      <div className="flex items-center gap-4 text-slate-400 group-hover:opacity-100 transition-opacity" style={{ color: `${themeColor}CC` }}>
+        <Icon size={18} strokeWidth={2.5} style={{ color: themeColor }} />
+        <p className="text-[10px] font-black uppercase tracking-[0.4em]">
+            {label}
+        </p>
+      </div>
       {isLink ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="text-3xl font-black text-slate-900 dark:text-white hover:text-primary transition-all leading-none block truncate">
+        <a 
+            href={href} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-3xl font-black text-slate-900 dark:text-white transition-all leading-tight block truncate uppercase tracking-tighter"
+            onMouseEnter={(e) => (e.currentTarget.style.color = themeColor)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '')}
+        >
           {value}
         </a>
       ) : (
-        <p className="text-3xl font-black text-slate-700 dark:text-slate-300 leading-none truncate">
+        <p className="text-3xl font-black text-slate-800 dark:text-slate-200 leading-tight truncate uppercase tracking-tighter">
           {value}
         </p>
       )}
@@ -354,8 +427,4 @@ function SocialIcon({ platform, size }: { platform: string, size: number }) {
     case 'youtube': return <Youtube size={size} />;
     default: return <Globe size={size} />;
   }
-}
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
 }

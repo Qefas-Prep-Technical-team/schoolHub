@@ -1,4 +1,5 @@
-"use client"
+'use client';
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -9,7 +10,13 @@ import {
     Clock, 
     AlertCircle,
     CheckCircle2,
-    Baby
+    Baby,
+    ChevronRight,
+    TrendingUp,
+    Zap,
+    Download,
+    History,
+    Shield
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from 'next/navigation';
 import { useFetchPricing } from '@/components/pricing/query';
 import { PricingData } from '@/components/Types/Pricing';
+import { cn } from '@/lib/utils';
 
 export default function ParentBillingPage() {
     const router = useRouter();
@@ -36,11 +44,17 @@ export default function ParentBillingPage() {
 
     if (isLoading) {
         return (
-            <div className="space-y-8 pb-12 p-6">
-                <Skeleton className="h-12 w-1/3 rounded-xl" />
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <Skeleton className="lg:col-span-2 h-64 rounded-[2.5rem]" />
-                    <Skeleton className="h-64 rounded-[2.5rem]" />
+            <div className="space-y-10 pb-12 p-4 md:p-0">
+                <div className="space-y-4">
+                    <Skeleton className="h-4 w-32 rounded-full" />
+                    <Skeleton className="h-12 w-1/2 rounded-2xl" />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <Skeleton className="lg:col-span-2 h-[450px] rounded-[3rem]" />
+                    <div className="space-y-6">
+                        <Skeleton className="h-48 rounded-[2.5rem]" />
+                        <Skeleton className="h-48 rounded-[2.5rem]" />
+                    </div>
                 </div>
             </div>
         );
@@ -48,11 +62,17 @@ export default function ParentBillingPage() {
 
     if (isError || !billingData) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-                <AlertCircle className="w-16 h-16 text-red-500" />
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Failed to load billing data</h3>
-                <p className="text-slate-500">Please try again later or contact support.</p>
-                <Button onClick={() => window.location.reload()} className="rounded-xl h-12 px-6">Retry</Button>
+            <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-6 p-4">
+                <div className="w-24 h-24 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-12 h-12 text-red-500" />
+                </div>
+                <div className="text-center space-y-2">
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Frequency Disruption</h3>
+                    <p className="text-slate-500 max-w-xs mx-auto font-medium">We encountered a signal error while retrieving your financial records. Please re-authenticate or retry.</p>
+                </div>
+                <Button onClick={() => window.location.reload()} className="rounded-[1.5rem] h-14 px-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95">
+                    Retry Protocol
+                </Button>
             </div>
         );
     }
@@ -84,7 +104,7 @@ export default function ParentBillingPage() {
     const subscriptionInfo = {
         plan: subscription?.plan || "Parent Free",
         status: isTrial ? "TRIAL" : (subscription?.subscriptionStatus || "INACTIVE"),
-        renewalDate: subscription?.subscriptionEnd ? new Date(subscription.subscriptionEnd).toLocaleDateString() : "N/A",
+        renewalDate: subscription?.subscriptionEnd ? new Date(subscription.subscriptionEnd).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : "N/A",
         amount: dynamicAmount,
         billingCycle: cycle,
         features: activePlanData?.features || [
@@ -98,78 +118,97 @@ export default function ParentBillingPage() {
     const studentPercentage = Math.min(((usage?.students || 0) / currentLimits.students) * 100, 100);
 
     return (
-        <div className="space-y-8 pb-12 p-6 lg:p-8">
-            <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex flex-col md:flex-row md:items-center justify-between gap-4"
-            >
-                <div className="space-y-1">
-                    <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                        Family Subscription
-                    </h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium">
-                        Manage your family plan and linked student accounts.
+        <div className="space-y-12 pb-12 p-4 md:p-0 animate-in fade-in duration-700">
+            {/* Header Section */}
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-2">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                        <span>Financial Console</span>
+                        <ChevronRight size={10} className="text-orange-500" />
+                        <span className="text-orange-600">Subscriptions</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-orange-600 rounded-2xl shadow-2xl shadow-orange-600/30">
+                            <Zap size={24} className="text-white fill-current" />
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 dark:text-white uppercase leading-none">
+                            Family Billing
+                        </h1>
+                    </div>
+                    <p className="text-[13px] text-slate-500 dark:text-slate-400 font-bold tracking-tight max-w-xl leading-relaxed">
+                        Control your family service access, manage linked student capacity, and review financial transaction history.
                     </p>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full md:w-auto">
                     <Button 
-                        variant="outline" 
-                        className="rounded-2xl font-bold border-2 h-12 px-6"
+                        className="h-14 px-10 rounded-[1.8rem] bg-orange-600 hover:bg-orange-700 text-white shadow-2xl shadow-orange-600/30 transition-all font-black text-xs uppercase tracking-widest active:scale-95 group"
                         onClick={() => router.push('/pricing?role=parent')}
                     >
+                        <TrendingUp className="mr-3 group-hover:scale-125 transition-transform" size={18} />
                         Upgrade Plan
                     </Button>
                 </div>
-            </motion.div>
+            </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2 rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden bg-white dark:bg-slate-900/50">
-                    <CardHeader className="bg-emerald-600 dark:bg-emerald-900 p-8 text-white relative overflow-hidden">
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
-                        <div className="flex justify-between items-start relative z-10">
-                            <div className="space-y-2">
-                                <Badge className="bg-white/20 text-white border-none px-3 py-1 font-black uppercase tracking-widest text-[10px]">
-                                    Parental Access
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-1">
+                {/* Main Subscription Card */}
+                <Card className="lg:col-span-2 rounded-[3.5rem] border-none shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl relative group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                    
+                    <CardHeader className="bg-slate-900 dark:bg-orange-600 p-10 text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full translate-x-24 -translate-y-24 blur-3xl" />
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                            <div className="space-y-3">
+                                <Badge className="bg-white/20 text-white border-none px-4 py-1.5 font-black uppercase tracking-[0.2em] text-[9px] backdrop-blur-md">
+                                    Active Authority
                                 </Badge>
-                                <CardTitle className="text-4xl font-black capitalize">{subscriptionInfo.plan}</CardTitle>
-                                <CardDescription className="text-emerald-100 font-medium text-lg">
-                                    Comprehensive Student Monitoring Plan
-                                </CardDescription>
+                                <div className="space-y-1">
+                                    <h2 className="text-5xl font-black capitalize tracking-tighter">{subscriptionInfo.plan} Plan</h2>
+                                    <p className="text-white/70 font-bold text-lg tracking-tight leading-tight">
+                                        Advanced Student Performance Monitoring
+                                    </p>
+                                </div>
                             </div>
-                            <div className="bg-white/10 p-4 rounded-3xl backdrop-blur-md">
-                                <Baby className="w-10 h-10 text-white" />
+                            <div className="bg-white/10 p-6 rounded-[2rem] backdrop-blur-xl border border-white/10 shadow-2xl group-hover:scale-110 transition-transform duration-700">
+                                <Shield size={40} className="text-white" />
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Subscription Status</p>
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-3 h-3 rounded-full animate-pulse ${subscriptionInfo.status === 'ACTIVE' || subscriptionInfo.status === 'TRIAL' ? 'bg-green-500' : 'bg-red-500'}`} />
-                                        <span className="text-xl font-bold text-slate-900 dark:text-white capitalize">
-                                            {subscriptionInfo.status === 'TRIAL' ? 'Free Trial' : subscriptionInfo.status}
+
+                    <CardContent className="p-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                            <div className="space-y-8">
+                                <div className="space-y-3">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Deployment Status</p>
+                                    <div className="flex items-center gap-4">
+                                        <div className={cn(
+                                            "w-4 h-4 rounded-full shadow-lg",
+                                            (subscriptionInfo.status === 'ACTIVE' || subscriptionInfo.status === 'TRIAL') ? "bg-green-500 shadow-green-500/50 animate-pulse" : "bg-red-500 shadow-red-500/50"
+                                        )} />
+                                        <span className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                            {subscriptionInfo.status === 'TRIAL' ? 'Experimental Trial' : subscriptionInfo.status}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Renewal Date</p>
-                                    <div className="flex items-center gap-3">
-                                        <Calendar className="w-5 h-5 text-slate-400" />
-                                        <span className="text-xl font-bold text-slate-900 dark:text-white">{subscriptionInfo.renewalDate}</span>
+                                
+                                <div className="space-y-3">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Next Dispatch Cycle</p>
+                                    <div className="flex items-center gap-4 bg-slate-50 dark:bg-white/[0.03] p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                                        <Calendar className="w-6 h-6 text-orange-600" />
+                                        <span className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">{subscriptionInfo.renewalDate}</span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="space-y-4">
-                                <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Family Features</p>
-                                <ul className="space-y-3">
+                            <div className="space-y-5">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Authorized Protocols</p>
+                                <ul className="space-y-4">
                                     {subscriptionInfo.features.map((feature: string, i: number) => (
-                                        <li key={i} className="flex items-center gap-3 text-slate-600 dark:text-slate-300 font-medium">
-                                            <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                        <li key={i} className="flex items-center gap-4 text-slate-600 dark:text-slate-300 font-bold text-sm tracking-tight group/item">
+                                            <div className="w-6 h-6 rounded-full bg-orange-600/10 flex items-center justify-center group-hover/item:bg-orange-600 transition-colors">
+                                                <CheckCircle2 className="w-4 h-4 text-orange-600 group-hover/item:text-white" />
+                                            </div>
                                             <span>{feature}</span>
                                         </li>
                                     ))}
@@ -179,59 +218,84 @@ export default function ParentBillingPage() {
                     </CardContent>
                 </Card>
 
-                <div className="space-y-6">
-                    <Card className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden bg-slate-900 text-white p-8">
-                        <h4 className="text-sm font-black uppercase tracking-widest opacity-80 mb-1">
-                            {isTrial ? "Upcoming Payment" : "Pricing"}
+                {/* Sidebar Stats */}
+                <div className="space-y-8">
+                    {/* Amount Card */}
+                    <Card className="rounded-[3rem] border-none shadow-2xl shadow-orange-600/10 overflow-hidden bg-slate-900 dark:bg-orange-600 text-white p-10 relative group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-16 -translate-y-16 blur-2xl group-hover:scale-150 transition-transform duration-1000" />
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 mb-2 relative z-10">
+                            {isTrial ? "Initial Credit Load" : "Protocol Rate"}
                         </h4>
-                        <div className="flex items-baseline gap-2 mb-4">
-                            <span className="text-4xl font-black tracking-tighter">₦{subscriptionInfo.amount.toLocaleString()}</span>
-                            <span className="text-sm font-bold opacity-70">/ {subscriptionInfo.billingCycle}</span>
+                        <div className="flex items-baseline gap-2 mb-6 relative z-10">
+                            <span className="text-5xl font-black tracking-tighter">₦{subscriptionInfo.amount.toLocaleString()}</span>
+                            <span className="text-sm font-black uppercase opacity-60">/ {subscriptionInfo.billingCycle}</span>
                         </div>
-                        <p className="text-sm opacity-80 font-medium leading-relaxed">
-                            Pro plans support unlimited student accounts and real-time teacher communication.
+                        <p className="text-xs opacity-70 font-bold leading-relaxed relative z-10 uppercase tracking-widest italic">
+                            Premium plans enable multi-node student linkage and deep academic analytics.
                         </p>
                     </Card>
 
-                    <Card className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl p-8 bg-white dark:bg-slate-900/50">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                                <Users className="w-6 h-6" />
+                    {/* Capacity Card */}
+                    <Card className="rounded-[3rem] border-none shadow-2xl shadow-slate-200/50 dark:shadow-none p-10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl relative group overflow-hidden">
+                        <div className="flex items-center gap-5 mb-8">
+                            <div className="w-14 h-14 bg-orange-600 rounded-[1.2rem] flex items-center justify-center text-white shadow-xl shadow-orange-600/20 group-hover:rotate-12 transition-transform duration-500">
+                                <Users className="w-7 h-7" />
                             </div>
                             <div>
-                                <h4 className="font-black text-slate-900 dark:text-white leading-tight">Family Capacity</h4>
-                                <p className="text-xs text-slate-500 font-medium">Linked student accounts</p>
+                                <h4 className="text-lg font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">Family Capacity</h4>
+                                <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest mt-0.5">Linked Terminals</p>
                             </div>
                         </div>
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm font-bold">
-                                    <span className="text-slate-500">Linked Students</span>
+                        
+                        <div className="space-y-8">
+                            <div className="space-y-4">
+                                <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
+                                    <span className="text-slate-400">Network Usage</span>
                                     <span className="text-slate-900 dark:text-white">{usage?.students || 0} / {currentLimits.students}</span>
                                 </div>
-                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div className="h-full bg-emerald-500" style={{ width: `${studentPercentage}%` }} />
+                                <div className="h-4 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden p-1 shadow-inner">
+                                    <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${studentPercentage}%` }}
+                                        transition={{ duration: 1.5, ease: "easeOut" }}
+                                        className="h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded-full shadow-lg" 
+                                    />
                                 </div>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-60">
+                                <AlertCircle size={12} />
+                                <span>Signals optimal within current capacity</span>
                             </div>
                         </div>
                     </Card>
                 </div>
             </div>
 
-            <div className="space-y-6 mt-12">
-                <div className="flex items-center gap-3">
-                    <CreditCard className="w-6 h-6 text-emerald-500" />
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                        Family Billing History
-                    </h2>
+            {/* Billing History Section */}
+            <div className="space-y-8 mt-12 px-2">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="p-2.5 bg-slate-900 dark:bg-white rounded-xl">
+                            <History className="w-5 h-5 text-white dark:text-slate-900" />
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
+                            Dispatch History
+                        </h2>
+                    </div>
+                    <Button variant="ghost" className="hidden md:flex gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-orange-600">
+                        <Download size={14} /> Download PDF Logs
+                    </Button>
                 </div>
-                <TransactionHistory 
-                    items={transactions} 
-                    totalItems={billingData.totalTransactions}
-                    currentPage={currentPage}
-                    itemsPerPage={ITEMS_PER_PAGE}
-                    onPageChange={setCurrentPage}
-                />
+
+                <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 overflow-hidden shadow-xl">
+                    <TransactionHistory 
+                        items={transactions} 
+                        totalItems={billingData.totalTransactions}
+                        currentPage={currentPage}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        onPageChange={setCurrentPage}
+                    />
+                </div>
             </div>
         </div>
     );

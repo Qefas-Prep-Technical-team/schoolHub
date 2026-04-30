@@ -5,6 +5,20 @@ import { Fragment } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useChildDetails } from "@/lib/api/hooks/useParentChildren";
+import { 
+  User, 
+  GraduationCap, 
+  Calendar, 
+  Activity, 
+  ShieldAlert, 
+  TrendingUp, 
+  ChevronRight,
+  X,
+  ArrowRight,
+  BookOpen
+} from 'lucide-react';
+import { cn } from "@/lib/utils";
 
 export interface ChildStats {
   averageGrade: string;
@@ -24,7 +38,7 @@ export interface ChildData {
 
 interface QuickAction {
   id: string;
-  icon: string;
+  icon: any;
   title: string;
   description: string;
   color: string;
@@ -35,7 +49,6 @@ interface ChildDetailsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   child: ChildData | null;
-  // optional callbacks the parent can provide:
   onViewDashboard?: (child: ChildData) => void;
   onQuickAction?: (actionId: string, child: ChildData | null) => void;
   onSwitchProfile?: () => void;
@@ -43,41 +56,26 @@ interface ChildDetailsDrawerProps {
 
 const quickActions: QuickAction[] = [
   {
-    id: "1",
-    icon: "bar_chart",
-    title: "Academic Results",
-    description: "View grades and report cards",
-    color: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+    id: "results",
+    icon: TrendingUp,
+    title: "Academic Analysis",
+    description: "Real-time performance metrics",
+    color: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   },
   {
-    id: "2",
-    icon: "history",
-    title: "Attendance History",
-    description: "Check daily logs and leaves",
-    color: "bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400",
+    id: "attendance",
+    icon: Calendar,
+    title: "Presence Log",
+    description: "Daily synchronization records",
+    color: "bg-green-500/10 text-green-600 dark:text-green-400",
   },
   {
-    id: "3",
-    icon: "assignment",
-    title: "Homework & Assignments",
-    description: "2 Pending assignments",
-    color: "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400",
-    badge: 2,
-  },
-  {
-    id: "4",
-    icon: "quiz",
-    title: "Exams & Quizzes",
-    description: "Schedule and upcoming tests",
-    color: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400",
-  },
-  {
-    id: "5",
-    icon: "chat_bubble",
-    title: "Contact Teachers",
-    description: "Ms. Anderson (Homeroom)",
-    color: "bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400",
-  },
+    id: "alerts",
+    icon: ShieldAlert,
+    title: "Security Alerts",
+    description: "Behavioral and remark protocols",
+    color: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+  }
 ];
 
 export default function ChildDetailsDrawer({
@@ -88,34 +86,9 @@ export default function ChildDetailsDrawer({
   onQuickAction,
   onSwitchProfile,
 }: ChildDetailsDrawerProps) {
-  if (!child) {
-    // Early render while no child selected — allow Dialog to handle open/close normally
-    return null;
-  }
+  const { data: fullDetails, isLoading } = useChildDetails(child?.id || null);
 
-  const stats = [
-    {
-      id: "grade",
-      icon: "school",
-      label: "Avg. Grade",
-      value: child.stats.averageGrade,
-      color: "bg-blue-100 text-primary dark:bg-blue-900/30 dark:text-blue-400",
-    },
-    {
-      id: "attendance",
-      icon: "calendar_month",
-      label: "Attendance",
-      value: child.stats.attendance,
-      color: "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
-    },
-    {
-      id: "behavior",
-      icon: "sentiment_very_satisfied",
-      label: "Behavior",
-      value: child.stats.behavior,
-      color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
-    },
-  ];
+  if (!child) return null;
 
   const handleViewDashboard = () => {
     onViewDashboard?.(child);
@@ -127,197 +100,171 @@ export default function ChildDetailsDrawer({
     onClose();
   };
 
-  const handleSwitchProfile = () => {
-    onSwitchProfile?.();
-    // keep drawer open or close depending on UX; here we'll close
-    onClose();
-  };
+  const placeholderUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(child.name)}&backgroundColor=ea580c&fontFamily=Arial&fontSize=40&fontWeight=900`;
 
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        {/* Backdrop */}
+      <Dialog as="div" className="relative z-[100]" onClose={onClose}>
         <Transition.Child
           as={Fragment}
-          enter="ease-out duration-200"
+          enter="ease-out duration-300"
           enterFrom="opacity-0"
           enterTo="opacity-100"
-          leave="ease-in duration-150"
+          leave="ease-in duration-200"
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md" />
         </Transition.Child>
 
-        {/* Drawer container */}
         <div className="fixed inset-0 overflow-hidden">
           <div className="absolute inset-0 flex justify-end">
             <Transition.Child
               as={Fragment}
-              enter="transform transition duration-300"
+              enter="transform transition duration-500 cubic-bezier(0, 0, 0.2, 1)"
               enterFrom="translate-x-full"
               enterTo="translate-x-0"
-              leave="transform transition duration-200"
+              leave="transform transition duration-400 cubic-bezier(0.4, 0, 1, 1)"
               leaveFrom="translate-x-0"
               leaveTo="translate-x-full"
             >
-              <Dialog.Panel className="w-full max-w-[480px] h-full bg-white dark:bg-gray-900 shadow-2xl flex flex-col">
+              <Dialog.Panel className="w-full max-w-[500px] h-full bg-white dark:bg-slate-950 shadow-[-20px_0_50px_rgba(0,0,0,0.1)] flex flex-col border-l border-slate-200 dark:border-white/5">
                 {/* Header */}
-                <div className="sticky top-0 z-20 bg-white/60 dark:bg-gray-900/60 backdrop-blur border-b dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary" style={{ fontSize: 26 }}>
-                      face_3
-                    </span>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Child Details</h3>
+                <div className="p-8 flex items-center justify-between border-b border-slate-100 dark:border-white/5">
+                  <div className="flex items-center gap-4">
+                    <div className="size-12 rounded-2xl bg-orange-600/10 flex items-center justify-center text-orange-600">
+                      <Activity size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Node Intelligence</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Protocol: SYNC-ACTIVE</p>
+                    </div>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={onClose}
-                      aria-label="Close"
-                      className="p-2 rounded-full bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700"
-                    >
-                      <span className="material-symbols-outlined">close</span>
-                    </button>
-                  </div>
+                  <button onClick={onClose} className="size-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-500 hover:bg-orange-600 hover:text-white transition-all">
+                    <X size={20} />
+                  </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6">
-                  {/* Profile */}
-                  <div className="flex flex-col items-center gap-4 mb-6">
-                    <div className="relative">
-                      <div className="relative w-32 h-32 rounded-full border-4 border-white dark:border-gray-700 shadow-lg overflow-hidden">
-                        <Image src={child.imageUrl} alt={child.name} fill className="object-cover" sizes="128px" />
-                      </div>
-
-                      {child.isActive && (
-                        <div className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center ring-2 ring-white dark:ring-gray-800">
-                          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                            check
-                          </span>
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-10">
+                  {/* Profile Section */}
+                  <div className="relative group">
+                    <div className="flex items-center gap-6">
+                      <div className="relative">
+                        <div className="size-32 rounded-[2.5rem] overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl relative">
+                          <Image 
+                            src={child.imageUrl || placeholderUrl} 
+                            alt={child.name} 
+                            fill 
+                            className="object-cover"
+                            unoptimized
+                          />
                         </div>
-                      )}
-                    </div>
-
-                    <div className="text-center">
-                      <h4 className="text-2xl font-bold text-gray-900 dark:text-white">{child.name}</h4>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
-                        {child.class} • ID: {child.studentId}
-                      </p>
+                        <div className="absolute -bottom-2 -right-2 size-10 bg-green-500 rounded-2xl border-4 border-white dark:border-slate-950 flex items-center justify-center text-white shadow-lg">
+                          <ShieldAlert size={18} />
+                        </div>
+                      </div>
+                      <div>
+                        <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">{child.name}</h2>
+                        <p className="text-orange-600 font-black text-[10px] uppercase tracking-[0.2em] mt-3">ID: {child.studentId}</p>
+                        <div className="flex items-center gap-3 mt-4 text-slate-500 font-bold text-xs uppercase tracking-wider">
+                          <span className="flex items-center gap-1.5"><GraduationCap size={14} /> {child.class}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-3 mb-6">
-                    {stats.map((s) => (
-                      <motion.div
-                        key={s.id}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.18 }}
-                        className="flex flex-col items-center rounded-xl p-4 bg-gray-50 dark:bg-gray-800 border dark:border-gray-700"
-                      >
-                        <div className={`mb-2 w-10 h-10 rounded-full flex items-center justify-center ${s.color}`}>
-                          <span className="material-symbols-outlined">{s.icon}</span>
+                  {/* Core Metrics */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {[
+                      { label: 'Avg Grade', value: child.stats.averageGrade, color: 'text-blue-600', bg: 'bg-blue-600/10', icon: TrendingUp },
+                      { label: 'Attendance', value: child.stats.attendance, color: 'text-green-600', bg: 'bg-green-600/10', icon: Calendar },
+                      { label: 'Behavior', value: 'Excellent', color: 'text-orange-600', bg: 'bg-orange-600/10', icon: Activity }
+                    ].map((stat, i) => (
+                      <div key={i} className="p-4 rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
+                        <div className={cn("size-8 rounded-xl flex items-center justify-center mb-3", stat.bg, stat.color)}>
+                          <stat.icon size={16} />
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{s.label}</div>
-                        <div className="text-lg font-bold text-gray-900 dark:text-white mt-1">{s.value}</div>
-                      </motion.div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                        <p className="text-lg font-black text-slate-900 dark:text-white mt-1">{stat.value}</p>
+                      </div>
                     ))}
                   </div>
 
-                  {/* Primary Action */}
-                  <Link href={"/dashboard/parent/my-children/details"} className="mb-6">
-                    <button
-                      onClick={handleViewDashboard}
-                      className="w-full flex items-center cursor-pointer justify-center gap-3 h-12 rounded-xl bg-primary text-white font-bold shadow-lg hover:bg-blue-600 active:scale-[0.98] transition"
-                    >
-                      <span>View Full Dashboard</span>
-                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                        arrow_forward
-                      </span>
-                    </button>
-                  </Link>
+                  {/* Recent Activity / Intelligent Logs */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Intelligent Logs (Recent Grades)</h4>
+                      {isLoading && <div className="size-3 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {fullDetails?.grades?.length > 0 ? (
+                        fullDetails.grades.map((grade: any, i: number) => (
+                          <div key={i} className="p-4 rounded-2xl bg-white dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:border-orange-600/30 transition-all">
+                            <div className="flex items-center gap-3">
+                              <div className="size-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-500">
+                                <BookOpen size={18} />
+                              </div>
+                              <div>
+                                <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{grade.subject}</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">{grade.assessmentType || 'Assessment'}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-black text-orange-600">{Math.round((grade.score / grade.maxMarks) * 100)}%</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase">{new Date(grade.createdAt).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-8 rounded-3xl border-2 border-dashed border-slate-100 dark:border-white/5 text-center">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No recent logs found</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-                  {/* Quick Actions */}
-                  <div className="mb-6">
-                    <h5 className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
-                      Quick Actions
-                    </h5>
-
-                    <div className="flex flex-col gap-3">
+                  {/* Quick Access Terminal */}
+                  <div className="space-y-4">
+                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Quick Access Terminal</h4>
+                    <div className="grid grid-cols-1 gap-3">
                       {quickActions.map((action) => (
                         <button
                           key={action.id}
                           onClick={() => handleQuickAction(action.id)}
-                          className="group flex items-center justify-between gap-4 rounded-xl bg-white dark:bg-gray-800 border dark:border-gray-700 p-4 hover:shadow-md transition"
+                          className="flex items-center justify-between p-5 rounded-[1.5rem] bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 hover:bg-orange-600/5 hover:border-orange-600/30 transition-all group"
                         >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${action.color} group-hover:scale-105 transition-transform`}>
-                              <span className="material-symbols-outlined">{action.icon}</span>
+                          <div className="flex items-center gap-4">
+                            <div className={cn("size-12 rounded-2xl flex items-center justify-center", action.color)}>
+                              <action.icon size={20} />
                             </div>
-
                             <div className="text-left">
-                              <div className="font-bold text-gray-900 dark:text-white">{action.title}</div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{action.description}</div>
+                              <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{action.title}</p>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase">{action.description}</p>
                             </div>
                           </div>
-
-                          <div className="flex items-center gap-2">
-                            {action.badge && <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{action.badge}</span>}
-                            <span className="material-symbols-outlined text-gray-400">chevron_right</span>
-                          </div>
+                          <ChevronRight size={18} className="text-slate-300 group-hover:text-orange-600 group-hover:translate-x-1 transition-all" />
                         </button>
                       ))}
                     </div>
                   </div>
-
-                  <div className="mt-4 flex justify-center">
-                    <button onClick={handleSwitchProfile} className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary transition inline-flex items-center gap-1">
-                      Switch Child Profile
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>expand_more</span>
-                    </button>
-                  </div>
                 </div>
 
-                {/* Footer */}
-                <div className="border-t dark:border-gray-700 px-6 py-3 text-center">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Last updated: Today at {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </p>
+                {/* Footer Action */}
+                <div className="p-8 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/5">
+                  <button
+                    onClick={handleViewDashboard}
+                    className="w-full h-16 rounded-[1.5rem] bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-black text-xs uppercase tracking-widest hover:bg-orange-600 dark:hover:bg-orange-600 dark:hover:text-white transition-all shadow-xl hover:shadow-orange-600/30 flex items-center justify-center gap-3 active:scale-[0.98] group"
+                  >
+                    Enter Full Intelligence Terminal
+                    <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
+                  </button>
                 </div>
               </Dialog.Panel>
             </Transition.Child>
           </div>
         </div>
-        <div className="mb-8">
-  <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Quick Actions</h4>
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-    {quickActions.map((action) => (
-      <button
-        key={action.id}
-        onClick={() => handleQuickAction(action.id)}
-        className="flex items-center gap-3 p-4 rounded-xl border bg-gray-50 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-      >
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${action.color}`}>
-          <span className="material-symbols-outlined">{action.icon}</span>
-        </div>
-
-        <div className="flex-1 text-left">
-          <p className="font-semibold text-gray-900 dark:text-white">{action.title}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{action.description}</p>
-        </div>
-
-        {action.badge && (
-          <span className="px-2 py-1 text-xs rounded-full bg-red-600 text-white">
-            {action.badge}
-          </span>
-        )}
-      </button>
-    ))}
-  </div>
-</div>
       </Dialog>
     </Transition>
   );

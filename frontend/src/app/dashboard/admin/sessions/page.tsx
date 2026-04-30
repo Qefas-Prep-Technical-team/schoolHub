@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sessionService, Session } from "@/lib/api/services/sessionService";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
 import { CreateSessionForm } from "./components/CreateSessionForm";
 import {
   Calendar,
@@ -14,12 +15,20 @@ import {
   ShieldCheck,
   AlertCircle,
   MoreVertical,
-  ChevronRight
+  ChevronRight,
+  Zap,
+  Activity,
+  ArrowUpRight,
+  Clock,
+  Layers
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +41,10 @@ import {
 export default function SessionsPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const schoolId = user?.schools?.[0]?.schoolId || "";
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
+
+  const { data: settings } = useSchoolSettings(schoolId);
+  const primaryColor = settings?.themeColor || '#ea580c';
 
   const { data: sessions = [], isLoading, isError } = useQuery({
     queryKey: ["sessions"],
@@ -41,7 +53,7 @@ export default function SessionsPage() {
 
   const activeSession = sessions.find(s => s.status === "ACTIVE");
   const archivedSessions = sessions.filter(s => s.status === "ARCHIVED");
-  const inactiveSessions = sessions.filter(s => s.status === "INACTIVE");
+  const upcomingSessions = sessions.filter(s => s.status === "INACTIVE");
 
   const archiveMutation = useMutation({
     mutationFn: (id: string) => sessionService.archiveSession(id),
@@ -63,191 +75,225 @@ export default function SessionsPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto p-6 md:p-10 space-y-10">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-12 w-64" />
-          <Skeleton className="h-12 w-48" />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-12 space-y-12">
+        <div className="flex justify-between items-end">
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-32 rounded-full" />
+            <Skeleton className="h-16 w-96 rounded-3xl" />
+          </div>
+          <Skeleton className="h-14 w-48 rounded-2xl" />
         </div>
-        <Skeleton className="h-64 w-full rounded-3xl" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-40 rounded-2xl" />
-          <Skeleton className="h-40 rounded-2xl" />
-          <Skeleton className="h-40 rounded-2xl" />
+        <div className="grid grid-cols-12 gap-10">
+          <Skeleton className="col-span-4 h-[500px] rounded-[3rem]" />
+          <div className="col-span-8 space-y-6">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full rounded-[2.5rem]" />)}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-10 pb-24">
-      {/* Header Area */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-blue-600 font-bold text-xs uppercase tracking-widest">
-            <History size={14} /> Academic Periods
-          </div>
-          <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            Session Management
-          </h1>
-          <p className="text-slate-500 max-w-lg">
-            Define academic years, set active periods, and manage historical session data for your institution.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-2 text-sm shadow-sm gap-2">
-            <Search size={16} className="text-slate-400" />
-            <input type="text" placeholder="Search sessions..." className="bg-transparent outline-none w-40" />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Left Column: Create & Active */}
-        <div className="lg:col-span-4 space-y-8">
-          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-              <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-                <Plus size={20} />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
+      {/* Dynamic Header */}
+      <header className="px-8 md:px-12 pt-12 pb-16 space-y-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">
+              <span>Timeframe Protocols</span>
+              <div className="h-1 w-1 rounded-full" style={{ backgroundColor: primaryColor }} />
+              <span style={{ color: primaryColor }}>Academic Registry</span>
+            </div>
+            <div className="flex items-center gap-5">
+              <div className="p-4 rounded-[2rem] shadow-2xl" style={{ backgroundColor: primaryColor }}>
+                <History size={32} className="text-white" />
               </div>
-              <h2 className="text-lg font-bold">New Session</h2>
+              <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-slate-900 dark:text-white uppercase leading-none">
+                Academic Sessions
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <Input 
+                placeholder="Search chronology..."
+                className="h-14 pl-12 pr-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/5 font-bold w-64 shadow-lg focus:border-orange-600 transition-all"
+              />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="px-8 md:px-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
+        {/* Left Control Column */}
+        <div className="lg:col-span-4 space-y-8">
+          {/* Active Terminal Card */}
+          {activeSession && (
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="relative p-8 rounded-[3rem] text-white shadow-2xl overflow-hidden group"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 blur-3xl rounded-full translate-x-10 -translate-y-10" />
+              <div className="relative z-10 space-y-6">
+                <div className="flex justify-between items-start">
+                  <div className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                    <Activity size={12} />
+                    Live Protocol
+                  </div>
+                  <ShieldCheck size={24} className="text-white/80" />
+                </div>
+                
+                <div>
+                  <h3 className="text-3xl font-black tracking-tighter uppercase leading-tight">{activeSession.name}</h3>
+                  <p className="text-white/70 text-xs font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
+                    <Clock size={12} /> Established {format(new Date(activeSession.startDate), 'MMM d, yyyy')}
+                  </p>
+                </div>
+
+                <div className="pt-6 border-t border-white/20 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Protocol Expiry</p>
+                    <p className="text-sm font-black uppercase tracking-tighter">{format(new Date(activeSession.endDate), 'MMM d, yyyy')}</p>
+                  </div>
+                  <div className="size-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <ChevronRight size={20} />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Initialization Terminal */}
+          <div className="p-8 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl space-y-8">
+            <div className="flex items-center gap-4">
+              <div className="size-12 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                <Zap size={24} />
+              </div>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Initialize Node</h2>
             </div>
             <CreateSessionForm schoolId={schoolId} />
           </div>
-
-          {activeSession && (
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl shadow-blue-200 dark:shadow-none relative overflow-hidden group">
-              <div className="absolute -right-10 -top-10 h-40 w-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700" />
-              <div className="relative z-10 space-y-4">
-                <div className="flex justify-between items-start">
-                  <span className="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest backdrop-blur-md">Active Current</span>
-                  <ShieldCheck size={20} className="text-blue-100" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black">{activeSession.name}</h3>
-                  <p className="text-blue-100 text-xs mt-1">
-                    Started {format(new Date(activeSession.startDate), 'MMM d, yyyy')}
-                  </p>
-                </div>
-                <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                  <div className="text-[10px] text-blue-200 uppercase font-black">Ends in {format(new Date(activeSession.endDate), 'MMM d, yyyy')}</div>
-                  <ChevronRight size={16} className="text-white/50" />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Right Column: List of All Sessions */}
-        <div className="lg:col-span-8 space-y-8">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black flex items-center gap-2">
-                All Planned Sessions <span className="text-slate-400 font-medium text-sm">({sessions.length})</span>
-              </h2>
-            </div>
-
+        {/* Right Registry Column */}
+        <div className="lg:col-span-8 space-y-10">
+          <div className="space-y-6">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Chronological Registry ({sessions.length})</h3>
+            
             {sessions.length === 0 ? (
-              <div className="bg-slate-50 dark:bg-slate-900/50 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-20 text-center space-y-4">
-                <div className="h-20 w-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-400">
+              <div className="p-24 rounded-[4rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 text-center space-y-6 shadow-xl">
+                <div className="size-20 bg-slate-50 dark:bg-white/5 rounded-[2.5rem] flex items-center justify-center mx-auto text-slate-300">
                   <Calendar size={40} />
                 </div>
-                <div className="space-y-1">
-                  <h3 className="font-bold text-slate-900 dark:text-white">No sessions established</h3>
-                  <p className="text-sm text-slate-500 max-w-xs mx-auto">Create your first academic session using the form on the left to start managing school activities.</p>
+                <div className="space-y-2">
+                  <p className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Empty Registry</p>
+                  <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Initialize your first academic period to begin synchronization.</p>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-4">
                 {sessions.map((session) => (
-                  <div
+                  <motion.div
                     key={session.id}
+                    layout
                     className={cn(
-                      "group bg-white dark:bg-slate-950 border rounded-3xl p-5 flex items-center justify-between transition-all hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-900",
-                      session.status === 'ACTIVE' ? "border-blue-200 bg-blue-50/10" : "border-slate-200 dark:border-slate-800"
+                      "group p-6 rounded-[2.5rem] flex items-center justify-between transition-all hover:shadow-2xl border-2",
+                      session.status === 'ACTIVE' 
+                        ? "bg-white dark:bg-slate-900 border-orange-600/20 shadow-orange-600/5" 
+                        : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5"
                     )}
                   >
-                    <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-6">
                       <div className={cn(
-                        "h-14 w-14 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110",
-                        session.status === 'ACTIVE' ? "bg-blue-600 text-white shadow-lg shadow-blue-200" :
-                          session.status === 'ARCHIVED' ? "bg-slate-100 dark:bg-slate-800 text-slate-400" :
-                            "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600"
+                        "size-16 rounded-[1.5rem] flex items-center justify-center transition-transform group-hover:scale-110 shadow-lg",
+                        session.status === 'ACTIVE' ? "bg-orange-600 text-white" :
+                          session.status === 'ARCHIVED' ? "bg-slate-100 dark:bg-white/5 text-slate-400 shadow-none" :
+                            "bg-slate-900 dark:bg-white text-white dark:text-slate-900"
                       )}>
-                        <Calendar size={24} />
+                        <Calendar size={28} />
                       </div>
+                      
                       <div>
                         <div className="flex items-center gap-3">
-                          <h3 className="font-bold text-slate-900 dark:text-white">{session.name}</h3>
-                          <span className={cn(
-                            "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter",
-                            session.status === 'ACTIVE' ? "bg-blue-100 text-blue-700" :
-                              session.status === 'ARCHIVED' ? "bg-slate-100 text-slate-500" :
-                                "bg-indigo-100 text-indigo-700"
+                          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter group-hover:text-orange-600 transition-colors">
+                            {session.name}
+                          </h3>
+                          <div className={cn(
+                            "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                            session.status === 'ACTIVE' ? "bg-orange-600/10 text-orange-600 border-orange-600/20" :
+                              session.status === 'ARCHIVED' ? "bg-slate-100 text-slate-500 border-slate-200 shadow-none" :
+                                "bg-slate-900 text-white border-slate-800"
                           )}>
                             {session.status}
-                          </span>
+                          </div>
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {format(new Date(session.startDate), 'MMM d, yyyy')} — {format(new Date(session.endDate), 'MMM d, yyyy')}
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                          {format(new Date(session.startDate), 'MMMM d, yyyy')} — {format(new Date(session.endDate), 'MMMM d, yyyy')}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                       {session.status !== 'ARCHIVED' && (
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => archiveMutation.mutate(session.id)}
-                          className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-400 hover:text-orange-500 transition-all"
-                          title="Archive Session"
+                          className="size-12 rounded-2xl hover:bg-orange-600/10 hover:text-orange-600 transition-all"
                         >
-                          <Archive size={18} />
-                        </button>
+                          <Archive size={20} />
+                        </Button>
                       )}
 
                       <DropdownMenu>
-                        <DropdownMenuTrigger className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-400 transition-all">
-                          <MoreVertical size={18} />
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="size-12 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
+                            <MoreVertical size={20} />
+                          </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 rounded-2xl">
-                          <DropdownMenuLabel>Session Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="gap-2 cursor-pointer">
-                            <Search size={14} /> View Details
+                        <DropdownMenuContent align="end" className="w-56 rounded-[1.5rem] p-2 border-2 border-slate-100 dark:border-white/5">
+                          <DropdownMenuLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 py-2">Session Protocols</DropdownMenuLabel>
+                          <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/5" />
+                          <DropdownMenuItem className="rounded-xl gap-3 font-bold py-3 cursor-pointer">
+                            <Layers size={16} /> View Structure
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className="gap-2 text-red-600 cursor-pointer"
+                            className="rounded-xl gap-3 font-bold py-3 text-red-500 hover:bg-red-500/10 cursor-pointer"
                             onClick={() => {
-                              if (confirm("Are you sure you want to delete this session? This action cannot be undone.")) {
+                              if (confirm("Permanently purge this session node from the registry?")) {
                                 deleteMutation.mutate(session.id);
                               }
                             }}
                           >
-                            <Trash2 size={14} /> Delete Permanently
+                            <Trash2 size={16} /> Purge Registry
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
           </div>
 
           {archivedSessions.length > 0 && (
-            <div className="pt-8 border-t border-slate-100 dark:border-slate-800 space-y-4">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <div className="pt-12 border-t border-slate-100 dark:border-white/5 space-y-6">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2">
                 <Archive size={14} /> Archived Vault ({archivedSessions.length})
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-70 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {archivedSessions.map((s) => (
-                  <div key={s.id} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-3">
-                    <div className="h-10 w-10 bg-white dark:bg-slate-950 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100 dark:border-slate-800">
-                      <History size={16} />
+                  <div key={s.id} className="p-5 rounded-[2rem] bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 flex items-center gap-4 group hover:bg-white dark:hover:bg-slate-900 transition-all shadow-sm hover:shadow-xl">
+                    <div className="size-12 rounded-[1rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-400 group-hover:text-orange-600 transition-colors shadow-sm">
+                      <History size={18} />
                     </div>
                     <div>
-                      <div className="text-sm font-bold truncate w-32">{s.name}</div>
-                      <div className="text-[10px] text-slate-500">Archived on {format(new Date(s.updatedAt), 'MMM d, yyyy')}</div>
+                      <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{s.name}</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Archived {format(new Date(s.updatedAt), 'MMM d, yyyy')}</p>
                     </div>
                   </div>
                 ))}
@@ -255,7 +301,7 @@ export default function SessionsPage() {
             </div>
           )}
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

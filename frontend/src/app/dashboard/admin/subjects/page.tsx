@@ -1,176 +1,293 @@
-"use client"
+'use client';
 
-import React, { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import React, { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Plus, Search, LayoutGrid, List } from "lucide-react"
-import SubjectCard from "./components/SubjectCard"
-import SubjectModal from "./components/SubjectModal"
-import { subjectService, Subject } from "./services/subjectService"
-import { departmentService, Department } from "../departments/services/departmentService"
-import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
-import { apiClient } from "@/lib/api/client"
+} from "@/components/ui/select";
+import { 
+  Plus, 
+  Search, 
+  LayoutGrid, 
+  List, 
+  BookOpen, 
+  Layers, 
+  Zap, 
+  MoreVertical, 
+  ShieldCheck, 
+  ArrowRight,
+  Filter,
+  Download,
+  BookMarked,
+  Cpu,
+  Globe,
+  Lock
+} from "lucide-react";
+import SubjectCard from "./components/SubjectCard";
+import SubjectModal from "./components/SubjectModal";
+import { subjectService, Subject } from "./services/subjectService";
+import { departmentService, Department } from "../departments/services/departmentService";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { apiClient } from "@/lib/api/client";
+import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 const SubjectsPage = () => {
-  const router = useRouter()
-  const [subjects, setSubjects] = useState<Subject[]>([])
-  const [departments, setDepartments] = useState<Department[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedDepartment, setSelectedDepartment] = useState("all")
-  const [selectedScope, setSelectedScope] = useState("all")
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingSubject, setEditingSubject] = useState<Subject | null>(null)
+  const router = useRouter();
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("all");
+  const [selectedScope, setSelectedScope] = useState("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
 
-  const { user } = useAuthStore()
+  const { user } = useAuthStore();
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const { data: settings } = useSchoolSettings(schoolId);
+  const primaryColor = settings?.themeColor || '#ea580c';
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const statusRes = await apiClient.get(`/admin/admin-status/${user?.email}`);
-      const schoolId = statusRes.data.data.schoolAdmins?.[0]?.schoolId;
+      const fetchedSchoolId = statusRes.data.data.schoolAdmins?.[0]?.schoolId;
       
       const [subjectsData, departmentsData] = await Promise.all([
-        subjectService.getSubjects(schoolId),
-        departmentService.getDepartments(schoolId)
-      ])
+        subjectService.getSubjects(fetchedSchoolId),
+        departmentService.getDepartments(fetchedSchoolId)
+      ]);
       
-      setSubjects(subjectsData)
-      setDepartments(departmentsData)
+      setSubjects(subjectsData);
+      setDepartments(departmentsData);
     } catch (error) {
-      console.error("Failed to fetch data", error)
+      console.error("Failed to fetch data", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const filteredSubjects = subjects.filter((subject) => {
-    const matchesSearch = 
-        subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        subject.code.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesDepartment = selectedDepartment === "all" || 
-        subject.departments?.some(d => d.departmentId === selectedDepartment);
-    const matchesScope = selectedScope === "all" || subject.scope === selectedScope
-    
-    return matchesSearch && matchesDepartment && matchesScope
-  })
+  const filteredSubjects = useMemo(() => {
+    return subjects.filter((subject) => {
+      const matchesSearch = 
+          subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          subject.code.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesDepartment = selectedDepartment === "all" || 
+          subject.departments?.some(d => d.departmentId === selectedDepartment);
+      const matchesScope = selectedScope === "all" || subject.scope === selectedScope;
+      
+      return matchesSearch && matchesDepartment && matchesScope;
+    });
+  }, [subjects, searchQuery, selectedDepartment, selectedScope]);
 
   const handleEdit = (subject: Subject) => {
-    setEditingSubject(subject)
-    setIsModalOpen(true)
-  }
+    setEditingSubject(subject);
+    setIsModalOpen(true);
+  };
 
   const handleView = (subject: Subject) => {
-    router.push(`/dashboard/admin/subjects/${subject.id}`)
-  }
+    router.push(`/dashboard/admin/subjects/${subject.id}`);
+  };
 
   const handleCreate = () => {
-    setEditingSubject(null)
-    setIsModalOpen(true)
-  }
+    setEditingSubject(null);
+    setIsModalOpen(true);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-12">
-      <main className="pt-24 pb-12 px-8">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-          <div>
-            <h1 className="text-4xl font-black font-headline tracking-tighter text-slate-900 dark:text-white mb-2 uppercase">
-              Curriculum & Subjects
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-lg font-medium">
-              Manage the academic core, departmental scope, and faculty assignments.
-            </p>
-          </div>
-          <Button 
-            onClick={handleCreate}
-            className="flex items-center gap-3 px-8 py-7 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 text-base uppercase tracking-tight"
-          >
-            <Plus className="h-6 w-6 stroke-[3]" />
-            <span>New Subject</span>
-          </Button>
-        </div>
-
-        {/* Filter Bar */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-4 mb-8 shadow-sm">
-          <div className="flex-1 min-w-[240px] relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-6 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 transition-all text-slate-900 dark:text-white"
-              placeholder="Filter by subject name or code..."
-            />
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="w-[200px] h-12 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-xs font-black uppercase tracking-wider px-4">
-                <SelectValue placeholder="All Departments" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
-                {departments.map(dep => (
-                  <SelectItem key={dep.id} value={dep.id}>{dep.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedScope} onValueChange={setSelectedScope}>
-              <SelectTrigger className="w-[160px] h-12 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-xs font-black uppercase tracking-wider px-4">
-                <SelectValue placeholder="Scope: All" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Scope: All</SelectItem>
-                <SelectItem value="SCHOOL">School-wide</SelectItem>
-                <SelectItem value="PERSONAL">Personal</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Subjects Bento Grid */}
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="relative h-16 w-16">
-                <div className="absolute inset-0 rounded-full border-4 border-blue-600/20"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
+    <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
+      <div className="max-w-[1600px] mx-auto space-y-12">
+        
+        {/* Tactical Header */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+              <div className="size-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Academic Core Terminal</span>
+            </div>
+            <div>
+              <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
+                Curriculum<span style={{ color: primaryColor }}>.</span>
+              </h1>
+              <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
+                Advanced curriculum architecture, departmental alignment, and academic module reconciliation.
+              </p>
             </div>
           </div>
-        ) : filteredSubjects.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredSubjects.map((subject) => (
-              <SubjectCard 
-                key={subject.id} 
-                subject={subject} 
-                onEdit={handleEdit}
-                onView={handleView}
-              />
-            ))}
+          
+          <div className="flex items-center gap-4">
+            <Button 
+              onClick={handleCreate}
+              style={{ backgroundColor: primaryColor }}
+              className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 shadow-2xl hover:scale-105 active:scale-95 transition-all"
+            >
+              <Plus size={20} strokeWidth={3} />
+              Initialize Module
+            </Button>
           </div>
-        ) : (
-          <div className="text-center py-32 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
-            <span className="material-symbols-outlined text-7xl text-slate-200 dark:text-slate-800 mb-6">menu_book</span>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Empty Curriculum</h3>
-            <p className="text-slate-500 dark:text-slate-400 font-medium max-w-sm mx-auto">
-              {searchQuery ? "No subjects match your current filter settings." : "Ready to build your school's curriculum? Start by adding your first subject module."}
-            </p>
-          </div>
-        )}
-      </main>
+        </div>
+
+        {/* Tactical Metrics Cluster */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-8 rounded-[3rem] bg-slate-900 text-white border border-slate-800 shadow-xl relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 p-8 opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                    <BookMarked size={120} />
+                </div>
+                <div className="relative z-10 flex items-center gap-8">
+                    <div className="size-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-indigo-400">
+                        <Cpu size={32} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Curriculum Depth</p>
+                        <h3 className="text-5xl font-black tracking-tighter uppercase">{subjects.length} Modules</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div className="p-8 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] dark:opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                    <Layers size={120} />
+                </div>
+                <div className="relative z-10 flex items-center gap-8">
+                    <div className="size-20 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-orange-600">
+                        <Layers size={32} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Node Alignment</p>
+                        <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">{departments.length} Units</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div className="p-8 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] dark:opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                    <Globe size={120} />
+                </div>
+                <div className="relative z-10 flex items-center gap-8">
+                    <div className="size-20 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-emerald-600">
+                        <Zap size={32} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Global Sync</p>
+                        <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Active</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* Operational Control Center */}
+        <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
+            <div className="relative group flex-1 max-w-xl">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
+                <input 
+                    type="text" 
+                    placeholder="Search curriculum modules..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-16 pl-16 pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
+                    style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+                />
+            </div>
+            
+            <div className="flex items-center gap-4">
+                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                    <SelectTrigger className="h-16 w-[240px] rounded-[2rem] bg-white dark:bg-slate-950 border-slate-100 dark:border-white/5 text-[10px] font-black uppercase tracking-widest px-8 shadow-sm">
+                        <SelectValue placeholder="All Departments" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-3xl border-2 border-slate-100 dark:border-white/5 p-2">
+                        <SelectItem value="all" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest">All Nodes</SelectItem>
+                        {departments.map(dep => (
+                            <SelectItem key={dep.id} value={dep.id} className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest">{dep.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <Select value={selectedScope} onValueChange={setSelectedScope}>
+                    <SelectTrigger className="h-16 w-[200px] rounded-[2rem] bg-white dark:bg-slate-950 border-slate-100 dark:border-white/5 text-[10px] font-black uppercase tracking-widest px-8 shadow-sm">
+                        <SelectValue placeholder="Global Scope" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-3xl border-2 border-slate-100 dark:border-white/5 p-2">
+                        <SelectItem value="all" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest">Global Sync</SelectItem>
+                        <SelectItem value="SCHOOL" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                            <Globe size={12} className="inline mr-2" /> Institutional
+                        </SelectItem>
+                        <SelectItem value="PERSONAL" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                            <Lock size={12} className="inline mr-2" /> Localized
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <Button variant="outline" className="size-16 rounded-3xl border-2 border-slate-100 dark:border-white/5 flex items-center justify-center p-0 hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
+                    <Download size={22} strokeWidth={3} className="text-slate-400" />
+                </Button>
+            </div>
+        </div>
+
+        {/* Modules Registry Grid */}
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+               {[1,2,3,4,5,6].map(i => <div key={i} className="h-80 rounded-[4rem] bg-white dark:bg-white/[0.02] animate-pulse border border-slate-100 dark:border-white/5" />)}
+            </div>
+          ) : filteredSubjects.length > 0 ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              {filteredSubjects.map((subject, index) => (
+                <SubjectCard 
+                  key={subject.id} 
+                  subject={subject} 
+                  onEdit={handleEdit}
+                  onView={handleView}
+                />
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-48 bg-slate-50 dark:bg-white/[0.02] rounded-[5rem] border-2 border-dashed border-slate-100 dark:border-white/5 flex flex-col items-center justify-center gap-8"
+            >
+              <div className="size-32 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center text-slate-200 dark:text-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.05)]">
+                <BookOpen size={64} strokeWidth={1} />
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Registry Depleted</h3>
+                <p className="text-slate-500 font-medium max-w-sm mx-auto text-lg leading-relaxed">
+                  {searchQuery ? "No curriculum modules discovered matching your current parameters." : "Initialize your school's curriculum architecture to begin academic reconciliation."}
+                </p>
+              </div>
+              {!searchQuery && (
+                <Button onClick={handleCreate} style={{ backgroundColor: primaryColor }} className="h-14 px-8 rounded-2xl text-white font-black uppercase tracking-widest gap-3 shadow-xl">
+                    <Plus size={20} strokeWidth={3} /> Create First Module
+                </Button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Operational Security Footer */}
+        <div className="flex justify-center pt-12">
+            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                <ShieldCheck size={16} className="text-emerald-500" strokeWidth={3} /> Certified Academic Registry
+            </div>
+        </div>
+      </div>
 
       <SubjectModal
         isOpen={isModalOpen}
@@ -179,7 +296,7 @@ const SubjectsPage = () => {
         subject={editingSubject}
       />
     </div>
-  )
-}
+  );
+};
 
-export default SubjectsPage
+export default SubjectsPage;

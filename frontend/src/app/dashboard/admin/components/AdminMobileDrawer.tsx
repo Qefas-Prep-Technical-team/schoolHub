@@ -79,10 +79,10 @@ export function AdminMobileDrawer() {
               <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
             </div>
             <div className="flex flex-col">
-              <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase group-hover/logo:text-indigo-500 transition-colors">
+              <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase group-hover/logo:text-primary transition-colors">
                 {school?.name || "QEFAS HUB"}
               </span>
-              <span className="text-[10px] text-indigo-500 font-black uppercase tracking-[0.2em]">Admin Portal</span>
+              <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em]">Admin Portal</span>
             </div>
           </Link>
         </div>
@@ -112,12 +112,12 @@ export function AdminMobileDrawer() {
                         className={cn(
                           "flex items-center gap-4 rounded-xl px-4 py-4 transition-all duration-200 border border-transparent",
                           isActive 
-                            ? "bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 shadow-sm shadow-indigo-600/5" 
+                            ? "bg-primary/10 text-primary border-primary/20 shadow-sm shadow-primary/5" 
                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
                         )}
                       >
                         <Icon className={cn("h-5 w-5 shrink-0 transition-transform", isActive && "scale-110")} />
-                        <span className={cn("text-sm font-bold tracking-tight flex-1", isActive && "text-indigo-600 dark:text-indigo-400")}>{item.label}</span>
+                        <span className={cn("text-sm font-bold tracking-tight flex-1", isActive && "text-primary")}>{item.label}</span>
                         <ChevronRight className={cn("h-4 w-4 opacity-40 transition-transform", isActive && "translate-x-1 opacity-80")} />
                       </Link>
                     );
@@ -131,8 +131,8 @@ export function AdminMobileDrawer() {
         {/* Footer */}
         <div className="px-6 py-6 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50">
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 shadow-sm">
-            <div className="h-10 w-10 rounded-xl bg-indigo-600/10 dark:bg-indigo-600/20 flex items-center justify-center border border-indigo-500/20 overflow-hidden shrink-0">
-               <User2 className="h-6 w-6 text-indigo-500/60" />
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shrink-0">
+               <User2 className="h-6 w-6 text-primary/60" />
             </div>
             <div className="flex-1 flex flex-col min-w-0">
               <span className="text-sm font-black text-slate-900 dark:text-white truncate uppercase tracking-tight">Admin Hub</span>

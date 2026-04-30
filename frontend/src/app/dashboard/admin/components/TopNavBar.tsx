@@ -33,9 +33,9 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
         <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
             <div className="flex items-center gap-6 flex-1">
                 {/* Dashboard Badge */}
-                <Link href="/" className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-full shadow-sm hover:border-indigo-500/30 transition-all group/badge">
+                <Link href="/" className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-full shadow-sm hover:border-primary/30 transition-all group/badge">
                     <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-4 w-4 object-contain group-hover/badge:scale-110 transition-transform" />
-                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Admin Hub</span>
+                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Admin Hub</span>
                 </Link>
 
                 {/* Desktop collapse */}
@@ -57,13 +57,13 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
             {/* Central Search Section */}
             <div className="hidden md:flex flex-1 justify-center max-w-2xl px-8">
                 <div className="relative w-full group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" size={18} />
                     <input
                         type="search"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search teachers, students, sessions..."
-                        className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-slate-200 dark:focus:bg-white/10 transition-all text-sm font-medium"
+                        className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-slate-200 dark:focus:bg-white/10 transition-all text-sm font-medium"
                     />
                 </div>
             </div>
@@ -74,7 +74,7 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
                   onClick={() => setIsQRModalOpen(true)}
                   className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-slate-200 dark:border-white/5 shadow-sm"
                 >
-                    <QrCode className="w-5 h-5 text-indigo-500" />
+                    <QrCode className="w-5 h-5 text-primary" />
                 </button>
 
                 <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} />
@@ -90,11 +90,11 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
                     className="flex items-center gap-3 p-1.5 pl-1.5 pr-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 transition-all cursor-pointer group rounded-xl"
                     onClick={handleProfileClick}
                 >
-                    <div className="relative h-9 w-9 rounded-lg bg-indigo-600/10 dark:bg-indigo-600/20 flex items-center justify-center border border-indigo-500/20 dark:border-indigo-500/30 overflow-hidden">
+                    <div className="relative h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 dark:border-primary/30 overflow-hidden">
                         {displayImage ? (
                             <img src={displayImage} alt={displayName} className="h-full w-full object-cover group-hover:scale-110 transition-transform" />
                         ) : (
-                            <User size={18} className="text-indigo-600 dark:text-indigo-400" />
+                            <User size={18} className="text-primary" />
                         )}
                         <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-slate-900" />
                     </div>

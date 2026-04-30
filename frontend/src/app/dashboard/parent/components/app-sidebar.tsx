@@ -75,22 +75,21 @@ export const parentMenuItems: ParentMenuItem[] = [
     { icon: CalendarDays, label: "Attendance", href: "/dashboard/parent/attendance", featureKey: "attendance", section: "core" },
 
     // === MONITORING & COMMUNICATION ===
-    { icon: Award, label: "Behavior & Remarks", href: "/parent/behavior", featureKey: "behavior", section: "monitoring" },
-    { icon: MessageSquare, label: "Messages", href: "/parent/messages", featureKey: "messages", section: "monitoring" },
-    { icon: BellRing, label: "Notifications", href: "/parent/notifications", featureKey: "notifications", section: "monitoring" },
+    { icon: Award, label: "Behavior & Remarks", href: "/dashboard/parent/behavior", featureKey: "behavior", section: "monitoring" },
+    { icon: MessageSquare, label: "Messages", href: "/dashboard/parent/messages", featureKey: "messages", section: "monitoring" },
 
     // === FINANCIAL & RESOURCES ===
     { icon: CreditCard, label: "Subscription", href: "/dashboard/parent/billing", featureKey: "billing", section: "financial" },
-    { icon: BookMarked, label: "Resources", href: "/parent/resources", featureKey: "resources", section: "financial" },
+    { icon: BookMarked, label: "Resources", href: "/dashboard/parent/resources", featureKey: "resources", section: "financial" },
 
     // === ADVANCED TOOLS ===
-    { icon: Brain, label: "AI Insights", href: "/parent/ai-insights", featureKey: "aiInsights", section: "advanced" },
-    { icon: CalendarClock, label: "Events & Timetable", href: "/parent/events", featureKey: "events", section: "advanced" },
+    { icon: Brain, label: "AI Insights", href: "/dashboard/parent/ai-insights", featureKey: "aiInsights", section: "advanced" },
+    { icon: CalendarClock, label: "Events & Timetable", href: "/dashboard/parent/events", featureKey: "events", section: "advanced" },
 
     // === PROFILE & SETTINGS ===
-    { icon: UserCircle, label: "Profile", href: "/parent/profile", featureKey: "profile", section: "profile" },
-    { icon: Settings, label: "Settings", href: "/parent/settings", featureKey: "settings", section: "profile" },
-    { icon: LifeBuoy, label: "Support", href: "/parent/support", featureKey: "support", section: "profile" },
+    { icon: UserCircle, label: "Profile", href: "/dashboard/parent/profile", featureKey: "profile", section: "profile" },
+    { icon: Settings, label: "Settings", href: "/dashboard/parent/settings", featureKey: "settings", section: "profile" },
+    { icon: LifeBuoy, label: "Support", href: "/dashboard/parent/support", featureKey: "support", section: "profile" },
 ];
 
 // Section titles
@@ -191,18 +190,20 @@ export function ParentSidebar() {
 
                                     return (
                                         <SidebarMenuItem key={label}>
-                                            <Link href={isDisabled ? "#" : href} className="w-full">
-                                                <SidebarMenuButton
-                                                    className={cn(
-                                                        "relative flex items-center gap-3 h-11 px-3 rounded-xl transition-all duration-200 group overflow-hidden cursor-pointer",
-                                                        isDisabled
-                                                            ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50"
-                                                            : isActive
-                                                                ? "bg-orange-600/10 text-orange-600 dark:text-orange-400 font-bold shadow-[0_4px_12px_rgba(234,113,10,0.1)]"
-                                                                : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
-                                                    )}
-                                                    disabled={isDisabled}
-                                                >
+                                            <SidebarMenuButton
+                                                asChild
+                                                isActive={isActive}
+                                                className={cn(
+                                                    "relative flex items-center gap-3 h-11 px-3 rounded-xl transition-all duration-200 group overflow-hidden cursor-pointer",
+                                                    isDisabled
+                                                        ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50"
+                                                        : isActive
+                                                            ? "bg-orange-600/10 text-orange-600 dark:text-orange-400 font-bold shadow-[0_4px_12px_rgba(234,113,10,0.1)]"
+                                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
+                                                )}
+                                                disabled={isDisabled}
+                                            >
+                                                <Link href={isDisabled ? "#" : href}>
                                                     {isActive && !isDisabled && (
                                                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-orange-600 rounded-r-full shadow-[2px_0_8px_rgba(234,113,10,0.6)]" />
                                                     )}
@@ -225,8 +226,8 @@ export function ParentSidebar() {
                                                             <ChevronRight className="h-3.5 w-3.5 text-amber-500/50" />
                                                         </div>
                                                     )}
-                                                </SidebarMenuButton>
-                                            </Link>
+                                                </Link>
+                                            </SidebarMenuButton>
                                         </SidebarMenuItem>
                                     );
                                 })}
@@ -273,14 +274,6 @@ export function ParentSidebar() {
                                 sideOffset={12}
                                 className="w-[240px] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl p-2 animate-in slide-in-from-bottom-2 duration-300"
                             >
-                                <DropdownMenuItem className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 focus:bg-orange-500/10 focus:text-orange-600 transition-all font-medium">
-                                    <Users className="h-4 w-4" />
-                                    <span>Family Profile</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 focus:bg-orange-500/10 focus:text-orange-600 transition-all font-medium">
-                                    <CreditCard className="h-4 w-4" />
-                                    <span>Payment History</span>
-                                </DropdownMenuItem>
                                 <DropdownMenuItem className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 focus:bg-orange-500/10 focus:text-orange-600 transition-all font-medium">
                                     <Settings className="h-4 w-4" />
                                     <span>Notifications</span>

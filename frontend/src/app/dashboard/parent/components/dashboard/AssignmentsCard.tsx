@@ -1,11 +1,12 @@
-'use client'
 import { cn } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useParentStore } from '@/lib/api/hooks/useParentStore'
 
 export default function AssignmentsCard() {
-  const { data, isLoading } = useParentDashboard()
+  const { selectedChildId } = useParentStore()
+  const { data, isLoading } = useParentDashboard(selectedChildId)
   const grades = data?.child?.recentGrades ?? []
 
   const getStatus = (score: number, maxMarks: number) => {

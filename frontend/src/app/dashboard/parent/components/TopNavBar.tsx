@@ -16,6 +16,7 @@ import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { useParentChildren } from "@/lib/api/hooks/useParentChildren";
+import { useParentStore } from "@/lib/api/hooks/useParentStore";
 
 export default function TopNavBar() {
   const { state, toggleSidebar } = useSidebar();
@@ -26,13 +27,24 @@ export default function TopNavBar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const { data: children = [], isLoading: isChildrenLoading } = useParentChildren();
+  const { selectedChildId, setSelectedChildId } = useParentStore();
 
   useEffect(() => {
     linkService.getProfile().then(setProfile).catch(() => {});
   }, []);
 
-  const displayImage = profile?.data?.profileImage || user?.profileImage;
+  // Initialize selectedChildId if not set
+  useEffect(() => {
+    if (!selectedChildId && children.length > 0) {
+      setSelectedChildId(children[0].id);
+    }
+  }, [children, selectedChildId, setSelectedChildId]);
+
   const displayName = profile?.data?.fullName || profile?.data?.name || user?.name || user?.email;
+  const [imgError, setImgError] = useState(false);
+  const displayImage = (!imgError && (profile?.data?.profileImage || user?.profileImage) && (profile?.data?.profileImage || user?.profileImage) !== "null" && (profile?.data?.profileImage || user?.profileImage) !== "")
+    ? (profile?.data?.profileImage || user?.profileImage)
+    : `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName || 'User')}&backgroundColor=ea580c&fontFamily=Arial&fontSize=40&fontWeight=900`;
 
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between h-20 px-4 md:px-8 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 transition-all duration-300">
@@ -43,6 +55,7 @@ export default function TopNavBar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  type="button"
                   variant="ghost"
                   size="icon"
                   onClick={toggleSidebar}
@@ -74,13 +87,15 @@ export default function TopNavBar() {
         {/* Child Selector */}
         <div className="relative hidden xl:block min-w-[200px] group">
           <select 
+            value={selectedChildId || ''}
+            onChange={(e) => setSelectedChildId(e.target.value)}
             disabled={isChildrenLoading || children.length === 0}
             className="w-full appearance-none bg-slate-100 dark:bg-white/5 border border-transparent hover:border-orange-500/30 rounded-xl px-4 py-2.5 text-xs font-black text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer outline-none uppercase tracking-tight disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isChildrenLoading ? (
-              <option>Loading children...</option>
+              <option value="">Loading children...</option>
             ) : children.length === 0 ? (
-              <option>No children linked</option>
+              <option value="">No children linked</option>
             ) : (
               children.map((child) => (
                 <option key={child.id} value={child.id}>
@@ -94,6 +109,7 @@ export default function TopNavBar() {
           </div>
         </div>
       </div>
+
 
 
       {/* Central Search Section */}
@@ -115,6 +131,7 @@ export default function TopNavBar() {
       <div className="flex items-center justify-end gap-4 flex-1">
         {/* Quick Actions / QR Code */}
         <button 
+          type="button"
           onClick={() => setIsQRModalOpen(true)}
           className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-slate-200 dark:border-white/5 shadow-sm"
         >
@@ -136,13 +153,12 @@ export default function TopNavBar() {
         >
           <div className="relative w-8 h-8 rounded-full overflow-hidden bg-orange-600 p-0.5 transition-transform group-hover:scale-105 duration-500 ring-2 ring-orange-500/10 group-hover:ring-orange-500/30">
             <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-slate-900">
-              {displayImage ? (
-                <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-orange-600 text-white">
-                  <User className="h-4 w-4" />
-                </div>
-              )}
+              <img 
+                src={displayImage} 
+                alt="Profile" 
+                className="w-full h-full object-cover" 
+                onError={() => setImgError(true)}
+              />
             </div>
           </div>
           

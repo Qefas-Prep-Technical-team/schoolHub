@@ -6,10 +6,21 @@ import TopNavBar from "./components/TopNavBar"
 import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute"
 import { TrialBanner } from "@/components/subscription/TrialBanner"
 
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
+import { useSchoolSettings } from "@/lib/api/hooks/useSchool"
+
 export default function Layout({ children }: { children: React.ReactNode }) {
+    const { user } = useAuthStore()
+    const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ""
+    const { data: settings } = useSchoolSettings(schoolId)
+    
     const [isCollapsed, setIsCollapsed] = useState(false)
+
+    const primaryColor = settings?.themeColor || "#1e40af"
+
     return (
         <ProtectedAdminRoute>
+            <div style={{ "--primary-color": primaryColor } as React.CSSProperties}>
 
 
             <SidebarProvider 
@@ -32,6 +43,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     </SidebarInset>
                 </div>
             </SidebarProvider>
+            </div>
         </ProtectedAdminRoute>
     )
 }
