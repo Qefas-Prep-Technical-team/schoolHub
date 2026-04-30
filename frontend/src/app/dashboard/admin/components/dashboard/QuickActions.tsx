@@ -1,8 +1,10 @@
 'use client';
 
-import { UserPlus, FileText, Megaphone, MoreHorizontal, Users, Calendar, Download, Settings } from 'lucide-react';
+import { UserPlus, FileText, Megaphone, MoreHorizontal, Users, Calendar, Download, Settings, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface Action {
   id: string;
@@ -23,9 +25,9 @@ export default function QuickActions() {
       title: 'Add Student',
       icon: UserPlus,
       description: 'Enroll new student',
-      color: 'border-blue-200 dark:border-blue-800',
-      iconColor: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      color: 'border-blue-500/20',
+      iconColor: 'text-blue-500',
+      bgColor: 'bg-blue-500/10',
       href: '/dashboard/admin/students?showAdd=true',
     },
     {
@@ -33,9 +35,9 @@ export default function QuickActions() {
       title: 'Publish Results',
       icon: FileText,
       description: 'Release exam grades',
-      color: 'border-emerald-200 dark:border-emerald-800',
-      iconColor: 'text-emerald-600 dark:text-emerald-400',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+      color: 'border-emerald-500/20',
+      iconColor: 'text-emerald-500',
+      bgColor: 'bg-emerald-500/10',
       href: '/dashboard/admin/grades',
     },
     {
@@ -43,9 +45,9 @@ export default function QuickActions() {
       title: 'Announce',
       icon: Megaphone,
       description: 'Send notifications',
-      color: 'border-amber-200 dark:border-amber-800',
-      iconColor: 'text-amber-600 dark:text-amber-400',
-      bgColor: 'bg-amber-50 dark:bg-amber-900/20',
+      color: 'border-amber-500/20',
+      iconColor: 'text-amber-500',
+      bgColor: 'bg-amber-500/10',
       href: '/dashboard/admin/notifications',
     },
     {
@@ -53,9 +55,9 @@ export default function QuickActions() {
       title: 'Manage Staff',
       icon: Users,
       description: 'Teacher assignments',
-      color: 'border-purple-200 dark:border-purple-800',
-      iconColor: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+      color: 'border-purple-500/20',
+      iconColor: 'text-purple-500',
+      bgColor: 'bg-purple-500/10',
       href: '/dashboard/admin/teachers',
     },
     {
@@ -63,9 +65,9 @@ export default function QuickActions() {
       title: 'Schedule',
       icon: Calendar,
       description: 'Create timetable',
-      color: 'border-indigo-200 dark:border-indigo-800',
-      iconColor: 'text-indigo-600 dark:text-indigo-400',
-      bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
+      color: 'border-indigo-500/20',
+      iconColor: 'text-indigo-500',
+      bgColor: 'bg-indigo-500/10',
       href: '/dashboard/admin/classes',
     },
     {
@@ -73,9 +75,9 @@ export default function QuickActions() {
       title: 'Export Data',
       icon: Download,
       description: 'Download reports',
-      color: 'border-teal-200 dark:border-teal-800',
-      iconColor: 'text-teal-600 dark:text-teal-400',
-      bgColor: 'bg-teal-50 dark:bg-teal-900/20',
+      color: 'border-teal-500/20',
+      iconColor: 'text-teal-500',
+      bgColor: 'bg-teal-500/10',
       href: '/dashboard/admin/grades',
     },
     {
@@ -83,9 +85,9 @@ export default function QuickActions() {
       title: 'Settings',
       icon: Settings,
       description: 'System configuration',
-      color: 'border-slate-200 dark:border-slate-800',
-      iconColor: 'text-slate-600 dark:text-slate-400',
-      bgColor: 'bg-slate-50 dark:bg-slate-900/20',
+      color: 'border-slate-500/20',
+      iconColor: 'text-slate-500',
+      bgColor: 'bg-slate-500/10',
       href: '/dashboard/admin/settings',
     },
   ]);
@@ -94,55 +96,65 @@ export default function QuickActions() {
   const visibleActions = showMore ? actions : actions.slice(0, 4);
 
   return (
-    <div className="bg-surface-light dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-sm uppercase text-slate-400 tracking-wider">
-          Quick Shortcuts
+    <div className="space-y-6">
+      <div className="flex items-center justify-between px-2">
+        <h3 className="font-black text-[10px] uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em]">
+          Quick Actions
         </h3>
         {actions.length > 4 && (
           <button
             onClick={() => setShowMore(!showMore)}
-            className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+            className="text-[10px] font-black text-indigo-400 hover:text-white transition-all uppercase tracking-widest"
           >
             {showMore ? 'Show Less' : `+${actions.length - 4} More`}
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {visibleActions.map((action) => {
+      <div className="grid grid-cols-2 gap-4">
+        {visibleActions.map((action, idx) => {
           const Icon = action.icon;
           return (
-            <button
+            <motion.button
               key={action.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.05 }}
               onClick={() => router.push(action.href)}
-              className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border ${action.color} ${action.bgColor} hover:border-primary/50 hover:scale-[1.02] transition-all group`}
+              className={cn(
+                "flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border transition-all duration-500 group relative overflow-hidden",
+                "bg-white/10 dark:bg-black/20 border-white/10 hover:border-indigo-500/50 hover:bg-white/20",
+                "shadow-lg hover:shadow-indigo-500/10 active:scale-95"
+              )}
             >
-              <div className={`p-2 rounded-lg ${action.bgColor} group-hover:bg-white dark:group-hover:bg-slate-700 transition-colors`}>
-                <Icon className={`h-5 w-5 ${action.iconColor} group-hover:text-primary transition-colors`} />
+              <div className={cn(
+                "p-3 rounded-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6",
+                action.bgColor,
+                action.iconColor
+              )}>
+                <Icon size={20} strokeWidth={2.5} />
               </div>
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-primary transition-colors text-center">
-                {action.title}
-              </span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 group-hover:text-primary/70 transition-colors text-center">
-                {action.description}
-              </span>
-            </button>
+              <div className="text-center space-y-1 relative z-10">
+                <span className="text-[11px] font-black text-white uppercase tracking-tight italic block">
+                  {action.title}
+                </span>
+                <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest block opacity-0 group-hover:opacity-100 transition-opacity">
+                  Open
+                </span>
+              </div>
+            </motion.button>
           );
         })}
       </div>
 
-      {/* Quick Action Modal */}
-      <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {actions.length} available actions
-          </p>
-          <button className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
-            Customize
-            <Settings className="h-3 w-3" />
-          </button>
-        </div>
+      {/* Quick Action Footer */}
+      <div className="pt-4 border-t border-white/5 flex items-center justify-between px-2 opacity-60">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+          {actions.length} Shortcuts Available
+        </p>
+        <button className="text-[9px] font-black text-indigo-400 hover:text-white transition-all uppercase flex items-center gap-1 tracking-widest">
+          Settings <Settings size={10} />
+        </button>
       </div>
     </div>
   );

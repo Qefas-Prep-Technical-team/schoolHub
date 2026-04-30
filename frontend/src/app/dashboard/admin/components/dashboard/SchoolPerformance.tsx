@@ -47,36 +47,36 @@ export default function SchoolPerformance({ analysis, isLoading }: SchoolPerform
                         <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30">
                             <Sparkles size={24} className="animate-pulse" />
                         </div>
-                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">Academic <span className="text-indigo-600">Trajectory</span></h2>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Academic <span className="text-indigo-600">Performance</span></h2>
                     </div>
-
+ 
                     <div className="space-y-6">
                         <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 shadow-inner italic relative overflow-hidden group/insight">
                             <div className="absolute left-0 top-0 w-1.5 h-full bg-indigo-500" />
                             <p className="text-slate-600 dark:text-slate-300 font-bold leading-relaxed text-sm relative z-10">
-                                "{analysis?.insight || "Analyzing institutional data clusters to generate strategic performance telemetry..."}"
+                                "{analysis?.insight || "Analyzing school performance data to provide helpful insights..."}"
                             </p>
                         </div>
-
+ 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="p-6 rounded-[2rem] bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/10 shadow-sm transition-colors hover:bg-indigo-500/10">
                                 <div className="flex items-center gap-2 text-indigo-500 mb-2">
                                     <Activity size={16} />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Institutional Mastery</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">School Average</span>
                                 </div>
-                                <p className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">{analysis?.averageScore || 0}% <span className="text-xs text-slate-400 font-bold ml-1">AVG</span></p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter italic">{analysis?.averageScore || 0}% <span className="text-xs text-slate-400 font-bold ml-1">AVG</span></p>
                             </div>
                             <div className="p-6 rounded-[2rem] bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/10 shadow-sm transition-colors hover:bg-blue-500/10">
                                 <div className="flex items-center gap-2 text-blue-500 mb-2">
                                     <ShieldCheck size={16} />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600">Validation Status</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600">System Status</span>
                                 </div>
-                                <p className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">NOMINAL</p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter italic">NORMAL</p>
                             </div>
                         </div>
                     </div>
                 </div>
-
+ 
                 <div className="w-full xl:w-80 h-80 shrink-0 relative p-6 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-xl flex items-center justify-center">
                     <div className="absolute inset-0 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl scale-125 pointer-events-none" />
                     {isLoading ? (
@@ -87,14 +87,14 @@ export default function SchoolPerformance({ analysis, isLoading }: SchoolPerform
                             innerRadius={75}
                             outerRadius={100}
                             centerLabel={{
-                                title: 'System Grade',
+                                title: 'Avg Grade',
                                 value: analysis ? (analysis.averageScore >= 75 ? 'A+' : analysis.averageScore >= 60 ? 'B' : 'C') : '--'
                             }}
                         />
                     )}
                 </div>
             </div>
-
+ 
             {/* Sub-metrics Summary */}
             <div className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
@@ -105,11 +105,11 @@ export default function SchoolPerformance({ analysis, isLoading }: SchoolPerform
                             </div>
                         ))}
                      </div>
-                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mastery Distribution Matrix</p>
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Student Performance Distribution</p>
                 </div>
                 <div className="flex items-center gap-3 bg-slate-950 px-5 py-2 rounded-full shadow-2xl">
                     <BarChart3 className="text-indigo-500" size={16} />
-                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{analysis?.totalAssessments || 0} Data Points Captured</span>
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{analysis?.totalAssessments || 0} Total Records Found</span>
                 </div>
             </div>
         </section>

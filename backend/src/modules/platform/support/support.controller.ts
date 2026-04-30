@@ -606,14 +606,35 @@ export const searchParents = async (req: Request, res: Response) => {
 };
 
 /**
- * Get all platform features for management
+ * Get all platform features for management (Redirected to Unified Manifest)
  */
 export const getPlatformFeatures = async (req: Request, res: Response) => {
   try {
-    const features = await prisma.platformFeature.findMany({
+    let features = await prisma.featureManifest.findMany({
       orderBy: { name: 'asc' }
     });
-    return res.status(200).json({ success: true, data: features });
+    
+    // Fallback: If Manifest is empty, try to pull from legacy table to prevent blank UI
+    if (features.length === 0) {
+      const legacyFeatures = await (prisma as any).platformFeature?.findMany({
+        orderBy: { name: 'asc' }
+      }).catch(() => []);
+      
+      if (legacyFeatures && legacyFeatures.length > 0) {
+        return res.status(200).json({ 
+          success: true, 
+          data: legacyFeatures.map((f: any) => ({ ...f, isLegacy: true })) 
+        });
+      }
+    }
+
+    // Map Manifest to legacy format for UI compatibility
+    const mapped = features.map(f => ({
+      ...f,
+      featureKey: f.tag, // UI uses featureKey
+    }));
+
+    return res.status(200).json({ success: true, data: mapped });
   } catch (error) {
     console.error("Get platform features failed:", error);
     return res.status(500).json({ success: false, message: "Failed to fetch features" });
@@ -621,14 +642,14 @@ export const getPlatformFeatures = async (req: Request, res: Response) => {
 };
 
 /**
- * Update a platform feature's toggle states
+ * Update a platform feature's toggle states (Redirected to Unified Manifest)
  */
 export const updatePlatformFeature = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const updateData = req.body;
     
-    const feature = await prisma.platformFeature.update({
+    const feature = await prisma.featureManifest.update({
       where: { id },
       data: updateData
     });
@@ -642,7 +663,9 @@ export const updatePlatformFeature = async (req: Request, res: Response) => {
     console.error("Update platform feature failed:", error);
     return res.status(500).json({ success: false, message: "Update failed" });
   }
-};/**
+};
+
+/**
  * Get enabled features for a specific role (Public/End-user)
  */
 export const getPublicRoleFeatures = async (req: Request, res: Response) => {

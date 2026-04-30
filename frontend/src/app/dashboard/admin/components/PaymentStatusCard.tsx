@@ -46,17 +46,17 @@ export function PaymentStatusCard({ status, schoolId, onRefresh }: PaymentStatus
                         </div>
                         <div className="space-y-1">
                             <div className="flex items-center gap-3">
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white">{status.label}</h3>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">{status.label}</h3>
                                 <Badge className={cn(
-                                    "rounded-md font-bold uppercase tracking-wider text-[10px]",
-                                    isRed && "bg-red-600 hover:bg-red-700",
-                                    isYellow && "bg-amber-600 hover:bg-amber-700",
-                                    isGreen && "bg-emerald-600 hover:bg-emerald-700"
-                                )}>
-                                    {status.status}
-                                </Badge>
+                                     "rounded-lg font-black uppercase tracking-[0.2em] text-[9px] px-3 py-1",
+                                     isRed && "bg-red-600 hover:bg-red-700",
+                                     isYellow && "bg-amber-600 hover:bg-amber-700",
+                                     isGreen && "bg-emerald-600 hover:bg-emerald-700"
+                                 )}>
+                                     {status.status}
+                                 </Badge>
                             </div>
-                            <p className="text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-md">
+                            <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-md text-sm">
                                 {status.message}
                             </p>
                         </div>

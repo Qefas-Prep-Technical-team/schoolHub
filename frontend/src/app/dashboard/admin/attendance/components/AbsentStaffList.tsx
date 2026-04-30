@@ -1,144 +1,138 @@
 'use client';
 
-import { Users } from 'lucide-react';
+import { Users, MoreHorizontal, UserX } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useMemo } from 'react';
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface AbsentStaff {
     id: string;
     name: string;
     department: string;
-    leaveType: 'sick' | 'personal' | 'vacation' | 'unexcused' | 'other';
+    leaveType: 'sick' | 'personal' | 'vacation' | 'unexcused' | 'other' | 'unassigned';
     imageUrl: string;
     notes?: string;
 }
 
-export default function AbsentStaffList() {
-    const [staff] = useState<AbsentStaff[]>([
-        {
-            id: '1',
-            name: 'Mr. Anderson',
-            department: 'Mathematics Dept.',
-            leaveType: 'sick',
-            imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCy3EoI-nMTqa6J8BL8D19cdjQKfq2fecDiylNZp5xdVb3uBFF2RkrzIU__BVIwjGX1jwQxzDVnggxR99aQloh1IWCjOzgCPqt-I-o1tyeAg9e7FwPraWOgeh9nvmtc85P3tWfAbapNConIdcV3egS6oYvRtwjJLxtS_MEOil-0hSI8PAr5fVn3muuNs_3h9jjSr2nk_6ByP0E5bBozUgO0qhPf3iLZvandDh-z2lIoZDwO7ZmMoC1hbSiVfUe7g383rBlkYXIU7k0',
-        },
-        {
-            id: '2',
-            name: 'Ms. Davis',
-            department: 'Science Dept.',
-            leaveType: 'unexcused',
-            imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuARWQO6EcB4srQApqesWj-urhWTuFSwSJIEnnf-Ccu8_PKZmGlPKVdKYvijbHW_lnLadd2gEtHJnliCWFRlBYVZzlD0wgXAZGxXCTb6tnucC4Yshn-KpiNFhHNt-kLsKjz_-atAi_lM8O_B7nfJZJEeZyMRh5q_mctobLkgsyt9eNqGQR67FOfw5sU1F13GIlFIrRh6GAdlq20aPDTp1ieQIcv4StxEoRjgWoOLJRxbbDk8hE4yMj-vauZOzbCrTITnfbU-b4aEsFM',
-        },
-        {
-            id: '3',
-            name: 'Mr. Roberts',
-            department: 'History Dept.',
-            leaveType: 'personal',
-            imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBNUjnw6LH526XZ5ExD4CR2pcyVCsAj-SKNXxaugoC927CD6P1UbK2m2az0NAfypq8EU0wIz9YxqkM3W9QDJdsW_1Qlomt9MQjYuOJCVkk8XXgpjT9SeIqOjDsM2YanTh1VgoKxDDYA6uXHTiOmOMMhPkkDAG2mgU8YtTRBy6UjxIW5cDOW2Z3Rthv9prqccJVZ1ejCYiDkSKasjujVMd1GiZSIG-aJZaO79tOA3J7jJ20N8KIXNc_pKn4GEfNMToSP-wvj2XFiUPw',
-        },
-    ]);
+interface AbsentStaffListProps {
+    summary?: {
+        unassignedCount: number;
+        unassignedTeachers: any[];
+    };
+    isLoading?: boolean;
+}
 
-    const getLeaveTypeConfig = (type: AbsentStaff['leaveType']) => {
+export default function AbsentStaffList({ summary, isLoading }: AbsentStaffListProps) {
+    const staff = useMemo<AbsentStaff[]>(() => {
+        if (!summary?.unassignedTeachers || summary.unassignedTeachers.length === 0) {
+            // Fallback mock data if no real unassigned teachers
+            return [
+                {
+                    id: '1',
+                    name: 'Mr. Anderson',
+                    department: 'Mathematics Dept.',
+                    leaveType: 'sick',
+                    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCy3EoI-nMTqa6J8BL8D19cdjQKfq2fecDiylNZp5xdVb3uBFF2RkrzIU__BVIwjGX1jwQxzDVnggxR99aQloh1IWCjOzgCPqt-I-o1tyeAg9e7FwPraWOgeh9nvmtc85P3tWfAbapNConIdcV3egS6oYvRtwjJLxtS_MEOil-0hSI8PAr5fVn3muuNs_3h9jjSr2nk_6ByP0E5bBozUgO0qhPf3iLZvandDh-z2lIoZDwO7ZmMoC1hbSiVfUe7g383rBlkYXIU7k0',
+                },
+                {
+                    id: '2',
+                    name: 'Ms. Davis',
+                    department: 'Science Dept.',
+                    leaveType: 'unexcused',
+                    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuARWQO6EcB4srQApqesWj-urhWTuFSwSJIEnnf-Ccu8_PKZmGlPKVdKYvijbHW_lnLadd2gEtHJnliCWFRlBYVZzlD0wgXAZGxXCTb6tnucC4Yshn-KpiNFhHNt-kLsKjz_-atAi_lM8O_B7nfJZJEeZyMRh5q_mctobLkgsyt9eNqGQR67FOfw5sU1F13GIlFIrRh6GAdlq20aPDTp1ieQIcv4StxEoRjgWoOLJRxbbDk8hE4yMj-vauZOzbCrTITnfbU-b4aEsFM',
+                }
+            ];
+        }
+
+        return summary.unassignedTeachers.map(t => ({
+            id: t.id,
+            name: t.name,
+            department: 'Unallocated',
+            leaveType: 'unassigned',
+            imageUrl: t.profileImage || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCy3EoI-nMTqa6J8BL8D19cdjQKfq2fecDiylNZp5xdVb3uBFF2RkrzIU__BVIwjGX1jwQxzDVnggxR99aQloh1IWCjOzgCPqt-I-o1tyeAg9e7FwPraWOgeh9nvmtc85P3tWfAbapNConIdcV3egS6oYvRtwjJLxtS_MEOil-0hSI8PAr5fVn3muuNs_3h9jjSr2nk_6ByP0E5bBozUgO0qhPf3iLZvandDh-z2lIoZDwO7ZmMoC1hbSiVfUe7g383rBlkYXIU7k0',
+        }));
+    }, [summary]);
+
+    const getLeaveStyles = (type: AbsentStaff['leaveType']) => {
         switch (type) {
-            case 'sick':
-                return {
-                    color: 'text-yellow-700 dark:text-yellow-400',
-                    bg: 'bg-yellow-100 dark:bg-yellow-900/30',
-                    label: 'Sick Leave',
-                };
-            case 'personal':
-                return {
-                    color: 'text-blue-700 dark:text-blue-400',
-                    bg: 'bg-blue-100 dark:bg-blue-900/30',
-                    label: 'Personal',
-                };
-            case 'vacation':
-                return {
-                    color: 'text-green-700 dark:text-green-400',
-                    bg: 'bg-green-100 dark:bg-green-900/30',
-                    label: 'Vacation',
-                };
-            case 'unexcused':
-                return {
-                    color: 'text-red-700 dark:text-red-400',
-                    bg: 'bg-red-100 dark:bg-red-900/30',
-                    label: 'Unexcused',
-                };
-            default:
-                return {
-                    color: 'text-gray-700 dark:text-gray-400',
-                    bg: 'bg-gray-100 dark:bg-gray-900/30',
-                    label: 'Other',
-                };
+            case 'sick': return "bg-amber-500/10 text-amber-600";
+            case 'unexcused': return "bg-rose-500/10 text-rose-600";
+            case 'personal': return "bg-indigo-500/10 text-indigo-600";
+            case 'vacation': return "bg-emerald-500/10 text-emerald-600";
+            case 'unassigned': return "bg-purple-500/10 text-purple-600";
+            default: return "bg-slate-500/10 text-slate-600";
         }
     };
 
+    if (isLoading) {
+        return (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm space-y-6">
+                <Skeleton className="h-8 w-40 rounded-lg" />
+                <div className="space-y-4">
+                    {[1, 2, 3].map(i => (
+                        <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex flex-col rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-5 shadow-sm flex-1">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-text-primary-light dark:text-text-primary-dark text-base font-bold flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    Absent Staff Today
-                </h3>
-                <button className="text-primary text-xs font-bold hover:underline">
-                    View All
-                </button>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm space-y-6">
+            <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <UserX className="h-5 w-5 text-indigo-500" />
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">
+                            {summary?.unassignedCount ? 'Faculty Attention' : 'Absent Faculty'}
+                        </h3>
+                    </div>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1">
+                        {summary?.unassignedCount ? 'Staff unallocated to classes' : "Today's non-attendance"}
+                    </p>
+                </div>
+                <Badge className="bg-indigo-500/10 text-indigo-600 border-none font-black text-[10px] uppercase px-3 py-1">
+                    {staff.length} Total
+                </Badge>
             </div>
 
-            <div className="flex flex-col gap-4">
-                {staff.map((person) => {
-                    const leaveConfig = getLeaveTypeConfig(person.leaveType);
-                    return (
-                        <div key={person.id} className="flex items-center gap-3">
-                            {/* Profile Image */}
-                            <div className="relative size-10 flex-shrink-0">
+            <div className="space-y-4">
+                {staff.map((person) => (
+                    <div key={person.id} className="flex items-center justify-between group">
+                        <div className="flex items-center gap-4">
+                            <div className="relative h-12 w-12 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-900 shadow-sm transition-transform group-hover:scale-110">
                                 <Image
                                     src={person.imageUrl}
-                                    alt={`Portrait of ${person.name}`}
+                                    alt={person.name}
                                     fill
-                                    className="rounded-full object-cover"
+                                    className="object-cover"
                                 />
                             </div>
-
-                            {/* Info */}
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold text-text-primary-light dark:text-text-primary-dark truncate">
+                            <div className="min-w-0">
+                                <p className="font-black text-slate-900 dark:text-white text-sm truncate tracking-tight italic">
                                     {person.name}
                                 </p>
-                                <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark truncate">
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest truncate">
                                     {person.department}
                                 </p>
-                                {person.notes && (
-                                    <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark mt-1">
-                                        {person.notes}
-                                    </p>
-                                )}
                             </div>
-
-                            {/* Leave Badge */}
-                            <span className={`px-2 py-1 ${leaveConfig.bg} ${leaveConfig.color} text-xs font-medium rounded-lg whitespace-nowrap`}>
-                                {leaveConfig.label}
-                            </span>
                         </div>
-                    );
-                })}
+                        <Badge className={cn(
+                            "rounded-lg text-[9px] font-black uppercase px-2 py-0.5 border-none",
+                            getLeaveStyles(person.leaveType)
+                        )}>
+                            {person.leaveType}
+                        </Badge>
+                    </div>
+                ))}
             </div>
 
-            {/* Summary */}
-            <div className="mt-4 pt-4 border-t border-border-light dark:border-border-dark">
-                <div className="flex items-center justify-between">
-                    <div className="text-sm">
-                        <span className="text-text-secondary-light dark:text-text-secondary-dark">
-                            Total Absent:
-                        </span>
-                        <span className="font-bold text-text-primary-light dark:text-text-primary-dark ml-2">
-                            {staff.length} staff members
-                        </span>
-                    </div>
-                    <button className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-                        Manage Substitutes
-                    </button>
-                </div>
+            <div className="pt-4">
+                <button className="w-full h-12 rounded-2xl border-2 border-slate-100 dark:border-slate-800 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all">
+                    Coordinate Substitutes
+                </button>
             </div>
         </div>
     );

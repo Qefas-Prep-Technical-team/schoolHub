@@ -35,13 +35,14 @@ export const useSavePricingPlan = () => {
             });
             return data;
         },
-        onSuccess: (res) => {
-            queryClient.invalidateQueries({ queryKey: ["platform-pricing-plans"] })
-            queryClient.invalidateQueries({ queryKey: ["fetchPricing"] }) // Global invalidation
-            toast.success("Pricing plan updated successfully")
+        onSuccess: async () => {
+            // Force immediate refetch
+            await queryClient.invalidateQueries({ queryKey: ["platform-pricing-plans"] });
+            await queryClient.invalidateQueries({ queryKey: ["fetchPricing"] });
+            toast.success("Pricing plan updated successfully");
         },
         onError: (err: any) => {
-            toast.error(err.response?.data?.message || "Failed to save plan")
+            toast.error(err.response?.data?.message || "Failed to save plan");
         }
     })
 }
@@ -60,9 +61,9 @@ export const useSeedPricingPlans = () => {
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: any) => {
             queryClient.invalidateQueries({ queryKey: ["platform-pricing-plans"] })
-            toast.success(res.message)
+            toast.success(res.message || "Plans seeded successfully")
         }
     })
 }
@@ -82,5 +83,85 @@ export const usePlatformPricingDefaults = () => {
             return data.data;
         },
         enabled: !!platform_token,
+    })
+}
+
+/**
+ * Fetch all features from the manifest
+ */
+export const usePlatformFeatures = () => {
+    const { platform_token } = usePlatformStaffStore()
+
+    return useQuery({
+        queryKey: ["platform-features-manifest"],
+        queryFn: async () => {
+            const { data } = await platformClient.get("/platform/pricing/features/manifest", {
+                headers: { Authorization: `Bearer ${platform_token}` }
+            });
+            return data.data;
+        },
+        enabled: !!platform_token,
+    })
+}
+
+/**
+ * Save or update a feature in the manifest
+ */
+export const useSavePlatformFeature = () => {
+    const { platform_token } = usePlatformStaffStore()
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (featureData: any) => {
+            const { data } = await platformClient.post("/platform/pricing/features/save", featureData, {
+                headers: { Authorization: `Bearer ${platform_token}` }
+            });
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["platform-features-manifest"] })
+            queryClient.invalidateQueries({ queryKey: ["platform-features"] })
+            toast.success("Feature manifest updated")
+        }
+    })
+}
+/**
+ * Fetch billing dashboard stats
+ */
+export const usePlatformBillingStats = () => {
+    const { platform_token } = usePlatformStaffStore()
+
+    return useQuery({
+        queryKey: ["platform-billing-stats"],
+        queryFn: async () => {
+            const { data } = await platformClient.get("/platform/pricing/stats", {
+                headers: { Authorization: `Bearer ${platform_token}` }
+            });
+            return data.data;
+        },
+        enabled: !!platform_token,
+    })
+}
+
+/**
+ * Harvest legacy features and sync to manifest
+ */
+export const useHarvestFeatures = () => {
+    const { platform_token } = usePlatformStaffStore()
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (payload?: { category?: string, role?: string }) => {
+            const { data } = await platformClient.post("/platform/pricing/features/harvest", payload || {}, {
+                headers: { Authorization: `Bearer ${platform_token}` }
+            });
+            return data;
+        },
+        onSuccess: (res: any) => {
+            queryClient.invalidateQueries({ queryKey: ["platform-features-manifest"] })
+            queryClient.invalidateQueries({ queryKey: ["platform-features"] })
+            queryClient.invalidateQueries({ queryKey: ["platform-pricing-plans"] })
+            toast.success(res.message)
+        }
     })
 }

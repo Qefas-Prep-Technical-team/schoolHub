@@ -42,7 +42,7 @@ export default function AdminInsights({ stats, isLoading }: AdminInsightsProps) 
             trend: "Active"
         },
         {
-            label: "Active Subjects",
+            label: "Active Courses",
             value: stats?.subjects?.toLocaleString() || "0",
             icon: BookOpen,
             color: "text-emerald-600",
@@ -50,12 +50,12 @@ export default function AdminInsights({ stats, isLoading }: AdminInsightsProps) 
             trend: "Verified"
         },
         {
-            label: "Institution Health",
+            label: "School Status",
             value: "98%",
             icon: CalendarCheck,
             color: "text-rose-600",
             bg: "bg-rose-500/10",
-            trend: "Optimal"
+            trend: "Good"
         },
         {
             label: "Total Exams",
@@ -102,7 +102,7 @@ export default function AdminInsights({ stats, isLoading }: AdminInsightsProps) 
                                         : "bg-indigo-500/10 text-indigo-600"
                                 )}>{stat.trend}</span>
                             </div>
-                            <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight italic uppercase">{stat.value}</p>
+                            <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">{stat.value}</p>
                         </div>
                     </div>
                 </motion.div>

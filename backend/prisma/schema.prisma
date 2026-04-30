@@ -1145,9 +1145,44 @@ model SubscriptionPlan {
   schoolSubscriptions SchoolSubscription[]
   histories           SubscriptionHistory[]
   userSubscriptions   UserSubscription[]
+  featureAccess       PlanFeatureAccess[]
 
   @@unique([category, type])
   @@map("subscription_plans")
+}
+
+model FeatureManifest {
+  id            String               @id @default(uuid())
+  name          String
+  tag           String               @unique
+  description   String?
+  category      String?
+  studentEnabled Boolean             @default(true)
+  teacherEnabled Boolean             @default(true)
+  parentEnabled  Boolean             @default(true)
+  adminEnabled   Boolean             @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  planAccesses  PlanFeatureAccess[]
+
+  @@map("feature_manifest")
+}
+
+model PlanFeatureAccess {
+  id            String           @id @default(uuid())
+  planId        String
+  featureId     String
+  enabled       Boolean          @default(false)
+  limitValue    Int?
+  meta          Json?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  plan          SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  feature       FeatureManifest  @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, featureId])
+  @@map("plan_feature_access")
 }
 
 model SchoolSubscription {

@@ -84,10 +84,10 @@ export default function AcademicPerformanceChart() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce" />
-            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em]">Competency Metrics</span>
+            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em]">Academic Trends</span>
           </div>
           <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter">
-            Academic Trends
+            Student Performance
           </h3>
         </div>
         <div className="flex gap-2">
@@ -134,9 +134,9 @@ export default function AcademicPerformanceChart() {
                 >
                    {chartData.map((entry, index) => (
                       <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.value >= 70 ? '#10B981' : entry.value >= 40 ? '#6366F1' : '#F43F5E'} 
-                        fillOpacity={0.8}
+                         key={`cell-${index}`} 
+                         fill={entry.value >= 70 ? '#10B981' : entry.value >= 40 ? '#6366F1' : '#F43F5E'} 
+                         fillOpacity={0.8}
                       />
                    ))}
                 </Bar>
@@ -147,7 +147,8 @@ export default function AcademicPerformanceChart() {
             <div className="h-16 w-16 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-300">
                <BookOpen size={32} />
             </div>
-            <p className="font-bold text-sm tracking-tight">Awaiting assessment inputs for Trend Generation</p>
+            <p className="font-black text-sm tracking-tight">No data available currently</p>
+            <p className="font-bold text-xs">Awaiting assessment inputs for student performance generation</p>
           </div>
         )}
       </div>
@@ -157,7 +158,7 @@ export default function AcademicPerformanceChart() {
           <div className="p-4 rounded-[2rem] bg-white/50 dark:bg-slate-800/50 border border-white/20 dark:border-slate-800/50 backdrop-blur-md">
              <div className="flex items-center gap-2 mb-2">
                 <Zap size={14} className="text-emerald-500" />
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Best Performance</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Best Score</span>
              </div>
              <p className="text-lg font-black text-slate-900 dark:text-white leading-none mb-1">{stats.best.value}%</p>
              <p className="text-[10px] font-bold text-slate-500 capitalize truncate">{stats.best.fullLabel}</p>
@@ -165,10 +166,10 @@ export default function AcademicPerformanceChart() {
           <div className="p-4 rounded-[2rem] bg-white/50 dark:bg-slate-800/50 border border-white/20 dark:border-slate-800/50 backdrop-blur-md">
              <div className="flex items-center gap-2 mb-2">
                 <TrendingUp size={14} className="text-indigo-500" />
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Avg Standing</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Average Score</span>
              </div>
              <p className="text-lg font-black text-slate-900 dark:text-white leading-none mb-1">{stats.avg}%</p>
-             <p className="text-[10px] font-bold text-slate-500">Core Benchmark</p>
+             <p className="text-[10px] font-bold text-slate-500">School Standing</p>
           </div>
       </div>
 
@@ -178,9 +179,9 @@ export default function AcademicPerformanceChart() {
            <Lightbulb size={20} />
         </div>
         <div>
-          <p className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">Observation</p>
+          <p className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">Notice</p>
           <p className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed italic">
-            "{analysis?.insight || "Aggregate performance metrics are currently within expected institutional benchmarks."}"
+            "{analysis?.insight || "School performance is currently within expected ranges."}"
           </p>
         </div>
       </div>

@@ -30,4 +30,13 @@ export interface PricingTab {
   trialDays: number;
   isPopular: boolean;
   storage?: string;
+  featureAccess?: FeatureAccess[];
+}
+
+export interface FeatureAccess {
+  tag: string;
+  name: string;
+  enabled: boolean;
+  limitValue?: number;
+  meta?: any;
 }

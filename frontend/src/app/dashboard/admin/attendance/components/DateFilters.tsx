@@ -24,9 +24,9 @@ export default function DateFilters() {
                 <button
                     key={filter.id}
                     onClick={() => setSelectedFilter(filter.id)}
-                    className={`flex h-9 shrink-0 items-center justify-center px-4 rounded-xl text-sm font-medium transition-colors ${selectedFilter === filter.id
-                            ? 'bg-primary text-white shadow-sm'
-                            : 'bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark text-text-secondary-light dark:text-text-secondary-dark hover:text-primary dark:hover:text-primary'
+                    className={`flex h-11 shrink-0 items-center justify-center px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedFilter === filter.id
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                            : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-500/30'
                         }`}
                 >
                     {filter.label}
@@ -35,9 +35,9 @@ export default function DateFilters() {
 
             <button
                 onClick={() => console.log('Open date picker')}
-                className="flex h-9 shrink-0 items-center justify-center px-4 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark text-text-secondary-light dark:text-text-secondary-dark hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors ml-auto"
+                className="flex h-11 shrink-0 items-center justify-center px-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-500/30 text-[10px] font-black uppercase tracking-widest transition-all ml-auto"
             >
-                <CalendarRange className="mr-1 h-4 w-4" />
+                <CalendarRange className="mr-2 h-4 w-4" />
                 Custom Range
             </button>
         </div>

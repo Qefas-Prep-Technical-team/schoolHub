@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationService, Notification } from "../services/notificationService";
+import { notificationService, Notification, NotificationPriority } from "../services/notificationService";
 import { toast } from "react-toastify";
 
 export const notificationKeys = {
@@ -8,7 +8,7 @@ export const notificationKeys = {
   unreadCount: () => [...notificationKeys.all, "unreadCount"] as const,
 };
 
-export const useNotifications = (options?: { limit?: number; offset?: number; isRead?: boolean }) => {
+export const useNotifications = (options?: { limit?: number; offset?: number; isRead?: boolean; priority?: NotificationPriority }) => {
   return useQuery({
     queryKey: notificationKeys.list(options),
     queryFn: () => notificationService.getNotifications(options),

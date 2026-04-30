@@ -1,21 +1,43 @@
-import { School, GraduationCap, Users, UserMinus, TrendingUp, TrendingDown } from 'lucide-react';
+import { School, GraduationCap, Users, UserMinus } from 'lucide-react';
 import KPICard from './ui/KPICard';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default function KPICards() {
-    const stats = [
+interface KPICardsProps {
+    stats?: {
+        students: number;
+        teachers: number;
+        classes: number;
+        exams: number;
+        subjects: number;
+    };
+    isLoading?: boolean;
+}
+
+export default function KPICards({ stats, isLoading }: KPICardsProps) {
+    if (isLoading) {
+        return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-48 rounded-[2.5rem] bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                ))}
+            </div>
+        );
+    }
+
+    const cards = [
         {
             id: 'student-presence',
             title: 'Student Presence',
             value: '94%',
             icon: School,
-            iconColor: 'text-green-600 dark:text-green-400',
-            iconBg: 'bg-green-100 dark:bg-green-900/30',
+            iconColor: 'text-indigo-600 dark:text-indigo-400',
+            iconBg: 'bg-indigo-500/10',
             trend: { value: '+2.1%', isPositive: true },
             progress: 94,
-            progressColor: 'bg-green-500',
+            progressColor: 'bg-indigo-500',
             showProgress: true,
             link: {
-                label: 'View Details',
+                label: 'View Class Analytics',
                 href: '#',
             },
         },
@@ -24,51 +46,51 @@ export default function KPICards() {
             title: 'Teacher Presence',
             value: '88%',
             icon: GraduationCap,
-            iconColor: 'text-orange-600 dark:text-orange-400',
-            iconBg: 'bg-orange-100 dark:bg-orange-900/30',
+            iconColor: 'text-emerald-600 dark:text-emerald-400',
+            iconBg: 'bg-emerald-500/10',
             trend: { value: '-5.4%', isPositive: false },
             progress: 88,
-            progressColor: 'bg-orange-500',
+            progressColor: 'bg-emerald-500',
             showProgress: true,
             warning: true,
             link: {
-                label: 'Investigate',
+                label: 'Investigate Faculty',
                 href: '#',
             },
         },
         {
             id: 'student-absentees',
-            title: 'Student Absentees',
-            value: '42',
-            subtitle: 'Total',
+            title: 'Daily Absentees',
+            value: stats ? Math.round(stats.students * 0.06).toString() : '42',
+            subtitle: 'Students Expected',
             icon: Users,
-            iconColor: 'text-primary',
-            iconBg: 'bg-blue-50 dark:bg-blue-900/30',
+            iconColor: 'text-amber-600 dark:text-amber-400',
+            iconBg: 'bg-amber-500/10',
             showProgress: false,
             link: {
-                label: 'View List',
+                label: 'Export List',
                 href: '#',
             },
         },
         {
             id: 'teacher-absentees',
-            title: 'Teacher Absentees',
-            value: '6',
-            subtitle: 'Total',
+            title: 'Unexcused Absence',
+            value: stats ? Math.round(stats.teachers * 0.12).toString() : '6',
+            subtitle: 'Staff Personnel',
             icon: UserMinus,
-            iconColor: 'text-red-500',
-            iconBg: 'bg-red-50 dark:bg-red-900/30',
+            iconColor: 'text-rose-600 dark:text-rose-400',
+            iconBg: 'bg-rose-500/10',
             showProgress: false,
             link: {
-                label: 'View List',
+                label: 'View Disciplinary',
                 href: '#',
             },
         },
     ];
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((stat) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {cards.map((stat) => (
                 <KPICard key={stat.id} {...stat} />
             ))}
         </div>

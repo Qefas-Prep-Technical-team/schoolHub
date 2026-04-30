@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PricingService } from "./pricing.service";
+import { FeatureService } from "../../subscription/feature.service";
 import { createActivityLog } from "../logs/logs.controller";
 
 /**
@@ -74,5 +75,81 @@ export const seedPlans = async (req: Request, res: Response) => {
         return res.status(200).json({ success: true, ...result });
     } catch (error) {
         return res.status(500).json({ success: false, message: "Seeding failed" });
+    }
+};
+
+/**
+ * Console: List all features from manifest
+ */
+export const getFeatures = async (req: Request, res: Response) => {
+    try {
+        let features = await FeatureService.listFeatures();
+        
+        // Fallback: If Manifest is empty, pull from legacy to prevent blank registry
+        if (features.length === 0) {
+            const legacyFeatures = await (prisma as any).platformFeature?.findMany({
+                orderBy: { name: 'asc' }
+            }).catch(() => []);
+            
+            if (legacyFeatures && legacyFeatures.length > 0) {
+                // Map legacy to manifest format
+                features = legacyFeatures.map((f: any) => ({
+                    ...f,
+                    tag: f.featureKey,
+                    isLegacy: true
+                }));
+            }
+        }
+
+        return res.status(200).json({ success: true, data: features });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to get features" });
+    }
+};
+
+/**
+ * Console: Create or update a feature
+ */
+export const saveFeature = async (req: Request, res: Response) => {
+    try {
+        const feature = await FeatureService.saveFeature(req.body);
+        return res.status(200).json({ success: true, data: feature });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to save feature" });
+    }
+};
+
+/**
+ * Console: Harvest and sync legacy features to manifest
+ */
+export const harvestFeatures = async (req: Request, res: Response) => {
+    try {
+        const result = await PricingService.harvestLegacyFeatures();
+        return res.status(200).json({ success: true, ...result });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Harvesting failed" });
+    }
+};
+
+/**
+ * Console: Delete a feature
+ */
+export const deleteFeature = async (req: Request, res: Response) => {
+    try {
+        await FeatureService.deleteFeature(req.params.id);
+        return res.status(200).json({ success: true, message: "Feature deleted" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to delete feature" });
+    }
+};
+/**
+ * Console: Get dashboard stats
+ */
+export const getStats = async (req: Request, res: Response) => {
+    try {
+        const stats = await PricingService.getBillingStats();
+        return res.status(200).json({ success: true, data: stats });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to get stats" });
     }
 };

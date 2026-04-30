@@ -18,7 +18,7 @@ interface EachPriceCardProps extends PricingTab {
 
 const EachPriceCard: FC<EachPriceCardProps> = ({
     name, description, pricing, type, trialDays, features, hasTrial,
-    isPopular, category, index = 0, storage
+    isPopular, category, index = 0, storage, featureAccess
 }) => {
     const { billingType } = useBillingStore();
     const { user, isAuthenticated } = useAuthStore();
@@ -190,7 +190,7 @@ const EachPriceCard: FC<EachPriceCardProps> = ({
                     </div>
                 )}
 
-                {/* Features */}
+                {/* Features (Marketing Labels Only) */}
                 <ul className="space-y-3 flex-grow">
                     {features?.map((feature) => (
                         <li key={feature} className="flex items-start gap-3">
@@ -202,7 +202,7 @@ const EachPriceCard: FC<EachPriceCardProps> = ({
                                     : 'text-slate-400 dark:text-slate-500'
                                 }`}
                             />
-                            <span className="text-slate-600 dark:text-slate-300 text-sm leading-snug">
+                            <span className="text-slate-600 dark:text-slate-300 text-sm font-medium leading-snug">
                                 {feature}
                             </span>
                         </li>

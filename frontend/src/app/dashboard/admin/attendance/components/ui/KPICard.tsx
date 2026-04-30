@@ -32,80 +32,82 @@ export default function KPICard({
     iconBg,
     trend,
     progress = 0,
-    progressColor = 'bg-green-500',
+    progressColor = 'bg-indigo-500',
     showProgress,
     warning = false,
     link,
 }: KPICardProps) {
+    // Map traditional colors to console style classes if needed, 
+    // but here we will mostly rely on the passed iconColor for the icon itself.
+    
     return (
         <div className={cn(
-            'flex flex-col gap-3 rounded-xl p-5 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm',
-            warning && 'border-l-4 border-l-orange-500 relative overflow-hidden'
+            "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all shadow-sm relative overflow-hidden group",
+            warning && "ring-1 ring-orange-500/20"
         )}>
-            {/* Warning Decoration */}
-            {warning && (
-                <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
-                    <Icon className="text-[80px]" />
-                </div>
-            )}
-
-            {/* Header */}
-            <div className="flex justify-between items-start z-10">
-                <p className="text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium">
-                    {title}
-                </p>
-                <span className={`flex items-center justify-center size-8 rounded-full ${iconBg} ${iconColor}`}>
-                    <Icon className="h-5 w-5" />
-                </span>
+            {/* Background Decorative Icon */}
+            <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all pointer-events-none">
+                <Icon size={100} className="text-slate-500" />
             </div>
 
-            {/* Value & Trend */}
-            <div className="flex items-baseline gap-2 z-10">
-                <h3 className="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">
-                    {value}
-                </h3>
-                {subtitle && (
-                    <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark font-normal">
-                        {subtitle}
-                    </span>
-                )}
-                {trend && (
-                    <span className={cn(
-                        'text-xs font-medium px-1.5 py-0.5 rounded flex items-center',
-                        trend.isPositive
-                            ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
-                            : 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20'
-                    )}>
-                        {trend.isPositive ? (
-                            <TrendingUp className="h-3 w-3 mr-0.5" />
-                        ) : (
-                            <TrendingDown className="h-3 w-3 mr-0.5" />
+            <div className="relative z-10 space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", iconBg)}>
+                        <Icon size={20} className={iconColor} />
+                    </div>
+                    {trend && (
+                        <div className={cn(
+                            "flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-tighter",
+                            trend.isPositive 
+                                ? "bg-emerald-500/10 text-emerald-600" 
+                                : "bg-red-500/10 text-red-600"
+                        )}>
+                            {trend.isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                            {trend.value}
+                        </div>
+                    )}
+                </div>
+
+                <div>
+                    <div className="flex items-baseline gap-2">
+                        <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                            {value}
+                        </h3>
+                        {subtitle && (
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                {subtitle}
+                            </span>
                         )}
-                        {trend.value}
-                    </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.15em] mt-1">
+                        {title}
+                    </p>
+                </div>
+
+                {showProgress && (
+                    <div className="space-y-1.5">
+                        <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div 
+                                className={cn("h-full transition-all duration-1000", progressColor)}
+                                style={{ width: `${progress}%` }}
+                            ></div>
+                        </div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                            {progress}% OF CAPACITY
+                        </p>
+                    </div>
+                )}
+
+                {link && (
+                    <Link 
+                        href={link.href}
+                        className="flex items-center gap-2 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:gap-3 transition-all pt-2"
+                    >
+                        {link.label}
+                        <ArrowRight size={12} />
+                    </Link>
                 )}
             </div>
-
-            {/* Progress Bar */}
-            {showProgress && (
-                <div className="w-full bg-border-light dark:bg-border-dark rounded-full h-1.5 mt-auto z-10">
-                    <div
-                        className={cn('h-1.5 rounded-full transition-all duration-500', progressColor)}
-                        style={{ width: `${progress}%` }}
-                    />
-                </div>
-            )}
-
-            {/* Link */}
-            {link && (
-                <Link
-                    href={link.href}
-                    className="text-xs font-bold text-primary hover:underline mt-auto flex items-center"
-                >
-                    {link.label}
-                    <ArrowRight className="ml-1 h-3 w-3" />
-                </Link>
-            )}
         </div>
     );
 }

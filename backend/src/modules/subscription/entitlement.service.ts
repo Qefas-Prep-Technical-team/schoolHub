@@ -85,25 +85,62 @@ export class EntitlementService {
     // 1. Check personal subscription first (Primary)
     const userSub = await prisma.userSubscription.findUnique({
       where: { userId },
-      include: { subscriptionPlan: true }
+      include: { 
+        subscriptionPlan: {
+          include: {
+            featureAccess: {
+              include: { feature: true }
+            }
+          }
+        } 
+      }
     });
 
-    if (userSub?.status === SubscriptionStatus.ACTIVE && userSub.subscriptionPlan.features.includes(feature)) {
-      return true;
+    if (userSub?.status === SubscriptionStatus.ACTIVE) {
+      // Check legacy array
+      if (userSub.subscriptionPlan.features.includes(feature)) return true;
+      
+      // Check new relational system
+      const hasAccess = userSub.subscriptionPlan.featureAccess.some(
+        fa => fa.enabled && fa.feature.tag === feature
+      );
+      if (hasAccess) return true;
     }
 
     // 2. Check school subscription if schoolId is provided (Secondary)
     if (schoolId) {
       const schoolSub = await prisma.schoolSubscription.findUnique({
         where: { schoolId },
-        include: { subscriptionPlan: true }
+        include: { 
+          subscriptionPlan: {
+            include: {
+              featureAccess: {
+                include: { feature: true }
+              }
+            }
+          }
+        }
       });
 
-      if (schoolSub?.status === SubscriptionStatus.ACTIVE && schoolSub.subscriptionPlan.features.includes(feature)) {
-        return true;
+      if (schoolSub?.status === SubscriptionStatus.ACTIVE) {
+        // Check legacy array
+        if (schoolSub.subscriptionPlan.features.includes(feature)) return true;
+        
+        // Check new relational system
+        const hasAccess = schoolSub.subscriptionPlan.featureAccess.some(
+          fa => fa.enabled && fa.feature.tag === feature
+        );
+        if (hasAccess) return true;
       }
     }
 
     return false;
+  }
+
+  /**
+   * Secure server-side helper for quick feature access verification
+   */
+  static async hasFeatureAccess(userId: string, featureTag: string, schoolId?: string): Promise<boolean> {
+    return await this.validateFeatureAccess({ userId, feature: featureTag, schoolId });
   }
 }

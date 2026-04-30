@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
 } from 'recharts';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Activity, Zap } from 'lucide-react';
+import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const data = [
     { day: 'Mon', students: 96, teachers: 92 },
@@ -23,133 +24,156 @@ const data = [
     { day: 'Today', students: 94, teachers: 88 },
 ];
 
-export default function AttendanceChart() {
+interface AttendanceChartProps {
+    stats?: {
+        students: number;
+        teachers: number;
+        classes: number;
+        exams: number;
+        subjects: number;
+    };
+    isLoading?: boolean;
+}
+
+export default function AttendanceChart({ stats, isLoading }: AttendanceChartProps) {
     const [activeLine, setActiveLine] = useState<'students' | 'teachers' | 'both'>('both');
 
+    if (isLoading) {
+        return (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm h-full min-h-[500px]">
+                <Skeleton className="h-full w-full rounded-3xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+            </div>
+        );
+    }
+
     return (
-        <div className="lg:col-span-2 flex flex-col rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <div>
-                    <h3 className="text-text-primary-light dark:text-text-primary-dark text-lg font-bold leading-tight">
-                        Attendance Trends
-                    </h3>
-                    <p className="text-text-secondary-light dark:text-text-secondary-dark text-sm mt-1">
-                        Comparing Student vs Teacher presence over last 7 days
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm space-y-8 h-full flex flex-col">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <Activity className="h-5 w-5 text-indigo-500" />
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">
+                            Presence Velocity
+                        </h3>
+                    </div>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1">
+                        Comparative 7-day school-wide data
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
                     <button
-                        onClick={() => setActiveLine(activeLine === 'students' ? 'both' : 'students')}
-                        className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-colors ${activeLine === 'students' || activeLine === 'both'
-                                ? 'bg-primary/10 border-primary text-primary'
-                                : 'bg-background-light dark:bg-background-dark border-border-light dark:border-border-dark text-text-secondary-light dark:text-text-secondary-dark'
-                            }`}
+                        onClick={() => setActiveLine('students')}
+                        className={cn(
+                            "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                            activeLine === 'students' ? "bg-white dark:bg-slate-900 shadow-sm text-indigo-600" : "text-slate-400 hover:text-slate-600"
+                        )}
                     >
-                        <div className="size-2 rounded-full bg-primary" />
-                        <span className="text-xs font-medium">Students</span>
+                        Students
                     </button>
-
                     <button
-                        onClick={() => setActiveLine(activeLine === 'teachers' ? 'both' : 'teachers')}
-                        className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-colors ${activeLine === 'teachers' || activeLine === 'both'
-                                ? 'bg-orange-500/10 border-orange-500 text-orange-500'
-                                : 'bg-background-light dark:bg-background-dark border-border-light dark:border-border-dark text-text-secondary-light dark:text-text-secondary-dark'
-                            }`}
+                        onClick={() => setActiveLine('teachers')}
+                        className={cn(
+                            "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                            activeLine === 'teachers' ? "bg-white dark:bg-slate-900 shadow-sm text-emerald-600" : "text-slate-400 hover:text-slate-600"
+                        )}
                     >
-                        <div className="size-2 rounded-full bg-orange-400" />
-                        <span className="text-xs font-medium">Teachers</span>
+                        Teachers
+                    </button>
+                    <button
+                        onClick={() => setActiveLine('both')}
+                        className={cn(
+                            "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                            activeLine === 'both' ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-600"
+                        )}
+                    >
+                        Compare
                     </button>
                 </div>
             </div>
 
-            <div className="relative w-full h-[280px]">
+            <div className="flex-1 min-h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e8ebf3" vertical={false} />
-                        <XAxis
-                            dataKey="day"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#64748B', fontSize: 12 }}
+                    <AreaChart data={data}>
+                        <defs>
+                            <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1}/>
+                                <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorTeachers" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
+                        <XAxis 
+                            dataKey="day" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+                            dy={10}
                         />
-                        <YAxis
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#64748B', fontSize: 12 }}
-                            domain={[60, 100]}
-                            tickFormatter={(value) => `${value}%`}
+                        <YAxis 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+                            domain={[0, 100]}
+                            tickFormatter={(v) => `${v}%`}
                         />
-                        <Tooltip
-                            formatter={(value) => [`${value}%`, 'Attendance']}
-                            labelFormatter={(label) => `Day: ${label}`}
-                            contentStyle={{
-                                backgroundColor: 'white',
-                                border: '1px solid #E2E8F0',
-                                borderRadius: '0.5rem',
-                                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                        <Tooltip 
+                            contentStyle={{ 
+                                borderRadius: '1.5rem', 
+                                border: 'none', 
+                                boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                                padding: '1rem',
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                backdropFilter: 'blur(8px)',
+                                color: '#fff'
                             }}
+                            itemStyle={{ color: '#fff' }}
                         />
-                        <Legend />
-
-                        {/* Students Line */}
+                        
                         {(activeLine === 'students' || activeLine === 'both') && (
-                            <Line
-                                type="monotone"
-                                dataKey="students"
-                                stroke="#3670e2"
-                                strokeWidth={3}
-                                dot={{ r: 4, strokeWidth: 2, fill: 'white' }}
-                                activeDot={{ r: 6 }}
-                                name="Students"
+                            <Area 
+                                type="monotone" 
+                                dataKey="students" 
+                                stroke="#4f46e5" 
+                                strokeWidth={4}
+                                fillOpacity={1} 
+                                fill="url(#colorStudents)" 
+                                animationDuration={1500}
                             />
                         )}
-
-                        {/* Teachers Line */}
                         {(activeLine === 'teachers' || activeLine === 'both') && (
-                            <Line
-                                type="monotone"
-                                dataKey="teachers"
-                                stroke="#fb923c"
-                                strokeWidth={3}
-                                strokeDasharray="6 4"
-                                dot={{ r: 4, strokeWidth: 2, fill: 'white' }}
-                                activeDot={{ r: 6 }}
-                                name="Teachers"
+                            <Area 
+                                type="monotone" 
+                                dataKey="teachers" 
+                                stroke="#10b981" 
+                                strokeWidth={4}
+                                fillOpacity={1} 
+                                fill="url(#colorTeachers)" 
+                                animationDuration={1500}
                             />
                         )}
-                    </LineChart>
+                    </AreaChart>
                 </ResponsiveContainer>
             </div>
 
-            {/* Summary */}
-            <div className="flex justify-between mt-4 px-2">
-                {data.map((item, index) => (
-                    <span
-                        key={index}
-                        className={`text-xs ${item.day === 'Today'
-                                ? 'font-bold text-text-primary-light dark:text-text-primary-dark'
-                                : 'text-text-secondary-light dark:text-text-secondary-dark'
-                            }`}
-                    >
-                        {item.day}
-                    </span>
-                ))}
-            </div>
-
-            {/* Insight */}
-            <div className="mt-6 pt-4 border-t border-border-light dark:border-border-dark">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                        <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                            Student attendance improved by 2.1% this week
+            <div className="flex flex-col sm:flex-row items-center justify-between p-6 bg-slate-50 dark:bg-slate-950 rounded-[2rem] border border-slate-100 dark:border-slate-800 gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                        <TrendingUp size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight italic uppercase">Institutional Growth</p>
+                        <p className="text-xs text-slate-500 font-bold leading-relaxed">
+                            {stats ? `Presence metrics show positive stability across ${stats.classes} active classes.` : "Student attendance improved by 2.1% this week compared to last month."}
                         </p>
                     </div>
-                    <button className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-                        View Detailed Report
-                    </button>
                 </div>
+                <button className="h-12 px-8 rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 whitespace-nowrap">
+                    Download Raw Data
+                </button>
             </div>
         </div>
     );

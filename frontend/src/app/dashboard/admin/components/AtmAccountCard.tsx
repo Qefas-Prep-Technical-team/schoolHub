@@ -26,8 +26,8 @@ export function AtmAccountCard({ account, onRefresh, onDelete }: AtmAccountCardP
 
     return (
         <Card className={cn(
-            "relative w-full max-w-[380px] h-[220px] rounded-[2rem] overflow-hidden border-none transition-all hover:scale-[1.02] shadow-2xl",
-            isSuccess ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-blue-500/10" : 
+            "relative w-full max-w-[400px] h-[240px] rounded-[2.5rem] overflow-hidden border-none transition-all hover:scale-[1.02] shadow-2xl",
+            isSuccess ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-indigo-500/10" : 
             isPending ? "bg-gradient-to-br from-amber-900/40 via-slate-900 to-slate-900 border border-amber-500/20" :
             "bg-gradient-to-br from-red-950/40 via-slate-900 to-slate-900 border border-red-500/20"
         )}>
@@ -39,71 +39,49 @@ export function AtmAccountCard({ account, onRefresh, onDelete }: AtmAccountCardP
                 <div className="flex justify-between items-start">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <Landmark className={cn("h-5 w-5", isSuccess ? "text-blue-400" : isPending ? "text-amber-400" : "text-red-400")} />
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                            <Landmark className={cn("h-5 w-5", isSuccess ? "text-indigo-400" : isPending ? "text-amber-400" : "text-red-400")} />
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                                 {account.bankName}
                             </p>
                         </div>
-                        <h3 className="text-lg font-black tracking-tight line-clamp-1">{account.accountName}</h3>
+                        <h3 className="text-xl font-black tracking-tighter italic line-clamp-1">{account.accountName}</h3>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                         {account.isDefault && (
-                            <Badge className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 rounded-lg text-[9px] font-black uppercase py-0.5">
-                                Primary
+                            <Badge className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 rounded-lg text-[9px] font-black uppercase py-0.5 tracking-widest">
+                                Primary Node
                             </Badge>
                         )}
-                        <div className="flex items-center gap-1">
-                            {onRefresh && (
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={(e) => { e.stopPropagation(); onRefresh(account.id); }}
-                                    className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all"
-                                >
-                                    <RefreshCw className="h-4 w-4" />
-                                </Button>
-                            )}
-                            {onDelete && !account.isDefault && (
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={(e) => { e.stopPropagation(); onDelete(account.id); }}
-                                    className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            )}
-                        </div>
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <div className="flex items-center gap-3 font-mono text-xl tracking-widest text-slate-300">
-                        <span className="opacity-40">••••</span>
-                        <span className="opacity-40">••••</span>
-                        <span>{account.accountNumber?.slice(-4) || "0000"}</span>
+                <div className="space-y-6">
+                    <div className="flex items-center gap-4 font-mono text-2xl tracking-[0.3em] text-white opacity-80">
+                        <span className="opacity-20 italic">••••</span>
+                        <span className="opacity-20 italic">••••</span>
+                        <span className="font-black italic">{account.accountNumber?.slice(-4) || "0000"}</span>
                     </div>
 
                     <div className="flex items-center justify-between mt-4">
                         <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Total Settled</p>
-                            <p className="text-xl font-black">₦{account.totalSettled.toLocaleString()}</p>
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-0.5">Total Settled</p>
+                            <p className="text-2xl font-black italic tracking-tighter">₦{account.totalSettled.toLocaleString()}</p>
                         </div>
                         <div className="flex flex-col items-end gap-1">
                             {isSuccess ? (
-                                <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20">
+                                <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-4 py-1.5 rounded-full border border-emerald-500/20 shadow-lg shadow-emerald-500/10">
                                     <CheckCircle2 className="h-3 w-3" />
-                                    <span className="text-[10px] font-black uppercase">Verified</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest">Verified</span>
                                 </div>
                             ) : isPending ? (
-                                <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-400 px-3 py-1 rounded-full border border-amber-500/20">
+                                <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-400 px-4 py-1.5 rounded-full border border-amber-500/20 shadow-lg shadow-amber-500/10">
                                     <Clock className="h-3 w-3" />
-                                    <span className="text-[10px] font-black uppercase">Pending</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest">Pending</span>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-1.5 bg-red-500/10 text-red-400 px-3 py-1 rounded-full border border-red-500/20">
+                                <div className="flex items-center gap-1.5 bg-red-500/10 text-red-400 px-4 py-1.5 rounded-full border border-red-500/20 shadow-lg shadow-red-500/10">
                                     <AlertCircle className="h-3 w-3" />
-                                    <span className="text-[10px] font-black uppercase">Failed</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest">Failed</span>
                                 </div>
                             )}
                         </div>

@@ -21,11 +21,12 @@ export interface Notification {
 
 export const notificationService = {
   // Get all notifications for the current user
-  getNotifications: async (options?: { limit?: number; offset?: number; isRead?: boolean }) => {
+  getNotifications: async (options?: { limit?: number; offset?: number; isRead?: boolean; priority?: NotificationPriority }) => {
     const params = new URLSearchParams();
     if (options?.limit) params.append('limit', options.limit.toString());
     if (options?.offset) params.append('offset', options.offset.toString());
     if (options?.isRead !== undefined) params.append('isRead', options.isRead.toString());
+    if (options?.priority) params.append('priority', options.priority);
 
     const response = await apiClient.get<Notification[]>(`/notifications?${params.toString()}`);
     const data = (response.data as any).data || [];

@@ -23,7 +23,7 @@ export default function AdminHero({ schoolName }: AdminHeroProps) {
                 <div className="space-y-6">
                     <div className="flex flex-wrap items-center gap-3">
                         <Badge className="bg-gradient-to-r from-indigo-500/10 to-blue-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 rounded-full px-5 py-1.5 text-[11px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md">
-                            Institutional Command Center
+                            School Management Dashboard
                         </Badge>
                         <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
                             <span className="relative flex h-2 w-2">
@@ -31,27 +31,27 @@ export default function AdminHero({ schoolName }: AdminHeroProps) {
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                             </span>
                             <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                                System Status: Optimal
+                                System Status: Online
                             </span>
                         </div>
                     </div>
                     
                     <div className="flex flex-col gap-1">
-                        <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">
-                            Welcome to the <span className="text-indigo-600">Hub,</span>
+                        <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">
+                            Welcome to the <span className="text-indigo-600">Dashboard,</span>
                         </h1>
-                        <h2 className="text-xl md:text-2xl font-bold text-slate-500 dark:text-slate-400">
+                        <h2 className="text-xl md:text-2xl font-black text-slate-500 dark:text-slate-400 tracking-tighter">
                             {schoolName}
                         </h2>
                     </div>
                     
                     <div className="flex items-center gap-4">
                         <button className="bg-slate-900 text-white dark:bg-white dark:text-slate-900 h-12 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl">
-                            Configuration <ChevronRight size={14} />
+                            Dashboard Settings <ChevronRight size={14} />
                         </button>
                         <div className="flex items-center gap-2 text-slate-400">
                              <ShieldCheck size={18} className="text-indigo-500" />
-                             <span className="text-[10px] font-black uppercase tracking-widest">Encrypted Session</span>
+                             <span className="text-[10px] font-black uppercase tracking-widest">Secure Session</span>
                         </div>
                     </div>
                 </div>
@@ -62,8 +62,8 @@ export default function AdminHero({ schoolName }: AdminHeroProps) {
                             <LayoutDashboard size={24} />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Environment</p>
-                            <p className="font-black text-slate-900 dark:text-white whitespace-nowrap uppercase italic">Production 2.0</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">System Mode</p>
+                            <p className="font-black text-slate-900 dark:text-white whitespace-nowrap uppercase italic">Live Status</p>
                         </div>
                     </div>
                 </div>

@@ -112,54 +112,55 @@ export default function AdminBillingPage() {
     };
 
     return (
-        <div className="space-y-8 pb-12">
+        <div className="space-y-8 pb-20 max-w-[1600px] mx-auto">
             <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="flex flex-col md:flex-row md:items-center justify-between gap-6"
             >
                 <div className="space-y-1">
-                    <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                        Billing & Subscription
+                    <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
+                        Protocol & Tier
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium">
-                        Manage your school's plan and billing information.
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">
+                        Manage institutional subscription status and liquidity parameters
                     </p>
                 </div>
                 
                 <div className="flex items-center gap-3">
                     <Button 
                         variant="outline" 
-                        className="rounded-2xl font-bold border-2 h-12 px-6"
+                        className="rounded-2xl font-black text-[10px] uppercase tracking-widest bg-white dark:bg-slate-900 border-2 h-14 px-8 shadow-sm"
                         onClick={() => router.push('/dashboard/admin/billing/upgrade')}
                     >
-                        Change Plan
+                        Switch Protocol
                     </Button>
-                    <Button className="rounded-2xl font-bold bg-blue-600 hover:bg-blue-700 h-12 px-6 shadow-lg shadow-blue-600/20">
-                        Manage Payment Methods
+                    <Button className="rounded-2xl font-black text-[10px] uppercase tracking-widest bg-indigo-600 hover:bg-indigo-500 text-white h-14 px-8 shadow-xl shadow-indigo-600/20">
+                        Manage Settlement Methods
                     </Button>
                 </div>
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2 rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden bg-white dark:bg-slate-900/50">
-                    <CardHeader className="bg-slate-900 dark:bg-slate-800 p-8 text-white relative overflow-hidden">
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl" />
+                <Card className="lg:col-span-2 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white dark:bg-slate-900 flex flex-col">
+                    <CardHeader className="bg-slate-900 dark:bg-black p-10 text-white relative overflow-hidden">
+                        <div className="absolute -top-10 -right-10 w-60 h-60 bg-indigo-500/20 rounded-full blur-[80px]" />
                         <div className="flex justify-between items-start relative z-10">
-                            <div className="space-y-2">
-                                <Badge className="bg-blue-500/20 text-blue-400 border-none px-3 py-1 font-black uppercase tracking-widest text-[10px]">
-                                    Current Plan
+                            <div className="space-y-4">
+                                <Badge className="bg-indigo-500/20 text-indigo-400 border-none px-4 py-1.5 font-black uppercase tracking-[0.2em] text-[10px]">
+                                    Current Protocol
                                 </Badge>
-                                <CardTitle className="text-4xl font-black capitalize flex items-center gap-3">
-                                    {subscriptionInfo.plan}
-                                    <span className="text-xl opacity-60 font-medium">₦{subscriptionInfo.amount.toLocaleString()}</span>
-                                </CardTitle>
-                                <CardDescription className="text-slate-400 font-medium text-lg">
-                                    {subscriptionInfo.billingCycle === 'monthly' ? 'Billed Monthly' : 'Billed Yearly'}
-                                </CardDescription>
+                                <div className="space-y-1">
+                                    <CardTitle className="text-5xl font-black capitalize tracking-tighter italic">
+                                        {subscriptionInfo.plan}
+                                    </CardTitle>
+                                    <p className="text-2xl font-black text-indigo-400 tracking-tighter">
+                                        ₦{subscriptionInfo.amount.toLocaleString()} <span className="text-sm opacity-60 font-bold uppercase tracking-widest">/ {subscriptionInfo.billingCycle}</span>
+                                    </p>
+                                </div>
                             </div>
-                            <div className="bg-white/10 p-4 rounded-3xl backdrop-blur-md">
-                                <ShieldCheck className="w-10 h-10 text-white" />
+                            <div className="h-16 w-16 bg-white/10 p-4 rounded-2xl backdrop-blur-md flex items-center justify-center border border-white/10">
+                                <ShieldCheck className="w-8 h-8 text-white" />
                             </div>
                         </div>
                     </CardHeader>
@@ -200,24 +201,27 @@ export default function AdminBillingPage() {
                 </Card>
 
                 <div className="space-y-6">
-                    <Card className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden bg-gradient-to-br from-blue-600 to-blue-800 text-white p-8">
-                        <div className="mb-6 flex justify-between items-start">
-                            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                                <Zap className="w-6 h-6" />
+                    <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-gradient-to-br from-indigo-600 to-indigo-900 text-white p-10 relative group">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform pointer-events-none">
+                            <Zap size={100} />
+                        </div>
+                        <div className="mb-10 flex justify-between items-start relative z-10">
+                            <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/10 backdrop-blur-md">
+                                <Zap className="w-7 h-7 text-white" />
                             </div>
-                            <Button size="sm" className="bg-white/20 hover:bg-white/30 border-none rounded-xl text-xs font-black uppercase tracking-tight">
+                            <Button size="sm" className="bg-white/10 hover:bg-white/20 border-none rounded-xl text-[9px] font-black uppercase tracking-widest">
                                 Details
                             </Button>
                         </div>
-                        <h4 className="text-sm font-black uppercase tracking-widest opacity-80 mb-1">Next Payment</h4>
-                        <div className="flex items-baseline gap-2 mb-4">
-                            <span className="text-4xl font-black tracking-tighter">₦{subscriptionInfo.amount.toLocaleString()}</span>
-                            <span className="text-sm font-bold opacity-70">/ {subscriptionInfo.billingCycle}</span>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2">Next Liquidity Event</h4>
+                        <div className="flex items-baseline gap-2 mb-6 relative z-10">
+                            <span className="text-5xl font-black tracking-tighter italic">₦{subscriptionInfo.amount.toLocaleString()}</span>
+                            <span className="text-xs font-bold opacity-70 uppercase tracking-widest">/ {subscriptionInfo.billingCycle}</span>
                         </div>
-                        <p className="text-sm opacity-80 font-medium leading-relaxed">
+                        <p className="text-xs opacity-70 font-medium leading-relaxed relative z-10">
                             {subscriptionInfo.status === 'ACTIVE' 
-                                ? "Your subscription will automatically renew. Make sure your payment method is up to date."
-                                : "Subscribe to a plan to continue enjoying Qefas Hub features after your trial."}
+                                ? "Automatic protocol renewal scheduled. Ensure settlement methods are valid."
+                                : "Initialize a subscription tier to continue accessing premium institutional conduits."}
                         </p>
                     </Card>
 
@@ -226,26 +230,28 @@ export default function AdminBillingPage() {
             </div>
 
             {analytics?.accounts && analytics.accounts.length > 0 && (
-                <div className="space-y-6 mt-12 bg-slate-50/50 dark:bg-slate-900/30 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
+                <div className="space-y-6 mt-12 bg-white dark:bg-slate-900/50 p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
                     <div className="flex items-center justify-between px-1">
-                        <div className="flex items-center gap-3">
-                            <Plus className="w-6 h-6 text-blue-500" />
-                            <div className="space-y-0.5">
-                                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Settlement Vault</h2>
-                                <p className="text-sm text-slate-500 font-medium tracking-tight">Active conduits for automatic fee disbursements.</p>
+                        <div className="flex items-center gap-4">
+                            <div className="h-14 w-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-500/20">
+                                <Landmark size={28} />
+                            </div>
+                            <div className="space-y-1">
+                                <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">Settlement Vault</h2>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Active conduits for automatic fee disbursements</p>
                             </div>
                         </div>
                         <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="font-black text-[10px] uppercase tracking-widest text-blue-600 hover:bg-blue-50 gap-2"
+                            className="font-black text-[10px] uppercase tracking-[0.2em] text-indigo-600 hover:bg-indigo-50 gap-2"
                             onClick={() => router.push("/dashboard/admin/finance/bank-setup")}
                         >
                             <Plus className="h-3 w-3" />
                             Manage Conduits
                         </Button>
                     </div>
-                    <div className="flex flex-nowrap overflow-x-auto gap-6 pb-4 scrollbar-hide snap-x mt-4">
+                    <div className="flex flex-nowrap overflow-x-auto gap-6 pb-4 no-scrollbar snap-x mt-6">
                         {analytics.accounts.map((acc: any) => (
                             <div key={acc.id} className="snap-center flex-shrink-0 w-full md:w-[380px]">
                                 <AtmAccountCard 
@@ -259,11 +265,16 @@ export default function AdminBillingPage() {
             )}
 
             <div className="space-y-6 mt-12">
-                <div className="flex items-center gap-3">
-                    <CreditCard className="w-6 h-6 text-blue-500" />
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                        Payment History
-                    </h2>
+                <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 border border-indigo-500/20">
+                        <CreditCard size={24} />
+                    </div>
+                    <div className="space-y-1">
+                        <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
+                            Liquidity Stream
+                        </h2>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Historical record of all successfully processed transitions</p>
+                    </div>
                 </div>
                 <TransactionHistory 
                     items={transactions} 
