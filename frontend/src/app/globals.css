@@ -130,8 +130,7 @@
   html, body {
     @apply bg-background text-foreground;
     scrollbar-gutter: stable;
-    width: 100vw !important;
-    overflow-x: hidden !important;
+    overflow-x: hidden;
     position: relative;
   }
 }
@@ -177,7 +176,7 @@ body[data-scroll-locked] {
     opacity: 0.05;
     z-index: 1;
     pointer-events: none;
-    background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     filter: contrast(150%) brightness(100%);
 }
 
@@ -211,8 +210,8 @@ body[data-scroll-locked] {
 }
 
 .premium-gradient {
-    background: radial-gradient(circle at top right, rgba(30, 64, 175, 0.05), transparent 40%),
-                radial-gradient(circle at bottom left, rgba(217, 119, 6, 0.03), transparent 40%);
+    background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.05), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(37, 99, 235, 0.03), transparent 40%);
 }
 
 .iphone-frame {

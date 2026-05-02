@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
-import { useSchoolPerformanceAnalysis } from '@/lib/api/hooks/useSchool';
+import { useSchoolPerformanceAnalysis, useSchoolStats } from '@/lib/api/hooks/useSchool';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, TrendingUp, Filter, MoreHorizontal, Lightbulb, Zap } from 'lucide-react';
@@ -30,11 +30,12 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-export default function AcademicPerformanceChart() {
+export default function AcademicPerformanceChart({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
-  const { data: analysis, isLoading } = useSchoolPerformanceAnalysis(schoolId);
+  const { data: schoolStatsData } = useSchoolStats(schoolId);
+  const { data: analysis, isLoading } = useSchoolPerformanceAnalysis(schoolId, schoolStatsData);
 
   const chartData = useMemo(() => {
     if (!analysis?.subjectBreakdown) return [];
@@ -72,29 +73,32 @@ export default function AcademicPerformanceChart() {
         "relative overflow-hidden group h-full",
         "bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl",
         "rounded-[3rem] border border-white/20 dark:border-slate-800/50",
-        "shadow-2xl shadow-slate-200/50 dark:shadow-none p-8 md:p-10",
-        "flex flex-col transition-all duration-500 hover:shadow-indigo-500/10"
+        "p-8 md:p-10 flex flex-col transition-all duration-500"
       )}
+      style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` } as any}
     >
       {/* Background Decor */}
-      <div className="absolute top-0 right-0 h-40 w-40 bg-indigo-500/5 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
+      <div 
+        className="absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700" 
+        style={{ backgroundColor: primaryColor }}
+      />
       
       {/* Header */}
       <div className="relative z-10 flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce" />
-            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em]">Academic Trends</span>
+            <div className="h-2 w-2 rounded-full animate-bounce" style={{ backgroundColor: primaryColor }} />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Academic Trends</span>
           </div>
           <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter">
             Student Performance
           </h3>
         </div>
         <div className="flex gap-2">
-           <button className="h-10 w-10 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-md flex items-center justify-center text-slate-500 hover:text-indigo-500 transition-colors">
+           <button className="h-10 w-10 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-md flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
               <Filter size={16} />
            </button>
-           <button className="h-10 w-10 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-md flex items-center justify-center text-slate-500 hover:text-indigo-500 transition-colors">
+           <button className="h-10 w-10 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-md flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
               <MoreHorizontal size={16} />
            </button>
         </div>
@@ -124,7 +128,7 @@ export default function AcademicPerformanceChart() {
                   dx={-5}
                   domain={[0, 100]}
                 />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: 12 }} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: `${primaryColor}10`, radius: 12 }} />
                 <Bar 
                   dataKey="value" 
                   radius={[12, 12, 4, 4]} 
@@ -135,7 +139,7 @@ export default function AcademicPerformanceChart() {
                    {chartData.map((entry, index) => (
                       <Cell 
                          key={`cell-${index}`} 
-                         fill={entry.value >= 70 ? '#10B981' : entry.value >= 40 ? '#6366F1' : '#F43F5E'} 
+                         fill={entry.value >= 70 ? '#10B981' : entry.value >= 40 ? primaryColor : '#F43F5E'} 
                          fillOpacity={0.8}
                       />
                    ))}
@@ -165,7 +169,7 @@ export default function AcademicPerformanceChart() {
           </div>
           <div className="p-4 rounded-[2rem] bg-white/50 dark:bg-slate-800/50 border border-white/20 dark:border-slate-800/50 backdrop-blur-md">
              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp size={14} className="text-indigo-500" />
+                <TrendingUp size={14} style={{ color: primaryColor }} />
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Average Score</span>
              </div>
              <p className="text-lg font-black text-slate-900 dark:text-white leading-none mb-1">{stats.avg}%</p>
@@ -174,12 +178,15 @@ export default function AcademicPerformanceChart() {
       </div>
 
       {/* Bottom Insight Section */}
-      <div className="p-6 rounded-[2.5rem] bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 border border-indigo-500/10 backdrop-blur-md flex items-start gap-4 transition-transform hover:scale-[1.02] duration-300">
-        <div className="h-10 w-10 shrink-0 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center text-indigo-500 shadow-sm">
+      <div 
+        className="p-6 rounded-[2.5rem] border backdrop-blur-md flex items-start gap-4 transition-transform hover:scale-[1.02] duration-300"
+        style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}15` }}
+      >
+        <div className="h-10 w-10 shrink-0 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm" style={{ color: primaryColor }}>
            <Lightbulb size={20} />
         </div>
         <div>
-          <p className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">Notice</p>
+          <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: primaryColor }}>Notice</p>
           <p className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed italic">
             "{analysis?.insight || "School performance is currently within expected ranges."}"
           </p>
@@ -188,3 +195,4 @@ export default function AcademicPerformanceChart() {
     </motion.div>
   );
 }
+

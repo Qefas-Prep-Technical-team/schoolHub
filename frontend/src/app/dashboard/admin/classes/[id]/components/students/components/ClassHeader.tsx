@@ -1,50 +1,56 @@
-import React from 'react';
-import { ClipboardList, MessageSquare } from 'lucide-react';
-import { ClassInfo } from './types';
+import React, { useState } from 'react';
+import { X } from 'lucide-react';
 
-interface ClassHeaderProps {
-  classInfo: ClassInfo;
-  onTakeAttendance?: () => void;
-  onMessageAll?: () => void;
+interface SubjectInputProps {
+  subjects: string[];
+  onSubjectsChange: (subjects: string[]) => void;
 }
 
-const ClassHeader: React.FC<ClassHeaderProps> = ({ 
-  classInfo, 
-  onTakeAttendance, 
-  onMessageAll 
-}) => {
+const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      e.preventDefault();
+      if (!subjects.includes(inputValue.trim())) {
+        onSubjectsChange([...subjects, inputValue.trim()]);
+      }
+      setInputValue('');
+    }
+  };
+
+  const handleRemoveSubject = (subjectToRemove: string) => {
+    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
+  };
+
   return (
-    <div className="sticky top-0 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm py-4 z-10">
-      <div className="flex flex-wrap justify-between items-center gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-gray-900 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">
-            {classInfo.name} – {classInfo.subject}
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-base font-normal leading-normal">
-            Code: {classInfo.code} | {classInfo.totalStudents} Students
-          </p>
-        </div>
-        
-        <div className="flex flex-1 sm:flex-none gap-3 flex-wrap justify-start">
+    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
+      {subjects.map((subject) => (
+        <span
+          key={subject}
+          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
+        >
+          {subject}
           <button
-            onClick={onTakeAttendance}
-            className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
+            onClick={() => handleRemoveSubject(subject)}
+            className="hover:text-primary/70"
+            aria-label={`Remove ${subject}`}
           >
-            <ClipboardList size={18} className="mr-2" />
-            <span className="truncate">Take Attendance</span>
+            <X size={12} />
           </button>
-          
-          <button
-            onClick={onMessageAll}
-            className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary/10 text-primary text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/20 transition-colors"
-          >
-            <MessageSquare size={18} className="mr-2" />
-            <span className="truncate">Message All Students</span>
-          </button>
-        </div>
-      </div>
+        </span>
+      ))}
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleAddSubject}
+        placeholder="Add subjects..."
+        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
+      />
     </div>
   );
 };
 
-export default ClassHeader;
+export default SubjectInput;
+

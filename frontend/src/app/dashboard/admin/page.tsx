@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
-import { useSchoolStats, useSchoolPerformanceAnalysis } from '@/lib/api/hooks/useSchool';
+import { useSchoolStats, useSchoolPerformanceAnalysis, useSchoolSettings } from '@/lib/api/hooks/useSchool';
 import { Sparkles, Building2, ShieldCheck, GraduationCap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,14 +37,16 @@ export default function AdminDashboard() {
   const schoolName = user?.schools?.[0]?.name || 'School Management System';
 
   const { data: stats, isLoading: statsLoading } = useSchoolStats(schoolId);
-  const { data: analysis, isLoading: analysisLoading } = useSchoolPerformanceAnalysis(schoolId);
+  const { data: analysis, isLoading: analysisLoading } = useSchoolPerformanceAnalysis(schoolId, stats);
+  const { data: settings } = useSchoolSettings(schoolId);
+  const primaryColor = settings?.themeColor || '#2563eb'; // Default to blue-600 if not set
 
   return (
     <div className="min-h-screen bg-transparent">
       <main className="max-w-[1600px] mx-auto space-y-10">
         
         {/* Institutional Identity Banner */}
-        <AdminHero schoolName={schoolName} />
+        <AdminHero schoolName={schoolName} primaryColor={primaryColor} />
 
         <AnimatePresence mode="wait">
           <motion.div
@@ -54,7 +56,7 @@ export default function AdminDashboard() {
             className="space-y-10"
           >
             {/* Telemetry Insights Grid */}
-            <AdminInsights stats={stats} isLoading={statsLoading} />
+            <AdminInsights stats={stats} isLoading={statsLoading} primaryColor={primaryColor} />
 
             {/* Main Operational Bento Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -62,39 +64,39 @@ export default function AdminDashboard() {
               {/* Primary Content Area (Left, 8 Cols) */}
               <div className="lg:col-span-8 space-y-8">
                 {/* Academic Trajectory Chart */}
-                <SchoolPerformance analysis={analysis} isLoading={analysisLoading} />
+                <SchoolPerformance analysis={analysis} isLoading={analysisLoading} primaryColor={primaryColor} />
 
                 {/* Sub-Metric Panels */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                  <AttendanceChart />
-                  <ExamStatus />
+                  <AttendanceChart primaryColor={primaryColor} />
+                  <ExamStatus primaryColor={primaryColor} />
                 </div>
                 
                 {/* Institutional Staff Insights */}
-                <StaffInsights />
+                <StaffInsights primaryColor={primaryColor} />
               </div>
 
               {/* Sidebar Context Layer (Right, 4 Cols) */}
               <div className="lg:col-span-4 space-y-8 flex flex-col">
                 {/* Usage Matrix Panel */}
-                <UsageLimitsCard />
+                <UsageLimitsCard primaryColor={primaryColor} />
 
                 {/* Quick Access Context */}
                 <div className="bg-slate-900 dark:bg-slate-100 rounded-[3rem] p-10 text-white dark:text-slate-900 shadow-2xl relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 dark:bg-slate-900/10 rounded-full blur-3xl -translate-y-20 translate-x-10 group-hover:scale-150 transition-transform duration-700" />
                   <div className="relative z-10 space-y-8">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-2xl font-black uppercase tracking-tighter italic">Administrative <span className="text-indigo-500">Pulse</span></h3>
-                        <Sparkles size={24} className="text-indigo-500 fill-indigo-500" />
+                        <h3 className="text-2xl font-black uppercase tracking-tighter italic">Administrative <span style={{ color: primaryColor }}>Pulse</span></h3>
+                        <Sparkles size={24} style={{ color: primaryColor, fill: primaryColor }} />
                     </div>
-                    <QuickActions />
+                    <QuickActions primaryColor={primaryColor} />
                   </div>
                 </div>
 
                 {/* System Alerts & Telemetry */}
                 <div className="space-y-6 flex-1">
-                   <AlertsPanel />
-                   <RecentActivity />
+                   <AlertsPanel primaryColor={primaryColor} />
+                   <RecentActivity primaryColor={primaryColor} />
                 </div>
               </div>
 
@@ -105,3 +107,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+

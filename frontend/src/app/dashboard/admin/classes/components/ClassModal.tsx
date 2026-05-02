@@ -390,3 +390,4 @@ const ClassModal: React.FC<ClassModalProps> = ({
 }
 
 export default ClassModal;
+

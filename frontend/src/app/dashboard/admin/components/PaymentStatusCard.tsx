@@ -103,3 +103,4 @@ export function PaymentStatusCard({ status, schoolId, onRefresh }: PaymentStatus
         </Card>
     )
 }
+

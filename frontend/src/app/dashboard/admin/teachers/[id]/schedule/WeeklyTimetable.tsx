@@ -1,4 +1,5 @@
 import ClassCard from './ClassCard'
+import AvailabilityIndicator from './AvailabilityIndicator'
 
 interface ClassSchedule {
   id: string
@@ -98,9 +99,47 @@ export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetab
                   />
                 )
               })}
+
+            {/* Special cases */}
+            {day === 'Tuesday' && (
+              <AvailabilityIndicator
+                message="Unavailable"
+                style={{ top: 314, height: 128 }}
+              />
+            )}
+
+            {day === 'Wednesday' && classes.some(cls => cls.hasConflict) && (
+              <>
+                {/* Conflicting class */}
+                {classes
+                  .filter(cls => cls.day === day && cls.hasConflict)
+                  .map((cls) => {
+                    const position = calculatePosition(cls.startTime, cls.duration)
+                    return (
+                      <ClassCard
+                        key={cls.id}
+                        course={cls.course}
+                        time={cls.time}
+                        room={cls.room}
+                        color={cls.color}
+                        hasConflict={true}
+                        style={{
+                          top: position.top,
+                          height: position.height,
+                          zIndex: 5,
+                          marginLeft: '12px',
+                          marginTop: '12px',
+                          opacity: 0.8
+                        }}
+                      />
+                    )
+                  })}
+              </>
+            )}
           </div>
         ))}
       </div>
     </div>
   )
 }
+

@@ -59,7 +59,7 @@ export default function AbsentStaffList({ summary, isLoading }: AbsentStaffListP
         switch (type) {
             case 'sick': return "bg-amber-500/10 text-amber-600";
             case 'unexcused': return "bg-rose-500/10 text-rose-600";
-            case 'personal': return "bg-indigo-500/10 text-indigo-600";
+            case 'personal': return "bg-primary/10 text-primary";
             case 'vacation': return "bg-emerald-500/10 text-emerald-600";
             case 'unassigned': return "bg-purple-500/10 text-purple-600";
             default: return "bg-slate-500/10 text-slate-600";
@@ -84,7 +84,7 @@ export default function AbsentStaffList({ summary, isLoading }: AbsentStaffListP
             <div className="flex items-center justify-between">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                        <UserX className="h-5 w-5 text-indigo-500" />
+                        <UserX className="h-5 w-5 text-primary" />
                         <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">
                             {summary?.unassignedCount ? 'Faculty Attention' : 'Absent Faculty'}
                         </h3>
@@ -93,7 +93,7 @@ export default function AbsentStaffList({ summary, isLoading }: AbsentStaffListP
                         {summary?.unassignedCount ? 'Staff unallocated to classes' : "Today's non-attendance"}
                     </p>
                 </div>
-                <Badge className="bg-indigo-500/10 text-indigo-600 border-none font-black text-[10px] uppercase px-3 py-1">
+                <Badge className="bg-primary/10 text-primary border-none font-black text-[10px] uppercase px-3 py-1">
                     {staff.length} Total
                 </Badge>
             </div>
@@ -137,3 +137,4 @@ export default function AbsentStaffList({ summary, isLoading }: AbsentStaffListP
         </div>
     );
 }
+

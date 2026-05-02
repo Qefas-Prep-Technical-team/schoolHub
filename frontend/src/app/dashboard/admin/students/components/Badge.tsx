@@ -13,3 +13,4 @@ export const Badge = ({ children, variant = "active" }: BadgeProps) => {
 
   return <span className={`${baseClasses} ${variants[variant]}`}>{children}</span>;
 };
+

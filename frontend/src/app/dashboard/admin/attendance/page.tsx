@@ -61,7 +61,7 @@ export default function AttendancePage() {
                         {showHistory ? "Hide History" : "View Analytics History"}
                     </Button>
                     <Button 
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white h-14 px-8 rounded-2xl font-bold shadow-xl shadow-indigo-600/20 gap-2"
+                        className="bg-primary hover:bg-primary text-white h-14 px-8 rounded-2xl font-bold shadow-xl shadow-primary/20 gap-2"
                     >
                         <DownloadIcon size={18} />
                         Generate Executive Report
@@ -93,3 +93,4 @@ export default function AttendancePage() {
         </div>
     )
 }
+

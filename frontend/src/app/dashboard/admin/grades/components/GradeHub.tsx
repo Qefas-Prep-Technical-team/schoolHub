@@ -57,20 +57,20 @@ export default function GradeHub({ grades, isLoading, schoolId }: GradeHubProps)
       {/* Header Actions */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white dark:bg-slate-900/40 p-6 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-md">
         <div className="relative group w-full md:max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={20} />
             <Input 
                 type="text" 
                 placeholder="Search candidates or subjects..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 h-12 bg-slate-50/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium"
+                className="w-full pl-12 h-12 bg-slate-50/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium"
             />
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
              <Button 
                 onClick={() => setIsOCRModalOpen(true)}
                 variant="outline" 
-                className="flex-1 md:flex-none rounded-xl h-12 px-6 font-bold border-indigo-200 dark:border-indigo-900/30 bg-indigo-50/50 dark:bg-indigo-500/5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition-all"
+                className="flex-1 md:flex-none rounded-xl h-12 px-6 font-bold border-primary dark:border-primary/30 bg-primary/5 dark:bg-primary/5 text-primary dark:text-primary hover:bg-primary transition-all"
               >
                 <Camera size={18} className="mr-2" /> AI Vision
              </Button>
@@ -83,7 +83,7 @@ export default function GradeHub({ grades, isLoading, schoolId }: GradeHubProps)
              </Button>
              <Button 
                 onClick={() => setIsEntryModalOpen(true)}
-                className="flex-1 md:flex-none rounded-xl h-12 px-8 font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all text-white"
+                className="flex-1 md:flex-none rounded-xl h-12 px-8 font-black uppercase tracking-widest bg-primary hover:bg-primary shadow-lg shadow-primary/20 active:scale-95 transition-all text-white"
               >
                 <Plus size={18} className="mr-2" /> Create Entry
              </Button>
@@ -92,7 +92,7 @@ export default function GradeHub({ grades, isLoading, schoolId }: GradeHubProps)
 
       {/* Bento Grid Analytics Summary (Placeholder for real aggregate data) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-indigo-800 text-white shadow-xl shadow-indigo-500/20 group relative overflow-hidden">
+          <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-primary to-primary text-white shadow-xl shadow-primary/20 group relative overflow-hidden">
                 <TrendingUp className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 transition-transform duration-700" size={160} />
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-2">Institutional Mean</p>
                 <h3 className="text-4xl font-black tracking-tighter mb-4">76.4%</h3>
@@ -146,7 +146,7 @@ export default function GradeHub({ grades, isLoading, schoolId }: GradeHubProps)
               {isLoading ? (
                 <tr><td colSpan={5} className="px-8 py-32 text-center">
                     <div className="flex flex-col items-center gap-4">
-                        <div className="h-10 w-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                        <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                         <span className="text-xs font-black uppercase tracking-widest text-slate-400">Compiling Grade Hub...</span>
                     </div>
                 </td></tr>
@@ -161,7 +161,7 @@ export default function GradeHub({ grades, isLoading, schoolId }: GradeHubProps)
                 <tr key={grade.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300">
                   <td className="px-8 py-7">
                     <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                        <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 shadow-inner group-hover:bg-primary group-hover:text-white transition-all duration-300">
                             <User size={24} />
                         </div>
                         <div>
@@ -173,7 +173,7 @@ export default function GradeHub({ grades, isLoading, schoolId }: GradeHubProps)
                   <td className="px-8 py-7">
                     <div className="space-y-1">
                         <p className="text-sm font-black text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                           <FileText size={14} className="text-indigo-500" /> {grade.subject}
+                           <FileText size={14} className="text-primary" /> {grade.subject}
                         </p>
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-3">
@@ -184,7 +184,7 @@ export default function GradeHub({ grades, isLoading, schoolId }: GradeHubProps)
                             {(grade.exam || grade.subjectPaper) && (
                               <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-50 dark:border-slate-800/50 mt-1">
                                 {grade.exam && (
-                                  <span className="text-[9px] font-black text-indigo-500/80 uppercase tracking-tight bg-indigo-50/50 dark:bg-indigo-500/5 px-2 py-0.5 rounded-md">
+                                  <span className="text-[9px] font-black text-primary/80 uppercase tracking-tight bg-primary/5 dark:bg-primary/5 px-2 py-0.5 rounded-md">
                                     {grade.exam.title}
                                   </span>
                                 )}
@@ -205,7 +205,7 @@ export default function GradeHub({ grades, isLoading, schoolId }: GradeHubProps)
                         </span>
                         <div className="w-16 h-1 rounded-full bg-slate-100 dark:bg-slate-800 mt-2 overflow-hidden">
                            <div 
-                              className="h-full bg-indigo-500 rounded-full" 
+                              className="h-full bg-primary rounded-full" 
                               style={{ width: `${(grade.score / grade.maxMarks) * 100}%` }} 
                            />
                         </div>
@@ -267,3 +267,4 @@ export default function GradeHub({ grades, isLoading, schoolId }: GradeHubProps)
     </div>
   );
 }
+

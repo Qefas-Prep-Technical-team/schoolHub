@@ -20,7 +20,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   ExternalLink,
-  ShieldAlert
+  ShieldAlert,
+  GraduationCap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,8 +34,8 @@ const StatusChip = ({ status, themeColor }: StatusChipProps) => {
   const isActive = status;
   return (
     <div className="flex items-center gap-2">
-      <div className={cn("size-2 rounded-full", isActive ? 'bg-green-500' : 'bg-orange-500')} />
-      <span className={cn("text-[10px] font-black uppercase tracking-widest", isActive ? 'text-green-600' : 'text-orange-600')}>
+      <div className={cn("size-2 rounded-full", isActive ? 'bg-green-500' : 'bg-primary')} />
+      <span className={cn("text-[10px] font-black uppercase tracking-widest", isActive ? 'text-green-600' : 'text-primary')}>
         {isActive ? 'Verified' : 'Pending'}
       </span>
     </div>
@@ -56,7 +57,7 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId;
   const { data: settings } = useSchoolSettings(schoolId!);
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
   
   const [selectAll, setSelectAll] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -128,7 +129,8 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
               <th className="p-8 w-10">
                 <input
                   type="checkbox"
-                  className="size-5 rounded-lg border-2 border-slate-200 dark:border-white/10 checked:bg-orange-600 transition-all cursor-pointer"
+                  className="size-5 rounded-lg border-2 border-slate-200 dark:border-white/10 transition-all cursor-pointer"
+                  style={{ accentColor: primaryColor }}
                   checked={selectAll}
                   onChange={toggleSelectAll}
                 />
@@ -150,13 +152,15 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
                   key={student.id}
                   className={cn(
                     "group hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-all cursor-pointer",
-                    isSelected && "bg-orange-600/5 dark:bg-orange-600/10"
+                    isSelected && "bg-opacity-10"
                   )}
+                  style={isSelected ? { backgroundColor: `${primaryColor}10` } : {}}
                 >
                   <td className="p-8">
                     <input
                       type="checkbox"
-                      className="size-5 rounded-lg border-2 border-slate-200 dark:border-white/10 checked:bg-orange-600 transition-all cursor-pointer"
+                      className="size-5 rounded-lg border-2 border-slate-200 dark:border-white/10 transition-all cursor-pointer"
+                      style={{ accentColor: primaryColor }}
                       checked={isSelected}
                       onChange={(e) => toggleSelect(e, student.id)}
                     />
@@ -180,8 +184,11 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
                         )}
                       </div>
                       <div>
-                        <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-lg group-hover:text-orange-600 transition-colors">
-                          {student.name}
+                        <p 
+                          className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-lg transition-colors"
+                          style={{ color: 'inherit' }}
+                        >
+                          <span className="group-hover:text-primary" style={{ '--primary': primaryColor } as any}>{student.name}</span>
                         </p>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{student.email}</p>
                       </div>
@@ -218,12 +225,18 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
                         <Button 
                           onClick={(e) => handleVerify(e, student.id)}
                           disabled={verifyMutation.isPending}
-                          className="h-10 px-4 rounded-xl bg-orange-600 text-white font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-orange-700 active:scale-95 transition-all border-none"
+                          style={{ backgroundColor: primaryColor }}
+                          className="h-10 px-4 rounded-xl text-white font-black text-[10px] uppercase tracking-widest shadow-lg hover:brightness-110 active:scale-95 transition-all border-none"
                         >
                           {verifyMutation.isPending && verifyMutation.variables === student.id ? "Syncing..." : "Authorize"}
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" className="size-12 rounded-2xl hover:bg-orange-600/10 hover:text-orange-600 transition-all">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="size-12 rounded-2xl hover:bg-opacity-10 transition-all"
+                        style={{ color: primaryColor }}
+                      >
                         <MoreVertical size={20} />
                       </Button>
                     </div>
@@ -258,7 +271,8 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
             <Button
               variant="outline"
               size="icon"
-              className="size-12 rounded-2xl border-2 border-slate-200 dark:border-white/10 hover:border-orange-600/50 transition-all bg-white dark:bg-slate-900"
+              className="size-12 rounded-2xl border-2 border-slate-200 dark:border-white/10 transition-all bg-white dark:bg-slate-900"
+              style={{ borderColor: page === 1 ? undefined : `${primaryColor}30` }}
               onClick={() => onPageChange(Math.max(1, page - 1))}
               disabled={page === 1}
             >
@@ -275,9 +289,10 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
                     className={cn(
                       "size-12 rounded-2xl font-black text-xs transition-all",
                       p === page 
-                        ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xl" 
-                        : "text-slate-400 hover:text-orange-600 hover:bg-orange-600/10"
+                        ? "shadow-xl text-white" 
+                        : "text-slate-400 hover:bg-opacity-10"
                     )}
+                    style={p === page ? { backgroundColor: primaryColor } : { color: 'inherit' }}
                     onClick={() => onPageChange(p)}
                   >
                     {p}
@@ -289,7 +304,8 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
             <Button
               variant="outline"
               size="icon"
-              className="size-12 rounded-2xl border-2 border-slate-200 dark:border-white/10 hover:border-orange-600/50 transition-all bg-white dark:bg-slate-900"
+              className="size-12 rounded-2xl border-2 border-slate-200 dark:border-white/10 transition-all bg-white dark:bg-slate-900"
+              style={{ borderColor: page === totalPages ? undefined : `${primaryColor}30` }}
               onClick={() => onPageChange(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
             >
@@ -301,4 +317,5 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
     </div>
   );
 }
+
 

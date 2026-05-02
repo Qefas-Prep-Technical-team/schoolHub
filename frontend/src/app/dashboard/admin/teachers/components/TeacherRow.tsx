@@ -64,3 +64,4 @@ export default function TeacherRow({ teacher, selected, onSelect }: TeacherRowPr
     </tr>
   )
 }
+

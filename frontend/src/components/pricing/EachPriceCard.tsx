@@ -61,6 +61,19 @@ const EachPriceCard: FC<EachPriceCardProps> = ({
         else if (lowerCategory === 'parents') role = 'PARENT';
         else if (lowerCategory === 'individuals' && lowerType.includes('parent')) role = 'PARENT';
 
+        // Custom redirection for Free plans for unauthenticated users
+        if (lowerType === 'free' && !isAuthenticated) {
+            let signupPath = '/signup';
+            if (role === 'STUDENT') signupPath = '/signup/student';
+            else if (role === 'TEACHER') signupPath = '/signup/teacher';
+            else if (role === 'PARENT') signupPath = '/signup/parent';
+            else if (role === 'ADMIN') signupPath = '/signup/school';
+            
+            setIsLoading(true);
+            router.push(signupPath);
+            return;
+        }
+
         const redirectBackUrl = window.location.pathname + window.location.search;
         setCheckoutDetails({ plan: type, billing: billingType, role, redirectBackUrl });
         setIsLoading(true);

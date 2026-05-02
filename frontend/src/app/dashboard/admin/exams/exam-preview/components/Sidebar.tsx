@@ -25,3 +25,4 @@ export default function Sidebar({ statistics, totalQuestions, showAnswers, onTog
         </aside>
     );
 }
+

@@ -62,3 +62,4 @@ export const downloadIndividualResultsAsZip = async ({
   const zipContent = await zip.generateAsync({ type: 'blob' });
   saveAs(zipContent, `${sanitizedExamTitle}.zip`);
 };
+

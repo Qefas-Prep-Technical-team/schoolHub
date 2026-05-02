@@ -41,7 +41,7 @@ export default function ManageTeachersPage() {
   
   const { data: teachersData, isLoading } = useSchoolTeachers(schoolId)
   const { data: settings } = useSchoolSettings(schoolId)
-  const primaryColor = settings?.themeColor || '#ea580c'
+  const primaryColor = settings?.themeColor || '#2563eb'
 
   const teachersList = useMemo(() => {
     if (!teachersData || !Array.isArray(teachersData)) return []
@@ -53,7 +53,7 @@ export default function ManageTeachersPage() {
       subjects: t.subjects?.map((s: any) => s.name) || ['General'],
       classes: t.classes?.map((c: any) => c.name) || [],
       status: t.verified ? 'active' : 'pending',
-      profileImage: t.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(t.name)}&backgroundColor=ea580c&fontFamily=Arial&fontSize=40&fontWeight=900`
+      profileImage: t.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(t.name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`
     }))
   }, [teachersData])
 
@@ -84,7 +84,7 @@ export default function ManageTeachersPage() {
         label: 'Active Channels', 
         value: '12', 
         icon: Activity, 
-        color: '#6366f1', // Indigo
+        color: '#2563eb', // Indigo
         desc: 'Instructional Streams'
     },
     { 
@@ -119,8 +119,8 @@ export default function ManageTeachersPage() {
           
           <div className="flex items-center gap-4">
             <Button 
-              style={{ backgroundColor: primaryColor }}
-              className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 shadow-2xl hover:scale-105 active:scale-95 transition-all"
+              style={{ backgroundColor: primaryColor, boxShadow: `0 20px 25px -5px ${primaryColor}4D` }}
+              className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 hover:scale-105 active:scale-95 transition-all border-0"
               onClick={() => {}}
             >
               <UserPlus size={20} strokeWidth={3} />
@@ -134,7 +134,8 @@ export default function ManageTeachersPage() {
             {stats.map((stat, index) => (
                 <div 
                     key={index}
-                    className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl relative overflow-hidden group"
+                    className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 relative overflow-hidden group transition-all"
+                    style={{ boxShadow: `0 25px 50px -12px ${stat.color}15` }}
                 >
                     <div 
                         className="absolute -right-6 -bottom-6 size-40 rounded-full blur-3xl opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none" 
@@ -220,13 +221,17 @@ export default function ManageTeachersPage() {
                     ) : filteredTeachers.map((teacher) => (
                         <div 
                             key={teacher.id}
-                            className="group relative bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[4rem] p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col"
+                            className="group relative bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[4rem] p-10 hover:-translate-y-2 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col"
+                            style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
                             onClick={() => router.push(`/dashboard/admin/teachers/${teacher.id}`)}
                         >
                             <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full blur-[80px] opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none" style={{ backgroundColor: primaryColor }} />
                             
                             <div className="flex justify-between items-start mb-10 relative z-10">
-                                <div className="size-24 rounded-[2.5rem] overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl group-hover:scale-110 transition-transform duration-500">
+                                <div 
+                                    className="size-24 rounded-[2.5rem] overflow-hidden border-4 border-white dark:border-slate-800 group-hover:scale-110 transition-transform duration-500"
+                                    style={{ boxShadow: `0 20px 25px -5px ${primaryColor}33` }}
+                                >
                                     <img src={teacher.profileImage} alt={teacher.name} className="size-full object-cover" />
                                 </div>
                                 <div className={cn(
@@ -276,7 +281,8 @@ export default function ManageTeachersPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[4rem] overflow-hidden shadow-2xl"
+                    className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[4rem] overflow-hidden transition-all"
+                    style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
                 >
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
@@ -294,7 +300,7 @@ export default function ManageTeachersPage() {
                                     <tr>
                                         <td colSpan={5} className="px-10 py-40 text-center">
                                             <div className="flex flex-col items-center gap-6">
-                                                <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 border-t-orange-600 animate-spin" style={{ borderTopColor: primaryColor }} />
+                                                <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 border-t-primary animate-spin" style={{ borderTopColor: primaryColor }} />
                                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Syncing Faculty Network...</span>
                                             </div>
                                         </td>
@@ -354,3 +360,4 @@ export default function ManageTeachersPage() {
     </div>
   )
 }
+

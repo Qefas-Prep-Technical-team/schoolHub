@@ -17,3 +17,4 @@ export default function BatchGradeHeader({ title, description }: BatchGradeHeade
         </div>
     );
 }
+

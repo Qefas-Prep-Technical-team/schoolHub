@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { PricingService } from "./pricing.service";
 import { FeatureService } from "../../subscription/feature.service";
 import { createActivityLog } from "../logs/logs.controller";
+import prisma from "../../../config/database";
 
 /**
  * Console: Get hardcoded defaults
@@ -61,6 +62,7 @@ export const savePlan = async (req: Request, res: Response) => {
 
         return res.status(200).json({ success: true, data: plan });
     } catch (error) {
+        console.error("[PricingController] savePlan error:", error);
         return res.status(500).json({ success: false, message: "Failed to save pricing plan" });
     }
 };
@@ -85,22 +87,6 @@ export const getFeatures = async (req: Request, res: Response) => {
     try {
         let features = await FeatureService.listFeatures();
         
-        // Fallback: If Manifest is empty, pull from legacy to prevent blank registry
-        if (features.length === 0) {
-            const legacyFeatures = await (prisma as any).platformFeature?.findMany({
-                orderBy: { name: 'asc' }
-            }).catch(() => []);
-            
-            if (legacyFeatures && legacyFeatures.length > 0) {
-                // Map legacy to manifest format
-                features = legacyFeatures.map((f: any) => ({
-                    ...f,
-                    tag: f.featureKey,
-                    isLegacy: true
-                }));
-            }
-        }
-
         return res.status(200).json({ success: true, data: features });
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to get features" });

@@ -36,11 +36,11 @@ export function LinkingStats({ activeCount, pendingCount, totalCount, usage, lim
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl border-none shadow-sm bg-orange-500/5 dark:bg-orange-500/10 border-orange-100 dark:border-orange-900/20">
+      <Card className="rounded-3xl border-none shadow-sm bg-primary/5 dark:bg-primary/10 border-primary/10 dark:border-primary/15/20">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-2 text-orange-600 dark:text-orange-400">
+          <div className="flex items-center justify-between mb-2 text-primary dark:text-orange-400">
             <Clock size={20} />
-            <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-none shadow-none">Pending</Badge>
+            <Badge className="bg-primary/10 text-primary dark:text-orange-400 border-none shadow-none">Pending</Badge>
           </div>
           <p className="text-3xl font-black text-gray-900 dark:text-white">{pendingCount}</p>
           <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wider">Pending Requests</p>
@@ -82,3 +82,4 @@ export function LinkingStats({ activeCount, pendingCount, totalCount, usage, lim
     </div>
   );
 }
+

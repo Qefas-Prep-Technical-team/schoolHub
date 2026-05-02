@@ -29,3 +29,4 @@ export default function AttendanceStats({ stats }: AttendanceStatsProps) {
         </div>
     )
 }
+

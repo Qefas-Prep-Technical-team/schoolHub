@@ -53,7 +53,7 @@ const SubjectsPage = () => {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
 
   useEffect(() => {
     fetchData();
@@ -131,8 +131,8 @@ const SubjectsPage = () => {
           <div className="flex items-center gap-4">
             <Button 
               onClick={handleCreate}
-              style={{ backgroundColor: primaryColor }}
-              className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 shadow-2xl hover:scale-105 active:scale-95 transition-all"
+              style={{ backgroundColor: primaryColor, boxShadow: `0 20px 25px -5px ${primaryColor}4D` }}
+              className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 hover:scale-105 active:scale-95 transition-all border-0"
             >
               <Plus size={20} strokeWidth={3} />
               Initialize Module
@@ -142,12 +142,15 @@ const SubjectsPage = () => {
 
         {/* Tactical Metrics Cluster */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-8 rounded-[3rem] bg-slate-900 text-white border border-slate-800 shadow-xl relative overflow-hidden group">
+            <div 
+                className="p-8 rounded-[3rem] bg-slate-900 text-white border border-slate-800 relative overflow-hidden group transition-all"
+                style={{ boxShadow: `0 25px 50px -12px ${primaryColor}4D` }}
+            >
                  <div className="absolute top-0 right-0 p-8 opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
                     <BookMarked size={120} />
                 </div>
                 <div className="relative z-10 flex items-center gap-8">
-                    <div className="size-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-indigo-400">
+                    <div className="size-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-primary">
                         <Cpu size={32} strokeWidth={2.5} />
                     </div>
                     <div>
@@ -157,12 +160,15 @@ const SubjectsPage = () => {
                 </div>
             </div>
 
-            <div className="p-8 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl relative overflow-hidden group">
+            <div 
+                className="p-8 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 relative overflow-hidden group transition-all"
+                style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
+            >
                  <div className="absolute top-0 right-0 p-8 opacity-[0.02] dark:opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
                     <Layers size={120} />
                 </div>
                 <div className="relative z-10 flex items-center gap-8">
-                    <div className="size-20 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-orange-600">
+                    <div className="size-20 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-primary">
                         <Layers size={32} strokeWidth={2.5} />
                     </div>
                     <div>
@@ -172,7 +178,10 @@ const SubjectsPage = () => {
                 </div>
             </div>
 
-            <div className="p-8 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl relative overflow-hidden group">
+            <div 
+                className="p-8 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 relative overflow-hidden group transition-all"
+                style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
+            >
                  <div className="absolute top-0 right-0 p-8 opacity-[0.02] dark:opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
                     <Globe size={120} />
                 </div>
@@ -300,3 +309,4 @@ const SubjectsPage = () => {
 };
 
 export default SubjectsPage;
+

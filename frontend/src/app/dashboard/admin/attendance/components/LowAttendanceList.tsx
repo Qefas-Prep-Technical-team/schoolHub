@@ -65,7 +65,7 @@ export default function LowAttendanceList({ summary, isLoading }: LowAttendanceL
         switch (severity) {
             case 'severe': return "bg-rose-500/10 text-rose-600";
             case 'warning': return "bg-amber-500/10 text-amber-600";
-            case 'moderate': return "bg-indigo-500/10 text-indigo-600";
+            case 'moderate': return "bg-primary/10 text-primary";
             default: return "bg-slate-500/10 text-slate-600";
         }
     };
@@ -102,7 +102,7 @@ export default function LowAttendanceList({ summary, isLoading }: LowAttendanceL
                 {classes.map((classItem) => (
                     <div
                         key={classItem.id}
-                        className="group flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-transparent hover:border-indigo-500/30 transition-all cursor-pointer"
+                        className="group flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-transparent hover:border-primary/30 transition-all cursor-pointer"
                     >
                         <div className="flex items-center gap-4">
                             <div className={cn(
@@ -121,17 +121,18 @@ export default function LowAttendanceList({ summary, isLoading }: LowAttendanceL
                             </div>
                         </div>
                         <div className="h-8 w-8 rounded-full flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm opacity-0 group-hover:opacity-100 transition-all">
-                            <ChevronRight size={14} className="text-indigo-600" />
+                            <ChevronRight size={14} className="text-primary" />
                         </div>
                     </div>
                 ))}
             </div>
 
             <div className="pt-4">
-                <button className="w-full h-12 rounded-2xl bg-indigo-600/5 text-indigo-600 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-600 hover:text-white transition-all">
+                <button className="w-full h-12 rounded-2xl bg-primary/5 text-primary font-black text-[10px] uppercase tracking-[0.2em] hover:bg-primary hover:text-white transition-all">
                     Generate Alert Notifications
                 </button>
             </div>
         </div>
     );
 }
+

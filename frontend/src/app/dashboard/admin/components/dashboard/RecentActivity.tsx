@@ -21,13 +21,13 @@ import Link from 'next/link';
 const typeConfig: Record<string, { icon: any, color: string, bg: string }> = {
   LINK_REQUEST: { icon: UserPlus, color: 'text-blue-500', bg: 'bg-blue-500/10' },
   LINK_RESPONSE: { icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  ACADEMIC: { icon: TrendingUp, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+  ACADEMIC: { icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
   SYSTEM: { icon: Database, color: 'text-slate-500', bg: 'bg-slate-500/10' },
   ANNOUNCEMENT: { icon: Bell, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   CRITICAL: { icon: ShieldAlert, color: 'text-rose-500', bg: 'bg-rose-500/10' },
 };
 
-export default function RecentActivity() {
+export default function RecentActivity({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const { data: notifications, isLoading } = useNotifications({ limit: 7 });
 
   const containerVariants = {
@@ -45,6 +45,15 @@ export default function RecentActivity() {
     visible: { opacity: 1, x: 0 }
   };
 
+  const typeConfig: Record<string, { icon: any, color?: string, bg?: string, customColor?: string }> = {
+    LINK_REQUEST: { icon: UserPlus, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    LINK_RESPONSE: { icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    ACADEMIC: { icon: TrendingUp, customColor: primaryColor },
+    SYSTEM: { icon: Database, color: 'text-slate-500', bg: 'bg-slate-500/10' },
+    ANNOUNCEMENT: { icon: Bell, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    CRITICAL: { icon: ShieldAlert, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+  };
+
   return (
     <motion.div 
       initial="hidden"
@@ -54,18 +63,24 @@ export default function RecentActivity() {
         "relative overflow-hidden group min-h-[750px] flex flex-col",
         "bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl",
         "rounded-[3rem] border border-white/20 dark:border-slate-800/50",
-        "shadow-2xl shadow-slate-200/50 dark:shadow-none p-8 md:p-10",
-        "transition-all duration-500 hover:shadow-primary/5"
+        "p-8 md:p-10 transition-all duration-500"
       )}
+      style={{ 
+        boxShadow: `0 25px 50px -12px ${primaryColor}15`,
+        '--shadow-color': `${primaryColor}05` 
+      } as any}
     >
       {/* Background Decor */}
-      <div className="absolute top-0 right-0 h-40 w-40 bg-primary/5 rounded-full blur-3xl opacity-50 transition-opacity group-hover:opacity-100" />
+      <div 
+        className="absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl opacity-50 transition-opacity group-hover:opacity-100" 
+        style={{ backgroundColor: primaryColor }}
+      />
 
       <div className="relative z-10 flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-black text-primary dark:text-primary/70 uppercase tracking-[0.2em]">Institutional Pulse</span>
+            <div className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Institutional Pulse</span>
           </div>
           <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter">
             Recent Activity
@@ -73,7 +88,8 @@ export default function RecentActivity() {
         </div>
         <Link 
           href="/dashboard/admin/notifications"
-          className="h-10 px-4 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-md border border-white/20 dark:border-slate-700/50 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-all flex items-center gap-2 group/btn"
+          className="h-10 px-4 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-md border border-white/20 dark:border-slate-700/50 text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all flex items-center gap-2 group/btn"
+          style={{ '--hover-color': primaryColor } as any}
         >
           View All
           <ChevronRight size={12} className="group-hover/btn:translate-x-1 transition-transform" />
@@ -122,22 +138,29 @@ export default function RecentActivity() {
                     key={notification.id}
                     variants={itemVariants}
                     whileHover={{ x: 5 }}
-                    className="group/item relative flex items-start gap-4 p-4 rounded-[2rem] border border-transparent hover:border-white/20 dark:hover:border-slate-800 hover:bg-white/30 dark:hover:bg-slate-800/30 transition-all cursor-pointer"
+                    className="group/item relative flex items-start gap-4 p-4 rounded-[2rem] border border-transparent hover:bg-white/30 dark:hover:bg-slate-800/30 transition-all cursor-pointer"
+                    style={{ '--hover-border': `${primaryColor}20` } as any}
                   >
-                    <div className={cn(
-                      "flex-shrink-0 h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-500 scale-95 group-hover/item:scale-100",
-                      config.bg,
-                      config.color
-                    )}>
+                    <div 
+                        className={cn(
+                            "flex-shrink-0 h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-500 scale-95 group-hover/item:scale-100",
+                            !config.customColor && config.bg,
+                            !config.customColor && config.color
+                        )}
+                        style={config.customColor ? { backgroundColor: `${config.customColor}15`, color: config.customColor } : {}}
+                    >
                       <Icon size={20} strokeWidth={2.5} />
                     </div>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className={cn(
-                            "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-current opacity-60",
-                            config.color
-                        )}>
+                        <span 
+                            className={cn(
+                                "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-current opacity-60",
+                                !config.customColor && config.color
+                            )}
+                            style={config.customColor ? { color: config.customColor, borderColor: config.customColor } : {}}
+                        >
                             {notification.type.replace('_', ' ')}
                         </span>
                         <div className="flex items-center gap-1 text-[10px] font-black text-slate-400">
@@ -155,7 +178,7 @@ export default function RecentActivity() {
                     </div>
 
                     <div className="absolute right-4 bottom-4 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                        <ExternalLink size={14} className="text-slate-300 hover:text-primary transition-colors" />
+                        <ExternalLink size={14} className="text-slate-300 hover:text-white transition-colors" style={{ '--hover-color': primaryColor } as any} />
                     </div>
                   </motion.div>
                 );
@@ -172,7 +195,7 @@ export default function RecentActivity() {
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Live Activity Monitor</p>
             </div>
-            <Link href="/dashboard/admin/notifications" className="text-[10px] font-black text-primary hover:tracking-[0.15em] transition-all uppercase">
+            <Link href="/dashboard/admin/notifications" className="text-[10px] font-black hover:tracking-[0.15em] transition-all uppercase" style={{ color: primaryColor }}>
                Configure Filters
             </Link>
          </div>
@@ -180,3 +203,4 @@ export default function RecentActivity() {
     </motion.div>
   );
 }
+

@@ -55,3 +55,4 @@ export default function ProfessionalInfoCard({ professionalInfo }: ProfessionalI
     </Card>
   )
 }
+

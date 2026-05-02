@@ -241,3 +241,4 @@ export default function InstitutionReportModal({ isOpen, onClose, school }: Inst
     </Dialog>
   );
 }
+

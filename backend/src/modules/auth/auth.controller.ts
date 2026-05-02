@@ -118,8 +118,6 @@ export const registerSchool = async (req: Request, res: Response) => {
         },
       });
 
-      // Initialize School Subscription
-      await SchoolSubscriptionService.initializeFreePlan(school.id);
 
       const admin = await tx.admin.create({
         data: {
@@ -286,8 +284,6 @@ export const registerTeacher = async (req: Request, res: Response) => {
         },
       });
 
-      // Initialize Teacher Subscription
-      await UserSubscriptionService.initializeFreePlan(teacher.id, UserRole.TEACHER);
 
       if (schoolToConnect) {
         await tx.linkRequest.create({
@@ -603,8 +599,6 @@ export const registerStudent = async (
         },
       });
 
-      // Initialize Student Subscription
-      await UserSubscriptionService.initializeFreePlan(student.id, UserRole.STUDENT);
 
       const note = "i would like to connect with you";
 
@@ -850,8 +844,6 @@ export const registerParent = async (
         },
       });
 
-      // Initialize Parent Subscription
-      await UserSubscriptionService.initializeFreePlan(parent.id, UserRole.PARENT);
 
       let linkResult = null;
       let studentData = null;
@@ -967,8 +959,11 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
       });
     }
 
+    // Normalize userType casing
+    const normalizedRole = (userType as string)?.toUpperCase().trim() as UserRole;
+
     // Validate userType using UserRole enum
-    if (!Object.values(UserRole).includes(userType as UserRole)) {
+    if (!Object.values(UserRole).includes(normalizedRole)) {
       return res.status(400).json({
         success: false,
         message: "Invalid user type",
@@ -977,7 +972,7 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
 
     // Delete old unused codes for same email and userType
     await prisma.verificationCode.deleteMany({
-      where: { email, userType: userType as UserRole, used: false },
+      where: { email, userType: normalizedRole, used: false },
     });
 
     const code = generateRandomSixDigit();
@@ -988,7 +983,7 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
       data: {
         email,
         code,
-        userType: userType as UserRole, // FIXED: Use enum
+        userType: normalizedRole, 
         expiresAt,
       },
     });
@@ -1433,12 +1428,14 @@ export const login = async (req: Request, res: Response) => {
               school: true,
               currentSchool: true,
               primarySchool: true 
-
             },
           });
           if (teacher) {
+            console.log(`Found teacher for email: [${email}]. Normalizing school reference.`);
             // Normalize school for compatibility with existing code
             (teacher as any).school = teacher.currentSchool || teacher.primarySchool || (teacher as any).school;
+          } else {
+            console.warn(`Teacher NOT found for email: [${email}]`);
           }
           return teacher;
         }
@@ -1471,10 +1468,12 @@ export const login = async (req: Request, res: Response) => {
 
     // 2. If not found, search across other roles (Smart Search)
     if (!user) {
+      console.log(`User not found with provided type [${userType}]. Initiating smart search across all roles for email: [${normalizedEmail}]`);
       const rolesToSearch = Object.values(UserRole).filter((r) => r !== userType);
       for (const role of rolesToSearch) {
         user = await fetchUserWithRelations(role as UserRole, normalizedEmail);
         if (user) {
+          console.log(`Smart search SUCCESS: User found with role [${role}] for email: [${normalizedEmail}]`);
           actualRole = role as UserRole;
           break;
         }
@@ -1482,6 +1481,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     if (!user) {
+      console.error(`CRITICAL: Login failed. User NOT FOUND in any role table for email: [${normalizedEmail}]`);
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
@@ -1644,14 +1644,16 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
       });
     }
 
-    if (!Object.values(UserRole).includes(userType as UserRole)) {
+    const normalizedRole = (userType as string)?.toUpperCase().trim() as UserRole;
+
+    if (!Object.values(UserRole).includes(normalizedRole)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid user type" });
     }
 
     const found = await prisma.verificationCode.findFirst({
-      where: { email, code, userType: userType as UserRole, used: false },
+      where: { email, code, userType: normalizedRole, used: false },
     });
 
     if (!found)
@@ -1666,10 +1668,10 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
 
     // Handle "Register them if not registered"
     let user: any;
-    const role = userType as UserRole;
+    console.log(`Verifying checkout for role: ${normalizedRole}, email: [${email}]`);
 
     // Check if user exists
-    switch (role) {
+    switch (normalizedRole) {
       case UserRole.ADMIN:
         user = await prisma.admin.findUnique({ where: { email } });
         if (!user) {
@@ -1711,7 +1713,7 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       message: "Email verified successfully for checkout.",
-      userRole: userType,
+      userRole: normalizedRole,
       userId: user?.id,
       plan: user?.plan,
       trialUsed: user?.trialUsed
@@ -1811,6 +1813,15 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           include: { schoolAdmins: { include: { school: true } } },
         });
 
+        // Initialize Admin Subscription upon verification
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.ADMIN);
+
+        // If School Owner, also initialize School Subscription
+        const ownerAdmin = user.schoolAdmins.find((sa: any) => sa.role === AdminRole.SCHOOL_OWNER);
+        if (ownerAdmin) {
+          await SchoolSubscriptionService.initializeFreePlan(ownerAdmin.school.id);
+        }
+
         const schools = user.schoolAdmins.map((sa: any) => ({
           schoolId: sa.school.id,
           schoolName: sa.school.name,
@@ -1848,6 +1859,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           where: { email },
           data: { verified: true },
         });
+        // Initialize Teacher Subscription upon verification
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.TEACHER);
         return res.status(200).json({
           success: true,
           message: "Teacher verified successfully!",
@@ -1861,6 +1874,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           where: { email },
           data: { verified: true },
         });
+        // Initialize Student Subscription upon verification
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.STUDENT);
         return res.status(200).json({
           success: true,
           message: "Student verified successfully!",
@@ -1874,6 +1889,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           where: { email },
           data: { verified: true },
         });
+        // Initialize Parent Subscription upon verification
+        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.PARENT);
         return res.status(200).json({
           success: true,
           message: "Parent verified successfully!",
@@ -2449,13 +2466,19 @@ export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Email, password, and user type are required" });
     }
 
+    const normalizedRole = (userType as string)?.toUpperCase().trim() as UserRole;
+    
+    if (!Object.values(UserRole).includes(normalizedRole)) {
+      return res.status(400).json({ success: false, message: "Invalid user type" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const role = userType as UserRole;
+    console.log(`Finalizing account setup for normalized role: ${normalizedRole}, email: [${email}]`);
 
     // Update user based on role
     const updateData = { password: hashedPassword, verified: true };
     
-    switch (role) {
+    switch (normalizedRole) {
       case UserRole.ADMIN:
         await prisma.admin.update({ where: { email }, data: updateData });
         break;

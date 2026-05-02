@@ -68,7 +68,7 @@ export default function AdminGradesDashboard() {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
 
   const router = useRouter();
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
@@ -532,15 +532,15 @@ function ExamStudentList({
                       className={cn(
                         "p-10 rounded-[3rem] border-2 transition-all cursor-pointer group relative overflow-hidden",
                         isSelected 
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-2xl shadow-indigo-600/20 scale-[1.02]" 
-                          : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-indigo-600/30"
+                          ? "bg-primary text-white border-primary shadow-2xl shadow-primary/20 scale-[1.02]" 
+                          : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-primary/30"
                       )}
                     >
                         <div className="relative z-10 space-y-6">
                             <div className="flex justify-between items-start">
                                 <div className={cn(
                                     "size-14 rounded-2xl flex items-center justify-center transition-all duration-500 border",
-                                    isSelected ? "bg-white/20 border-white/30" : "bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 text-indigo-600"
+                                    isSelected ? "bg-white/20 border-white/30" : "bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 text-primary"
                                 )}>
                                     <BarChart3 size={24} strokeWidth={2.5} />
                                 </div>
@@ -828,7 +828,7 @@ function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor
 
               <div className="space-y-8">
                   <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter flex items-center gap-4 px-4">
-                      <Percent className="text-indigo-500" /> Institution Benchmark
+                      <Percent className="text-primary" /> Institution Benchmark
                   </h3>
                   <div className="p-12 rounded-[4rem] bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 space-y-12 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden">
                       <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none">
@@ -854,7 +854,7 @@ function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor
                           <div className="h-6 bg-slate-50 dark:bg-white/5 rounded-full overflow-hidden shadow-inner p-1">
                               <div 
                                 className="h-full rounded-full transition-all duration-1000 shadow-lg" 
-                                style={{ width: `${result.globalStanding || 92}%`, background: `linear-gradient(to right, ${primaryColor}, #6366f1)` }}
+                                style={{ width: `${result.globalStanding || 92}%`, background: `linear-gradient(to right, ${primaryColor}, #2563eb)` }}
                               />
                           </div>
                       </div>
@@ -880,7 +880,7 @@ function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor
                           </div>
                       </div>
                       
-                      <div className="p-10 rounded-[3rem] border border-indigo-100 dark:border-indigo-500/20 relative group overflow-hidden" style={{ backgroundColor: `${primaryColor}05` }}>
+                      <div className="p-10 rounded-[3rem] border border-primary dark:border-primary/20 relative group overflow-hidden" style={{ backgroundColor: `${primaryColor}05` }}>
                           <History className="absolute -right-8 -bottom-8 opacity-5 transition-opacity duration-700 group-hover:opacity-10" size={200} style={{ color: primaryColor }} />
                           <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-6 flex items-center gap-3" style={{ color: primaryColor }}>
                              <Zap size={14} fill="currentColor" /> Operational Intelligence
@@ -989,3 +989,4 @@ function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor }: a
     </div>
   );
 }
+

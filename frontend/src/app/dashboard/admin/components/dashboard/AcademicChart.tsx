@@ -177,16 +177,16 @@ export default function AcademicChart({ analysis, isLoading }: AcademicChartProp
 
             <motion.div 
               whileHover={{ y: -5 }}
-              className="p-5 rounded-[2rem] bg-gradient-to-br from-indigo-500/5 to-indigo-500/10 dark:from-indigo-500/10 dark:to-indigo-500/5 border border-indigo-500/10 dark:border-indigo-500/20 backdrop-blur-xl relative overflow-hidden"
+              className="p-5 rounded-[2rem] bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/5 border border-primary/10 dark:border-primary/20 backdrop-blur-xl relative overflow-hidden"
             >
-                <ShieldCheck className="absolute -right-2 -bottom-2 h-16 w-16 text-indigo-500/10 -rotate-12" />
-                <p className="text-[9px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">Institutional Health</p>
+                <ShieldCheck className="absolute -right-2 -bottom-2 h-16 w-16 text-primary/10 -rotate-12" />
+                <p className="text-[9px] font-black uppercase tracking-widest text-primary dark:text-primary mb-2">Institutional Health</p>
                 <p className="text-sm font-black text-slate-900 dark:text-white truncate relative z-10">
                     {analysis?.totalAssessments || 0} Assessments
                 </p>
                 <div className="flex items-center gap-1.5 mt-2">
-                   <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-                   <span className="text-[10px] font-black text-indigo-600">Stable Trajectory</span>
+                   <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                   <span className="text-[10px] font-black text-primary">Stable Trajectory</span>
                 </div>
             </motion.div>
           </div>
@@ -211,3 +211,4 @@ export default function AcademicChart({ analysis, isLoading }: AcademicChartProp
     </motion.div>
   );
 }
+

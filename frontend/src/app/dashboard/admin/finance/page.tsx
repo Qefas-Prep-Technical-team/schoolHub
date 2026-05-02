@@ -55,7 +55,7 @@ export default function AdminFinancePage() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
                 <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Encrypting Financial Data...</p>
             </div>
         )
@@ -101,7 +101,7 @@ export default function AdminFinancePage() {
                         Internal Logs
                     </Button>
                     <Button 
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white h-14 px-8 rounded-2xl font-bold shadow-xl shadow-indigo-600/20 gap-2"
+                        className="bg-primary hover:bg-primary text-white h-14 px-8 rounded-2xl font-bold shadow-xl shadow-primary/20 gap-2"
                         onClick={() => {
                             if (!analytics?.recentTransactions) return;
                             const headers = ["Date", "Student", "Category", "Amount", "Reference"]
@@ -137,7 +137,7 @@ export default function AdminFinancePage() {
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { title: "Total Revenue", value: analytics?.totalRevenue || 0, icon: TrendingUp, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-500/10", trend: "+14.2%" },
+                    { title: "Total Revenue", value: analytics?.totalRevenue || 0, icon: TrendingUp, color: "text-primary dark:text-primary", bg: "bg-primary/10", trend: "+14.2%" },
                     { title: "Pending Payments", value: analytics?.pendingRevenue || 0, icon: Wallet, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10", trend: "Review" },
                     { title: "Active Payers", value: analytics?.activePayerCount || 0, icon: Users, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10", trend: "Live" },
                     { title: "Avg. Transaction", value: analytics?.averageTransaction || 0, icon: ArrowUpRight, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-500/10", trend: "Optimized" },
@@ -205,7 +205,7 @@ export default function AdminFinancePage() {
                         <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="font-black text-[10px] uppercase tracking-[0.2em] text-indigo-600 hover:bg-indigo-50 gap-2"
+                            className="font-black text-[10px] uppercase tracking-[0.2em] text-primary hover:bg-primary/5 gap-2"
                             onClick={() => router.push("/dashboard/admin/finance/bank-setup")}
                         >
                             <Plus className="h-3 w-3" />
@@ -230,7 +230,7 @@ export default function AdminFinancePage() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                                <Receipt className="h-5 w-5 text-indigo-500" />
+                                <Receipt className="h-5 w-5 text-primary" />
                                 <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">Transaction Stream</h3>
                             </div>
                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1">Recent processed liquidity events</p>
@@ -257,7 +257,7 @@ export default function AdminFinancePage() {
                             </div>
                             <Button 
                                 onClick={() => router.push("/dashboard/admin/finance/bank-setup")}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest px-8 rounded-xl h-12"
+                                className="bg-primary hover:bg-primary text-white font-black text-[10px] uppercase tracking-widest px-8 rounded-xl h-12"
                             >
                                 Setup Bank Node
                             </Button>
@@ -284,14 +284,14 @@ export default function AdminFinancePage() {
                                                 {t.student?.name}
                                             </TableCell>
                                             <TableCell>
-                                                <Badge className="bg-indigo-500/10 text-indigo-600 border-none font-black text-[9px] uppercase tracking-widest py-1">
+                                                <Badge className="bg-primary/10 text-primary border-none font-black text-[9px] uppercase tracking-widest py-1">
                                                     {t.paymentType || "School Fee"}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="font-black text-slate-900 dark:text-white text-lg tracking-tighter">
                                                 ₦{t.amount.toLocaleString()}
                                             </TableCell>
-                                            <TableCell className="pr-8 font-mono text-[9px] text-slate-400 uppercase tracking-[0.2em] group-hover:text-indigo-500 transition-colors">
+                                            <TableCell className="pr-8 font-mono text-[9px] text-slate-400 uppercase tracking-[0.2em] group-hover:text-primary transition-colors">
                                                 {t.paymentReference}
                                             </TableCell>
                                         </TableRow>
@@ -305,3 +305,4 @@ export default function AdminFinancePage() {
         </div>
     )
 }
+

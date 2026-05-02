@@ -45,10 +45,10 @@ export function PendingRequestsGrid({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-orange-50/50 dark:bg-orange-950/10 p-4 rounded-3xl border border-orange-100 dark:border-orange-900/20 shadow-sm transition-all hover:shadow-md">
+      <div className="flex justify-between items-center bg-primary/5/50 dark:bg-primary/20/10 p-4 rounded-3xl border border-primary/10 dark:border-primary/15/20 shadow-sm transition-all hover:shadow-md">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center">
-            <CheckCircle2 className="text-orange-500" size={24} />
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
+            <CheckCircle2 className="text-primary" size={24} />
           </div>
           <div>
             <h3 className="text-sm font-black uppercase tracking-tight">Batch Actions</h3>
@@ -58,7 +58,7 @@ export function PendingRequestsGrid({
         <Button 
           onClick={onAcceptAll}
           disabled={isAcceptAllPending}
-          className="h-10 px-6 rounded-xl bg-orange-500 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-200 hover:scale-105 active:scale-95 transition-all"
+          className="h-10 px-6 rounded-xl bg-primary text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all"
         >
           {isAcceptAllPending ? (
             <Loader2 className="animate-spin mr-2" size={14} />
@@ -87,3 +87,4 @@ export function PendingRequestsGrid({
     </div>
   );
 }
+

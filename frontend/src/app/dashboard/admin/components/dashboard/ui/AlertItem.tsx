@@ -23,10 +23,10 @@ export default function AlertItem({
       button: 'text-red-700 hover:text-red-900',
     },
     warning: {
-      border: 'border-orange-500',
-      bg: 'bg-orange-50 dark:bg-orange-900/10',
+      border: 'border-primary',
+      bg: 'bg-primary/5 dark:bg-primary/15/10',
       text: 'text-orange-700 dark:text-orange-400',
-      button: 'text-orange-700 hover:text-orange-900',
+      button: 'text-orange-700 hover:text-primary/15',
     },
     info: {
       border: 'border-slate-300 dark:border-slate-600',
@@ -67,3 +67,4 @@ export default function AlertItem({
     </div>
   );
 }
+

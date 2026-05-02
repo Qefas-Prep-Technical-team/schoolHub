@@ -142,3 +142,4 @@ export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetab
     </div>
   )
 }
+

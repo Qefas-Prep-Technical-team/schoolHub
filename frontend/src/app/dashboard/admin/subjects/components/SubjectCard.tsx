@@ -33,7 +33,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onEdit, onView }) =>
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
 
   const getIcon = (code: string) => {
     const c = code.toUpperCase();
@@ -48,7 +48,8 @@ const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onEdit, onView }) =>
 
   return (
     <div 
-      className="group relative bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3.5rem] p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col"
+      className="group relative bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3.5rem] p-10 hover:-translate-y-2 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col"
+      style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
       onClick={() => onView?.(subject)}
     >
       {/* Dynamic Background Glow */}
@@ -125,7 +126,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onEdit, onView }) =>
         
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-                <div className="size-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                     <Workflow size={14} strokeWidth={2.5} />
                 </div>
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -146,3 +147,4 @@ const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onEdit, onView }) =>
 }
 
 export default SubjectCard
+

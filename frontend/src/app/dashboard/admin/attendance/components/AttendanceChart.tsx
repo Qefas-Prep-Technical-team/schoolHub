@@ -51,7 +51,7 @@ export default function AttendanceChart({ stats, isLoading }: AttendanceChartPro
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                        <Activity className="h-5 w-5 text-indigo-500" />
+                        <Activity className="h-5 w-5 text-primary" />
                         <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">
                             Presence Velocity
                         </h3>
@@ -66,7 +66,7 @@ export default function AttendanceChart({ stats, isLoading }: AttendanceChartPro
                         onClick={() => setActiveLine('students')}
                         className={cn(
                             "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                            activeLine === 'students' ? "bg-white dark:bg-slate-900 shadow-sm text-indigo-600" : "text-slate-400 hover:text-slate-600"
+                            activeLine === 'students' ? "bg-white dark:bg-slate-900 shadow-sm text-primary" : "text-slate-400 hover:text-slate-600"
                         )}
                     >
                         Students
@@ -97,8 +97,8 @@ export default function AttendanceChart({ stats, isLoading }: AttendanceChartPro
                     <AreaChart data={data}>
                         <defs>
                             <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1}/>
-                                <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
+                                <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
                             </linearGradient>
                             <linearGradient id="colorTeachers" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
@@ -137,7 +137,7 @@ export default function AttendanceChart({ stats, isLoading }: AttendanceChartPro
                             <Area 
                                 type="monotone" 
                                 dataKey="students" 
-                                stroke="#4f46e5" 
+                                stroke="#2563eb" 
                                 strokeWidth={4}
                                 fillOpacity={1} 
                                 fill="url(#colorStudents)" 
@@ -171,10 +171,11 @@ export default function AttendanceChart({ stats, isLoading }: AttendanceChartPro
                         </p>
                     </div>
                 </div>
-                <button className="h-12 px-8 rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 whitespace-nowrap">
+                <button className="h-12 px-8 rounded-2xl bg-primary text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 whitespace-nowrap">
                     Download Raw Data
                 </button>
             </div>
         </div>
     );
 }
+

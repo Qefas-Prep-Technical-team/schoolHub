@@ -41,7 +41,7 @@ const statusStyles = {
     REVIEW: 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
     APPROVED: 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
     REJECTED: 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',
-    PUBLISHED: 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20',
+    PUBLISHED: 'bg-primary/5 text-primary border-indigo-100 dark:bg-primary/50/10 dark:text-indigo-400 dark:border-primary/20',
 };
 
 export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectPaperCardProps) {
@@ -50,7 +50,7 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
 
   const effectiveExamId = propExamId || paper.examId || 'none';
 
@@ -128,7 +128,7 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
             {paper.title || `${paper.subject?.name} Assessment`}
           </h3>
           <div className="flex items-center gap-3 mb-8">
-            <div className="size-6 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+            <div className="size-6 rounded-lg bg-primary/50/10 text-primary flex items-center justify-center">
                 <BookOpen size={12} strokeWidth={2.5} />
             </div>
             <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
@@ -142,7 +142,7 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
               <div className="space-y-1">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Faculty lead</span>
                   <div className="flex items-center gap-2">
-                       <User size={12} className="text-indigo-500" />
+                       <User size={12} className="text-primary" />
                        <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase truncate max-w-[100px]">
                           {paper.teacher?.name || 'Unassigned'}
                        </span>
@@ -195,3 +195,4 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
     </>
   );
 }
+

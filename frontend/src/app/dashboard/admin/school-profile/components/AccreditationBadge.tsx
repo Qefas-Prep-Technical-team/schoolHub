@@ -39,3 +39,4 @@ const AccreditationBadge: React.FC<AccreditationBadgeProps> = ({ status }) => {
 };
 
 export default AccreditationBadge;
+

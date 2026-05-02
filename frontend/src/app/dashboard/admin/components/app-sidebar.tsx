@@ -117,9 +117,10 @@ const SECTION_TITLES = {
 interface AdminSidebarProps {
     isCollapsed: boolean;
     setIsCollapsed: (collapsed: boolean) => void;
+    primaryColor?: string;
 }
 
-export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps) {
+export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#2563eb' }: AdminSidebarProps) {
     const { mutate: logout } = useLogoutMutation()
     const [isUserOpen, setIsUserOpen] = useState(false)
     const [profile, setProfile] = useState<any>(null)
@@ -165,7 +166,10 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
             <SidebarHeader className="pt-8 flex items-center justify-between px-4 relative">
                 <div className="flex items-center gap-3">
                     <Link href="/" className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/5 shadow-sm border border-indigo-500/10 overflow-hidden p-1">
+                        <div 
+                            className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/5 border border-primary/10 overflow-hidden p-1"
+                            style={{ boxShadow: `0 4px 6px -1px ${primaryColor}10` }}
+                        >
                             <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
                         </div>
                         {!isCollapsed && (
@@ -183,7 +187,8 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                         e.preventDefault();
                         setIsCollapsed(!isCollapsed);
                     }}
-                    className="absolute -right-3 top-20 z-50 h-6 w-6 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400 hover:text-primary flex items-center justify-center transition-all shadow-sm group"
+                    className="absolute -right-3 top-20 z-50 h-6 w-6 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400 hover:text-primary flex items-center justify-center transition-all group"
+                    style={{ boxShadow: `0 2px 4px ${primaryColor}20` }}
                     title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                 >
                     {isCollapsed ? (
@@ -224,9 +229,10 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                                                     className={cn(
                                                         "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative cursor-pointer",
                                                         isActive
-                                                            ? "bg-primary/10 text-primary shadow-sm shadow-primary/5"
+                                                            ? "bg-primary/10 text-primary"
                                                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100"
                                                     )}
+                                                    style={isActive ? { boxShadow: `0 4px 6px -1px ${primaryColor}20` } : {}}
                                                     disabled={isDisabled}
                                                 >
                                                     <Icon className={cn(
@@ -245,7 +251,10 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
                                                         </span>
                                                     )}
                                                     {isActive && (
-                                                        <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-primary shadow-lg shadow-primary/50" />
+                                                        <div 
+                                                            className="absolute right-2 h-1.5 w-1.5 rounded-full bg-primary shadow-lg" 
+                                                            style={{ boxShadow: `0 0 10px ${primaryColor}` }}
+                                                        />
                                                     )}
                                                 </SidebarMenuButton>
                                             </Link>
@@ -333,3 +342,4 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps)
         </Sidebar>
     )
 }
+

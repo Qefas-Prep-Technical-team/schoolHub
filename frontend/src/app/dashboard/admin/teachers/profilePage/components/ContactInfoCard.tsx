@@ -46,3 +46,4 @@ export default function ContactInfoCard({ contactInfo }: ContactInfoCardProps) {
     </Card>
   )
 }
+

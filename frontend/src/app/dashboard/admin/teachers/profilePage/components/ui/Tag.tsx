@@ -15,3 +15,4 @@ export default function Tag({ children, variant = 'secondary' }: TagProps) {
     </span>
   )
 }
+

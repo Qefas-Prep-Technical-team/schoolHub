@@ -1,53 +1,56 @@
-import React from 'react';
-import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
-import 'react-tabs/style/react-tabs.css'; // keep default styles
+import React, { useState } from 'react';
+import { X } from 'lucide-react';
 
-interface TabItem {
-  id: string;
-  label: string;
-  content: React.ReactNode;
+interface SubjectInputProps {
+  subjects: string[];
+  onSubjectsChange: (subjects: string[]) => void;
 }
 
-interface CustomTabsProps {
-  tabs: TabItem[];
-  activeTab: string;
-  onTabChange: (tabId: string) => void;
-}
+const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
+  const [inputValue, setInputValue] = useState('');
 
-const CustomTabs: React.FC<CustomTabsProps> = ({ tabs, activeTab, onTabChange }) => {
-  const activeIndex = tabs.findIndex((t) => t.id === activeTab);
+  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      e.preventDefault();
+      if (!subjects.includes(inputValue.trim())) {
+        onSubjectsChange([...subjects, inputValue.trim()]);
+      }
+      setInputValue('');
+    }
+  };
+
+  const handleRemoveSubject = (subjectToRemove: string) => {
+    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
+  };
 
   return (
-    <Tabs
-      selectedIndex={activeIndex}
-      onSelect={(index) => onTabChange(tabs[index].id)}
-    >
-      <TabList className="flex border-b border-gray-200 dark:border-gray-700 gap-8">
-        {tabs.map((tab) => (
-          <Tab
-            key={tab.id}
-            className={`
-              py-3 px-1 text-sm font-bold tracking-[0.015em] 
-              text-gray-500 dark:text-gray-400 
-              hover:text-gray-700 hover:border-gray-300 
-              dark:hover:text-gray-300 dark:hover:border-gray-600
-              border-b-2 border-transparent
-              cursor-pointer
-            `}
-            selectedClassName="border-b-2 border-primary text-primary"
+    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
+      {subjects.map((subject) => (
+        <span
+          key={subject}
+          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
+        >
+          {subject}
+          <button
+            onClick={() => handleRemoveSubject(subject)}
+            className="hover:text-primary/70"
+            aria-label={`Remove ${subject}`}
           >
-            {tab.label}
-          </Tab>
-        ))}
-      </TabList>
-
-      {tabs.map((tab) => (
-        <TabPanel key={tab.id} className="mt-4">
-          {tab.content}
-        </TabPanel>
+            <X size={12} />
+          </button>
+        </span>
       ))}
-    </Tabs>
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleAddSubject}
+        placeholder="Add subjects..."
+        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
+      />
+    </div>
   );
 };
 
-export default CustomTabs;
+export default SubjectInput;
+

@@ -132,3 +132,4 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
     </Dialog>
   );
 }
+

@@ -166,17 +166,17 @@ export function ConnectionCard({
   return (
     <Card className={cn(
       "rounded-[2rem] overflow-hidden border-none bg-white dark:bg-gray-800 shadow-lg transition-all hover:shadow-2xl relative group",
-      isClass ? "shadow-purple-100/50" : "shadow-orange-100/50"
+      isClass ? "shadow-purple-100/50" : "shadow-primary/10/50"
     )}>
       <div className={cn(
         "h-1.5 w-full absolute top-0 z-20",
-        isOutgoing ? "bg-slate-300 shadow-sm" : (isClass ? "bg-purple-500 shadow-purple-500/20" : "bg-orange-500 shadow-orange-500/20")
+        isOutgoing ? "bg-slate-300 shadow-sm" : (isClass ? "bg-purple-500 shadow-purple-500/20" : "bg-primary shadow-primary/20")
       )} />
 
       <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5 z-10">
         <Badge className={cn(
           "border-none px-3 py-1 font-black uppercase text-[8px] tracking-widest rounded-lg",
-          isClass ? "bg-purple-600 text-white" : "bg-orange-600 text-white"
+          isClass ? "bg-purple-600 text-white" : "bg-primary text-white"
         )}>
           {details.className || item.linkType.replace('_', ' ')}
         </Badge>
@@ -193,13 +193,13 @@ export function ConnectionCard({
           >
             <div className={cn(
               "absolute -inset-1 rounded-2xl blur-md opacity-0 group-hover/avatar:opacity-40 transition-opacity",
-              isClass ? "bg-purple-500" : "bg-orange-500"
+              isClass ? "bg-purple-500" : "bg-primary"
             )} />
             <Avatar className="h-14 w-14 rounded-2xl shadow-sm transition-transform group-hover/avatar:scale-105 border-2 border-white dark:border-gray-800">
               <AvatarImage src={details.image} alt={details.name} className="object-cover" />
               <AvatarFallback className={cn(
                 "rounded-2xl text-white font-black text-xl",
-                isClass ? "bg-purple-500" : "bg-orange-500"
+                isClass ? "bg-purple-500" : "bg-primary"
               )}>
                 {details.name?.charAt(0).toUpperCase() || <Clock size={20} />}
               </AvatarFallback>
@@ -244,7 +244,7 @@ export function ConnectionCard({
               disabled={isLoading}
               className={cn(
                 "flex-[3] h-12 rounded-xl text-white font-black text-[10px] uppercase tracking-widest shadow-lg transition-all hover:scale-[1.02] active:scale-95",
-                isClass ? "bg-purple-600 shadow-purple-200" : "bg-orange-500 shadow-orange-100"
+                isClass ? "bg-purple-600 shadow-purple-200" : "bg-primary shadow-primary/10"
               )}
             >
               {isLoading ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
@@ -274,3 +274,4 @@ export function ConnectionCard({
     </Card>
   );
 }
+

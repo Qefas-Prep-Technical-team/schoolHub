@@ -18,3 +18,4 @@ export default function DashboardLayout({ leftColumn, rightColumn }: DashboardLa
     </div>
   );
 }
+

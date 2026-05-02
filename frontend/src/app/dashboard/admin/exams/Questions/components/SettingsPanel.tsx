@@ -26,3 +26,4 @@ const SettingsPanel: React.FC = () => {
 };
 
 export default SettingsPanel;
+

@@ -49,7 +49,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, schoolCode }
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] bg-white dark:bg-slate-900 border-none shadow-2xl rounded-3xl overflow-hidden p-0">
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white">
+        <div className="bg-gradient-to-br from-blue-600 to-primary p-8 text-white">
           <DialogHeader className="text-white">
             <DialogTitle className="text-3xl font-black tracking-tight">QR Access Hub</DialogTitle>
             <DialogDescription className="text-blue-100 text-lg opacity-90">
@@ -108,3 +108,4 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, schoolCode }
 };
 
 export default QRCodeModal;
+

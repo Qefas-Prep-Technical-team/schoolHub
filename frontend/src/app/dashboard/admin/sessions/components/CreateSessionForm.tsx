@@ -28,7 +28,7 @@ export function CreateSessionForm({ schoolId, onSuccess }: { schoolId: string; o
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
 
   const {
     register,
@@ -141,3 +141,4 @@ export function CreateSessionForm({ schoolId, onSuccess }: { schoolId: string; o
     </form>
   );
 }
+

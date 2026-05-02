@@ -40,7 +40,7 @@ export default function StudentsPage() {
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
 
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
@@ -91,7 +91,7 @@ export default function StudentsPage() {
         label: 'Cognitive Efficiency', 
         value: '89%', 
         icon: Activity, 
-        color: '#6366f1', // Indigo
+        color: '#2563eb', // Indigo
         desc: 'Performance Sync'
     },
     { 
@@ -213,3 +213,4 @@ export default function StudentsPage() {
     </div>
   );
 }
+

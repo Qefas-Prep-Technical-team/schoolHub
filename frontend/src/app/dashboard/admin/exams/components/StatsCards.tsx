@@ -14,7 +14,7 @@ export default function StatsCards({ exams = [] }: StatsCardsProps) {
     const { user } = useAuthStore();
     const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
     const { data: settings } = useSchoolSettings(schoolId);
-    const primaryColor = settings?.themeColor || '#ea580c';
+    const primaryColor = settings?.themeColor || '#2563eb';
 
     const now = new Date();
     
@@ -37,7 +37,7 @@ export default function StatsCards({ exams = [] }: StatsCardsProps) {
             label: 'Temporal Schedule', 
             value: exams.filter(e => e.status === 'PUBLISHED' && e.startDate && new Date(e.startDate) > now).length.toString(),
             icon: Calendar,
-            color: '#6366f1', // Indigo
+            color: '#2563eb', // Indigo
             desc: 'Pending Deployments'
         },
         { 
@@ -98,3 +98,4 @@ export default function StatsCards({ exams = [] }: StatsCardsProps) {
         </section>
     );
 }
+

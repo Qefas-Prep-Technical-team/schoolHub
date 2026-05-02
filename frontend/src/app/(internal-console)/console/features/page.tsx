@@ -1,5 +1,6 @@
 "use client"
 
+import RoleFeaturesContent from "./components/RoleFeaturesContent"
 import {
     useUpdatePlatformFeature
 } from "@/lib/api/hooks/usePlatformSchools"
@@ -93,15 +94,14 @@ export default function PlatformFeaturesPage() {
 
     const filteredFeatures = (role: string) => {
         const query = searchQuery.toLowerCase();
+        const registry = entitlementFeatures || [];
 
-        // Everything now filters from entitlementFeatures (The Registry)
-        return entitlementFeatures?.filter((f: any) => {
+        return registry.filter((f: any) => {
             const matchesSearch =
-                f.name.toLowerCase().includes(query) ||
-                f.tag.toLowerCase().includes(query) ||
+                (f.name?.toLowerCase() || "").includes(query) ||
+                (f.featureKey?.toLowerCase() || "").includes(query) ||
                 (f.marketingLabel && f.marketingLabel.toLowerCase().includes(query));
 
-            // We show all features in all tabs so they can be toggled on/off for that role
             return matchesSearch;
         })
     }
@@ -135,131 +135,88 @@ export default function PlatformFeaturesPage() {
             </div>
 
             {/* Tabs for Roles */}
-            <Tabs defaultValue="student" className="space-y-10" onValueChange={setActiveRole}>
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-                    <TabsList className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/5 p-1.5 h-auto rounded-[2rem] shadow-sm">
-                        <TabsTrigger value="student" className="rounded-[1.5rem] px-8 py-3.5 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-indigo-500/20 font-black text-[11px] uppercase tracking-widest gap-2.5 transition-all">
-                            <StudentIcon size={16} /> Student
-                        </TabsTrigger>
-                        <TabsTrigger value="teacher" className="rounded-[1.5rem] px-8 py-3.5 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-indigo-500/20 font-black text-[11px] uppercase tracking-widest gap-2.5 transition-all">
-                            <TeacherIcon size={16} /> Teacher
-                        </TabsTrigger>
-                        <TabsTrigger value="parent" className="rounded-[1.5rem] px-8 py-3.5 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-indigo-500/20 font-black text-[11px] uppercase tracking-widest gap-2.5 transition-all">
-                            <ParentIcon size={16} /> Parent
-                        </TabsTrigger>
-                        <TabsTrigger value="admin" className="rounded-[1.5rem] px-8 py-3.5 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-indigo-500/20 font-black text-[11px] uppercase tracking-widest gap-2.5 transition-all">
-                            <AdminIcon size={16} /> Admin
-                        </TabsTrigger>
-                        <TabsTrigger value="registry" className="rounded-[1.5rem] px-8 py-3.5 data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/20 font-black text-[11px] uppercase tracking-widest gap-2.5 transition-all">
-                            <ShieldIcon size={16} /> Registry
-                        </TabsTrigger>
+            <Tabs defaultValue="student" className="space-y-12" onValueChange={setActiveRole}>
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl p-3 rounded-[2.5rem] border border-white dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none sticky top-4 z-40">
+                    <TabsList className="bg-slate-100/50 dark:bg-white/5 border-none p-1.5 h-auto rounded-[2rem] flex flex-wrap md:flex-nowrap">
+                        {[
+                            { id: 'student', label: 'Student', icon: StudentIcon, color: 'data-[state=active]:bg-blue-600' },
+                            { id: 'teacher', label: 'Teacher', icon: TeacherIcon, color: 'data-[state=active]:bg-emerald-600' },
+                            { id: 'parent', label: 'Parent', icon: ParentIcon, color: 'data-[state=active]:bg-orange-600' },
+                            { id: 'admin', label: 'Admin', icon: AdminIcon, color: 'data-[state=active]:bg-indigo-600' },
+                            { id: 'registry', label: 'Registry', icon: ShieldIcon, color: 'data-[state=active]:bg-slate-900 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900' }
+                        ].map((tab) => (
+                            <TabsTrigger 
+                                key={tab.id}
+                                value={tab.id} 
+                                className={cn(
+                                    "rounded-[1.5rem] px-8 py-4 font-black text-[11px] uppercase tracking-widest gap-3 transition-all duration-500",
+                                    "data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:scale-105",
+                                    tab.color
+                                )}
+                            >
+                                <tab.icon size={18} /> {tab.label}
+                            </TabsTrigger>
+                        ))}
                     </TabsList>
 
-                    <div className="relative group min-w-[360px]">
-                        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+                    <div className="relative group flex-1 max-w-md ml-auto">
+                        <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
                             <SearchIcon className={cn("transition-colors duration-300", currentRole.color)} size={20} />
                         </div>
                         <Input
-                            placeholder={`Search ${activeRole} features...`}
+                            placeholder={`Filter ${activeRole}...`}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-14 h-16 bg-white dark:bg-slate-950 border-slate-200 dark:border-white/5 rounded-[1.5rem] shadow-sm focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-slate-900 dark:text-white border-2 focus:border-indigo-500/50"
+                            className="pl-16 h-16 bg-white/80 dark:bg-slate-950/80 border-transparent rounded-[1.5rem] shadow-inner focus:ring-0 transition-all font-bold text-slate-900 dark:text-white border-2 focus:border-indigo-500/30"
                         />
                     </div>
                 </div>
 
                 {['student', 'teacher', 'parent', 'admin'].map((role) => (
-                    <TabsContent key={role} value={role} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {/* Dynamic Header for Active Role */}
-                        <div className="flex items-center gap-4 py-4 border-b border-slate-100 dark:border-white/5">
-                            <div className={cn("p-3 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-white/10", currentRole.color)}>
-                                <currentRole.icon size={24} />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-                                    Configuring <span className={currentRole.color}>{currentRole.label}</span>
-                                </h3>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
-                                    Directly Attached Features & Modules
-                                </p>
-                            </div>
-
-                            <div className="ml-auto">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => harvestFeatures.mutate({ category: role.toUpperCase(), role })}
-                                    disabled={harvestFeatures.isPending}
-                                    className="border-indigo-600/20 text-indigo-600 hover:bg-indigo-50 rounded-2xl px-6 py-4 font-black uppercase tracking-widest text-[9px] gap-2"
-                                >
-                                    {harvestFeatures.isPending ? <RefreshCcw className="animate-spin" size={14} /> : <Sparkles size={14} />}
-                                    Sync {currentRole.label} Features
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {isLoadingEntitlement ? (
-                                Array(4).fill(0).map((_, i) => (
-                                    <div key={i} className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-6 space-y-6 animate-pulse">
-                                        <div className="flex items-center gap-4">
-                                            <Skeleton className="h-14 w-14 rounded-2xl" />
-                                            <Skeleton className="h-8 w-1/2" />
-                                        </div>
-                                        <Skeleton className="h-24 w-full rounded-2xl" />
-                                        <div className="p-6 pt-0 border-t border-slate-50 dark:border-slate-800/50 mt-4">
-                                            <div className="pt-4 flex flex-col gap-2">
-                                                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active in Plans</span>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {/* Placeholder logic for skeleton */}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : filteredFeatures(role)?.map((feature: any) => (
-                                <FeatureCard 
-                                    key={feature.id}
-                                    feature={feature}
-                                    mode="role"
-                                    activeRole={role}
-                                    onToggle={handleToggle}
-                                />
-                            ))}
-                        </div>
-
-                        {filteredFeatures(role)?.length === 0 && (
-                            <div className="py-40 text-center border-2 border-dashed border-slate-100 dark:border-white/5 rounded-[3rem]">
-                                <div className="bg-slate-50 dark:bg-white/5 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
-                                    <FeatureIcon size={48} />
-                                </div>
-                                <h3 className="text-2xl font-black text-slate-400 dark:text-slate-600">No {role} features found</h3>
-                                <p className="text-slate-400 dark:text-slate-600 font-bold mt-2">Try adjusting your search or filters.</p>
-                            </div>
-                        )}
+                    <TabsContent key={role} value={role}>
+                        <RoleFeaturesContent 
+                            role={role}
+                            roleLabel={roleData[role as keyof typeof roleData].label}
+                            icon={roleData[role as keyof typeof roleData].icon}
+                            accentColor={roleData[role as keyof typeof roleData].color}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                        />
                     </TabsContent>
                 ))}
 
                 {/* Registry Tab Content */}
-                <TabsContent value="registry" className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 py-8 border-b border-slate-100 dark:border-white/5">
+                <TabsContent value="registry" className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 py-10 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] px-8 rounded-[3rem]">
                         <div>
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                            <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                                 Entitlement <span className="text-emerald-600">Registry</span>
                             </h3>
-                            <p className="text-sm font-medium text-slate-500 mt-1">Define core platform features that can be assigned to subscription plans.</p>
+                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">
+                                Define Core Platform Capabilities & Feature Tags
+                            </p>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="outline"
+                                onClick={() => harvestFeatures.mutate({})}
+                                disabled={harvestFeatures.isPending}
+                                className="border-2 border-emerald-600/20 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-[1.5rem] px-8 py-7 font-black uppercase tracking-widest text-[10px] gap-3 shadow-lg shadow-emerald-500/5 transition-all hover:scale-105 active:scale-95"
+                            >
+                                {harvestFeatures.isPending ? <RefreshCcw className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                                Sync Master Registry
+                            </Button>
 
                             <Button
                                 onClick={() => setIsAddingFeature(true)}
-                                className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl px-8 py-6 font-black uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-600/20 gap-2"
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-[1.5rem] px-10 py-7 font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-emerald-600/30 gap-3 transition-all hover:scale-105 active:scale-95"
                             >
-                                <PlusIcon size={16} /> Register New Feature
+                                <PlusIcon size={20} /> Register New Feature
                             </Button>
                         </div>
                     </div>
 
-                    <div className="space-y-12">
+                    <div className="space-y-16 px-4">
                         {Object.entries(
                             (entitlementFeatures || []).reduce((acc: any, f: any) => {
                                 const cat = f.category || 'GENERAL';
@@ -268,16 +225,16 @@ export default function PlatformFeaturesPage() {
                                 return acc;
                             }, {})
                         ).map(([category, features]: [string, any]) => (
-                            <div key={category} className="space-y-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-px flex-1 bg-slate-100 dark:bg-white/5" />
-                                    <Badge className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg px-4 py-1.5 font-black text-[10px] uppercase tracking-[0.2em]">
+                            <div key={category} className="space-y-8">
+                                <div className="flex items-center gap-6">
+                                    <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent" />
+                                    <Badge className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl px-6 py-2.5 font-black text-[10px] uppercase tracking-[0.3em] shadow-xl">
                                         {category} Features
                                     </Badge>
-                                    <div className="h-px flex-1 bg-slate-100 dark:bg-white/5" />
+                                    <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent" />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                                     {features.map((f: any) => (
                                         <FeatureCard 
                                             key={f.id}
@@ -293,17 +250,28 @@ export default function PlatformFeaturesPage() {
                                 </div>
                             </div>
                         ))}
+                    </div>
 
                         {(!entitlementFeatures || entitlementFeatures.length === 0) && (
-                            <div className="py-40 text-center border-2 border-dashed border-slate-100 dark:border-white/5 rounded-[3rem]">
-                                <div className="bg-slate-50 dark:bg-white/5 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
-                                    <FeatureIcon size={48} />
+                            <div className="py-40 text-center border-4 border-dashed border-slate-100 dark:border-white/5 rounded-[4rem] bg-slate-50/30 dark:bg-white/[0.01]">
+                                <div className="bg-white dark:bg-slate-900 w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl border border-slate-100 dark:border-white/5 text-slate-300">
+                                    <FeatureIcon size={56} />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-400 dark:text-slate-600">Registry Empty</h3>
-                                <p className="text-slate-400 dark:text-slate-600 font-bold mt-2">Sync or manually register your first entitlement.</p>
+                                <h3 className="text-3xl font-black text-slate-400 dark:text-slate-700">Registry Empty</h3>
+                                <p className="text-slate-400 dark:text-slate-600 font-bold mt-4 mb-10 max-w-sm mx-auto">
+                                    Sync or manually register your first entitlement to begin managing core platform features.
+                                </p>
+                                
+                                <Button
+                                    onClick={() => harvestFeatures.mutate({})}
+                                    disabled={harvestFeatures.isPending}
+                                    className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[2rem] px-12 py-8 font-black uppercase tracking-[0.2em] text-[12px] shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-all gap-4"
+                                >
+                                    {harvestFeatures.isPending ? <RefreshCcw className="animate-spin" size={20} /> : <Sparkles size={20} />}
+                                    Harvest Features from Plans
+                                </Button>
                             </div>
                         )}
-                    </div>
                 </TabsContent>
             </Tabs>
 

@@ -59,7 +59,7 @@ export default function SettingsPage() {
       // Ensure all fields have at least a default value to avoid uncontrolled input warnings
       setLocalSettings({
         ...settings,
-        themeColor: settings.themeColor || '#3670e2',
+        themeColor: settings.themeColor || '#2563eb',
         defaultSession: settings.defaultSession || '',
         defaultTerm: settings.defaultTerm || '',
         enableEmailNotifications: settings.enableEmailNotifications ?? true,
@@ -112,7 +112,7 @@ export default function SettingsPage() {
     if (settings) {
       setLocalSettings({
         ...settings,
-        themeColor: settings.themeColor || '#3670e2',
+        themeColor: settings.themeColor || '#2563eb',
         defaultSession: settings.defaultSession || '',
         defaultTerm: settings.defaultTerm || '',
         enableEmailNotifications: settings.enableEmailNotifications ?? true,
@@ -246,7 +246,7 @@ export default function SettingsPage() {
 
                             <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900">
                                 <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4">
-                                    <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                                    <div className="h-10 w-10 rounded-xl bg-primary/50/10 text-primary flex items-center justify-center">
                                         <Database size={20} />
                                     </div>
                                     <div>
@@ -304,9 +304,9 @@ export default function SettingsPage() {
                                         <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Institutional Color Presets</Label>
                                         <div className="flex flex-wrap gap-4">
                                             {[
-                                                { name: 'Qefas Orange', hex: '#ea580c' },
+                                                { name: 'Institutional Blue', hex: '#2563eb' },
                                                 { name: 'Royal Blue', hex: '#2563eb' },
-                                                { name: 'Scholar Indigo', hex: '#4f46e5' },
+                                                { name: 'Royal Blue', hex: '#2563eb' },
                                                 { name: 'Emerald Growth', hex: '#10b981' },
                                                 { name: 'Academic Slate', hex: '#475569' },
                                                 { name: 'Rose Excellence', hex: '#e11d48' },
@@ -332,7 +332,7 @@ export default function SettingsPage() {
                                                 <div className="relative">
                                                     <Input 
                                                         type="color" 
-                                                        value={localSettings.themeColor || '#ea580c'} 
+                                                        value={localSettings.themeColor || '#2563eb'} 
                                                         onChange={(e) => handleChange('themeColor', e.target.value)}
                                                         className="w-16 h-14 p-1 rounded-2xl cursor-copy border-none bg-transparent relative z-10"
                                                     />
@@ -352,7 +352,7 @@ export default function SettingsPage() {
                                         </div>
                                         <div 
                                             className="h-40 w-40 rounded-[3rem] shadow-3xl border-[8px] border-white dark:border-slate-800 group relative overflow-hidden"
-                                            style={{ backgroundColor: localSettings.themeColor || '#ea580c' }}
+                                            style={{ backgroundColor: localSettings.themeColor || '#2563eb' }}
                                         >
                                             <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent" />
                                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -515,3 +515,4 @@ function SettingItem({ title, description, icon: Icon, checked, onCheckedChange 
 function cn(...classes: any[]) {
   return classes.filter(Boolean).join(' ');
 }
+

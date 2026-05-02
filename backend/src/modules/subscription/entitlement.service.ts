@@ -67,8 +67,16 @@ export class EntitlementService {
       return false;
     }
 
-    // Check if the feature string is in the plan's feature array
-    return subscription.subscriptionPlan.features.includes(feature);
+    // 1. Check legacy array
+    if (subscription.subscriptionPlan.features.includes(feature)) return true;
+
+    // 2. Check new relational system (fetch featureAccess if not already included)
+    const plan = await prisma.subscriptionPlan.findUnique({
+      where: { id: subscription.subscriptionPlanId },
+      include: { featureAccess: { include: { feature: true } } }
+    });
+
+    return plan?.featureAccess.some(fa => fa.enabled && fa.feature.featureKey === feature) ?? false;
   }
 
   /**
@@ -102,7 +110,7 @@ export class EntitlementService {
       
       // Check new relational system
       const hasAccess = userSub.subscriptionPlan.featureAccess.some(
-        fa => fa.enabled && fa.feature.tag === feature
+        fa => fa.enabled && fa.feature.featureKey === feature
       );
       if (hasAccess) return true;
     }
@@ -128,7 +136,7 @@ export class EntitlementService {
         
         // Check new relational system
         const hasAccess = schoolSub.subscriptionPlan.featureAccess.some(
-          fa => fa.enabled && fa.feature.tag === feature
+          fa => fa.enabled && fa.feature.featureKey === feature
         );
         if (hasAccess) return true;
       }

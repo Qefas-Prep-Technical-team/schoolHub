@@ -15,3 +15,4 @@ export default function AvailabilityIndicator({ message, style }: AvailabilityIn
     </div>
   )
 }
+

@@ -1,27 +1,56 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { X } from 'lucide-react';
 
-interface TimeInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  label: string;
-  id: string;
+interface SubjectInputProps {
+  subjects: string[];
+  onSubjectsChange: (subjects: string[]) => void;
 }
 
-const TimeInput: React.FC<TimeInputProps> = ({ value, onChange, label, id }) => {
+const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      e.preventDefault();
+      if (!subjects.includes(inputValue.trim())) {
+        onSubjectsChange([...subjects, inputValue.trim()]);
+      }
+      setInputValue('');
+    }
+  };
+
+  const handleRemoveSubject = (subjectToRemove: string) => {
+    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
+  };
+
   return (
-    <div className="flex flex-col">
-      <label htmlFor={id} className="text-gray-900 dark:text-white text-sm font-medium leading-normal pb-2">
-        {label}
-      </label>
+    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
+      {subjects.map((subject) => (
+        <span
+          key={subject}
+          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
+        >
+          {subject}
+          <button
+            onClick={() => handleRemoveSubject(subject)}
+            className="hover:text-primary/70"
+            aria-label={`Remove ${subject}`}
+          >
+            <X size={12} />
+          </button>
+        </span>
+      ))}
       <input
-        id={id}
-        type="time"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-gray-700 bg-transparent h-12 placeholder:text-gray-400 dark:placeholder:text-gray-500 px-3 text-base font-normal leading-normal"
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleAddSubject}
+        placeholder="Add subjects..."
+        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
       />
     </div>
   );
 };
 
-export default TimeInput;
+export default SubjectInput;
+

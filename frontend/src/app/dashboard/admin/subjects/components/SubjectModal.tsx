@@ -376,7 +376,7 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
                                     </div>
                                     <div className="col-span-12 md:col-span-6 space-y-3">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <Target className="h-3 w-3 text-indigo-600" />
+                                            <Target className="h-3 w-3 text-primary" />
                                             <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Main Objectives</Label>
                                         </div>
                                         <Textarea 
@@ -461,3 +461,4 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
 }
 
 export default SubjectModal
+

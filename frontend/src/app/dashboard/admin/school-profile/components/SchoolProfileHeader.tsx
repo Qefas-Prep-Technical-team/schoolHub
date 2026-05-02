@@ -46,3 +46,4 @@ const SchoolProfileHeader: React.FC<SchoolProfileHeaderProps> = ({ school, onEdi
 };
 
 export default SchoolProfileHeader;
+

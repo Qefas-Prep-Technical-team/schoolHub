@@ -4,7 +4,14 @@ import { io, Socket } from "socket.io-client"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000"
+const getRawSocketUrl = () => {
+  const url = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:5000";
+  // Avoid malformed "https" or "http" strings
+  if (url === "https" || url === "http") return "http://localhost:5000";
+  return url;
+};
+
+const SOCKET_URL = getRawSocketUrl();
 
 export interface NewTicketNotification {
   id: string

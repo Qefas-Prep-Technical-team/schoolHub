@@ -25,7 +25,7 @@ export default function AttendanceBadge({ type, size = 'md' }: AttendanceBadgePr
         },
         unexcused: {
             label: 'Unexcused',
-            colors: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+            colors: 'bg-primary/10 text-orange-700 dark:bg-primary/15/30 dark:text-orange-400',
         },
     };
 
@@ -45,3 +45,4 @@ export default function AttendanceBadge({ type, size = 'md' }: AttendanceBadgePr
         </span>
     );
 }
+

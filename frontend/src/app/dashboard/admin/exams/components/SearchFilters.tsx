@@ -227,3 +227,4 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
         </div>
     );
 }
+

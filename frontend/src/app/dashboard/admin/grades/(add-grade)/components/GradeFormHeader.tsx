@@ -23,3 +23,4 @@ export default function GradeFormHeader({ title, onClose }: GradeFormHeaderProps
         </div>
     );
 }
+

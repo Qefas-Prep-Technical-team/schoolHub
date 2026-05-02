@@ -52,7 +52,7 @@ function getFilteredMenuItemsBySection(items: AdminMenuItem[]) {
   };
 }
 
-export function AdminMobileDrawer() {
+export function AdminMobileDrawer({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const pathname = usePathname();
   const { mutate: logout } = useLogoutMutation();
   const [open, setOpen] = React.useState(false);
@@ -75,7 +75,10 @@ export function AdminMobileDrawer() {
         {/* Header */}
         <div className="px-6 py-8 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50">
           <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-4 group/logo">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-white/10 p-1.5 group-hover/logo:scale-105 transition-transform duration-500">
+            <div 
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-1.5 group-hover/logo:scale-105 transition-transform duration-500"
+              style={{ boxShadow: `0 4px 6px -1px ${primaryColor}15` }}
+            >
               <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
             </div>
             <div className="flex flex-col">
@@ -112,9 +115,10 @@ export function AdminMobileDrawer() {
                         className={cn(
                           "flex items-center gap-4 rounded-xl px-4 py-4 transition-all duration-200 border border-transparent",
                           isActive 
-                            ? "bg-primary/10 text-primary border-primary/20 shadow-sm shadow-primary/5" 
+                            ? "bg-primary/10 text-primary border-primary/20" 
                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
                         )}
+                        style={isActive ? { boxShadow: `0 4px 6px -1px ${primaryColor}20` } : {}}
                       >
                         <Icon className={cn("h-5 w-5 shrink-0 transition-transform", isActive && "scale-110")} />
                         <span className={cn("text-sm font-bold tracking-tight flex-1", isActive && "text-primary")}>{item.label}</span>
@@ -130,7 +134,10 @@ export function AdminMobileDrawer() {
 
         {/* Footer */}
         <div className="px-6 py-6 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50">
-          <div className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 shadow-sm">
+          <div 
+            className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 transition-all"
+            style={{ boxShadow: `0 4px 6px -1px ${primaryColor}10` }}
+          >
             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shrink-0">
                <User2 className="h-6 w-6 text-primary/60" />
             </div>
@@ -154,3 +161,4 @@ export function AdminMobileDrawer() {
     </Sheet>
   );
 }
+

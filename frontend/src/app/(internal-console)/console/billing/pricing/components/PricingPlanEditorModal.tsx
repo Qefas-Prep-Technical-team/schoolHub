@@ -55,6 +55,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
         isPopular: false,
         hasTrial: false
     })
+    const [limitEditingFeature, setLimitEditingFeature] = useState<any>(null)
 
     useEffect(() => {
         if (plan) {
@@ -86,7 +87,20 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                 ...plan,
                 monthlyPrice: plan.pricing?.monthly ?? plan.monthlyPrice ?? '',
                 yearlyPrice: plan.pricing?.yearly ?? plan.yearlyPrice ?? '',
-                linkedFeatures: linked,
+                linkedFeatures: relationalAccess.map((ra: any) => {
+                    const manifestName = (ra.name !== null && ra.name !== undefined) ? ra.name : (ra.feature?.name || ra.feature?.tag);
+                    const existsInMarketing = plan.features?.includes(manifestName);
+                    
+                    return {
+                        featureId: ra.featureId || ra.feature?.id,
+                        name: manifestName,
+                        tag: ra.tag || ra.feature?.tag,
+                        enabled: ra.enabled,
+                        limitValue: ra.limitValue ?? "",
+                        setupLimit: ra.meta?.setupLimit ?? "",
+                        showLabel: ra.meta?.showLabel ?? existsInMarketing ?? true
+                    };
+                }),
                 features: marketingOnly, // Purely visual ad-hoc labels
                 maxStudents: plan.maxStudents ?? '',
                 maxStorageGb: plan.maxStorageGb ?? '',
@@ -125,12 +139,8 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
     const handleSubmit = async () => {
         // 1. Registry-backed labels (linked to entitlements)
         const entitlementLabels = formData.linkedFeatures
-            .filter((f: any) => f.enabled)
-            .map((f: any) => {
-                if (f.name && f.name.trim() !== "") return f.name;
-                const manifest = manifestFeatures?.find((mf: any) => mf.tag === f.tag);
-                return manifest?.marketingLabel || manifest?.name || f.tag;
-            });
+            .filter((f: any) => f.enabled && f.showLabel !== false && f.name && f.name.trim() !== "")
+            .map((f: any) => f.name.trim());
 
         // 2. Ad-hoc labels (standalone strings)
         const adhocLabels = (formData.features || [])
@@ -141,11 +151,17 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
             .filter(label => label && label.trim() !== "");
 
         const relationalAccess = formData.linkedFeatures
-            .filter((f: any) => f.tag && f.tag !== "")
+            .filter((f: any) => f.featureId || (f.tag && f.tag !== ""))
             .map((f: any) => ({
+                featureId: f.featureId,
                 tag: f.tag,
                 name: f.name, // Save the custom label back to relational access too
-                enabled: f.enabled
+                enabled: f.enabled,
+                limitValue: f.limitValue ? Number(f.limitValue) : null,
+                meta: {
+                    setupLimit: f.setupLimit ? Number(f.setupLimit) : null,
+                    showLabel: f.showLabel
+                }
             }));
 
         // CRITICAL: Extract EVERYTHING that could conflict
@@ -156,14 +172,16 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
         
         const payload = {
             ...baseData,
-            features: finalMarketingLabels, // Both registry-backed and ad-hoc
+            features: finalMarketingLabels,
             featureAccess: relationalAccess,
-            monthlyPrice: Number(formData.monthlyPrice) || 0,
-            yearlyPrice: Number(formData.yearlyPrice) || 0,
-            maxStudents: Number(formData.maxStudents) || 0,
-            maxStorageGb: Number(formData.maxStorageGb) || 0,
-            trialDays: Number(formData.trialDays) || 0,
+            monthlyPrice: Number(formData.monthlyPrice || 0) || 0,
+            yearlyPrice: Number(formData.yearlyPrice || 0) || 0,
+            maxStudents: Number(formData.maxStudents || 0) || 0,
+            maxStorageGb: Number(formData.maxStorageGb || 0) || 0,
+            trialDays: Number(formData.trialDays || 0) || 0,
         }
+
+        console.log("[PricingPlanEditorModal] Submitting payload:", payload);
         
         await savePlan.mutateAsync(payload)
         onClose()
@@ -335,14 +353,19 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No matching entitlements</p>
                                     <p className="text-[10px] text-slate-400 mt-1">Add {formData.category} features in the System Architecture console.</p>
                                 </div>
-                            ) : manifestFeatures.filter((mf: any) => {
+                            ) : manifestFeatures?.filter((mf: any) => {
+                                if (mf.isActive === false) return false;
                                 if (formData.category === 'schools') return mf.adminEnabled;
                                 if (formData.category === 'teachers') return mf.teacherEnabled;
                                 if (formData.category === 'parents') return mf.parentEnabled;
                                 if (formData.category === 'students') return mf.studentEnabled;
                                 return true;
+                            }).sort((a: any, b: any) => {
+                                const aEnabled = formData.linkedFeatures?.find((lf: any) => lf.featureId === a.id || (lf.tag === a.tag && a.tag))?.enabled ? 1 : 0;
+                                const bEnabled = formData.linkedFeatures?.find((lf: any) => lf.featureId === b.id || (lf.tag === b.tag && b.tag))?.enabled ? 1 : 0;
+                                return bEnabled - aEnabled;
                             }).map((mf: any) => {
-                                const linked = formData.linkedFeatures?.find((lf: any) => lf.tag === mf.tag);
+                                const linked = formData.linkedFeatures?.find((lf: any) => (lf.featureId === mf.id) || (lf.tag === mf.tag && mf.tag));
                                 const isEnabled = linked?.enabled ?? false;
 
                                 return (
@@ -364,18 +387,27 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                                 checked={isEnabled} 
                                                 onCheckedChange={(val) => {
                                                     const current = [...(formData.linkedFeatures || [])];
-                                                    const idx = current.findIndex(lf => lf.tag === mf.tag);
+                                                    const idx = current.findIndex(lf => (lf.featureId === mf.id) || (lf.tag === mf.tag && mf.tag));
                                                     if (idx > -1) {
                                                         current[idx] = { ...current[idx], enabled: val };
                                                     } else {
-                                                        // When turning on, initialize with manifest name/marketingLabel as default
+                                                        // When turning on, initialize with empty name so it won't show as a label by default
                                                         current.push({ 
-                                                            name: mf.marketingLabel || mf.name, 
+                                                            featureId: mf.id,
+                                                            name: "", 
                                                             tag: mf.tag, 
-                                                            enabled: val 
+                                                            enabled: val,
+                                                            limitValue: "",
+                                                            setupLimit: "",
+                                                            showLabel: true
                                                         });
                                                     }
                                                     setFormData({ ...formData, linkedFeatures: current });
+                                                    
+                                                    // If turned on, show the limit popup
+                                                    if (val) {
+                                                        setLimitEditingFeature(mf);
+                                                    }
                                                 }}
                                                 className="data-[state=checked]:bg-emerald-500"
                                             />
@@ -389,7 +421,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                                     value={linked?.name || ""}
                                                     onChange={(e) => {
                                                         const current = [...(formData.linkedFeatures || [])];
-                                                        const idx = current.findIndex(lf => lf.tag === mf.tag);
+                                                        const idx = current.findIndex(lf => (lf.featureId === mf.id) || (lf.tag === mf.tag && mf.tag));
                                                         if (idx > -1) {
                                                             current[idx] = { ...current[idx], name: e.target.value };
                                                             setFormData({ ...formData, linkedFeatures: current });
@@ -475,13 +507,29 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {/* Registry Linked Summary */}
                             {formData.linkedFeatures?.filter((lf: any) => lf.enabled).map((lf: any) => {
-                                const manifest = manifestFeatures?.find((mf: any) => mf.tag === lf.tag);
-                                const displayLabel = lf.name || manifest?.marketingLabel || manifest?.name || lf.tag;
+                                const manifest = manifestFeatures?.find((mf: any) => mf.id === lf.featureId || mf.tag === lf.tag);
+                                const hasCustomName = lf.name !== null && lf.name !== undefined && lf.name !== "";
+                                const isHidden = lf.showLabel === false || !hasCustomName;
+                                const displayLabel = hasCustomName ? lf.name : (manifest?.marketingLabel || manifest?.name || lf.tag);
+                                
                                 return (
-                                    <div key={lf.tag} className="flex items-center justify-between p-4 bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl">
+                                    <div key={lf.featureId || lf.tag} className={cn(
+                                        "flex items-center justify-between p-4 rounded-2xl border transition-all",
+                                        isHidden 
+                                        ? "bg-slate-50/50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800 opacity-60"
+                                        : "bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30"
+                                    )}>
                                         <div className="flex flex-col">
-                                            <span className="text-xs font-bold text-slate-900 dark:text-white">{displayLabel}</span>
-                                            <span className="text-[9px] text-emerald-600 uppercase font-black tracking-widest">Registry: {manifest?.name || lf.tag}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-slate-900 dark:text-white">{displayLabel}</span>
+                                                {isHidden && <Badge variant="outline" className="text-[7px] font-black uppercase px-1 h-3 border-slate-300 text-slate-400">Entitlement Only</Badge>}
+                                            </div>
+                                            <span className={cn(
+                                                "text-[9px] uppercase font-black tracking-widest",
+                                                isHidden ? "text-slate-400" : "text-emerald-600"
+                                            )}>
+                                                Registry: {manifest?.name || lf.tag}
+                                            </span>
                                         </div>
                                     </div>
                                 );
@@ -517,6 +565,86 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                     </Button>
                 </div>
             </DialogContent>
+
+            {/* Feature Limit Configuration Dialog */}
+            <Dialog open={!!limitEditingFeature} onOpenChange={() => setLimitEditingFeature(null)}>
+                <DialogContent className="max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 shadow-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                                <Sparkles size={20} />
+                            </div>
+                            Configure: {limitEditingFeature?.name}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-6 pt-4">
+                        <div className="flex items-center justify-between p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20">
+                            <div className="flex flex-col gap-1">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Show in Pricing Card</Label>
+                                <p className="text-[9px] text-slate-400 font-medium">Toggle this to hide/show this feature in the public plan description.</p>
+                            </div>
+                            <Switch 
+                                checked={formData.linkedFeatures?.find((lf: any) => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag))?.showLabel !== false}
+                                onCheckedChange={(val) => {
+                                    const current = [...(formData.linkedFeatures || [])];
+                                    const idx = current.findIndex(lf => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag));
+                                    if (idx > -1) {
+                                        current[idx] = { ...current[idx], showLabel: val };
+                                        setFormData({ ...formData, linkedFeatures: current });
+                                    }
+                                }}
+                                className="data-[state=checked]:bg-indigo-600"
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Usage Limit (Unit Count)</Label>
+                            <Input 
+                                type="number"
+                                placeholder="e.g. 10"
+                                value={formData.linkedFeatures?.find((lf: any) => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag))?.limitValue || ""}
+                                onChange={(e) => {
+                                    const current = [...(formData.linkedFeatures || [])];
+                                    const idx = current.findIndex(lf => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag));
+                                    if (idx > -1) {
+                                        current[idx] = { ...current[idx], limitValue: e.target.value };
+                                        setFormData({ ...formData, linkedFeatures: current });
+                                    }
+                                }}
+                                className="h-12 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 font-black"
+                            />
+                            <p className="text-[9px] text-slate-400 font-medium">Leave empty for unlimited access within this feature.</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Setup Limit / Cost Override (NGN)</Label>
+                            <Input 
+                                type="number"
+                                placeholder="e.g. 5000"
+                                value={formData.linkedFeatures?.find((lf: any) => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag))?.setupLimit || ""}
+                                onChange={(e) => {
+                                    const current = [...(formData.linkedFeatures || [])];
+                                    const idx = current.findIndex(lf => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag));
+                                    if (idx > -1) {
+                                        current[idx] = { ...current[idx], setupLimit: e.target.value };
+                                        setFormData({ ...formData, linkedFeatures: current });
+                                    }
+                                }}
+                                className="h-12 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 font-black"
+                            />
+                            <p className="text-[9px] text-slate-400 font-medium">Additional one-time setup fee or credit limit for this entitlement.</p>
+                        </div>
+
+                        <Button 
+                            onClick={() => setLimitEditingFeature(null)}
+                            className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl py-6 font-black uppercase tracking-widest text-[10px]"
+                        >
+                            Confirm Parameters
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </Dialog>
     )
 }

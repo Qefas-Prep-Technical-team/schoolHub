@@ -1,125 +1,145 @@
-"use client"
-import { useState } from 'react'
-import { useParams } from 'next/navigation'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api/client'
-import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
-import TimetableToolbar from './TimetableToolbar'
-import WeeklyTimetable from './WeeklyTimetable'
-import AddScheduleModal from './AddScheduleModal'
+import ClassCard from './ClassCard'
+import AvailabilityIndicator from './AvailabilityIndicator'
 
-export default function SchedulePage() {
-  const { id: teacherId } = useParams()
-  const queryClient = useQueryClient()
-  const { user } = useAuthStore()
-  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ''
-  
-  const [currentWeek, setCurrentWeek] = useState('Current Semester Schedule')
-  const [isModalOpen, setIsModalOpen] = useState(false)
+interface ClassSchedule {
+  id: string
+  course: string
+  time: string
+  room: string
+  color: string
+  day: string
+  startTime: string
+  duration: number // in hours
+  hasConflict?: boolean
+}
 
-  // Fetch real timetable data
-  const { data: timetableResponse, isLoading } = useQuery({
-    queryKey: ['teacher-timetable', teacherId],
-    queryFn: async () => {
-      const response = await apiClient.get(`/admin/teachers/${teacherId}/timetable`)
-      return response.data
-    },
-    enabled: !!teacherId
-  })
+interface WeeklyTimetableProps {
+  classes: ClassSchedule[]
+  onClassClick: (classId: string) => void
+}
 
-  const rawPeriods = timetableResponse?.data || []
+export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetableProps) {
+  const timeSlots = [
+    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
+    '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM'
+  ]
 
-  // Map backend TimetablePeriod to frontend ClassSchedule format
-  const mappedClasses = rawPeriods.map((p: any) => {
-    // Parse times (Expected format: HH:mm)
-    const [startH, startM] = p.startTime.split(':').map(Number)
-    const [endH, endM] = p.endTime.split(':').map(Number)
-    
-    // Calculate duration in hours
-    const startDecimal = startH + startM / 60
-    const endDecimal = endH + endM / 60
-    const duration = endDecimal - startDecimal
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
-    // Format time for display (e.g., '09:00 AM')
-    const formatTime = (h: number, m: number) => {
-      const period = h >= 12 ? 'PM' : 'AM'
-      const displayH = h % 12 || 12
-      return `${displayH}:${m.toString().padStart(2, '0')} ${period}`
+  const calculatePosition = (startTime: string, duration: number) => {
+    const timeToPixels: { [key: string]: number } = {
+      '08:00': 0, '08:30': 32, '09:00': 64, '09:30': 96,
+      '10:00': 128, '10:30': 160, '11:00': 192, '11:30': 224,
+      '12:00': 256, '12:30': 288, '13:00': 320, '13:30': 352,
+      '14:00': 384, '14:30': 416, '15:00': 448
     }
 
-    // Determine color based on subject (simple heuristic)
-    const getSubjectColor = (name: string) => {
-      const n = name.toLowerCase()
-      if (n.includes('math')) return 'math'
-      if (n.includes('hist')) return 'history'
-      if (n.includes('chem') || n.includes('sci')) return 'chemistry'
-      if (n.includes('eng')) return 'english'
-      return 'math' // default
-    }
+    const [time, modifier] = startTime.split(' ')
+    let [hours] = time.split(':').map(Number)
+    const [minutes] = time.split(':').map(Number)
 
-    return {
-      id: p.id,
-      course: `${p.subject.name} - ${p.class.name}`,
-      time: `${formatTime(startH, startM)} - ${formatTime(endH, endM)}`,
-      room: p.room || 'TBD',
-      color: getSubjectColor(p.subject.name),
-      day: p.day,
-      startTime: formatTime(startH, startM),
-      duration: duration > 0 ? duration : 1, // fallback to 1 hour
-      hasConflict: false
-    }
-  })
+    if (modifier === 'PM' && hours !== 12) hours += 12
+    if (modifier === 'AM' && hours === 12) hours = 0
 
-  const handlePreviousWeek = () => {
-    console.log('Previous week')
-  }
+    const timeKey = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+    const top = timeToPixels[timeKey] || 0
+    const height = duration * 64 // 64px per hour
 
-  const handleNextWeek = () => {
-    console.log('Next week')
-  }
-
-  const handleAddClass = () => {
-    setIsModalOpen(true)
-  }
-
-  const handlePrint = () => {
-    window.print()
-  }
-
-  const handleClassClick = (classId: string) => {
-    console.log('Class clicked:', classId)
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex-1 p-6 lg:p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
+    return { top, height }
   }
 
   return (
-    <div className="flex-1 p-6 lg:p-8 overflow-y-auto">
-      <TimetableToolbar
-        currentWeek={currentWeek}
-        onPreviousWeek={handlePreviousWeek}
-        onNextWeek={handleNextWeek}
-        onAddClass={handleAddClass}
-        onPrint={handlePrint}
-      />
-      
-      <WeeklyTimetable
-        classes={mappedClasses}
-        onClassClick={handleClassClick}
-      />
+    <div className="bg-white dark:bg-[#191e2a] rounded-xl border border-gray-200 dark:border-gray-700 p-4 overflow-x-auto">
+      <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr] min-w-[800px]">
+        {/* Time Column */}
+        <div className="w-16">
+          <div className="h-10"></div>
+          {timeSlots.map((time, index) => (
+            <div
+              key={time}
+              className="h-16 text-right pr-4 text-xs text-gray-400 dark:text-gray-500 border-t border-gray-200 dark:border-gray-700 pt-1"
+            >
+              {time}
+            </div>
+          ))}
+        </div>
 
-      <AddScheduleModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        teacherId={teacherId as string}
-        schoolId={schoolId}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['teacher-timetable', teacherId] })}
-      />
+        {/* Day Columns */}
+        {days.map((day) => (
+          <div key={day} className="relative" data-day={day}>
+            <div className="h-10 text-center font-bold text-[#0e121b] dark:text-white">
+              {day.slice(0, 3)}
+            </div>
+            <div className="h-full border-l border-gray-200 dark:border-gray-700 space-y-px">
+              {timeSlots.map((_, index) => (
+                <div
+                  key={index}
+                  className="h-16 border-t border-gray-200 dark:border-gray-700"
+                ></div>
+              ))}
+            </div>
+
+            {/* Render classes for this day */}
+            {classes
+              .filter(cls => cls.day === day)
+              .map((cls) => {
+                const position = calculatePosition(cls.startTime, cls.duration)
+                return (
+                  <ClassCard
+                    key={cls.id}
+                    course={cls.course}
+                    time={cls.time}
+                    room={cls.room}
+                    color={cls.color}
+                    hasConflict={cls.hasConflict}
+                    style={{
+                      top: position.top,
+                      height: position.height
+                    }}
+                  />
+                )
+              })}
+
+            {/* Special cases */}
+            {day === 'Tuesday' && (
+              <AvailabilityIndicator
+                message="Unavailable"
+                style={{ top: 314, height: 128 }}
+              />
+            )}
+
+            {day === 'Wednesday' && classes.some(cls => cls.hasConflict) && (
+              <>
+                {/* Conflicting class */}
+                {classes
+                  .filter(cls => cls.day === day && cls.hasConflict)
+                  .map((cls) => {
+                    const position = calculatePosition(cls.startTime, cls.duration)
+                    return (
+                      <ClassCard
+                        key={cls.id}
+                        course={cls.course}
+                        time={cls.time}
+                        room={cls.room}
+                        color={cls.color}
+                        hasConflict={true}
+                        style={{
+                          top: position.top,
+                          height: position.height,
+                          zIndex: 5,
+                          marginLeft: '12px',
+                          marginTop: '12px',
+                          opacity: 0.8
+                        }}
+                      />
+                    )
+                  })}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
+

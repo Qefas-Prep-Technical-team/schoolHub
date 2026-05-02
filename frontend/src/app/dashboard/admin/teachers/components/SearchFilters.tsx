@@ -32,3 +32,4 @@ export default function SearchFilters({ searchTerm, onSearchChange }: SearchFilt
     </div>
   )
 }
+

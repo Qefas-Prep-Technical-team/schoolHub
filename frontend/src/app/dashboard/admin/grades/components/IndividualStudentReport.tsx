@@ -394,3 +394,4 @@ const IndividualStudentReport: React.FC<IndividualStudentReportProps> = ({
 };
 
 export default IndividualStudentReport;
+

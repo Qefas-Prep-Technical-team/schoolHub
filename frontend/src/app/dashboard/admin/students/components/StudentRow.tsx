@@ -28,3 +28,4 @@ export function StudentRow({ student }: { student: Student }) {
     </tr>
   );
 }
+

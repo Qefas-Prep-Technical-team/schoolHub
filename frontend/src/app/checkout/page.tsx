@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle2, Lock, ShieldCheck, Mail, KeyRound, Loader2, Zap, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Lock, ShieldCheck, Mail, KeyRound, Loader2, Zap, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { usePaystackPayment } from 'react-paystack';
 import { paymentService } from '@/lib/api/services/paymentService';
@@ -499,27 +499,14 @@ export default function CheckoutPage() {
                                         <CheckCircle2 className="w-8 h-8" />
                                     </div>
                                     <h2 className="text-3xl font-black text-slate-900 dark:text-white font-lexend mb-2">Payment Successful!</h2>
-                                    <p className="text-slate-500">Your subscription is active. Set a password to save your details for next time.</p>
+                                    <p className="text-slate-500 mb-8">Your subscription is active and your account is ready.</p>
+                                    
+                                    <Link href={`/login/${role === 'ADMIN' ? 'school-admin' : role?.toLowerCase() || 'school-admin'}`}>
+                                        <Button className="w-full py-6 text-lg rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2">
+                                            Go to Login <ArrowRight className="w-5 h-5" />
+                                        </Button>
+                                    </Link>
                                 </div>
-                                <form onSubmit={handleSavePassword} className="space-y-6 max-w-sm mx-auto">
-                                    <div>
-                                        <div className="relative">
-                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                            <input 
-                                                type="password" required minLength={6}
-                                                value={password} onChange={(e) => setPassword(e.target.value)}
-                                                className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none"
-                                                placeholder="Create a secure password"
-                                            />
-                                        </div>
-                                    </div>
-                                    <Button type="submit" disabled={isLoading} className="w-full py-6 text-lg rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-lg shadow-blue-600/30 transition-all">
-                                        Save Details
-                                    </Button>
-                                    <button type="button" onClick={() => setStep('SUCCESS')} className="w-full text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors">
-                                        Skip for now
-                                    </button>
-                                </form>
                             </motion.div>
                         )}
 

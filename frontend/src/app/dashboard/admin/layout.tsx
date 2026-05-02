@@ -16,7 +16,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     
     const [isCollapsed, setIsCollapsed] = useState(false)
 
-    const primaryColor = settings?.themeColor || "#1e40af"
+    const primaryColor = settings?.themeColor || "#2563eb"
 
     return (
         <ProtectedAdminRoute>
@@ -32,10 +32,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 } as React.CSSProperties}
             >
                 <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-200 min-w-full relative overflow-x-hidden font-sans">
-                    <AdminSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+                    <AdminSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} primaryColor={primaryColor} />
                     
                     <SidebarInset className="relative flex-1 h-screen overflow-hidden bg-transparent">
-                        <TopNavBar />
+                        <TopNavBar isCollapsed={isCollapsed} primaryColor={primaryColor} />
                         <div className="flex-1 overflow-y-auto p-4 md:p-8">
                             <TrialBanner />
                             {children}
@@ -47,3 +47,4 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </ProtectedAdminRoute>
     )
 }
+

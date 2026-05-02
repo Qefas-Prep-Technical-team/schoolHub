@@ -32,3 +32,4 @@ export default function TeacherTabs({ tabs, activeTab, onTabChange }: TeacherTab
     </div>
   )
 }
+

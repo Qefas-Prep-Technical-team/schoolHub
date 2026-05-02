@@ -44,7 +44,7 @@ export default function SessionsPage() {
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
 
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
 
   const { data: sessions = [], isLoading, isError } = useQuery({
     queryKey: ["sessions"],
@@ -119,7 +119,7 @@ export default function SessionsPage() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <Input 
                 placeholder="Search chronology..."
-                className="h-14 pl-12 pr-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/5 font-bold w-64 shadow-lg focus:border-orange-600 transition-all"
+                className="h-14 pl-12 pr-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/5 font-bold w-64 shadow-lg focus:border-primary transition-all"
               />
             </div>
           </div>
@@ -203,14 +203,14 @@ export default function SessionsPage() {
                     className={cn(
                       "group p-6 rounded-[2.5rem] flex items-center justify-between transition-all hover:shadow-2xl border-2",
                       session.status === 'ACTIVE' 
-                        ? "bg-white dark:bg-slate-900 border-orange-600/20 shadow-orange-600/5" 
+                        ? "bg-white dark:bg-slate-900 border-primary/20 shadow-primary/5" 
                         : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5"
                     )}
                   >
                     <div className="flex items-center gap-6">
                       <div className={cn(
                         "size-16 rounded-[1.5rem] flex items-center justify-center transition-transform group-hover:scale-110 shadow-lg",
-                        session.status === 'ACTIVE' ? "bg-orange-600 text-white" :
+                        session.status === 'ACTIVE' ? "bg-primary text-white" :
                           session.status === 'ARCHIVED' ? "bg-slate-100 dark:bg-white/5 text-slate-400 shadow-none" :
                             "bg-slate-900 dark:bg-white text-white dark:text-slate-900"
                       )}>
@@ -219,12 +219,12 @@ export default function SessionsPage() {
                       
                       <div>
                         <div className="flex items-center gap-3">
-                          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter group-hover:text-orange-600 transition-colors">
+                          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter group-hover:text-primary transition-colors">
                             {session.name}
                           </h3>
                           <div className={cn(
                             "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                            session.status === 'ACTIVE' ? "bg-orange-600/10 text-orange-600 border-orange-600/20" :
+                            session.status === 'ACTIVE' ? "bg-primary/10 text-primary border-primary/20" :
                               session.status === 'ARCHIVED' ? "bg-slate-100 text-slate-500 border-slate-200 shadow-none" :
                                 "bg-slate-900 text-white border-slate-800"
                           )}>
@@ -243,7 +243,7 @@ export default function SessionsPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => archiveMutation.mutate(session.id)}
-                          className="size-12 rounded-2xl hover:bg-orange-600/10 hover:text-orange-600 transition-all"
+                          className="size-12 rounded-2xl hover:bg-primary/10 hover:text-primary transition-all"
                         >
                           <Archive size={20} />
                         </Button>
@@ -288,7 +288,7 @@ export default function SessionsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {archivedSessions.map((s) => (
                   <div key={s.id} className="p-5 rounded-[2rem] bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 flex items-center gap-4 group hover:bg-white dark:hover:bg-slate-900 transition-all shadow-sm hover:shadow-xl">
-                    <div className="size-12 rounded-[1rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-400 group-hover:text-orange-600 transition-colors shadow-sm">
+                    <div className="size-12 rounded-[1rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shadow-sm">
                       <History size={18} />
                     </div>
                     <div>
@@ -305,3 +305,4 @@ export default function SessionsPage() {
     </div>
   );
 }
+

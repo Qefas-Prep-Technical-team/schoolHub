@@ -2,13 +2,12 @@ import prisma from "../../config/database";
 
 export class FeatureService {
   /**
-   * List all features in the manifest
+   * List all features in the registry
    */
   static async listFeatures() {
-    return await prisma.featureManifest.findMany({
+    return await prisma.platformFeature.findMany({
       include: {
         planAccesses: {
-          where: { enabled: true },
           include: {
             plan: {
               select: {
@@ -26,38 +25,38 @@ export class FeatureService {
   }
 
   /**
-   * Create or update a feature in the manifest
+   * Create or update a feature in the registry
    */
   static async saveFeature(data: any) {
     const { id, planAccesses, ...cleanData } = data;
     
     if (id) {
-      return await prisma.featureManifest.update({
+      return await prisma.platformFeature.update({
         where: { id },
         data: cleanData
       });
     }
 
-    return await prisma.featureManifest.create({
+    return await prisma.platformFeature.create({
       data: cleanData
     });
   }
 
   /**
-   * Delete a feature from the manifest
+   * Delete a feature from the registry
    */
   static async deleteFeature(id: string) {
-    return await prisma.featureManifest.delete({
+    return await prisma.platformFeature.delete({
       where: { id }
     });
   }
 
   /**
-   * Get a feature by its tag
+   * Get a feature by its key
    */
   static async getFeatureByTag(tag: string) {
-    return await prisma.featureManifest.findUnique({
-      where: { tag }
+    return await prisma.platformFeature.findUnique({
+      where: { featureKey: tag }
     });
   }
 }

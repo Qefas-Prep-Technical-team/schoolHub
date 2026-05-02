@@ -41,9 +41,25 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     }
 
     // Initialize socket connection
-    // Extract base URL from NEXT_PUBLIC_API_URL (e.g., http://localhost:5000/api -> http://localhost:5000)
+    // Extract base URL from NEXT_PUBLIC_API_URL or use NEXT_PUBLIC_SOCKET_URL if provided
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-    const socketUrl = apiUrl.replace("/api", "");
+    let socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+
+    if (!socketUrl) {
+      try {
+        // Robust way to get the origin (e.g. https://api.example.com/api -> https://api.example.com)
+        const url = new URL(apiUrl);
+        socketUrl = url.origin;
+      } catch (e) {
+        // Fallback to string replacement if URL is not absolute
+        socketUrl = apiUrl.replace(/\/api$/, "").replace(/\/$/, "");
+      }
+    }
+    
+    // Final safety check: if socketUrl is just "https" or "http", fallback to local
+    if (socketUrl === "https" || socketUrl === "http") {
+      socketUrl = "http://localhost:5000";
+    }
 
     const newSocket = io(socketUrl, {
       reconnectionAttempts: 5,

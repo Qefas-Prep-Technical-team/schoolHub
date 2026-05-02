@@ -28,3 +28,4 @@ export default function InstructionsCard({ instructions }: InstructionsCardProps
         </div>
     );
 }
+

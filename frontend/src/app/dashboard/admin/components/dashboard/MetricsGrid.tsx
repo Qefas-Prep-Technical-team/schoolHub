@@ -67,8 +67,8 @@ export default function MetricsGrid({ stats, isLoading }: MetricsGridProps) {
         title: 'Active Subjects',
         value: stats.subjects.toLocaleString(),
         icon: BookOpen,
-        iconColor: 'text-indigo-600 dark:text-indigo-400',
-        iconBg: 'bg-indigo-50 dark:bg-indigo-900/30',
+        iconColor: 'text-primary dark:text-primary',
+        iconBg: 'bg-primary/5 dark:bg-primary/30',
       },
       {
         id: 'attendance',
@@ -109,3 +109,4 @@ export default function MetricsGrid({ stats, isLoading }: MetricsGridProps) {
     </div>
   );
 }
+

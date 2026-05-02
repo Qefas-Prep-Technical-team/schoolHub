@@ -30,11 +30,11 @@ export default function KPICards({ stats, isLoading }: KPICardsProps) {
             title: 'Student Presence',
             value: '94%',
             icon: School,
-            iconColor: 'text-indigo-600 dark:text-indigo-400',
-            iconBg: 'bg-indigo-500/10',
+            iconColor: 'text-primary dark:text-primary',
+            iconBg: 'bg-primary/10',
             trend: { value: '+2.1%', isPositive: true },
             progress: 94,
-            progressColor: 'bg-indigo-500',
+            progressColor: 'bg-primary',
             showProgress: true,
             link: {
                 label: 'View Class Analytics',
@@ -96,3 +96,4 @@ export default function KPICards({ stats, isLoading }: KPICardsProps) {
         </div>
     );
 }
+

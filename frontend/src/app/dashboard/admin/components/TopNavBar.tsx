@@ -14,7 +14,7 @@ import { useEffect } from "react";
 /**
  * High-fidelity Admin TopNavBar
  */
-const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => void, isCollapsed?: boolean }) => {
+const TopNavBar = ({ onToggleSidebar, isCollapsed, primaryColor = '#2563eb' }: { onToggleSidebar?: () => void, isCollapsed?: boolean, primaryColor?: string }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [notifications] = useState(5);
     const [profile, setProfile] = useState<any>(null);
@@ -33,7 +33,11 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
         <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
             <div className="flex items-center gap-6 flex-1">
                 {/* Dashboard Badge */}
-                <Link href="/" className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-full shadow-sm hover:border-primary/30 transition-all group/badge">
+                <Link 
+                    href="/" 
+                    className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-full hover:border-primary/30 transition-all group/badge"
+                    style={{ boxShadow: `0 4px 6px -1px ${primaryColor}10` }}
+                >
                     <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-4 w-4 object-contain group-hover/badge:scale-110 transition-transform" />
                     <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Admin Hub</span>
                 </Link>
@@ -51,7 +55,7 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
                 </div>
 
                 {/* Mobile hamburger */}
-                <AdminMobileDrawer />
+                <AdminMobileDrawer primaryColor={primaryColor} />
             </div>
 
             {/* Central Search Section */}
@@ -72,7 +76,8 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
                 {/* Quick Actions / QR Code */}
                 <button 
                   onClick={() => setIsQRModalOpen(true)}
-                  className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-slate-200 dark:border-white/5 shadow-sm"
+                  className="hidden sm:flex items-center justify-center w-11 h-11 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-slate-200 dark:border-white/5"
+                  style={{ boxShadow: `0 4px 6px -1px ${primaryColor}15` }}
                 >
                     <QrCode className="w-5 h-5 text-primary" />
                 </button>
@@ -109,3 +114,4 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed }: { onToggleSidebar?: () => v
 };
 
 export default TopNavBar;
+

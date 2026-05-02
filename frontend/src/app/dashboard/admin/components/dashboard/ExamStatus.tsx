@@ -21,7 +21,7 @@ interface Exam {
   teacher?: string;
 }
 
-export default function ExamStatus() {
+export default function ExamStatus({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
@@ -64,8 +64,9 @@ export default function ExamStatus() {
       case 'upcoming':
         return {
           icon: Calendar,
-          color: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
+          color: 'bg-primary/10 text-primary border-primary/20',
           label: 'Upcoming',
+          customColor: primaryColor
         };
       case 'grading':
         return {
@@ -84,13 +85,16 @@ export default function ExamStatus() {
 
   return (
     <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[3rem] border border-white/20 dark:border-slate-800/50 shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden flex flex-col group">
-      <div className="absolute top-0 right-0 h-32 w-32 bg-indigo-500/5 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
+      <div 
+        className="absolute top-0 right-0 h-32 w-32 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700" 
+        style={{ backgroundColor: primaryColor }}
+      />
       
       <div className="px-10 py-8 relative z-10 flex justify-between items-center">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
-            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em]">Academic Overview</span>
+            <div className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Academic Overview</span>
           </div>
           <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter italic uppercase">
             Exam Status
@@ -98,7 +102,8 @@ export default function ExamStatus() {
         </div>
         <Link
           href="/dashboard/admin/exams"
-          className="h-10 w-10 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-md flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-all active:scale-90 border border-transparent hover:border-indigo-500/20"
+          className="h-10 w-10 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-md flex items-center justify-center text-slate-500 hover:text-white transition-all active:scale-90 border border-transparent"
+          style={{ '--hover-bg': primaryColor } as any}
         >
           <ChevronRight className="h-5 w-5" />
         </Link>
@@ -131,10 +136,11 @@ export default function ExamStatus() {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className="px-6 py-5 flex items-center justify-between rounded-[2rem] border border-transparent hover:border-indigo-500/10 hover:bg-white/30 dark:hover:bg-slate-800/30 transition-all cursor-pointer group/item"
+                className="px-6 py-5 flex items-center justify-between rounded-[2rem] border border-transparent hover:bg-white/30 dark:hover:bg-slate-800/30 transition-all cursor-pointer group/item"
+                style={{ '--hover-border': `${primaryColor}20` } as any}
               >
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 group-hover/item:text-indigo-600 group-hover/item:bg-indigo-50 transition-all shrink-0">
+                  <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 group-hover/item:text-white transition-all shrink-0" style={{ '--hover-bg': primaryColor } as any}>
                     <FileText className="h-6 w-6" />
                   </div>
                   <div className="min-w-0">
@@ -148,7 +154,7 @@ export default function ExamStatus() {
                           {exam.subject}
                        </span>
                        <span className="h-1 w-1 rounded-full bg-slate-300" />
-                       <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">
+                       <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: primaryColor }}>
                           {exam.grade}
                        </span>
                     </div>
@@ -156,10 +162,13 @@ export default function ExamStatus() {
                 </div>
                 
                 <div className="text-right shrink-0">
-                  <div className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest",
-                    statusConfig.color
-                  )}>
+                  <div 
+                    className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest",
+                        !statusConfig.customColor && statusConfig.color
+                    )}
+                    style={statusConfig.customColor ? { backgroundColor: `${statusConfig.customColor}15`, color: statusConfig.customColor, borderColor: `${statusConfig.customColor}30` } : {}}
+                  >
                     <Icon className="h-3 w-3" />
                     {statusConfig.label}
                   </div>
@@ -179,7 +188,7 @@ export default function ExamStatus() {
               System Update: <span className="text-slate-900 dark:text-white">1 exam ending</span>
             </p>
           </div>
-          <button className="text-[10px] font-black text-indigo-600 hover:tracking-widest transition-all uppercase">
+          <button className="text-[10px] font-black hover:tracking-widest transition-all uppercase" style={{ color: primaryColor }}>
             Schedule New Exam →
           </button>
         </div>
@@ -187,3 +196,4 @@ export default function ExamStatus() {
     </div>
   );
 }
+

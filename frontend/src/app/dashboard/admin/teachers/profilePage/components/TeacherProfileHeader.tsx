@@ -55,3 +55,4 @@ export default function TeacherProfileHeader({ teacher }: TeacherProfileHeaderPr
     </div>
   )
 }
+

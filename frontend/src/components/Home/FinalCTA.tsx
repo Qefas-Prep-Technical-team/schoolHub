@@ -22,14 +22,14 @@ const FinalCTA = () => {
                 <motion.div 
                     animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
                     transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -top-1/2 -right-1/4 w-[600px] h-[600px] bg-blue-600/40 rounded-full blur-[100px] mix-blend-screen" 
+                    className="absolute -top-1/2 -right-1/4 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-blue-600/40 rounded-full blur-[80px] sm:blur-[100px] mix-blend-screen pointer-events-none" 
                 />
                 <motion.div 
                     animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.5, 0.2] }}
                     transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                    className="absolute -bottom-1/2 -left-1/4 w-[600px] h-[600px] bg-amber-500/30 rounded-full blur-[100px] mix-blend-screen" 
+                    className="absolute -bottom-1/2 -left-1/4 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-amber-500/30 rounded-full blur-[80px] sm:blur-[100px] mix-blend-screen pointer-events-none" 
                 />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/10 rounded-full blur-[120px] mix-blend-screen pointer-events-none" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-indigo-500/10 rounded-full blur-[100px] sm:blur-[120px] mix-blend-screen pointer-events-none" />
                 
                 <div className="relative z-10 max-w-3xl mx-auto">
                     <motion.div 
@@ -42,7 +42,7 @@ const FinalCTA = () => {
                         <Sparkles className="w-4 h-4 text-blue-400" /> Start Your Journey
                     </motion.div>
 
-                    <h2 className="text-5xl md:text-7xl font-black mb-8 leading-[1.1] tracking-tight font-lexend text-transparent bg-clip-text bg-gradient-to-br from-white via-blue-100 to-indigo-200">
+                    <h2 className="text-3xl sm:text-5xl md:text-7xl font-black mb-8 leading-[1.2] sm:leading-[1.1] tracking-tight font-lexend text-transparent bg-clip-text bg-gradient-to-br from-white via-blue-100 to-indigo-200 px-4">
                         Ready to lead the future of education?
                     </h2>
                     <p className="text-xl md:text-2xl text-blue-100/70 mb-12 font-light leading-relaxed max-w-2xl mx-auto">

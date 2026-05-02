@@ -24,14 +24,32 @@ export class SchoolSubscriptionService {
 
     return await prisma.$transaction(async (tx) => {
       // Create the school subscription
-      const subscription = await tx.schoolSubscription.create({
-        data: {
+      const subscription = await tx.schoolSubscription.upsert({
+        where: { schoolId },
+        create: {
           schoolId,
           subscriptionPlanId: freePlan.id,
           subscriptionType: SubscriptionType.FREE,
           status: SubscriptionStatus.ACTIVE,
           startedAt: new Date(),
         },
+        update: {
+          subscriptionPlanId: freePlan.id,
+          subscriptionType: SubscriptionType.FREE,
+          status: SubscriptionStatus.ACTIVE,
+        }
+      });
+
+      // Update school record with plan details
+      await tx.school.update({
+        where: { id: schoolId },
+        data: {
+          plan: freePlan.name,
+          planId: freePlan.id,
+          subscriptionPlanId: freePlan.id,
+          lastPaymentDate: new Date(),
+          subscriptionStatus: "ACTIVE"
+        }
       });
 
       // Log to history
@@ -110,6 +128,19 @@ export class SchoolSubscriptionService {
           expiresAt,
           updatedAt: new Date(),
         },
+      });
+
+      // Update school record with plan details
+      await tx.school.update({
+        where: { id: schoolId },
+        data: {
+          plan: plan.name,
+          planId: planId,
+          subscriptionPlanId: planId,
+          lastPaymentDate: new Date(),
+          subscriptionEnd: expiresAt,
+          subscriptionStatus: "ACTIVE"
+        }
       });
 
       // 3. Log new plan to history

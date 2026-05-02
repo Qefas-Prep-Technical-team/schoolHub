@@ -69,12 +69,12 @@ export function LinkingTabs({
             onClick={() => setSubTab('pending')}
             className={cn(
               "h-9 rounded-xl text-[10px] font-black uppercase tracking-widest relative px-4",
-              subTab === 'pending' ? (mainTab === 'classroom' ? "bg-purple-600 text-white shadow-lg shadow-purple-200" : "bg-orange-500 text-white shadow-lg shadow-orange-200") : "text-gray-400"
+              subTab === 'pending' ? (mainTab === 'classroom' ? "bg-purple-600 text-white shadow-lg shadow-purple-200" : "bg-primary text-white shadow-lg shadow-primary/30") : "text-gray-400"
             )}
           >
             Pending
             {(mainTab === 'network' ? networkPendingCount : classroomPendingCount) > 0 && (
-              <span className="ml-2 px-1.5 py-0.5 rounded-md bg-white text-orange-600 text-[8px] font-black">
+              <span className="ml-2 px-1.5 py-0.5 rounded-md bg-white text-primary text-[8px] font-black">
                 {mainTab === 'network' ? networkPendingCount : classroomPendingCount}
               </span>
             )}
@@ -105,3 +105,4 @@ export function LinkingTabs({
     </div>
   );
 }
+

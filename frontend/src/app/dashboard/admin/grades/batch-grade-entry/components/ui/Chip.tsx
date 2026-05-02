@@ -63,3 +63,4 @@ export default function Chip({ label, value, options, onChange }: ChipProps) {
         </div>
     );
 }
+

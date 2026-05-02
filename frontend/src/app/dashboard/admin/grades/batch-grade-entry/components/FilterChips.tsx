@@ -27,3 +27,4 @@ export default function FilterChips({ filters, onFilterChange }: FilterChipsProp
         </div>
     );
 }
+

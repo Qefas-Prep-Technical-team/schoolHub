@@ -16,3 +16,4 @@ export default function Badge({ variant, children }: BadgeProps) {
     </div>
   )
 }
+

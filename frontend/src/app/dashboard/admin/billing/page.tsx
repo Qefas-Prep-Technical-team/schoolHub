@@ -135,7 +135,7 @@ export default function AdminBillingPage() {
                     >
                         Switch Protocol
                     </Button>
-                    <Button className="rounded-2xl font-black text-[10px] uppercase tracking-widest bg-indigo-600 hover:bg-indigo-500 text-white h-14 px-8 shadow-xl shadow-indigo-600/20">
+                    <Button className="rounded-2xl font-black text-[10px] uppercase tracking-widest bg-primary hover:bg-primary text-white h-14 px-8 shadow-xl shadow-primary/20">
                         Manage Settlement Methods
                     </Button>
                 </div>
@@ -144,17 +144,17 @@ export default function AdminBillingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-2 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white dark:bg-slate-900 flex flex-col">
                     <CardHeader className="bg-slate-900 dark:bg-black p-10 text-white relative overflow-hidden">
-                        <div className="absolute -top-10 -right-10 w-60 h-60 bg-indigo-500/20 rounded-full blur-[80px]" />
+                        <div className="absolute -top-10 -right-10 w-60 h-60 bg-primary/20 rounded-full blur-[80px]" />
                         <div className="flex justify-between items-start relative z-10">
                             <div className="space-y-4">
-                                <Badge className="bg-indigo-500/20 text-indigo-400 border-none px-4 py-1.5 font-black uppercase tracking-[0.2em] text-[10px]">
+                                <Badge className="bg-primary/20 text-primary border-none px-4 py-1.5 font-black uppercase tracking-[0.2em] text-[10px]">
                                     Current Protocol
                                 </Badge>
                                 <div className="space-y-1">
                                     <CardTitle className="text-5xl font-black capitalize tracking-tighter italic">
                                         {subscriptionInfo.plan}
                                     </CardTitle>
-                                    <p className="text-2xl font-black text-indigo-400 tracking-tighter">
+                                    <p className="text-2xl font-black text-primary tracking-tighter">
                                         ₦{subscriptionInfo.amount.toLocaleString()} <span className="text-sm opacity-60 font-bold uppercase tracking-widest">/ {subscriptionInfo.billingCycle}</span>
                                     </p>
                                 </div>
@@ -201,7 +201,7 @@ export default function AdminBillingPage() {
                 </Card>
 
                 <div className="space-y-6">
-                    <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-gradient-to-br from-indigo-600 to-indigo-900 text-white p-10 relative group">
+                    <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-gradient-to-br from-primary to-primary text-white p-10 relative group">
                         <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform pointer-events-none">
                             <Zap size={100} />
                         </div>
@@ -233,7 +233,7 @@ export default function AdminBillingPage() {
                 <div className="space-y-6 mt-12 bg-white dark:bg-slate-900/50 p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
                     <div className="flex items-center justify-between px-1">
                         <div className="flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-500/20">
+                            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20">
                                 <Landmark size={28} />
                             </div>
                             <div className="space-y-1">
@@ -244,7 +244,7 @@ export default function AdminBillingPage() {
                         <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="font-black text-[10px] uppercase tracking-[0.2em] text-indigo-600 hover:bg-indigo-50 gap-2"
+                            className="font-black text-[10px] uppercase tracking-[0.2em] text-primary hover:bg-primary/5 gap-2"
                             onClick={() => router.push("/dashboard/admin/finance/bank-setup")}
                         >
                             <Plus className="h-3 w-3" />
@@ -266,7 +266,7 @@ export default function AdminBillingPage() {
 
             <div className="space-y-6 mt-12">
                 <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 border border-indigo-500/20">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                         <CreditCard size={24} />
                     </div>
                     <div className="space-y-1">
@@ -302,3 +302,4 @@ export default function AdminBillingPage() {
         </div>
     );
 }
+

@@ -44,7 +44,7 @@ export default function ClassesOverviewPage() {
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
 
   const { data: fetchClassesData, isLoading: loading, refetch: fetchClasses } = useClasses(schoolId);
   const classes = (fetchClassesData as Class[]) || [];
@@ -100,7 +100,7 @@ export default function ClassesOverviewPage() {
             label: 'Faculty Assigned', 
             value: teachersAssigned, 
             icon: Users, 
-            color: '#6366f1', // Indigo
+            color: '#2563eb', // Indigo
             desc: 'Node Commanders'
         },
         { 
@@ -293,7 +293,7 @@ export default function ClassesOverviewPage() {
                                     <tr>
                                         <td colSpan={5} className="px-10 py-40 text-center">
                                             <div className="flex flex-col items-center gap-6">
-                                                <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 border-t-orange-600 animate-spin" style={{ borderTopColor: primaryColor }} />
+                                                <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 border-t-primary animate-spin" style={{ borderTopColor: primaryColor }} />
                                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Syncing Infrastructure...</span>
                                             </div>
                                         </td>
@@ -400,3 +400,4 @@ export default function ClassesOverviewPage() {
     </div>
   );
 }
+

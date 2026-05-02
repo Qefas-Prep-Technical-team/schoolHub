@@ -1,83 +1,39 @@
-'use client';
+interface TextareaProps {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    className?: string;
+    required?: boolean;
+    disabled?: boolean;
+    rows?: number;
+}
 
-import { useRouter, useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { GradeFormData } from '../../components/types';
-import GradeForm from '../../components/GradeForm';
-import SchoolLoaderIOS from '@/components/reuseables/SchoolLoaderIOS';
-
-
-// Mock function to fetch grade data - replace with actual API call
-const fetchGradeData = async (id: string): Promise<GradeFormData> => {
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-    return {
-        studentId: '1',
-        classId: '1',
-        subjectId: '1',
-        assessmentType: 'quiz',
-        score: 85,
-        maxMarks: 100,
-        remarks: 'Good work on the quiz.'
-    };
-};
-
-export default function EditGradePage() {
-    const router = useRouter();
-    const params = useParams();
-    const gradeId = params.id as string;
-
-    const [initialData, setInitialData] = useState<GradeFormData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const loadGradeData = async () => {
-            try {
-                const data = await fetchGradeData(gradeId);
-                setInitialData(data);
-            } catch (error) {
-                console.error('Error loading grade:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        if (gradeId) {
-            loadGradeData();
-        }
-    }, [gradeId]);
-
-    const handleSubmit = async (formData: GradeFormData) => {
-        try {
-            // Simulate API call
-            console.log('Updating grade:', formData);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Redirect back to grades page or show success message
-            router.push('/grades');
-        } catch (error) {
-            console.error('Error updating grade:', error);
-            // Handle error (show toast, etc.)
-        }
-    };
-
-    const handleClose = () => {
-        router.back();
-    };
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <SchoolLoaderIOS />
-            </div>
-        );
-    }
-
+export default function Textarea({
+    label,
+    value,
+    onChange,
+    placeholder,
+    className = '',
+    required = false,
+    disabled = false,
+    rows = 4
+}: TextareaProps) {
     return (
-        <GradeForm
-            initialData={initialData || undefined}
-            isEditing={true}
-            onClose={handleClose}
-            onSubmit={handleSubmit}
-        />
+        <label className="flex flex-col">
+            <span className="pb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                {label}
+            </span>
+            <textarea
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={placeholder}
+                required={required}
+                disabled={disabled}
+                rows={rows}
+                className={`flex w-full min-h-[100px] resize-y overflow-hidden rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 border border-gray-300 dark:border-zinc-700 bg-background-light dark:bg-background-dark p-4 text-base leading-normal ${className}`}
+            />
+        </label>
     );
 }
+

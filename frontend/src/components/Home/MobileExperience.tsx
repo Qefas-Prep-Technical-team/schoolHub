@@ -10,16 +10,16 @@ const MobileExperience = () => {
             <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                 
                 {/* iPhone Showcase Area */}
-                <div className="order-2 lg:order-1 flex justify-center relative">
+                <div className="order-2 lg:order-1 flex justify-center relative w-full overflow-hidden">
                     {/* Glowing Aura */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-blue-600/20 rounded-full blur-[120px]" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[140%] h-[300px] md:h-[140%] bg-blue-600/20 rounded-full blur-[80px] md:blur-[120px] pointer-events-none" />
                     
                     <motion.div 
                         initial={{ opacity: 0, y: 50 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.8 }}
-                        className="iphone-frame scale-90 md:scale-100"
+                        className="iphone-frame scale-75 sm:scale-90 md:scale-100 origin-center"
                     >
                         <div className="iphone-notch" />
                         <div className="w-full h-full bg-slate-50 p-5 pt-12 overflow-hidden flex flex-col">
@@ -124,17 +124,17 @@ const MobileExperience = () => {
                         </li>
                     </ul>
 
-                    <div className="flex flex-wrap gap-4">
-                        <div className="bg-white/5 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-all group">
+                    <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+                        <div className="bg-white/5 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-all group min-w-[180px]">
                             <Apple className="w-8 h-8 group-hover:scale-110 transition-transform" />
-                            <div>
+                            <div className="text-left">
                                 <p className="text-[10px] uppercase font-bold text-slate-500">Download on the</p>
                                 <p className="text-sm font-black">App Store</p>
                             </div>
                         </div>
-                        <div className="bg-white/5 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-all group">
+                        <div className="bg-white/5 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-all group min-w-[180px]">
                             <PlayCircle className="w-8 h-8 group-hover:scale-110 transition-transform" />
-                            <div>
+                            <div className="text-left">
                                 <p className="text-[10px] uppercase font-bold text-slate-500">Get it on</p>
                                 <p className="text-sm font-black">Google Play</p>
                             </div>

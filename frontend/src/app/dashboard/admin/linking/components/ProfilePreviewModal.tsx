@@ -57,7 +57,7 @@ export function ProfilePreviewModal({
         <div className="relative h-40 w-full overflow-hidden">
           <div className={cn(
             "absolute inset-0 bg-gradient-to-br transition-all duration-500",
-            isClass ? "from-purple-600 to-indigo-700" : "from-blue-600 to-cyan-700"
+            isClass ? "from-purple-600 to-primary" : "from-blue-600 to-cyan-700"
           )} />
           
           {/* Animated Patterns */}
@@ -150,7 +150,7 @@ export function ProfilePreviewModal({
 
                {details.className && (
                  <div className="flex items-center gap-4 p-5 rounded-3xl bg-white dark:bg-transparent border border-slate-100 dark:border-slate-800">
-                    <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 dark:bg-orange-950/30 flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/5 text-primary dark:bg-primary/20/30 flex items-center justify-center shrink-0">
                       <Users size={24} />
                     </div>
                     <div className="flex flex-col">
@@ -186,3 +186,4 @@ export function ProfilePreviewModal({
     </Dialog>
   );
 }
+

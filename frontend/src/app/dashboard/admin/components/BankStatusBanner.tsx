@@ -42,3 +42,4 @@ export function BankStatusBanner({ status }: BankStatusBannerProps) {
         </div>
     )
 }
+

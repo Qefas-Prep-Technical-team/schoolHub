@@ -81,3 +81,4 @@ export default function PersonalInfoCard({ personalInfo }: PersonalInfoCardProps
     </Card>
   )
 }
+

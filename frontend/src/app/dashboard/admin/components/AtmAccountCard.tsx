@@ -27,19 +27,19 @@ export function AtmAccountCard({ account, onRefresh, onDelete }: AtmAccountCardP
     return (
         <Card className={cn(
             "relative w-full max-w-[400px] h-[240px] rounded-[2.5rem] overflow-hidden border-none transition-all hover:scale-[1.02] shadow-2xl",
-            isSuccess ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-indigo-500/10" : 
+            isSuccess ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-primary/10" : 
             isPending ? "bg-gradient-to-br from-amber-900/40 via-slate-900 to-slate-900 border border-amber-500/20" :
             "bg-gradient-to-br from-red-950/40 via-slate-900 to-slate-900 border border-red-500/20"
         )}>
             {/* Background Accents */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 opacity-50" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl -ml-12 -mb-12" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -ml-12 -mb-12" />
 
             <CardContent className="p-7 flex flex-col justify-between h-full relative z-10 text-white">
                 <div className="flex justify-between items-start">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <Landmark className={cn("h-5 w-5", isSuccess ? "text-indigo-400" : isPending ? "text-amber-400" : "text-red-400")} />
+                            <Landmark className={cn("h-5 w-5", isSuccess ? "text-primary" : isPending ? "text-amber-400" : "text-red-400")} />
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                                 {account.bankName}
                             </p>
@@ -48,7 +48,7 @@ export function AtmAccountCard({ account, onRefresh, onDelete }: AtmAccountCardP
                     </div>
                     <div className="flex flex-col items-end gap-2">
                         {account.isDefault && (
-                            <Badge className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 rounded-lg text-[9px] font-black uppercase py-0.5 tracking-widest">
+                            <Badge className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 rounded-lg text-[9px] font-black uppercase py-0.5 tracking-widest">
                                 Primary Node
                             </Badge>
                         )}
@@ -91,3 +91,4 @@ export function AtmAccountCard({ account, onRefresh, onDelete }: AtmAccountCardP
         </Card>
     )
 }
+

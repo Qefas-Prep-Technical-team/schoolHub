@@ -52,7 +52,7 @@ export default function DepartmentsPage() {
   const schoolIdFromStore = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const [schoolId, setSchoolId] = useState<string | null>(schoolIdFromStore || null);
   const { data: settings } = useSchoolSettings(schoolId || '');
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
 
   const fetchSchoolId = useCallback(async () => {
     if (schoolId) return;
@@ -169,7 +169,7 @@ export default function DepartmentsPage() {
                     <Building2 size={120} />
                 </div>
                 <div className="relative z-10 space-y-6">
-                    <div className="size-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-orange-600 shadow-inner">
+                    <div className="size-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary shadow-inner">
                         <Layers size={24} strokeWidth={2.5} />
                     </div>
                     <div>
@@ -184,7 +184,7 @@ export default function DepartmentsPage() {
                     <Users size={120} />
                 </div>
                 <div className="relative z-10 space-y-6">
-                    <div className="size-14 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-indigo-600">
+                    <div className="size-14 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-primary">
                         <Users size={24} strokeWidth={2.5} />
                     </div>
                     <div>
@@ -289,7 +289,7 @@ export default function DepartmentsPage() {
                                     <tr>
                                         <td colSpan={5} className="px-10 py-40 text-center">
                                             <div className="flex flex-col items-center gap-6">
-                                                <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 border-t-orange-600 animate-spin" style={{ borderTopColor: primaryColor }} />
+                                                <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 border-t-primary animate-spin" style={{ borderTopColor: primaryColor }} />
                                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Synchronizing Institutional Map...</span>
                                             </div>
                                         </td>
@@ -456,3 +456,4 @@ export default function DepartmentsPage() {
     </div>
   );
 }
+

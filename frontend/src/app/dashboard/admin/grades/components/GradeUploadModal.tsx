@@ -158,7 +158,7 @@ export default function GradeUploadModal({ isOpen, onClose, schoolId }: GradeUpl
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-[3rem] border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-10 shadow-2xl">
         <DialogHeader>
-          <div className="h-14 w-14 rounded-2xl bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-6 shadow-inner">
+          <div className="h-14 w-14 rounded-2xl bg-primary dark:bg-primary/10 text-primary dark:text-primary flex items-center justify-center mb-6 shadow-inner">
              <FileUp size={28} />
           </div>
           <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Batch Grade Upload</DialogTitle>
@@ -171,9 +171,9 @@ export default function GradeUploadModal({ isOpen, onClose, schoolId }: GradeUpl
           <div className="py-12 space-y-6">
              <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="group border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-16 flex flex-col items-center justify-center gap-4 hover:border-indigo-500 hover:bg-indigo-50/30 transition-all cursor-pointer relative overflow-hidden"
+                className="group border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-16 flex flex-col items-center justify-center gap-4 hover:border-primary hover:bg-primary/5/30 transition-all cursor-pointer relative overflow-hidden"
              >
-                <div className="h-16 w-16 rounded-3xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-110 transition-all duration-500">
+                <div className="h-16 w-16 rounded-3xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-500">
                     <FileUp size={32} />
                 </div>
                 <div className="text-center">
@@ -256,7 +256,7 @@ export default function GradeUploadModal({ isOpen, onClose, schoolId }: GradeUpl
                         </span>
                     )}
                     {selectedExam?.term && (
-                        <span className="px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 text-[10px] font-black uppercase tracking-widest">
+                        <span className="px-3 py-1 rounded-full bg-primary/5 dark:bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest">
                             Term: {selectedExam.term}
                         </span>
                     )}
@@ -264,8 +264,8 @@ export default function GradeUploadModal({ isOpen, onClose, schoolId }: GradeUpl
             </div>
 
 
-            <div className="p-8 bg-indigo-50/50 dark:bg-indigo-500/5 rounded-[2rem] border border-indigo-100 dark:border-indigo-900/30 space-y-6">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+            <div className="p-8 bg-primary/5 dark:bg-primary/5 rounded-[2rem] border border-primary dark:border-primary/30 space-y-6">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary dark:text-primary flex items-center gap-2">
                     <Table size={14} /> Column Mapping Configuration
                 </h4>
                 <div className="grid gap-4">
@@ -356,7 +356,7 @@ export default function GradeUploadModal({ isOpen, onClose, schoolId }: GradeUpl
                 else if (step === 'preview') mutation.mutate();
             }}
             disabled={mutation.isPending || (step === 'map' && (!mapping.studentName || !mapping.score || !selectedExamId || !selectedPaperId))}
-            className="flex-1 h-12 rounded-xl bg-indigo-600 text-white font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+            className="flex-1 h-12 rounded-xl bg-primary text-white font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
           >
             {mutation.isPending ? <Loader2 className="animate-spin" /> : step === 'map' ? 'Review Data' : 'Initialize Batch Creation'}
           </Button>
@@ -365,3 +365,4 @@ export default function GradeUploadModal({ isOpen, onClose, schoolId }: GradeUpl
     </Dialog>
   );
 }
+

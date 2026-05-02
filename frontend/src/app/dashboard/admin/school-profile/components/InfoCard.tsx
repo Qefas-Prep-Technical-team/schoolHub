@@ -20,3 +20,4 @@ const InfoCard: React.FC<InfoCardProps> = ({ title, children, className = '' }) 
 };
 
 export default InfoCard;
+

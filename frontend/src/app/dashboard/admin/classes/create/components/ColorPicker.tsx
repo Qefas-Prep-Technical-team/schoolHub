@@ -8,7 +8,7 @@ interface ColorPickerProps {
 const ColorPicker: React.FC<ColorPickerProps> = ({ selectedColor, onColorSelect }) => {
   const colors = [
     { value: 'red', bg: 'bg-red-500' },
-    { value: 'orange', bg: 'bg-orange-500' },
+    { value: 'orange', bg: 'bg-primary' },
     { value: 'amber', bg: 'bg-amber-500' },
     { value: 'green', bg: 'bg-green-500' },
     { value: 'sky', bg: 'bg-sky-500' },
@@ -35,3 +35,4 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ selectedColor, onColorSelect 
 };
 
 export default ColorPicker;
+

@@ -12,3 +12,4 @@ const FooterActions: React.FC = () => {
 };
 
 export default FooterActions;
+

@@ -18,3 +18,4 @@ export default function Toggle({ id, checked, onChange }: ToggleProps) {
         </label>
     );
 }
+

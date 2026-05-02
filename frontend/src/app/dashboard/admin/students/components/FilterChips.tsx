@@ -161,3 +161,4 @@ export default function FilterChips({ selectedFilters, onFilterChange }: FilterC
     </div>
   );
 }
+

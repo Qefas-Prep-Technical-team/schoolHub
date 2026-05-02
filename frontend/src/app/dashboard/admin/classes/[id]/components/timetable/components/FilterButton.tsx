@@ -1,57 +1,56 @@
-'use client';
+import React, { useState } from 'react';
+import { X } from 'lucide-react';
 
-import React from 'react';
-import { ChevronDown, Layers } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-
-interface FilterButtonProps {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
+interface SubjectInputProps {
+  subjects: string[];
+  onSubjectsChange: (subjects: string[]) => void;
 }
 
-const FilterButton: React.FC<FilterButtonProps> = ({ 
-  label, 
-  value, 
-  options, 
-  onChange 
-}) => {
+const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      e.preventDefault();
+      if (!subjects.includes(inputValue.trim())) {
+        onSubjectsChange([...subjects, inputValue.trim()]);
+      }
+      setInputValue('');
+    }
+  };
+
+  const handleRemoveSubject = (subjectToRemove: string) => {
+    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
+  };
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="h-12 px-6 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-white/10 transition-all shadow-sm group"
+    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
+      {subjects.map((subject) => (
+        <span
+          key={subject}
+          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
         >
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}:</span>
-          <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter group-hover:text-orange-600 transition-colors">{value}</span>
-          <ChevronDown size={14} className="text-slate-400 group-hover:text-orange-600 transition-colors" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-48 rounded-[1.2rem] p-1 border-2 border-slate-100 dark:border-white/5">
-        {options.map((option) => (
-          <DropdownMenuItem
-            key={option}
-            onClick={() => onChange(option)}
-            className={cn(
-              "rounded-lg px-3 py-2.5 text-xs font-bold uppercase tracking-tight cursor-pointer",
-              value === option ? "bg-orange-600/10 text-orange-600" : "hover:bg-slate-50 dark:hover:bg-white/5"
-            )}
+          {subject}
+          <button
+            onClick={() => handleRemoveSubject(subject)}
+            className="hover:text-primary/70"
+            aria-label={`Remove ${subject}`}
           >
-            {option}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <X size={12} />
+          </button>
+        </span>
+      ))}
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleAddSubject}
+        placeholder="Add subjects..."
+        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
+      />
+    </div>
   );
 };
 
-export default FilterButton;
+export default SubjectInput;
+

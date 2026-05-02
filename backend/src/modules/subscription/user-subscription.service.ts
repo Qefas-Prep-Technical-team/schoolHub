@@ -24,8 +24,9 @@ export class UserSubscriptionService {
     }
 
     return await prisma.$transaction(async (tx) => {
-      const subscription = await tx.userSubscription.create({
-        data: {
+      const subscription = await tx.userSubscription.upsert({
+        where: { userId },
+        create: {
           userId,
           userType,
           subscriptionPlanId: freePlan.id,
@@ -33,6 +34,24 @@ export class UserSubscriptionService {
           status: SubscriptionStatus.ACTIVE,
           startedAt: new Date(),
         },
+        update: {
+          subscriptionPlanId: freePlan.id,
+          subscriptionType: SubscriptionType.FREE,
+          status: SubscriptionStatus.ACTIVE,
+        }
+      });
+
+      // Update user record with plan details
+      const userModel = userType.toLowerCase() as any;
+      await (tx as any)[userModel].update({
+        where: { id: userId },
+        data: {
+          plan: freePlan.name,
+          planId: freePlan.id,
+          subscriptionPlanId: freePlan.id,
+          lastPaymentDate: new Date(),
+          subscriptionStatus: "ACTIVE"
+        }
       });
 
       await tx.subscriptionHistory.create({
@@ -110,6 +129,20 @@ export class UserSubscriptionService {
           expiresAt,
           updatedAt: new Date(),
         },
+      });
+
+      // Update user record with plan details
+      const userModel = userType.toLowerCase() as any;
+      await (tx as any)[userModel].update({
+        where: { id: userId },
+        data: {
+          plan: plan.name,
+          planId: planId,
+          subscriptionPlanId: planId,
+          lastPaymentDate: new Date(),
+          subscriptionEnd: expiresAt,
+          subscriptionStatus: "ACTIVE"
+        }
       });
 
       await tx.subscriptionHistory.create({

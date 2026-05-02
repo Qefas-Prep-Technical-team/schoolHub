@@ -61,3 +61,4 @@ const ClassPreview: React.FC<ClassPreviewProps> = ({
 };
 
 export default ClassPreview;
+

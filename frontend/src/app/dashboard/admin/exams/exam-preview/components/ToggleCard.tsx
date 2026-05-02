@@ -21,3 +21,4 @@ export default function ToggleCard({ showAnswers, onToggle }: ToggleCardProps) {
         </div>
     );
 }
+

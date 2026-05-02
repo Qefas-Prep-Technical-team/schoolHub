@@ -236,6 +236,98 @@ export const sendSetupCompleteEmail = async (email: string) => {
   });
 };
 
+export const sendPaymentReceiptEmail = async (params: {
+  email: string;
+  amount: number;
+  date: Date;
+  method: string;
+  plan: string;
+  expiryDate: Date;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? process.env.TEST_EMAIL as string : params.email;
+
+  const formattedAmount = new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+  }).format(params.amount);
+
+  const formattedDate = params.date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const formattedExpiry = params.expiryDate.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  return await resend.emails.send({
+    from: process.env.MAIL_FROM as string,
+    to: recipient,
+    subject: `Payment Receipt: ${params.plan} Plan - Qefas Hub ${isTest ? `(Original: ${params.email})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
+          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
+            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Payment Confirmation</p>
+          </div>
+        </div>
+        
+        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">Payment Receipt</h3>
+        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">Thank you for your payment. Your subscription is now active. Below are your transaction details.</p>
+        
+        <div style="background: #f8fafc; border-radius: 24px; padding: 32px; margin-bottom: 32px; border: 1px solid #e2e8f0;">
+          <div style="text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #e2e8f0;">
+            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Amount Paid</p>
+            <h1 style="margin: 8px 0 0 0; color: #0f172a; font-size: 36px; font-weight: 900;">${formattedAmount}</h1>
+          </div>
+          
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 10px 0; color: #64748b; font-size: 14px; font-weight: 600;">Plan Name</td>
+              <td style="padding: 10px 0; text-align: right; color: #0f172a; font-size: 14px; font-weight: 700; text-transform: capitalize;">${params.plan}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; color: #64748b; font-size: 14px; font-weight: 600;">Payment Date</td>
+              <td style="padding: 10px 0; text-align: right; color: #0f172a; font-size: 14px; font-weight: 700;">${formattedDate}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; color: #64748b; font-size: 14px; font-weight: 600;">Payment Method</td>
+              <td style="padding: 10px 0; text-align: right; color: #0f172a; font-size: 14px; font-weight: 700; text-transform: capitalize;">${params.method}</td>
+            </tr>
+            <tr>
+              <td style="padding: 20px 0 0 0; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 14px; font-weight: 600;">Access Expires On</td>
+              <td style="padding: 20px 0 0 0; border-top: 1px solid #e2e8f0; text-align: right; color: #059669; font-size: 14px; font-weight: 800;">${formattedExpiry}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <div style="padding: 24px; background: #eff6ff; border-radius: 16px; border-left: 4px solid #2563eb; margin-bottom: 32px;">
+          <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.5; font-weight: 500;">
+            <b>Pro Tip:</b> You can download a PDF version of this receipt and view your full billing history in your dashboard.
+          </p>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 32px;">
+          <a href="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard" style="display: inline-block; background: #0f172a; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Go to Dashboard</a>
+        </div>
+        
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
+          ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${params.email}</div>` : ''}
+        </div>
+      </div>
+    `,
+  });
+};
+
 // Login function
 export const loginUser = async (email: string, password: string) => {
   // Check student first

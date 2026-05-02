@@ -3,6 +3,7 @@
 import { UserPlus, FileText, Megaphone, MoreHorizontal, Users, Calendar, Download, Settings, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -17,7 +18,7 @@ interface Action {
   href: string;
 }
 
-export default function QuickActions() {
+export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const router = useRouter();
   const [actions] = useState<Action[]>([
     {
@@ -65,9 +66,9 @@ export default function QuickActions() {
       title: 'Schedule',
       icon: Calendar,
       description: 'Create timetable',
-      color: 'border-indigo-500/20',
-      iconColor: 'text-indigo-500',
-      bgColor: 'bg-indigo-500/10',
+      color: '', // Will use custom
+      iconColor: '', 
+      bgColor: '',
       href: '/dashboard/admin/classes',
     },
     {
@@ -104,7 +105,8 @@ export default function QuickActions() {
         {actions.length > 4 && (
           <button
             onClick={() => setShowMore(!showMore)}
-            className="text-[10px] font-black text-indigo-400 hover:text-white transition-all uppercase tracking-widest"
+            className="text-[10px] font-black hover:text-white transition-all uppercase tracking-widest"
+            style={{ color: primaryColor }}
           >
             {showMore ? 'Show Less' : `+${actions.length - 4} More`}
           </button>
@@ -114,6 +116,8 @@ export default function QuickActions() {
       <div className="grid grid-cols-2 gap-4">
         {visibleActions.map((action, idx) => {
           const Icon = action.icon;
+          const isCustom = action.id === 'schedule';
+
           return (
             <motion.button
               key={action.id}
@@ -123,15 +127,23 @@ export default function QuickActions() {
               onClick={() => router.push(action.href)}
               className={cn(
                 "flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border transition-all duration-500 group relative overflow-hidden",
-                "bg-white/10 dark:bg-black/20 border-white/10 hover:border-indigo-500/50 hover:bg-white/20",
-                "shadow-lg hover:shadow-indigo-500/10 active:scale-95"
+                "bg-white/10 dark:bg-black/20 border-white/10 hover:bg-white/20",
+                "active:scale-95"
               )}
+              style={{ 
+                '--hover-border': `${primaryColor}50`, 
+                '--shadow-hover': `${primaryColor}10`,
+                boxShadow: `0 10px 15px -3px ${primaryColor}10`
+              } as any}
             >
-              <div className={cn(
-                "p-3 rounded-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6",
-                action.bgColor,
-                action.iconColor
-              )}>
+              <div 
+                className={cn(
+                  "p-3 rounded-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6",
+                  !isCustom && action.bgColor,
+                  !isCustom && action.iconColor
+                )}
+                style={isCustom ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
+              >
                 <Icon size={20} strokeWidth={2.5} />
               </div>
               <div className="text-center space-y-1 relative z-10">
@@ -152,10 +164,15 @@ export default function QuickActions() {
         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
           {actions.length} Shortcuts Available
         </p>
-        <button className="text-[9px] font-black text-indigo-400 hover:text-white transition-all uppercase flex items-center gap-1 tracking-widest">
+        <Link 
+            href="/dashboard/admin/settings"
+            className="text-[9px] font-black hover:text-white transition-all uppercase flex items-center gap-1 tracking-widest"
+            style={{ color: primaryColor }}
+        >
           Settings <Settings size={10} />
-        </button>
+        </Link>
       </div>
     </div>
   );
 }
+

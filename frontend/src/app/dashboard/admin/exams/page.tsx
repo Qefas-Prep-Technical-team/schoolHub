@@ -21,7 +21,7 @@ export default function Dashboard() {
     const { user } = useAuthStore();
     const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
     const { data: settings } = useSchoolSettings(schoolId);
-    const primaryColor = settings?.themeColor || '#ea580c';
+    const primaryColor = settings?.themeColor || '#2563eb';
 
     const [filters, setFilters] = useState({
         sessionId: 'all',
@@ -168,3 +168,4 @@ export default function Dashboard() {
         </main>
     );
 }
+

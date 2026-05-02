@@ -80,7 +80,7 @@ export default function CreateExamForm() {
   const watchedSchoolId = watch("schoolId");
   const watchedScope = watch("scope");
   const { data: settings } = useSchoolSettings(watchedSchoolId);
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
 
   // sessions now represents the Array [{id, name...}]
   const { data: sessions, isLoading: loadingSessions, isError } = useSessions(watchedSchoolId);
@@ -459,3 +459,4 @@ export default function CreateExamForm() {
     </form>
   );
 }
+

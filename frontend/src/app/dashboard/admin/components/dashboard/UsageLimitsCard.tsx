@@ -11,7 +11,7 @@ import { useSubscriptionUsage } from '@/lib/api/hooks/useSubscriptionUsage';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from 'next/navigation';
 
-export default function UsageLimitsCard() {
+export default function UsageLimitsCard({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const router = useRouter();
   const { data, isLoading, isError, refetch } = useSubscriptionUsage();
 
@@ -21,7 +21,10 @@ export default function UsageLimitsCard() {
 
   if (isError || !data) {
     return (
-      <Card className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl p-8 bg-white dark:bg-slate-900/50 flex flex-col items-center justify-center gap-4 text-center min-h-[400px]">
+      <Card 
+        className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 p-8 bg-white dark:bg-slate-900/50 flex flex-col items-center justify-center gap-4 text-center min-h-[400px] transition-all"
+        style={{ boxShadow: `0 20px 25px -5px ${primaryColor}15` }}
+      >
         <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/20 text-rose-600 flex items-center justify-center">
           <AlertTriangle className="w-8 h-8" />
         </div>
@@ -47,18 +50,18 @@ export default function UsageLimitsCard() {
   const getBarColor = (percentage: number) => {
     if (percentage >= 90) return "bg-rose-500";
     if (percentage >= 80) return "bg-amber-500";
-    return "bg-blue-500";
+    return ""; // Will use inline style for primaryColor
   };
 
   const getTextColor = (percentage: number) => {
     if (percentage >= 90) return "text-rose-600 dark:text-rose-400";
     if (percentage >= 80) return "text-amber-600 dark:text-amber-400";
-    return "text-slate-900 dark:text-white";
+    return ""; // Will use inline style
   };
 
   const metrics = [
     { label: "Students", count: usage.students, limit: limits.students, percent: percentages.students, color: "bg-blue-500" },
-    { label: "Exams", count: usage.exams, limit: limits.exams, percent: percentages.exams, color: "bg-indigo-500" },
+    { label: "Exams", count: usage.exams, limit: limits.exams, percent: percentages.exams, color: "bg-primary" },
     { label: "Classes", count: usage.classes, limit: limits.classes, percent: percentages.classes, color: "bg-purple-500" },
     { label: "Teachers", count: usage.teachers, limit: limits.teachers, percent: percentages.teachers, color: "bg-rose-500" },
     { label: "Storage", count: `${usage.storageGb}GB`, limit: `${limits.storageGb}GB`, percent: percentages.storage, color: "bg-emerald-500" },
@@ -67,7 +70,10 @@ export default function UsageLimitsCard() {
   const hasWarning = Object.values(percentages).some(p => p >= 80);
 
   return (
-    <Card className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl p-8 bg-white dark:bg-slate-900/50 relative overflow-hidden group">
+    <Card 
+      className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 p-8 bg-white dark:bg-slate-900/50 relative overflow-hidden group transition-all"
+      style={{ boxShadow: `0 20px 25px -5px ${primaryColor}15` }}
+    >
       {/* Background Glow when nearing limits */}
       {hasWarning && (
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
@@ -75,10 +81,13 @@ export default function UsageLimitsCard() {
 
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <div className={cn(
-            "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-colors",
-            hasWarning ? "bg-amber-100 dark:bg-amber-900/20 text-amber-600" : "bg-blue-100 dark:bg-blue-900/20 text-blue-600"
-          )}>
+          <div 
+            className={cn(
+                "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-colors",
+                hasWarning ? "bg-amber-100 dark:bg-amber-900/20 text-amber-600" : "bg-blue-100 dark:bg-blue-900/20"
+            )}
+            style={!hasWarning ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
+          >
             {hasWarning ? <AlertTriangle className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
           </div>
           <div>
@@ -112,7 +121,10 @@ export default function UsageLimitsCard() {
             <div className="flex justify-between items-end">
               <span className="text-sm font-bold text-slate-500">{m.label}</span>
               <div className="text-right">
-                <span className={cn("text-base font-black tracking-tight", getTextColor(m.percent))}>
+                <span 
+                    className={cn("text-base font-black tracking-tight", getTextColor(m.percent))}
+                    style={m.percent < 80 ? { color: primaryColor } : {}}
+                >
                   {m.count}
                 </span>
                 <span className="text-xs font-bold text-slate-400 ml-1.5">
@@ -126,6 +138,7 @@ export default function UsageLimitsCard() {
                 animate={{ width: `${m.percent}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 className={cn("h-full rounded-full shadow-lg", getBarColor(m.percent))}
+                style={m.percent < 80 ? { backgroundColor: primaryColor } : {}}
               />
             </div>
           </div>
@@ -138,8 +151,9 @@ export default function UsageLimitsCard() {
           "w-full mt-10 h-14 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all gap-2 group-hover:shadow-lg",
           hasWarning 
             ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20" 
-            : "bg-slate-900 dark:bg-white text-white dark:text-slate-900"
+            : "text-white dark:text-slate-900"
         )}
+        style={!hasWarning ? { backgroundColor: primaryColor } : {}}
       >
         <span>Upgrade Institutional capacity</span>
         <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -147,3 +161,4 @@ export default function UsageLimitsCard() {
     </Card>
   );
 }
+

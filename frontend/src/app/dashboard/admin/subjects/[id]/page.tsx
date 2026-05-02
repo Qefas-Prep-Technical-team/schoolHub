@@ -1,286 +1,464 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { subjectService, Subject, SchemeOfWork } from "../services/subjectService"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, Edit, Users, BookOpen, Clock, BarChart3, GraduationCap, Building2, Layers, CheckCircle2, Circle, AlertCircle } from "lucide-react"
-import SubjectModal from "../components/SubjectModal"
-import { apiClient } from "@/lib/api/client"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+import { Subject, SchemeOfWork, subjectService } from "../services/subjectService"
+import { departmentService, Department } from "../../departments/services/departmentService"
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
+import { apiClient } from "@/lib/api/client"
 import { toast } from "react-toastify"
-import { Progress } from "@/components/ui/progress"
+import { useSchoolTeachers } from "@/lib/api/hooks/useSchool"
+import { Plus, Trash2, BookOpen, Settings, Target, Link2, Hash, Type, Sparkles } from "lucide-react"
 
-const SubjectDetailPage = () => {
-  const { id } = useParams()
-  const router = useRouter()
+interface SubjectModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onSuccess: () => void
+  subject?: Subject | null
+}
+
+const SubjectModal: React.FC<SubjectModalProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  subject,
+}) => {
+  const [loading, setLoading] = useState(false)
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [formData, setFormData] = useState<{
+    name: string;
+    code: string;
+    description?: string;
+    departmentIds: string[];
+    teacherIds: string[];
+    scope: "SCHOOL";
+  }>({
+    name: "",
+    code: "",
+    description: "",
+    departmentIds: [],
+    teacherIds: [],
+    scope: "SCHOOL",
+  })
+
+  const [schemes, setSchemes] = useState<Partial<SchemeOfWork>[]>([])
+
   const { user } = useAuthStore()
-  
-  const [subject, setSubject] = useState<Subject | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const [schoolId, setSchoolId] = useState<string>("");
-  const [schemes, setSchemes] = useState<SchemeOfWork[]>([])
+  
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (user?.email) {
+        try {
+            const res = await apiClient.get(`/admin/admin-status/${user.email}`);
+            setSchoolId(res.data.data.schoolAdmins?.[0]?.schoolId || "");
+        } catch (err) {
+            console.error("Auth check failed", err);
+        }
+      }
+    };
+    checkStatus();
+  }, [user?.email]);
 
-  const fetchSubject = async () => {
+  const { data: schoolTeachers = [] } = useSchoolTeachers(schoolId);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchDepartments()
+      if (subject?.id) {
+        setFormData({
+          name: subject.name,
+          code: subject.code,
+          description: subject.description || "",
+          departmentIds: subject.departments?.map((d: any) => d.departmentId) || [],
+          teacherIds: (subject as any).teacherSubjects?.map((ts: any) => ts.teacherId) || [],
+          scope: "SCHOOL",
+        })
+        fetchScheme(subject.id)
+      } else {
+        setFormData({
+          name: "",
+          code: "",
+          description: "",
+          departmentIds: [],
+          teacherIds: [],
+          scope: "SCHOOL",
+        })
+        setSchemes([{ week: 1, topic: "", term: 1 }])
+      }
+    }
+  }, [isOpen, subject, schoolId])
+
+  const fetchDepartments = async () => {
+    try {
+        if (schoolId) {
+            const deps = await departmentService.getDepartments(schoolId);
+            setDepartments(deps);
+        }
+    } catch (error) {
+        console.error("Failed to fetch departments", error);
+    }
+  }
+
+  const fetchScheme = async (subjectId: string) => {
+      try {
+          const data = await subjectService.getScheme(subjectId);
+          setSchemes(data.length > 0 ? data : [{ week: 1, topic: "", term: 1 }]);
+      } catch (err) {
+          console.error("Failed to fetch scheme", err);
+      }
+  }
+
+  const addSchemeRow = () => {
+      const nextWeek = schemes.length > 0 ? (Math.max(...schemes.map(s => s.week || 0)) + 1) : 1;
+      setSchemes([...schemes, { week: nextWeek, topic: "", term: 1 }]);
+  }
+
+  const removeSchemeRow = (index: number) => {
+      setSchemes(schemes.filter((_, i) => i !== index));
+  }
+
+  const updateSchemeRow = (index: number, data: Partial<SchemeOfWork>) => {
+      const newSchemes = [...schemes];
+      newSchemes[index] = { ...newSchemes[index], ...data };
+      setSchemes(newSchemes);
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setLoading(true)
     try {
-      const data = await subjectService.getSubject(id as string)
-      setSubject(data)
-      const schemeData = await subjectService.getScheme(id as string)
-      setSchemes(schemeData)
-    } catch (error) {
-      console.error("Failed to fetch subject details", error)
+      if (!schoolId) {
+        toast.error("School context not found. Please try logging in again.");
+        return;
+      }
+
+      let savedSubject;
+      const { departmentIds, ...subjectData } = formData;
+
+      if (subject?.id) {
+        const response = await apiClient.patch(`/academic/subjects/${subject.id}`, {
+          ...subjectData,
+          scope: "SCHOOL",
+        });
+        savedSubject = response.data.data;
+      } else {
+        const response = await apiClient.post("/academic/subjects", {
+          ...subjectData,
+          schoolId,
+          scope: "SCHOOL",
+        });
+        savedSubject = response.data.data;
+      }
+
+      // Link departments
+      if (savedSubject?.id) {
+          await apiClient.post(`/academic/subjects/${savedSubject.id}/departments`, {
+              departmentIds: formData.departmentIds,
+          });
+
+          await apiClient.post(`/academic/subjects/${savedSubject.id}/teachers`, {
+              teacherIds: formData.teacherIds,
+              schoolId,
+          });
+
+          // Sync Scheme of Work
+          const validSchemes = schemes.filter(s => s.topic?.trim());
+          if (validSchemes.length > 0) {
+              await subjectService.syncScheme(savedSubject.id, validSchemes);
+          }
+      }
+
+      toast.success(subject?.id ? "Subject updated!" : "Subject created!");
+      onSuccess()
+      onClose()
+    } catch (error: any) {
+      console.error("Failed to save subject", error)
+      toast.error(error.response?.data?.message || "Failed to save subject");
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchSchoolId = async () => {
-      if (user?.email) {
-          try {
-              const res = await apiClient.get(`/admin/admin-status/${user.email}`);
-              setSchoolId(res.data.data.schoolAdmins?.[0]?.schoolId || "");
-          } catch (err) {
-              console.error("Failed to fetch school context", err);
-          }
-      }
-  };
-
-  useEffect(() => {
-    fetchSubject()
-    fetchSchoolId()
-  }, [id, user?.email])
-
-  const handleToggleCompletion = async (schemeId: string, currentStatus: boolean) => {
-    try {
-        await subjectService.updateSchemeEntry(schemeId, { isCompleted: !currentStatus });
-        setSchemes(schemes.map(s => s.id === schemeId ? { ...s, isCompleted: !currentStatus } : s));
-        toast.success(currentStatus ? "Topic marked as pending" : "Topic marked as completed");
-    } catch (error) {
-        console.error("Failed to update status", error);
-        toast.error("Failed to update topic status");
-    }
-  };
-
-  const completedCount = schemes.filter(s => s.isCompleted).length;
-  const progressPercent = schemes.length > 0 ? Math.round((completedCount / schemes.length) * 100) : 0;
-
-  const handleRemoveTeacher = async (teacherId: string) => {
-    if (!subject || !schoolId) return;
-    const confirmRemove = window.confirm("Are you sure you want to remove this teacher from the subject?");
-    if (!confirmRemove) return;
-
-    try {
-        const currentTeacherIds = (subject as any).teacherSubjects?.map((ts: any) => ts.teacherId) || [];
-        const newTeacherIds = currentTeacherIds.filter((tid: string) => tid !== teacherId);
-        await apiClient.post(`/academic/subjects/${subject.id}/teachers`, {
-            teacherIds: newTeacherIds,
-            schoolId,
-        });
-        toast.success("Teacher removed successfully");
-        fetchSubject();
-    } catch (error) {
-        toast.error("Failed to remove teacher");
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-blue-600">
-        <span className="material-symbols-outlined text-5xl animate-spin">cyclone</span>
-      </div>
-    )
-  }
-
-  if (!subject) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
-        <AlertCircle className="h-16 w-16 text-slate-300 dark:text-slate-800 mb-4" />
-        <h1 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Subject Not Found</h1>
-        <Button variant="link" onClick={() => router.push("/dashboard/admin/subjects")} className="mt-4 text-blue-600 font-bold">Back to curriculum</Button>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <main className="pt-24 pb-12 px-4 sm:px-8 max-w-7xl mx-auto">
-        {/* Actions Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <button onClick={() => router.push("/dashboard/admin/subjects")} className="flex items-center gap-2 text-sm font-black text-slate-500 hover:text-blue-600 transition-all uppercase tracking-widest group">
-            <ChevronLeft className="h-4 w-4 group-hover:-translate-x-1" /> Back to Subjects
-          </button>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" className="rounded-xl font-bold border-slate-200 dark:border-slate-800" onClick={() => window.print()}>Print</Button>
-            <Button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl px-6 gap-2">
-              <Edit className="h-4 w-4" /> Edit Subject
-            </Button>
-          </div>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[850px] max-h-[90vh] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 flex flex-col">
+        <DialogHeader className="p-8 border-b dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900 flex-shrink-0">
+          <DialogTitle className="text-3xl font-black font-headline text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
+             <div className="p-2 bg-blue-600 rounded-xl"><BookOpen className="h-6 w-6 text-white" /></div>
+             {subject?.id ? "Edit Subject Profile" : "Initialize New Subject"}
+          </DialogTitle>
+        </DialogHeader>
 
-        {/* Hero Section */}
-        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 sm:p-12 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden mb-8">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10">
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <span className="px-4 py-1.5 bg-blue-600 text-white font-black text-xs rounded-full uppercase tracking-widest">{subject.code}</span>
-                <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${subject.scope === 'SCHOOL' ? 'bg-indigo-50 text-indigo-700' : 'bg-amber-50 text-amber-700'}`}>
-                   <span className="material-symbols-outlined text-[14px]">{subject.scope === 'SCHOOL' ? 'domain' : 'person'}</span> {subject.scope}
-                </div>
-              </div>
-              <h1 className="text-5xl sm:text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">{subject.name}</h1>
-              <p className="text-lg text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-xl">{subject.description || "No description provided."}</p>
-              <div className="flex flex-wrap gap-6 pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-blue-600"><Users className="h-6 w-6" /></div>
-                  <div><p className="text-xs font-bold text-slate-400 uppercase">Teachers</p><p className="text-lg font-black text-slate-900 dark:text-white leading-none">{subject.teachersCount || 0}</p></div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-indigo-600"><BookOpen className="h-6 w-6" /></div>
-                  <div><p className="text-xs font-bold text-slate-400 uppercase">Classes</p><p className="text-lg font-black text-slate-900 dark:text-white leading-none">{subject.classesCount || 0}</p></div>
-                </div>
-              </div>
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <Tabs defaultValue="settings" className="w-full flex-1 flex flex-col min-h-0">
+            <div className="px-8 border-b dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
+                <TabsList className="bg-transparent border-none p-0 h-14 gap-8">
+                    <TabsTrigger 
+                        value="settings" 
+                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-blue-600 rounded-none h-full px-1 text-sm font-black uppercase tracking-widest gap-2.5 transition-all"
+                    >
+                        <Settings className="h-4 w-4" />
+                        Base Settings
+                    </TabsTrigger>
+                    <TabsTrigger 
+                        value="curriculum" 
+                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-blue-600 rounded-none h-full px-1 text-sm font-black uppercase tracking-widest gap-2.5 transition-all"
+                    >
+                        <Sparkles className="h-4 w-4" />
+                        Curriculum
+                    </TabsTrigger>
+                </TabsList>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl space-y-4">
-                   <div className="h-10 w-10 bg-blue-600 text-white rounded-xl flex items-center justify-center"><BarChart3 className="h-5 w-5" /></div>
-                   <h4 className="text-sm font-black uppercase tracking-tight">Curriculum Completion</h4>
-                   <div className="space-y-1">
-                        <p className="text-2xl font-black text-blue-600">{progressPercent}%</p>
-                        <Progress value={progressPercent} className="h-1.5 bg-blue-100 dark:bg-blue-900/30" />
-                   </div>
-                </div>
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl space-y-4">
-                   <div className="h-10 w-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center"><Clock className="h-5 w-5" /></div>
-                   <h4 className="text-sm font-black uppercase tracking-tight">Timeline</h4>
-                   <p className="text-2xl font-black text-indigo-600">{schemes.length} Weeks</p>
-                </div>
-                <div className="col-span-2 bg-slate-900 dark:bg-slate-800 p-8 rounded-3xl text-white flex justify-between items-center group cursor-pointer hover:bg-slate-800 transition-all">
-                    <div>
-                        <h3 className="text-xl font-black uppercase tracking-tighter">View Lesson Plans</h3>
-                        <p className="text-slate-400 text-sm font-medium">Access detailed pedagogical notes for this subject</p>
-                    </div>
-                    <span className="material-symbols-outlined text-3xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Tabs Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Sidebar Column: Depts & Classes */}
-            <div className="lg:col-span-1 space-y-8">
-                <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border dark:border-slate-800 shadow-sm">
-                    <div className="flex items-center gap-3 mb-6">
-                        <Building2 className="h-5 w-5 text-blue-600" />
-                        <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase">Departments</h2>
-                    </div>
-                    <div className="space-y-2">
-                        {subject.departments?.map((d: any) => (
-                            <div key={d.departmentId} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300">
-                                {d.department.name}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border dark:border-slate-800 shadow-sm">
-                    <div className="flex items-center gap-3 mb-6">
-                        <Layers className="h-5 w-5 text-indigo-600" />
-                        <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase">Active Classes</h2>
-                    </div>
-                    <div className="space-y-2">
-                        {subject.classes?.map((c: any) => (
-                            <div key={c.classId} onClick={() => router.push(`/dashboard/admin/classes/${c.classId}`)} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center justify-between cursor-pointer group hover:bg-indigo-50 transition-all border border-transparent hover:border-indigo-100">
-                                <span className="text-xs font-bold text-slate-700 group-hover:text-indigo-600">{c.class.name}</span>
-                                <span className="material-symbols-outlined text-transparent group-hover:text-indigo-600 text-sm">open_in_new</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* Main Content: Scheme of Work & Teachers */}
-            <div className="lg:col-span-3 space-y-8">
-                {/* Scheme of Work Section */}
-                <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border dark:border-slate-800 shadow-sm">
-                    <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-3">
-                            <BookOpen className="h-6 w-6 text-blue-600" />
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Scheme of Work</h2>
+            <div className="flex-1 overflow-y-auto p-8 bg-slate-50/30 dark:bg-slate-900/50 min-h-0">
+                <TabsContent value="settings" className="space-y-8 mt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                            <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <Type className="h-3 w-3" /> Subject Name
+                            </Label>
+                            <Input
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-2xl h-12 px-5 font-bold shadow-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                placeholder="e.g. Mathematics"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-3">
+                            <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <Hash className="h-3 w-3" /> Subject Code
+                            </Label>
+                            <Input
+                                value={formData.code}
+                                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                                className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-2xl h-12 px-5 font-bold shadow-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                placeholder="e.g. MATH-101"
+                                required
+                            />
                         </div>
                     </div>
 
-                    <div className="space-y-1">
-                        {schemes.length > 0 ? schemes.map((scheme, idx) => (
-                            <div key={scheme.id} className={`p-6 flex items-start gap-6 border-b dark:border-slate-800 last:border-none transition-all group ${scheme.isCompleted ? 'bg-blue-50/20 dark:bg-blue-900/5' : ''}`}>
-                                <div className="pt-1 flex flex-col items-center">
-                                    <button 
-                                        onClick={() => handleToggleCompletion(scheme.id, scheme.isCompleted)}
-                                        className={`h-8 w-8 rounded-full flex items-center justify-center transition-all ${scheme.isCompleted ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-300 hover:text-blue-600'}`}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Departments */}
+                        <div className="space-y-4">
+                            <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Target Departments</Label>
+                            <div className="space-y-2 max-h-[250px] overflow-y-auto p-3 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                                {departments.map(dep => (
+                                    <div 
+                                        key={dep.id}
+                                        onClick={() => {
+                                            const isSelected = formData.departmentIds.includes(dep.id);
+                                            const newIds = isSelected 
+                                                ? formData.departmentIds.filter(id => id !== dep.id)
+                                                : [...formData.departmentIds, dep.id];
+                                            setFormData({ ...formData, departmentIds: newIds });
+                                        }}
+                                        className={`flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all border ${
+                                            formData.departmentIds.includes(dep.id) 
+                                                ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20 translate-x-1' 
+                                                : 'bg-slate-50 dark:bg-slate-900 border-transparent hover:border-blue-500/30'
+                                        }`}
                                     >
-                                        {scheme.isCompleted ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
-                                    </button>
-                                    <div className="w-0.5 h-full bg-slate-100 dark:bg-slate-800 mt-2"></div>
-                                </div>
-                                <div className="flex-1 space-y-4">
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full">Week {scheme.week}</span>
-                                        <h3 className={`text-lg font-black uppercase tracking-tight ${scheme.isCompleted ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-white'}`}>{scheme.topic}</h3>
+                                        <span className="text-xs font-black uppercase tracking-tight">{dep.name}</span>
+                                        {formData.departmentIds.includes(dep.id) && <Plus className="h-3 w-3 ml-auto rotate-45" />}
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Learning Objectives</p>
-                                            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">{scheme.objectives || "Not specified."}</p>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Teachers */}
+                        <div className="space-y-4">
+                            <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Faculty Assignment</Label>
+                            <div className="space-y-2 max-h-[250px] overflow-y-auto p-3 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                                {schoolTeachers.map((teacher: any) => (
+                                    <div 
+                                        key={teacher.id}
+                                        onClick={() => {
+                                            const isSelected = formData.teacherIds.includes(teacher.id);
+                                            const newIds = isSelected 
+                                                ? formData.teacherIds.filter(id => id !== teacher.id)
+                                                : [...formData.teacherIds, teacher.id];
+                                            setFormData({ ...formData, teacherIds: newIds });
+                                        }}
+                                        className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border ${
+                                            formData.teacherIds.includes(teacher.id) 
+                                                ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20 translate-x-1' 
+                                                : 'bg-slate-50 dark:bg-slate-900 border-transparent hover:border-blue-500/30'
+                                        }`}
+                                    >
+                                        <div className={`h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-black ${formData.teacherIds.includes(teacher.id) ? 'bg-white/20' : 'bg-blue-100 text-blue-600'}`}>
+                                            {teacher.name.charAt(0)}
                                         </div>
-                                        <div className="space-y-2">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Resources</p>
-                                            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">{scheme.resources || "None."}</p>
+                                        <div className="flex flex-col text-left">
+                                            <span className="text-xs font-black uppercase tracking-tight">{teacher.name}</span>
+                                            <span className={`text-[10px] font-bold ${formData.teacherIds.includes(teacher.id) ? 'text-blue-100' : 'text-slate-500 uppercase'}`}>{teacher.teacherCode}</span>
                                         </div>
                                     </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Subject Description</Label>
+                        <Textarea
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-2xl p-5 text-sm font-medium shadow-sm"
+                            rows={3}
+                            placeholder="Provide a high-level overview of this academic course..."
+                        />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="curriculum" className="space-y-8 mt-0">
+                    <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                        <div className="text-left">
+                            <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Curriculum Roadmap</h4>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Plan your teaching milestones week-by-week</p>
+                        </div>
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={addSchemeRow}
+                            className="rounded-2xl border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-black uppercase tracking-widest text-[10px] px-6 h-11 transition-all active:scale-95"
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Entry
+                        </Button>
+                    </div>
+
+                    <div className="space-y-4 pb-4">
+                        {schemes.length > 0 ? schemes.map((scheme, idx) => (
+                            <div key={idx} className="group p-8 bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:shadow-blue-600/5 transition-all relative">
+                                <div className="grid grid-cols-12 gap-8">
+                                    <div className="col-span-12 md:col-span-3 lg:col-span-2 space-y-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Hash className="h-3 w-3 text-blue-600" />
+                                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Week</Label>
+                                        </div>
+                                        <Input 
+                                            type="number"
+                                            value={scheme.week} 
+                                            onChange={(e) => updateSchemeRow(idx, { week: parseInt(e.target.value) })}
+                                            className="bg-slate-50 dark:bg-slate-900 border-none rounded-xl h-12 px-4 text-center font-black text-blue-600 text-lg shadow-inner"
+                                        />
+                                    </div>
+                                    <div className="col-span-12 md:col-span-9 lg:col-span-10 space-y-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <BookOpen className="h-3 w-3 text-blue-600" />
+                                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Topic Title</Label>
+                                        </div>
+                                        <Input 
+                                            value={scheme.topic} 
+                                            onChange={(e) => updateSchemeRow(idx, { topic: e.target.value })}
+                                            className="bg-slate-50 dark:bg-slate-900 border-none rounded-xl h-12 px-5 font-black text-slate-900 dark:text-white shadow-inner"
+                                            placeholder="e.g. Introduction to Organic Chemistry"
+                                        />
+                                    </div>
+                                    <div className="col-span-12 md:col-span-6 space-y-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Target className="h-3 w-3 text-primary" />
+                                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Main Objectives</Label>
+                                        </div>
+                                        <Textarea 
+                                            value={scheme.objectives} 
+                                            onChange={(e) => updateSchemeRow(idx, { objectives: e.target.value })}
+                                            className="bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-xs font-medium min-h-[100px] p-4 shadow-inner"
+                                            placeholder="Outline what students will achieve this week..."
+                                        />
+                                    </div>
+                                    <div className="col-span-12 md:col-span-6 space-y-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Link2 className="h-3 w-3 text-green-600" />
+                                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recommended Resources</Label>
+                                        </div>
+                                        <Textarea 
+                                            value={scheme.resources} 
+                                            onChange={(e) => updateSchemeRow(idx, { resources: e.target.value })}
+                                            className="bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-xs font-medium min-h-[100px] p-4 shadow-inner"
+                                            placeholder="List textbooks, online links, or physical tools..."
+                                        />
+                                    </div>
                                 </div>
+                                
+                                <button 
+                                    type="button"
+                                    onClick={() => removeSchemeRow(idx)}
+                                    className="absolute -top-3 -right-3 h-10 w-10 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:border-red-500 shadow-lg transition-all opacity-0 group-hover:opacity-100 active:scale-90"
+                                >
+                                    <Plus className="h-5 w-5 rotate-45" />
+                                </button>
                             </div>
                         )) : (
-                            <div className="py-20 text-center space-y-4">
-                                <span className="material-symbols-outlined text-5xl text-slate-200">event_note</span>
-                                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No Curriculum Roadmap Defined</p>
-                                <Button onClick={() => setIsModalOpen(true)} variant="link" className="text-blue-600 font-bold">Initialize Scheme of Work</Button>
+                            <div className="py-20 bg-white dark:bg-slate-800 rounded-[2.5rem] border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-center space-y-6">
+                                <div className="h-20 w-20 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center">
+                                    <Sparkles className="h-10 w-10 text-slate-300" />
+                                </div>
+                                <div className="max-w-xs">
+                                    <h5 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">No roadmap initialized</h5>
+                                    <p className="text-xs text-slate-500 font-medium mt-1">Start by adding your first week of teaching topics and objectives.</p>
+                                </div>
+                                <Button 
+                                    type="button"
+                                    onClick={addSchemeRow}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-black uppercase text-[10px] px-8 rounded-full h-11"
+                                >
+                                    Start Planning
+                                </Button>
                             </div>
                         )}
                     </div>
-                </div>
-
-                {/* Teachers Section */}
-                <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border dark:border-slate-800 shadow-sm">
-                    <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-3">
-                            <GraduationCap className="h-6 w-6 text-indigo-600" />
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Subject Teachers</h2>
-                        </div>
-                        <Button onClick={() => setIsModalOpen(true)} variant="ghost" className="text-blue-600 font-bold uppercase text-xs tracking-widest hover:bg-blue-50">Assign More</Button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {(subject as any).teacherSubjects?.map((ts: any) => (
-                            <div key={ts.teacherId} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-transparent hover:border-indigo-500/20 transition-all flex items-center gap-4 group">
-                                <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-black uppercase shadow-sm">{ts.teacher.name.charAt(0)}</div>
-                                <div className="cursor-pointer" onClick={() => router.push(`/dashboard/admin/teachers/${ts.teacherId}`)}>
-                                    <h4 className="font-bold text-slate-900 dark:text-white mb-1 group-hover:text-indigo-600 transition-colors uppercase">{ts.teacher.name}</h4>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase">{ts.teacher.teacherCode}</p>
-                                </div>
-                                <button onClick={() => handleRemoveTeacher(ts.teacherId)} className="ml-auto text-slate-300 hover:text-red-500 transition-colors p-2 hover:bg-red-50 rounded-lg"><span className="material-symbols-outlined text-[20px]">person_remove</span></button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                </TabsContent>
             </div>
-        </div>
-      </main>
 
-      <SubjectModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={fetchSubject} subject={subject} />
-    </div>
+            <DialogFooter className="p-8 border-t dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
+                <Button 
+                    type="button" 
+                    variant="ghost" 
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onClose();
+                    }} 
+                    className="font-black text-xs uppercase tracking-widest mr-auto hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                    Discard Changes
+                </Button>
+                <div className="flex gap-4">
+                    <Button 
+                        type="submit" 
+                        disabled={loading} 
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-black px-12 rounded-full h-12 shadow-2xl shadow-blue-600/30 active:scale-95 transition-all text-xs uppercase tracking-widest"
+                    >
+                        {loading ? (subject?.id ? "Saving..." : "Publishing...") : (subject?.id ? "Save Changes" : "Create Subject")}
+                    </Button>
+                </div>
+            </DialogFooter>
+          </Tabs>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
-export default SubjectDetailPage
+export default SubjectModal
+

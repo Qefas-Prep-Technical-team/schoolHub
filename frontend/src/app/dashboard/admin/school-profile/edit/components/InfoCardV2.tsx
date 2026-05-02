@@ -20,3 +20,4 @@ const InfoCardV2: React.FC<InfoCardV2Props> = ({ title, children, className = ''
 };
 
 export default InfoCardV2;
+

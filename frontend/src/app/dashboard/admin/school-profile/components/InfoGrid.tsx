@@ -48,3 +48,4 @@ const InfoGrid: React.FC<InfoGridProps> = ({ items, columns = 2 }) => {
 };
 
 export default InfoGrid;
+

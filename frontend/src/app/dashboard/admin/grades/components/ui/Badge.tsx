@@ -12,3 +12,4 @@ export default function Badge({ children, className = '' }: BadgeProps) {
         </span>
     );
 }
+

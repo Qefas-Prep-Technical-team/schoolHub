@@ -139,3 +139,4 @@ export default function GradesTable({ grades, onEdit }: GradesTableProps) {
         </div>
     );
 }
+

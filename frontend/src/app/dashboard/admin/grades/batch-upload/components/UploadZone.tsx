@@ -103,3 +103,4 @@ export default function UploadZone({ onFileSelect, isProcessing = false }: Uploa
         </div>
     );
 }
+

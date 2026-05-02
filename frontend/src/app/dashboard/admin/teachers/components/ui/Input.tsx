@@ -31,3 +31,4 @@ export default function Input({ icon, className = '', ...props }: InputProps) {
     </div>
   )
 }
+

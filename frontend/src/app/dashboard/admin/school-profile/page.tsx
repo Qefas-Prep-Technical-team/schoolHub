@@ -47,7 +47,7 @@ export default function SchoolProfilePage() {
   const { data: stats, isLoading: statsLoading } = useSchoolStats(schoolId);
   const { data: settings } = useSchoolSettings(schoolId);
 
-  const primaryColor = settings?.themeColor || '#ea580c'; // Fallback to Qefas Orange
+  const primaryColor = settings?.themeColor || '#2563eb'; // Fallback to Institutional Blue
 
   const handleEditProfile = () => {
     router.push('/dashboard/admin/school-profile/edit');
@@ -135,7 +135,8 @@ export default function SchoolProfilePage() {
         <motion.section 
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="relative h-[600px] rounded-[4.5rem] overflow-hidden shadow-3xl group"
+          className="relative h-[600px] rounded-[4.5rem] overflow-hidden group transition-all"
+          style={{ boxShadow: `0 35px 60px -15px ${primaryColor}33` }}
         >
           {/* Banner with sophisticated overlays */}
           <div className="absolute inset-0">
@@ -158,7 +159,10 @@ export default function SchoolProfilePage() {
                 {/* Logo Node */}
                 <div className="relative group/logo">
                     <div className="absolute -inset-4 rounded-[3.5rem] blur-2xl transition-colors opacity-30 group-hover/logo:opacity-50" style={{ backgroundColor: primaryColor }} />
-                    <div className="h-48 w-48 rounded-[3.2rem] bg-white dark:bg-slate-800 p-2 shadow-3xl overflow-hidden flex items-center justify-center border-[8px] border-white/20 dark:border-slate-800/20 shrink-0 relative z-20 backdrop-blur-3xl group-hover/logo:-translate-y-2 transition-transform duration-500">
+                    <div 
+                        className="h-48 w-48 rounded-[3.2rem] bg-white dark:bg-slate-800 p-2 overflow-hidden flex items-center justify-center border-[8px] border-white/20 dark:border-slate-800/20 shrink-0 relative z-20 backdrop-blur-3xl group-hover/logo:-translate-y-2 transition-transform duration-500"
+                        style={{ boxShadow: `0 25px 50px -12px ${primaryColor}4D` }}
+                    >
                         {school?.logo ? (
                             <img src={school.logo} alt={school.name} className="h-full w-full object-cover rounded-[2.5rem]" />
                         ) : (
@@ -204,7 +208,7 @@ export default function SchoolProfilePage() {
         {/* Tactical Metrics Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {[
-            { label: 'Network Students', value: stats?.students || 0, icon: GraduationCap, colorClass: 'text-orange-500', shadowClass: 'shadow-orange-500/10' },
+            { label: 'Network Students', value: stats?.students || 0, icon: GraduationCap, colorClass: 'text-primary', shadowClass: 'shadow-primary/10' },
             { label: 'Faculty Nodes', value: stats?.teachers || 0, icon: Users, colorClass: 'text-blue-500', shadowClass: 'shadow-blue-500/10' },
             { label: 'Operational Classes', value: stats?.classes || 0, icon: BookOpen, colorClass: 'text-emerald-500', shadowClass: 'shadow-emerald-500/10' },
             { label: 'Founded Year', value: school?.foundedYear || '---', icon: Trophy, colorClass: 'text-amber-500', shadowClass: 'shadow-amber-500/10' },
@@ -216,9 +220,9 @@ export default function SchoolProfilePage() {
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
               className={cn(
-                "bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/[0.03] p-10 rounded-[3.5rem] relative overflow-hidden group transition-all shadow-2xl shadow-slate-200/50 dark:shadow-none"
+                "bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/[0.03] p-10 rounded-[3.5rem] relative overflow-hidden group transition-all"
               )}
-              style={{ boxShadow: idx === 0 ? `0 20px 25px -5px ${primaryColor}1A` : undefined }}
+              style={{ boxShadow: `0 20px 25px -5px ${primaryColor}15` }}
             >
               <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 group-hover:scale-125 transition-all duration-700">
                 <stat.icon size={120} />
@@ -239,7 +243,10 @@ export default function SchoolProfilePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Detailed Institutional Intel */}
-          <Card className="lg:col-span-2 rounded-[4.5rem] border-none shadow-3xl bg-white dark:bg-slate-900/50 backdrop-blur-3xl overflow-hidden relative border-2 border-transparent transition-colors">
+          <Card 
+            className="lg:col-span-2 rounded-[4.5rem] border-none bg-white dark:bg-slate-900/50 backdrop-blur-3xl overflow-hidden relative border-2 border-transparent transition-all"
+            style={{ boxShadow: `0 35px 60px -15px ${primaryColor}1A` }}
+          >
             <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl pointer-events-none opacity-10" style={{ backgroundColor: primaryColor }} />
             <CardContent className="p-12 md:p-16 space-y-16">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-10 border-b border-slate-100 dark:border-white/5 pb-12">
@@ -305,7 +312,10 @@ export default function SchoolProfilePage() {
           {/* Console Sidebar Modules */}
           <div className="space-y-12">
             {/* System Architecture Node */}
-            <Card className="rounded-[4.5rem] border-none shadow-3xl bg-slate-900 text-white overflow-hidden relative group">
+            <Card 
+                className="rounded-[4.5rem] border-none bg-slate-900 text-white overflow-hidden relative group transition-all"
+                style={{ boxShadow: `0 35px 60px -15px ${primaryColor}4D` }}
+            >
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" style={{ background: `linear-gradient(to bottom right, ${primaryColor}33, transparent)` }} />
               <div className="absolute -bottom-24 -right-24 w-64 h-64 rounded-full blur-3xl pointer-events-none opacity-20" style={{ backgroundColor: primaryColor }} />
               
@@ -335,7 +345,7 @@ export default function SchoolProfilePage() {
 
                 <div className="pt-4 flex flex-col gap-6">
                    <div className="flex items-center gap-4 px-6 py-3 rounded-full w-fit border" style={{ backgroundColor: `${primaryColor}1A`, borderColor: `${primaryColor}33` }}>
-                      <div className="h-2 w-2 rounded-full animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.8)]" style={{ backgroundColor: primaryColor }} />
+                      <div className="h-2 w-2 rounded-full animate-pulse shadow-[0_0_10px_rgba(37,99,235,0.8)]" style={{ backgroundColor: primaryColor }} />
                       <span className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: primaryColor }}>Live Session Active</span>
                    </div>
                    <p className="text-5xl font-black tracking-tighter leading-none italic text-white/90 truncate uppercase">{school?.sessions?.[0]?.name || '---'}</p>
@@ -344,7 +354,10 @@ export default function SchoolProfilePage() {
             </Card>
 
             {/* Leadership Protocol Card */}
-            <Card className="rounded-[4.5rem] border-none shadow-3xl bg-white dark:bg-slate-900 p-12 md:p-14 border-2 border-transparent transition-colors">
+            <Card 
+                className="rounded-[4.5rem] border-none bg-white dark:bg-slate-900 p-12 md:p-14 border-2 border-transparent transition-all"
+                style={{ boxShadow: `0 35px 60px -15px ${primaryColor}1A` }}
+            >
                <div className="flex items-center justify-between mb-12">
                   <div className="space-y-1">
                      <h3 className="text-3xl font-black tracking-tight uppercase leading-none">Leadership</h3>
@@ -363,7 +376,7 @@ export default function SchoolProfilePage() {
                          {sa.admin?.name?.charAt(0)}
                        </div>
                        <div className="flex-1 min-w-0">
-                         <p className="font-black text-xl text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors truncate uppercase tracking-tight" style={{ '--hover-color': primaryColor } as any} onMouseEnter={(e) => (e.currentTarget.style.color = primaryColor)} onMouseLeave={(e) => (e.currentTarget.style.color = '')}>{sa.admin?.name}</p>
+                         <p className="font-black text-xl text-slate-900 dark:text-white group-hover:text-primary transition-colors truncate uppercase tracking-tight" style={{ '--hover-color': primaryColor } as any} onMouseEnter={(e) => (e.currentTarget.style.color = primaryColor)} onMouseLeave={(e) => (e.currentTarget.style.color = '')}>{sa.admin?.name}</p>
                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 mt-1">{sa.role}</p>
                        </div>
                      </div>
@@ -428,3 +441,4 @@ function SocialIcon({ platform, size }: { platform: string, size: number }) {
     default: return <Globe size={size} />;
   }
 }
+

@@ -54,3 +54,4 @@ export default function ExamHeader({ exam }: ExamHeaderProps) {
         </div>
     );
 }
+

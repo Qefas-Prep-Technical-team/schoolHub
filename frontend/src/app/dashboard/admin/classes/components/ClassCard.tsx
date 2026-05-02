@@ -43,9 +43,9 @@ const statusConfig = {
   incomplete: {
     label: 'PARTIAL SYNC',
     icon: AlertCircle,
-    color: 'text-orange-500',
-    bgColor: 'bg-orange-500/10',
-    borderColor: 'border-orange-500/20'
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20'
   },
   pending: {
     label: 'SYNC PENDING',
@@ -65,7 +65,7 @@ export default function ClassCard({
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#ea580c';
+  const primaryColor = settings?.themeColor || '#2563eb';
 
   const status = statusConfig[classData.timetableStatus] || statusConfig.pending;
 
@@ -161,7 +161,7 @@ export default function ClassCard({
               <div className="space-y-1">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Occupancy</span>
                   <div className="flex items-center gap-2">
-                       <Users size={14} className="text-indigo-500" />
+                       <Users size={14} className="text-primary" />
                        <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter uppercase">
                           {classData.studentCount} Nodes
                        </span>
@@ -203,3 +203,4 @@ export default function ClassCard({
     </motion.div>
   );
 }
+

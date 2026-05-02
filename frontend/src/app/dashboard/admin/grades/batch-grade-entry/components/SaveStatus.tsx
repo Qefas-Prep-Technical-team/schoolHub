@@ -55,3 +55,4 @@ export default function SaveStatus({ status, lastSaved, errorMessage }: SaveStat
         </div>
     );
 }
+

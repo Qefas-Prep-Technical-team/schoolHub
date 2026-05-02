@@ -44,3 +44,4 @@ export function LinkingHeader({ onConnectClick, onShowQRCodeClick, isLimitReache
     </div>
   );
 }
+

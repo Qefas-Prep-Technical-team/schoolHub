@@ -31,7 +31,7 @@ const IntroSection: FC = () => {
                         opacity: [0.3, 0.5, 0.3],
                     }}
                     transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -top-1/4 -right-1/4 w-[800px] h-[800px] bg-blue-600/30 rounded-full blur-[120px] mix-blend-screen"
+                    className="absolute -top-1/4 -right-1/4 w-[300px] sm:w-[800px] h-[300px] sm:h-[800px] bg-blue-600/30 rounded-full blur-[80px] sm:blur-[120px] mix-blend-screen pointer-events-none"
                 />
                 <motion.div 
                     animate={{ 
@@ -39,7 +39,7 @@ const IntroSection: FC = () => {
                         opacity: [0.2, 0.4, 0.2],
                     }}
                     transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                    className="absolute -bottom-1/4 -left-1/4 w-[600px] h-[600px] bg-amber-500/20 rounded-full blur-[100px] mix-blend-screen"
+                    className="absolute -bottom-1/4 -left-1/4 w-[250px] sm:w-[600px] h-[250px] sm:h-[600px] bg-amber-500/20 rounded-full blur-[60px] sm:blur-[100px] mix-blend-screen pointer-events-none"
                 />
             </div>
 
@@ -59,7 +59,7 @@ const IntroSection: FC = () => {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-                    className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-white mb-8 leading-[1.1] font-lexend drop-shadow-2xl"
+                    className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-white mb-8 leading-[1.2] sm:leading-[1.1] font-lexend drop-shadow-2xl px-4"
                 >
                     Education management, <br />
                     <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-200 bg-clip-text text-transparent filter drop-shadow-lg">

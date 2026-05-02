@@ -85,7 +85,7 @@ export default function NotificationCenter() {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'LINK_REQUEST': return <Info className="h-4 w-4 text-blue-500" />;
-      case 'SYSTEM': return <AlertCircle className="h-4 w-4 text-orange-500" />;
+      case 'SYSTEM': return <AlertCircle className="h-4 w-4 text-primary" />;
       case 'MESSAGE': return <Mail className="h-4 w-4 text-primary" />;
       case 'ANNOUNCEMENT': return <Megaphone className="h-4 w-4 text-purple-500" />;
       case 'ACADEMIC': return <Activity className="h-4 w-4 text-green-500" />;
@@ -232,3 +232,4 @@ export default function NotificationCenter() {
     </DropdownMenu>
   );
 }
+

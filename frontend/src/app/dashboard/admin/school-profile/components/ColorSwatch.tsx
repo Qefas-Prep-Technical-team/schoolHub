@@ -28,3 +28,4 @@ const ColorSwatch: React.FC<ColorSwatchProps> = ({ color, label, size = 'md' }) 
 };
 
 export default ColorSwatch;
+

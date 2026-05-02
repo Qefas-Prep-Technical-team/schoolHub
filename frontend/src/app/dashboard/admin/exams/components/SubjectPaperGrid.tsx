@@ -16,3 +16,4 @@ export default function SubjectPaperGrid({ papers }: SubjectPaperGridProps) {
         </section>
     );
 }
+

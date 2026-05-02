@@ -67,3 +67,4 @@ export default function Filters({ filters, onFilterChange }: FiltersProps) {
         </div>
     );
 }
+

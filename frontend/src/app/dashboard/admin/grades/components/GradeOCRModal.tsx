@@ -153,7 +153,7 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[1000px] max-h-[95vh] overflow-y-auto rounded-[3rem] border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-10 shadow-2xl">
         <DialogHeader>
-          <div className="h-14 w-14 rounded-2xl bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-6 shadow-inner">
+          <div className="h-14 w-14 rounded-2xl bg-primary dark:bg-primary/10 text-primary dark:text-primary flex items-center justify-center mb-6 shadow-inner">
              <Camera size={28} />
           </div>
           <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
@@ -168,9 +168,9 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
            <div className="py-12">
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="group border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[3rem] p-24 flex flex-col items-center justify-center gap-6 hover:border-indigo-500 hover:bg-indigo-50/30 transition-all cursor-pointer relative overflow-hidden"
+                className="group border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[3rem] p-24 flex flex-col items-center justify-center gap-6 hover:border-primary hover:bg-primary/5/30 transition-all cursor-pointer relative overflow-hidden"
               >
-                 <div className="h-24 w-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-110 transition-all duration-700 shadow-xl group-hover:shadow-indigo-500/40">
+                 <div className="h-24 w-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-700 shadow-xl group-hover:shadow-primary/40">
                     <Camera size={48} />
                  </div>
                  <div className="text-center space-y-2">
@@ -191,9 +191,9 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
         {step === 'processing' && (
             <div className="py-32 flex flex-col items-center justify-center gap-8">
                 <div className="relative">
-                    <div className="h-32 w-32 border-8 border-indigo-100 dark:border-indigo-900/30 rounded-full" />
-                    <div className="h-32 w-32 border-8 border-indigo-600 border-t-transparent rounded-full animate-spin absolute inset-0" />
-                    <Sparkles className="absolute inset-0 m-auto text-indigo-600 animate-pulse" size={40} />
+                    <div className="h-32 w-32 border-8 border-primary dark:border-primary/30 rounded-full" />
+                    <div className="h-32 w-32 border-8 border-primary border-t-transparent rounded-full animate-spin absolute inset-0" />
+                    <Sparkles className="absolute inset-0 m-auto text-primary animate-pulse" size={40} />
                 </div>
                 <div className="text-center space-y-2">
                     <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-widest uppercase italic">Analyzing Physical Assets...</h3>
@@ -208,7 +208,7 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
                 {/* Left Side: Original Image */}
                 <div 
                     onClick={() => setShowFullImage(true)}
-                    className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden relative group cursor-zoom-in hover:border-indigo-500/50 transition-all"
+                    className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden relative group cursor-zoom-in hover:border-primary/50 transition-all"
                 >
                     <div className="absolute top-4 left-4 z-10 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                         Original Scan <Sparkles size={10} className="text-amber-400" />
@@ -220,8 +220,8 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
                                 alt="Scan Preview" 
                                 className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl group-hover:scale-[1.02] transition-transform duration-700"
                             />
-                            <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/5 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-indigo-600 shadow-xl">Click to expand</div>
+                            <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-primary shadow-xl">Click to expand</div>
                             </div>
                         </div>
                     )}
@@ -231,15 +231,15 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
                 <div className="flex flex-col gap-6 overflow-hidden">
                     <div className="flex items-center justify-between">
                         <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-2">
-                            <SplitSquareVertical size={16} className="text-indigo-600" /> Extracted Metadata
+                            <SplitSquareVertical size={16} className="text-primary" /> Extracted Metadata
                         </h4>
-                        <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-900/30">{(extractedGrades || []).length} rows found</span>
+                        <span className="text-[10px] font-black text-primary bg-primary/5 dark:bg-primary/10 px-3 py-1 rounded-full border border-primary dark:border-primary/30">{(extractedGrades || []).length} rows found</span>
                     </div>
 
                     <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
                         {(extractedGrades || []).map((grade, i) => (
-                            <div key={i} className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4 group hover:border-indigo-500/50 transition-all shadow-sm">
-                                <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                            <div key={i} className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4 group hover:border-primary/50 transition-all shadow-sm">
+                                <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white transition-all">
                                     <User size={18} />
                                 </div>
                                 <div className="flex-1 space-y-1">
@@ -249,8 +249,8 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
                                         className="h-8 text-xs font-bold bg-transparent border-none p-0 focus-visible:ring-0"
                                     />
                                     <div className="flex items-center gap-2">
-                                        <div className="flex items-center gap-2 bg-indigo-50/50 dark:bg-indigo-500/5 px-2 py-0.5 rounded-lg border border-indigo-100 dark:border-indigo-900/30">
-                                            <span className="text-[10px] font-black text-indigo-600">SCORE:</span>
+                                        <div className="flex items-center gap-2 bg-primary/5 dark:bg-primary/5 px-2 py-0.5 rounded-lg border border-primary dark:border-primary/30">
+                                            <span className="text-[10px] font-black text-primary">SCORE:</span>
                                             <Input 
                                                 type="number" 
                                                 value={grade.score} 
@@ -313,7 +313,7 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
                 </div>
                 <div className="flex flex-col justify-end gap-1 pb-1 z-10">
                     {selectedExam?.class && (
-                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Class: {selectedExam.class.name}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Class: {selectedExam.class.name}</span>
                     )}
                     {selectedExam?.term && (
                         <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Term: {selectedExam.term}</span>
@@ -335,7 +335,7 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
           <Button 
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || step !== 'verify' || !selectedExamId || !selectedPaperId}
-            className="flex-1 h-12 rounded-xl bg-indigo-600 text-white font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+            className="flex-1 h-12 rounded-xl bg-primary text-white font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
           >
             {mutation.isPending ? <Loader2 className="animate-spin" /> : (
                 <span className="flex items-center gap-2"><CheckCircle2 size={18} /> Initialize Draft Save</span>
@@ -371,3 +371,4 @@ export default function GradeOCRModal({ isOpen, onClose, schoolId }: GradeOCRMod
     </Dialog>
   );
 }
+

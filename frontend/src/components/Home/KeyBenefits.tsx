@@ -13,21 +13,21 @@ const KeyBenefits = () => {
             {/* Institutional Partners / Social Proof */}
             <div className="mb-32">
                 <p className="text-center text-xs font-bold text-slate-400 mb-16 uppercase tracking-[0.3em]">Institutional Partners</p>
-                <div className="flex flex-wrap justify-center items-center gap-12 lg:gap-24 opacity-50 hover:opacity-100 transition-opacity duration-700">
-                    <div className="flex items-center gap-2 text-xl font-bold tracking-tight grayscale group hover:grayscale-0 transition-all">
-                        <History className="w-6 h-6 text-blue-600" /> ACADEMY
+                <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 lg:gap-24 opacity-50 hover:opacity-100 transition-opacity duration-700 px-4">
+                    <div className="flex items-center gap-2 text-lg md:text-xl font-bold tracking-tight grayscale group hover:grayscale-0 transition-all">
+                        <History className="w-5 h-5 md:w-6 md:h-6 text-blue-600" /> ACADEMY
                     </div>
-                    <div className="flex items-center gap-2 text-xl font-bold tracking-tight grayscale group hover:grayscale-0 transition-all">
-                        <Landmark className="w-6 h-6 text-blue-600" /> POLYTECH
+                    <div className="flex items-center gap-2 text-lg md:text-xl font-bold tracking-tight grayscale group hover:grayscale-0 transition-all">
+                        <Landmark className="w-5 h-5 md:w-6 md:h-6 text-blue-600" /> POLYTECH
                     </div>
-                    <div className="flex items-center gap-2 text-xl font-bold tracking-tight grayscale group hover:grayscale-0 transition-all">
-                        <Droplets className="w-6 h-6 text-blue-600" /> EDUFLOW
+                    <div className="flex items-center gap-2 text-lg md:text-xl font-bold tracking-tight grayscale group hover:grayscale-0 transition-all">
+                        <Droplets className="w-5 h-5 md:w-6 md:h-6 text-blue-600" /> EDUFLOW
                     </div>
-                    <div className="flex items-center gap-2 text-xl font-bold tracking-tight grayscale group hover:grayscale-0 transition-all">
-                        <Eye className="w-6 h-6 text-blue-600" /> LENSCO
+                    <div className="flex items-center gap-2 text-lg md:text-xl font-bold tracking-tight grayscale group hover:grayscale-0 transition-all">
+                        <Eye className="w-5 h-5 md:w-6 md:h-6 text-blue-600" /> LENSCO
                     </div>
-                    <div className="flex items-center gap-2 text-xl font-bold tracking-tight grayscale group hover:grayscale-0 transition-all">
-                        <TrendingUp className="w-6 h-6 text-blue-600" /> STRIVE
+                    <div className="flex items-center gap-2 text-lg md:text-xl font-bold tracking-tight grayscale group hover:grayscale-0 transition-all">
+                        <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-blue-600" /> STRIVE
                     </div>
                 </div>
             </div>

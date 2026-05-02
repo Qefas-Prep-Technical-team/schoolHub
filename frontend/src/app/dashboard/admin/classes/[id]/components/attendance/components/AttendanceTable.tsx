@@ -1,117 +1,56 @@
-import React from 'react';
-import { Edit2 } from 'lucide-react';
-import { AttendanceRecord } from './types';
+import React, { useState } from 'react';
+import { X } from 'lucide-react';
 
-interface AttendanceTableProps {
-  records: AttendanceRecord[];
-  date: string;
-  onEdit?: (record: AttendanceRecord) => void;
+interface SubjectInputProps {
+  subjects: string[];
+  onSubjectsChange: (subjects: string[]) => void;
 }
 
-const AttendanceTable: React.FC<AttendanceTableProps> = ({ 
-  records, 
-  date, 
-  onEdit 
-}) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      e.preventDefault();
+      if (!subjects.includes(inputValue.trim())) {
+        onSubjectsChange([...subjects, inputValue.trim()]);
+      }
+      setInputValue('');
+    }
   };
 
-  const getStatusBadge = (status: string) => {
-    const config = {
-      present: {
-        bg: 'bg-green-100 dark:bg-green-900',
-        text: 'text-green-800 dark:text-green-200',
-        label: 'Present'
-      },
-      absent: {
-        bg: 'bg-red-100 dark:bg-red-900',
-        text: 'text-red-800 dark:text-red-200',
-        label: 'Absent'
-      },
-      late: {
-        bg: 'bg-yellow-100 dark:bg-yellow-900',
-        text: 'text-yellow-800 dark:text-yellow-200',
-        label: 'Late'
-      },
-      excused: {
-        bg: 'bg-blue-100 dark:bg-blue-900',
-        text: 'text-blue-800 dark:text-blue-200',
-        label: 'Excused'
-      }
-    };
-
-    const { bg, text, label } = config[status as keyof typeof config] || config.present;
-
-    return (
-      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${bg} ${text}`}>
-        {label}
-      </span>
-    );
+  const handleRemoveSubject = (subjectToRemove: string) => {
+    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
   };
 
   return (
-    <div className="lg:col-span-2 bg-white dark:bg-gray-900/50 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
-      <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-        Attendance for: {formatDate(date)}
-      </h2>
-      
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-800">
-            <tr>
-              <th className="px-4 py-3" scope="col">Student</th>
-              <th className="px-4 py-3" scope="col">Student ID</th>
-              <th className="px-4 py-3" scope="col">Status</th>
-              <th className="px-4 py-3" scope="col">Comment</th>
-              <th className="px-4 py-3" scope="col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {records.map((record) => (
-              <tr key={record.id} className="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td className="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                  {record.studentName}
-                </td>
-                <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                  {record.studentCode}
-                </td>
-                <td className="px-4 py-3">
-                  {getStatusBadge(record.status)}
-                </td>
-                <td className="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                  {record.comment || '-'}
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => onEdit?.(record)}
-                    className="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
-                    aria-label={`Edit attendance for ${record.studentName}`}
-                  >
-                    <Edit2 size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      
-      {records.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500 dark:text-gray-400">
-            No attendance records found for this date
-          </p>
-        </div>
-      )}
+    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
+      {subjects.map((subject) => (
+        <span
+          key={subject}
+          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
+        >
+          {subject}
+          <button
+            onClick={() => handleRemoveSubject(subject)}
+            className="hover:text-primary/70"
+            aria-label={`Remove ${subject}`}
+          >
+            <X size={12} />
+          </button>
+        </span>
+      ))}
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleAddSubject}
+        placeholder="Add subjects..."
+        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
+      />
     </div>
   );
 };
 
-export default AttendanceTable;
+export default SubjectInput;
+

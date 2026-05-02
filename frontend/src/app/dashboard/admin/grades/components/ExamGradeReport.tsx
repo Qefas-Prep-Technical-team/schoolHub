@@ -385,3 +385,4 @@ const ExamGradeReport: React.FC<ExamGradeReportProps> = ({ exam, attempts, schoo
 };
 
 export default ExamGradeReport;
+

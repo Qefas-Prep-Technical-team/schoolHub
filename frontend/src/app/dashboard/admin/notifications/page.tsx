@@ -70,7 +70,7 @@ export default function NotificationsPage() {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'LINK_REQUEST': return <Info className="h-5 w-5 text-blue-500" />;
-      case 'SYSTEM': return <AlertCircle className="h-5 w-5 text-orange-500" />;
+      case 'SYSTEM': return <AlertCircle className="h-5 w-5 text-primary" />;
       default: return <Bell className="h-5 w-5 text-gray-500" />;
     }
   };
@@ -273,3 +273,4 @@ export default function NotificationsPage() {
     </div>
   );
 }
+

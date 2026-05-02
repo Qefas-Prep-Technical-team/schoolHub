@@ -1,6 +1,7 @@
 import axios from "axios";
 import prisma from "../../config/database";
 import { PRICING_PLANS } from "./plans.data";
+import { sendPaymentReceiptEmail } from "../auth/auth.service";
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "sk_test_placeholder";
 
@@ -215,16 +216,45 @@ export const verifyPaymentService = async (
                 where: { id: userId },
                 data: {
                     plan: updateData.plan,
+                    planId: updateData.planId,
                     subscriptionStatus: updateData.subscriptionStatus,
                     subscriptionEnd: updateData.subscriptionEnd,
                     lastPaymentDate: updateData.lastPaymentDate,
                     trialUsed: updateData.trialUsed,
                     isTrialActive: updateData.isTrialActive,
+                    billingCycle: updateData.billingCycle,
                 }
             });
             console.log(`[PaymentService] Admin record ${userId} updated successfully.`);
             break;
         }
+    }
+
+    // 4. Send Receipt Email
+    try {
+        let userEmail: string | undefined;
+        if (userRole === "ADMIN") {
+            const admin = await prisma.admin.findUnique({ where: { id: userId }, select: { email: true } });
+            userEmail = admin?.email;
+        } else {
+            const user = await (prisma as any)[userRole.toLowerCase()].findUnique({ where: { id: userId }, select: { email: true } });
+            userEmail = user?.email;
+        }
+
+        if (userEmail) {
+            await sendPaymentReceiptEmail({
+                email: userEmail,
+                amount: paystackAmount / 100,
+                date: new Date(),
+                method: channel || 'Card',
+                plan: plan,
+                expiryDate: updateData.subscriptionEnd
+            });
+            console.log(`[PaymentService] Receipt email sent to ${userEmail}`);
+        }
+    } catch (emailError) {
+        console.error("[PaymentService] Failed to send receipt email:", emailError);
+        // Don't throw here as the payment was successful
     }
 
     return response.data.data;

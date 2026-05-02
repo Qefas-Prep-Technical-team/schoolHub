@@ -46,7 +46,7 @@ export default function FeatureCard({
                                 {feature.name}
                             </h4>
                             <code className="text-[10px] font-mono text-indigo-500 font-bold uppercase tracking-tighter">
-                                {feature.tag}
+                                {feature.featureKey}
                             </code>
                         </div>
                         <Button 
@@ -58,15 +58,6 @@ export default function FeatureCard({
                             <Trash2 size={18} />
                         </Button>
                     </div>
-
-                    {feature.marketingLabel && (
-                        <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-4 flex items-center gap-3">
-                            <Sparkles size={16} className="text-emerald-500" />
-                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none">
-                                {feature.marketingLabel}
-                            </span>
-                        </div>
-                    )}
 
                     <div className="space-y-4">
                         <div className="flex flex-col gap-2">
@@ -108,7 +99,7 @@ export default function FeatureCard({
                                     </Badge>
                                 ))
                             ) : (
-                                <span className="text-[10px] font-medium text-slate-400 italic">Not assigned yet</span>
+                                <span className="text-[10px] font-medium text-slate-400 italic">Not assigned to any plans</span>
                             )}
                             </div>
                         </div>
@@ -139,14 +130,9 @@ export default function FeatureCard({
                                 {feature.name}
                             </h3>
                             <div className="flex flex-col gap-1">
-                                <Badge variant="outline" className="text-[9px] font-black bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 tracking-widest py-0.5 w-fit">
-                                    {feature.tag.toUpperCase()}
+                                <Badge variant="outline" className="text-[9px] font-black bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 tracking-widest py-0.5 w-fit uppercase">
+                                    {feature.featureKey}
                                 </Badge>
-                                {feature.marketingLabel && (
-                                    <Badge variant="outline" className="text-[9px] font-black bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 tracking-widest py-0.5 w-fit">
-                                        MKTG: {feature.marketingLabel}
-                                    </Badge>
-                                )}
                             </div>
                         </div>
                     </div>

@@ -23,3 +23,4 @@ export default function StatCard({ icon, value, label }: StatCardProps) {
     </div>
   )
 }
+

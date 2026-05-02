@@ -7,7 +7,7 @@ import { useNotifications, useMarkAsRead } from '@/lib/api/hooks/useNotification
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 
-export default function AlertsPanel() {
+export default function AlertsPanel({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const { data: notifications, isLoading } = useNotifications({ 
     limit: 5, 
     priority: 'HIGH' // Focus on high-priority institutional alerts
@@ -19,7 +19,7 @@ export default function AlertsPanel() {
     if (priority === 'CRITICAL' || priority === 'HIGH') return 'text-rose-500 bg-rose-500/10 border-rose-500/20';
     switch (type) {
       case 'SYSTEM': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-      case 'ACADEMIC': return 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20';
+      case 'ACADEMIC': return ''; // Will use primaryColor
       default: return 'text-slate-500 bg-slate-500/10 border-slate-500/20';
     }
   };
@@ -34,8 +34,14 @@ export default function AlertsPanel() {
   };
 
   return (
-    <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[3rem] border border-white/20 dark:border-slate-800/50 shadow-2xl shadow-slate-200/50 dark:shadow-none p-10 flex-1 relative group overflow-hidden flex flex-col">
-      <div className="absolute top-0 right-0 h-40 w-40 bg-indigo-500/5 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
+    <div 
+      className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[3rem] border border-white/20 dark:border-slate-800/50 p-10 flex-1 relative group overflow-hidden flex flex-col transition-all"
+      style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
+    >
+      <div 
+        className="absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700" 
+        style={{ backgroundColor: primaryColor }}
+      />
       
       <div className="flex items-center justify-between mb-10 relative z-10">
         <div className="space-y-1">
@@ -50,7 +56,10 @@ export default function AlertsPanel() {
                 Alerts & Notices
             </h3>
         </div>
-        <span className="bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
+        <span 
+            className="border text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm"
+            style={{ backgroundColor: `${primaryColor}15`, color: primaryColor, borderColor: `${primaryColor}20` }}
+        >
           {isLoading ? '...' : (notifications?.length || 0)} ACTIVE
         </span>
       </div>
@@ -88,15 +97,19 @@ export default function AlertsPanel() {
                   transition={{ delay: idx * 0.1 }}
                   onClick={() => !notification.isRead && markAsRead(notification.id)}
                   className={cn(
-                    "group/item relative p-6 rounded-[2.5rem] bg-white/30 dark:bg-slate-800/20 border border-transparent hover:border-indigo-500/10 transition-all cursor-pointer",
-                    !notification.isRead && "border-indigo-500/20 bg-indigo-500/5"
+                    "group/item relative p-6 rounded-[2.5rem] bg-white/30 dark:bg-slate-800/20 border border-transparent transition-all cursor-pointer",
+                    !notification.isRead && "border-white/20"
                   )}
+                  style={!notification.isRead ? { backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}20` } : {}}
                 >
                    <div className="flex items-start gap-5">
-                      <div className={cn(
+                      <div 
+                        className={cn(
                           "h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border transition-all duration-500 group-hover/item:scale-110",
                           getTypeStyles(notification.type, notification.priority)
-                      )}>
+                        )}
+                        style={notification.type === 'ACADEMIC' && notification.priority !== 'HIGH' && notification.priority !== 'CRITICAL' ? { backgroundColor: `${primaryColor}15`, color: primaryColor, borderColor: `${primaryColor}30` } : {}}
+                      >
                           {getTypeIcon(notification.type, notification.priority)}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -113,7 +126,8 @@ export default function AlertsPanel() {
                           </p>
                           <div className="flex gap-3">
                               <button 
-                                  className="text-[9px] font-black text-indigo-600 hover:text-indigo-500 tracking-widest uppercase flex items-center gap-1 transition-all hover:gap-2"
+                                  className="text-[9px] font-black hover:tracking-widest uppercase flex items-center gap-1 transition-all hover:gap-2"
+                                  style={{ color: primaryColor }}
                               >
                                   VIEW ALERT <ChevronRight size={10} />
                               </button>
@@ -121,7 +135,7 @@ export default function AlertsPanel() {
                       </div>
                    </div>
                    {!notification.isRead && (
-                     <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+                     <div className="absolute top-4 right-4 h-2 w-2 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" style={{ backgroundColor: primaryColor }} />
                    )}
                 </motion.div>
               ))}
@@ -133,13 +147,17 @@ export default function AlertsPanel() {
       {/* Bottom Visual Decor */}
       <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800 relative z-10 flex items-center justify-between">
          <div className="flex items-center gap-2">
-            <Sparkles size={14} className="text-indigo-500" />
+            <Sparkles size={14} style={{ color: primaryColor }} />
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Monitor Active</p>
          </div>
-         <button className="h-8 w-8 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-500/20 active:scale-90">
+         <button 
+            className="h-8 w-8 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 hover:text-white transition-all border border-transparent active:scale-90"
+            style={{ '--hover-bg': primaryColor } as any}
+         >
             <ChevronRight size={16} />
          </button>
       </div>
     </div>
   );
 }
+

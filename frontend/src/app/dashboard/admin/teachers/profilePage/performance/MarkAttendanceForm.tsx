@@ -108,3 +108,4 @@ export default function MarkAttendanceForm({ selectedDate, onAttendanceSubmit }:
         </div>
     )
 }
+

@@ -17,3 +17,4 @@ export function StatusBadge({ status }: { status: "Active" | "Inactive" }) {
     </span>
   );
 }
+

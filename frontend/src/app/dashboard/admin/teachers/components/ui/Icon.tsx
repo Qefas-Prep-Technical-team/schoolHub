@@ -14,3 +14,4 @@ export default function Icon({ name, className = '', filled = false }: IconProps
     </span>
   )
 }
+

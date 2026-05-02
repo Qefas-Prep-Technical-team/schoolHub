@@ -39,7 +39,8 @@ export class PricingService {
                     maxStudents: p.maxStudents,
                     maxStorageGb: p.maxStorageGb,
                     featureAccess: p.featureAccess.map(fa => ({
-                        tag: fa.feature.tag,
+                        featureId: fa.featureId,
+                        tag: fa.feature.featureKey,
                         name: fa.feature.name,
                         enabled: fa.enabled,
                         limitValue: fa.limitValue,
@@ -111,33 +112,39 @@ export class PricingService {
 
         console.log(`[PricingService] Plan saved successfully: ${plan.id}`);
 
-        // Handle relational feature mapping if provided
-        if (featureAccess && Array.isArray(featureAccess)) {
-            // Clear existing mapping or handle intelligently. 
-            // For simplicity in the admin console, we can sync the provided list.
-            for (const access of featureAccess) {
-                const feature = await prisma.featureManifest.findUnique({ where: { tag: access.tag } });
-                if (feature) {
-                    await prisma.planFeatureAccess.upsert({
-                        where: { planId_featureId: { planId: plan.id, featureId: feature.id } },
-                        update: {
-                            enabled: access.enabled,
-                            limitValue: access.limitValue,
-                            meta: access.meta
-                        },
-                        create: {
-                            planId: plan.id,
-                            featureId: feature.id,
-                            enabled: access.enabled,
-                            limitValue: access.limitValue,
-                            meta: access.meta
-                        }
-                    });
+        try {
+            // Handle relational feature mapping if provided
+            if (featureAccess && Array.isArray(featureAccess)) {
+                for (const access of featureAccess) {
+                    const feature = access.featureId 
+                        ? await prisma.platformFeature.findUnique({ where: { id: access.featureId } })
+                        : await prisma.platformFeature.findUnique({ where: { featureKey: access.tag } });
+
+                    if (feature) {
+                        await prisma.planFeatureAccess.upsert({
+                            where: { planId_featureId: { planId: plan.id, featureId: feature.id } },
+                            update: {
+                                enabled: access.enabled,
+                                limitValue: access.limitValue,
+                                meta: access.meta
+                            },
+                            create: {
+                                planId: plan.id,
+                                featureId: feature.id,
+                                enabled: access.enabled,
+                                limitValue: access.limitValue,
+                                meta: access.meta
+                            }
+                        });
+                    }
                 }
             }
-        }
 
-        return plan;
+            return plan;
+        } catch (error) {
+            console.error("[PricingService] savePlan feature mapping failed:", error);
+            throw error;
+        }
     }
 
     /**
@@ -156,14 +163,6 @@ export class PricingService {
     static async seedFromConstants(customPlans?: any[]) {
         const plansToSeed = customPlans || PRICING_PLANS;
         
-        // Wait, instead of just checking if count > 0, we should probably allow an overwrite? 
-        // The user asked to "sync it to the database so I can edit it later".
-        // Let's first delete existing plans OR just add if not present? 
-        // Actually, if they want to sync it to the database, maybe we do an upsert or clear and create.
-        // Let's clear and create for a true "sync", or just add missing.
-        // Let's keep it simple: if count > 0, we can clear them and re-seed, but maybe soft-delete instead?
-        
-        // For simplicity and to match existing logic, if they send customPlans, we force sync.
         if (customPlans) {
             await prisma.subscriptionPlan.updateMany({ data: { isActive: false }});
         } else {
@@ -222,7 +221,7 @@ export class PricingService {
     }
 
     /**
-     * Harvest unique features from plans and sync them to the manifest
+     * Harvest unique features from plans and sync them to the registry (PlatformFeature)
      */
     static async harvestLegacyFeatures() {
         const plans = await prisma.subscriptionPlan.findMany({
@@ -240,16 +239,17 @@ export class PricingService {
             // Generate a tag
             const tag = featName.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^\w]/g, '');
             
-            // Check if exists by name or tag
-            let manifestEntry = await prisma.featureManifest.findFirst({
-                where: { OR: [{ name: featName }, { tag: tag }] }
+            // Check if exists in PlatformFeature
+            let featureEntry = await prisma.platformFeature.findFirst({
+                where: { OR: [{ name: featName }, { featureKey: tag }] }
             });
 
-            if (!manifestEntry) {
-                manifestEntry = await prisma.featureManifest.create({
+            if (!featureEntry) {
+                featureEntry = await prisma.platformFeature.create({
                     data: {
                         name: featName,
-                        tag: tag,
+                        featureKey: tag,
+                        label: featName,
                         description: `Automatically harvested from legacy plan: ${featName}`
                     }
                 });
@@ -258,18 +258,18 @@ export class PricingService {
                 results.skipped++;
             }
 
-            // Now link this manifest entry to all plans that have this string
+            // Now link this feature entry to all plans that have this string
             for (const plan of plans) {
                 if (plan.features.includes(featName)) {
                     const existingLink = await prisma.planFeatureAccess.findUnique({
-                        where: { planId_featureId: { planId: plan.id, featureId: manifestEntry.id } }
+                        where: { planId_featureId: { planId: plan.id, featureId: featureEntry.id } }
                     });
 
                     if (!existingLink) {
                         await prisma.planFeatureAccess.create({
                             data: {
                                 planId: plan.id,
-                                featureId: manifestEntry.id,
+                                featureId: featureEntry.id,
                                 enabled: true
                             }
                         });
@@ -329,7 +329,6 @@ export class PricingService {
         const feat = features.find(f => f.toLowerCase().includes(keyword.toLowerCase()));
         if (!feat) return 0;
         
-        // Handle "Unlimited" cases
         if (feat.toLowerCase().includes('unlimited')) {
             return 999999;
         }
@@ -337,7 +336,6 @@ export class PricingService {
         const match = feat.match(/\d+/);
         if (match) return parseInt(match[0]);
 
-        // Default if keyword exists but no number (e.g. "Core Examination Tools")
         if (keyword.toLowerCase().includes("exam")) return 10;
         if (keyword.toLowerCase().includes("teacher")) return 5;
         if (keyword.toLowerCase().includes("class")) return 5;

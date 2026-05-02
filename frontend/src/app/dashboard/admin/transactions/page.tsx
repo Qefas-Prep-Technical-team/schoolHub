@@ -50,7 +50,7 @@ export default function AdminTransactionsPage() {
                             <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
                                 Audit Log
                             </h1>
-                            <div className="flex items-center gap-1.5 bg-indigo-500/10 text-indigo-600 px-3 py-1 rounded-full border border-indigo-500/20 mt-1">
+                            <div className="flex items-center gap-1.5 bg-primary/50/10 text-primary px-3 py-1 rounded-full border border-primary/20 mt-1">
                                 <History className="h-4 w-4" />
                                 <span className="text-[9px] font-black uppercase tracking-wider">Immutable History</span>
                             </div>
@@ -72,3 +72,4 @@ export default function AdminTransactionsPage() {
         </div>
     );
 }
+

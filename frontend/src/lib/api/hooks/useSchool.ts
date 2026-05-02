@@ -29,11 +29,39 @@ export const useSchoolTeachers = (schoolId: string) => {
   });
 };
 
-export const useSchoolPerformanceAnalysis = (schoolId: string) => {
+export const useSchoolPerformanceAnalysis = (schoolId: string, stats?: any) => {
   return useQuery({
-    queryKey: schoolQueryKeys.performance(schoolId),
-    queryFn: () => schoolService.getPerformanceAnalysis(schoolId),
-    enabled: !!schoolId,
+    queryKey: [...schoolQueryKeys.performance(schoolId), stats ? JSON.stringify(stats) : "no-stats"],
+    queryFn: async () => {
+      const cacheKey = `ai_analysis_${schoolId}`;
+      const cached = localStorage.getItem(cacheKey);
+      
+      // If we have stats and a cached result, check if the stats match the cached stats
+      if (cached && stats) {
+        try {
+          const parsedCache = JSON.parse(cached);
+          if (JSON.stringify(parsedCache.stats) === JSON.stringify(stats)) {
+            console.log("Using cached AI analysis report");
+            return parsedCache.data;
+          }
+        } catch (e) {
+          console.error("Failed to parse cached analysis", e);
+        }
+      }
+
+      // If no cache or stats changed, fetch new analysis
+      const data = await schoolService.getPerformanceAnalysis(schoolId);
+      
+      // Store new analysis with current stats
+      if (stats) {
+        localStorage.setItem(cacheKey, JSON.stringify({ stats, data }));
+      }
+      
+      return data;
+    },
+    enabled: !!schoolId && !!stats,
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
   });
 };
 

@@ -31,3 +31,4 @@ const BulkIndividualReports: React.FC<BulkIndividualReportsProps> = ({
 };
 
 export default BulkIndividualReports;
+

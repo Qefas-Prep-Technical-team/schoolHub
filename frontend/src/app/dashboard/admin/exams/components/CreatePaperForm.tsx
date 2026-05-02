@@ -155,7 +155,7 @@ export function CreatePaperForm({
 
       <div className="space-y-2">
         <Label className="text-sm font-semibold flex items-center gap-2 text-gray-700 dark:text-gray-300">
-          <Clock size={16} className="text-orange-500" /> Duration (Minutes)
+          <Clock size={16} className="text-primary" /> Duration (Minutes)
         </Label>
         <Input
           type="number"
@@ -181,3 +181,4 @@ export function CreatePaperForm({
     </form>
   );
 }
+

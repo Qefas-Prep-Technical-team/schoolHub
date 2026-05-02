@@ -38,7 +38,7 @@ const statusStyles = {
     ONGOING: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
     COMPLETED: 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
     DRAFT: 'bg-slate-50 text-slate-500 border-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
-    PUBLISHED: 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20',
+    PUBLISHED: 'bg-primary/5 text-primary border-indigo-100 dark:bg-primary/50/10 dark:text-indigo-400 dark:border-primary/20',
 };
 
 export default function AssessmentCard({ assessment }: AssessmentCardProps) {
@@ -46,7 +46,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
     const { user } = useAuthStore();
     const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
     const { data: settings } = useSchoolSettings(schoolId);
-    const primaryColor = settings?.themeColor || '#ea580c';
+    const primaryColor = settings?.themeColor || '#2563eb';
 
     const deleteExamMutation = useDeleteExam();
     const unpublishExamMutation = useUnpublishExam();
@@ -128,7 +128,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                     <div className="space-y-1">
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Protocol</span>
                         <div className="flex items-center gap-2">
-                             <Target size={12} className="text-indigo-500" />
+                             <Target size={12} className="text-primary" />
                              <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase">{assessment.mode}</span>
                         </div>
                     </div>
@@ -216,3 +216,4 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
         </div>
     );
 }
+
