@@ -49,7 +49,7 @@ export const useUpdatePlatformSettings = () => {
 
     return useMutation({
         mutationFn: async (settings: any) => {
-            const { data } = await platformClient.put("/platform/settings", settings, {
+            const { data } = await platformClient.post("/platform/settings", settings, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;

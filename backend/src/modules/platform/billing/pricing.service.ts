@@ -7,50 +7,69 @@ export class PricingService {
      * Returns DB plans if they exist and are active, otherwise returns hardcoded fallbacks
      */
     static async resolveAllPlans() {
-        const dbPlans = await prisma.subscriptionPlan.findMany({
-            where: { isActive: true },
-            include: {
-                featureAccess: {
-                    include: { feature: true }
-                }
-            },
-            orderBy: { sortOrder: 'asc' }
-        });
+        const [dbPlans, settings] = await Promise.all([
+            prisma.subscriptionPlan.findMany({
+                where: { isActive: true },
+                include: {
+                    featureAccess: {
+                        include: { feature: true }
+                    }
+                },
+                orderBy: { sortOrder: 'asc' }
+            }),
+            prisma.platformSettings.findMany({
+                where: { key: { startsWith: "sub_enforced_" } }
+            })
+        ]);
+
+        const settingsMap = settings.reduce((acc: any, s: any) => {
+            acc[s.key] = s.value;
+            return acc;
+        }, {});
 
         if (dbPlans && dbPlans.length > 0) {
             // Group by category to match the expected format of PRICING_PLANS
             const categories = [...new Set(dbPlans.map(p => p.category))];
-            return categories.map(cat => ({
-                category: cat,
-                tabs: dbPlans.filter(p => p.category === cat).map(p => ({
-                    id: p.id,
-                    type: p.type,
-                    name: p.name,
-                    pricing: {
-                        monthly: p.monthlyPrice,
-                        yearly: p.yearlyPrice
-                    },
-                    description: p.description || '',
-                    features: p.features,
-                    hasTrial: p.hasTrial,
-                    trialDays: p.trialDays,
-                    isPopular: p.isPopular,
-                    storage: p.maxStorageGb ? `${p.maxStorageGb}GB` : undefined,
-                    maxStudents: p.maxStudents,
-                    maxStorageGb: p.maxStorageGb,
-                    featureAccess: p.featureAccess.map(fa => ({
-                        featureId: fa.featureId,
-                        tag: fa.feature.featureKey,
-                        name: fa.feature.name,
-                        enabled: fa.enabled,
-                        limitValue: fa.limitValue,
-                        meta: fa.meta
+            return categories.map(cat => {
+                const settingKey = `sub_enforced_${cat.toLowerCase()}`;
+                const isEnforced = settingsMap[settingKey] !== "false"; // Default to true
+
+                return {
+                    category: cat,
+                    isSubscriptionEnforced: isEnforced,
+                    tabs: dbPlans.filter(p => p.category === cat).map(p => ({
+                        id: p.id,
+                        type: p.type,
+                        name: p.name,
+                        pricing: {
+                            monthly: p.monthlyPrice,
+                            yearly: p.yearlyPrice
+                        },
+                        description: p.description || '',
+                        features: p.features,
+                        hasTrial: p.hasTrial,
+                        trialDays: p.trialDays,
+                        isPopular: p.isPopular,
+                        storage: p.maxStorageGb ? `${p.maxStorageGb}GB` : undefined,
+                        maxStudents: p.maxStudents,
+                        maxStorageGb: p.maxStorageGb,
+                        featureAccess: p.featureAccess.map(fa => ({
+                            featureId: fa.featureId,
+                            tag: fa.feature.featureKey,
+                            name: fa.feature.name,
+                            enabled: fa.enabled,
+                            limitValue: fa.limitValue,
+                            meta: fa.meta
+                        }))
                     }))
-                }))
-            }));
+                };
+            });
         }
 
-        return PRICING_PLANS;
+        return PRICING_PLANS.map(cat => ({
+            ...cat,
+            isSubscriptionEnforced: true // Default for constants
+        }));
     }
 
     /**

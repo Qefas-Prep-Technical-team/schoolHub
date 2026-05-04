@@ -25,7 +25,15 @@ export const getPlatformSettings = async (req: Request, res: Response) => {
  */
 export const getPublicPlatformSettings = async (req: Request, res: Response) => {
   try {
-    const publicKeys = ["google_auth_enabled", "platform_name", "maintenance_mode"];
+    const publicKeys = [
+      "google_auth_enabled", 
+      "platform_name", 
+      "maintenance_mode",
+      "sub_enforced_schools",
+      "sub_enforced_teachers",
+      "sub_enforced_parents",
+      "sub_enforced_students"
+    ];
     const settings = await prisma.platformSettings.findMany({
       where: { key: { in: publicKeys } }
     });

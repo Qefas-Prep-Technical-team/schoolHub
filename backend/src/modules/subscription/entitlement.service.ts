@@ -7,10 +7,23 @@ import { UserRole, SubscriptionStatus } from "@prisma/client";
  */
 export class EntitlementService {
   /**
+   * Internal helper to check if subscription enforcement is enabled for a category
+   */
+  private static async isEnforced(category: "students" | "teachers" | "parents" | "schools"): Promise<boolean> {
+    const setting = await prisma.platformSettings.findUnique({
+      where: { key: `sub_enforced_${category}` }
+    });
+    return setting?.value !== "false"; // Default to true
+  }
+
+  /**
    * Checks if a school has enough quota for a specific metric.
    * Throws an error if quota is exceeded.
    */
   static async validateSchoolQuota(schoolId: string, metric: "students" | "exams" | "classes" | "storageGb", incrementalValue = 0) {
+    // 0. Check if enforcement is enabled for schools
+    if (!await this.isEnforced("schools")) return true;
+
     const subscription = await prisma.schoolSubscription.findUnique({
       where: { schoolId },
       include: { subscriptionPlan: true }
@@ -63,6 +76,17 @@ export class EntitlementService {
       include: { subscriptionPlan: true }
     });
 
+    // 0. Check if enforcement is enabled for this user's category
+    if (subscription) {
+      const category = subscription.subscriptionPlan.category.toLowerCase() as any;
+      if (["students", "teachers", "parents", "schools"].includes(category)) {
+        if (!await this.isEnforced(category)) return true;
+      }
+    } else {
+        // If no subscription, check if enforcement is disabled for the user's role
+        // We'd need to fetch the user role here, but let's try to get it from the sub first
+    }
+
     if (!subscription || subscription.status !== SubscriptionStatus.ACTIVE) {
       return false;
     }
@@ -89,6 +113,9 @@ export class EntitlementService {
     feature: string;
   }): Promise<boolean> {
     const { userId, schoolId, feature } = params;
+
+    // 0. Preliminary bypass check: if enforcement is disabled for schools, allow school-wide features
+    if (schoolId && !await this.isEnforced("schools")) return true;
 
     // 1. Check personal subscription first (Primary)
     const userSub = await prisma.userSubscription.findUnique({

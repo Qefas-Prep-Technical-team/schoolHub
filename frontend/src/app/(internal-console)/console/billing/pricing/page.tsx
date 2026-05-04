@@ -8,6 +8,7 @@ import {
     usePlatformFeatures,
     usePlatformBillingStats
 } from "@/lib/api/hooks/usePricingManagement"
+import { usePlatformSettings, useUpdatePlatformSettings } from "@/lib/api/hooks/usePlatformGovernance"
 
 import { 
     Tag, 
@@ -37,10 +38,14 @@ import PricingPlanEditorModal from "./components/PricingPlanEditorModal"
 export default function PricingManagerPage() {
     const { data: categories, isLoading } = usePlatformPricingPlans()
     const { data: stats } = usePlatformBillingStats()
+    const { data: settings } = usePlatformSettings()
+    const updateSettings = useUpdatePlatformSettings()
     const seedPlans = useSeedPricingPlans()
     const [selectedCategory, setSelectedCategory] = useState("schools")
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
     const [isEditing, setIsEditing] = useState<any>(null)
+
+    const isEnforced = settings?.[`sub_enforced_${selectedCategory}`] !== "false"
 
     const filteredCategory = categories?.find((c: any) => c.category === selectedCategory)
 
@@ -60,6 +65,21 @@ export default function PricingManagerPage() {
                     >
                         <RefreshCcw size={16} className={seedPlans.isPending ? "animate-spin" : ""} /> 
                         Sync Platform Defaults
+                    </Button>
+                    <Button 
+                        variant={isEnforced ? "outline" : "default"}
+                        onClick={() => updateSettings.mutate({ 
+                            key: `sub_enforced_${selectedCategory}`, 
+                            value: isEnforced ? "false" : "true" 
+                        })}
+                        disabled={updateSettings.isPending}
+                        className={cn(
+                            "rounded-xl font-bold gap-2 transition-all",
+                            !isEnforced ? "bg-amber-500 hover:bg-amber-400 text-white shadow-lg shadow-amber-500/20" : "border-slate-200 dark:border-slate-800"
+                        )}
+                    >
+                        <Shield size={16} className={cn(!isEnforced && "animate-pulse")} /> 
+                        {isEnforced ? `Enforcement Active: ${selectedCategory}` : `Enforcement Disabled: ${selectedCategory}`}
                     </Button>
                     <Button 
                         onClick={() => setIsEditing({ 

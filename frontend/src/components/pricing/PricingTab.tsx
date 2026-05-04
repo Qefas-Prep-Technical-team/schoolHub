@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { pricingResolver } from '@/lib/pricingResolver';
+import { usePublicPlatformSettings } from '@/lib/api/hooks/usePlatformGovernance';
 
 interface PricingTabProps {
     billingType: 'monthly' | 'yearly';
@@ -24,22 +25,44 @@ export default function PricingTab({
 }: PricingTabProps) {
     const queryClient = useQueryClient();
     const { data: rawData, isLoading } = useFetchPricing();
+    const { data: settings } = usePublicPlatformSettings();
     const data = React.useMemo(() => pricingResolver(rawData), [rawData]);
     const { userType, isAuthenticated } = useAuthStore();
     const [value, setValue] = React.useState(0);
 
     const categories = React.useMemo(() => {
         const allCategories = ['students', 'parents', 'schools', 'teachers'];
-        if (!isAuthenticated || !userType) return allCategories;
+        
+        // Helper to check if a category is enforced
+        const isEnforced = (cat: string) => settings?.[`sub_enforced_${cat}`] !== "false";
 
+        if (!isAuthenticated || !userType) {
+            // For guest, show only enforced categories
+            return allCategories.filter(isEnforced);
+        }
+
+        let userCategory = '';
+        switch (userType) {
+            case 'PARENT':   userCategory = 'parents'; break;
+            case 'STUDENT':  userCategory = 'students'; break;
+            case 'TEACHER':  userCategory = 'teachers'; break;
+            case 'ADMIN':    userCategory = 'schools'; break;
+        }
+
+        if (userCategory && !isEnforced(userCategory)) {
+            // If user's own category is disabled, show ALL OTHER enforced categories
+            return allCategories.filter(cat => cat !== userCategory && isEnforced(cat));
+        }
+
+        // Default behavior: show only user's category if authenticated
         switch (userType) {
             case 'PARENT':   return ['parents'];
             case 'STUDENT':  return ['students'];
             case 'TEACHER':  return ['teachers'];
             case 'ADMIN':    return ['schools'];
-            default:         return allCategories;
+            default:         return allCategories.filter(isEnforced);
         }
-    }, [isAuthenticated, userType]);
+    }, [isAuthenticated, userType, settings]);
 
     React.useEffect(() => {
         if (value >= categories.length) setValue(0);
