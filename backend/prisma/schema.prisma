@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model School {
@@ -1301,6 +1302,7 @@ model PlatformFeature {
   parentEnabled  Boolean  @default(true)
   adminEnabled   Boolean  @default(true)
   updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
   planAccesses   PlanFeatureAccess[]
 
   @@map("platform_features")

@@ -1,145 +1,182 @@
-import ClassCard from './ClassCard'
-import AvailabilityIndicator from './AvailabilityIndicator'
+"use client"
+import { useState } from 'react'
+import TimetableToolbar from './TimetableToolbar'
+import WeeklyTimetable from './WeeklyTimetable'
 
-interface ClassSchedule {
-  id: string
-  course: string
-  time: string
-  room: string
-  color: string
-  day: string
-  startTime: string
-  duration: number // in hours
-  hasConflict?: boolean
+
+const mockTeacherData = {
+  id: '1',
+  name: 'Ms. Eleanor Vance',
+  title: 'Senior Maths Teacher',
+  teacherId: 'T-82156',
+  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmpuwUGDmWSnAYeiA59QIA5gfVXUhS6H7pZO1WzZlqF3adpaWXJWW1LhbSfCvkLKbDk96GKyea0u9cA42tCe3p4IMPYKudGRDle-HwMoAxJhqvA47-xEunmEA4ZpF1PFdvRbgam9WJDxxORkuvsjUdjZTmhFONOGXepi9sLF9QL5Bi9nKeIeuMyduwU7uSxNLU8YH7HIm_fzDDU7O2wIE_-QHRr1q84JU28DpncIjSRBPhP6AxKFxA4GcedQumfEdEiw6CafTxKK0',
+  status: 'active' as const,
+  personalInfo: {
+    fullName: 'Dr. Eleanor Vance',
+    gender: 'Female',
+    email: 'e.vance@university.edu',
+    phone: '+1 (234) 567-8901',
+    address: '123 University Drive, Scholarstown, ST 12345',
+    highestQualification: 'Ph.D. in Mathematics',
+    yearsOfExperience: '12 Years'
+  },
+  professionalInfo: {
+    department: 'Mathematics',
+    subjects: ['Algebra', 'Calculus', 'Geometry'],
+    assignedClasses: ['Grade 10 - Section A', 'Grade 11 - Section B', 'Grade 12 - Section A']
+  },
+  statistics: {
+    classPerformance: '87%',
+    attendanceRate: '98%',
+    upcomingClasses: '4',
+    studentsTaught: '85'
+  }
 }
 
-interface WeeklyTimetableProps {
-  classes: ClassSchedule[]
-  onClassClick: (classId: string) => void
-}
+const timetableClasses = [
+  {
+    id: '1',
+    course: 'MATH 101',
+    time: '11:00 - 12:30',
+    room: 'Room 4A',
+    color: 'math',
+    day: 'Monday',
+    startTime: '11:00 AM',
+    duration: 1.5
+  },
+  {
+    id: '2',
+    course: 'HIST 202',
+    time: '01:00 - 02:00',
+    room: 'Room 2C',
+    color: 'history',
+    day: 'Monday',
+    startTime: '01:00 PM',
+    duration: 1
+  },
+  {
+    id: '3',
+    course: 'CHEM 101',
+    time: '09:30 - 11:00',
+    room: 'Lab 1',
+    color: 'chemistry',
+    day: 'Tuesday',
+    startTime: '09:30 AM',
+    duration: 1.5
+  },
+  {
+    id: '4',
+    course: 'HIST 202',
+    time: '10:00 - 11:00',
+    room: 'Room 2C',
+    color: 'history',
+    day: 'Wednesday',
+    startTime: '10:00 AM',
+    duration: 1
+  },
+  {
+    id: '5',
+    course: 'ENG 301',
+    time: '11:00 - 12:30',
+    room: 'Room 5B',
+    color: 'english',
+    day: 'Wednesday',
+    startTime: '11:00 AM',
+    duration: 1.5,
+    hasConflict: true
+  },
+  {
+    id: '6',
+    course: 'MATH 101',
+    time: '11:00 - 12:30',
+    room: 'Room 4A',
+    color: 'math',
+    day: 'Wednesday',
+    startTime: '11:00 AM',
+    duration: 1.5
+  },
+  {
+    id: '7',
+    course: 'CHEM 101',
+    time: '08:45 - 10:15',
+    room: 'Lab 1',
+    color: 'chemistry',
+    day: 'Thursday',
+    startTime: '08:45 AM',
+    duration: 1.5
+  }
+]
 
-export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetableProps) {
-  const timeSlots = [
-    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
-    '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM'
+const tabs = [
+  { id: 'profile', label: 'Profile' },
+  { id: 'timetable', label: 'Timetable' },
+  { id: 'courses', label: 'Courses' },
+  { id: 'leave', label: 'Leave Requests' }
+]
+
+export default function SchedulePage() {
+  const [activeTab, setActiveTab] = useState('timetable')
+  const [currentWeek, setCurrentWeek] = useState('Oct 21 - Oct 25, 2024')
+
+  const breadcrumbItems = [
+    { label: 'Teachers', href: '/dashboard/admin/teachers' },
+    { label: mockTeacherData.name, href: '#' },
+    { label: 'Timetable', active: true }
   ]
 
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+  const handlePreviousWeek = () => {
+    // Implement week navigation logic
+    console.log('Previous week')
+  }
 
-  const calculatePosition = (startTime: string, duration: number) => {
-    const timeToPixels: { [key: string]: number } = {
-      '08:00': 0, '08:30': 32, '09:00': 64, '09:30': 96,
-      '10:00': 128, '10:30': 160, '11:00': 192, '11:30': 224,
-      '12:00': 256, '12:30': 288, '13:00': 320, '13:30': 352,
-      '14:00': 384, '14:30': 416, '15:00': 448
-    }
+  const handleNextWeek = () => {
+    // Implement week navigation logic
+    console.log('Next week')
+  }
 
-    const [time, modifier] = startTime.split(' ')
-    let [hours] = time.split(':').map(Number)
-    const [minutes] = time.split(':').map(Number)
+  const handleAddClass = () => {
+    // Implement add class logic
+    console.log('Add class')
+  }
 
-    if (modifier === 'PM' && hours !== 12) hours += 12
-    if (modifier === 'AM' && hours === 12) hours = 0
+  const handlePrint = () => {
+    // Implement print logic
+    window.print()
+  }
 
-    const timeKey = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
-    const top = timeToPixels[timeKey] || 0
-    const height = duration * 64 // 64px per hour
-
-    return { top, height }
+  const handleClassClick = (classId: string) => {
+    // Implement class click logic
+    console.log('Class clicked:', classId)
   }
 
   return (
-    <div className="bg-white dark:bg-[#191e2a] rounded-xl border border-gray-200 dark:border-gray-700 p-4 overflow-x-auto">
-      <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr] min-w-[800px]">
-        {/* Time Column */}
-        <div className="w-16">
-          <div className="h-10"></div>
-          {timeSlots.map((time, index) => (
-            <div
-              key={time}
-              className="h-16 text-right pr-4 text-xs text-gray-400 dark:text-gray-500 border-t border-gray-200 dark:border-gray-700 pt-1"
-            >
-              {time}
-            </div>
-          ))}
-        </div>
+  
+      <div className="flex-1 p-6 lg:p-8 overflow-y-auto">
+        
 
-        {/* Day Columns */}
-        {days.map((day) => (
-          <div key={day} className="relative" data-day={day}>
-            <div className="h-10 text-center font-bold text-[#0e121b] dark:text-white">
-              {day.slice(0, 3)}
-            </div>
-            <div className="h-full border-l border-gray-200 dark:border-gray-700 space-y-px">
-              {timeSlots.map((_, index) => (
-                <div
-                  key={index}
-                  className="h-16 border-t border-gray-200 dark:border-gray-700"
-                ></div>
-              ))}
-            </div>
-
-            {/* Render classes for this day */}
-            {classes
-              .filter(cls => cls.day === day)
-              .map((cls) => {
-                const position = calculatePosition(cls.startTime, cls.duration)
-                return (
-                  <ClassCard
-                    key={cls.id}
-                    course={cls.course}
-                    time={cls.time}
-                    room={cls.room}
-                    color={cls.color}
-                    hasConflict={cls.hasConflict}
-                    style={{
-                      top: position.top,
-                      height: position.height
-                    }}
-                  />
-                )
-              })}
-
-            {/* Special cases */}
-            {day === 'Tuesday' && (
-              <AvailabilityIndicator
-                message="Unavailable"
-                style={{ top: 314, height: 128 }}
+          
+            <>
+              <TimetableToolbar
+                currentWeek={currentWeek}
+                onPreviousWeek={handlePreviousWeek}
+                onNextWeek={handleNextWeek}
+                onAddClass={handleAddClass}
+                onPrint={handlePrint}
               />
-            )}
+              
+              <WeeklyTimetable
+                classes={timetableClasses}
+                onClassClick={handleClassClick}
+              />
+            </>
+       
 
-            {day === 'Wednesday' && classes.some(cls => cls.hasConflict) && (
-              <>
-                {/* Conflicting class */}
-                {classes
-                  .filter(cls => cls.day === day && cls.hasConflict)
-                  .map((cls) => {
-                    const position = calculatePosition(cls.startTime, cls.duration)
-                    return (
-                      <ClassCard
-                        key={cls.id}
-                        course={cls.course}
-                        time={cls.time}
-                        room={cls.room}
-                        color={cls.color}
-                        hasConflict={true}
-                        style={{
-                          top: position.top,
-                          height: position.height,
-                          zIndex: 5,
-                          marginLeft: '12px',
-                          marginTop: '12px',
-                          opacity: 0.8
-                        }}
-                      />
-                    )
-                  })}
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
+          
+
+         
+        </div>
+    
+   
   )
 }
 

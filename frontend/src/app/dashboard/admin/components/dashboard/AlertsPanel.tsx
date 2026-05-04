@@ -1,17 +1,23 @@
 'use client';
 
-import { Bell, Sparkles, ChevronRight, Info, AlertTriangle, Zap, Clock } from 'lucide-react';
+import { Bell, Sparkles, ChevronRight, ChevronLeft, Info, AlertTriangle, Zap, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useNotifications, useMarkAsRead } from '@/lib/api/hooks/useNotifications';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
+import { useState } from 'react';
+import Link from 'next/link';
 
 export default function AlertsPanel({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
+  const [page, setPage] = useState(0);
+  const itemsPerPage = 5;
+
   const { data: notifications, isLoading } = useNotifications({ 
-    limit: 5, 
     priority: 'HIGH' // Focus on high-priority institutional alerts
   });
+
+  const paginatedNotifications = notifications?.slice(page * itemsPerPage, (page + 1) * itemsPerPage) || [];
 
   const { mutate: markAsRead } = useMarkAsRead();
 
@@ -56,12 +62,22 @@ export default function AlertsPanel({ primaryColor = '#2563eb' }: { primaryColor
                 Alerts & Notices
             </h3>
         </div>
-        <span 
-            className="border text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm"
-            style={{ backgroundColor: `${primaryColor}15`, color: primaryColor, borderColor: `${primaryColor}20` }}
-        >
-          {isLoading ? '...' : (notifications?.length || 0)} ACTIVE
-        </span>
+        <div className="flex items-center gap-3">
+            <span 
+                className="border text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm hidden md:inline-block"
+                style={{ backgroundColor: `${primaryColor}15`, color: primaryColor, borderColor: `${primaryColor}20` }}
+            >
+              {isLoading ? '...' : (notifications?.length || 0)} ACTIVE
+            </span>
+            <Link 
+              href="/dashboard/admin/notifications"
+              className="h-10 px-4 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-md border border-white/20 dark:border-slate-700/50 text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all flex items-center gap-2 group/btn"
+              style={{ '--hover-color': primaryColor } as any}
+            >
+              View All
+              <ChevronRight size={12} className="group-hover/btn:translate-x-1 transition-transform" />
+            </Link>
+        </div>
       </div>
       
       <div className="space-y-4 relative z-10 flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -89,7 +105,7 @@ export default function AlertsPanel({ primaryColor = '#2563eb' }: { primaryColor
             </motion.div>
           ) : (
             <div className="space-y-4">
-              {notifications.map((notification: any, idx: number) => (
+              {paginatedNotifications.map((notification: any, idx: number) => (
                 <motion.div 
                   key={notification.id}
                   initial={{ opacity: 0, x: -10 }}
@@ -150,12 +166,25 @@ export default function AlertsPanel({ primaryColor = '#2563eb' }: { primaryColor
             <Sparkles size={14} style={{ color: primaryColor }} />
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Monitor Active</p>
          </div>
-         <button 
-            className="h-8 w-8 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 hover:text-white transition-all border border-transparent active:scale-90"
-            style={{ '--hover-bg': primaryColor } as any}
-         >
-            <ChevronRight size={16} />
-         </button>
+         <div className="flex items-center gap-2">
+            <button 
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="h-8 w-8 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <ChevronLeft size={16} />
+            </button>
+            <span className="text-[10px] font-black text-slate-500">
+                {page + 1} / {Math.max(1, Math.ceil((notifications?.length || 0) / itemsPerPage))}
+            </span>
+            <button 
+                onClick={() => setPage(p => p + 1)}
+                disabled={!notifications || (page + 1) * itemsPerPage >= notifications.length}
+                className="h-8 w-8 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <ChevronRight size={16} />
+            </button>
+         </div>
       </div>
     </div>
   );

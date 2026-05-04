@@ -265,8 +265,22 @@ export const getSchoolStatsService = async (schoolId: string) => {
  * Fetch detailed school profile
  */
 export const getSchoolProfileService = async (schoolId: string) => {
+  // 0. Resolve canonical school UUID (schoolId could be tenantId or id)
+  const school = await prisma.school.findFirst({
+    where: {
+      OR: [
+        { id: schoolId },
+        { tenantId: schoolId }
+      ]
+    },
+    select: { id: true }
+  });
+  
+  if (!school) return null;
+  const resolvedId = school.id;
+
   return await prisma.school.findUnique({
-    where: { id: schoolId },
+    where: { id: resolvedId },
     include: {
       admins: {
         include: {
@@ -279,6 +293,7 @@ export const getSchoolProfileService = async (schoolId: string) => {
         },
         take: 1,
       },
+      subscriptionPlan: true,
     },
   });
 };

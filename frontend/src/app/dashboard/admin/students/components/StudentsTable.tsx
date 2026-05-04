@@ -65,7 +65,7 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["school-students", schoolId, searchTerm, filters, page],
-    queryFn: () => adminService.getSchoolStudents(schoolId!, page, 10),
+    queryFn: () => adminService.getSchoolStudents(schoolId!, page, 10, searchTerm, filters),
     enabled: !!schoolId,
   });
 
@@ -104,9 +104,33 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
 
   if (isLoading) {
     return (
-      <div className="rounded-[3.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-12 space-y-6">
-        {[1, 2, 3, 4, 5].map(i => (
-          <Skeleton key={i} className="h-20 w-full rounded-3xl bg-slate-100 dark:bg-white/5" />
+      <div className="p-8 space-y-8 bg-slate-950/40 rounded-[3.5rem] backdrop-blur-3xl border border-white/5">
+        <div className="flex items-center justify-between mb-8 px-10">
+          {[1, 2, 3, 4, 5].map(i => (
+            <Skeleton key={i} className="h-3 w-24 rounded-full bg-white/5" />
+          ))}
+        </div>
+        {[1, 2, 3, 4, 5, 6].map(i => (
+          <div key={i} className="flex items-center gap-8 p-8 rounded-[2.5rem] bg-white/[0.02] border border-white/5 relative overflow-hidden group">
+            <div 
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent -translate-x-full animate-[shimmer_2s_infinite]" 
+              style={{ backgroundSize: '200% 100%' }}
+            />
+            <Skeleton className="size-6 rounded-lg bg-white/5" />
+            <div className="flex items-center gap-6 flex-1">
+              <Skeleton className="size-16 rounded-2xl bg-white/10" />
+              <div className="space-y-3">
+                <Skeleton className="h-5 w-48 rounded-lg bg-white/10" />
+                <Skeleton className="h-3 w-32 rounded-full bg-white/5" />
+              </div>
+            </div>
+            <Skeleton className="h-4 w-28 rounded-full bg-white/5" />
+            <Skeleton className="h-4 w-36 rounded-full bg-white/5" />
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-12 w-28 rounded-2xl bg-white/10" />
+              <Skeleton className="size-12 rounded-2xl bg-white/5" />
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -115,7 +139,7 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
   if (isError) {
     return (
       <div className="p-20 text-center rounded-[3.5rem] bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 font-black uppercase tracking-widest text-xs">
-        Failed to synchronize student nodes. Re-initializing connection...
+        Failed to synchronize student registry. Re-initializing connection...
       </div>
     );
   }
@@ -135,9 +159,9 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Subject</th>
-              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Digital ID</th>
-              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Targeting Class</th>
+              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Name</th>
+              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Code</th>
+              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned Class</th>
               <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Auth Status</th>
               <th className="p-8 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
             </tr>
@@ -151,7 +175,7 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
                 <tr
                   key={student.id}
                   className={cn(
-                    "group hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-all cursor-pointer",
+                    "group hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-all cursor-pointer",
                     isSelected && "bg-opacity-10"
                   )}
                   style={isSelected ? { backgroundColor: `${primaryColor}10` } : {}}
@@ -254,7 +278,7 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
             <GraduationCap size={40} />
           </div>
           <div className="space-y-2">
-            <p className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">No Student Nodes Found</p>
+            <p className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">No Students Found</p>
             <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">Distribute your institutional code to initiate secure links.</p>
           </div>
         </div>
@@ -264,7 +288,7 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
       {totalItems > 0 && (
         <div className="p-8 border-t border-slate-100 dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/50 dark:bg-white/[0.01]">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-            Displaying <span className="text-slate-900 dark:text-white">{(page - 1) * 10 + 1} - {Math.min(page * 10, totalItems)}</span> of <span className="text-slate-900 dark:text-white">{totalItems}</span> personnel nodes
+            Displaying <span className="text-slate-900 dark:text-white">{(page - 1) * 10 + 1} - {Math.min(page * 10, totalItems)}</span> of <span className="text-slate-900 dark:text-white">{totalItems}</span> students
           </p>
           
           <div className="flex items-center gap-3">

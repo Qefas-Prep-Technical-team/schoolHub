@@ -147,13 +147,13 @@ export const useAllPlatformPlans = () => {
 /**
  * Search students across the platform
  */
-export const usePlatformStudents = (query: string = "", page: number = 1, limit: number = 20) => {
+export const usePlatformStudents = (query: string = "", status: string = "ALL", page: number = 1, limit: number = 20) => {
     const { platform_token } = usePlatformStaffStore()
 
     return useQuery({
-        queryKey: ["platform-students", query, page, limit],
+        queryKey: ["platform-students", query, status, page, limit],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/students?query=${query}&page=${page}&limit=${limit}`, {
+            const { data } = await platformClient.get(`/platform/support/students?query=${query}&status=${status}&page=${page}&limit=${limit}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;

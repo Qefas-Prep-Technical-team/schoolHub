@@ -29,7 +29,7 @@ export default function AddStudentDialog({
         <div className="space-y-3">
           <Input placeholder="Full Name" />
           <Input placeholder="Class" />
-          <Input placeholder="Student ID" />
+          <Input placeholder="Student Code" />
         </div>
 
         <DialogFooter>

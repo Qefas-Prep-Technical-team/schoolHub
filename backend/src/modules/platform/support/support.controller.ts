@@ -455,16 +455,22 @@ export const listAllSubscriptionPlans = async (req: Request, res: Response) => {
  */
 export const searchStudents = async (req: Request, res: Response) => {
   try {
-    const { query, page = 1, limit = 20 } = req.query;
+    const { query, status, page = 1, limit = 20 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where = query ? {
-      OR: [
+    const where: any = {};
+    
+    if (query) {
+      where.OR = [
         { name: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
         { studentCode: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
         { email: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
-      ]
-    } : {};
+      ];
+    }
+
+    if (status && status !== 'ALL') {
+      where.subscriptionStatus = status;
+    }
 
     const [students, total] = await Promise.all([
       prisma.student.findMany({
@@ -610,31 +616,11 @@ export const searchParents = async (req: Request, res: Response) => {
  */
 export const getPlatformFeatures = async (req: Request, res: Response) => {
   try {
-    let features = await prisma.featureManifest.findMany({
+    const features = await prisma.platformFeature.findMany({
       orderBy: { name: 'asc' }
     });
     
-    // Fallback: If Manifest is empty, try to pull from legacy table to prevent blank UI
-    if (features.length === 0) {
-      const legacyFeatures = await (prisma as any).platformFeature?.findMany({
-        orderBy: { name: 'asc' }
-      }).catch(() => []);
-      
-      if (legacyFeatures && legacyFeatures.length > 0) {
-        return res.status(200).json({ 
-          success: true, 
-          data: legacyFeatures.map((f: any) => ({ ...f, isLegacy: true })) 
-        });
-      }
-    }
-
-    // Map Manifest to legacy format for UI compatibility
-    const mapped = features.map(f => ({
-      ...f,
-      featureKey: f.tag, // UI uses featureKey
-    }));
-
-    return res.status(200).json({ success: true, data: mapped });
+    return res.status(200).json({ success: true, data: features });
   } catch (error) {
     console.error("Get platform features failed:", error);
     return res.status(500).json({ success: false, message: "Failed to fetch features" });
@@ -649,7 +635,7 @@ export const updatePlatformFeature = async (req: Request, res: Response) => {
     const id = req.params.id as string;
     const updateData = req.body;
     
-    const feature = await prisma.featureManifest.update({
+    const feature = await prisma.platformFeature.update({
       where: { id },
       data: updateData
     });

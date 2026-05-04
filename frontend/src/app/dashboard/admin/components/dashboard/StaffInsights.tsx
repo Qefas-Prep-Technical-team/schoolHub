@@ -38,7 +38,7 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
       list.push({
         id: 'unassigned',
         title: `${summary.unassignedCount} Unassigned Faculty`,
-        description: `Personnel like ${summary.unassignedTeachers.map(t => t.name).join(', ')} are awaiting structural allocation.`,
+        description: `Personnel like ${summary.unassignedTeachers.map(t => t.name).join(', ')} are awaiting class assignment.`,
         icon: UserX,
         iconColor: 'text-rose-600 dark:text-rose-400',
         iconBg: 'bg-rose-500/10',
@@ -55,7 +55,7 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
     if (lowCoverageClasses.length > 0) {
       list.push({
         id: 'coverage',
-        title: `${lowCoverageClasses.length} Inactive Segments`,
+        title: `${lowCoverageClasses.length} Unassigned Classes`,
         description: `Classes including ${lowCoverageClasses.slice(0, 2).map(c => c.name).join(', ')} have no primary faculty assigned.`,
         icon: Building,
         iconColor: 'text-amber-600 dark:text-amber-400',
@@ -66,7 +66,7 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
       list.push({
         id: 'full-coverage',
         title: 'Full Faculty Coverage',
-        description: `All ${summary.classesSummary.length} active segments have verified faculty assignment.`,
+        description: `All ${summary.classesSummary.length} classes have verified faculty assignment.`,
         icon: Building,
         iconColor: 'text-emerald-600 dark:text-emerald-400',
         iconBg: 'bg-emerald-500/10',
@@ -80,7 +80,7 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
       list.push({
         id: 'healthy',
         title: 'Staffing Stable',
-        description: 'All institutional segments are currently balanced with optimal workload distribution.',
+        description: 'All classes are currently balanced with optimal workload distribution.',
         icon: Users,
         iconColor: 'text-primary',
         iconBg: 'bg-primary/10',

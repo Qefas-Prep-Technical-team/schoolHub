@@ -1,145 +1,102 @@
-import ClassCard from './ClassCard'
-import AvailabilityIndicator from './AvailabilityIndicator'
+"use client"
+import { useState } from 'react'
+import TeacherBreadcrumbs from './components/TeacherBreadcrumbs'
+import TeacherProfileHeader from './components/TeacherProfileHeader'
+import TeacherTabs from './components/TeacherTabs'
+import PersonalInfoCard from './components/PersonalInfoCard'
+import ProfessionalInfoCard from './components/ProfessionalInfoCard'
+import StatisticsCard from './components/StatisticsCard'
+import SchedulePage from './schedule/SchedulePage'
+import PerformancePage from './performance/PerformancePage'
 
-interface ClassSchedule {
-  id: string
-  course: string
-  time: string
-  room: string
-  color: string
-  day: string
-  startTime: string
-  duration: number // in hours
-  hasConflict?: boolean
+
+const mockTeacherData = {
+  id: '1',
+  name: 'Dr. Eleanor Vance',
+  title: 'Senior Maths Teacher',
+  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmpuwUGDmWSnAYeiA59QIA5gfVXUhS6H7pZO1WzZlqF3adpaWXJWW1LhbSfCvkLKbDk96GKyea0u9cA42tCe3p4IMPYKudGRDle-HwMoAxJhqvA47-xEunmEA4ZpF1PFdvRbgam9WJDxxORkuvsjUdjZTmhFONOGXepi9sLF9QL5Bi9nKeIeuMyduwU7uSxNLU8YH7HIm_fzDDU7O2wIE_-QHRr1q84JU28DpncIjSRBPhP6AxKFxA4GcedQumfEdEiw6CafTxKK0',
+  status: 'active' as const,
+  personalInfo: {
+    fullName: 'Dr. Eleanor Vance',
+    gender: 'Female',
+    email: 'e.vance@university.edu',
+    phone: '+1 (234) 567-8901',
+    address: '123 University Drive, Scholarstown, ST 12345',
+    highestQualification: 'Ph.D. in Mathematics',
+    yearsOfExperience: '12 Years'
+  },
+  professionalInfo: {
+    department: 'Mathematics',
+    subjects: ['Algebra', 'Calculus', 'Geometry'],
+    assignedClasses: ['Grade 10 - Section A', 'Grade 11 - Section B', 'Grade 12 - Section A']
+  },
+  statistics: {
+    classPerformance: '87%',
+    attendanceRate: '98%',
+    upcomingClasses: '4',
+    studentsTaught: '85'
+  }
 }
 
-interface WeeklyTimetableProps {
-  classes: ClassSchedule[]
-  onClassClick: (classId: string) => void
-}
+const tabs = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'schedule', label: 'Schedule' },
+  { id: 'performance', label: 'Performance Reports' }
+]
 
-export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetableProps) {
-  const timeSlots = [
-    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
-    '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM'
+export default function TeacherProfilePage() {
+  const [activeTab, setActiveTab] = useState('overview')
+
+  const breadcrumbItems = [
+    { label: 'Dashboard', href: '/dashboard/admin' },
+    { label: 'Teachers', href: '/dashboard/admin/teachers' },
+    { label: mockTeacherData.name, active: true }
   ]
 
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-
-  const calculatePosition = (startTime: string, duration: number) => {
-    const timeToPixels: { [key: string]: number } = {
-      '08:00': 0, '08:30': 32, '09:00': 64, '09:30': 96,
-      '10:00': 128, '10:30': 160, '11:00': 192, '11:30': 224,
-      '12:00': 256, '12:30': 288, '13:00': 320, '13:30': 352,
-      '14:00': 384, '14:30': 416, '15:00': 448
-    }
-
-    const [time, modifier] = startTime.split(' ')
-    let [hours] = time.split(':').map(Number)
-    const [minutes] = time.split(':').map(Number)
-
-    if (modifier === 'PM' && hours !== 12) hours += 12
-    if (modifier === 'AM' && hours === 12) hours = 0
-
-    const timeKey = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
-    const top = timeToPixels[timeKey] || 0
-    const height = duration * 64 // 64px per hour
-
-    return { top, height }
-  }
-
   return (
-    <div className="bg-white dark:bg-[#191e2a] rounded-xl border border-gray-200 dark:border-gray-700 p-4 overflow-x-auto">
-      <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr] min-w-[800px]">
-        {/* Time Column */}
-        <div className="w-16">
-          <div className="h-10"></div>
-          {timeSlots.map((time, index) => (
-            <div
-              key={time}
-              className="h-16 text-right pr-4 text-xs text-gray-400 dark:text-gray-500 border-t border-gray-200 dark:border-gray-700 pt-1"
-            >
-              {time}
+    <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+      <div className="max-w-7xl mx-auto">
+        <TeacherBreadcrumbs items={breadcrumbItems} />
+
+        <TeacherProfileHeader
+          teacher={{
+            name: mockTeacherData.name,
+            subjects: mockTeacherData.professionalInfo.subjects,
+            assignedClasses: mockTeacherData.professionalInfo.assignedClasses,
+            avatar: mockTeacherData.avatar,
+            status: mockTeacherData.status
+          }}
+        />
+
+        <TeacherTabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <div className="lg:col-span-2 flex flex-col gap-6">
+              <PersonalInfoCard personalInfo={mockTeacherData.personalInfo} />
+              <ProfessionalInfoCard professionalInfo={mockTeacherData.professionalInfo} />
             </div>
-          ))}
-        </div>
-
-        {/* Day Columns */}
-        {days.map((day) => (
-          <div key={day} className="relative" data-day={day}>
-            <div className="h-10 text-center font-bold text-[#0e121b] dark:text-white">
-              {day.slice(0, 3)}
+            <div className="lg:col-span-1 flex flex-col gap-6">
+              <StatisticsCard statistics={mockTeacherData.statistics} />
             </div>
-            <div className="h-full border-l border-gray-200 dark:border-gray-700 space-y-px">
-              {timeSlots.map((_, index) => (
-                <div
-                  key={index}
-                  className="h-16 border-t border-gray-200 dark:border-gray-700"
-                ></div>
-              ))}
-            </div>
-
-            {/* Render classes for this day */}
-            {classes
-              .filter(cls => cls.day === day)
-              .map((cls) => {
-                const position = calculatePosition(cls.startTime, cls.duration)
-                return (
-                  <ClassCard
-                    key={cls.id}
-                    course={cls.course}
-                    time={cls.time}
-                    room={cls.room}
-                    color={cls.color}
-                    hasConflict={cls.hasConflict}
-                    style={{
-                      top: position.top,
-                      height: position.height
-                    }}
-                  />
-                )
-              })}
-
-            {/* Special cases */}
-            {day === 'Tuesday' && (
-              <AvailabilityIndicator
-                message="Unavailable"
-                style={{ top: 314, height: 128 }}
-              />
-            )}
-
-            {day === 'Wednesday' && classes.some(cls => cls.hasConflict) && (
-              <>
-                {/* Conflicting class */}
-                {classes
-                  .filter(cls => cls.day === day && cls.hasConflict)
-                  .map((cls) => {
-                    const position = calculatePosition(cls.startTime, cls.duration)
-                    return (
-                      <ClassCard
-                        key={cls.id}
-                        course={cls.course}
-                        time={cls.time}
-                        room={cls.room}
-                        color={cls.color}
-                        hasConflict={true}
-                        style={{
-                          top: position.top,
-                          height: position.height,
-                          zIndex: 5,
-                          marginLeft: '12px',
-                          marginTop: '12px',
-                          opacity: 0.8
-                        }}
-                      />
-                    )
-                  })}
-              </>
-            )}
           </div>
-        ))}
+        )}
+        {activeTab === 'schedule' && (
+          <SchedulePage />
+        )}
+        {activeTab === 'performance' && (
+          <PerformancePage />
+        )}
+        {activeTab !== 'overview' && activeTab !== 'schedule' && activeTab !== 'performance' && (
+          <div className="mt-6 p-8 text-center text-text-secondary-light dark:text-text-secondary-dark">
+            <p>{tabs.find(tab => tab.id === activeTab)?.label} content coming soon...</p>
+          </div>
+        )}
       </div>
-    </div>
+    </main>
   )
 }
-

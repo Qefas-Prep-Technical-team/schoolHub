@@ -82,11 +82,11 @@ export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetab
             {/* Render classes for this day */}
             {classes
               .filter(cls => cls.day === day)
-              .map((cls) => {
+              .map((cls, idx) => {
                 const position = calculatePosition(cls.startTime, cls.duration)
                 return (
                   <ClassCard
-                    key={cls.id}
+                    key={`main-${cls.id || idx}`}
                     course={cls.course}
                     time={cls.time}
                     room={cls.room}
@@ -113,11 +113,11 @@ export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetab
                 {/* Conflicting class */}
                 {classes
                   .filter(cls => cls.day === day && cls.hasConflict)
-                  .map((cls) => {
+                  .map((cls, idx) => {
                     const position = calculatePosition(cls.startTime, cls.duration)
                     return (
                       <ClassCard
-                        key={cls.id}
+                        key={`conflict-${cls.id || idx}`}
                         course={cls.course}
                         time={cls.time}
                         room={cls.room}

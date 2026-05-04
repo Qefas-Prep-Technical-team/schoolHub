@@ -43,8 +43,8 @@ export default function SchoolProfilePage() {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
-  const { data: school, isLoading: schoolLoading } = useSchoolProfile(schoolId);
-  const { data: stats, isLoading: statsLoading } = useSchoolStats(schoolId);
+  const { data: school, isLoading: schoolLoading, isError: schoolError, refetch } = useSchoolProfile(schoolId);
+  const { data: stats, isLoading: statsLoading, isError: statsError } = useSchoolStats(schoolId);
   const { data: settings } = useSchoolSettings(schoolId);
 
   const primaryColor = settings?.themeColor || '#2563eb'; // Fallback to Institutional Blue
@@ -66,16 +66,79 @@ export default function SchoolProfilePage() {
 
   if (schoolLoading || statsLoading) {
     return (
-      <div className="p-8 space-y-10 animate-pulse bg-slate-50 dark:bg-slate-950 min-h-screen">
-        <div className="flex flex-col gap-4">
-          <Skeleton className="h-4 w-32 rounded-full" />
-          <Skeleton className="h-16 w-2/3 rounded-3xl" />
+      <div className="fixed inset-0 z-[100] bg-white dark:bg-slate-950 flex flex-col items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full blur-[120px] opacity-20 animate-pulse" style={{ backgroundColor: primaryColor }} />
+          <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] rounded-full blur-[100px] opacity-10 animate-pulse delay-1000" style={{ backgroundColor: primaryColor }} />
         </div>
-        <Skeleton className="h-[450px] w-full rounded-[4rem] bg-slate-200 dark:bg-slate-900" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {[1, 2, 3, 4].map(i => (
-            <Skeleton key={i} className="h-44 rounded-[3rem] bg-slate-200 dark:bg-slate-900" />
-          ))}
+        
+        <div className="relative z-10 flex flex-col items-center gap-10 max-w-7xl w-full px-8">
+           <div className="flex items-center gap-6">
+              <div className="size-20 rounded-[2.5rem] bg-slate-100 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10 animate-spin-slow flex items-center justify-center">
+                 <Building2 size={32} className="text-slate-300 dark:text-slate-600" />
+              </div>
+              <div className="space-y-3">
+                 <div className="h-10 w-64 bg-slate-100 dark:bg-white/5 rounded-2xl animate-pulse" />
+                 <div className="h-4 w-40 bg-slate-50 dark:bg-white/5 rounded-full animate-pulse opacity-50" />
+              </div>
+           </div>
+
+           <div className="w-full h-[450px] bg-slate-50 dark:bg-white/5 rounded-[4rem] border-2 border-slate-100 dark:border-white/5 overflow-hidden p-12 flex items-end">
+              <div className="flex items-center gap-8 w-full">
+                 <div className="size-32 rounded-[2.5rem] bg-slate-200 dark:bg-white/10 animate-pulse" />
+                 <div className="space-y-4 flex-1">
+                    <div className="h-16 w-1/2 bg-slate-200 dark:bg-white/10 rounded-[2rem] animate-pulse" />
+                    <div className="h-6 w-1/3 bg-slate-100 dark:bg-white/5 rounded-full animate-pulse" />
+                 </div>
+              </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 w-full">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-40 rounded-[3rem] bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 p-8 flex flex-col justify-between">
+                   <div className="size-10 rounded-xl bg-slate-100 dark:bg-white/5 animate-pulse" />
+                   <div className="space-y-2">
+                      <div className="h-3 w-16 bg-slate-100 dark:bg-white/5 rounded-full animate-pulse" />
+                      <div className="h-8 w-24 bg-slate-200 dark:bg-white/10 rounded-xl animate-pulse" />
+                   </div>
+                </div>
+              ))}
+           </div>
+        </div>
+        
+        <div className="absolute bottom-12 flex flex-col items-center gap-3">
+           <div className="flex items-center gap-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-primary animate-ping" style={{ backgroundColor: primaryColor }} />
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Synchronizing Institutional Node</p>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (schoolError || statsError) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center p-8">
+        <div className="max-w-md w-full text-center space-y-10">
+          <div className="relative inline-block">
+             <div className="absolute -inset-6 rounded-full blur-3xl opacity-20" style={{ backgroundColor: primaryColor }} />
+             <div className="size-24 rounded-[2.5rem] bg-red-50 dark:bg-red-950/20 border-2 border-red-100 dark:border-red-900/30 flex items-center justify-center mx-auto text-red-500 shadow-2xl">
+                <Target size={40} className="animate-pulse" />
+             </div>
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-none">Synchronization <br />Failed.</h2>
+            <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-xs leading-relaxed">
+              We encountered a protocol disturbance while reconciling your institutional architecture.
+            </p>
+          </div>
+          <Button 
+            onClick={() => refetch()}
+            className="h-16 px-12 rounded-full font-black uppercase tracking-[0.2em] text-xs shadow-2xl active:scale-95 transition-all"
+            style={{ backgroundColor: primaryColor }}
+          >
+            Re-Initialize Connection
+          </Button>
         </div>
       </div>
     );
@@ -340,6 +403,30 @@ export default function SchoolProfilePage() {
                        <p className="text-xl font-black truncate uppercase tracking-tighter" style={{ color: primaryColor }}>{school?.subdomain ? `${school.subdomain}.qefashub.com` : 'OFFLINE'}</p>
                        <Globe size={24} className="text-slate-500 shrink-0" />
                     </div>
+                  </div>
+                </div>
+
+                {/* Active Features Section */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-white/10" />
+                    <h4 className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-500">Core Capabilities</h4>
+                    <div className="h-px flex-1 bg-white/10" />
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {school?.subscriptionPlan?.features?.slice(0, 6).map((feature: string, idx: number) => (
+                      <div 
+                        key={idx}
+                        className="px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.05] text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 hover:bg-white/[0.08] transition-colors"
+                      >
+                        <div className="size-1 rounded-full" style={{ backgroundColor: primaryColor }} />
+                        {feature}
+                      </div>
+                    )) || (
+                      <div className="w-full py-4 text-center border-2 border-dashed border-white/5 rounded-[2rem]">
+                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 italic">No Active Features Detected</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

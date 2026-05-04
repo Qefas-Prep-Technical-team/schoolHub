@@ -111,19 +111,19 @@ const SubjectsPage = () => {
     <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
       <div className="max-w-[1600px] mx-auto space-y-12">
         
-        {/* Tactical Header */}
+        {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
               <div className="size-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Academic Core Terminal</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Curriculum Management</span>
             </div>
             <div>
               <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
-                Curriculum<span style={{ color: primaryColor }}>.</span>
+                Subjects<span style={{ color: primaryColor }}>.</span>
               </h1>
               <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
-                Advanced curriculum architecture, departmental alignment, and academic module reconciliation.
+                Manage your school curriculum, departmental alignment, and academic subject planning.
               </p>
             </div>
           </div>
@@ -135,12 +135,12 @@ const SubjectsPage = () => {
               className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 hover:scale-105 active:scale-95 transition-all border-0"
             >
               <Plus size={20} strokeWidth={3} />
-              Initialize Module
+              Add New Subject
             </Button>
           </div>
         </div>
 
-        {/* Tactical Metrics Cluster */}
+        {/* Metrics Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div 
                 className="p-8 rounded-[3rem] bg-slate-900 text-white border border-slate-800 relative overflow-hidden group transition-all"
@@ -151,11 +151,11 @@ const SubjectsPage = () => {
                 </div>
                 <div className="relative z-10 flex items-center gap-8">
                     <div className="size-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-primary">
-                        <Cpu size={32} strokeWidth={2.5} />
+                        <BookOpen size={32} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Curriculum Depth</p>
-                        <h3 className="text-5xl font-black tracking-tighter uppercase">{subjects.length} Modules</h3>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Academic Scope</p>
+                        <h3 className="text-5xl font-black tracking-tighter uppercase">{subjects.length} Subjects</h3>
                     </div>
                 </div>
             </div>
@@ -172,7 +172,7 @@ const SubjectsPage = () => {
                         <Layers size={32} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Node Alignment</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Department Alignment</p>
                         <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">{departments.length} Units</h3>
                     </div>
                 </div>
@@ -187,23 +187,23 @@ const SubjectsPage = () => {
                 </div>
                 <div className="relative z-10 flex items-center gap-8">
                     <div className="size-20 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-emerald-600">
-                        <Zap size={32} strokeWidth={2.5} />
+                        <ShieldCheck size={32} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Global Sync</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">System Status</p>
                         <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Active</h3>
                     </div>
                 </div>
             </div>
         </div>
 
-        {/* Operational Control Center */}
+        {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
             <div className="relative group flex-1 max-w-xl">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
                 <input 
                     type="text" 
-                    placeholder="Search curriculum modules..."
+                    placeholder="Search subjects..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full h-16 pl-16 pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
@@ -217,7 +217,7 @@ const SubjectsPage = () => {
                         <SelectValue placeholder="All Departments" />
                     </SelectTrigger>
                     <SelectContent className="rounded-3xl border-2 border-slate-100 dark:border-white/5 p-2">
-                        <SelectItem value="all" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest">All Nodes</SelectItem>
+                        <SelectItem value="all" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest">All Departments</SelectItem>
                         {departments.map(dep => (
                             <SelectItem key={dep.id} value={dep.id} className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest">{dep.name}</SelectItem>
                         ))}
@@ -227,14 +227,15 @@ const SubjectsPage = () => {
                 <Select value={selectedScope} onValueChange={setSelectedScope}>
                     <SelectTrigger className="h-16 w-[200px] rounded-[2rem] bg-white dark:bg-slate-950 border-slate-100 dark:border-white/5 text-[10px] font-black uppercase tracking-widest px-8 shadow-sm">
                         <SelectValue placeholder="Global Scope" />
+                        <SelectValue placeholder="All Types" />
                     </SelectTrigger>
                     <SelectContent className="rounded-3xl border-2 border-slate-100 dark:border-white/5 p-2">
-                        <SelectItem value="all" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest">Global Sync</SelectItem>
+                        <SelectItem value="all" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest">All Types</SelectItem>
                         <SelectItem value="SCHOOL" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                            <Globe size={12} className="inline mr-2" /> Institutional
+                            <Globe size={12} className="inline mr-2" /> School-wide
                         </SelectItem>
                         <SelectItem value="PERSONAL" className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                            <Lock size={12} className="inline mr-2" /> Localized
+                            <Lock size={12} className="inline mr-2" /> Private
                         </SelectItem>
                     </SelectContent>
                 </Select>
@@ -245,7 +246,7 @@ const SubjectsPage = () => {
             </div>
         </div>
 
-        {/* Modules Registry Grid */}
+        {/* Subjects Registry */}
         <AnimatePresence mode="wait">
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -278,12 +279,12 @@ const SubjectsPage = () => {
               <div className="space-y-3">
                 <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Registry Depleted</h3>
                 <p className="text-slate-500 font-medium max-w-sm mx-auto text-lg leading-relaxed">
-                  {searchQuery ? "No curriculum modules discovered matching your current parameters." : "Initialize your school's curriculum architecture to begin academic reconciliation."}
+                  {searchQuery ? "No subjects discovered matching your current search." : "Add your school's first subject to get started."}
                 </p>
               </div>
               {!searchQuery && (
                 <Button onClick={handleCreate} style={{ backgroundColor: primaryColor }} className="h-14 px-8 rounded-2xl text-white font-black uppercase tracking-widest gap-3 shadow-xl">
-                    <Plus size={20} strokeWidth={3} /> Create First Module
+                    <Plus size={20} strokeWidth={3} /> Add Your First Subject
                 </Button>
               )}
             </motion.div>
@@ -293,7 +294,7 @@ const SubjectsPage = () => {
         {/* Operational Security Footer */}
         <div className="flex justify-center pt-12">
             <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
-                <ShieldCheck size={16} className="text-emerald-500" strokeWidth={3} /> Certified Academic Registry
+                <ShieldCheck size={16} className="text-emerald-500" strokeWidth={3} /> Verified Subject Registry
             </div>
         </div>
       </div>

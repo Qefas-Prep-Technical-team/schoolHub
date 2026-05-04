@@ -7,7 +7,8 @@ import {
     User as StudentIcon,
     Presentation as TeacherIcon,
     Users as ParentIcon,
-    Lock as AdminIcon
+    Lock as AdminIcon,
+    RefreshCcw
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,7 @@ interface FeatureCardProps {
     activeRole?: string
     onToggle?: (id: string, role: string, value: boolean) => void
     onDelete?: (feature: any) => void
+    isUpdating?: boolean
 }
 
 const ROLE_CONFIG = [
@@ -34,7 +36,8 @@ export default function FeatureCard({
     mode, 
     activeRole, 
     onToggle, 
-    onDelete 
+    onDelete,
+    isUpdating = false
 }: FeatureCardProps) {
     if (mode === 'registry') {
         return (
@@ -49,14 +52,17 @@ export default function FeatureCard({
                                 {feature.featureKey}
                             </code>
                         </div>
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => onDelete?.(feature)}
-                            className="text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
-                        >
-                            <Trash2 size={18} />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {isUpdating && <RefreshCcw size={14} className="animate-spin text-indigo-500" />}
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => onDelete?.(feature)}
+                                className="text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
+                            >
+                                <Trash2 size={18} />
+                            </Button>
+                        </div>
                     </div>
 
                     <div className="space-y-4">
@@ -69,12 +75,14 @@ export default function FeatureCard({
                                     return (
                                         <button
                                             key={r.role}
+                                            disabled={isUpdating}
                                             onClick={() => onToggle?.(feature.id, r.role, !isEnabled)}
                                             className={cn(
                                                 "p-2.5 rounded-xl transition-all border group/btn",
                                                 isEnabled 
                                                 ? `${r.bg} ${r.color} border-transparent shadow-sm` 
-                                                : "bg-slate-50 dark:bg-slate-950/50 text-slate-400 border-slate-100 dark:border-white/5 grayscale opacity-50"
+                                                : "bg-slate-50 dark:bg-slate-950/50 text-slate-400 border-slate-100 dark:border-white/5 grayscale opacity-50",
+                                                isUpdating && "cursor-not-allowed opacity-50"
                                             )}
                                             title={`Toggle ${r.role} visibility`}
                                         >
@@ -110,11 +118,11 @@ export default function FeatureCard({
     }
 
     // Role Mode
-    const isEnabled = feature[`${activeRole}Enabled`];
+    const isEnabled = !!feature[`${activeRole}Enabled`];
     return (
         <div className={cn(
             "group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500",
-            isEnabled ? "ring-2 ring-indigo-500/20" : "opacity-80"
+            isEnabled ? "ring-2 ring-indigo-500/20 shadow-xl" : "border-dashed opacity-90 hover:opacity-100"
         )}>
             <div className="space-y-6">
                 <div className="flex items-start justify-between gap-4">
@@ -123,7 +131,7 @@ export default function FeatureCard({
                             "h-16 w-16 rounded-3xl flex items-center justify-center transition-all duration-500",
                             isEnabled ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-50 dark:bg-white/5 text-slate-400"
                         )}>
-                            <Sparkles size={24} />
+                            {isUpdating ? <RefreshCcw size={24} className="animate-spin" /> : <Sparkles size={24} />}
                         </div>
                         <div>
                             <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-2.5">
@@ -137,17 +145,27 @@ export default function FeatureCard({
                         </div>
                     </div>
                     
-                    <div className="flex flex-col items-end gap-3 bg-slate-50/50 dark:bg-white/5 p-4 rounded-3xl border border-slate-100 dark:border-white/5">
-                        <Switch 
-                            checked={isEnabled} 
-                            onCheckedChange={(val) => onToggle?.(feature.id, activeRole!, val)}
-                            className="data-[state=checked]:bg-indigo-500 h-7 w-12"
-                        />
+                    
+                    <div className={cn(
+                        "flex flex-col items-end gap-3 p-4 rounded-3xl border transition-all duration-300",
+                        isEnabled 
+                        ? "bg-indigo-500/5 border-indigo-500/20 shadow-inner" 
+                        : "bg-slate-50/50 dark:bg-white/5 border-slate-100 dark:border-white/5"
+                    )}>
+                        <div className="flex items-center gap-3">
+                            {isUpdating && <RefreshCcw size={12} className="animate-spin text-indigo-500" />}
+                            <Switch 
+                                checked={isEnabled} 
+                                onCheckedChange={(val) => onToggle?.(feature.id, activeRole!, val)}
+                                disabled={isUpdating}
+                                className="data-[state=checked]:bg-indigo-500 h-7 w-12"
+                            />
+                        </div>
                         <span className={cn(
-                            "text-[9px] font-black uppercase tracking-widest",
-                            isEnabled ? "text-emerald-500" : "text-slate-400"
+                            "text-[9px] font-black uppercase tracking-[0.2em]",
+                            isUpdating ? "text-indigo-400 animate-pulse" : (isEnabled ? "text-emerald-500" : "text-slate-400")
                         )}>
-                            {isEnabled ? "Active" : "Inactive"}
+                            {isUpdating ? "Updating..." : (isEnabled ? "Module Active" : "Module Inactive")}
                         </span>
                     </div>
                 </div>

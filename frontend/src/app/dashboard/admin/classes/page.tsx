@@ -90,32 +90,32 @@ export default function ClassesOverviewPage() {
 
     return [
         { 
-            label: 'Total Clusters', 
+            label: 'Total Classes', 
             value: totalClasses, 
             icon: LayoutGrid, 
             color: primaryColor,
-            desc: 'Active Nodes'
+            desc: 'Registered Classes'
         },
         { 
-            label: 'Faculty Assigned', 
+            label: 'Assigned Faculty', 
             value: teachersAssigned, 
             icon: Users, 
             color: '#2563eb', // Indigo
-            desc: 'Node Commanders'
+            desc: 'Primary Teachers'
         },
         { 
-            label: 'Population', 
+            label: 'Enrolled Students', 
             value: studentsTotal, 
             icon: Zap, 
             color: '#10b981', // Emerald
-            desc: 'Node Occupancy'
+            desc: 'Platform Enrollment'
         },
         { 
-            label: 'Real-time Pulse', 
+            label: 'Active Now', 
             value: activeNodes, 
             icon: Activity, 
             color: '#f59e0b', // Amber
-            desc: 'Active Channels'
+            desc: 'In-Session Classes'
         },
     ];
   }, [classes, mappedClassData, primaryColor]);
@@ -129,13 +129,13 @@ export default function ClassesOverviewPage() {
   };
 
   const handleDeleteClass = async (classId: string) => {
-    if (confirm('Are you sure you want to archive this class node?')) {
+    if (confirm('Are you sure you want to archive this class?')) {
       try {
         await classService.archiveClass(classId);
-        toast.success("Class node archived successfully");
+        toast.success("Class archived successfully");
         fetchClasses();
       } catch (error) {
-        toast.error("Failed to archive class node");
+        toast.error("Failed to archive class");
       }
     }
   };
@@ -144,19 +144,19 @@ export default function ClassesOverviewPage() {
     <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
       <div className="max-w-[1600px] mx-auto space-y-12">
         
-        {/* Tactical Header */}
+        {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
               <div className="size-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Infrastructure Terminal</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Classes & Timetable</span>
             </div>
             <div>
               <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
-                Structural Nodes<span style={{ color: primaryColor }}>.</span>
+                Classes<span style={{ color: primaryColor }}>.</span>
               </h1>
               <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
-                Advanced institutional layout management, structural node alignment, and real-time occupancy tracking.
+                Manage school classes, sections, assigned teachers, and student enrollment in real-time.
               </p>
             </div>
           </div>
@@ -171,12 +171,12 @@ export default function ClassesOverviewPage() {
               className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 shadow-2xl hover:scale-105 active:scale-95 transition-all"
             >
               <Plus size={20} strokeWidth={3} />
-              Initialize Cluster
+              Add New Class
             </Button>
           </div>
         </div>
 
-        {/* Pulse Tactical Metrics */}
+        {/* Analytics Hub */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
                 <div 
@@ -215,13 +215,13 @@ export default function ClassesOverviewPage() {
             ))}
         </div>
 
-        {/* Operational Terminal Control */}
+        {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
             <div className="relative group flex-1 max-w-xl">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
                 <input 
                     type="text" 
-                    placeholder="Search structural nodes..."
+                    placeholder="Search classes..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full h-16 pl-16 pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
@@ -252,7 +252,7 @@ export default function ClassesOverviewPage() {
             </div>
         </div>
 
-        {/* Dynamic Registry Terminal */}
+        {/* Class Registry */}
         <AnimatePresence mode="wait">
             {viewMode === 'grid' ? (
                 <motion.div
@@ -281,9 +281,9 @@ export default function ClassesOverviewPage() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
-                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Structural Node</th>
-                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Personnel</th>
-                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Occupancy</th>
+                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Class Name</th>
+                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Teacher</th>
+                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Details</th>
                                     <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
                                     <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
                                 </tr>
@@ -294,7 +294,7 @@ export default function ClassesOverviewPage() {
                                         <td colSpan={5} className="px-10 py-40 text-center">
                                             <div className="flex flex-col items-center gap-6">
                                                 <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 border-t-primary animate-spin" style={{ borderTopColor: primaryColor }} />
-                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Syncing Infrastructure...</span>
+                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading Classes...</span>
                                             </div>
                                         </td>
                                     </tr>
@@ -303,13 +303,13 @@ export default function ClassesOverviewPage() {
                                         <td colSpan={5} className="px-10 py-40 text-center text-slate-300">
                                             <div className="flex flex-col items-center gap-6 opacity-30">
                                                 <Layers size={80} strokeWidth={1} />
-                                                <span className="text-[10px] font-black uppercase tracking-[0.3em]">No Nodes Detected</span>
+                                                <span className="text-[10px] font-black uppercase tracking-[0.3em]">No Classes Found</span>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredClasses.map((cls, index) => (
-                                        <tr key={cls.id} className="group hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-all">
+                                        <tr key={cls.id || index} className="group hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-all">
                                             <td className="px-10 py-8">
                                                 <div className="flex items-center gap-6">
                                                     <div className="size-16 rounded-3xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-all border border-slate-100 dark:border-white/5" style={{ color: primaryColor }}>
@@ -319,9 +319,9 @@ export default function ClassesOverviewPage() {
                                                         <div className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter group-hover:text-primary transition-colors" style={{ '--primary': primaryColor } as any}>
                                                             {cls.name}
                                                         </div>
-                                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                                                            {cls.section} ARM • Node ID: {cls.id.slice(0, 8)}
-                                                        </div>
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                                            {cls.section} SECTION • ID: {cls.id.slice(0, 8)}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -342,15 +342,15 @@ export default function ClassesOverviewPage() {
                                                     <div className="w-px h-8 bg-slate-100 dark:bg-white/5" />
                                                     <div className="flex flex-col">
                                                         <span className="text-xl font-black text-slate-900 dark:text-white">{cls.subjectCount}</span>
-                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Modules</span>
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Subjects</span>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-10 py-8">
                                                 {cls.isLive ? (
-                                                    <span className="px-4 py-1.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-500/20">Active Now</span>
+                                                    <span className="px-4 py-1.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-500/20">In Session</span>
                                                 ) : (
-                                                    <span className="px-4 py-1.5 rounded-xl bg-slate-50 dark:bg-white/5 text-slate-400 text-[9px] font-black uppercase tracking-widest border border-slate-100 dark:border-white/10 text-opacity-50">Offline</span>
+                                                    <span className="px-4 py-1.5 rounded-xl bg-slate-50 dark:bg-white/5 text-slate-400 text-[9px] font-black uppercase tracking-widest border border-slate-100 dark:border-white/10 text-opacity-50">Inactive</span>
                                                 )}
                                             </td>
                                             <td className="px-10 py-8 text-right">
@@ -386,7 +386,7 @@ export default function ClassesOverviewPage() {
         {/* Global Security Footer */}
         <div className="flex justify-center pt-12">
             <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
-                <ShieldCheck size={16} className="text-emerald-500" strokeWidth={3} /> Verified Infrastructure Registry
+                <ShieldCheck size={16} className="text-emerald-500" strokeWidth={3} /> Verified Classes
             </div>
         </div>
       </div>

@@ -9,11 +9,13 @@ import {
   ShieldAlert, 
   ExternalLink,
   ChevronRight,
+  ChevronLeft,
   Clock
 } from 'lucide-react';
 import { useNotifications } from '@/lib/api/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -28,7 +30,10 @@ const typeConfig: Record<string, { icon: any, color: string, bg: string }> = {
 };
 
 export default function RecentActivity({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
-  const { data: notifications, isLoading } = useNotifications({ limit: 7 });
+  const [page, setPage] = useState(0);
+  const itemsPerPage = 5;
+  const { data: notifications, isLoading } = useNotifications();
+  const paginatedNotifications = notifications?.slice(page * itemsPerPage, (page + 1) * itemsPerPage) || [];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -129,7 +134,7 @@ export default function RecentActivity({ primaryColor = '#2563eb' }: { primaryCo
             </motion.div>
           ) : (
             <motion.div key="list" className="space-y-2">
-              {notifications.slice(0, 7).map((notification: any) => {
+              {paginatedNotifications.map((notification: any) => {
                 const config = typeConfig[notification.type] || typeConfig.ANNOUNCEMENT;
                 const Icon = config.icon;
                 
@@ -138,7 +143,7 @@ export default function RecentActivity({ primaryColor = '#2563eb' }: { primaryCo
                     key={notification.id}
                     variants={itemVariants}
                     whileHover={{ x: 5 }}
-                    className="group/item relative flex items-start gap-4 p-4 rounded-[2rem] border border-transparent hover:bg-white/30 dark:hover:bg-slate-800/30 transition-all cursor-pointer"
+                    className="group/item relative flex items-start gap-4 p-4 rounded-[2.5rem] border border-white/10 dark:border-slate-800/30 bg-white/30 dark:bg-slate-800/20 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all cursor-pointer"
                     style={{ '--hover-border': `${primaryColor}20` } as any}
                   >
                     <div 
@@ -193,8 +198,29 @@ export default function RecentActivity({ primaryColor = '#2563eb' }: { primaryCo
          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Live Activity Monitor</p>
+                <p className="hidden sm:block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Live Activity Monitor</p>
             </div>
+            
+            <div className="flex items-center gap-2">
+                <button 
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                    className="h-6 w-6 rounded-md bg-slate-100/50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <ChevronLeft size={12} />
+                </button>
+                <span className="text-[10px] font-black text-slate-500">
+                    {page + 1} / {Math.max(1, Math.ceil((notifications?.length || 0) / itemsPerPage))}
+                </span>
+                <button 
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={!notifications || (page + 1) * itemsPerPage >= notifications.length}
+                    className="h-6 w-6 rounded-md bg-slate-100/50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <ChevronRight size={12} />
+                </button>
+            </div>
+
             <Link href="/dashboard/admin/notifications" className="text-[10px] font-black hover:tracking-[0.15em] transition-all uppercase" style={{ color: primaryColor }}>
                Configure Filters
             </Link>

@@ -27,8 +27,9 @@ import Pagination from "@/components/ui/Pagination"
 export default function PlatformStudentsPage() {
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
+    const [statusFilter, setStatusFilter] = useState("ALL")
     const [currentPage, setCurrentPage] = useState(1)
-    const { data: response, isLoading } = usePlatformStudents(searchQuery, currentPage, 10)
+    const { data: response, isLoading } = usePlatformStudents(searchQuery, statusFilter, currentPage, 10)
     const students = response?.data || []
     const pagination = response?.pagination
 
@@ -49,16 +50,28 @@ export default function PlatformStudentsPage() {
                     </p>
                 </div>
 
-                <div className="relative group min-w-[320px]">
-                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                        <SearchIcon className="text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 min-w-[450px]">
+                    <div className="flex-1 relative group">
+                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                            <SearchIcon className="text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                        </div>
+                        <Input 
+                            placeholder="Search name, code..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-12 h-14 bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium text-slate-900 dark:text-white"
+                        />
                     </div>
-                    <Input 
-                        placeholder="Search name, code, or email..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-12 h-14 bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium text-slate-900 dark:text-white"
-                    />
+                    <select 
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="h-14 px-6 bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-500/20 transition-all font-black text-[10px] uppercase tracking-widest text-slate-600 dark:text-slate-400 outline-none cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/80"
+                    >
+                        <option value="ALL">All Status</option>
+                        <option value="ACTIVE">Active Only</option>
+                        <option value="INACTIVE">Inactive</option>
+                        <option value="SUSPENDED">Suspended</option>
+                    </select>
                 </div>
             </div>
 
@@ -77,21 +90,35 @@ export default function PlatformStudentsPage() {
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                             {isLoading ? (
-                                Array(5).fill(0).map((_, i) => (
-                                    <tr key={i}>
-                                        <td className="px-8 py-6"><Skeleton className="h-4 w-4 rounded" /></td>
+                                Array(8).fill(0).map((_, i) => (
+                                    <tr key={i} className="animate-pulse">
+                                        <td className="px-8 py-6">
+                                            <div className="h-4 w-4 bg-slate-200 dark:bg-slate-800 rounded opacity-50" />
+                                        </td>
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-4">
-                                                <Skeleton className="h-12 w-12 rounded-2xl" />
+                                                <div className="h-12 w-12 rounded-2xl bg-slate-200 dark:bg-slate-800 opacity-50" />
                                                 <div className="space-y-2">
-                                                    <Skeleton className="h-5 w-32" />
-                                                    <Skeleton className="h-4 w-20" />
+                                                    <div className="h-5 w-32 bg-slate-200 dark:bg-slate-800 rounded opacity-80" />
+                                                    <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded opacity-40" />
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6"><Skeleton className="h-5 w-40" /></td>
-                                        <td className="px-8 py-6"><Skeleton className="h-6 w-20 rounded-full" /></td>
-                                        <td className="px-8 py-6"><Skeleton className="h-4 w-24 float-right" /></td>
+                                        <td className="px-8 py-6">
+                                            <div className="space-y-2">
+                                                <div className="h-4 w-40 bg-slate-200 dark:bg-slate-800 rounded opacity-50" />
+                                                <div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded opacity-30" />
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <div className="h-6 w-20 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <div className="space-y-2 float-right">
+                                                <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded opacity-50" />
+                                                <div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded opacity-30 float-right" />
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))
                             ) : students?.length === 0 ? (

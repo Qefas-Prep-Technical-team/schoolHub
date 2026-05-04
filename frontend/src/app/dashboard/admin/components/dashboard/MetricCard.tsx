@@ -16,6 +16,7 @@ export interface MetricCardProps {
   badge?: string;
   badgeColor?: string;
   onClick?: () => void;
+  isLoading?: boolean;
 }
 
 export default function MetricCard({
@@ -28,7 +29,21 @@ export default function MetricCard({
   badge,
   badgeColor = 'bg-rose-500/10 text-rose-500 border-rose-500/20',
   onClick,
+  isLoading
 }: MetricCardProps) {
+  if (isLoading) {
+    return (
+      <div className="relative overflow-hidden p-5 rounded-[2.5rem] bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl border border-white/20 dark:border-slate-800/50 animate-pulse">
+        <div className="flex items-center justify-between mb-4">
+          <div className="h-12 w-12 rounded-[1.25rem] bg-slate-200/50 dark:bg-slate-800/50" />
+          <div className="h-6 w-16 rounded-full bg-slate-200/50 dark:bg-slate-800/50" />
+        </div>
+        <div className="h-3 w-20 bg-slate-200/50 dark:bg-slate-800/50 mb-2 rounded-full" />
+        <div className="h-8 w-24 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg" />
+      </div>
+    );
+  }
+
   return (
     <motion.div
       whileHover={{ y: -5, scale: 1.02 }}

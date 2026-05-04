@@ -13,9 +13,15 @@ export const adminService = {
   /**
    * Get school students (paginated)
    */
-  getSchoolStudents: async (schoolId: string, page: number = 1, limit: number = 10) => {
+  getSchoolStudents: async (schoolId: string, page: number = 1, limit: number = 10, search?: string, filters?: any) => {
     const response = await apiClient.get("/admin/students", {
-      params: { schoolId, page, limit },
+      params: { 
+        schoolId, 
+        page, 
+        limit, 
+        search,
+        ...filters
+      },
     });
     return response.data;
   },

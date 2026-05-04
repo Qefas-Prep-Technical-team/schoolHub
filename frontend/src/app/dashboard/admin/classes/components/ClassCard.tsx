@@ -34,21 +34,21 @@ interface ClassCardProps {
 
 const statusConfig = {
   complete: {
-    label: 'SYNC COMPLETE',
+    label: 'TIMETABLE READY',
     icon: CheckCircle,
     color: 'text-emerald-500',
     bgColor: 'bg-emerald-500/10',
     borderColor: 'border-emerald-500/20'
   },
   incomplete: {
-    label: 'PARTIAL SYNC',
+    label: 'PARTIAL SCHEDULE',
     icon: AlertCircle,
     color: 'text-primary',
     bgColor: 'bg-primary/10',
     borderColor: 'border-primary/20'
   },
   pending: {
-    label: 'SYNC PENDING',
+    label: 'PENDING SETUP',
     icon: Clock,
     color: 'text-amber-500',
     bgColor: 'bg-amber-500/10',
@@ -101,7 +101,7 @@ export default function ClassCard({
                     {status.label}
                 </div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                     STRUCTURAL NODE
+                     ACADEMIC UNIT
                 </div>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function ClassCard({
             {classData.name}
           </h3>
           <p className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8">
-            {classData.section} ARM RECOGNITION
+            {classData.section} SECTION
           </p>
 
           <div className="flex items-center gap-4 p-4 rounded-3xl bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 mb-8">
@@ -148,7 +148,7 @@ export default function ClassCard({
                 )}
             </div>
             <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Lead Personnel</p>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Class Teacher</p>
                 <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate max-w-[150px]">
                   {classData.teacher.name}
                 </p>
@@ -159,20 +159,20 @@ export default function ClassCard({
         <div className="space-y-6 pt-8 border-t border-slate-50 dark:border-white/5 relative z-10">
           <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Occupancy</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Student Count</span>
                   <div className="flex items-center gap-2">
                        <Users size={14} className="text-primary" />
                        <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter uppercase">
-                          {classData.studentCount} Nodes
+                          {classData.studentCount} Students
                        </span>
                   </div>
               </div>
               <div className="space-y-1">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Efficiency</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Curriculum</span>
                   <div className="flex items-center gap-2">
                        <Target size={14} className="text-emerald-500" />
                        <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter uppercase">
-                          {classData.subjectCount} Syncs
+                          {classData.subjectCount} Subjects
                        </span>
                   </div>
               </div>
@@ -182,11 +182,11 @@ export default function ClassCard({
               <div className="flex items-center gap-3">
                   {classData.isLive ? (
                     <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest animate-pulse border border-emerald-100">
-                        <div className="size-1.5 rounded-full bg-emerald-500" /> Active Channel
+                        <div className="size-1.5 rounded-full bg-emerald-500" /> In Session
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest border border-slate-100">
-                        <Activity size={10} /> Standby
+                        <Activity size={10} /> Inactive
                     </div>
                   )}
               </div>
@@ -194,7 +194,7 @@ export default function ClassCard({
                 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all"
                 style={{ color: primaryColor }}
               >
-                  <span>Connect</span>
+                  <span>Manage</span>
                   <ArrowRight size={14} strokeWidth={3} />
               </div>
           </div>

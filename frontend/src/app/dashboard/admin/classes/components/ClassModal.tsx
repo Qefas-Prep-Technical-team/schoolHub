@@ -219,7 +219,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
             </div>
             <div className="space-y-2">
               <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                Section / Arm
+                Class Section
               </Label>
               <Input
                 value={formData.section}
@@ -232,7 +232,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
 
           <div className="space-y-2">
             <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-              Assign Homeroom Teacher
+              Assign Lead Educator
             </Label>
             <Select 
                 value={formData.teacherId} 
@@ -254,7 +254,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
 
           <div className="space-y-3">
             <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-              Select Subjects
+              Select Curriculum Subjects
             </Label>
             <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
               {subjects.map((subject) => (
@@ -289,7 +289,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
 
           <div className="space-y-3">
             <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-              Assign Departments
+              Assign Academic Departments
             </Label>
             <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-900 dark:text-white">
               {departments.map((dept) => (
@@ -324,7 +324,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
 
           <div className="space-y-3">
             <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-              Assign Students (Connected Only)
+              Assign Enrolled Students
             </Label>
             <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
               {students.length === 0 ? (
@@ -373,7 +373,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
               onClick={onClose}
               className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             >
-              Discard
+              Cancel
             </Button>
             <Button
               type="submit"

@@ -64,7 +64,7 @@ export default function MetricsGrid({ stats, isLoading }: MetricsGridProps) {
       },
       {
         id: 'subjects',
-        title: 'Active Subjects',
+        title: 'Total Subjects',
         value: stats.subjects.toLocaleString(),
         icon: BookOpen,
         iconColor: 'text-primary dark:text-primary',
@@ -72,12 +72,12 @@ export default function MetricsGrid({ stats, isLoading }: MetricsGridProps) {
       },
       {
         id: 'attendance',
-        title: "Institution Health",
+        title: "Attendance Rate",
         value: stats.students > 0 ? '98%' : '0%',
         icon: CalendarCheck,
         iconColor: 'text-teal-600 dark:text-teal-400',
         iconBg: 'bg-teal-50 dark:bg-teal-900/30',
-        trend: { value: 'Optimal', isPositive: true },
+        trend: { value: 'Average', isPositive: true },
       },
       {
         id: 'exams',
@@ -90,12 +90,12 @@ export default function MetricsGrid({ stats, isLoading }: MetricsGridProps) {
     ]);
   }, [stats]);
 
-  // Loading skeletons could be handled here or by Parent
+  // Loading skeletons
   if (isLoading || metrics.length === 0) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 animate-pulse">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="h-32 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+          <MetricCard key={i} isLoading={true} title="" value="" icon={Users} iconColor="" iconBg="" />
         ))}
       </div>
     );
@@ -103,7 +103,7 @@ export default function MetricsGrid({ stats, isLoading }: MetricsGridProps) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      {metrics.map((metric: MetricCardProps) => (
+      {metrics.map((metric: any) => (
         <MetricCard key={metric?.id} {...metric} />
       ))}
     </div>

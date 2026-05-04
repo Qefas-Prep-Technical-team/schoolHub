@@ -497,9 +497,10 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
 
 export const getSchoolStudents = async (req: Request, res: Response) => {
   try {
-    const schoolId = getSingleString(req.query.schoolId as string | string[] | undefined);
-    const page = getSingleString(req.query.page as string | string[] | undefined) || "1";
-    const limit = getSingleString(req.query.limit as string | string[] | undefined) || "10";
+    const search = getSingleString(req.query.search as string | string[] | undefined);
+    const classId = getSingleString(req.query.classId as string | string[] | undefined);
+    const gender = getSingleString(req.query.gender as string | string[] | undefined);
+    const status = getSingleString(req.query.status as string | string[] | undefined);
 
     if (!schoolId) {
       return res.status(400).json({
@@ -527,13 +528,40 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
       });
     }
 
+    // Build where clause
+    const where: any = {
+      schoolId: schoolId as string,
+    };
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { studentCode: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (classId) {
+      where.classes = {
+        some: {
+          classId: classId,
+        }
+      };
+    }
+
+    if (gender) {
+      where.gender = gender as any;
+    }
+
+    if (status) {
+      where.verified = status === 'verified';
+    }
+
     // Get count and students
     const [total, students] = await Promise.all([
-      prisma.student.count({
-        where: { schoolId: schoolId as string },
-      }),
+      prisma.student.count({ where }),
       prisma.student.findMany({
-        where: { schoolId: schoolId as string },
+        where,
         skip,
         take,
         select: {
@@ -545,6 +573,12 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
           verified: true,
           profileImage: true,
           gender: true,
+          classes: {
+            include: {
+              class: true
+            }
+          },
+          department: true
         },
         orderBy: { name: 'asc' }
       }),

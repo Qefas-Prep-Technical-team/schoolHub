@@ -36,14 +36,19 @@ export default function RoleFeaturesContent({
     searchQuery,
     setSearchQuery
 }: RoleFeaturesContentProps) {
+    const queryClient = useQueryClient()
     const { data: entitlementFeatures, isLoading: isLoadingEntitlement } = useEntitlementFeatures()
     const { mutate: updateFeature } = useUpdatePlatformFeature()
     const harvestFeatures = useHarvestFeatures()
+    const [updatingId, setUpdatingId] = useState<string | null>(null)
 
     const handleToggle = (id: string, role: string, value: boolean) => {
         const updateData: any = {}
         updateData[`${role}Enabled`] = value
-        updateFeature({ id, updateData })
+        setUpdatingId(id)
+        updateFeature({ id, updateData }, {
+            onSettled: () => setUpdatingId(null)
+        })
     }
 
     const filteredFeatures = () => {
@@ -110,6 +115,7 @@ export default function RoleFeaturesContent({
                         mode="role"
                         activeRole={role}
                         onToggle={handleToggle}
+                        isUpdating={updatingId === feature.id}
                     />
                 ))}
             </div>

@@ -23,7 +23,8 @@ import {
   Globe,
   Cpu,
   LayoutGrid,
-  List
+  List,
+  ChevronLeft
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from "@/components/ui/button"
@@ -35,6 +36,8 @@ import { cn } from '@/lib/utils'
 export default function ManageTeachersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [currentPage, setCurrentPage] = useState(0)
+  const itemsPerPage = 12
   const router = useRouter()
   const { user } = useAuthStore()
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ''
@@ -65,54 +68,61 @@ export default function ManageTeachersPage() {
     )
   }, [searchTerm, teachersList])
 
+  const totalPages = Math.ceil(filteredTeachers.length / itemsPerPage)
+  const paginatedTeachers = filteredTeachers.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
+
+  const uniqueSubjects = new Set(teachersList.flatMap(t => t.subjects));
+
   const stats = [
     { 
-        label: 'Total Faculty', 
+        label: 'Total Teachers', 
         value: teachersList.length, 
         icon: Users, 
         color: primaryColor,
-        desc: 'Institutional Nodes'
+        desc: 'Registered Teachers'
     },
     { 
-        label: 'Verified Personnel', 
+        label: 'Verified Teachers', 
         value: teachersList.filter(t => t.status === 'active').length, 
         icon: ShieldCheck, 
         color: '#10b981', // Emerald
-        desc: 'Authenticated Nodes'
+        desc: 'Active Accounts'
     },
     { 
-        label: 'Active Channels', 
-        value: '12', 
+        label: 'Total Subjects', 
+        value: uniqueSubjects.size, 
         icon: Activity, 
         color: '#2563eb', // Indigo
-        desc: 'Instructional Streams'
+        desc: 'Subjects Covered'
     },
     { 
-        label: 'Pending Protocols', 
+        label: 'Pending Teachers', 
         value: teachersList.filter(t => t.status === 'pending').length, 
         icon: Zap, 
         color: '#f59e0b', // Amber
-        desc: 'Await Auth'
+        desc: 'Awaiting Verification'
     },
   ]
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
+    <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500 relative">
+      {/* Loading Overlay */}
+
       <div className="max-w-[1600px] mx-auto space-y-12">
         
-        {/* Tactical Header */}
+        {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
               <div className="size-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Human Capital Terminal</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Teacher Management</span>
             </div>
             <div>
               <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
-                Faculty Network<span style={{ color: primaryColor }}>.</span>
+                Teachers<span style={{ color: primaryColor }}>.</span>
               </h1>
               <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
-                Advanced instructional personnel management, faculty node synchronization, and operational authorization.
+                Manage all school teachers, their assigned subjects, and verify new teacher accounts.
               </p>
             </div>
           </div>
@@ -124,12 +134,12 @@ export default function ManageTeachersPage() {
               onClick={() => {}}
             >
               <UserPlus size={20} strokeWidth={3} />
-              Add New Faculty
+              Add New Teacher
             </Button>
           </div>
         </div>
 
-        {/* Tactical Analytics Hub */}
+        {/* Analytics Hub */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
                 <div 
@@ -159,7 +169,9 @@ export default function ManageTeachersPage() {
                         </div>
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{stat.label}</p>
-                            <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">{stat.value}</h3>
+                            <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
+                                {isLoading ? <Skeleton className="h-12 w-24 rounded-2xl bg-slate-100 dark:bg-slate-800" /> : stat.value}
+                            </h3>
                             <p className="text-[10px] font-bold text-slate-500 mt-4 uppercase tracking-widest flex items-center gap-2">
                                 <Zap size={12} className="text-slate-300" /> {stat.desc}
                             </p>
@@ -169,15 +181,18 @@ export default function ManageTeachersPage() {
             ))}
         </div>
 
-        {/* Operational Control Terminal */}
+        {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
             <div className="relative group flex-1 max-w-xl">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
                 <input 
                     type="text" 
-                    placeholder="Search faculty nodes..."
+                    placeholder="Search teachers..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value)
+                        setCurrentPage(0)
+                    }}
                     className="w-full h-16 pl-16 pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
                     style={{ '--tw-ring-color': `${primaryColor}20` } as any}
                 />
@@ -206,7 +221,7 @@ export default function ManageTeachersPage() {
             </div>
         </div>
 
-        {/* Dynamic Personnel Registry */}
+        {/* Teacher Registry */}
         <AnimatePresence mode="wait">
             {viewMode === 'grid' ? (
                 <motion.div
@@ -218,7 +233,7 @@ export default function ManageTeachersPage() {
                 >
                     {isLoading ? (
                         [1, 2, 3].map(i => <Skeleton key={i} className="h-[400px] rounded-[4rem] bg-slate-50 dark:bg-white/5" />)
-                    ) : filteredTeachers.map((teacher) => (
+                    ) : paginatedTeachers.map((teacher) => (
                         <div 
                             key={teacher.id}
                             className="group relative bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[4rem] p-10 hover:-translate-y-2 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col"
@@ -301,11 +316,11 @@ export default function ManageTeachersPage() {
                                         <td colSpan={5} className="px-10 py-40 text-center">
                                             <div className="flex flex-col items-center gap-6">
                                                 <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 border-t-primary animate-spin" style={{ borderTopColor: primaryColor }} />
-                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Syncing Faculty Network...</span>
+                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading teachers...</span>
                                             </div>
                                         </td>
                                     </tr>
-                                ) : filteredTeachers.map((teacher) => (
+                                ) : paginatedTeachers.map((teacher) => (
                                     <tr key={teacher.id} className="group hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-all cursor-pointer" onClick={() => router.push(`/dashboard/admin/teachers/${teacher.id}`)}>
                                         <td className="px-10 py-8">
                                             <div className="flex items-center gap-6">
@@ -339,7 +354,7 @@ export default function ManageTeachersPage() {
                                             <div className="flex items-center gap-2">
                                                 <div className={cn("size-2 rounded-full", teacher.status === 'active' ? 'bg-emerald-500' : 'bg-amber-500')} />
                                                 <span className={cn("text-[10px] font-black uppercase tracking-widest", teacher.status === 'active' ? 'text-emerald-600' : 'text-amber-600')}>
-                                                    {teacher.status === 'active' ? 'Verified Node' : 'Pending Auth'}
+                                                    {teacher.status === 'active' ? 'Verified Teacher' : 'Pending Verification'}
                                                 </span>
                                             </div>
                                         </td>
@@ -356,6 +371,50 @@ export default function ManageTeachersPage() {
                 </motion.div>
             )}
         </AnimatePresence>
+
+        {/* Pagination Controls */}
+        {!isLoading && filteredTeachers.length > 0 && (
+          <div className="flex items-center justify-between p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-3xl" style={{ boxShadow: `0 25px 50px -12px ${primaryColor}10` }}>
+            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+              Showing {currentPage * itemsPerPage + 1} - {Math.min((currentPage + 1) * itemsPerPage, filteredTeachers.length)} of {filteredTeachers.length} Personnel
+            </span>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="h-10 px-4 rounded-xl text-xs font-black uppercase tracking-widest border-slate-100 dark:border-white/5"
+                onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                disabled={currentPage === 0}
+              >
+                <ChevronLeft size={16} className="mr-2" />
+                Prev
+              </Button>
+              <div className="flex items-center gap-1 px-4">
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    className={cn(
+                      "size-8 rounded-lg text-xs font-black transition-all",
+                      currentPage === i ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    )}
+                    onClick={() => setCurrentPage(i)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                className="h-10 px-4 rounded-xl text-xs font-black uppercase tracking-widest border-slate-100 dark:border-white/5"
+                onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={currentPage >= totalPages - 1}
+              >
+                Next
+                <ChevronRight size={16} className="ml-2" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

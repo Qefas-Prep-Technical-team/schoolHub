@@ -145,10 +145,10 @@ export default function TeacherLoginForm() {
                     {isPending ? (
                         <div className="flex items-center">
                             <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-b-white mr-3"></div>
-                            Authenticating...
+                            Signing in...
                         </div>
                     ) : (
-                        "Establish Session"
+                        "Sign In"
                     )}
                 </button>
             </div>

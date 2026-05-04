@@ -74,6 +74,7 @@ export default function PlatformFeaturesPage() {
             toast.error(err.response?.data?.message || "Failed to delete feature. Check your permissions.")
         }
     })
+    const [updatingId, setUpdatingId] = useState<string | null>(null)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [featureToDelete, setFeatureToDelete] = useState<any>(null)
     const [searchQuery, setSearchQuery] = useState("")
@@ -84,7 +85,10 @@ export default function PlatformFeaturesPage() {
     const handleToggle = (id: string, role: string, value: boolean) => {
         const updateData: any = {}
         updateData[`${role}Enabled`] = value
-        updateFeature({ id, updateData })
+        setUpdatingId(id)
+        updateFeature({ id, updateData }, {
+            onSettled: () => setUpdatingId(null)
+        })
     }
 
     const handleSaveEntitlement = async (newFeature: any) => {
@@ -245,6 +249,7 @@ export default function PlatformFeaturesPage() {
                                                 setFeatureToDelete(feature)
                                                 setIsDeleteModalOpen(true)
                                             }}
+                                            isUpdating={updatingId === f.id}
                                         />
                                     ))}
                                 </div>

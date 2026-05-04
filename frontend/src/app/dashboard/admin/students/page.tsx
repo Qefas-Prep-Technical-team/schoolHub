@@ -74,32 +74,32 @@ export default function StudentsPage() {
 
   const stats = [
     { 
-        label: 'Institutional Population', 
+        label: 'Total Students', 
         value: studentStats?.total || 0, 
         icon: GraduationCap, 
         color: primaryColor,
-        desc: 'Cognitive Nodes'
+        desc: 'Registered Students'
     },
     { 
-        label: 'Verified Identities', 
+        label: 'Verified Students', 
         value: studentStats?.total || 0, 
         icon: ShieldCheck, 
         color: '#10b981', // Emerald
-        desc: 'Secured Access'
+        desc: 'Active Accounts'
     },
     { 
-        label: 'Cognitive Efficiency', 
+        label: 'Attendance Rate', 
         value: '89%', 
         icon: Activity, 
         color: '#2563eb', // Indigo
-        desc: 'Performance Sync'
+        desc: 'Average Attendance'
     },
     { 
-        label: 'Pending Nodes', 
+        label: 'Pending Students', 
         value: '14', 
         icon: Zap, 
         color: '#f59e0b', // Amber
-        desc: 'Await Registry'
+        desc: 'Awaiting Enrollment'
     },
   ]
 
@@ -107,19 +107,19 @@ export default function StudentsPage() {
     <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
       <div className="max-w-[1600px] mx-auto space-y-12">
         
-        {/* Tactical Header */}
+        {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
               <div className="size-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Cognitive Registry Terminal</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Student Management</span>
             </div>
             <div>
               <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
-                Student Network<span style={{ color: primaryColor }}>.</span>
+                Students<span style={{ color: primaryColor }}>.</span>
               </h1>
               <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
-                Advanced institutional student management, cognitive node synchronization, and academic progress tracking.
+                Manage your school students, track their academic progress, and verify new enrollments.
               </p>
             </div>
           </div>
@@ -131,12 +131,12 @@ export default function StudentsPage() {
               onClick={() => setOpen(true)}
             >
               <UserPlus size={20} strokeWidth={3} />
-              Initialize Enrollment
+              Add New Student
             </Button>
           </div>
         </div>
 
-        {/* Tactical Analytics Hub */}
+        {/* Analytics Hub */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
                 <div 
@@ -175,14 +175,12 @@ export default function StudentsPage() {
             ))}
         </div>
 
-        {/* Operational Control Terminal */}
-        <div className="flex flex-col gap-8">
             <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
                 <div className="relative group flex-1 max-w-xl">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
                     <input 
                         type="text" 
-                        placeholder="Search student nodes..."
+                        placeholder="Search students..."
                         value={searchTerm}
                         onChange={(e) => handleSearchChange(e.target.value)}
                         className="w-full h-16 pl-16 pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
@@ -197,7 +195,6 @@ export default function StudentsPage() {
                      </Button>
                 </div>
             </div>
-
             <div className="rounded-[4rem] bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-2 shadow-2xl overflow-hidden">
                 <StudentsTable 
                   searchTerm={searchTerm} 
@@ -206,7 +203,6 @@ export default function StudentsPage() {
                   onPageChange={setPage}
                 />
             </div>
-        </div>
 
         <AddStudentDialog open={open} onOpenChange={setOpen} />
       </div>

@@ -45,9 +45,9 @@ export default function ClassGrid({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {classes.map((classItem) => (
+      {classes.map((classItem, idx) => (
         <ClassCard
-          key={classItem.id}
+          key={classItem.id || idx}
           classData={classItem}
           onView={onViewClass}
           onEdit={onEditClass}
