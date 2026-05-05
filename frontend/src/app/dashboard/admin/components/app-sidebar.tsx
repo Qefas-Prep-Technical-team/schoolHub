@@ -159,7 +159,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
             collapsible="icon"
             className={cn(
                 "transition-all duration-300 ease-in-out no-print border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-0",
-                isCollapsed ? "w-[64px]" : "w-[260px]"
+                isCollapsed ? "w-[64px]" : "w-[200px]"
             )}
         >
             {/* Header */}

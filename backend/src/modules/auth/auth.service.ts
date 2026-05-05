@@ -435,6 +435,8 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
           </p>
         </div>
         
+        </div>
+        
         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
           <p>© 2025 Qefas Hub. All rights reserved.</p>
         </div>
@@ -442,6 +444,56 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
     `,
   });
 };
+
+export const sendTeacherInvitationEmail = async (email: string, token: string, schoolName: string, teacherName: string) => {
+  const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const claimLink = `${baseUrl}/auth/claim-account?token=${token}&type=teacher`;
+  
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? process.env.TEST_EMAIL as string : email;
+
+  return await resend.emails.send({
+    from: process.env.MAIL_FROM as string,
+    to: recipient,
+    subject: `Invitation to join ${schoolName} on Qefas Hub`,
+    html: `
+      <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <img src="${baseUrl}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px;" />
+          <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">Qefas Hub</h1>
+          <p style="color: #6b7280; margin: 5px 0 0 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;">Account Invitation</p>
+        </div>
+        
+        <div style="background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <h2 style="color: #1f2937; margin-top: 0;">Hello ${teacherName},</h2>
+          
+          <p>You have been invited to join <strong>${schoolName}</strong> as a teacher on Qefas Hub.</p>
+          <p>Your account has been pre-registered by the school administrator. Please click the button below to claim your account, set up your password, and access your dashboard.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${claimLink}" 
+               style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+              Claim Your Account
+            </a>
+          </div>
+
+          <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">
+            Or copy and paste this link in your browser:
+          </p>
+          
+          <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; word-break: break-all; font-size: 14px; color: #374151;">
+            ${claimLink}
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+          <p>© 2025 Qefas Hub. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+  });
+};
+
 
 export const googleAuthService = async (
   supabaseToken: string,

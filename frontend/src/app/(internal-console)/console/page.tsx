@@ -106,7 +106,7 @@ export default function PlatformDashboard() {
     ]
 
     return (
-        <div className="space-y-10 pb-20">
+        <div className="space-y-8 pb-20">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
@@ -119,8 +119,8 @@ export default function PlatformDashboard() {
                 </div>
             </div>
 
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* Metrics Grid - Fluid Auto-fill */}
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5">
                 {metricCards.map((card, i) => (
                     <Card key={i} className={`bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 overflow-hidden relative group shadow-sm ${card.bg}`}>
                         <div className="absolute top-0 right-0 p-6 opacity-[0.04] group-hover:scale-110 transition-transform duration-500">
@@ -149,11 +149,11 @@ export default function PlatformDashboard() {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column Charts */}
-                <div className="lg:col-span-2 space-y-8">
+            <div className="flex flex-col xl:flex-row gap-8">
+                {/* Left Column Charts - Flexible growth */}
+                <div className="flex-1 min-w-[min(100%,600px)] space-y-8">
                     {/* Growth Chart */}
-                    <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                    <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Ecosystem Growth</h3>
@@ -171,7 +171,7 @@ export default function PlatformDashboard() {
                         </div>
                     </div>
                     
-                    <div className="h-[350px] w-full">
+                    <div className="h-[320px] w-full">
                         {growthLoading ? (
                             <Skeleton className="h-full w-full bg-slate-100 dark:bg-slate-800 rounded-xl" />
                         ) : (
@@ -239,7 +239,7 @@ export default function PlatformDashboard() {
                 </Card>
 
                 {/* User Growth Chart */}
-                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">User Registration Trends</h3>
@@ -261,7 +261,7 @@ export default function PlatformDashboard() {
                         </div>
                     </div>
                     
-                    <div className="h-[350px] w-full">
+                    <div className="h-[320px] w-full">
                         {growthLoading ? (
                             <Skeleton className="h-full w-full bg-slate-100 dark:bg-slate-800 rounded-xl" />
                         ) : (
@@ -317,9 +317,9 @@ export default function PlatformDashboard() {
                 </Card>
                 </div>
 
-                {/* Right Column Status */}
-                <div className="space-y-6">
-                    <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-indigo-500/20 shadow-xl dark:shadow-2xl shadow-slate-200/50 dark:shadow-indigo-500/5 p-8 relative overflow-hidden">
+                {/* Right Column Status - Fixed width on large screens, wraps on smaller */}
+                <div className="w-full xl:w-[380px] shrink-0 space-y-6">
+                    <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-indigo-500/20 shadow-xl dark:shadow-2xl shadow-slate-200/50 dark:shadow-indigo-500/5 p-6 relative overflow-hidden">
                         <div className="absolute -top-10 -right-10 opacity-5 pointer-events-none rotate-12">
                             <TrendingUp size={200} />
                         </div>
@@ -358,7 +358,7 @@ export default function PlatformDashboard() {
                         </div>
                     </Card>
 
-                    <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6 space-y-6 shadow-sm">
+                    <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-5 space-y-6 shadow-sm">
                         <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
                                 <ShieldAlert size={16} className="text-amber-500" />
@@ -381,7 +381,7 @@ export default function PlatformDashboard() {
                         </div>
                     </Card>
                     
-                    <Card className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 p-6 border-dashed">
+                    <Card className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 p-5 border-dashed">
                          <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500">
                              <Cpu size={16} />
                              <span className="text-[10px] font-bold uppercase tracking-widest leading-none">Internal Node 01 Status</span>

@@ -20,7 +20,7 @@ export const schoolRegistrationSchema = yup.object({
       .string()
       .trim()
       .lowercase()
-      .email("Invalid email")
+      .email("Invalid email format")
       .required("Email is required"),
 
     password: yup
@@ -67,6 +67,7 @@ export const teacherRegistrationSchema = yup.object({
     email: yup
       .string()
       .trim()
+      .lowercase()
       .email("Invalid email format")
       .required("Email is required"),
 
@@ -102,7 +103,12 @@ export const studentSchema = yup.object({
       .string()
       .required("Full name is required")
       .min(2, "Name must be at least 2 characters"),
-    email: yup.string().email("Invalid email").required("Email is required"),
+    email: yup
+      .string()
+      .trim()
+      .lowercase()
+      .email("Invalid email format")
+      .required("Email is required"),
     password: yup
       .string()
       .required("Password is required")
@@ -139,8 +145,10 @@ export const ParentRegisterSchema = yup.object({
 
     email: yup
       .string()
-      .required("Email is required")
-      .email("Enter a valid email"),
+      .trim()
+      .lowercase()
+      .email("Invalid email format")
+      .required("Email is required"),
 
     password: yup
       .string()
@@ -172,7 +180,12 @@ export const ParentRegisterSchema = yup.object({
 
 export const requestCodeSchema = yup.object({
   body: yup.object({
-    email: yup.string().email("Invalid email").required("Email is required"),
+    email: yup
+      .string()
+      .trim()
+      .lowercase()
+      .email("Invalid email format")
+      .required("Email is required"),
   }),
 });
 
@@ -194,6 +207,8 @@ export const loginSchema = yup.object({
   body: yup.object({
     email: yup
       .string()
+      .trim()
+      .lowercase()
       .email("Invalid email format")
       .required("Email is required"),
     password: yup.string().required("Password is required"),

@@ -1394,7 +1394,7 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password, userType } = req.body;
-    console.log("Login attempt:", { email, userType });
+    console.log("DEBUG: Login attempt started", { email, userType });
 
     if (!email || !password || !userType) {
       return res.status(400).json({
@@ -1496,8 +1496,8 @@ export const login = async (req: Request, res: Response) => {
     const validPassword = await comparePassword(password, user.password);
     if (!validPassword) {
       return res
-        .status(404)
-        .json({ success: false, message: "Password incorrect" });
+        .status(401)
+        .json({ success: false, message: "Invalid email or password" });
     }
 
     // ===== Set defaultTenantId if missing =====
@@ -1506,8 +1506,11 @@ export const login = async (req: Request, res: Response) => {
     // ========================================
 
     // IMPORTANT: Generate token with ACTUAL role, not the one from the portal
+    console.log("DEBUG: Generating tokens for user", user.id);
     const accessToken = generateAccessToken(user.id, actualRole);
+    console.log("DEBUG: Access token generated");
     const refreshToken = await generateRefreshToken(user.id, actualRole);
+    console.log("DEBUG: Refresh token generated and stored");
 
     res.cookie("token", accessToken, {
       httpOnly: true,
@@ -1531,9 +1534,9 @@ export const login = async (req: Request, res: Response) => {
 
     if (actualRole === UserRole.ADMIN) {
       const schools = user.schoolAdmins.map((sa: any) => ({
-        schoolId: sa.school.id,
-        schoolName: sa.school.name,
-        schoolCode: sa.school.schoolCode,
+        schoolId: sa.school?.id,
+        schoolName: sa.school?.name,
+        schoolCode: sa.school?.schoolCode,
         adminRole: sa.role,
         approved:
           sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
@@ -1620,9 +1623,10 @@ export const login = async (req: Request, res: Response) => {
       };
     }
 
+    console.log("DEBUG: Login successful, sending response");
     return res.status(200).json({ success: true, message, data: responseData });
   } catch (error) {
-    console.error(error);
+    console.error("DEBUG: LOGIN ERROR CAUGHT:", error);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -1797,8 +1801,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
 
         if (!user)
           return res
-            .status(404)
-            .json({ success: false, message: "Admin not found" });
+            .status(401)
+            .json({ success: false, message: "Invalid credentials" });
 
         isSchoolOwner = user.schoolAdmins.some(
           (sa: any) => sa.role === AdminRole.SCHOOL_OWNER,

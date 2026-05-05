@@ -18,10 +18,8 @@ import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 
 export default function StudentRegisterForm() {
-  const [serverError, setServerError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
   const [showOptional, setShowOptional] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
@@ -84,8 +82,7 @@ export default function StudentRegisterForm() {
   };
 
   const onSubmit = async (data: StudentFormData) => {
-    setServerError('');
-    setSuccessMessage('');
+
 
     try {
       // Transform data to match your backend expectations
@@ -104,8 +101,6 @@ export default function StudentRegisterForm() {
         onSuccess: (response: any) => {
           console.log('✅ Student registration successful:', response.data);
 
-          const backendMessage = response.data.message || 'Registration successful!';
-          setSuccessMessage(backendMessage);
 
           const email = response.data.data?.student?.email || data.email;
 
@@ -120,17 +115,12 @@ export default function StudentRegisterForm() {
         },
         onError: (error: any) => {
           console.error('❌ Student registration failed:', error);
-
-          const errorMessage = error.response?.data?.message ||
-            error.message ||
-            'Registration failed. Please try again.';
-          setServerError(errorMessage);
+          // Toast is handled in useStudentRegistration
         }
       });
 
     } catch (error) {
       console.error('❌ Unexpected error:', error);
-      setServerError('An unexpected error occurred. Please try again.');
     }
   };
 
@@ -149,26 +139,7 @@ export default function StudentRegisterForm() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Success Message */}
-          {successMessage && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-              <div className="flex items-center">
-                <span className="material-symbols-outlined mr-2">check_circle</span>
-                {successMessage}
-              </div>
-              <p className="text-sm mt-1">Redirecting to verification...</p>
-            </div>
-          )}
 
-          {/* Server Error */}
-          {serverError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              <div className="flex items-center">
-                <span className="material-symbols-outlined mr-2">error</span>
-                {serverError}
-              </div>
-            </div>
-          )}
 
           {/* Full Name */}
           <label className="flex flex-col">
@@ -443,7 +414,7 @@ export default function StudentRegisterForm() {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full cursor-pointer bg-primary hover:bg-primary/90 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? (
               <div className="flex items-center justify-center">

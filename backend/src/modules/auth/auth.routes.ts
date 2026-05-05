@@ -31,27 +31,32 @@ import {
   googleAuthSchema,
 } from "./auth.validation";
 import { getStudentByCode, linkChildToParent } from "./auth.service";
+import { authRateLimiter, loginRateLimiter } from "../../middleware/rateLimiter";
 
 const router = express.Router();
 
 // Registration
 router.post(
   "/register/school",
+  authRateLimiter,
   validateRequest(schoolRegistrationSchema),
   registerSchool
 );
 router.post(
   "/register/teacher",
+  authRateLimiter,
   validateRequest(teacherRegistrationSchema),
   registerTeacher
 );
 router.post(
   "/register/student",
+  authRateLimiter,
   validateRequest(studentSchema),
   registerStudent
 );
 router.post(
   "/register/parents",
+  authRateLimiter,
   validateRequest(ParentRegisterSchema),
   registerParent
 );
@@ -74,12 +79,12 @@ router.post("/verify-code", validateRequest(verifyCodeSchema), verifyEmailCode);
 router.post("/verify-checkout-code", validateRequest(verifyCodeSchema), verifyCheckoutCode);
 
 // Login & Session
-router.post("/login", validateRequest(loginSchema), login);
+router.post("/login", loginRateLimiter, validateRequest(loginSchema), login);
 router.post("/refresh", refreshToken);
 router.post("/logout", logout);
 
 // Reset password routes
-router.post("/password/reset/request", requestPasswordReset);
+router.post("/password/reset/request", authRateLimiter, requestPasswordReset);
 router.get("/password/reset/validate/:token", validateResetToken);
 router.post("/password/reset/verify", verifyResetToken);
 router.post(

@@ -50,7 +50,7 @@ export default function GoogleLoginButton({ userType }: GoogleLoginButtonProps) 
             type="button"
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="flex items-center justify-center w-full h-14 gap-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 group relative overflow-hidden"
+            className="flex items-center justify-center w-full h-14 gap-3 cursor-pointer bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 group relative overflow-hidden"
         >
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
             

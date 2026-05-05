@@ -3,14 +3,11 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const schools = await prisma.school.findMany({
-    take: 1,
-    include: {
-      subscriptionPlan: true,
-    }
+  const refreshTokens = await prisma.refreshToken.findMany({
+    take: 1
   });
 
-  console.log(JSON.stringify(schools, null, 2));
+  console.log("Refresh tokens test:", JSON.stringify(refreshTokens, null, 2));
 }
 
 main()

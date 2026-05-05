@@ -77,14 +77,14 @@ export class SubscriptionScheduler {
         await MailService.sendSchoolEmail({
           schoolId: sub.schoolId,
           to: sub.school.schoolEmail,
-          subject: "Your SchoolHub Subscription Has Expired",
+          subject: "Your Qefas Hub Subscription Has Expired",
           type: "SUBSCRIPTION_EXPIRED",
           body: `
             <h1>Subscription Expired</h1>
             <p>Hello ${sub.school.name},</p>
-            <p>Your SchoolHub subscription has officially expired. Access to premium features has been suspended.</p>
+            <p>Your Qefas Hub subscription has officially expired. Access to premium features has been suspended.</p>
             <p>Please log in and renew your plan to restore full functionality for your students and teachers.</p>
-            <p>Best regards,<br/>SchoolHub Team</p>
+            <p>Best regards,<br/>Qefas Hub Team</p>
           `
         });
     }
@@ -150,14 +150,14 @@ export class SubscriptionScheduler {
         await MailService.sendSchoolEmail({
           schoolId: sub.schoolId,
           to: sub.school.schoolEmail,
-          subject: `Urgent: Your SchoolHub Subscription Expires in ${interval.days} Day(s)`,
+          subject: `Urgent: Your Qefas Hub Subscription Expires in ${interval.days} Day(s)`,
           type: interval.type,
           body: `
             <h1>Subscription Expiry Warning</h1>
             <p>Hello ${sub.school.name},</p>
-            <p>Your SchoolHub subscription is set to expire in <strong>${interval.days} day(s)</strong> (on ${sub.expiresAt.toLocaleDateString()}).</p>
+            <p>Your Qefas Hub subscription is set to expire in <strong>${interval.days} day(s)</strong> (on ${sub.expiresAt.toLocaleDateString()}).</p>
             <p>To avoid service interruption for your students and teachers, please renew your plan as soon as possible.</p>
-            <p>Best regards,<br/>SchoolHub Team</p>
+            <p>Best regards,<br/>Qefas Hub Team</p>
           `
         });
       }

@@ -19,7 +19,7 @@ export default function ConsoleTopBar({ onToggleSidebar, isCollapsed }: ConsoleT
     const router = useRouter()
 
     return (
-        <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
             <div className="flex items-center gap-6 flex-1">
                 <Button
                     variant="ghost"

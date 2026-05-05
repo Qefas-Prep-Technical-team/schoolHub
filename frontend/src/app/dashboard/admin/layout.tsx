@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AdminSidebar } from "./components/app-sidebar"
 import TopNavBar from "./components/TopNavBar"
 import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute"
+import AdminBottomNav from "./components/AdminBottomNav"
 import { TrialBanner } from "@/components/subscription/TrialBanner"
 
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
@@ -27,14 +28,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 open={!isCollapsed} 
                 onOpenChange={(open) => setIsCollapsed(!open)}
                 style={{
-                    "--sidebar-width": "260px",
+                    "--sidebar-width": "200px",
                     "--sidebar-width-icon": "64px",
                 } as React.CSSProperties}
             >
                 <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-200 min-w-full relative overflow-x-hidden font-sans">
                     <AdminSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} primaryColor={primaryColor} />
                     
-                    <SidebarInset className="relative flex-1 h-screen overflow-hidden bg-transparent">
+                    <SidebarInset className="relative flex-1 h-screen overflow-hidden bg-transparent pb-[4.5rem] md:pb-0">
                         <TopNavBar isCollapsed={isCollapsed} primaryColor={primaryColor} />
                         <div className="flex-1 overflow-y-auto p-4 md:p-8">
                             <TrialBanner />
@@ -42,6 +43,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         </div>
                     </SidebarInset>
                 </div>
+                <AdminBottomNav primaryColor={primaryColor} />
             </SidebarProvider>
             </div>
         </ProtectedAdminRoute>

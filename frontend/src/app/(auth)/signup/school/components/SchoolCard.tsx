@@ -49,10 +49,8 @@ export const getPasswordStrength = (password: string) => {
 };
 
 export default function SchoolCard() {
-  const [serverError, setServerError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
   const [showOverlay, setShowOverlay] = useState(false);
   const router = useRouter();
@@ -121,8 +119,7 @@ export default function SchoolCard() {
   };
 
   const onSubmit = async (data: SchoolFormData) => {
-    setServerError('');
-    setSuccessMessage('');
+
 
     try {
       // Transform data to match your backend expectations
@@ -139,9 +136,6 @@ export default function SchoolCard() {
         onSuccess: (response: any) => {
 
 
-          const backendMessage = response.data.message || 'Registration successful!';
-          setSuccessMessage(backendMessage);
-
           const email = response.data.data?.school?.email || data.email;
 
           setShowOverlay(true);
@@ -155,17 +149,12 @@ export default function SchoolCard() {
         },
         onError: (error: any) => {
           console.error('❌ School registration failed:', error);
-
-          const errorMessage = error.response?.data?.message ||
-            error.message ||
-            'Registration failed. Please try again.';
-          setServerError(errorMessage);
+          // Toast is handled in useSchoolRegistration
         }
       });
 
     } catch (error) {
       console.error('❌ Unexpected error:', error);
-      setServerError('An unexpected error occurred. Please try again.');
     }
   };
 
@@ -179,26 +168,6 @@ export default function SchoolCard() {
           <SchoolHeader />
           <div className="mt-2" />
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Success Message */}
-          {successMessage && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-              <div className="flex items-center">
-                <span className="material-symbols-outlined mr-2">check_circle</span>
-                {successMessage}
-              </div>
-              <p className="text-sm mt-1">Redirecting to verification...</p>
-            </div>
-          )}
-
-          {/* Server Error */}
-          {serverError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              <div className="flex items-center">
-                <span className="material-symbols-outlined mr-2">error</span>
-                {serverError}
-              </div>
-            </div>
-          )}
 
           {/* School Name */}
           <label className="flex flex-col gap-2">
@@ -389,7 +358,7 @@ export default function SchoolCard() {
             <button
               type="submit"
               disabled={isPending}
-              className="flex items-center justify-center w-full bg-primary text-white font-bold h-14 px-6 rounded-lg text-lg hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center cursor-pointer bg-primary hover:bg-primary/90 text-white font-bold h-14 px-6 rounded-lg text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPending ? (
                 <div className="flex items-center justify-center">

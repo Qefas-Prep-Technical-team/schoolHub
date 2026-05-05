@@ -2,6 +2,9 @@ import prisma from "../../config/database";
 import { Request, Response } from "express";
 import { getTeacherTimetableService, upsertTimetablePeriodService } from "../class/timetable.service";
 import { getSingleString } from "../../utils/request-utils";
+import { generateUniqueCode } from "../../utils/code-generator";
+import { sendTeacherInvitationEmail } from "../auth/auth.service";
+import crypto from "crypto";
 
 /**
  * Get detailed teacher information by ID
@@ -273,3 +276,206 @@ export const createTimetablePeriod = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * Invite a teacher by code or create a pre-registered account
+ */
+export const inviteTeacher = async (req: Request, res: Response) => {
+  try {
+    const { action, teacherCode, name, email } = req.body;
+    const adminId = (req as any).user?.id;
+
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    // Get the school for the admin
+    const adminRecord = await prisma.admin.findUnique({
+      where: { id: adminId },
+      include: { schoolAdmins: { include: { school: true } } }
+    });
+
+    const school = adminRecord?.schoolAdmins[0]?.school;
+    if (!school) {
+      return res.status(404).json({ success: false, message: "School not found for this admin" });
+    }
+
+    if (action === "code") {
+      if (!teacherCode) {
+        return res.status(400).json({ success: false, message: "teacherCode is required for action 'code'" });
+      }
+
+      const teacher = await prisma.teacher.findUnique({
+        where: { teacherCode }
+      });
+
+      if (!teacher) {
+        return res.status(404).json({ success: false, message: "Teacher not found" });
+      }
+
+      // Check if relationship already exists
+      const existingLink = await prisma.relationshipLink.findFirst({
+        where: {
+          leftEntityId: school.id,
+          rightEntityId: teacher.id,
+          status: "ACTIVE"
+        }
+      });
+
+      if (existingLink) {
+        return res.status(400).json({ success: false, message: "Teacher is already connected to this school" });
+      }
+
+      // Create LinkRequest
+      await prisma.linkRequest.create({
+        data: {
+          linkType: "SCHOOL_TEACHER",
+          requesterType: "SCHOOL",
+          requesterId: school.id,
+          requesterCode: school.schoolCode,
+          targetType: "TEACHER",
+          targetId: teacher.id,
+          targetCode: teacher.teacherCode,
+          schoolId: school.id,
+          requestedByAdminId: adminId,
+          targetTeacherId: teacher.id,
+          requesterSchoolId: school.id,
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Invitation request sent to teacher successfully",
+      });
+
+    } else if (action === "create") {
+      if (!name || !email) {
+        return res.status(400).json({ success: false, message: "Name and email are required for action 'create'" });
+      }
+
+      const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
+        prisma.student.findUnique({ where: { email } }),
+        prisma.teacher.findUnique({ where: { email } }),
+        prisma.admin.findUnique({ where: { email } }),
+        prisma.parent.findUnique({ where: { email } })
+      ]);
+
+      if (existingStudent || existingTeacher || existingAdmin || existingParent) {
+        return res.status(400).json({ success: false, message: "Email is already in use" });
+      }
+
+      const newTeacherCode = await generateUniqueCode(prisma, "teacher", name);
+      const invitationToken = crypto.randomBytes(32).toString('hex');
+
+      const teacher = await prisma.teacher.create({
+        data: {
+          name,
+          email,
+          teacherCode: newTeacherCode,
+          role: "TEACHER",
+          isClaimed: false,
+          verified: false,
+          invitationToken,
+          primarySchoolId: school.id,
+          activeSchoolId: school.id,
+          schoolId: school.id,
+        }
+      });
+
+      // Automatically create relationship link
+      await prisma.relationshipLink.create({
+        data: {
+          linkType: "SCHOOL_TEACHER",
+          leftEntityType: "SCHOOL",
+          leftEntityId: school.id,
+          leftCode: school.schoolCode,
+          rightEntityType: "TEACHER",
+          rightEntityId: teacher.id,
+          rightCode: teacher.teacherCode,
+          schoolId: school.id,
+          status: "ACTIVE",
+        }
+      });
+
+      // Send the email
+      await sendTeacherInvitationEmail(email, invitationToken, school.name, teacher.name);
+
+      return res.status(200).json({
+        success: true,
+        message: "Teacher pre-registered and invitation email sent",
+        data: { teacherId: teacher.id, teacherCode: teacher.teacherCode }
+      });
+    }
+
+    return res.status(400).json({ success: false, message: "Invalid action" });
+
+  } catch (error: any) {
+    console.error("inviteTeacher error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+/**
+ * Resend claim email to a pre-registered teacher
+ */
+export const resendClaimEmail = async (req: Request, res: Response) => {
+  try {
+    const teacherId = getSingleString(req.params.id as string | string[] | undefined);
+    const adminId = (req as any).user?.id;
+
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const adminRecord = await prisma.admin.findUnique({
+      where: { id: adminId },
+      include: { schoolAdmins: { include: { school: true } } }
+    });
+
+    const school = adminRecord?.schoolAdmins[0]?.school;
+    if (!school) {
+      return res.status(404).json({ success: false, message: "School not found" });
+    }
+
+    const teacher = await prisma.teacher.findFirst({
+      where: {
+        OR: [{ id: teacherId }, { teacherCode: teacherId }],
+        primarySchoolId: school.id
+      }
+    });
+
+    if (!teacher) {
+      return res.status(404).json({ success: false, message: "Teacher not found or not connected to your school" });
+    }
+
+    if (teacher.isClaimed || !teacher.email) {
+      return res.status(400).json({ success: false, message: "Teacher account is already claimed or has no email" });
+    }
+
+    // Generate new token
+    const invitationToken = crypto.randomBytes(32).toString('hex');
+
+    await prisma.teacher.update({
+      where: { id: teacher.id },
+      data: { invitationToken }
+    });
+
+    await sendTeacherInvitationEmail(teacher.email, invitationToken, school.name, teacher.name);
+
+    return res.status(200).json({
+      success: true,
+      message: "Claim email resent successfully",
+    });
+
+  } catch (error: any) {
+    console.error("resendClaimEmail error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+

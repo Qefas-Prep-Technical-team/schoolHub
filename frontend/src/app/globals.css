@@ -127,11 +127,20 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    font-size: 13px; /* Reduced to 13px to achieve the user's preferred 80% zoom feel at 100% zoom */
+  }
   html, body {
     @apply bg-background text-foreground;
     scrollbar-gutter: stable;
     overflow-x: hidden;
     position: relative;
+  }
+  a, button, [role="button"] {
+    @apply cursor-pointer;
+  }
+  button:disabled, [role="button"]:disabled {
+    @apply cursor-not-allowed;
   }
 }
 

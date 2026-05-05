@@ -30,16 +30,21 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed, primaryColor = '#2563eb' }: {
     const handleProfileClick = () => {};
 
     return (
-        <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
-            <div className="flex items-center gap-6 flex-1">
+        <header className="sticky top-0 z-40 flex h-16 md:h-20 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
+            <div className="flex items-center gap-2 md:gap-6 flex-1">
+                {/* Mobile hamburger */}
+                <div className="md:hidden flex items-center justify-center">
+                    <AdminMobileDrawer primaryColor={primaryColor} />
+                </div>
+
                 {/* Dashboard Badge */}
                 <Link 
-                    href="/" 
-                    className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-full hover:border-primary/30 transition-all group/badge"
+                    href="/dashboard/admin" 
+                    className="flex items-center gap-2 md:gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-2 md:px-3 py-1.5 rounded-full hover:border-primary/30 transition-all group/badge"
                     style={{ boxShadow: `0 4px 6px -1px ${primaryColor}10` }}
                 >
-                    <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-4 w-4 object-contain group-hover/badge:scale-110 transition-transform" />
-                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Admin Hub</span>
+                    <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-5 w-5 md:h-4 md:w-4 object-contain group-hover/badge:scale-110 transition-transform" />
+                    <span className="hidden sm:inline-block text-[10px] font-bold text-primary uppercase tracking-widest mt-0.5">Admin Hub</span>
                 </Link>
 
                 {/* Desktop collapse */}
@@ -53,9 +58,6 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed, primaryColor = '#2563eb' }: {
                     {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
                   </Button>
                 </div>
-
-                {/* Mobile hamburger */}
-                <AdminMobileDrawer primaryColor={primaryColor} />
             </div>
 
             {/* Central Search Section */}

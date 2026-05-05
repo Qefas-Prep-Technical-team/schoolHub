@@ -25,8 +25,7 @@ function NavBar() {
     const pathname = usePathname()
     const isDashboard = pathname.startsWith("/dashboard") || 
                         pathname.startsWith("/console") || 
-                        pathname.startsWith("/platform") ||
-                        (pathname.startsWith("/auth/login") && pathname.includes("type=platform"));
+                        pathname.startsWith("/platform");
     const pages = [
         {
             name: 'Features',

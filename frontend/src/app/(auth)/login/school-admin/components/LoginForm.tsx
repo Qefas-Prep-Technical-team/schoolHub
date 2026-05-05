@@ -16,7 +16,6 @@ import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 export default function LoginForm() {
   const { data: globalFeatures } = useGlobalFeatures('admin');
 
-  const [serverError, setServerError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   // const [selectedRole, setSelectedRole] = useState(''); // Commented out
 
@@ -43,7 +42,6 @@ export default function LoginForm() {
   const passwordValue = watch('password');
 
   const onSubmit = (data: LoginFormData) => {
-    setServerError("");
     login(
       { 
         email: data.email, 
@@ -52,7 +50,7 @@ export default function LoginForm() {
       },
       {
         onError: (error) => {
-          setServerError(error.message);
+          // Toast is handled in useLoginMutation
         },
       }
     );
@@ -62,11 +60,6 @@ export default function LoginForm() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setValue(field, value, { shouldValidate: true, shouldDirty: true });
-
-      // Clear server error when user starts typing again
-      if (serverError) {
-        setServerError("");
-      }
     };
 
   const handleBlur = (field: keyof LoginFormData) => async () => {
@@ -76,10 +69,6 @@ export default function LoginForm() {
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setValue('password', value, { shouldValidate: true, shouldDirty: true });
-
-    if (serverError) {
-      setServerError("");
-    }
   };
 
   const handlePasswordBlur = async () => {
@@ -155,17 +144,12 @@ export default function LoginForm() {
         )}
       </div>
 
-      {serverError && (
-        <div className="p-4 text-xs font-bold text-red-500 bg-red-500/5 border border-red-500/20 rounded-2xl dark:bg-red-900/10 dark:text-red-400 animate-fadeIn">
-          {serverError}
-        </div>
-      )}
 
       <div className="pt-4">
         <button
           type="submit"
           disabled={isSubmitDisabled}
-          className="flex h-14 w-full items-center justify-center rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-indigo-500/25 transition-all duration-300 hover:bg-indigo-500 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+          className="flex h-14 w-full cursor-pointer items-center justify-center rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-indigo-500/25 transition-all duration-300 hover:bg-indigo-500 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
         >
           {isPending ? (
             <div className="flex items-center justify-center">

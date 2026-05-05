@@ -22,7 +22,7 @@ export class MailService {
     try {
       // 1. Attempt to send via Resend
       const { data, error } = await resend.emails.send({
-        from: "SchoolHub <notifications@schoolhub.flexitistudio.com>",
+        from: "Qefas Hub <notifications@qefashub.flexitistudio.com>",
         to: input.to,
         subject: input.subject,
         html: input.body,

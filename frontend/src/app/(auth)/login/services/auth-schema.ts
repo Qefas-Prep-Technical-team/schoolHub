@@ -12,7 +12,8 @@ export const loginSchema = yup.object({
     .string()
     .required("Password is required")
     .min(8, "Password must be at least 8 characters")
-    .max(72, "Password must be less than 72 characters"),
+    .max(72, "Password must be less than 72 characters")
+    .matches(/^\S+$/, "Password must not contain spaces"),
 });
 
 export type LoginFormData = yup.InferType<typeof loginSchema>;

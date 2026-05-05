@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import route from "./routes/index";
 import cookieParser from "cookie-parser";
 import http from "http";
@@ -13,13 +14,15 @@ const app = express();
 // Render uses dynamic ports; fallback to 5000 for local development in Lagos
 const PORT = process.env.PORT || 5000;
 
+app.use(helmet());
+
 
 app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://schoolhub.flexitistudio.com",
-      "https://www.schoolhub.flexitistudio.com",
+      "https://qefashub.flexitistudio.com",
+      "https://www.qefashub.flexitistudio.com",
     ],
     credentials: true,
   }),
@@ -31,7 +34,7 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Basic entry point
 app.get("/api", (req, res) => {
-  res.send("SchoolHub Backend Running 🚀");
+  res.send("Qefas Hub Backend Running 🚀");
 });
 
 // 2. HEALTH CHECK ROUTE

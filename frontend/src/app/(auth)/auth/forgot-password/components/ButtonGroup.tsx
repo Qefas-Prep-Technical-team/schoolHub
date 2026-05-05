@@ -17,7 +17,7 @@ export default function ButtonGroup({ isPending, isValid, onSubmit }: ButtonGrou
         type="button" // Changed to button since form is handled by parent
         onClick={onSubmit}
         disabled={isSubmitDisabled}
-        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+        className="w-full flex cursor-pointer justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
       >
         {isPending ?
          <div className="flex items-center justify-center">

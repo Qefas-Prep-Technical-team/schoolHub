@@ -19,7 +19,6 @@ export default function ResetPasswordForm() {
   
   const [isValidating, setIsValidating] = useState(true);
   const [validationError, setValidationError] = useState("");
-  const [serverError, setServerError] = useState("");
   const [email, setEmail] = useState("");
 
   const { mutate: validateToken, isPending: isValidatingToken } = useValidateResetTokenMutation();
@@ -75,13 +74,11 @@ export default function ResetPasswordForm() {
   const onSubmit = (data: ResetPasswordFormData) => {
     if (!token) return;
     
-    setServerError("");
     resetPassword(
       { token, newPassword: data.password ,confirmPassword: data.confirmPassword },
       {
         onError: (error: any) => {
-          const errorMessage = error.response?.data?.message || "Failed to reset password";
-          setServerError(errorMessage);
+          // Toast is handled in useResetPasswordMutation
         },
       }
     );
@@ -89,12 +86,10 @@ export default function ResetPasswordForm() {
 
   const handlePasswordChange = (value: string) => {
     setValue('password', value, { shouldValidate: true });
-    if (serverError) setServerError("");
   };
 
   const handleConfirmPasswordChange = (value: string) => {
     setValue('confirmPassword', value, { shouldValidate: true });
-    if (serverError) setServerError("");
   };
 
   const handleBlur = (field: 'password' | 'confirmPassword') => async () => {
@@ -186,18 +181,14 @@ export default function ResetPasswordForm() {
             disabled={isPending}
           />
 
-          {serverError && (
-            <div className="p-3 text-sm text-red-500 bg-red-50 rounded-lg dark:bg-red-900/20 dark:text-red-400 animate-fadeIn">
-              {serverError}
-            </div>
-          )}
+
         </div>
 
         <div className="flex flex-col gap-4 mt-6">
           <button
             type="submit"
             disabled={isPending || !isValid}
-            className="flex items-center justify-center gap-2 h-12 px-6 text-base font-semibold text-white rounded-lg bg-primary hover:bg-primary/90 focus:ring-2 focus:ring-primary/50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed w-full transition-colors duration-200"
+             className="flex items-center justify-center cursor-pointer gap-2 h-12 px-6 text-base font-semibold text-white rounded-lg bg-primary hover:bg-primary/90 focus:ring-2 focus:ring-primary/50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed w-full transition-colors duration-200"
           >
             {isPending ? (
               <>

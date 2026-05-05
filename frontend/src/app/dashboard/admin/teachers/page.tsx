@@ -4,6 +4,9 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
 import { useSchoolTeachers, useSchoolSettings } from '@/lib/api/hooks/useSchool'
+import { AddTeacherModal } from './components/AddTeacherModal'
+import { apiClient } from '@/lib/api/client'
+import { toast } from 'react-toastify'
 import { 
   Users, 
   UserPlus, 
@@ -24,7 +27,8 @@ import {
   Cpu,
   LayoutGrid,
   List,
-  ChevronLeft
+  ChevronLeft,
+  Loader2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from "@/components/ui/button"
@@ -37,12 +41,13 @@ export default function ManageTeachersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [currentPage, setCurrentPage] = useState(0)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const itemsPerPage = 12
   const router = useRouter()
   const { user } = useAuthStore()
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ''
   
-  const { data: teachersData, isLoading } = useSchoolTeachers(schoolId)
+  const { data: teachersData, isLoading, mutate: mutateTeachers } = useSchoolTeachers(schoolId)
   const { data: settings } = useSchoolSettings(schoolId)
   const primaryColor = settings?.themeColor || '#2563eb'
 
@@ -56,6 +61,7 @@ export default function ManageTeachersPage() {
       subjects: t.subjects?.map((s: any) => s.name) || ['General'],
       classes: t.classes?.map((c: any) => c.name) || [],
       status: t.verified ? 'active' : 'pending',
+      isClaimed: t.isClaimed,
       profileImage: t.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(t.name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`
     }))
   }, [teachersData])
@@ -67,6 +73,17 @@ export default function ManageTeachersPage() {
       teacher.subjects.some((s: string) => s.toLowerCase().includes(searchTerm.toLowerCase()))
     )
   }, [searchTerm, teachersList])
+
+  const handleResendEmail = async (teacherId: string) => {
+    try {
+      const res = await apiClient.post(`/admin/teachers/${teacherId}/resend-claim-email`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to resend email");
+    }
+  };
 
   const totalPages = Math.ceil(filteredTeachers.length / itemsPerPage)
   const paginatedTeachers = filteredTeachers.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
@@ -104,6 +121,17 @@ export default function ManageTeachersPage() {
     },
   ]
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] w-full gap-4">
+        <div className="size-16 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+          <Loader2 className="animate-spin text-blue-600 dark:text-blue-400" size={32} />
+        </div>
+        <p className="text-sm font-bold text-slate-500 uppercase tracking-widest animate-pulse">Loading Teachers...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500 relative">
       {/* Loading Overlay */}
@@ -131,7 +159,7 @@ export default function ManageTeachersPage() {
             <Button 
               style={{ backgroundColor: primaryColor, boxShadow: `0 20px 25px -5px ${primaryColor}4D` }}
               className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 hover:scale-105 active:scale-95 transition-all border-0"
-              onClick={() => {}}
+              onClick={() => setIsAddModalOpen(true)}
             >
               <UserPlus size={20} strokeWidth={3} />
               Add New Teacher
@@ -282,9 +310,22 @@ export default function ManageTeachersPage() {
                                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Faculty ID</span>
                                     <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tighter">{teacher.teacherCode || 'UNASSIGNED'}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all" style={{ color: primaryColor }}>
-                                    <span>Access Profile</span>
-                                    <ArrowRight size={14} strokeWidth={3} />
+                                <div className="flex items-center gap-2">
+                                    {teacher.status === 'pending' && teacher.isClaimed === false && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => { e.stopPropagation(); handleResendEmail(teacher.id); }}
+                                            className="h-8 px-3 rounded-lg text-[10px] font-black uppercase tracking-widest bg-amber-50 dark:bg-amber-500/10 text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-all border border-amber-100 dark:border-amber-500/20"
+                                        >
+                                            <Mail size={12} className="mr-1.5" />
+                                            Resend Invite
+                                        </Button>
+                                    )}
+                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all" style={{ color: primaryColor }}>
+                                        <span>Access Profile</span>
+                                        <ArrowRight size={14} strokeWidth={3} />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -359,9 +400,22 @@ export default function ManageTeachersPage() {
                                             </div>
                                         </td>
                                         <td className="px-10 py-8 text-right">
-                                            <Button variant="ghost" size="icon" className="size-12 rounded-2xl hover:bg-white dark:hover:bg-slate-900 shadow-sm border border-transparent hover:border-slate-100 transition-all">
-                                                <ChevronRight size={20} className="text-slate-400" />
-                                            </Button>
+                                            <div className="flex justify-end items-center gap-2">
+                                                {teacher.status === 'pending' && teacher.isClaimed === false && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={(e) => { e.stopPropagation(); handleResendEmail(teacher.id); }}
+                                                        className="h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest bg-amber-50 dark:bg-amber-500/10 text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-all"
+                                                    >
+                                                        <Mail size={14} className="mr-2" />
+                                                        Resend Invite
+                                                    </Button>
+                                                )}
+                                                <Button variant="ghost" size="icon" className="size-12 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm border border-transparent hover:border-slate-100 transition-all">
+                                                    <ChevronRight size={20} className="text-slate-400" />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -416,7 +470,13 @@ export default function ManageTeachersPage() {
           </div>
         )}
       </div>
+
+      <AddTeacherModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        primaryColor={primaryColor}
+        onSuccess={() => mutateTeachers()}
+      />
     </div>
   )
 }
-

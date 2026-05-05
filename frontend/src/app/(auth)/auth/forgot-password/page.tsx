@@ -19,7 +19,6 @@ import { useRouter } from "next/navigation";
 export default function ForgotPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
-  const [serverError, setServerError] = useState("");
   const router = useRouter()
 
   const { mutate: requestReset, isPending } = useRequestPasswordResetMutation();
@@ -42,7 +41,6 @@ export default function ForgotPasswordPage() {
   const emailValue = watch('email');
 
   const onSubmit = (data: ResetPasswordRequestFormData) => {
-    setServerError("");
     const normalizedEmail = data.email.toLowerCase();
     requestReset(normalizedEmail, {
       onSuccess: () => {
@@ -52,14 +50,13 @@ export default function ForgotPasswordPage() {
         router.push(`/auth/forgot-password/check-your-email?email=${encodeURIComponent(normalizedEmail)}`);
       },
       onError: (error) => {
-        setServerError(error.message);
+        // Toast is handled in useRequestPasswordResetMutation
       },
     });
   };
 
   const handleInputChange = (value: string) => {
     setValue('email', value, { shouldValidate: true });
-    if (serverError) setServerError("");
   };
 
   const handleBlur = async () => {
@@ -95,11 +92,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
 
-                {serverError && (
-                  <div className="p-3 text-sm text-red-500 bg-red-50 rounded-lg dark:bg-red-900/20 dark:text-red-400 animate-fadeIn">
-                    {serverError}
-                  </div>
-                )}
+
 
                 <ButtonGroup
                   isPending={isPending}
@@ -110,11 +103,7 @@ export default function ForgotPasswordPage() {
             </div>
           </CardContainer>
 
-          {isSubmitted && (
-            <SuccessAlert
-              message={`If an account with the email ${submittedEmail} exists, a reset link has been sent.`}
-            />
-          )}
+
         </div>
       </div>
     </AuthLayout>

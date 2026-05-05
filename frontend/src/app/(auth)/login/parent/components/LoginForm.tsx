@@ -13,7 +13,7 @@ import GoogleLoginButton from "../../components/GoogleLoginButton";
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 export default function LoginForm() {
-    const [serverError, setServerError] = useState("");
+
 
     const { mutate: login, isPending } = useLoginMutation();
     const { data: globalFeatures } = useGlobalFeatures('parent');
@@ -40,13 +40,11 @@ export default function LoginForm() {
     const passwordValue = watch('password');
 
     const onSubmit = (data: LoginFormData) => {
-        setServerError("");
-        console.log("Form submitted with:", data);
         login(
             { email: data.email, password: data.password, userType: "PARENT" },
             {
                 onError: (error) => {
-                    setServerError(error.message);
+                    // Toast is handled in useLoginMutation
                 },
             }
         );
@@ -56,11 +54,6 @@ export default function LoginForm() {
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const value = e.target.value;
             setValue(field, value, { shouldValidate: true });
-
-            // Clear server error when user starts typing again
-            if (serverError) {
-                setServerError("");
-            }
         };
 
     const handleBlur = (field: keyof LoginFormData) => async () => {
@@ -119,11 +112,7 @@ export default function LoginForm() {
                     )}
                 </div>
 
-                {serverError && (
-                    <div className="p-4 text-xs font-bold text-red-500 bg-red-500/5 border border-red-500/20 rounded-2xl dark:bg-red-900/10 dark:text-red-400 animate-fadeIn">
-                        {serverError}
-                    </div>
-                )}
+
 
                 <div className="pt-2">
                     <LoginButton disabled={isSubmitDisabled} />

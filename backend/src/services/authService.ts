@@ -1,5 +1,4 @@
-// src/services/authService.ts
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../config/database";
 import { UserType } from "modules/auth/auth.types";
@@ -20,11 +19,13 @@ export const hashPassword = async (password: string) => {
   return bcrypt.hash(password, 10);
 };
 
-export const comparePassword = async (password: string, hash: string) => {
+export const comparePassword = async (password: string, hash: string | null) => {
+  if (!hash) return false;
   return bcrypt.compare(password, hash);
 };
 
 export const generateAccessToken = (userId: string, userType: UserType) => {
+  console.log("DEBUG: jwt.sign access token for", userId);
   return jwt.sign({ userId, userType }, getAccessSecret(), { expiresIn: "1h" });
 };
 
@@ -32,6 +33,7 @@ export const generateRefreshToken = async (
   userId: string,
   userType: UserType
 ) => {
+  console.log("DEBUG: jwt.sign refresh token for", userId);
   const token = jwt.sign({ userId, userType }, getRefreshSecret(), {
     expiresIn: "7d",
   });
@@ -39,6 +41,7 @@ export const generateRefreshToken = async (
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
+  console.log("DEBUG: prisma.refreshToken.create for", userId);
   await prisma.refreshToken.create({
     data: {
       token,

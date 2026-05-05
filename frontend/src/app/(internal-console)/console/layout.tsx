@@ -20,7 +20,7 @@ export default function PlatformConsoleLayout({ children }: { children: React.Re
                             isCollapsed={isCollapsed} 
                             onToggleSidebar={() => setIsCollapsed(!isCollapsed)} 
                         />
-                        <div className="p-4 md:p-10 max-w-[1600px] mx-auto w-full animate-in fade-in duration-500">
+                        <div className="p-4 md:p-6 max-w-[1440px] mx-auto w-full animate-in fade-in duration-500">
                              {children}
                         </div>
                     </SidebarInset>
