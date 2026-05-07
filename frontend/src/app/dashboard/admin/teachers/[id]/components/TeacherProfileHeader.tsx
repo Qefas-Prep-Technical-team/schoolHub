@@ -8,10 +8,15 @@ interface TeacherProfileHeaderProps {
     assignedClasses: string[]
     avatar: string
     status: 'active' | 'inactive'
+    isClaimed?: boolean
+    primarySchoolId?: string
+    currentSchoolId?: string
   }
+  onEdit?: () => void
 }
 
-export default function TeacherProfileHeader({ teacher }: TeacherProfileHeaderProps) {
+export default function TeacherProfileHeader({ teacher, onEdit }: TeacherProfileHeaderProps) {
+  const canEdit = teacher.primarySchoolId === teacher.currentSchoolId && !teacher.isClaimed
   return (
     <div className="flex flex-col gap-6 p-6 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200/60 dark:border-gray-800">
       <div className="flex w-full flex-col gap-4 md:flex-row md:justify-between">
@@ -41,12 +46,11 @@ export default function TeacherProfileHeader({ teacher }: TeacherProfileHeaderPr
         </div>
         
         <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto md:items-center">
-          <Button variant="secondary" icon="edit" className="flex-1 sm:flex-auto">
-            Edit Profile
-          </Button>
-          <Button variant="secondary" icon="lock_reset" className="flex-1 sm:flex-auto">
-            Reset Password
-          </Button>
+          {canEdit && (
+            <Button variant="secondary" icon="edit" className="flex-1 sm:flex-auto" onClick={onEdit}>
+              Edit Profile
+            </Button>
+          )}
           <Button variant="primary" icon="mail" className="flex-1 sm:flex-auto">
             Message
           </Button>

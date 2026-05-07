@@ -5,6 +5,7 @@ interface ClassCardProps {
   color: string
   hasConflict?: boolean
   style?: React.CSSProperties
+  onClick?: () => void
 }
 
 export default function ClassCard({ 
@@ -13,7 +14,8 @@ export default function ClassCard({
   room, 
   color,
   hasConflict = false,
-  style 
+  style,
+  onClick
 }: ClassCardProps) {
   const colorMap: { [key: string]: { bg: string; border: string } } = {
     math: { bg: 'bg-[#50E3C2]/20', border: 'border-[#50E3C2]' },
@@ -30,6 +32,7 @@ export default function ClassCard({
         hasConflict ? 'z-10' : ''
       }`}
       style={style}
+      onClick={onClick}
     >
       <p className="font-bold text-sm text-[#0e121b] dark:text-white">Subject: {course}</p>
       <p className="text-xs text-gray-500 dark:text-gray-400">{time}</p>

@@ -34,16 +34,28 @@ export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetab
       '14:00': 384, '14:30': 416, '15:00': 448
     }
 
-    const [time, modifier] = startTime.split(' ')
-    let [hours] = time.split(':').map(Number)
-    const [minutes] = time.split(':').map(Number)
+    let hours: number;
+    let minutes: number;
 
-    if (modifier === 'PM' && hours !== 12) hours += 12
-    if (modifier === 'AM' && hours === 12) hours = 0
+    if (startTime.includes(' ')) {
+      // 12-hour format: "11:00 AM"
+      const [time, modifier] = startTime.split(' ')
+      const [h, m] = time.split(':').map(Number)
+      hours = h;
+      minutes = m;
+      if (modifier === 'PM' && hours !== 12) hours += 12
+      if (modifier === 'AM' && hours === 12) hours = 0
+    } else {
+      // 24-hour format: "13:00"
+      const [h, m] = startTime.split(':').map(Number)
+      hours = h;
+      minutes = m;
+    }
 
-    const timeKey = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
-    const top = timeToPixels[timeKey] || 0
-    const height = duration * 64 // 64px per hour
+    // Round minutes to nearest 30 for pixel mapping if needed, 
+    // but better to just calculate based on 64px per hour
+    const top = ((hours - 8) * 64) + (minutes / 60 * 64)
+    const height = duration * 64 
 
     return { top, height }
   }
@@ -96,6 +108,7 @@ export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetab
                       top: position.top,
                       height: position.height
                     }}
+                    onClick={() => onClassClick(cls.id)}
                   />
                 )
               })}
@@ -131,6 +144,7 @@ export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetab
                           marginTop: '12px',
                           opacity: 0.8
                         }}
+                        onClick={() => onClassClick(cls.id)}
                       />
                     )
                   })}

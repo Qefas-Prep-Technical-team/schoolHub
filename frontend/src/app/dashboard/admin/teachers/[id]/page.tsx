@@ -1,5 +1,8 @@
 "use client"
 import { useState } from 'react'
+import { useParams } from 'next/navigation'
+import { useTeacherDetails } from '@/lib/api/hooks/useAdmin'
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
 import TeacherBreadcrumbs from './components/TeacherBreadcrumbs'
 import TeacherProfileHeader from './components/TeacherProfileHeader'
 import TeacherTabs from './components/TeacherTabs'
@@ -8,35 +11,9 @@ import ProfessionalInfoCard from './components/ProfessionalInfoCard'
 import StatisticsCard from './components/StatisticsCard'
 import SchedulePage from './schedule/SchedulePage'
 import PerformancePage from './performance/PerformancePage'
+import { Loader2 } from 'lucide-react'
+import { EditTeacherModal } from '../components/EditTeacherModal'
 
-
-const mockTeacherData = {
-  id: '1',
-  name: 'Dr. Eleanor Vance',
-  title: 'Senior Maths Teacher',
-  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmpuwUGDmWSnAYeiA59QIA5gfVXUhS6H7pZO1WzZlqF3adpaWXJWW1LhbSfCvkLKbDk96GKyea0u9cA42tCe3p4IMPYKudGRDle-HwMoAxJhqvA47-xEunmEA4ZpF1PFdvRbgam9WJDxxORkuvsjUdjZTmhFONOGXepi9sLF9QL5Bi9nKeIeuMyduwU7uSxNLU8YH7HIm_fzDDU7O2wIE_-QHRr1q84JU28DpncIjSRBPhP6AxKFxA4GcedQumfEdEiw6CafTxKK0',
-  status: 'active' as const,
-  personalInfo: {
-    fullName: 'Dr. Eleanor Vance',
-    gender: 'Female',
-    email: 'e.vance@university.edu',
-    phone: '+1 (234) 567-8901',
-    address: '123 University Drive, Scholarstown, ST 12345',
-    highestQualification: 'Ph.D. in Mathematics',
-    yearsOfExperience: '12 Years'
-  },
-  professionalInfo: {
-    department: 'Mathematics',
-    subjects: ['Algebra', 'Calculus', 'Geometry'],
-    assignedClasses: ['Grade 10 - Section A', 'Grade 11 - Section B', 'Grade 12 - Section A']
-  },
-  statistics: {
-    classPerformance: '87%',
-    attendanceRate: '98%',
-    upcomingClasses: '4',
-    studentsTaught: '85'
-  }
-}
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
@@ -45,12 +22,66 @@ const tabs = [
 ]
 
 export default function TeacherProfilePage() {
+  const { id } = useParams()
+  const { user } = useAuthStore()
+  const currentSchoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ""
+  const teacherId = typeof id === 'string' ? id : Array.isArray(id) ? id[0] : ''
+  const { data: teacher, isLoading, error } = useTeacherDetails(teacherId)
   const [activeTab, setActiveTab] = useState('overview')
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="animate-spin text-blue-600" size={40} />
+        <p className="text-slate-500 font-medium">Loading teacher profile...</p>
+      </div>
+    )
+  }
+
+  if (error || !teacher) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <p className="text-red-500 font-medium">Failed to load teacher profile</p>
+      </div>
+    )
+  }
+
+  // Transform real data to match component expectations
+  const teacherData = {
+    id: teacher.id,
+    name: teacher.name,
+    title: teacher.title || 'Teacher',
+    avatar: teacher.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(teacher.name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`,
+    status: teacher.verified ? 'active' as const : 'pending' as const,
+    isClaimed: teacher.isClaimed,
+    primarySchoolId: teacher.primarySchoolId,
+    personalInfo: {
+      fullName: teacher.name,
+      gender: teacher.gender || 'Not specified',
+      email: teacher.email,
+      phone: teacher.phone || 'Not provided',
+      address: teacher.address || 'Not provided',
+      highestQualification: teacher.highestQualification || 'Not specified',
+      yearsOfExperience: teacher.yearsOfExperience ? `${teacher.yearsOfExperience} Years` : 'Not specified'
+    },
+    professionalInfo: {
+      department: teacher.department?.name || 'General',
+      subjects: teacher.teacherSubjects?.map((ts: any) => ts.subject.name) || [],
+      assignedClasses: teacher.classTeachers?.map((ct: any) => ct.class.name) || []
+    },
+    statistics: {
+      classPerformance: '0%', // Mocked for now until we have analytics
+      attendanceRate: '0%',
+      upcomingClasses: teacher.classTeachers?.length.toString() || '0',
+      studentsTaught: '0'
+    }
+  }
 
   const breadcrumbItems = [
     { label: 'Dashboard', href: '/dashboard/admin' },
     { label: 'Teachers', href: '/dashboard/admin/teachers' },
-    { label: mockTeacherData.name, active: true }
+    { label: teacherData.name, active: true }
   ]
 
   return (
@@ -60,12 +91,16 @@ export default function TeacherProfilePage() {
 
         <TeacherProfileHeader
           teacher={{
-            name: mockTeacherData.name,
-            subjects: mockTeacherData.professionalInfo.subjects,
-            assignedClasses: mockTeacherData.professionalInfo.assignedClasses,
-            avatar: mockTeacherData.avatar,
-            status: mockTeacherData.status
+            name: teacherData.name,
+            subjects: teacherData.professionalInfo.subjects,
+            assignedClasses: teacherData.professionalInfo.assignedClasses,
+            avatar: teacherData.avatar,
+            status: teacherData.status,
+            isClaimed: teacherData.isClaimed,
+            primarySchoolId: teacherData.primarySchoolId,
+            currentSchoolId: currentSchoolId
           }}
+          onEdit={() => setIsEditModalOpen(true)}
         />
 
         <TeacherTabs
@@ -77,16 +112,16 @@ export default function TeacherProfilePage() {
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             <div className="lg:col-span-2 flex flex-col gap-6">
-              <PersonalInfoCard personalInfo={mockTeacherData.personalInfo} />
-              <ProfessionalInfoCard professionalInfo={mockTeacherData.professionalInfo} />
+              <PersonalInfoCard personalInfo={teacherData.personalInfo} />
+              <ProfessionalInfoCard professionalInfo={teacherData.professionalInfo} />
             </div>
             <div className="lg:col-span-1 flex flex-col gap-6">
-              <StatisticsCard statistics={mockTeacherData.statistics} />
+              <StatisticsCard statistics={teacherData.statistics} />
             </div>
           </div>
         )}
         {activeTab === 'schedule' && (
-          <SchedulePage />
+          <SchedulePage teacher={teacher} teacherId={teacherId} />
         )}
         {activeTab === 'performance' && (
           <PerformancePage />
@@ -97,6 +132,19 @@ export default function TeacherProfilePage() {
           </div>
         )}
       </div>
+
+      <EditTeacherModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        primaryColor="#2563eb"
+        teacher={{
+          id: teacherData.id,
+          name: teacherData.name,
+          gender: (teacher as any).gender,
+          department: (teacher as any).department
+        }}
+      />
     </main>
   )
 }
+

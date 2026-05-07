@@ -5,6 +5,8 @@ import { useRequestCode, useVerifyCode, useResendCode } from '../services/useVer
 import CodeInputGroup from './CodeInputGroup';
 import VerifyButton from './VerifyButton';
 import MetaText from './MetaText';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, Loader2 } from 'lucide-react';
 
 export default function VerificationCard() {
   const searchParams = useSearchParams();
@@ -13,10 +15,9 @@ export default function VerificationCard() {
   const email = searchParams.get('email');
   const userType = searchParams.get('userType');
 
-
-
   const [verificationCode, setVerificationCode] = useState('');
   const [isCodeComplete, setIsCodeComplete] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const { mutate: requestCode, isPending: isRequesting } = useRequestCode();
   const { mutate: verifyCode, isPending: isVerifying } = useVerifyCode();
@@ -50,11 +51,12 @@ export default function VerificationCard() {
       verifyCode(
         { email, code: verificationCode, userType },
         {
-          onSuccess: (response) => {
-            // Redirect to login or dashboard after successful verification
+          onSuccess: () => {
+            setIsSuccess(true);
+            // Redirect to onboarding after successful verification
             setTimeout(() => {
               router.push(`/onboarding?type=${userType}`);
-            }, 2000);
+            }, 3000);
           }
         }
       );
@@ -96,7 +98,50 @@ export default function VerificationCard() {
   }
 
   return (
-    <div className="w-full rounded-xl bg-white dark:bg-gray-800 p-8 shadow-lg dark:shadow-2xl dark:shadow-black/20">
+    <div className="relative overflow-hidden w-full rounded-xl bg-white dark:bg-gray-800 p-8 shadow-lg dark:shadow-2xl dark:shadow-black/20">
+      <AnimatePresence>
+        {isSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-800/95 backdrop-blur-sm p-8 text-center"
+          >
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", damping: 15 }}
+            >
+              <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
+            </motion.div>
+            <motion.h2
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="text-2xl font-bold text-gray-900 dark:text-white"
+            >
+              Verification Successful!
+            </motion.h2>
+            <motion.p
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="mt-2 text-gray-600 dark:text-gray-300"
+            >
+              Redirecting you to onboarding...
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mt-6 flex items-center gap-2 text-primary font-medium"
+            >
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Please wait</span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="text-center">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
           Verify Your Email Address
@@ -129,7 +174,7 @@ export default function VerificationCard() {
       <div className="mt-8">
         <VerifyButton
           label={isVerifying ? "Verifying..." : "Verify Account"}
-          disabled={!isCodeComplete || isVerifying}
+          disabled={!isCodeComplete || isVerifying || isSuccess}
           onClick={handleVerify}
         />
       </div>
@@ -141,3 +186,4 @@ export default function VerificationCard() {
     </div>
   );
 }
+

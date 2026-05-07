@@ -323,21 +323,72 @@ export const getUserBillingService = async (userId: string, role: string, page =
     // Role-specific usage metrics
     let usage: any = {
         storageBytes: storageMetric._sum.fileSize ? Number(storageMetric._sum.fileSize) : 0,
+        classes: 0,
+        students: 0,
+        schools: 0
     };
 
-    if (userRole === 'TEACHER') {
-        const classCount = await prisma.classTeacher.count({ where: { teacherId: userId } });
-        const studentCount = await prisma.relationshipLink.count({
-            where: { linkType: 'TEACHER_STUDENT', status: 'ACTIVE', OR: [{ leftEntityId: userId }, { rightEntityId: userId }] }
-        });
-        usage.classes = classCount;
-        usage.students = studentCount;
-    } else if (userRole === 'PARENT') {
-        const childCount = await prisma.parentChildLink.count({ where: { parentId: userId, status: 'active' } });
-        usage.students = childCount;
+    try {
+        if (userRole === 'TEACHER') {
+            const classCount = await prisma.classTeacher.count({ where: { teacherId: userId } });
+            const studentCount = await prisma.relationshipLink.count({
+                where: { 
+                    linkType: 'TEACHER_STUDENT', 
+                    status: 'ACTIVE', 
+                    OR: [{ leftEntityId: userId }, { rightEntityId: userId }] 
+                }
+            });
+            const schoolLinkCount = await prisma.relationshipLink.count({
+                where: { 
+                    linkType: 'SCHOOL_TEACHER', 
+                    status: 'ACTIVE', 
+                    OR: [{ leftEntityId: userId }, { rightEntityId: userId }] 
+                }
+            });
+            usage.classes = classCount;
+            usage.students = studentCount;
+            usage.schools = schoolLinkCount;
+        } else if (userRole === 'PARENT') {
+            const childCount = await prisma.parentChildLink.count({ where: { parentId: userId, status: 'active' } });
+            usage.students = childCount;
+        }
+    } catch (usageError) {
+        console.error("[PaymentService] Usage calculation error:", usageError);
     }
 
-    const latestTransaction = transactions[0];
+    // Fetch Subscription Plan with Features separately for accuracy across roles
+    let subscriptionPlan: any = null;
+    try {
+        if (userRole === 'ADMIN') {
+            const schoolAdmin = await prisma.schoolAdmin.findFirst({
+                where: { adminId: userId, active: true },
+                select: { schoolId: true }
+            });
+            if (schoolAdmin) {
+                const school = await prisma.school.findUnique({
+                    where: { id: schoolAdmin.schoolId },
+                    include: { 
+                        subscriptionPlan: {
+                            include: { featureAccess: { where: { enabled: true }, include: { feature: true } } }
+                        } 
+                    }
+                });
+                subscriptionPlan = school?.subscriptionPlan;
+            }
+        } else if (['TEACHER', 'STUDENT', 'PARENT'].includes(userRole)) {
+            const profile = await (prisma as any)[table].findUnique({
+                where: { id: userId },
+                include: { 
+                    subscriptionPlan: {
+                        include: { featureAccess: { where: { enabled: true }, include: { feature: true } } }
+                    } 
+                }
+            });
+            subscriptionPlan = profile?.subscriptionPlan;
+        }
+    } catch (planError) {
+        console.error("[PaymentService] Error fetching subscription plan features:", planError);
+    }
 
     return {
         subscription: {
@@ -347,7 +398,13 @@ export const getUserBillingService = async (userId: string, role: string, page =
             isTrialActive: user.isTrialActive,
             lastPaymentDate: user.lastPaymentDate,
             paystackCustomerCode: user.paystackCustomerCode,
-            billingCycle: user.billingCycle || 'monthly',
+            billingCycle: user.billingCycle || 'MONTHLY',
+            features: subscriptionPlan?.featureAccess?.map((fa: any) => ({
+                key: fa.feature.featureKey,
+                name: fa.feature.label || fa.feature.name,
+                limit: fa.limitValue,
+                enabled: fa.enabled
+            })) || []
         },
         usage,
         transactions,

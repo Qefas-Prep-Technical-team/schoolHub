@@ -1,145 +1,276 @@
-import ClassCard from './ClassCard'
-import AvailabilityIndicator from './AvailabilityIndicator'
+"use client"
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { useClasses } from '@/lib/api/hooks/useClasses'
+import { useUpsertTimetablePeriod, useDeleteTimetablePeriod } from '@/lib/api/hooks/useAdmin'
+import { Loader2, Trash2 } from 'lucide-react'
 
-interface ClassSchedule {
-  id: string
-  course: string
-  time: string
-  room: string
-  color: string
-  day: string
-  startTime: string
-  duration: number // in hours
-  hasConflict?: boolean
+const scheduleSchema = z.object({
+  id: z.string().optional(),
+  classId: z.string().min(1, 'Class is required'),
+  subjectId: z.string().min(1, 'Subject is required'),
+  day: z.string().min(1, 'Day is required'),
+  startTime: z.string().min(1, 'Start time is required'),
+  endTime: z.string().min(1, 'End time is required'),
+  room: z.string().optional(),
+})
+
+type ScheduleFormValues = z.infer<typeof scheduleSchema>
+
+interface AddScheduleModalProps {
+  isOpen: boolean
+  onClose: () => void
+  teacherId: string
+  teacherSubjects: { id: string; name: string }[]
+  initialData?: any
 }
 
-interface WeeklyTimetableProps {
-  classes: ClassSchedule[]
-  onClassClick: (classId: string) => void
-}
+export default function AddScheduleModal({
+  isOpen,
+  onClose,
+  teacherId,
+  teacherSubjects,
+  initialData
+}: AddScheduleModalProps) {
+  const { data: classesResponse, isLoading: isLoadingClasses } = useClasses()
+  const upsertMutation = useUpsertTimetablePeriod(teacherId)
+  const deleteMutation = useDeleteTimetablePeriod(teacherId)
 
-export default function WeeklyTimetable({ classes, onClassClick }: WeeklyTimetableProps) {
-  const timeSlots = [
-    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
-    '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM'
-  ]
+  const classes = classesResponse?.classes || []
 
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+  const form = useForm<ScheduleFormValues>({
+    resolver: zodResolver(scheduleSchema),
+    defaultValues: {
+      id: '',
+      classId: '',
+      subjectId: '',
+      day: '',
+      startTime: '',
+      endTime: '',
+      room: '',
+    },
+  })
 
-  const calculatePosition = (startTime: string, duration: number) => {
-    const timeToPixels: { [key: string]: number } = {
-      '08:00': 0, '08:30': 32, '09:00': 64, '09:30': 96,
-      '10:00': 128, '10:30': 160, '11:00': 192, '11:30': 224,
-      '12:00': 256, '12:30': 288, '13:00': 320, '13:30': 352,
-      '14:00': 384, '14:30': 416, '15:00': 448
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        id: initialData.id || '',
+        classId: initialData.classId || '',
+        subjectId: initialData.subjectId || '',
+        day: initialData.day || '',
+        startTime: initialData.startTime || '',
+        endTime: initialData.endTime || '',
+        room: initialData.room || '',
+      })
+    } else {
+      form.reset({
+        id: '',
+        classId: '',
+        subjectId: '',
+        day: '',
+        startTime: '',
+        endTime: '',
+        room: '',
+      })
     }
+  }, [initialData, form, isOpen])
 
-    const [time, modifier] = startTime.split(' ')
-    let [hours] = time.split(':').map(Number)
-    const [minutes] = time.split(':').map(Number)
-
-    if (modifier === 'PM' && hours !== 12) hours += 12
-    if (modifier === 'AM' && hours === 12) hours = 0
-
-    const timeKey = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
-    const top = timeToPixels[timeKey] || 0
-    const height = duration * 64 // 64px per hour
-
-    return { top, height }
+  const onSubmit = async (values: ScheduleFormValues) => {
+    await upsertMutation.mutateAsync(values)
+    onClose()
   }
 
+  const onDelete = async () => {
+    if (initialData?.id) {
+      if (confirm('Are you sure you want to delete this period?')) {
+        await deleteMutation.mutateAsync(initialData.id)
+        onClose()
+      }
+    }
+  }
+
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
   return (
-    <div className="bg-white dark:bg-[#191e2a] rounded-xl border border-gray-200 dark:border-gray-700 p-4 overflow-x-auto">
-      <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr] min-w-[800px]">
-        {/* Time Column */}
-        <div className="w-16">
-          <div className="h-10"></div>
-          {timeSlots.map((time, index) => (
-            <div
-              key={time}
-              className="h-16 text-right pr-4 text-xs text-gray-400 dark:text-gray-500 border-t border-gray-200 dark:border-gray-700 pt-1"
-            >
-              {time}
-            </div>
-          ))}
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{initialData ? 'Edit Timetable Period' : 'Add Timetable Period'}</DialogTitle>
+        </DialogHeader>
 
-        {/* Day Columns */}
-        {days.map((day) => (
-          <div key={day} className="relative" data-day={day}>
-            <div className="h-10 text-center font-bold text-[#0e121b] dark:text-white">
-              {day.slice(0, 3)}
-            </div>
-            <div className="h-full border-l border-gray-200 dark:border-gray-700 space-y-px">
-              {timeSlots.map((_, index) => (
-                <div
-                  key={index}
-                  className="h-16 border-t border-gray-200 dark:border-gray-700"
-                ></div>
-              ))}
-            </div>
-
-            {/* Render classes for this day */}
-            {classes
-              .filter(cls => cls.day === day)
-              .map((cls, idx) => {
-                const position = calculatePosition(cls.startTime, cls.duration)
-                return (
-                  <ClassCard
-                    key={`main-${cls.id || idx}`}
-                    course={cls.course}
-                    time={cls.time}
-                    room={cls.room}
-                    color={cls.color}
-                    hasConflict={cls.hasConflict}
-                    style={{
-                      top: position.top,
-                      height: position.height
-                    }}
-                  />
-                )
-              })}
-
-            {/* Special cases */}
-            {day === 'Tuesday' && (
-              <AvailabilityIndicator
-                message="Unavailable"
-                style={{ top: 314, height: 128 }}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="classId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select class" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {classes.map((cls: any) => (
+                          <SelectItem key={cls.id} value={cls.id}>
+                            {cls.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            )}
 
-            {day === 'Wednesday' && classes.some(cls => cls.hasConflict) && (
-              <>
-                {/* Conflicting class */}
-                {classes
-                  .filter(cls => cls.day === day && cls.hasConflict)
-                  .map((cls, idx) => {
-                    const position = calculatePosition(cls.startTime, cls.duration)
-                    return (
-                      <ClassCard
-                        key={`conflict-${cls.id || idx}`}
-                        course={cls.course}
-                        time={cls.time}
-                        room={cls.room}
-                        color={cls.color}
-                        hasConflict={true}
-                        style={{
-                          top: position.top,
-                          height: position.height,
-                          zIndex: 5,
-                          marginLeft: '12px',
-                          marginTop: '12px',
-                          opacity: 0.8
-                        }}
-                      />
-                    )
-                  })}
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
+              <FormField
+                control={form.control}
+                name="subjectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subject</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subject" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {teacherSubjects.map((sub: any) => (
+                          <SelectItem key={sub.id} value={sub.id}>
+                            {sub.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="day"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Day of Week</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select day" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {days.map((day) => (
+                        <SelectItem key={day} value={day}>
+                          {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="startTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Time</FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="endTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Time</FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="room"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Room (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Room 4A" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter className="flex justify-between items-center pt-4">
+              {initialData && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={onDelete}
+                  disabled={deleteMutation.isPending}
+                >
+                  {deleteMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                  Delete
+                </Button>
+              )}
+              <div className="flex gap-2 ml-auto">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={upsertMutation.isPending}>
+                  {upsertMutation.isPending && <Loader2 className="animate-spin h-4 w-4 mr-2" />}
+                  {initialData ? 'Update Period' : 'Add Period'}
+                </Button>
+              </div>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   )
 }
-

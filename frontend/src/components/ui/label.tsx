@@ -12,14 +12,19 @@ interface LabelProps
   extends React.ComponentPropsWithoutRef<"label">,
     VariantProps<typeof labelVariants> {}
 
-function Label({ className, ...props }: LabelProps) {
-  return (
-    <label
-      data-slot="label"
-      className={cn(labelVariants(), className)}
-      {...props}
-    />
-  )
-}
+const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
+  ({ className, ...props }, ref) => {
+    return (
+      <label
+        ref={ref}
+        data-slot="label"
+        className={cn(labelVariants(), className)}
+        {...props}
+      />
+    )
+  }
+)
+
+Label.displayName = "Label"
 
 export { Label }

@@ -279,6 +279,7 @@ export const registerTeacher = async (req: Request, res: Response) => {
             ? schoolToConnect.tenantId
             : "default-tenant-id",
           teacherCode,
+          isClaimed: true,
           primarySchoolId: schoolToConnect ? schoolToConnect.id : null,
           activeSchoolId: schoolToConnect ? schoolToConnect.id : null,
         },

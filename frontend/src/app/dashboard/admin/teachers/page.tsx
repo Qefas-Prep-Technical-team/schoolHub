@@ -11,9 +11,6 @@ import {
   Users, 
   UserPlus, 
   Search, 
-  Filter, 
-  MoreVertical, 
-  GraduationCap, 
   ShieldCheck,
   Zap,
   Activity,
@@ -21,27 +18,25 @@ import {
   Download,
   Mail,
   ChevronRight,
-  UserCheck,
   TrendingUp,
-  Globe,
-  Cpu,
   LayoutGrid,
   List,
   ChevronLeft,
-  Loader2
+  Edit2,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { EditTeacherModal } from './components/EditTeacherModal'
 
 export default function ManageTeachersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [currentPage, setCurrentPage] = useState(0)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editingTeacher, setEditingTeacher] = useState<any>(null)
   const itemsPerPage = 12
   const router = useRouter()
   const { user } = useAuthStore()
@@ -62,6 +57,7 @@ export default function ManageTeachersPage() {
       classes: t.classes?.map((c: any) => c.name) || [],
       status: t.verified ? 'active' : 'pending',
       isClaimed: t.isClaimed,
+      primarySchoolId: t.primarySchoolId,
       profileImage: t.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(t.name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`
     }))
   }, [teachersData])
@@ -102,40 +98,27 @@ export default function ManageTeachersPage() {
         label: 'Verified Teachers', 
         value: teachersList.filter(t => t.status === 'active').length, 
         icon: ShieldCheck, 
-        color: '#10b981', // Emerald
+        color: '#10b981',
         desc: 'Active Accounts'
     },
     { 
         label: 'Total Subjects', 
         value: uniqueSubjects.size, 
         icon: Activity, 
-        color: '#2563eb', // Indigo
+        color: '#2563eb',
         desc: 'Subjects Covered'
     },
     { 
         label: 'Pending Teachers', 
         value: teachersList.filter(t => t.status === 'pending').length, 
         icon: Zap, 
-        color: '#f59e0b', // Amber
+        color: '#f59e0b',
         desc: 'Awaiting Verification'
     },
   ]
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] w-full gap-4">
-        <div className="size-16 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-          <Loader2 className="animate-spin text-blue-600 dark:text-blue-400" size={32} />
-        </div>
-        <p className="text-sm font-bold text-slate-500 uppercase tracking-widest animate-pulse">Loading Teachers...</p>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500 relative">
-      {/* Loading Overlay */}
-
       <div className="max-w-[1600px] mx-auto space-y-12">
         
         {/* Header */}
@@ -169,7 +152,17 @@ export default function ManageTeachersPage() {
 
         {/* Analytics Hub */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 space-y-6">
+                  <Skeleton className="h-14 w-14 rounded-2xl" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-12 w-20" />
+                  </div>
+                </div>
+              ))
+            : stats.map((stat, index) => (
                 <div 
                     key={index}
                     className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 relative overflow-hidden group transition-all"
@@ -198,7 +191,7 @@ export default function ManageTeachersPage() {
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{stat.label}</p>
                             <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
-                                {isLoading ? <Skeleton className="h-12 w-24 rounded-2xl bg-slate-100 dark:bg-slate-800" /> : stat.value}
+                                {stat.value}
                             </h3>
                             <p className="text-[10px] font-bold text-slate-500 mt-4 uppercase tracking-widest flex items-center gap-2">
                                 <Zap size={12} className="text-slate-300" /> {stat.desc}
@@ -206,7 +199,8 @@ export default function ManageTeachersPage() {
                         </div>
                     </div>
                 </div>
-            ))}
+              ))
+          }
         </div>
 
         {/* Controls */}
@@ -286,7 +280,7 @@ export default function ManageTeachersPage() {
                             </div>
 
                             <div className="flex-1 relative z-10">
-                                <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors leading-[0.9] uppercase tracking-tighter" style={{ '--primary': primaryColor } as any}>
+                                <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-2 leading-[0.9] uppercase tracking-tighter">
                                     {teacher.name}
                                 </h3>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">{teacher.email}</p>
@@ -320,6 +314,17 @@ export default function ManageTeachersPage() {
                                         >
                                             <Mail size={12} className="mr-1.5" />
                                             Resend Invite
+                                        </Button>
+                                    )}
+                                    {teacher.primarySchoolId === schoolId && !teacher.isClaimed && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => { e.stopPropagation(); setEditingTeacher(teacher); }}
+                                            className="h-8 px-3 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 dark:bg-white/5 text-slate-600 hover:bg-slate-100 dark:hover:bg-white/10 transition-all border border-slate-200 dark:border-white/10"
+                                        >
+                                            <Edit2 size={12} className="mr-1.5" />
+                                            Edit
                                         </Button>
                                     )}
                                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all" style={{ color: primaryColor }}>
@@ -356,7 +361,7 @@ export default function ManageTeachersPage() {
                                     <tr>
                                         <td colSpan={5} className="px-10 py-40 text-center">
                                             <div className="flex flex-col items-center gap-6">
-                                                <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 border-t-primary animate-spin" style={{ borderTopColor: primaryColor }} />
+                                                <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 animate-spin" style={{ borderTopColor: primaryColor }} />
                                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading teachers...</span>
                                             </div>
                                         </td>
@@ -369,7 +374,7 @@ export default function ManageTeachersPage() {
                                                     <img src={teacher.profileImage} alt={teacher.name} className="size-full object-cover" />
                                                 </div>
                                                 <div>
-                                                    <div className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter group-hover:text-primary transition-colors" style={{ '--primary': primaryColor } as any}>
+                                                    <div className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
                                                         {teacher.name}
                                                     </div>
                                                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{teacher.email}</div>
@@ -412,6 +417,17 @@ export default function ManageTeachersPage() {
                                                         Resend Invite
                                                     </Button>
                                                 )}
+                                                {teacher.primarySchoolId === schoolId && !teacher.isClaimed && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={(e) => { e.stopPropagation(); setEditingTeacher(teacher); }}
+                                                        className="h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 dark:bg-white/5 text-slate-600 hover:bg-slate-100 dark:hover:bg-white/10 transition-all"
+                                                    >
+                                                        <Edit2 size={14} className="mr-2" />
+                                                        Edit
+                                                    </Button>
+                                                )}
                                                 <Button variant="ghost" size="icon" className="size-12 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm border border-transparent hover:border-slate-100 transition-all">
                                                     <ChevronRight size={20} className="text-slate-400" />
                                                 </Button>
@@ -430,7 +446,7 @@ export default function ManageTeachersPage() {
         {!isLoading && filteredTeachers.length > 0 && (
           <div className="flex items-center justify-between p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-3xl" style={{ boxShadow: `0 25px 50px -12px ${primaryColor}10` }}>
             <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
-              Showing {currentPage * itemsPerPage + 1} - {Math.min((currentPage + 1) * itemsPerPage, filteredTeachers.length)} of {filteredTeachers.length} Personnel
+              Showing {currentPage * itemsPerPage + 1} – {Math.min((currentPage + 1) * itemsPerPage, filteredTeachers.length)} of {filteredTeachers.length} Personnel
             </span>
             
             <div className="flex items-center gap-2">
@@ -477,6 +493,15 @@ export default function ManageTeachersPage() {
         primaryColor={primaryColor}
         onSuccess={() => mutateTeachers()}
       />
+
+      {editingTeacher && (
+        <EditTeacherModal
+            isOpen={!!editingTeacher}
+            onClose={() => setEditingTeacher(null)}
+            primaryColor={primaryColor}
+            teacher={editingTeacher}
+        />
+      )}
     </div>
   )
 }

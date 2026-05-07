@@ -36,6 +36,16 @@
     - [x] Implemented flex-wrap re-arrangement for the main dashboard (charts vs status).
     - [x] Tightened card internal padding to `p-5` and outer layout padding to `md:p-6`.
     - [x] Slimmed down Admin TopBar height to `64px`.
+- [x] **Teacher Profile Ownership & Editing**:
+    - [x] Restricted profile editing to the school that created the teacher account.
+    - [x] Automatically disabled editing capabilities once a teacher claims their account.
+    - [x] Implemented `EditTeacherModal` for admins to manage core identity data (Name, Gender, Department).
+    - [x] Added "Edit" buttons to both grid and list views in the Teachers directory with strict ownership checks.
+    - [x] Hardened backend `updateTeacher` endpoint with mandatory ownership and claim-status verification.
+- [x] **Teacher Hub Subscription Enforcement**:
+    - [x] Implemented teacher capacity checks (`maxTeachers`) across all subscription tiers, including FREE.
+    - [x] Integrated platform-wide feature toggles (`teacher_hub_enabled`) into the Linking Hub.
+    - [x] Enforced capacity limits on link request creation, response acceptance, and admin invitations.
 - [x] Created `flexiti-security-engine` skill.
 - [x] Resolved Next.js Turbopack font resolution error.
 

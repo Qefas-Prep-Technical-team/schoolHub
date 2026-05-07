@@ -151,7 +151,6 @@ model Admin {
   requestedLinkRequests   LinkRequest[]       @relation("requesterAdmin")
   relationshipAudits      RelationshipAudit[] @relation("AdminRelationshipAudits")
   schoolAdmins            SchoolAdmin[]
-  subscription            UserSubscription?
 }
 
 model Teacher {
@@ -210,7 +209,6 @@ model Teacher {
   subjects                Subject[]
   teacherSubjects         TeacherSubject[]
   timetablePeriods        TimetablePeriod[]
-  subscription            UserSubscription?
 }
 
 model Student {
@@ -263,7 +261,6 @@ model Student {
   incomingLinkRequests    LinkRequest[]     @relation("targetStudent")
   parentLinks             ParentChildLink[]
   payments                Payment[]
-  subscription            UserSubscription?
 }
 
 model Parent {
@@ -304,7 +301,6 @@ model Parent {
   incomingLinkRequests    LinkRequest[]     @relation("targetParent")
   children                ParentChildLink[]
   payments                Payment[]
-  subscription            UserSubscription?
 
   @@map("parents")
 }
@@ -1196,10 +1192,6 @@ model UserSubscription {
   autoRenew          Boolean            @default(true)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  admin              Admin?             @relation(fields: [userId], references: [id], map: "user_subs_admin_fkey")
-  parent             Parent?            @relation(fields: [userId], references: [id], map: "user_subs_parent_fkey")
-  student            Student?           @relation(fields: [userId], references: [id], map: "user_subs_student_fkey")
-  teacher            Teacher?           @relation(fields: [userId], references: [id], map: "user_subs_teacher_fkey")
   subscriptionPlan   SubscriptionPlan   @relation(fields: [subscriptionPlanId], references: [id])
 
   @@map("user_subscriptions")

@@ -35,7 +35,7 @@ export default function TeacherBillingPage() {
         limit: ITEMS_PER_PAGE 
     });
 
-    if (isLoading) {
+    if (isLoading || !user) {
         return (
             <div className="space-y-8 pb-12 p-6">
                 <Skeleton className="h-12 w-1/3 rounded-xl" />
@@ -47,7 +47,7 @@ export default function TeacherBillingPage() {
         );
     }
 
-    if (isError || !billingData) {
+    if (isError) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
                 <AlertCircle className="w-16 h-16 text-red-500" />
@@ -58,14 +58,16 @@ export default function TeacherBillingPage() {
         );
     }
 
-    const { subscription, usage, transactions } = billingData.data || {};
-    const plan = subscription?.plan?.toUpperCase() || "FREE";
+    if (!billingData) return null;
+
+    const { subscription, usage, transactions, totalTransactions } = billingData.data || {};
+    const plan = (subscription?.plan || "FREE").toUpperCase();
     
     // Plan limits mapping for teachers
     const planLimits = {
-        PRO: { classes: 100, students: 1000 },
-        ESSENTIAL: { classes: 5, students: 200 },
-        FREE: { classes: 1, students: 50 }
+        PRO: { classes: 100, students: 1000, schools: 10 },
+        ESSENTIAL: { classes: 5, students: 200, schools: 3 },
+        FREE: { classes: 1, students: 50, schools: 1 }
     };
 
     const currentLimits = planLimits[plan as keyof typeof planLimits] || planLimits.FREE;
@@ -97,8 +99,22 @@ export default function TeacherBillingPage() {
             ]
     };
 
-    const classPercentage = Math.min(((usage?.classes || 0) / currentLimits.classes) * 100, 100);
-    const studentPercentage = Math.min(((usage?.students || 0) / currentLimits.students) * 100, 100);
+    const UsageBar = ({ label, current, total, colorClass }: any) => {
+        const percentage = total > 0 ? Math.min((current / total) * 100, 100) : 0;
+        return (
+            <div className="space-y-2">
+                <div className="flex justify-between text-sm font-bold">
+                    <span className="text-slate-500">{label}</span>
+                    <span className="text-slate-900 dark:text-white">
+                        {current} / {total || '∞'}
+                    </span>
+                </div>
+                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div className={`h-full ${colorClass}`} style={{ width: `${percentage}%` }} />
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="space-y-8 pb-12 p-6 lg:p-8">
@@ -207,24 +223,43 @@ export default function TeacherBillingPage() {
                             </div>
                         </div>
                         <div className="space-y-6">
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm font-bold">
-                                    <span className="text-slate-500">Managed Classes</span>
-                                    <span className="text-slate-900 dark:text-white">{usage?.classes || 0} / {currentLimits.classes}</span>
-                                </div>
-                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div className="h-full bg-blue-500" style={{ width: `${classPercentage}%` }} />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm font-bold">
-                                    <span className="text-slate-500">Student Connections</span>
-                                    <span className="text-slate-900 dark:text-white">{usage?.students || 0} / {currentLimits.students}</span>
-                                </div>
-                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div className="h-full bg-indigo-500" style={{ width: `${studentPercentage}%` }} />
-                                </div>
-                            </div>
+                            <UsageBar 
+                                label="Managed Classes" 
+                                current={usage?.classes || 0} 
+                                total={currentLimits.classes} 
+                                colorClass="bg-blue-500" 
+                            />
+                            <UsageBar 
+                                label="Student Connections" 
+                                current={usage?.students || 0} 
+                                total={currentLimits.students} 
+                                colorClass="bg-indigo-500" 
+                            />
+                            <UsageBar 
+                                label="Institutional Links" 
+                                current={usage?.schools || 0} 
+                                total={(currentLimits as any).schools} 
+                                colorClass="bg-emerald-500" 
+                            />
+
+                            {/* Dynamic Features from Database */}
+                            {subscription?.features?.filter((f: any) => 
+                                !['classes', 'students', 'schools', 'storage', 'storagegb'].includes(f.key?.toLowerCase())
+                            ).map((feature: any) => {
+                                const usageKey = feature.key?.toLowerCase();
+                                const currentUsage = (usage as any)?.[usageKey] || 0;
+                                const totalLimit = feature.limit || 0;
+                                
+                                return (
+                                    <UsageBar 
+                                        key={feature.key}
+                                        label={feature.name?.replace(/_/g, ' ') || 'Feature'} 
+                                        current={currentUsage} 
+                                        total={totalLimit} 
+                                        colorClass="bg-slate-400"
+                                    />
+                                );
+                            })}
                         </div>
                     </Card>
                 </div>
@@ -239,7 +274,7 @@ export default function TeacherBillingPage() {
                 </div>
                 <TransactionHistory 
                     items={transactions} 
-                    totalItems={billingData.totalTransactions}
+                    totalItems={totalTransactions || 0}
                     currentPage={currentPage}
                     itemsPerPage={ITEMS_PER_PAGE}
                     onPageChange={setCurrentPage}

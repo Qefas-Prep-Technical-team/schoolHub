@@ -1,10 +1,11 @@
 import prisma from "../../config/database";
 import { Request, Response } from "express";
-import { getTeacherTimetableService, upsertTimetablePeriodService } from "../class/timetable.service";
+import { getTeacherTimetableService, upsertTimetablePeriodService, deleteTimetablePeriodService } from "../class/timetable.service";
 import { getSingleString } from "../../utils/request-utils";
 import { generateUniqueCode } from "../../utils/code-generator";
 import { sendTeacherInvitationEmail } from "../auth/auth.service";
 import crypto from "crypto";
+import { canSchoolAcceptTeacher, isTeacherHubEnabled } from "../payment/subscription.utils";
 
 /**
  * Get detailed teacher information by ID
@@ -51,6 +52,8 @@ export const getTeacherById = async (req: Request, res: Response) => {
       teacherCode: teacher.teacherCode,
       avatar: teacher.profileImage,
       status: teacher.verified ? 'active' : 'inactive',
+      isClaimed: teacher.isClaimed,
+      primarySchoolId: teacher.primarySchoolId,
       personalInfo: {
           fullName: teacher.name,
           gender: teacher.gender,
@@ -63,6 +66,7 @@ export const getTeacherById = async (req: Request, res: Response) => {
       professionalInfo: {
           department: teacher.department || "General",
           subjects: teacher.teacherSubjects.map((ts: any) => ts.subject.name),
+          subjectObjects: teacher.teacherSubjects.map((ts: any) => ({ id: ts.subject.id, name: ts.subject.name })),
           assignedClasses: teacher.classTeachers.map((ct: any) => ct.class.name)
       },
       statistics: {
@@ -162,13 +166,39 @@ export const updateTeacher = async (req: Request, res: Response) => {
       where: {
         OR: [{ id: inputId }, { teacherCode: inputId }]
       },
-      select: { id: true }
+      select: { 
+        id: true,
+        primarySchoolId: true,
+        isClaimed: true
+      }
     });
 
     if (!teacher) {
       return res.status(404).json({
         success: false,
         message: "Teacher not found",
+      });
+    }
+
+    // Security Check: Only the creator school can edit, and only if unclaimed
+    const adminId = (req as any).user?.id;
+    const adminRecord = await prisma.admin.findUnique({
+      where: { id: adminId },
+      include: { schoolAdmins: true }
+    });
+    const adminSchoolId = adminRecord?.schoolAdmins[0]?.schoolId;
+
+    if (teacher.primarySchoolId !== adminSchoolId) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Only the school that created this teacher account can edit it."
+      });
+    }
+
+    if (teacher.isClaimed) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: This account has already been claimed by the teacher and can no longer be edited by the school."
       });
     }
 
@@ -278,6 +308,28 @@ export const createTimetablePeriod = async (req: Request, res: Response) => {
 };
 
 /**
+ * Delete a timetable period
+ */
+export const deleteTimetablePeriod = async (req: Request, res: Response) => {
+  try {
+    const periodId = req.params.periodId;
+    
+    await deleteTimetablePeriodService(periodId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Timetable period deleted successfully",
+    });
+  } catch (error: any) {
+    console.error("deleteTimetablePeriod error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+/**
  * Invite a teacher by code or create a pre-registered account
  */
 export const inviteTeacher = async (req: Request, res: Response) => {
@@ -299,6 +351,28 @@ export const inviteTeacher = async (req: Request, res: Response) => {
     if (!school) {
       return res.status(404).json({ success: false, message: "School not found for this admin" });
     }
+
+    // --- Subscription & Capacity Checks ---
+    
+    // 1. Check if Teacher Hub is enabled
+    const isEnabled = await isTeacherHubEnabled();
+    if (!isEnabled) {
+        return res.status(403).json({ 
+            success: false, 
+            message: "Teacher management features are currently disabled by the platform." 
+        });
+    }
+
+    // 2. Check Capacity (only for new invitations/links)
+    const hasSpace = await canSchoolAcceptTeacher(school.id);
+    if (!hasSpace) {
+        return res.status(403).json({ 
+            success: false, 
+            message: "Your school has reached its maximum teacher capacity for its current subscription plan." 
+        });
+    }
+    
+    // --- End of Checks ---
 
     if (action === "code") {
       if (!teacherCode) {
@@ -478,4 +552,3 @@ export const resendClaimEmail = async (req: Request, res: Response) => {
     });
   }
 };
-
