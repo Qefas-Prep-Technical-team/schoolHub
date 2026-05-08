@@ -70,3 +70,12 @@ export const enforceStorageLimit = async (schoolId: string, newFileSize: number)
     throw error;
   }
 };
+
+export const enforceTeacherLimit = async (schoolId: string) => {
+  try {
+    await EntitlementService.validateSchoolQuota(schoolId, "teachers" as any, 1);
+  } catch (error: any) {
+    await triggerQuotaNotifications(schoolId, "Teacher", 100);
+    throw error;
+  }
+};

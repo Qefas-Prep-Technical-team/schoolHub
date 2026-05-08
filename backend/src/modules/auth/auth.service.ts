@@ -158,10 +158,10 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
     ? `Welcome to Qefas Hub - Verify Your Account ${isTest ? `(Original: ${email})` : ''}` 
     : `[Qefas Hub] Identity Verification ${isTest ? `(Original: ${email})` : ''}`;
 
-  const title = type === 'welcome' ? "Welcome to Qefas Hub" : "Identity Verification";
+  const title = type === 'welcome' ? "Welcome to Qefas Hub" : "Verify Your Identity";
   const description = type === 'welcome'
     ? "Thank you for joining our academic community. Please use the verification code below to activate your account and proceed with your subscription."
-    : "Please use the secure verification code below to confirm your identity and proceed with your account verification.";
+    : "Please use the secure verification code below to confirm your identity and proceed with your request.";
 
   return await resend.emails.send({
     from: process.env.MAIL_FROM as string,

@@ -1,5 +1,5 @@
 import prisma from "../../config/database";
-import { SubscriptionType, SubscriptionStatus, PlanScope, UserRole } from "@prisma/client";
+import { SubscriptionType, SubscriptionStatus, PlanScope, UserRole, Prisma } from "@prisma/client";
 
 /**
  * Service to manage Individual User level subscriptions (Teacher, Parent, Student).
@@ -9,22 +9,41 @@ export class UserSubscriptionService {
    * Initializes a user with the default FREE plan.
    * Used during user registration.
    */
-  static async initializeFreePlan(userId: string, userType: UserRole) {
-    const scope = this.resolveScope(userType);
-    const freePlan = await prisma.subscriptionPlan.findFirst({
-      where: {
-        planScope: scope,
-        type: "free",
-      },
+  static async initializeFreePlan(userId: string, userType: UserRole, tx?: Prisma.TransactionClient, planId?: string) {
+    // Resolve the environment-based plan ID with no fallbacks
+    let effectivePlanId = planId;
+
+    if (!effectivePlanId) {
+      switch (userType) {
+        case UserRole.ADMIN:
+          effectivePlanId = process.env.SCHOOL_FREE_PLAN;
+          break;
+        case UserRole.TEACHER:
+          effectivePlanId = process.env.TEACHER_FREE_PLAN;
+          break;
+        case UserRole.STUDENT:
+          effectivePlanId = process.env.STUDENT_FREE_PLAN;
+          break;
+        case UserRole.PARENT:
+          effectivePlanId = process.env.PARENT_FREE_PLAN;
+          break;
+      }
+    }
+
+    if (!effectivePlanId) {
+      throw new Error(`Required FREE plan environment variable is missing for role: ${userType}.`);
+    }
+
+    const freePlan = await (tx || prisma).subscriptionPlan.findUnique({
+      where: { id: effectivePlanId },
     });
 
     if (!freePlan) {
-      // It's possible some user types don't have free plans yet, so we just skip
-      return null;
+      throw new Error(`The configured free plan ID (${effectivePlanId}) for ${userType} was not found in the database.`);
     }
 
-    return await prisma.$transaction(async (tx) => {
-      const subscription = await tx.userSubscription.upsert({
+    const execute = async (t: Prisma.TransactionClient) => {
+      const subscription = await t.userSubscription.upsert({
         where: { userId },
         create: {
           userId,
@@ -41,20 +60,26 @@ export class UserSubscriptionService {
         }
       });
 
-      // Update user record with plan details
-      const userModel = userType.toLowerCase() as any;
-      await (tx as any)[userModel].update({
-        where: { id: userId },
-        data: {
-          plan: freePlan.name,
-          planId: freePlan.id,
-          subscriptionPlanId: freePlan.id,
-          lastPaymentDate: new Date(),
-          subscriptionStatus: "ACTIVE"
-        }
-      });
+      // Update user record with plan details based on role
+      const updateData = {
+        plan: freePlan.name,
+        planId: freePlan.id,
+        subscriptionPlanId: freePlan.id,
+        lastPaymentDate: new Date(),
+        subscriptionStatus: "ACTIVE"
+      };
 
-      await tx.subscriptionHistory.create({
+      if (userType === UserRole.ADMIN) {
+        await t.admin.update({ where: { id: userId }, data: updateData });
+      } else if (userType === UserRole.TEACHER) {
+        await t.teacher.update({ where: { id: userId }, data: updateData });
+      } else if (userType === UserRole.STUDENT) {
+        await t.student.update({ where: { id: userId }, data: updateData });
+      } else if (userType === UserRole.PARENT) {
+        await t.parent.update({ where: { id: userId }, data: updateData });
+      }
+
+      await t.subscriptionHistory.create({
         data: {
           userId,
           userType,
@@ -67,7 +92,9 @@ export class UserSubscriptionService {
       });
 
       return subscription;
-    });
+    };
+
+    return tx ? execute(tx) : prisma.$transaction(execute);
   }
 
   /**
@@ -173,6 +200,19 @@ export class UserSubscriptionService {
       case UserRole.STUDENT: return PlanScope.STUDENT;
       case UserRole.ADMIN: return PlanScope.SCHOOL; // Admins usually manage school level
       default: return PlanScope.SCHOOL;
+    }
+  }
+
+  /**
+   * Helper to resolve Category from UserRole.
+   */
+  private static resolveCategory(role: UserRole): string {
+    switch (role) {
+      case UserRole.TEACHER: return "teachers";
+      case UserRole.PARENT: return "parents";
+      case UserRole.STUDENT: return "students";
+      case UserRole.ADMIN: return "schools";
+      default: return "schools";
     }
   }
 

@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { updateAdminProfileService } from "./admin.service";
 import { getSingleString } from "../../utils/request-utils";
 
-// controllers/auth.controller.ts
+import { UserSubscriptionService } from "../subscription/user-subscription.service";
 
 // Step 1: Verify tenant ID and get school info
 export const verifyTenantId = async (req: Request, res: Response) => {
@@ -162,6 +162,8 @@ export const registerAdminSelf = async (
             role: role,
           },
         });
+        
+        await UserSubscriptionService.initializeFreePlan(admin.id, UserRole.ADMIN);
 
         return { admin, schoolAdmin, school };
       },

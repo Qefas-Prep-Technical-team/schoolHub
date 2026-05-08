@@ -1,7 +1,0 @@
-﻿--- AUDITING PENDING LINK REQUESTS ---
-TOTAL PENDING: 1
-[1] ID: 3c9ffa8e-6fe8-4dbe-b7eb-cd6ecff3c107 | TYPE: SCHOOL_STUDENT | REQ: STUDENT (stu-tes-285563) | TGT: SCHOOL (sch-qef-741910)
-    schoolId: null | targetSchoolId: null | targetId: 9b5d6efb-fc3c-4cd8-abb6-ecec956a4ab7
---- AUDITING ADMIN ACCESS ---
-ADMIN: test Admin1 (ID: 2f69469c-b59b-4d65-b3cc-4d1d49c1afab) | SCHOOLS: 9b5d6efb-fc3c-4cd8-abb6-ecec956a4ab7
-ADMIN: Yusuf (ID: e7e6b721-01d3-4ef0-865f-4eb687091b15) | SCHOOLS: 04ec2389-4cb0-46df-a0f3-ff3bff24797f

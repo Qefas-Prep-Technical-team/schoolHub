@@ -1,11 +1,31 @@
-import { LinkEntityType, LinkStatus, LinkType } from "@prisma/client";
 import prisma from "../../config/database";
+import { LinkEntityType, LinkStatus, LinkType } from "@prisma/client";
+import { EntitlementService } from "../subscription/entitlement.service";
+
+/**
+ * Resolve a school ID (which might be a UUID or a tenantId) to its canonical UUID.
+ */
+export const resolveSchoolId = async (schoolId: string): Promise<string | null> => {
+  const school = await prisma.school.findFirst({
+    where: {
+      OR: [
+        { id: schoolId },
+        { tenantId: schoolId }
+      ]
+    },
+    select: { id: true }
+  });
+  return school ? school.id : null;
+};
 
 /**
  * Fetch all teachers linked to a school via active RelationshipLinks
  * @param schoolId The ID of the school
  */
 export const getSchoolTeachersService = async (schoolId: string) => {
+  const resolvedId = await resolveSchoolId(schoolId);
+  if (!resolvedId) return [];
+
   // Find active school-teacher links from RelationshipLink
   const links = await prisma.relationshipLink.findMany({
     where: {
@@ -14,12 +34,12 @@ export const getSchoolTeachersService = async (schoolId: string) => {
       OR: [
         {
           leftEntityType: LinkEntityType.SCHOOL,
-          leftEntityId: schoolId,
+          leftEntityId: resolvedId,
           rightEntityType: LinkEntityType.TEACHER,
         },
         {
           rightEntityType: LinkEntityType.SCHOOL,
-          rightEntityId: schoolId,
+          rightEntityId: resolvedId,
           leftEntityType: LinkEntityType.TEACHER,
         },
       ],
@@ -35,8 +55,8 @@ export const getSchoolTeachersService = async (schoolId: string) => {
     where: {
       OR: [
         { id: { in: linkedTeacherIds } },
-        { primarySchoolId: schoolId },
-        { activeSchoolId: schoolId }
+        { primarySchoolId: resolvedId },
+        { activeSchoolId: resolvedId }
       ]
     },
     select: {
@@ -65,19 +85,8 @@ export const getSchoolStudentsService = async (
   schoolId: string,
   filters: { classId?: string; gender?: any; verified?: boolean; search?: string } = {}
 ) => {
-  // 0. Resolve canonical school UUID
-  const school = await prisma.school.findFirst({
-    where: {
-      OR: [
-        { id: schoolId },
-        { tenantId: schoolId }
-      ]
-    },
-    select: { id: true }
-  });
-  
-  if (!school) return { data: [], total: 0 };
-  const resolvedId = school.id;
+  const resolvedId = await resolveSchoolId(schoolId);
+  if (!resolvedId) return { data: [], total: 0 };
 
   // Find active school-student links from RelationshipLink
   const links = await prisma.relationshipLink.findMany({
@@ -175,45 +184,51 @@ export const getSchoolStudentsService = async (
 };
 
 export const getSchoolStatsService = async (schoolId: string) => {
-  // 0. Resolve canonical school UUID (schoolId could be tenantId or id)
-  const school = await prisma.school.findFirst({
-    where: {
-      OR: [
-        { id: schoolId },
-        { tenantId: schoolId }
-      ]
-    },
-    select: { id: true }
-  });
-  
-  if (!school) return { students: 0, teachers: 0, classes: 0, exams: 0, subjects: 0 };
-  const resolvedId = school.id;
+  const resolvedId = await resolveSchoolId(schoolId);
+  if (!resolvedId) return { students: 0, teachers: 0, classes: 0, exams: 0, subjects: 0 };
 
-  // 1. Gather all student IDs associated with this school
-  // A. From RelationshipLinks
-  const studentLinks = await prisma.relationshipLink.findMany({
-    where: {
-      linkType: LinkType.SCHOOL_STUDENT,
-      status: LinkStatus.ACTIVE,
-      OR: [
-        { leftEntityId: resolvedId },
-        { rightEntityId: resolvedId },
-      ],
-    },
-    select: { leftEntityType: true, leftEntityId: true, rightEntityId: true }
-  });
+  // 1. Fetch all link-related data in parallel
+  const [studentLinks, enrollments, teacherLinks, classes, exams, subjects] = await Promise.all([
+    // A. Student Links
+    prisma.relationshipLink.findMany({
+      where: {
+        linkType: LinkType.SCHOOL_STUDENT,
+        status: LinkStatus.ACTIVE,
+        OR: [
+          { leftEntityId: resolvedId },
+          { rightEntityId: resolvedId },
+        ],
+      },
+      select: { leftEntityType: true, leftEntityId: true, rightEntityId: true }
+    }),
+    // B. Student Enrollments
+    prisma.classEnrollment.findMany({
+      where: { class: { schoolId: resolvedId } },
+      select: { studentId: true }
+    }),
+    // C. Teacher Links
+    prisma.relationshipLink.findMany({
+      where: {
+        linkType: LinkType.SCHOOL_TEACHER,
+        status: LinkStatus.ACTIVE,
+        OR: [
+          { leftEntityId: resolvedId },
+          { rightEntityId: resolvedId },
+        ],
+      },
+      select: { leftEntityType: true, leftEntityId: true, rightEntityId: true }
+    }),
+    // D. Base Counts
+    prisma.class.count({ where: { schoolId: resolvedId } }),
+    prisma.exam.count({ where: { schoolId: resolvedId } }),
+    prisma.subject.count({ where: { schoolId: resolvedId } }),
+  ]);
+
+  // 2. Process Student IDs
   const linkedStudentIds = studentLinks.map((link) => 
     link.leftEntityType === LinkEntityType.STUDENT ? link.leftEntityId : link.rightEntityId
   );
-
-  // B. From Class Enrollments
-  const enrollments = await prisma.classEnrollment.findMany({
-    where: { class: { schoolId: resolvedId } },
-    select: { studentId: true }
-  });
   const enrolledStudentIds = enrollments.map(e => e.studentId);
-
-  // C. Final Student Count (Direct + Linked + Enrolled)
   const studentCount = await prisma.student.count({
     where: {
       OR: [
@@ -224,22 +239,10 @@ export const getSchoolStatsService = async (schoolId: string) => {
     }
   });
 
-  // 2. Count Teachers (Direct + Linked)
-  const teacherLinks = await prisma.relationshipLink.findMany({
-    where: {
-      linkType: LinkType.SCHOOL_TEACHER,
-      status: LinkStatus.ACTIVE,
-      OR: [
-        { leftEntityId: resolvedId },
-        { rightEntityId: resolvedId },
-      ],
-    },
-    select: { leftEntityType: true, leftEntityId: true, rightEntityId: true }
-  });
+  // 3. Process Teacher IDs
   const linkedTeacherIds = teacherLinks.map((link) => 
     link.leftEntityType === LinkEntityType.TEACHER ? link.leftEntityId : link.rightEntityId
   );
-
   const teacherCount = await prisma.teacher.count({
     where: {
       OR: [
@@ -249,10 +252,6 @@ export const getSchoolStatsService = async (schoolId: string) => {
       ]
     }
   });
-
-  const classes = await prisma.class.count({ where: { schoolId: resolvedId } });
-  const exams = await prisma.exam.count({ where: { schoolId: resolvedId } });
-  const subjects = await prisma.subject.count({ where: { schoolId: resolvedId } });
 
   return {
     students: studentCount,
@@ -267,19 +266,8 @@ export const getSchoolStatsService = async (schoolId: string) => {
  * Fetch detailed school profile
  */
 export const getSchoolProfileService = async (schoolId: string) => {
-  // 0. Resolve canonical school UUID (schoolId could be tenantId or id)
-  const school = await prisma.school.findFirst({
-    where: {
-      OR: [
-        { id: schoolId },
-        { tenantId: schoolId }
-      ]
-    },
-    select: { id: true }
-  });
-  
-  if (!school) return null;
-  const resolvedId = school.id;
+  const resolvedId = await resolveSchoolId(schoolId);
+  if (!resolvedId) return null;
 
   return await prisma.school.findUnique({
     where: { id: resolvedId },
@@ -304,8 +292,11 @@ export const getSchoolProfileService = async (schoolId: string) => {
  * Update school profile
  */
 export const updateSchoolProfileService = async (schoolId: string, data: any) => {
+  const resolvedId = await resolveSchoolId(schoolId);
+  if (!resolvedId) throw new Error("School not found");
+
   return await prisma.school.update({
-    where: { id: schoolId },
+    where: { id: resolvedId },
     data,
   });
 };
@@ -407,10 +398,38 @@ export const updateSchoolSettingsService = async (schoolId: string, data: any) =
 /**
  * Perform a high-level performance analysis for the entire school
  */
-export const getSchoolPerformanceAnalysisService = async (schoolId: string) => {
+export const getSchoolPerformanceAnalysisService = async (schoolId: string, userId: string) => {
+  const canonicalId = await resolveSchoolId(schoolId);
+  if (!canonicalId) return null;
+
+  // 1. Find the feature ID for 'aiInsights'
+  const feature = await prisma.platformFeature.findUnique({
+    where: { featureKey: "aiInsights" },
+  });
+
+  // 2. Find the school's current plan ID
+  const school = await prisma.school.findUnique({
+    where: { id: canonicalId },
+    select: { planId: true },
+  });
+
+  let hasAiAccess = false;
+  if (feature && school?.planId) {
+    // 3. Search plan feature access for this plan and feature
+    const access = await prisma.planFeatureAccess.findUnique({
+      where: {
+        planId_featureId: {
+          planId: school.planId,
+          featureId: feature.id,
+        },
+      },
+    });
+    hasAiAccess = !!access?.enabled;
+  }
+
   const [grades, examAttempts] = await Promise.all([
     prisma.grade.findMany({
-      where: { schoolId },
+      where: { schoolId: canonicalId },
       select: {
         score: true,
         maxMarks: true,
@@ -419,8 +438,8 @@ export const getSchoolPerformanceAnalysisService = async (schoolId: string) => {
     }),
     prisma.examAttempt.findMany({
       where: {
-        exam: { schoolId: schoolId },
-        status: 'SCORED',
+        exam: { schoolId: canonicalId },
+        status: "SCORED",
       },
       select: {
         totalScore: true,
@@ -436,8 +455,10 @@ export const getSchoolPerformanceAnalysisService = async (schoolId: string) => {
       averageScore: 0,
       totalAssessments: 0,
       subjectBreakdown: [],
-      insight: "Gathering institutional metrics to generate strategic performance insights...",
+      insight: "Start adding data to see premium insight",
       letterGrade: "N/A",
+      isPremium: !hasAiAccess,
+      featureKey: "aiInsights",
     };
   }
 
@@ -488,12 +509,18 @@ export const getSchoolPerformanceAnalysisService = async (schoolId: string) => {
     insight += "Current trajectory indicates consistent academic growth across all departments.";
   }
 
+  if (!hasAiAccess) {
+    insight = "Unlock premium AI-driven institutional insights and strategic academic analytics with a higher plan.";
+  }
+
   return {
     averageScore,
     totalAssessments,
     subjectBreakdown,
     insight,
     letterGrade,
+    isPremium: !hasAiAccess,
+    featureKey: "aiInsights",
   };
 };
 
@@ -501,10 +528,13 @@ export const getSchoolPerformanceAnalysisService = async (schoolId: string) => {
  * Fetch a summary of recent institutional activity for the Admin Dashboard
  */
 export const getDashboardRecentActivityService = async (schoolId: string) => {
+  const resolvedId = await resolveSchoolId(schoolId);
+  if (!resolvedId) return { recentExams: [], unassignedCount: 0, unassignedTeachers: [], classesSummary: [] };
+
   const [recentExams, unassignedTeachers, classes] = await Promise.all([
     // 1. Fetch 5 most recent exams
     prisma.exam.findMany({
-      where: { schoolId },
+      where: { schoolId: resolvedId },
       take: 5,
       orderBy: { createdAt: "desc" },
       include: {
@@ -517,17 +547,17 @@ export const getDashboardRecentActivityService = async (schoolId: string) => {
     prisma.teacher.findMany({
       where: {
         OR: [
-          { primarySchoolId: schoolId },
-          { activeSchoolId: schoolId }
+          { primarySchoolId: resolvedId },
+          { activeSchoolId: resolvedId }
         ],
         classTeachers: { none: {} }
       },
       select: { id: true, name: true }
     }),
-
+    
     // 3. Fetch all classes for context
     prisma.class.findMany({
-      where: { schoolId },
+      where: { schoolId: resolvedId },
       include: {
         _count: {
           select: { enrollments: true, teachers: true }
@@ -581,27 +611,27 @@ export const getSchoolBillingService = async (schoolId: string, page = 1, limit 
   const resolvedId = school.id;
   const skip = (page - 1) * limit;
 
-  // Fetch billing data sequentially to minimize concurrent connections
-  const stats = await getSchoolStatsService(resolvedId);
-  const transactions = await prisma.transaction.findMany({
-    where: { schoolId: resolvedId },
-    orderBy: { createdAt: "desc" },
-    skip,
-    take: limit,
-  });
-  const totalTransactions = await prisma.transaction.count({
-    where: { schoolId: resolvedId }
-  });
-  const storageMetric = await prisma.fileMetric.aggregate({
-    where: { schoolId: resolvedId },
-    _sum: { fileSize: true }
-  });
-
-  // Always fetch the absolute latest transaction for cycle/status reliability
-  const absoluteLatestTransaction = await prisma.transaction.findFirst({
-    where: { schoolId: resolvedId },
-    orderBy: { createdAt: "desc" }
-  });
+  // Fetch billing data in parallel now that connection limit is increased
+  const [stats, transactions, totalTransactions, storageMetric, absoluteLatestTransaction] = await Promise.all([
+    getSchoolStatsService(resolvedId),
+    prisma.transaction.findMany({
+      where: { schoolId: resolvedId },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.transaction.count({
+      where: { schoolId: resolvedId }
+    }),
+    prisma.fileMetric.aggregate({
+      where: { schoolId: resolvedId },
+      _sum: { fileSize: true }
+    }),
+    prisma.transaction.findFirst({
+      where: { schoolId: resolvedId },
+      orderBy: { createdAt: "desc" }
+    })
+  ]);
 
     const subscriptionPlan = school.subscriptionPlanId 
     ? await prisma.subscriptionPlan.findUnique({ where: { id: school.subscriptionPlanId } })

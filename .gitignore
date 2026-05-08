@@ -3,3 +3,7 @@ node_modules/
 dist/
 build/
 .env
+ignore/
+backend/ignore/
+frontend/ignore/
+Mobile/ignore/

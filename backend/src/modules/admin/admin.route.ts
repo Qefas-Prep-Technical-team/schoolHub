@@ -31,6 +31,7 @@ const resendClaimEmailLimiter = rateLimit({
   keyGenerator: (req) => {
     return (req as any).user?.id || req.ip;
   },
+  validate: { default: false },
   message: {
     success: false,
     message: "You have exceeded the 5 resend requests limit per day. Please try again tomorrow.",
