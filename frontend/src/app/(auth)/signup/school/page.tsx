@@ -1,4 +1,3 @@
-import { Container } from "@mui/material";
 import SchoolCard from "./components/SchoolCard";
 
 export default function SchoolPage() {

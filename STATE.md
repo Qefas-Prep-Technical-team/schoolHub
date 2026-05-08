@@ -1,8 +1,7 @@
 # Project State: Qefas Hub
 
 ## Current Focus
-- Verification logic finalization (Toaster-only, minimal friction).
-- Testing edge cases for rate limiting on the new resend endpoint.
+- Verification of subscription initialization after the P2025 fix.
 
 ## Completed
 - **Teacher Invitation Workflow**:
@@ -38,6 +37,22 @@
     - [x] Slimmed down Admin TopBar height to `64px`.
 - [x] Created `flexiti-security-engine` skill.
 - [x] Resolved Next.js Turbopack font resolution error.
+- [x] Resolved `AxiosError: timeout of 60000ms exceeded` on Link Requests:
+    - [x] Added 12 critical indices to `LinkRequest` table.
+    - [x] Optimized `buildIncomingWhere` to avoid expensive nested joins for Admins.
+- [x] Fixed empty "Link Requests" list and missing names:
+    - [x] Corrected data extraction logic (moved from `.data` to `.items`).
+    - [x] Implemented polymorphic name resolution for `LinkRequest` objects in the UI.
+- [x] Fixed incorrect "Confirm Your Payment" wording in registration verification emails.
+- [x] Removed all global and local skills from the system.
+- [x] Fixed Prisma `P2024` connection pool timeout by increasing `connection_limit` to 10.
+- [x] Fixed Prisma `P2025` (Record not found) during registration:
+    - [x] Refactored `SchoolSubscriptionService` and `UserSubscriptionService` to support optional transaction clients.
+    - [x] Updated `auth.controller.ts` to pass the transaction client (`tx`) to subscription initialization methods.
+    - [x] This resolves the issue where sub-transactions couldn't see uncommitted records from the parent transaction.
+- [x] Optimized heavy database queries in `School` and `Link` modules to resolve 60s Axios timeouts.
+- [x] Restored `node_modules` integrity by running `npm install` after accidental deletion of `skills` sub-directories.
+- [x] Fixed `express-rate-limit` validation error in `admin.route.ts` that was blocking server startup.
 
 ## Blockers
 - None.

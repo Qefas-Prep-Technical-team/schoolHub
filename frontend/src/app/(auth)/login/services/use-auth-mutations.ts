@@ -21,7 +21,10 @@ export const useLoginMutation = () => {
     }) => authAPI.login({ ...credentials }),
     // useLoginMutation logic
     onSuccess: (response: any, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["auth"] });
+      // Clear previous session data from storage and cache
+      localStorage.clear();
+      queryClient.clear();
+      
       console.log("Login API response:", response);
       const userWithType = {
         ...response.data.user,

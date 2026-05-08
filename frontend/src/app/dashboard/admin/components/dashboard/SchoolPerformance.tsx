@@ -1,10 +1,11 @@
 "use client";
 
-import { Award, TrendingUp, Sparkles, Activity, ShieldCheck, BarChart3 } from "lucide-react";
+import { Award, TrendingUp, Sparkles, Activity, ShieldCheck, BarChart3, Gem } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import DonutChart from "./DonutChart";
 import { useMemo } from "react";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 interface SchoolPerformanceProps {
     analysis?: {
@@ -12,12 +13,16 @@ interface SchoolPerformanceProps {
         totalAssessments: number;
         subjectBreakdown?: { name: string; average: number }[];
         insight?: string;
+        isPremium?: boolean;
     };
     isLoading?: boolean;
     primaryColor?: string;
 }
 
 export default function SchoolPerformance({ analysis, isLoading, primaryColor = '#2563eb' }: SchoolPerformanceProps) {
+    const hasData = (analysis?.totalAssessments || 0) > 0;
+    const isPremiumRestricted = analysis?.isPremium === true;
+
     const chartData = useMemo(() => {
         if (!analysis || !analysis.subjectBreakdown) return [
             { name: 'Excellence', value: 0, color: primaryColor },
@@ -60,9 +65,17 @@ export default function SchoolPerformance({ analysis, isLoading, primaryColor = 
                     <div className="space-y-6">
                         <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 shadow-inner italic relative overflow-hidden group/insight">
                             <div className="absolute left-0 top-0 w-1.5 h-full" style={{ backgroundColor: primaryColor }} />
-                            <p className="text-slate-600 dark:text-slate-300 font-bold leading-relaxed text-sm relative z-10">
-                                "{analysis?.insight || "Analyzing school performance data to provide helpful insights..."}"
-                            </p>
+                            <div className="flex flex-col gap-2 relative z-10">
+                                <p className="text-slate-600 dark:text-slate-300 font-bold leading-relaxed text-sm">
+                                    "{analysis?.insight || "Analyzing school performance data to provide helpful insights..."}"
+                                </p>
+                                {isPremiumRestricted && (
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <Gem size={14} className="text-amber-500 animate-pulse" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-500">Premium feature</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
  
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -71,7 +84,10 @@ export default function SchoolPerformance({ analysis, isLoading, primaryColor = 
                                     <Activity size={16} />
                                     <span className="text-[10px] font-black uppercase tracking-widest">School Average</span>
                                 </div>
-                                <p className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter italic">{analysis?.averageScore || 0}% <span className="text-xs text-slate-400 font-bold ml-1">AVG</span></p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter italic">
+                                    {hasData ? `${analysis?.averageScore}%` : "N/A"} 
+                                    {hasData && <span className="text-xs text-slate-400 font-bold ml-1">AVG</span>}
+                                </p>
                             </div>
                             <div className="p-6 rounded-[2rem] bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/10 shadow-sm transition-colors hover:bg-blue-500/10">
                                 <div className="flex items-center gap-2 text-blue-500 mb-2">
@@ -98,7 +114,7 @@ export default function SchoolPerformance({ analysis, isLoading, primaryColor = 
                             outerRadius={100}
                             centerLabel={{
                                 title: 'Avg Grade',
-                                value: analysis ? (analysis.averageScore >= 75 ? 'A+' : analysis.averageScore >= 60 ? 'B' : 'C') : '--'
+                                value: hasData ? (analysis!.averageScore >= 75 ? 'A+' : analysis!.averageScore >= 60 ? 'B' : 'C') : 'N/A'
                             }}
                         />
                     )}

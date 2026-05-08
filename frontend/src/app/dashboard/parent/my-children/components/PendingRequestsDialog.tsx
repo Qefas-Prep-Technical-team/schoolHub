@@ -33,8 +33,8 @@ export default function PendingRequestsDialog({ isOpen, onOpenChange }: PendingR
         linkService.getPendingLinkRequests({ category: 'network' }),
         linkService.getActiveLinks({ category: 'network' })
       ])
-      setRequests(pendingData.data || [])
-      setActiveLinks(activeData.data || [])
+      setRequests(pendingData.items || [])
+      setActiveLinks(activeData.items || [])
     } catch (error) {
       console.error('Failed to fetch link data:', error)
     } finally {
@@ -149,17 +149,28 @@ export default function PendingRequestsDialog({ isOpen, onOpenChange }: PendingR
   )
 }
 
+function getDisplayName(request: LinkRequest) {
+  const target = request.targetAdmin || request.targetTeacher || request.targetStudent || request.targetParent || request.targetSchool;
+  const requester = request.requesterAdmin || request.requesterTeacher || request.requesterStudent || request.requesterParent || request.requesterSchool;
+  
+  // If we have a target name, it's usually what we want to show for sent requests
+  // If we have a requester name, it's what we want to show for received requests
+  return target?.name || target?.fullName || requester?.name || requester?.fullName || request.targetCode;
+}
+
 function RequestItem({ request, onCancel, isCancelling, isActive = false }: { 
   request: LinkRequest, 
   onCancel: () => void, 
   isCancelling: boolean,
   isActive?: boolean
 }) {
+  const displayName = getDisplayName(request);
+
   return (
     <div className="group flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-orange-500/30 transition-all duration-300 shadow-sm">
       <div className="flex flex-col">
         <span className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-          {isActive ? request.receiver?.name || request.targetCode : `Code: ${request.targetCode}`}
+          {displayName}
           {isActive && <span className="bg-green-500/10 text-green-500 text-[8px] px-2 py-0.5 rounded-full uppercase font-black">Connected</span>}
         </span>
         <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">

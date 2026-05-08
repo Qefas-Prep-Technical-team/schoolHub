@@ -206,7 +206,8 @@ export default function CheckoutPage() {
             const res = await apiClient.post('/auth/verify-checkout-code', {
                 email,
                 code: otp,
-                userType: role
+                userType: role,
+                plan: plan // Pass selected plan type
             });
             
             if (res.data.userId) {
@@ -257,7 +258,9 @@ export default function CheckoutPage() {
             await apiClient.post('/auth/finalize-checkout-setup', {
                 email,
                 userType: role,
-                password
+                password,
+                planId: plan, // Using 'plan' as the identifier to be resolved by backend
+                billingCycle: billing
             });
             toast.success("Account setup successful! Proceeding to payment.");
             setStep('PAYMENT_READY');

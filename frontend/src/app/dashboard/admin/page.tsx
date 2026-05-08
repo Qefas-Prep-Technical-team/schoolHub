@@ -33,8 +33,11 @@ export default function AdminDashboard() {
   const [term, setTerm] = useState('Second Term');
 
   const { user } = useAuthStore();
+  
+  // Canonical school identification
+  // Prioritize the linked school UUID, fallback to tenantId for newly registered organizations
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
-  const schoolName = user?.schools?.[0]?.name || 'School Management System';
+  const schoolName = user?.schools?.[0]?.name || user?.name || 'School Management System';
 
   const { data: stats, isLoading: statsLoading } = useSchoolStats(schoolId);
   const { data: analysis, isLoading: analysisLoading } = useSchoolPerformanceAnalysis(schoolId, stats);

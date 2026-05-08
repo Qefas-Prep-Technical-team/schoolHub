@@ -1,13 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      "lh3.googleusercontent.com",
-      "api.dicebear.com",
-      "schoolhub-q.b-cdn.net",
-      "ui-avatars.com"
-    ],
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
       {
         protocol: "https",
         hostname: "api.dicebear.com",
@@ -22,10 +20,14 @@ const nextConfig = {
       },
     ],
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   transpilePackages: ["@react-pdf/renderer", "@react-pdf/pdfkit", "yoga-layout"],
+  experimental: {
+    // Silences the "Next.js inferred your workspace root" warning
+    // Turbopack uses this to determine the root of the project
+    turbopack: {
+      root: "..",
+    },
+  },
 };
 
 module.exports = nextConfig;

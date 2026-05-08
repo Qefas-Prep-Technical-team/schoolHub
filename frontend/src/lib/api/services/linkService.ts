@@ -24,16 +24,18 @@ export interface LinkRequest {
   targetCode?: string;
   expiresAt: string;
   createdAt: string;
-  sender?: {
-    name: string;
-    email: string;
-    userType: string;
-  };
-  receiver?: {
-    name: string;
-    email: string;
-    userType: string;
-  };
+  requesterAdmin?: any;
+  targetAdmin?: any;
+  requesterSchool?: any;
+  targetSchool?: any;
+  requesterTeacher?: any;
+  targetTeacher?: any;
+  requesterStudent?: any;
+  targetStudent?: any;
+  requesterParent?: any;
+  targetParent?: any;
+  relationshipLink?: any;
+  class?: any;
 }
 
 export const linkService = {
