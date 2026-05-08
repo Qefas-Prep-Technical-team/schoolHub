@@ -1,6 +1,6 @@
 import prisma from "../../config/database";
 import { Request, Response } from "express";
-import { getTeacherTimetableService, upsertTimetablePeriodService } from "../class/timetable.service";
+import { getTeacherTimetableService, upsertTimetablePeriodService, deleteTimetablePeriodService } from "../class/timetable.service";
 import { getSingleString } from "../../utils/request-utils";
 import { generateUniqueCode } from "../../utils/code-generator";
 import { sendTeacherInvitationEmail } from "../auth/auth.service";
@@ -53,24 +53,24 @@ export const getTeacherById = async (req: Request, res: Response) => {
       avatar: teacher.profileImage,
       status: teacher.verified ? 'active' : 'inactive',
       personalInfo: {
-          fullName: teacher.name,
-          gender: teacher.gender,
-          email: teacher.email,
-          phone: "Not provided",
-          address: "Not provided",
-          highestQualification: "Not provided",
-          yearsOfExperience: "Not provided"
+        fullName: teacher.name,
+        gender: teacher.gender,
+        email: teacher.email,
+        phone: "Not provided",
+        address: "Not provided",
+        highestQualification: "Not provided",
+        yearsOfExperience: "Not provided"
       },
       professionalInfo: {
-          department: teacher.department || "General",
-          subjects: teacher.teacherSubjects.map((ts: any) => ts.subject.name),
-          assignedClasses: teacher.classTeachers.map((ct: any) => ct.class.name)
+        department: teacher.department || "General",
+        subjects: teacher.teacherSubjects.map((ts: any) => ts.subject.name),
+        assignedClasses: teacher.classTeachers.map((ct: any) => ct.class.name)
       },
       statistics: {
-          classPerformance: '85%', // Placeholder
-          attendanceRate: '95%',    // Placeholder
-          upcomingClasses: teacher.classTeachers.length.toString(),
-          studentsTaught: '0'       // Placeholder
+        classPerformance: '85%', // Placeholder
+        attendanceRate: '95%',    // Placeholder
+        upcomingClasses: teacher.classTeachers.length.toString(),
+        studentsTaught: '0'       // Placeholder
       }
     };
 
@@ -483,3 +483,32 @@ export const resendClaimEmail = async (req: Request, res: Response) => {
   }
 };
 
+
+/**
+ * Delete a timetable period
+ */
+export const deleteTimetablePeriod = async (req: Request, res: Response) => {
+  try {
+    const periodId = req.params.periodId;
+
+    if (!periodId) {
+      return res.status(400).json({
+        success: false,
+        message: "periodId is required",
+      });
+    }
+
+    await deleteTimetablePeriodService(periodId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Timetable period deleted successfully",
+    });
+  } catch (error: any) {
+    console.error("deleteTimetablePeriod error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};

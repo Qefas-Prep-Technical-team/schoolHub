@@ -1735,9 +1735,29 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
 
         if (!user) {
           const result = await prisma.$transaction(async (tx) => {
-            const adminCode = `ADM${Math.floor(1000 + Math.random() * 9000)}`;
-            const tenantId = `TNT${Math.floor(100000 + Math.random() * 900000)}`;
-            const schoolCode = `SCH${Math.floor(1000 + Math.random() * 9000)}`;
+            // 1. Generate standard tenantId (sch-XXXXXX)
+            let tenantId: string | undefined;
+            const generateSixDigit = () => Math.floor(100000 + Math.random() * 900000).toString();
+            
+            for (let attempt = 0; attempt < 10; attempt++) {
+              const candidate = "sch-" + generateSixDigit();
+              const exists = await tx.school.findFirst({
+                where: { tenantId: candidate },
+                select: { id: true },
+              });
+              if (!exists) {
+                tenantId = candidate;
+                break;
+              }
+            }
+
+            if (!tenantId) {
+                throw new Error("Could not generate unique tenantId");
+            }
+
+            // 2. Generate standard codes using the standard utility
+            const adminCode = await generateUniqueCode(tx as any, "admin", "School Owner");
+            const schoolCode = await generateUniqueCode(tx as any, "school", "My Institution");
 
             const admin = await tx.admin.create({
               data: { 
@@ -1753,7 +1773,8 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
 
             const school = await tx.school.create({
               data: {
-                name: "My Institution", // Placeholder to be refilled
+                name: "My Institution",
+                schoolEmail: email, // Requirement: Use admin's email as school email
                 tenantId,
                 schoolCode,
                 registrationSource: "PRICING",

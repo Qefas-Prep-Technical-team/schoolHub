@@ -109,12 +109,23 @@ export class UserSubscriptionService {
     amountPaid?: number;
     paymentReference?: string;
     note?: string;
+    isTrial?: boolean;
+    trialPlan?: string;
+    trialEndsAt?: Date;
   }) {
-    const { userId, userType, planId, type, durationDays, amountPaid, paymentReference, note } = params;
+    const { 
+      userId, userType, planId, type, durationDays, amountPaid, 
+      paymentReference, note, isTrial, trialPlan, trialEndsAt 
+    } = params;
 
     const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
-    if (!plan || plan.planScope === PlanScope.SCHOOL) {
-      throw new Error("Invalid individual subscription plan.");
+    
+    // Validate scope compatibility
+    const isSchoolPlanForAdmin = plan?.planScope === PlanScope.SCHOOL && userType === UserRole.ADMIN;
+    const isIndividualPlanForIndividual = plan?.planScope !== PlanScope.SCHOOL && userType !== UserRole.ADMIN;
+
+    if (!plan || (!isSchoolPlanForAdmin && !isIndividualPlanForIndividual)) {
+      throw new Error(`Invalid plan scope for role ${userType}. Plan scope is ${plan?.planScope}.`);
     }
 
     const expiresAt = durationDays ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000) : null;
@@ -168,7 +179,12 @@ export class UserSubscriptionService {
           subscriptionPlanId: planId,
           lastPaymentDate: new Date(),
           subscriptionEnd: expiresAt,
-          subscriptionStatus: "ACTIVE"
+          subscriptionStatus: "ACTIVE",
+          // Trial Tracking Fields
+          isTrialActive: isTrial || false,
+          trialUsed: isTrial ? true : undefined,
+          trialPlan: isTrial ? trialPlan : undefined,
+          trialEndsAt: isTrial ? trialEndsAt : undefined,
         }
       });
 
@@ -180,8 +196,10 @@ export class UserSubscriptionService {
           subscriptionType: type,
           status: SubscriptionStatus.ACTIVE,
           startedAt: new Date(),
+          expiresAt,
           amountPaid,
           paymentReference,
+          activatedBy: userId, // Track who activated this (Admin/User ID)
           note,
         },
       });

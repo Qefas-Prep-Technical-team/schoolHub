@@ -83,8 +83,16 @@ export class SchoolSubscriptionService {
     amountPaid?: number;
     paymentReference?: string;
     note?: string;
+    isTrial?: boolean;
+    trialPlan?: string;
+    trialEndsAt?: Date;
+    assignedBy?: string;
   }) {
-    const { schoolId, planId, type, durationDays, amountPaid, paymentReference, note } = params;
+    const { 
+      schoolId, planId, type, durationDays, amountPaid, 
+      paymentReference, note, isTrial, trialPlan, 
+      trialEndsAt, assignedBy 
+    } = params;
 
     const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
     if (!plan || plan.planScope !== PlanScope.SCHOOL) {
@@ -123,6 +131,7 @@ export class SchoolSubscriptionService {
           status: SubscriptionStatus.ACTIVE,
           startedAt: new Date(),
           expiresAt,
+          assignedBy, // Track who assigned this plan (e.g. Admin ID)
         },
         update: {
           subscriptionPlanId: planId,
@@ -130,6 +139,7 @@ export class SchoolSubscriptionService {
           status: SubscriptionStatus.ACTIVE,
           startedAt: new Date(),
           expiresAt,
+          assignedBy,
           updatedAt: new Date(),
         },
       });
@@ -143,7 +153,12 @@ export class SchoolSubscriptionService {
           subscriptionPlanId: planId,
           lastPaymentDate: new Date(),
           subscriptionEnd: expiresAt,
-          subscriptionStatus: "ACTIVE"
+          subscriptionStatus: "ACTIVE",
+          // Trial Tracking Fields
+          isTrialActive: isTrial || false,
+          trialUsed: isTrial ? true : undefined,
+          trialPlan: isTrial ? trialPlan : undefined,
+          trialEndsAt: isTrial ? trialEndsAt : undefined,
         }
       });
 
@@ -155,8 +170,10 @@ export class SchoolSubscriptionService {
           subscriptionType: type,
           status: SubscriptionStatus.ACTIVE,
           startedAt: new Date(),
+          expiresAt,
           amountPaid,
           paymentReference,
+          activatedBy: assignedBy, // Track who activated this (Admin ID)
           note,
         },
       });

@@ -1,10 +1,22 @@
 # Project State: Qefas Hub
 
 ## Current Focus
-- Verification logic finalization (Toaster-only, minimal friction).
-- Testing edge cases for rate limiting on the new resend endpoint.
+- Final verification and testing of the Pricing/Payment registration flow.
+- Monitoring for any edge-case payment verification failures.
 
 ## Completed
+- **Registration & Billing Alignment**:
+  - Standardized Pricing/Checkout registration to use normal registration formats (`sch-XXXXXX` tenant IDs, generated admin/school codes).
+  - Synchronized `Admin` and `School` models to use Plan UUIDs (`planId`, `subscriptionPlanId`) instead of plan names.
+  - Implemented comprehensive trial tracking: auto-sets `trialEndsAt` and `trialPlan` during payment verification.
+  - **Security Hardened**: Implemented Paystack metadata-driven verification (Source of Truth) and strict rate limiting on payment endpoints.
+  - **Professional Tracking**: Integrated `UserSubscriptionService` and `SchoolSubscriptionService` to ensure trials and payments are synchronized across Institutional, Individual, and History/Audit tables. Added `expiresAt`, `activatedBy`, and `assignedBy` to history logs.
+  - **Comprehensive Trial Logic**: Schools and Admins now accurately track `isTrialActive`, `trialUsed`, `trialPlan`, and `trialEndsAt` across all relevant database entities.
+- **Database & Infrastructure**:
+  - Resolved Prisma migration blockage by terminating hung database sessions (idle in transaction > 17h).
+  - Hardened database connection strings with increased `statement_timeout` (5m) to prevent future DDL timeouts.
+  - Fixed `schema.prisma` missing relations (`SubscriptionPlan` ↔ `PlanFeatureAccess`, `Admin` ↔ `SchoolAdmin`) to support deep includes.
+  - [x] Successfully regenerated Prisma Client (`npx prisma generate`).
 - **Teacher Invitation Workflow**:
   - Implemented `AddTeacherModal` in frontend with options to add by Teacher Code or Pre-register via Email.
   - Added backend endpoints (`inviteTeacher`, `resendClaimEmail`) to handle teacher link requests and pre-registration.
@@ -53,6 +65,7 @@
 - None.
 
 ## Next Action
+- [ ] Ensure all users can successfully complete the checkout flow without relation errors.
+- [ ] Verify trial eligibility logic on the frontend/backend bridge.
 - [ ] Final manual verification of the "Toaster-only" flow across all user roles.
-- [ ] Review any remaining hardcoded branding in secondary modules.
 

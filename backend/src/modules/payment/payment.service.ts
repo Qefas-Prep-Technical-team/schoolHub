@@ -2,10 +2,13 @@ import axios from "axios";
 import prisma from "../../config/database";
 import { PRICING_PLANS } from "./plans.data";
 import { sendPaymentReceiptEmail } from "../auth/auth.service";
+import { SubscriptionType, UserRole } from "@prisma/client";
+import { SchoolSubscriptionService } from "../subscription/school-subscription.service";
+import { UserSubscriptionService } from "../subscription/user-subscription.service";
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "sk_test_placeholder";
 
-const getPlanId = (userType: string, plan: string) => {
+const getPlanId = async (userType: string, plan: string) => {
   const categoryMap: any = {
     'ADMIN': 'schools',
     'TEACHER': 'teachers',
@@ -13,6 +16,20 @@ const getPlanId = (userType: string, plan: string) => {
     'PARENT': 'parents'
   };
   const category = categoryMap[userType.toUpperCase()] || 'schools';
+  
+  // Requirement: Fetch the real UUID from the database, not from plans.data.ts
+  const dbPlan = await prisma.subscriptionPlan.findFirst({
+    where: {
+        category: { equals: category, mode: 'insensitive' },
+        type: { equals: plan, mode: 'insensitive' },
+        isActive: true
+    },
+    select: { id: true }
+  });
+
+  if (dbPlan) return dbPlan.id;
+
+  // Fallback to constants only if DB record doesn't exist (e.g. during dev)
   const cat = PRICING_PLANS.find(p => p.category === category);
   const tab = cat?.tabs.find(t => t.type.toLowerCase() === plan.toLowerCase());
   return (tab as any)?.id || null;
@@ -77,25 +94,46 @@ export const verifyPaymentService = async (
       }
     );
 
-    const { status: paystackStatus, amount: paystackAmount, reference: paystackRef, channel, authorization } = response.data.data;
+    const { 
+        status: paystackStatus, 
+        amount: paystackAmount, 
+        reference: paystackRef, 
+        channel, 
+        authorization,
+        metadata 
+    } = response.data.data;
+    
     const authCode = authorization?.authorization_code;
 
     if (paystackStatus !== "success") {
       throw new Error("Payment was not successful");
     }
 
-    // Calculate subscription end date
-    const durationMonths = billingType === 'yearly' ? 12 : 1;
-    const isUpgrade = response.data.data.metadata?.custom_fields?.find((f: any) => f.variable_name === 'is_upgrade')?.value === 'true';
-    const isTrial = response.data.data.metadata?.custom_fields?.find((f: any) => f.variable_name === 'is_trial')?.value === 'true';
+    // SECURITY: Extract Plan and Billing from Metadata (Source of Truth)
+    // This prevents users from spoofing a different plan in the request body
+    const customFields = metadata?.custom_fields || [];
+    const metadataPlan = customFields.find((f: any) => f.variable_name === 'plan')?.value;
+    const metadataBilling = customFields.find((f: any) => f.variable_name === 'billing')?.value;
+    const isUpgrade = customFields.find((f: any) => f.variable_name === 'is_upgrade')?.value === 'true';
+    const isTrial = customFields.find((f: any) => f.variable_name === 'is_trial')?.value === 'true';
 
+    // Prioritize metadata, fallback to provided params (for backward compatibility if needed)
+    const verifiedPlan = metadataPlan || plan;
+    const verifiedBilling: 'monthly' | 'yearly' = (metadataBilling || billingType) as any;
+
+    if (metadataPlan && plan && metadataPlan.toLowerCase() !== plan.toLowerCase()) {
+        console.warn(`[PaymentSecurity] Plan mismatch detected! Request: ${plan}, Metadata: ${metadataPlan}. Using Metadata.`);
+    }
+
+    // Calculate subscription end date
+    const durationMonths = verifiedBilling === 'yearly' ? 12 : 1;
     let subscriptionEnd = new Date();
     
     if (isTrial) {
         // Fetch trial days from plans config
         const categoryMap: any = { 'ADMIN': 'schools', 'TEACHER': 'teachers', 'STUDENT': 'students', 'PARENT': 'parents' };
         const category = categoryMap[userRole] || 'schools';
-        const planData = PRICING_PLANS.find(p => p.category === category)?.tabs.find(t => t.type.toLowerCase() === plan.toLowerCase());
+        const planData = PRICING_PLANS.find(p => p.category === category)?.tabs.find(t => t.type.toLowerCase() === verifiedPlan.toLowerCase());
         const trialDays = planData?.trialDays || 7;
         
         subscriptionEnd.setDate(subscriptionEnd.getDate() + trialDays);
@@ -103,27 +141,25 @@ export const verifyPaymentService = async (
         subscriptionEnd.setMonth(subscriptionEnd.getMonth() + durationMonths);
     }
 
-    // If it's an upgrade, we might want to preserve the existing end date 
-    // OR the user might have paid full price if > 15 days.
-    // The frontend logic handles the amount. The backend should respect the 'resetCycle' logic.
-    // However, for simplicity and safety, we'll check if the amount paid was the full price.
-    // Better: let's rely on the metadata from frontend about whether to reset.
-    // Actually, according to the requirements: 
     // < 15 days -> continues from where previous starts from.
     // >= 15 days -> starts from payment point.
     
     // We'll trust the frontend's decision on whether this was a pro-rated upgrade.
     // If it was pro-rated (isUpgrade = true), we should NOT reset the end date if it's already in the future.
     
+    const planId = await getPlanId(userRole, verifiedPlan);
+
     const updateData: any = {
-        plan,
-        planId: getPlanId(userRole, plan),
+        plan: verifiedPlan, // Human readable plan name (e.g. "Growth")
+        planId: planId, // UUID of the plan
+        subscriptionPlanId: planId, // UUID of the plan (Standardized field)
         subscriptionStatus: "ACTIVE",
         lastPaymentDate: new Date(),
         isTrialActive: isTrial,
         trialUsed: true,
         trialEndsAt: isTrial ? subscriptionEnd : undefined,
-        billingCycle: billingType
+        trialPlan: isTrial ? verifiedPlan : undefined, // Requirement: Set trial plan name if trialing
+        billingCycle: verifiedBilling
     };
 
     if (isUpgrade) {
@@ -162,8 +198,6 @@ export const verifyPaymentService = async (
         schoolId = schoolAdmin?.schoolId;
     }
 
-    const planId = getPlanId(userRole, plan);
-
     await prisma.transaction.create({
         data: {
             reference: paystackRef,
@@ -183,17 +217,30 @@ export const verifyPaymentService = async (
     });
 
 
-    // Update the corresponding model based on user role
+    // Determine Subscription Type for the professional tracking tables
+    const subType = isTrial ? SubscriptionType.TRIAL : SubscriptionType.PAID;
+    const durationDays = Math.ceil((updateData.subscriptionEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+    // Update the corresponding professional subscription tables and history
     switch (userRole) {
         case "TEACHER":
-            await prisma.teacher.update({ where: { id: userId }, data: updateData });
-            break;
         case "STUDENT":
-            await prisma.student.update({ where: { id: userId }, data: updateData });
-            break;
         case "PARENT":
-            await prisma.parent.update({ where: { id: userId }, data: updateData });
+            await UserSubscriptionService.updatePlan({
+                userId,
+                userType: userRole as UserRole,
+                planId: updateData.planId,
+                type: subType,
+                durationDays,
+                amountPaid: paystackAmount / 100,
+                paymentReference: paystackRef,
+                note: `Payment via Paystack (${channel})`,
+                isTrial,
+                trialPlan: verifiedPlan,
+                trialEndsAt: subscriptionEnd
+            });
             break;
+
         case "ADMIN": {
             const schoolAdmin = await prisma.schoolAdmin.findFirst({
                 where: { adminId: userId },
@@ -202,30 +249,38 @@ export const verifyPaymentService = async (
             
             console.log(`[PaymentService] Admin link check: ${schoolAdmin ? 'Link found: ' + schoolAdmin.schoolId : 'No link found for admin ' + userId}`);
             
-            // 1. Update the School record (Primary source for billing dashboard)
+            // 1. Update the Individual Admin Subscription
+            await UserSubscriptionService.updatePlan({
+                userId,
+                userType: UserRole.ADMIN,
+                planId: updateData.planId,
+                type: subType,
+                durationDays,
+                amountPaid: paystackAmount / 100,
+                paymentReference: paystackRef,
+                note: `Payment via Paystack (${channel})`,
+                isTrial,
+                trialPlan: verifiedPlan,
+                trialEndsAt: subscriptionEnd
+            });
+
+            // 2. Update the Institutional School Subscription (Primary source for billing dashboard)
             if (schoolAdmin?.schoolId) {
-                await prisma.school.update({
-                    where: { id: schoolAdmin.schoolId },
-                    data: updateData,
+                await SchoolSubscriptionService.updatePlan({
+                    schoolId: schoolAdmin.schoolId,
+                    planId: updateData.planId,
+                    type: subType,
+                    durationDays,
+                    amountPaid: paystackAmount / 100,
+                    paymentReference: paystackRef,
+                    note: `Institutional Payment via Paystack (${channel})`,
+                    isTrial,
+                    trialPlan: verifiedPlan,
+                    trialEndsAt: subscriptionEnd,
+                    assignedBy: userId // The admin ID who paid
                 });
                 console.log(`[PaymentService] School ${schoolAdmin.schoolId} updated successfully.`);
             }
-
-            // 2. Update the Admin record (Used for top-level auth store plan checks)
-            await prisma.admin.update({
-                where: { id: userId },
-                data: {
-                    plan: updateData.plan,
-                    planId: updateData.planId,
-                    subscriptionStatus: updateData.subscriptionStatus,
-                    subscriptionEnd: updateData.subscriptionEnd,
-                    lastPaymentDate: updateData.lastPaymentDate,
-                    trialUsed: updateData.trialUsed,
-                    isTrialActive: updateData.isTrialActive,
-                    billingCycle: updateData.billingCycle,
-                }
-            });
-            console.log(`[PaymentService] Admin record ${userId} updated successfully.`);
             break;
         }
     }
@@ -259,6 +314,7 @@ export const verifyPaymentService = async (
 
     return response.data.data;
   } catch (error: any) {
+    console.error("[PaymentService] Error during verification:", error);
     throw new Error(error.response?.data?.message || "Payment verification failed");
   }
 };
