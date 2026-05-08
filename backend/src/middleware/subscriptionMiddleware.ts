@@ -35,22 +35,32 @@ export const checkSubscription = async (
         return res.status(404).json({ success: false, message: "Profile information not found." });
     }
 
-    // FREE plan users have access to basic features (capacity is enforced at service level)
-    if (account.plan === "FREE") {
-        next();
-        return;
-    }
-
-    const now = new Date();
+    // 1. Identify plan and expiration status
+    const planName = (account.plan || "FREE").toUpperCase();
+    const isFree = planName.includes("FREE") || planName === "BASIC" || planName === "STARTER_FREE";
     const subEnd = account.subscriptionEnd ? new Date(account.subscriptionEnd) : null;
+    const now = new Date();
+    const isExpired = subEnd && subEnd < now;
+    const isTrial = account.isTrialActive === true;
 
-    if (!subEnd || subEnd < now) {
-        return res.status(402).json({ 
-            success: false, 
-            message: account.isTrialActive ? "Your trial has expired. Please upgrade to continue." : "Your subscription has expired. Please renew to continue.",
-            code: "SUBSCRIPTION_EXPIRED"
-        });
+    /**
+     * ACCESS LOGIC:
+     * - Allow if plan name contains "FREE"
+     * - Allow if plan has a future expiration date
+     * - Allow if NO expiration date exists and it's NOT a trial (assumes free/unlimited tier)
+     */
+    if (isFree || (subEnd && !isExpired) || (!subEnd && !isTrial)) {
+        return next();
     }
+
+    // 2. Handle denied access
+    console.warn(`LOG: [subscriptionMiddleware] Access denied for ${userType} ${id}. Plan: ${planName}, End: ${subEnd}, Trial: ${isTrial}`);
+    
+    return res.status(402).json({ 
+        success: false, 
+        message: isTrial ? "Your trial has expired. Please upgrade to continue." : "Your subscription has expired. Please renew to continue.",
+        code: "SUBSCRIPTION_EXPIRED"
+    });
 
     // All good, proceed
     next();

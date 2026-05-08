@@ -19,7 +19,8 @@ import {
   getTeacherTimetable,
   createTimetablePeriod,
   inviteTeacher,
-  resendClaimEmail
+  resendClaimEmail,
+  deleteTimetablePeriod
 } from "./teacher-management.controller";
 import { authenticateToken } from "@middleware/authMiddleware";
 import rateLimit from "express-rate-limit";
@@ -61,6 +62,7 @@ router.patch("/profile", updateAdminProfile);
 router.get("/teachers/:id", getTeacherById);
 router.get("/teachers/:id/timetable", getTeacherTimetable);
 router.post("/teachers/:id/timetable", createTimetablePeriod);
+router.delete("/teachers/:id/timetable/:periodId", deleteTimetablePeriod);
 router.patch("/teachers/:id", updateTeacher);
 router.post("/teachers/:id/assign-class", assignTeacherToClass);
 router.post("/teachers/invite", inviteTeacher);

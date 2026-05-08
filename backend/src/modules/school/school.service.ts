@@ -68,6 +68,8 @@ export const getSchoolTeachersService = async (schoolId: string) => {
       verified: true,
       role: true,
       gender: true,
+      primarySchoolId: true,
+      isClaimed: true,
     },
     orderBy: {
       name: "asc",

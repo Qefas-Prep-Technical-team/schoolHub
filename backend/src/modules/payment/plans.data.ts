@@ -183,10 +183,11 @@ export const PRICING_PLANS = [
         "pricing": { "monthly": 0, "yearly": 0 },
         "description": "Essential digital companion for individual educators",
         "features": [
-          "Basic quiz maker",
-          "Lesson planner",
-          "Single class management",
-          "Result entry"
+          "Institutional Linking (1 School)",
+          "Basic Quiz Maker",
+          "Lesson Planner",
+          "Single Class Management",
+          "Result Entry"
         ],
         "hasTrial": false,
         "trialDays": 0,
@@ -200,6 +201,7 @@ export const PRICING_PLANS = [
         "pricing": { "monthly": 2000, "yearly": 20000 },
         "description": "Standardized toolset for individual teachers and educational creators",
         "features": [
+          "Institutional Linking (Up to 3 Schools)",
           "Digital Course Creation",
           "Automated Quiz Generator",
           "Progression Tracking",
@@ -218,6 +220,7 @@ export const PRICING_PLANS = [
         "pricing": { "monthly": 4000, "yearly": 40000 },
         "description": "Advanced autonomy for private tutors and independent educators",
         "features": [
+          "Institutional Linking (Up to 10 Schools)",
           "Personalized Teacher Profile",
           "Multi-Class Management",
           "Dynamic Certificate Issuance",

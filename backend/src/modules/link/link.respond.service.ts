@@ -7,7 +7,7 @@ import {
   Prisma,
 } from "@prisma/client";
 import { createNotification } from "../notification/notification.service";
-import { checkLinkCapacity } from "../payment/subscription.utils";
+import { checkLinkCapacity, canSchoolAcceptTeacher } from "../payment/subscription.utils";
 
 type RespondToLinkRequestInput = {
   requestId: string;
@@ -408,7 +408,18 @@ export const respondToLinkRequestService = async ({
       if (targetEntityId && targetEntityType) {
           const hasSpace = await checkLinkCapacity(targetEntityId, targetEntityType);
           if (!hasSpace) {
-              throw new Error("Cannot accept: Capacity limit reached for the current plan.");
+              throw new Error("Cannot accept: Student capacity limit reached for the current plan.");
+          }
+      }
+  }
+
+  if (request.linkType === 'SCHOOL_TEACHER') {
+      const schoolId = request.targetType === 'SCHOOL' ? request.targetId : 
+                       request.requesterType === 'SCHOOL' ? request.requesterId : request.schoolId;
+      if (schoolId) {
+          const hasSpace = await canSchoolAcceptTeacher(schoolId);
+          if (!hasSpace) {
+              throw new Error("Cannot accept: Maximum teacher capacity reached for this school's current plan.");
           }
       }
   }

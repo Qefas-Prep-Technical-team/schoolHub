@@ -1,5 +1,27 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { authenticateToken } from "../../middleware/authMiddleware";
+
+const router = Router();
+
+// Rate limiter for payment initialization (prevent spamming Paystack)
+const paymentInitLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 20, // Limit each IP to 20 initializations per hour
+    message: { success: false, message: "Too many payment attempts. Please try again in an hour." },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Strict rate limiter for verification (prevent brute-forcing references)
+const paymentVerifyLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // Limit each IP to 10 verifications per hour
+    message: { success: false, message: "Too many verification attempts. Please contact support if you have issues." },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 import { 
     initializePayment, 
     verifyPayment, 
@@ -8,8 +30,6 @@ import {
     getPricingFAQ,
     getUserBilling
 } from "./payment.controller";
-
-const router = Router();
 
 /**
  * @route   GET /api/v1/payment/plans
@@ -30,7 +50,7 @@ router.get("/faq", getPricingFAQ);
  * @desc    Initialize a payment transaction
  * @access  Public (Guest support needed for checkout)
  */
-router.post("/initialize", (req, res, next) => {
+router.post("/initialize", paymentInitLimiter, (req, res, next) => {
     // If authenticated, authenticateToken will populate req.user
     // If guest, it proceeds without req.user
     next();
@@ -41,7 +61,7 @@ router.post("/initialize", (req, res, next) => {
  * @desc    Verify a payment transaction from Paystack
  * @access  Public (Guest support needed for checkout)
  */
-router.post("/verify", verifyPayment);
+router.post("/verify", paymentVerifyLimiter, verifyPayment);
 
 // Authentication required for the following routes
 router.use(authenticateToken);

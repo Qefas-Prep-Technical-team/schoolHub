@@ -2,181 +2,108 @@
 import { useState } from 'react'
 import TimetableToolbar from './TimetableToolbar'
 import WeeklyTimetable from './WeeklyTimetable'
+import AddScheduleModal from './AddScheduleModal'
+import { useTeacherTimetable } from '@/lib/api/hooks/useAdmin'
+import { Loader2 } from 'lucide-react'
 
-
-const mockTeacherData = {
-  id: '1',
-  name: 'Ms. Eleanor Vance',
-  title: 'Senior Maths Teacher',
-  teacherId: 'T-82156',
-  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmpuwUGDmWSnAYeiA59QIA5gfVXUhS6H7pZO1WzZlqF3adpaWXJWW1LhbSfCvkLKbDk96GKyea0u9cA42tCe3p4IMPYKudGRDle-HwMoAxJhqvA47-xEunmEA4ZpF1PFdvRbgam9WJDxxORkuvsjUdjZTmhFONOGXepi9sLF9QL5Bi9nKeIeuMyduwU7uSxNLU8YH7HIm_fzDDU7O2wIE_-QHRr1q84JU28DpncIjSRBPhP6AxKFxA4GcedQumfEdEiw6CafTxKK0',
-  status: 'active' as const,
-  personalInfo: {
-    fullName: 'Dr. Eleanor Vance',
-    gender: 'Female',
-    email: 'e.vance@university.edu',
-    phone: '+1 (234) 567-8901',
-    address: '123 University Drive, Scholarstown, ST 12345',
-    highestQualification: 'Ph.D. in Mathematics',
-    yearsOfExperience: '12 Years'
-  },
-  professionalInfo: {
-    department: 'Mathematics',
-    subjects: ['Algebra', 'Calculus', 'Geometry'],
-    assignedClasses: ['Grade 10 - Section A', 'Grade 11 - Section B', 'Grade 12 - Section A']
-  },
-  statistics: {
-    classPerformance: '87%',
-    attendanceRate: '98%',
-    upcomingClasses: '4',
-    studentsTaught: '85'
-  }
+interface SchedulePageProps {
+  teacher: any
+  teacherId: string
 }
 
-const timetableClasses = [
-  {
-    id: '1',
-    course: 'MATH 101',
-    time: '11:00 - 12:30',
-    room: 'Room 4A',
-    color: 'math',
-    day: 'Monday',
-    startTime: '11:00 AM',
-    duration: 1.5
-  },
-  {
-    id: '2',
-    course: 'HIST 202',
-    time: '01:00 - 02:00',
-    room: 'Room 2C',
-    color: 'history',
-    day: 'Monday',
-    startTime: '01:00 PM',
-    duration: 1
-  },
-  {
-    id: '3',
-    course: 'CHEM 101',
-    time: '09:30 - 11:00',
-    room: 'Lab 1',
-    color: 'chemistry',
-    day: 'Tuesday',
-    startTime: '09:30 AM',
-    duration: 1.5
-  },
-  {
-    id: '4',
-    course: 'HIST 202',
-    time: '10:00 - 11:00',
-    room: 'Room 2C',
-    color: 'history',
-    day: 'Wednesday',
-    startTime: '10:00 AM',
-    duration: 1
-  },
-  {
-    id: '5',
-    course: 'ENG 301',
-    time: '11:00 - 12:30',
-    room: 'Room 5B',
-    color: 'english',
-    day: 'Wednesday',
-    startTime: '11:00 AM',
-    duration: 1.5,
-    hasConflict: true
-  },
-  {
-    id: '6',
-    course: 'MATH 101',
-    time: '11:00 - 12:30',
-    room: 'Room 4A',
-    color: 'math',
-    day: 'Wednesday',
-    startTime: '11:00 AM',
-    duration: 1.5
-  },
-  {
-    id: '7',
-    course: 'CHEM 101',
-    time: '08:45 - 10:15',
-    room: 'Lab 1',
-    color: 'chemistry',
-    day: 'Thursday',
-    startTime: '08:45 AM',
-    duration: 1.5
+export default function SchedulePage({ teacher, teacherId }: SchedulePageProps) {
+  const { data: timetableData, isLoading } = useTeacherTimetable(teacherId)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedPeriod, setSelectedPeriod] = useState<any>(null)
+  
+  // Hardcoded for now as it's not dynamic in the current UI design
+  const [currentWeek] = useState('Current Week Schedule')
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+        <Loader2 className="animate-spin text-blue-600" size={32} />
+        <p className="text-slate-500 font-medium">Loading schedule...</p>
+      </div>
+    )
   }
-]
-
-const tabs = [
-  { id: 'profile', label: 'Profile' },
-  { id: 'timetable', label: 'Timetable' },
-  { id: 'courses', label: 'Courses' },
-  { id: 'leave', label: 'Leave Requests' }
-]
-
-export default function SchedulePage() {
-  const [activeTab, setActiveTab] = useState('timetable')
-  const [currentWeek, setCurrentWeek] = useState('Oct 21 - Oct 25, 2024')
-
-  const breadcrumbItems = [
-    { label: 'Teachers', href: '/dashboard/admin/teachers' },
-    { label: mockTeacherData.name, href: '#' },
-    { label: 'Timetable', active: true }
-  ]
 
   const handlePreviousWeek = () => {
-    // Implement week navigation logic
     console.log('Previous week')
   }
 
   const handleNextWeek = () => {
-    // Implement week navigation logic
     console.log('Next week')
   }
 
   const handleAddClass = () => {
-    // Implement add class logic
-    console.log('Add class')
+    setSelectedPeriod(null)
+    setIsModalOpen(true)
   }
 
   const handlePrint = () => {
-    // Implement print logic
     window.print()
   }
 
-  const handleClassClick = (classId: string) => {
-    // Implement class click logic
-    console.log('Class clicked:', classId)
+  const handleClassClick = (periodId: string) => {
+    const period = timetableData.find((p: any) => p.id === periodId)
+    if (period) {
+      setSelectedPeriod({
+        id: period.id,
+        classId: period.classId,
+        subjectId: period.subjectId,
+        day: period.day,
+        startTime: period.startTime,
+        endTime: period.endTime,
+        room: period.room,
+      })
+      setIsModalOpen(true)
+    }
+  }
+
+  // Map backend timetable to WeeklyTimetable format
+  const formattedClasses = (timetableData || []).map((period: any) => ({
+    id: period.id,
+    course: period.subject?.name || 'Unknown',
+    time: `${period.startTime} - ${period.endTime}`,
+    room: period.room || 'TBD',
+    color: 'primary', // Default color
+    day: period.day,
+    startTime: period.startTime,
+    // Calculate duration in hours
+    duration: calculateDuration(period.startTime, period.endTime)
+  }))
+
+  function calculateDuration(start: string, end: string) {
+    const [startH, startM] = start.split(':').map(Number)
+    const [endH, endM] = end.split(':').map(Number)
+    const startTotal = startH * 60 + startM
+    const endTotal = endH * 60 + endM
+    return (endTotal - startTotal) / 60
   }
 
   return (
-  
-      <div className="flex-1 p-6 lg:p-8 overflow-y-auto">
-        
+    <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
+      <TimetableToolbar
+        currentWeek={currentWeek}
+        onPreviousWeek={handlePreviousWeek}
+        onNextWeek={handleNextWeek}
+        onAddClass={handleAddClass}
+        onPrint={handlePrint}
+      />
+      
+      <WeeklyTimetable
+        classes={formattedClasses}
+        onClassClick={handleClassClick}
+      />
 
-          
-            <>
-              <TimetableToolbar
-                currentWeek={currentWeek}
-                onPreviousWeek={handlePreviousWeek}
-                onNextWeek={handleNextWeek}
-                onAddClass={handleAddClass}
-                onPrint={handlePrint}
-              />
-              
-              <WeeklyTimetable
-                classes={timetableClasses}
-                onClassClick={handleClassClick}
-              />
-            </>
-       
-
-          
-
-         
-        </div>
-    
-   
+      <AddScheduleModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        teacherId={teacherId}
+        teacherSubjects={teacher.professionalInfo?.subjectObjects || []}
+        initialData={selectedPeriod}
+      />
+    </div>
   )
 }
-

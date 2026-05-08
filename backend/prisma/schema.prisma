@@ -55,6 +55,7 @@ model School {
   billingCycle             String    @default("monthly")
   profileCompleted         Boolean   @default(false)
   registrationSource       String?   @default("STANDARD")
+  schoolAdmins             SchoolAdmin[]
 }
 
 model SchoolSetting {
@@ -83,6 +84,9 @@ model SchoolAdmin {
 
   @@unique([adminId, schoolId])
   @@map("school_admins")
+
+  admin Admin  @relation(fields: [adminId], references: [id])
+  school School @relation(fields: [schoolId], references: [id])
 }
 
 model Admin {
@@ -118,6 +122,7 @@ model Admin {
   planId                  String?
   billingCycle            String    @default("monthly")
   subscriptionPlanId      String?
+  schoolAdmins            SchoolAdmin[]
 }
 
 model Teacher {
@@ -947,6 +952,8 @@ model SubscriptionPlan {
 
   @@unique([category, type])
   @@map("subscription_plans")
+
+  featureAccess PlanFeatureAccess[]
 }
 
 model PlanFeatureAccess {
@@ -961,6 +968,9 @@ model PlanFeatureAccess {
 
   @@unique([planId, featureId])
   @@map("plan_feature_access")
+
+  plan    SubscriptionPlan @relation(fields: [planId], references: [id])
+  feature PlatformFeature  @relation(fields: [featureId], references: [id])
 }
 
 model SchoolSubscription {
@@ -1004,6 +1014,7 @@ model SubscriptionHistory {
   subscriptionType   SubscriptionType
   status             SubscriptionStatus
   startedAt          DateTime
+  expiresAt          DateTime?
   endedAt            DateTime?
   amountPaid         Float?
   paymentReference   String?
@@ -1090,6 +1101,8 @@ model PlatformFeature {
   createdAt      DateTime @default(now())
 
   @@map("platform_features")
+
+  planAccess PlanFeatureAccess[]
 }
 
 model PlatformSettings {

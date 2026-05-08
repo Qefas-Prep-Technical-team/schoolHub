@@ -1,7 +1,7 @@
 // src/modules/link/link.service.ts
 import prisma from "../../config/database";
 import { LinkEntityType, LinkType, LinkRequestStatus } from "@prisma/client";
-import { checkLinkCapacity } from "../payment/subscription.utils";
+import { checkLinkCapacity, isTeacherHubEnabled, canSchoolAcceptTeacher } from "../payment/subscription.utils";
 
 type FindEntityResult = {
   type: LinkEntityType;
@@ -234,7 +234,18 @@ export const createLinkRequestService = async ({
     );
   }
 
-  // Capacity Check: If the request involves linking a student, ensure the target has capacity
+  // Capacity & Feature Checks
+
+  // 1. Check if Teacher Hub is enabled globally
+  const isTeacherRelated = linkType === 'SCHOOL_TEACHER' || linkType === 'TEACHER_CLASS' || linkType === 'TEACHER_STUDENT';
+  if (isTeacherRelated) {
+      const isEnabled = await isTeacherHubEnabled();
+      if (!isEnabled) {
+          throw new Error("The Teacher Hub and linking features are currently disabled by the platform.");
+      }
+  }
+
+  // 2. Student Capacity Check
   if (linkType === 'SCHOOL_STUDENT' || linkType === 'TEACHER_STUDENT' || linkType === 'PARENT_STUDENT') {
       const capacityTargetId = (linkType === 'SCHOOL_STUDENT' && target.type === 'SCHOOL') ? target.id : 
                                (linkType === 'TEACHER_STUDENT' && target.type === 'TEACHER') ? target.id :
@@ -244,6 +255,26 @@ export const createLinkRequestService = async ({
           const hasSpace = await checkLinkCapacity(capacityTargetId, target.type);
           if (!hasSpace) {
               throw new Error(`The target ${target.type.toLowerCase()} has reached its student capacity for their current plan.`);
+          }
+      }
+  }
+
+  // 3. Teacher Capacity Check (for schools)
+  if (linkType === 'SCHOOL_TEACHER') {
+      const schoolTargetId = target.type === 'SCHOOL' ? target.id : requester.schoolId;
+      if (schoolTargetId) {
+          const hasSpace = await canSchoolAcceptTeacher(schoolTargetId);
+          if (!hasSpace) {
+              throw new Error("This school has reached its maximum teacher capacity for its current subscription plan.");
+          }
+      }
+
+      // Check teacher's own linking capacity
+      const teacherId = requester.type === LinkEntityType.TEACHER ? requester.id : target.id;
+      if (teacherId) {
+          const hasTeacherSpace = await (require("../payment/subscription.utils")).canTeacherLinkToSchool(teacherId);
+          if (!hasTeacherSpace) {
+              throw new Error("You have reached your limit for institutional connections on your current plan.");
           }
       }
   }
