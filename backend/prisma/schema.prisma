@@ -9,78 +9,52 @@ datasource db {
 }
 
 model School {
-  id                                      String               @id @default(uuid())
-  name                                    String
-  subdomain                               String?              @unique
-  tenantId                                String               @unique
-  schoolCode                              String               @unique
-  address                                 String?
-  phone                                   String?
-  schoolEmail                             String?
-  motto                                   String?
-  logo                                    String?
-  foundedYear                             Int?
-  principal                               String?
-  schoolType                              String?
-  website                                 String?
-  description                             String?
-  createdAt                               DateTime             @default(now())
-  updatedAt                               DateTime             @updatedAt
-  bannerImage                             String?
-  favicon                                 String?
-  mapLocation                             String?
-  operatingHours                          String?
-  socialLinks                             Json?
-  isTrialActive                           Boolean              @default(false)
-  lastPaymentDate                         DateTime?
-  paystackCustomerCode                    String?
-  plan                                    String               @default("FREE")
-  subscriptionEnd                         DateTime?
-  subscriptionStatus                      String               @default("INACTIVE")
-  trialEndsAt                             DateTime?
-  trialPlan                               String?
-  trialUsed                               Boolean              @default(false)
-  accountName                             String?
-  accountNumber                           String?
-  bankName                                String?
-  paystackSubaccountCode                  String?
-  percentageCharge                        Float?               @default(0)
-  paystackSubaccountStatus                String               @default("pending")
-  planId                                  String?
-  subscriptionPlanId                      String?
-  maxClassesOverride                      Int?
-  maxExamsOverride                        Int?
-  maxStorageGbOverride                    Float?
-  maxStudentsOverride                     Int?
-  billingCycle                            String               @default("monthly")
-  FileMetric                              FileMetric[]
-  subscriptionPlan                        SubscriptionPlan?    @relation(fields: [subscriptionPlanId], references: [id])
-  settings                                SchoolSetting?
-  students                                Student[]
-  Teacher_Teacher_activeSchoolIdToSchool  Teacher[]            @relation("Teacher_activeSchoolIdToSchool")
-  Teacher_Teacher_primarySchoolIdToSchool Teacher[]            @relation("Teacher_primarySchoolIdToSchool")
-  teachers                                Teacher[]
-  Tenant                                  Tenant?
-  classes                                 Class[]
-  departments                             Department[]
-  exams                                   Exam[]
-  grades                                  Grade[]
-  requesterLinkRequests                   LinkRequest[]        @relation("requesterSchool")
-  targetLinkRequests                      LinkRequest[]        @relation("targetSchool")
-  payments                                Payment[]
-  quizzes                                 Quiz[]
-  relationshipLinks                       RelationshipLink[]
-  schemeOfWorks                           SchemeOfWork[]
-  admins                                  SchoolAdmin[]
-  emailLogs                               EmailLog[]
-  schoolSubscription                      SchoolSubscription?
-  sessions                                Session[]
-  settlementAccounts                      SettlementAccount[]
-  subjectPapers                           SubjectExamPaper[]
-  subjects                                Subject[]
-  teacherSubjects                         TeacherSubject[]
-  transactionHistories                    TransactionHistory[]
-  transactions                            Transaction[]
+  id                       String    @id @default(uuid())
+  name                     String
+  subdomain                String?   @unique
+  tenantId                 String    @unique
+  schoolCode               String    @unique
+  address                  String?
+  phone                    String?
+  schoolEmail              String?
+  motto                    String?
+  logo                     String?
+  foundedYear              Int?
+  principal                String?
+  schoolType               String?
+  website                  String?
+  description              String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  bannerImage              String?
+  favicon                  String?
+  mapLocation              String?
+  operatingHours           String?
+  socialLinks              Json?
+  isTrialActive            Boolean   @default(false)
+  lastPaymentDate          DateTime?
+  paystackCustomerCode     String?
+  plan                     String    @default("FREE")
+  subscriptionEnd          DateTime?
+  subscriptionStatus       String    @default("INACTIVE")
+  trialEndsAt              DateTime?
+  trialPlan                String?
+  trialUsed                Boolean   @default(false)
+  accountName              String?
+  accountNumber            String?
+  bankName                 String?
+  paystackSubaccountCode   String?
+  percentageCharge         Float?    @default(0)
+  paystackSubaccountStatus String    @default("pending")
+  planId                   String?
+  subscriptionPlanId       String?
+  maxClassesOverride       Int?
+  maxExamsOverride         Int?
+  maxStorageGbOverride     Float?
+  maxStudentsOverride      Int?
+  billingCycle             String    @default("monthly")
+  profileCompleted         Boolean   @default(false)
+  registrationSource       String?   @default("STANDARD")
 }
 
 model SchoolSetting {
@@ -96,7 +70,6 @@ model SchoolSetting {
   enableMaintenanceMode        Boolean  @default(false)
   enablePushNotifications      Boolean  @default(true)
   lockSettings                 Boolean  @default(false)
-  school                       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
 
 model SchoolAdmin {
@@ -107,36 +80,34 @@ model SchoolAdmin {
   active    Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  admin     Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  school    School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@unique([adminId, schoolId])
   @@map("school_admins")
 }
 
 model Admin {
-  id                      String              @id @default(uuid())
+  id                      String    @id @default(uuid())
   name                    String
-  email                   String              @unique
+  email                   String    @unique
   password                String?
   role                    UserRole
-  adminCode               String              @unique
-  googleId                String?             @unique
-  authProvider            String              @default("EMAIL")
-  tenantId                String              @default("default-tenant-id")
-  verified                Boolean             @default(false)
-  status                  String              @default("PENDING")
-  createdAt               DateTime            @default(now())
-  updatedAt               DateTime            @updatedAt
+  adminCode               String    @unique
+  googleId                String?   @unique
+  authProvider            String    @default("EMAIL")
+  tenantId                String    @default("default-tenant-id")
+  verified                Boolean   @default(false)
+  status                  String    @default("PENDING")
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
   gender                  Gender?
-  isTrialActive           Boolean             @default(false)
+  isTrialActive           Boolean   @default(false)
   lastPaymentDate         DateTime?
-  plan                    String              @default("FREE")
+  plan                    String    @default("FREE")
   subscriptionEnd         DateTime?
-  subscriptionStatus      String              @default("INACTIVE")
+  subscriptionStatus      String    @default("INACTIVE")
   trialEndsAt             DateTime?
   trialPlan               String?
-  trialUsed               Boolean             @default(false)
+  trialUsed               Boolean   @default(false)
   emailVerificationCode   String?
   emailVerificationExpiry DateTime?
   pendingEmail            String?
@@ -145,43 +116,38 @@ model Admin {
   paystackCustomerCode    String?
   paystackSubaccountCode  String?
   planId                  String?
-  billingCycle            String              @default("monthly")
+  billingCycle            String    @default("monthly")
   subscriptionPlanId      String?
-  approvedLinkRequests    LinkRequest[]       @relation("approverAdmin")
-  requestedLinkRequests   LinkRequest[]       @relation("requesterAdmin")
-  relationshipAudits      RelationshipAudit[] @relation("AdminRelationshipAudits")
-  schoolAdmins            SchoolAdmin[]
-  subscription            UserSubscription?
 }
 
 model Teacher {
-  id                      String             @id @default(uuid())
+  id                      String    @id @default(uuid())
   name                    String
-  email                   String?            @unique
+  email                   String?   @unique
   password                String?
-  isClaimed               Boolean            @default(false)
-  invitationToken         String?            @unique
+  isClaimed               Boolean   @default(false)
+  invitationToken         String?   @unique
   role                    UserRole
-  tenantId                String             @default("default-tenant-id")
-  teacherCode             String             @unique
-  googleId                String?            @unique
-  authProvider            String             @default("EMAIL")
+  tenantId                String    @default("default-tenant-id")
+  teacherCode             String    @unique
+  googleId                String?   @unique
+  authProvider            String    @default("EMAIL")
   subject                 String?
   department              String?
   primarySchoolId         String?
   activeSchoolId          String?
-  verified                Boolean            @default(false)
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
+  verified                Boolean   @default(false)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
   gender                  Gender?
-  isTrialActive           Boolean            @default(false)
+  isTrialActive           Boolean   @default(false)
   lastPaymentDate         DateTime?
-  plan                    String             @default("FREE")
+  plan                    String    @default("FREE")
   subscriptionEnd         DateTime?
-  subscriptionStatus      String             @default("INACTIVE")
+  subscriptionStatus      String    @default("INACTIVE")
   trialEndsAt             DateTime?
   trialPlan               String?
-  trialUsed               Boolean            @default(false)
+  trialUsed               Boolean   @default(false)
   emailVerificationCode   String?
   emailVerificationExpiry DateTime?
   pendingEmail            String?
@@ -190,55 +156,39 @@ model Teacher {
   paystackCustomerCode    String?
   paystackSubaccountCode  String?
   planId                  String?
-  billingCycle            String             @default("monthly")
+  billingCycle            String    @default("monthly")
   currentSchoolId         String?
   schoolId                String?
-  settings                Json?              @default("{}")
+  settings                Json?     @default("{}")
   subscriptionPlanId      String?
-  FileMetric              FileMetric[]
-  currentSchool           School?            @relation("Teacher_activeSchoolIdToSchool", fields: [activeSchoolId], references: [id])
-  primarySchool           School?            @relation("Teacher_primarySchoolIdToSchool", fields: [primarySchoolId], references: [id])
-  school                  School?            @relation(fields: [schoolId], references: [id])
-  reportedAlerts          BehaviourAlert[]
-  classTeachers           ClassTeacher[]
-  departments             Department[]
-  exams                   Exam[]
-  grades                  Grade[]
-  outgoingLinkRequests    LinkRequest[]      @relation("requesterTeacher")
-  incomingLinkRequests    LinkRequest[]      @relation("targetTeacher")
-  subjectExamPapers       SubjectExamPaper[]
-  subjects                Subject[]
-  teacherSubjects         TeacherSubject[]
-  timetablePeriods        TimetablePeriod[]
-  subscription            UserSubscription?
 }
 
 model Student {
-  id                      String            @id @default(uuid())
+  id                      String    @id @default(uuid())
   name                    String
-  email                   String            @unique
+  email                   String    @unique
   password                String?
-  studentCode             String            @unique
-  googleId                String?           @unique
-  authProvider            String            @default("EMAIL")
-  tenantId                String            @default("default-tenant-id")
+  studentCode             String    @unique
+  googleId                String?   @unique
+  authProvider            String    @default("EMAIL")
+  tenantId                String    @default("default-tenant-id")
   gradeLevel              String?
   dateOfBirth             DateTime?
   role                    UserRole
   schoolId                String?
   originalSchoolId        String?
-  verified                Boolean           @default(false)
-  createdAt               DateTime          @default(now())
-  updatedAt               DateTime          @updatedAt
+  verified                Boolean   @default(false)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
   gender                  Gender?
-  isTrialActive           Boolean           @default(false)
+  isTrialActive           Boolean   @default(false)
   lastPaymentDate         DateTime?
-  plan                    String            @default("FREE")
+  plan                    String    @default("FREE")
   subscriptionEnd         DateTime?
-  subscriptionStatus      String            @default("INACTIVE")
+  subscriptionStatus      String    @default("INACTIVE")
   trialEndsAt             DateTime?
   trialPlan               String?
-  trialUsed               Boolean           @default(false)
+  trialUsed               Boolean   @default(false)
   departmentId            String?
   termAverage             Float?
   emailVerificationCode   String?
@@ -249,46 +199,33 @@ model Student {
   paystackCustomerCode    String?
   paystackSubaccountCode  String?
   planId                  String?
-  billingCycle            String            @default("monthly")
+  billingCycle            String    @default("monthly")
   subscriptionPlanId      String?
-  FileMetric              FileMetric[]
-  department              Department?       @relation(fields: [departmentId], references: [id])
-  school                  School?           @relation(fields: [schoolId], references: [id])
-  attendances             Attendance[]
-  behaviourAlerts         BehaviourAlert[]
-  classes                 ClassEnrollment[]
-  examAttempts            ExamAttempt[]
-  grades                  Grade[]
-  outgoingLinkRequests    LinkRequest[]     @relation("requesterStudent")
-  incomingLinkRequests    LinkRequest[]     @relation("targetStudent")
-  parentLinks             ParentChildLink[]
-  payments                Payment[]
-  subscription            UserSubscription?
 }
 
 model Parent {
-  id                      String            @id @default(uuid())
+  id                      String    @id @default(uuid())
   fullName                String
-  email                   String            @unique
+  email                   String    @unique
   password                String?
-  parentCode              String            @unique
+  parentCode              String    @unique
   phone                   String?
-  googleId                String?           @unique
-  authProvider            String            @default("EMAIL")
+  googleId                String?   @unique
+  authProvider            String    @default("EMAIL")
   role                    UserRole
-  tenantId                String            @default("default-tenant-id")
-  verified                Boolean           @default(false)
-  createdAt               DateTime          @default(now())
-  updatedAt               DateTime          @updatedAt
+  tenantId                String    @default("default-tenant-id")
+  verified                Boolean   @default(false)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
   gender                  Gender?
-  isTrialActive           Boolean           @default(false)
+  isTrialActive           Boolean   @default(false)
   lastPaymentDate         DateTime?
-  plan                    String            @default("FREE")
+  plan                    String    @default("FREE")
   subscriptionEnd         DateTime?
-  subscriptionStatus      String            @default("INACTIVE")
+  subscriptionStatus      String    @default("INACTIVE")
   trialEndsAt             DateTime?
   trialPlan               String?
-  trialUsed               Boolean           @default(false)
+  trialUsed               Boolean   @default(false)
   emailVerificationCode   String?
   emailVerificationExpiry DateTime?
   pendingEmail            String?
@@ -297,14 +234,8 @@ model Parent {
   paystackCustomerCode    String?
   paystackSubaccountCode  String?
   planId                  String?
-  billingCycle            String            @default("monthly")
+  billingCycle            String    @default("monthly")
   subscriptionPlanId      String?
-  FileMetric              FileMetric[]
-  outgoingLinkRequests    LinkRequest[]     @relation("requesterParent")
-  incomingLinkRequests    LinkRequest[]     @relation("targetParent")
-  children                ParentChildLink[]
-  payments                Payment[]
-  subscription            UserSubscription?
 
   @@map("parents")
 }
@@ -317,8 +248,6 @@ model ParentChildLink {
   relationship String   @default("parent")
   status       String   @default("pending")
   createdAt    DateTime @default(now())
-  parent       Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([parentId, studentId])
   @@index([studentCode])
@@ -326,31 +255,17 @@ model ParentChildLink {
 }
 
 model Class {
-  id                String             @id @default(uuid())
-  name              String
-  section           String?
-  schoolId          String?
-  classCode         String             @unique
-  scope             ClassScope
-  status            ClassStatus        @default(PENDING)
-  createdById       String?
-  createdByType     LinkEntityType?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  attendances       Attendance[]
-  behaviourAlerts   BehaviourAlert[]
-  departments       ClassDepartment[]
-  enrollments       ClassEnrollment[]
-  subjects          ClassSubject[]
-  teachers          ClassTeacher[]
-  school            School?            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  exams             Exam[]
-  grades            Grade[]
-  linkRequests      LinkRequest[]
-  quizzes           Quiz[]
-  relationshipLinks RelationshipLink[]
-  schemeOfWorks     SchemeOfWork[]
-  timetable         TimetablePeriod[]
+  id            String          @id @default(uuid())
+  name          String
+  section       String?
+  schoolId      String?
+  classCode     String          @unique
+  scope         ClassScope
+  status        ClassStatus     @default(PENDING)
+  createdById   String?
+  createdByType LinkEntityType?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   @@unique([schoolId, name, section])
   @@map("classes")
@@ -361,8 +276,6 @@ model ClassEnrollment {
   classId    String
   studentId  String
   enrolledAt DateTime @default(now())
-  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([classId, studentId])
   @@map("class_enrollments")
@@ -411,7 +324,7 @@ model PasswordReset {
 }
 
 model Grade {
-  id                   String              @id @default(uuid())
+  id                   String        @id @default(uuid())
   studentId            String
   schoolId             String
   teacherId            String?
@@ -424,23 +337,14 @@ model Grade {
   examId               String?
   examAttemptId        String?
   subjectExamAttemptId String?
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
-  category             GradeCategory       @default(EXAM)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  category             GradeCategory @default(EXAM)
   sessionId            String?
-  status               GradeStatus         @default(DRAFT)
+  status               GradeStatus   @default(DRAFT)
   subjectPaperId       String?
   term                 Term?
-  weight               Float               @default(1.0)
-  class                Class?              @relation(fields: [classId], references: [id])
-  examAttempt          ExamAttempt?        @relation(fields: [examAttemptId], references: [id])
-  exam                 Exam?               @relation(fields: [examId], references: [id])
-  school               School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  session              Session?            @relation(fields: [sessionId], references: [id])
-  student              Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  subjectExamAttempt   SubjectExamAttempt? @relation(fields: [subjectExamAttemptId], references: [id])
-  subjectPaper         SubjectExamPaper?   @relation(fields: [subjectPaperId], references: [id])
-  teacher              Teacher?            @relation(fields: [teacherId], references: [id])
+  weight               Float         @default(1.0)
 
   @@unique([studentId, examId, subjectPaperId])
   @@map("grades")
@@ -475,47 +379,52 @@ model LinkRequest {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   respondedAt        DateTime?
-  approverAdmin      Admin?            @relation("approverAdmin", fields: [approvedByAdminId], references: [id])
-  class              Class?            @relation(fields: [classId], references: [id])
-  relationshipLink   RelationshipLink? @relation("RelationshipFromRequest", fields: [relationshipLinkId], references: [id])
-  requesterAdmin     Admin?            @relation("requesterAdmin", fields: [requestedByAdminId], references: [id])
-  requesterParent    Parent?           @relation("requesterParent", fields: [requesterParentId], references: [id])
-  requesterSchool    School?           @relation("requesterSchool", fields: [requesterSchoolId], references: [id])
-  requesterStudent   Student?          @relation("requesterStudent", fields: [requesterStudentId], references: [id])
-  requesterTeacher   Teacher?          @relation("requesterTeacher", fields: [requesterTeacherId], references: [id])
-  targetParent       Parent?           @relation("targetParent", fields: [targetParentId], references: [id])
-  targetSchool       School?           @relation("targetSchool", fields: [targetSchoolId], references: [id])
-  targetStudent      Student?          @relation("targetStudent", fields: [targetStudentId], references: [id])
-  targetTeacher      Teacher?          @relation("targetTeacher", fields: [targetTeacherId], references: [id])
-  notifications      Notification[]
 
   @@index([requesterType, requesterId])
   @@index([targetType, targetCode])
+  @@index([targetType, targetId])
   @@index([status])
   @@index([linkType])
+  @@index([schoolId])
+  @@index([targetSchoolId])
+  @@index([classId])
+  @@index([requesterTeacherId])
+  @@index([targetTeacherId])
+  @@index([requesterStudentId])
+  @@index([targetStudentId])
+  @@index([requesterParentId])
+  @@index([targetParentId])
+  @@index([createdAt])
+  @@index([classId], map: "link_requests_class_id_idx")
+  @@index([createdAt], map: "link_requests_created_at_idx")
+  @@index([requesterParentId], map: "link_requests_req_parent_idx")
+  @@index([requesterStudentId], map: "link_requests_req_student_idx")
+  @@index([requesterTeacherId], map: "link_requests_req_teacher_idx")
+  @@index([schoolId], map: "link_requests_school_id_idx")
+  @@index([targetParentId], map: "link_requests_target_parent_idx")
+  @@index([targetSchoolId], map: "link_requests_target_school_id_idx")
+  @@index([targetStudentId], map: "link_requests_target_student_idx")
+  @@index([targetTeacherId], map: "link_requests_target_teacher_idx")
+  @@index([targetType, targetId], map: "link_requests_target_type_id_idx")
   @@map("link_requests")
 }
 
 model RelationshipLink {
-  id                  String              @id @default(uuid())
-  linkType            LinkType
-  status              LinkStatus          @default(ACTIVE)
-  leftEntityType      LinkEntityType
-  leftEntityId        String
-  leftCode            String
-  rightEntityType     LinkEntityType
-  rightEntityId       String
-  rightCode           String
-  schoolId            String?
-  classId             String?
-  startedAt           DateTime            @default(now())
-  endedAt             DateTime?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  approvedFromRequest LinkRequest?        @relation("RelationshipFromRequest")
-  audits              RelationshipAudit[]
-  class               Class?              @relation(fields: [classId], references: [id])
-  school              School?             @relation(fields: [schoolId], references: [id])
+  id              String         @id @default(uuid())
+  linkType        LinkType
+  status          LinkStatus     @default(ACTIVE)
+  leftEntityType  LinkEntityType
+  leftEntityId    String
+  leftCode        String
+  rightEntityType LinkEntityType
+  rightEntityId   String
+  rightCode       String
+  schoolId        String?
+  classId         String?
+  startedAt       DateTime       @default(now())
+  endedAt         DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@unique([linkType, leftEntityId, rightEntityId])
   @@index([leftEntityType, leftEntityId, status])
@@ -525,14 +434,12 @@ model RelationshipLink {
 }
 
 model RelationshipAudit {
-  id                 String           @id @default(uuid())
+  id                 String   @id @default(uuid())
   relationshipLinkId String
   action             String
   actorAdminId       String?
   note               String?
-  createdAt          DateTime         @default(now())
-  actorAdmin         Admin?           @relation("AdminRelationshipAudits", fields: [actorAdminId], references: [id])
-  relationshipLink   RelationshipLink @relation(fields: [relationshipLinkId], references: [id], onDelete: Cascade)
+  createdAt          DateTime @default(now())
 
   @@index([relationshipLinkId])
   @@map("relationship_audits")
@@ -553,7 +460,6 @@ model Notification {
   meta          Json?
   createdAt     DateTime           @default(now())
   readAt        DateTime?
-  linkRequest   LinkRequest?       @relation(fields: [linkRequestId], references: [id], onDelete: Cascade)
 
   @@index([recipientType, recipientId, status])
   @@index([recipientId])
@@ -561,28 +467,16 @@ model Notification {
 }
 
 model Subject {
-  id                String                 @id @default(uuid())
-  name              String
-  code              String
-  description       String?
-  schoolId          String?
-  teacherId         String?
-  scope             AcademicOwnershipScope
-  isArchived        Boolean                @default(false)
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-  classes           ClassSubject[]
-  departments       DepartmentSubject[]
-  examLinks         ExamSubject[]
-  exams             Exam[]
-  quizLinks         QuizSubject[]
-  quizzes           Quiz[]
-  schemeOfWorks     SchemeOfWork[]
-  subjectExamPapers SubjectExamPaper[]
-  school            School?                @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  teacher           Teacher?               @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  teacherSubjects   TeacherSubject[]
-  timetablePeriods  TimetablePeriod[]
+  id          String                 @id @default(uuid())
+  name        String
+  code        String
+  description String?
+  schoolId    String?
+  teacherId   String?
+  scope       AcademicOwnershipScope
+  isArchived  Boolean                @default(false)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
 
   @@unique([schoolId, code])
   @@map("subjects")
@@ -599,24 +493,15 @@ model Department {
   isArchived  Boolean                @default(false)
   createdAt   DateTime               @default(now())
   updatedAt   DateTime               @updatedAt
-  students    Student[]
-  classes     ClassDepartment[]
-  subjects    DepartmentSubject[]
-  school      School?                @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  teacher     Teacher?               @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  exams       ExamDepartment[]
-  quizzes     Quiz[]
 
   @@map("departments")
 }
 
 model DepartmentSubject {
-  id           String     @id @default(uuid())
+  id           String   @id @default(uuid())
   departmentId String
   subjectId    String
-  createdAt    DateTime   @default(now())
-  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  subject      Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
 
   @@unique([departmentId, subjectId])
   @@map("department_subjects")
@@ -627,49 +512,39 @@ model ClassSubject {
   classId   String
   subjectId String
   createdAt DateTime @default(now())
-  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@unique([classId, subjectId])
   @@map("class_subjects")
 }
 
 model ClassDepartment {
-  id           String     @id @default(uuid())
+  id           String   @id @default(uuid())
   classId      String
   departmentId String
-  createdAt    DateTime   @default(now())
-  class        Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
-  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
 
   @@unique([classId, departmentId])
   @@map("class_departments")
 }
 
 model Quiz {
-  id               String                 @id @default(uuid())
-  title            String
-  description      String?
-  scope            AssessmentScope
-  status           AssessmentStatus       @default(DRAFT)
-  creationMode     AssessmentCreationMode @default(MANUAL)
-  schoolId         String?
-  departmentId     String?
-  classId          String?
-  subjectId        String?
-  durationMinutes  Int?
-  totalMarks       Float?                 @default(0)
-  aiPrompt         String?
-  instructions     String?
-  generatedMeta    Json?
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  questions        QuizQuestion[]
-  includedSubjects QuizSubject[]
-  class            Class?                 @relation(fields: [classId], references: [id], onDelete: Cascade)
-  department       Department?            @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  school           School?                @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  subject          Subject?               @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  id              String                 @id @default(uuid())
+  title           String
+  description     String?
+  scope           AssessmentScope
+  status          AssessmentStatus       @default(DRAFT)
+  creationMode    AssessmentCreationMode @default(MANUAL)
+  schoolId        String?
+  departmentId    String?
+  classId         String?
+  subjectId       String?
+  durationMinutes Int?
+  totalMarks      Float?                 @default(0)
+  aiPrompt        String?
+  instructions    String?
+  generatedMeta   Json?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 
   @@map("quizzes")
 }
@@ -679,8 +554,6 @@ model QuizSubject {
   quizId    String
   subjectId String
   createdAt DateTime @default(now())
-  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@unique([quizId, subjectId])
   @@map("quiz_subjects")
@@ -701,7 +574,6 @@ model QuizQuestion {
   updatedAt     DateTime     @updatedAt
   imageLabels   String[]     @default([])
   images        String[]     @default([])
-  quiz          Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   @@map("quiz_questions")
 }
@@ -737,16 +609,6 @@ model Exam {
   subjectId            String?
   endDate              DateTime?
   shuffleQuestions     Boolean                @default(false)
-  examAttempts         ExamAttempt[]
-  departments          ExamDepartment[]
-  subjectPapers        ExamSubjectPaper[]
-  includedSubjects     ExamSubject[]
-  class                Class?                 @relation(fields: [classId], references: [id], onDelete: Cascade)
-  school               School?                @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  session              Session?               @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  subject              Subject?               @relation(fields: [subjectId], references: [id])
-  teacher              Teacher?               @relation(fields: [teacherId], references: [id])
-  grades               Grade[]
 
   @@map("exams")
 }
@@ -756,40 +618,31 @@ model ExamSubject {
   examId    String
   subjectId String
   createdAt DateTime @default(now())
-  exam      Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
-  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@unique([examId, subjectId])
   @@map("exam_subjects")
 }
 
 model SubjectExamPaper {
-  id              String                @id @default(uuid())
+  id              String             @id @default(uuid())
   subjectId       String?
   schoolId        String?
   teacherId       String?
   title           String?
   instructions    String?
   durationMinutes Int?
-  totalMarks      Float                 @default(0)
-  status          SubjectPaperStatus    @default(DRAFT)
+  totalMarks      Float              @default(0)
+  status          SubjectPaperStatus @default(DRAFT)
   validatedAt     DateTime?
   validatedById   String?
   publishedAt     DateTime?
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
   readingContent  String?
-  passMark        Float                 @default(40)
-  weight          Float                 @default(1)
-  imageLabels     String[]              @default([])
-  images          String[]              @default([])
-  exams           ExamSubjectPaper[]
-  grades          Grade[]
-  examAttempts    SubjectExamAttempt[]
-  school          School?               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  subject         Subject?              @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  teacher         Teacher?              @relation(fields: [teacherId], references: [id])
-  questions       SubjectExamQuestion[]
+  passMark        Float              @default(40)
+  weight          Float              @default(1)
+  imageLabels     String[]           @default([])
+  images          String[]           @default([])
 
   @@index([subjectId])
   @@index([schoolId, status])
@@ -797,22 +650,20 @@ model SubjectExamPaper {
 }
 
 model ExamSubjectPaper {
-  id             String           @id @default(uuid())
+  id             String   @id @default(uuid())
   examId         String
   subjectPaperId String
-  createdAt      DateTime         @default(now())
-  exam           Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
-  subjectPaper   SubjectExamPaper @relation(fields: [subjectPaperId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
 
   @@unique([examId, subjectPaperId])
   @@map("exam_subject_papers")
 }
 
 model SubjectExamQuestion {
-  id             String              @id @default(uuid())
+  id             String         @id @default(uuid())
   subjectPaperId String
   type           QuestionType
-  source         QuestionSource      @default(MANUAL)
+  source         QuestionSource @default(MANUAL)
   question       String
   optionA        String?
   optionB        String?
@@ -820,14 +671,12 @@ model SubjectExamQuestion {
   optionD        String?
   correctAnswer  String
   explanation    String?
-  marks          Float               @default(1)
-  order          Int                 @default(0)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  imageLabels    String[]            @default([])
-  images         String[]            @default([])
-  answers        SubjectExamAnswer[]
-  subjectPaper   SubjectExamPaper    @relation(fields: [subjectPaperId], references: [id], onDelete: Cascade)
+  marks          Float          @default(1)
+  order          Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  imageLabels    String[]       @default([])
+  images         String[]       @default([])
 
   @@map("subject_exam_questions")
 }
@@ -838,9 +687,6 @@ model TeacherSubject {
   subjectId String
   schoolId  String?
   createdAt DateTime @default(now())
-  school    School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@unique([teacherId, subjectId, schoolId])
   @@map("teacher_subjects")
@@ -857,83 +703,68 @@ model Session {
   currentTerm Term     @default(FIRST)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  exams       Exam[]
-  grades      Grade[]
-  school      School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@unique([schoolId, name])
   @@map("sessions")
 }
 
 model ExamAttempt {
-  id              String               @id @default(uuid())
-  examId          String
-  studentId       String
-  startedAt       DateTime             @default(now())
-  submittedAt     DateTime?
-  expiresAt       DateTime?
-  status          ExamAttemptStatus    @default(IN_PROGRESS)
-  totalScore      Float                @default(0)
-  totalMarks      Float                @default(0)
-  isSubmitted     Boolean              @default(false)
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
-  exam            Exam                 @relation(fields: [examId], references: [id], onDelete: Cascade)
-  student         Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  grades          Grade[]
-  subjectAttempts SubjectExamAttempt[]
+  id          String            @id @default(uuid())
+  examId      String
+  studentId   String
+  startedAt   DateTime          @default(now())
+  submittedAt DateTime?
+  expiresAt   DateTime?
+  status      ExamAttemptStatus @default(IN_PROGRESS)
+  totalScore  Float             @default(0)
+  totalMarks  Float             @default(0)
+  isSubmitted Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@unique([examId, studentId])
   @@map("exam_attempts")
 }
 
 model SubjectExamAttempt {
-  id             String              @id @default(uuid())
+  id             String    @id @default(uuid())
   examAttemptId  String
   subjectPaperId String
-  score          Float               @default(0)
-  totalMarks     Float               @default(0)
+  score          Float     @default(0)
+  totalMarks     Float     @default(0)
   submittedAt    DateTime?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   weightedScore  Float?
-  grades         Grade[]
-  answers        SubjectExamAnswer[]
-  examAttempt    ExamAttempt         @relation(fields: [examAttemptId], references: [id], onDelete: Cascade)
-  subjectPaper   SubjectExamPaper    @relation(fields: [subjectPaperId], references: [id], onDelete: Cascade)
 
   @@unique([examAttemptId, subjectPaperId])
   @@map("subject_exam_attempts")
 }
 
 model SubjectExamAnswer {
-  id                   String              @id @default(uuid())
+  id                   String    @id @default(uuid())
   subjectExamAttemptId String
   questionId           String
   answer               String
   isCorrect            Boolean?
   scoreAwarded         Float?
-  requiresManualReview Boolean             @default(false)
-  manuallyReviewed     Boolean             @default(false)
+  requiresManualReview Boolean   @default(false)
+  manuallyReviewed     Boolean   @default(false)
   reviewedById         String?
   reviewedAt           DateTime?
   reviewNote           String?
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
-  question             SubjectExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  subjectExamAttempt   SubjectExamAttempt  @relation(fields: [subjectExamAttemptId], references: [id], onDelete: Cascade)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   @@unique([subjectExamAttemptId, questionId])
   @@map("subject_exam_answers")
 }
 
 model ExamDepartment {
-  id           String     @id @default(uuid())
+  id           String   @id @default(uuid())
   examId       String
   departmentId String
-  createdAt    DateTime   @default(now())
-  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  exam         Exam       @relation(fields: [examId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
 
   @@unique([examId, departmentId])
   @@map("exam_departments")
@@ -948,8 +779,6 @@ model Attendance {
   note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([classId, studentId, date])
   @@map("attendances")
@@ -966,9 +795,6 @@ model TimetablePeriod {
   room      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@index([classId, day])
   @@map("timetable_periods")
@@ -980,8 +806,6 @@ model ClassTeacher {
   teacherId String
   isLead    Boolean  @default(false)
   createdAt DateTime @default(now())
-  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@unique([classId, teacherId])
   @@map("class_teachers")
@@ -997,9 +821,6 @@ model BehaviourAlert {
   classId      String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  class        Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
-  reporter     Teacher       @relation(fields: [reportedById], references: [id], onDelete: Cascade)
-  student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@map("behaviour_alerts")
 }
@@ -1021,7 +842,6 @@ model Transaction {
   plan               String?
   userId             String?
   userType           UserRole?
-  School             School?   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@map("transactions")
 }
@@ -1036,10 +856,6 @@ model FileMetric {
   teacherId String?
   parentId  String?
   createdAt DateTime @default(now())
-  parents   Parent?  @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  School    School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  Student   Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  Teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 }
 
 model Tenant {
@@ -1047,120 +863,101 @@ model Tenant {
   name      String
   schoolId  String   @unique
   createdAt DateTime @default(now())
-  School    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 }
 
 model Payment {
-  id                   String               @id @default(uuid())
-  paymentReference     String               @unique
-  studentId            String
-  schoolId             String
-  parentId             String
-  amount               Float
-  term                 String
-  session              String
-  paymentType          String
-  status               String               @default("PENDING")
-  paymentMethod        String?
-  paidAt               DateTime?
-  updatedAt            DateTime             @updatedAt
-  settlementAccountId  String?
-  createdAt            DateTime             @default(now())
-  parent               Parent               @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  school               School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  settlementAccount    SettlementAccount?   @relation(fields: [settlementAccountId], references: [id])
-  student              Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  transactionHistories TransactionHistory[]
+  id                  String    @id @default(uuid())
+  paymentReference    String    @unique
+  studentId           String
+  schoolId            String
+  parentId            String
+  amount              Float
+  term                String
+  session             String
+  paymentType         String
+  status              String    @default("PENDING")
+  paymentMethod       String?
+  paidAt              DateTime?
+  updatedAt           DateTime  @updatedAt
+  settlementAccountId String?
+  createdAt           DateTime  @default(now())
 
   @@map("payments")
 }
 
 model TransactionHistory {
-  id                   String             @id @default(uuid())
+  id                   String    @id @default(uuid())
   schoolId             String
   paymentId            String?
-  transactionReference String             @unique
+  transactionReference String    @unique
   amount               Float
   gatewayResponse      Json?
   channel              String?
-  currency             String             @default("NGN")
+  currency             String    @default("NGN")
   status               String
   paidAt               DateTime?
-  createdAt            DateTime           @default(now())
+  createdAt            DateTime  @default(now())
   settlementAccountId  String?
-  payment              Payment?           @relation(fields: [paymentId], references: [id])
-  school               School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  settlementAccount    SettlementAccount? @relation(fields: [settlementAccountId], references: [id])
 
   @@map("transaction_histories")
 }
 
 model SettlementAccount {
-  id                       String               @id @default(uuid())
+  id                       String   @id @default(uuid())
   schoolId                 String
   paystackSubaccountCode   String?
-  paystackSubaccountStatus String               @default("pending")
+  paystackSubaccountStatus String   @default("pending")
   bankName                 String?
   accountNumber            String?
   accountName              String?
-  percentageCharge         Float?               @default(0)
-  isDefault                Boolean              @default(false)
-  createdAt                DateTime             @default(now())
-  updatedAt                DateTime             @updatedAt
-  payments                 Payment[]
-  school                   School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  transactionHistories     TransactionHistory[]
+  percentageCharge         Float?   @default(0)
+  isDefault                Boolean  @default(false)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
   @@map("settlement_accounts")
 }
 
 model SubscriptionPlan {
-  id                  String                @id @default(uuid())
-  name                String
-  maxStudents         Int                   @default(0)
-  maxExams            Int                   @default(0)
-  maxClasses          Int                   @default(0)
-  maxStorageGb        Float                 @default(1)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  badgeLabel          String?
-  buttonText          String                @default("Get Started")
-  category            String                @default("INSTITUTION")
-  description         String?
-  features            String[]
-  isActive            Boolean               @default(true)
-  maxAiUsage          Int                   @default(0)
-  maxParents          Int                   @default(0)
-  maxTeachers         Int                   @default(0)
-  monthlyPrice        Float                 @default(0)
-  sortOrder           Int                   @default(0)
-  trialDays           Int                   @default(0)
-  type                String                @default("PAID")
-  yearlyPrice         Float                 @default(0)
-  planScope           PlanScope             @default(SCHOOL)
-  hasTrial            Boolean               @default(false)
-  isPopular           Boolean               @default(false)
-  schools             School[]
-  featureAccess       PlanFeatureAccess[]
-  schoolSubscriptions SchoolSubscription[]
-  histories           SubscriptionHistory[]
-  userSubscriptions   UserSubscription[]
+  id           String    @id @default(uuid())
+  name         String
+  maxStudents  Int       @default(0)
+  maxExams     Int       @default(0)
+  maxClasses   Int       @default(0)
+  maxStorageGb Float     @default(1)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  badgeLabel   String?
+  buttonText   String    @default("Get Started")
+  category     String    @default("INSTITUTION")
+  description  String?
+  features     String[]
+  isActive     Boolean   @default(true)
+  maxAiUsage   Int       @default(0)
+  maxParents   Int       @default(0)
+  maxTeachers  Int       @default(0)
+  monthlyPrice Float     @default(0)
+  sortOrder    Int       @default(0)
+  trialDays    Int       @default(0)
+  type         String    @default("PAID")
+  yearlyPrice  Float     @default(0)
+  planScope    PlanScope @default(SCHOOL)
+  hasTrial     Boolean   @default(false)
+  isPopular    Boolean   @default(false)
 
   @@unique([category, type])
   @@map("subscription_plans")
 }
 
 model PlanFeatureAccess {
-  id         String           @id @default(uuid())
+  id         String   @id @default(uuid())
   planId     String
   featureId  String
-  enabled    Boolean          @default(false)
+  enabled    Boolean  @default(false)
   limitValue Int?
   meta       Json?
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
-  feature    PlatformFeature  @relation(fields: [featureId], references: [id], onDelete: Cascade)
-  plan       SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([planId, featureId])
   @@map("plan_feature_access")
@@ -1178,8 +975,6 @@ model SchoolSubscription {
   assignedBy         String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  school             School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  subscriptionPlan   SubscriptionPlan   @relation(fields: [subscriptionPlanId], references: [id])
 
   @@map("school_subscriptions")
 }
@@ -1196,11 +991,6 @@ model UserSubscription {
   autoRenew          Boolean            @default(true)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  admin              Admin?             @relation(fields: [userId], references: [id], map: "user_subs_admin_fkey")
-  parent             Parent?            @relation(fields: [userId], references: [id], map: "user_subs_parent_fkey")
-  student            Student?           @relation(fields: [userId], references: [id], map: "user_subs_student_fkey")
-  teacher            Teacher?           @relation(fields: [userId], references: [id], map: "user_subs_teacher_fkey")
-  subscriptionPlan   SubscriptionPlan   @relation(fields: [subscriptionPlanId], references: [id])
 
   @@map("user_subscriptions")
 }
@@ -1220,7 +1010,6 @@ model SubscriptionHistory {
   activatedBy        String?
   note               String?
   createdAt          DateTime           @default(now())
-  subscriptionPlan   SubscriptionPlan   @relation(fields: [subscriptionPlanId], references: [id])
 
   @@index([schoolId])
   @@index([userId])
@@ -1228,65 +1017,61 @@ model SubscriptionHistory {
 }
 
 model SupportTicket {
-  id          String           @id @default(uuid())
+  id          String          @id @default(uuid())
   subject     String
   description String
-  status      SupportStatus    @default(OPEN)
-  priority    SupportPriority  @default(MEDIUM)
+  status      SupportStatus   @default(OPEN)
+  priority    SupportPriority @default(MEDIUM)
   category    String?
   userType    String
   userId      String
   userName    String
   userEmail   String
   schoolName  String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  messages    SupportMessage[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   @@index([userId])
   @@map("support_tickets")
 }
 
 model SupportMessage {
-  id         String        @id @default(uuid())
+  id         String   @id @default(uuid())
   ticketId   String
   content    String
   senderId   String
   senderName String
   senderRole String
-  createdAt  DateTime      @default(now())
-  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
 
   @@index([ticketId])
   @@map("support_messages")
 }
 
 model PlatformStaff {
-  id            String                @id @default(uuid())
+  id            String       @id @default(uuid())
   fullName      String
-  email         String                @unique
+  email         String       @unique
   password      String?
   role          PlatformRole
-  isActive      Boolean               @default(true)
+  isActive      Boolean      @default(true)
   lastLoginAt   DateTime?
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
   inviteExpires DateTime?
-  inviteToken   String?               @unique
-  activityLogs  PlatformActivityLog[]
+  inviteToken   String?      @unique
 
   @@map("platform_staff")
 }
 
 model PlatformActivityLog {
-  id         String        @id @default(uuid())
+  id         String   @id @default(uuid())
   staffId    String
   action     String
   entityType String
   entityId   String?
   details    Json?
-  createdAt  DateTime      @default(now())
-  staff      PlatformStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
 
   @@map("platform_activity_logs")
 }
@@ -1303,7 +1088,6 @@ model PlatformFeature {
   adminEnabled   Boolean  @default(true)
   updatedAt      DateTime @updatedAt
   createdAt      DateTime @default(now())
-  planAccesses   PlanFeatureAccess[]
 
   @@map("platform_features")
 }
@@ -1328,7 +1112,6 @@ model EmailLog {
   status         String   @default("SENT")
   error          String?
   createdAt      DateTime @default(now())
-  school         School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@map("school_email_logs")
 }
@@ -1351,14 +1134,9 @@ model SchemeOfWork {
   isCompleted Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  schoolClass Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  school      School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@map("scheme_of_works")
 }
-
-
 
 enum UserRole {
   ADMIN

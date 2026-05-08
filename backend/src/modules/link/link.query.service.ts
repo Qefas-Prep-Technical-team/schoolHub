@@ -36,21 +36,14 @@ const buildIncomingWhere = async ({
     });
     const schoolIds = schoolAdminLinks.map((s) => s.schoolId);
 
+    // Filter by targetId (direct), targetSchoolId (canonical), or schoolId (context)
     return {
       status: LinkRequestStatus.PENDING,
       OR: [
         { targetType: LinkEntityType.ADMIN, targetId: currentUserId },
         { targetSchoolId: { in: schoolIds } },
-        {
-          targetType: { in: [LinkEntityType.SCHOOL, LinkEntityType.CLASS] },
-          schoolId: { in: schoolIds }
-        },
-        {
-          targetType: LinkEntityType.SCHOOL,
-          targetSchool: {
-            admins: { some: { adminId: currentUserId, active: true } },
-          },
-        },
+        { targetType: LinkEntityType.SCHOOL, schoolId: { in: schoolIds } },
+        { targetType: LinkEntityType.CLASS, schoolId: { in: schoolIds } },
       ],
     };
   }
@@ -199,12 +192,7 @@ export const getAllLinkRequestsService = async (
       { targetType: LinkEntityType.ADMIN, targetId: currentUserId },
       { targetSchoolId: { in: schoolIds } },
       { schoolId: { in: schoolIds } },
-      {
-        targetType: LinkEntityType.SCHOOL,
-        targetSchool: {
-          admins: { some: { adminId: currentUserId, active: true } },
-        },
-      },
+      { targetType: LinkEntityType.SCHOOL, targetSchoolId: { in: schoolIds } },
     ];
   } else {
     incomingWhere.targetType = currentUserType;

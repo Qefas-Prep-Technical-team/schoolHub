@@ -1,5 +1,5 @@
 import prisma from "../../config/database";
-import { SubscriptionType, SubscriptionStatus, PlanScope } from "@prisma/client";
+import { SubscriptionType, SubscriptionStatus, PlanScope, Prisma } from "@prisma/client";
 
 /**
  * Service to manage Institutional (School) level subscriptions.
@@ -9,22 +9,24 @@ export class SchoolSubscriptionService {
    * Initializes a school with the default FREE plan.
    * Used during school registration.
    */
-  static async initializeFreePlan(schoolId: string) {
-    const freePlan = await prisma.subscriptionPlan.findFirst({
-      where: {
-        planScope: PlanScope.SCHOOL,
-        type: "free",
-        category: "schools",
-      },
+  static async initializeFreePlan(schoolId: string, tx?: Prisma.TransactionClient, planId?: string) {
+    const effectivePlanId = planId || process.env.SCHOOL_FREE_PLAN;
+    
+    if (!effectivePlanId) {
+      throw new Error("The SCHOOL_FREE_PLAN environment variable is missing.");
+    }
+
+    const freePlan = await (tx || prisma).subscriptionPlan.findUnique({
+      where: { id: effectivePlanId },
     });
 
     if (!freePlan) {
-      throw new Error("Default FREE school plan not found in database.");
+      throw new Error(`The configured institutional free plan ID (${effectivePlanId}) was not found in the database.`);
     }
 
-    return await prisma.$transaction(async (tx) => {
+    const execute = async (t: Prisma.TransactionClient) => {
       // Create the school subscription
-      const subscription = await tx.schoolSubscription.upsert({
+      const subscription = await t.schoolSubscription.upsert({
         where: { schoolId },
         create: {
           schoolId,
@@ -41,7 +43,7 @@ export class SchoolSubscriptionService {
       });
 
       // Update school record with plan details
-      await tx.school.update({
+      await t.school.update({
         where: { id: schoolId },
         data: {
           plan: freePlan.name,
@@ -53,7 +55,7 @@ export class SchoolSubscriptionService {
       });
 
       // Log to history
-      await tx.subscriptionHistory.create({
+      await t.subscriptionHistory.create({
         data: {
           schoolId,
           subscriptionPlanId: freePlan.id,
@@ -65,7 +67,9 @@ export class SchoolSubscriptionService {
       });
 
       return subscription;
-    });
+    };
+
+    return tx ? execute(tx) : prisma.$transaction(execute);
   }
 
   /**

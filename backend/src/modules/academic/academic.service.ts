@@ -8,6 +8,7 @@ import {
 import { AcademicOwnershipScope, UserRole } from "@prisma/client";
 import { hasActiveSchoolAccess } from "utils/school-access";
 import { updateCurrentSchoolContext } from "utils/update-current-school";
+import { enforceExamLimit } from "../subscription/quota.helpers";
 export const createDepartmentService = async ({
   currentUserId,
   currentUserType,
@@ -468,6 +469,8 @@ export const createQuizService = async ({
     selectedSubjectIds,
   });
 
+  if (schoolId) await enforceExamLimit(schoolId);
+
   return prisma.quiz.create({
     data: {
       title,
@@ -546,6 +549,8 @@ export const createExamService = async ({
     classId,
     selectedSubjectIds,
   });
+
+  if (schoolId) await enforceExamLimit(schoolId);
 
   return prisma.exam.create({
     data: {

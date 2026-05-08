@@ -5,6 +5,7 @@ import { getSingleString } from "../../utils/request-utils";
 import { generateUniqueCode } from "../../utils/code-generator";
 import { sendTeacherInvitationEmail } from "../auth/auth.service";
 import crypto from "crypto";
+import { enforceTeacherLimit } from "../subscription/quota.helpers";
 
 /**
  * Get detailed teacher information by ID
@@ -299,6 +300,9 @@ export const inviteTeacher = async (req: Request, res: Response) => {
     if (!school) {
       return res.status(404).json({ success: false, message: "School not found for this admin" });
     }
+
+    // Check quota
+    await enforceTeacherLimit(school.id);
 
     if (action === "code") {
       if (!teacherCode) {

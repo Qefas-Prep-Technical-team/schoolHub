@@ -50,6 +50,18 @@ export class EntitlementService {
         limit = plan.maxClasses;
         usage = await prisma.class.count({ where: { schoolId } });
         break;
+      case "teachers" as any:
+        limit = plan.maxTeachers;
+        usage = await prisma.teacher.count({ 
+          where: { 
+            OR: [
+              { activeSchoolId: schoolId },
+              { primarySchoolId: schoolId },
+              { schoolId: schoolId }
+            ]
+          } 
+        });
+        break;
       case "storageGb":
         limit = plan.maxStorageGb;
         const storageMetric = await prisma.fileMetric.aggregate({
@@ -78,13 +90,10 @@ export class EntitlementService {
 
     // 0. Check if enforcement is enabled for this user's category
     if (subscription) {
-      const category = subscription.subscriptionPlan.category.toLowerCase() as any;
-      if (["students", "teachers", "parents", "schools"].includes(category)) {
-        if (!await this.isEnforced(category)) return true;
+      const category = subscription.subscriptionPlan.category?.toLowerCase();
+      if (category && ["students", "teachers", "parents", "schools"].includes(category)) {
+        if (!await this.isEnforced(category as any)) return true;
       }
-    } else {
-        // If no subscription, check if enforcement is disabled for the user's role
-        // We'd need to fetch the user role here, but let's try to get it from the sub first
     }
 
     if (!subscription || subscription.status !== SubscriptionStatus.ACTIVE) {
@@ -92,7 +101,7 @@ export class EntitlementService {
     }
 
     // 1. Check legacy array
-    if (subscription.subscriptionPlan.features.includes(feature)) return true;
+    if (subscription.subscriptionPlan.features?.includes(feature)) return true;
 
     // 2. Check new relational system (fetch featureAccess if not already included)
     const plan = await prisma.subscriptionPlan.findUnique({
@@ -100,7 +109,7 @@ export class EntitlementService {
       include: { featureAccess: { include: { feature: true } } }
     });
 
-    return plan?.featureAccess.some(fa => fa.enabled && fa.feature.featureKey === feature) ?? false;
+    return plan?.featureAccess?.some(fa => fa.enabled && fa.feature?.featureKey === feature) ?? false;
   }
 
   /**
@@ -133,11 +142,11 @@ export class EntitlementService {
 
     if (userSub?.status === SubscriptionStatus.ACTIVE) {
       // Check legacy array
-      if (userSub.subscriptionPlan.features.includes(feature)) return true;
+      if (userSub.subscriptionPlan.features?.includes(feature)) return true;
       
       // Check new relational system
-      const hasAccess = userSub.subscriptionPlan.featureAccess.some(
-        fa => fa.enabled && fa.feature.featureKey === feature
+      const hasAccess = userSub.subscriptionPlan.featureAccess?.some(
+        fa => fa.enabled && fa.feature?.featureKey === feature
       );
       if (hasAccess) return true;
     }
@@ -159,11 +168,11 @@ export class EntitlementService {
 
       if (schoolSub?.status === SubscriptionStatus.ACTIVE) {
         // Check legacy array
-        if (schoolSub.subscriptionPlan.features.includes(feature)) return true;
+        if (schoolSub.subscriptionPlan.features?.includes(feature)) return true;
         
         // Check new relational system
-        const hasAccess = schoolSub.subscriptionPlan.featureAccess.some(
-          fa => fa.enabled && fa.feature.featureKey === feature
+        const hasAccess = schoolSub.subscriptionPlan.featureAccess?.some(
+          fa => fa.enabled && fa.feature?.featureKey === feature
         );
         if (hasAccess) return true;
       }

@@ -8,9 +8,12 @@ export const initSocket = (server: http.Server) => {
     cors: {
       origin: [
         "http://localhost:3000",
+        "https://qefashub.flexitistudio.com",
+        "https://www.qefashub.flexitistudio.com",
         "https://schoolhub.flexitistudio.com",
         "https://www.schoolhub.flexitistudio.com",
       ],
+      credentials: true,
     },
   });
 
