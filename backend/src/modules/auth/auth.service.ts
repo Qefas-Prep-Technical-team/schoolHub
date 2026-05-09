@@ -608,6 +608,8 @@ export const googleAuthService = async (
             studentCode,
             role: UserRole.STUDENT,
             verified: true,
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
           },
         });
         await UserSubscriptionService.initializeFreePlan(user.id, UserRole.STUDENT);
@@ -625,6 +627,8 @@ export const googleAuthService = async (
             teacherCode,
             role: UserRole.TEACHER,
             verified: true,
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
           },
         });
         await UserSubscriptionService.initializeFreePlan(user.id, UserRole.TEACHER);
@@ -643,6 +647,8 @@ export const googleAuthService = async (
             role: UserRole.ADMIN,
             verified: true,
             status: "APPROVED",
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
           },
         });
         await UserSubscriptionService.initializeFreePlan(user.id, UserRole.ADMIN);
@@ -660,6 +666,8 @@ export const googleAuthService = async (
             parentCode,
             role: UserRole.PARENT,
             verified: true,
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
           },
         });
         await UserSubscriptionService.initializeFreePlan(user.id, UserRole.PARENT);

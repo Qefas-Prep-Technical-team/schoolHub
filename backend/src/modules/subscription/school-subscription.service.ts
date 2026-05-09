@@ -102,24 +102,8 @@ export class SchoolSubscriptionService {
     const expiresAt = durationDays ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000) : null;
 
     return await prisma.$transaction(async (tx) => {
-      // 1. Get current active subscription to close it in history
-      const currentSub = await tx.schoolSubscription.findUnique({
-        where: { schoolId },
-      });
-
-      if (currentSub) {
-        // Record ending of previous plan in history if not already ended
-        await tx.subscriptionHistory.updateMany({
-          where: {
-            schoolId,
-            subscriptionPlanId: currentSub.subscriptionPlanId,
-            endedAt: null,
-          },
-          data: {
-            endedAt: new Date(),
-          },
-        });
-      }
+      // The previous plan history record remains open (endedAt: null) until it explicitly expires via the scheduler
+      // This ensures endedAt is only set once the plan actually expires or is cancelled.
 
       // 2. Update or Create subscription
       const subscription = await tx.schoolSubscription.upsert({

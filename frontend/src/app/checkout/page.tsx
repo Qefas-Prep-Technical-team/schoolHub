@@ -35,6 +35,9 @@ export default function CheckoutPage() {
     const [isReturningUser, setIsReturningUser] = useState(false);
     const [resendTimer, setResendTimer] = useState(0);
     const [registeredUserId, setRegisteredUserId] = useState<string | null>(null);
+    const [acceptTerms, setAcceptTerms] = useState(false);
+    const [showTermsModal, setShowTermsModal] = useState(false);
+    const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
     // Fetch real pricing to securely compute amount based on URL plan
     const { data: pricingData } = useFetchPricing();
@@ -260,7 +263,8 @@ export default function CheckoutPage() {
                 userType: role,
                 password,
                 planId: plan, // Using 'plan' as the identifier to be resolved by backend
-                billingCycle: billing
+                billingCycle: billing,
+                acceptTerms: acceptTerms
             });
             toast.success("Account setup successful! Proceeding to payment.");
             setStep('PAYMENT_READY');
@@ -447,6 +451,7 @@ export default function CheckoutPage() {
                                             </button>
                                         </div>
                                     </div>
+
                                     <div>
                                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Confirm Password</label>
                                         <div className="relative">
@@ -459,7 +464,48 @@ export default function CheckoutPage() {
                                             />
                                         </div>
                                     </div>
-                                    <Button type="submit" disabled={isLoading} className="w-full py-6 text-lg rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2">
+
+                                    {/* Privacy and Policy Checkbox */}
+                                    <div className="flex flex-col pt-2">
+                                        <label className="flex items-start gap-3 cursor-pointer group">
+                                            <div className="relative flex items-center h-5">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={acceptTerms}
+                                                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 checked:bg-blue-600 checked:border-blue-600 transition-all duration-200"
+                                                />
+                                                <CheckCircle2 className="absolute h-3.5 w-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity left-0.5 top-1 pointer-events-none" />
+                                            </div>
+                                            <span className="text-sm font-medium text-slate-600 dark:text-slate-400 leading-tight">
+                                                I agree to the{" "}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }}
+                                                    className="text-blue-600 hover:text-blue-700 font-bold underline underline-offset-4"
+                                                >
+                                                    Terms of Service
+                                                </button>{" "}
+                                                and{" "}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); setShowPrivacyModal(true); }}
+                                                    className="text-blue-600 hover:text-blue-700 font-bold underline underline-offset-4"
+                                                >
+                                                    Privacy Policy
+                                                </button>
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <Button 
+                                        type="submit" 
+                                        disabled={isLoading || !acceptTerms} 
+                                        className={`w-full py-6 text-lg rounded-2xl font-black shadow-lg transition-all flex items-center justify-center gap-2 
+                                            ${acceptTerms 
+                                                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/30' 
+                                                : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'}`}
+                                    >
                                         {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save & Continue to Payment"}
                                     </Button>
                                 </form>
@@ -630,8 +676,99 @@ export default function CheckoutPage() {
                         </div>
                     </div>
                 </div>
-
             </div>
+
+            {/* Privacy Policy Modal */}
+            {showPrivacyModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden border border-slate-100 dark:border-slate-800"
+                    >
+                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white font-lexend">Privacy Policy</h3>
+                                <p className="text-slate-500 text-sm font-bold">Last updated: May 2024</p>
+                            </div>
+                            <button
+                                onClick={() => setShowPrivacyModal(false)}
+                                className="p-3 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-colors"
+                            >
+                                <ArrowLeft className="w-6 h-6 text-slate-500" />
+                            </button>
+                        </div>
+                        <div className="p-8 overflow-y-auto max-h-[calc(80vh-160px)] prose dark:prose-invert prose-slate">
+                            <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-4">1. Information We Collect</h4>
+                            <p className="text-slate-600 dark:text-slate-400 mb-6">
+                                We collect information you provide directly to us when you create an account, such as your name, email address, and institutional affiliation.
+                            </p>
+                            <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-4">2. How We Use Your Information</h4>
+                            <p className="text-slate-600 dark:text-slate-400 mb-6">
+                                We use the information we collect to provide, maintain, and improve our services, and to communicate with you about your account.
+                            </p>
+                            <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-4">3. Data Security</h4>
+                            <p className="text-slate-600 dark:text-slate-400 mb-6">
+                                We implement industry-standard security measures to protect your personal data from unauthorized access or disclosure.
+                            </p>
+                        </div>
+                        <div className="p-8 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                            <Button
+                                onClick={() => setShowPrivacyModal(false)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black"
+                            >
+                                I Understand
+                            </Button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Terms of Service Modal */}
+            {showTermsModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden border border-slate-100 dark:border-slate-800"
+                    >
+                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white font-lexend">Terms of Service</h3>
+                                <p className="text-slate-500 text-sm font-bold">Last updated: May 2024</p>
+                            </div>
+                            <button
+                                onClick={() => setShowTermsModal(false)}
+                                className="p-3 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-colors"
+                            >
+                                <ArrowLeft className="w-6 h-6 text-slate-500" />
+                            </button>
+                        </div>
+                        <div className="p-8 overflow-y-auto max-h-[calc(80vh-160px)] prose dark:prose-invert prose-slate">
+                            <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-4">1. Acceptance of Terms</h4>
+                            <p className="text-slate-600 dark:text-slate-400 mb-6">
+                                By accessing or using our platform, you agree to be bound by these Terms of Service and all applicable laws and regulations.
+                            </p>
+                            <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-4">2. Use License</h4>
+                            <p className="text-slate-600 dark:text-slate-400 mb-6">
+                                Permission is granted to temporarily use our platform for personal, non-commercial institutional use only.
+                            </p>
+                            <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-4">3. Disclaimer</h4>
+                            <p className="text-slate-600 dark:text-slate-400 mb-6">
+                                The materials on our platform are provided on an 'as is' basis. We make no warranties, expressed or implied.
+                            </p>
+                        </div>
+                        <div className="p-8 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                            <Button
+                                onClick={() => setShowTermsModal(false)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black"
+                            >
+                                I Accept
+                            </Button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 }

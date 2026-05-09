@@ -53,6 +53,10 @@ export const schoolRegistrationSchema = yup.object({
       .min(3, "Subdomain must be at least 3 characters")
       .max(63, "Subdomain must be less than 63 characters")
       .optional(),
+    acceptTerms: yup
+      .boolean()
+      .oneOf([true], "You must accept the terms and conditions")
+      .required("Terms and conditions must be accepted"),
   }),
 });
 
@@ -94,6 +98,11 @@ export const teacherRegistrationSchema = yup.object({
       .optional()
       // .matches(/^\d{10}$/, "Tenant ID must be a 6-digit code")
       .nullable(),
+    isIndependent: yup.boolean().default(false),
+    acceptTerms: yup
+      .boolean()
+      .oneOf([true], "You must accept the terms and conditions")
+      .required("Terms and conditions must be accepted"),
   }),
 });
 
@@ -132,6 +141,10 @@ export const studentSchema = yup.object({
       .matches(/^\d{6}$/, "Tenant ID must be a 6-digit code")
       .nullable(),
     teacherCode: yup.string().optional().nullable(),
+    acceptTerms: yup
+      .boolean()
+      .oneOf([true], "You must accept the terms and conditions")
+      .required("Terms and conditions must be accepted"),
   }),
 });
 
@@ -175,6 +188,10 @@ export const ParentRegisterSchema = yup.object({
       .matches(/^stu-\d{6}$/, "Student code format: stu-123456")
       .nullable()
       .transform((value) => (value === "" ? null : value)),
+    acceptTerms: yup
+      .boolean()
+      .oneOf([true], "You must accept the terms and conditions")
+      .required("Terms and conditions must be accepted"),
   }),
 });
 

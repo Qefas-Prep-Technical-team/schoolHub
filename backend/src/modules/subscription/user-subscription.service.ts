@@ -94,7 +94,7 @@ export class UserSubscriptionService {
       return subscription;
     };
 
-    return tx ? execute(tx) : prisma.$transaction(execute);
+    return tx ? execute(tx) : prisma.$transaction(execute, { timeout: 20000 });
   }
 
   /**
@@ -134,19 +134,8 @@ export class UserSubscriptionService {
       const currentSub = await tx.userSubscription.findUnique({
         where: { userId },
       });
-
-      if (currentSub) {
-        await tx.subscriptionHistory.updateMany({
-          where: {
-            userId,
-            subscriptionPlanId: currentSub.subscriptionPlanId,
-            endedAt: null,
-          },
-          data: {
-            endedAt: new Date(),
-          },
-        });
-      }
+      // The previous plan history record remains open (endedAt: null) until it explicitly expires via the scheduler
+      // This ensures endedAt is only set once the plan actually expires or is cancelled.
 
       const subscription = await tx.userSubscription.upsert({
         where: { userId },

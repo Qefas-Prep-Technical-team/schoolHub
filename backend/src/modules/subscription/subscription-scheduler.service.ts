@@ -50,6 +50,18 @@ export class SubscriptionScheduler {
         },
       });
 
+      // Close history records for expired schools
+      await tx.subscriptionHistory.updateMany({
+        where: {
+          schoolId: { in: schoolsToNotify.map(s => s.schoolId) },
+          endedAt: null,
+        },
+        data: {
+          endedAt: now,
+          status: SubscriptionStatus.EXPIRED
+        }
+      });
+
       // 2. Process User Subscriptions
       const expiredUsers = await (tx as any).userSubscription.updateMany({
         where: {
@@ -61,6 +73,18 @@ export class SubscriptionScheduler {
           status: SubscriptionStatus.EXPIRED,
           updatedAt: now,
         },
+      });
+
+      // Close history records for expired users
+      await tx.subscriptionHistory.updateMany({
+        where: {
+          userId: { in: usersToNotify.map(u => u.userId) },
+          endedAt: null,
+        },
+        data: {
+          endedAt: now,
+          status: SubscriptionStatus.EXPIRED
+        }
       });
 
       return {

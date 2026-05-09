@@ -154,6 +154,8 @@ export const registerSchool = async (req: Request, res: Response) => {
           role: UserRole.ADMIN,
           adminCode,
           tenantId,
+          acceptedTerms: true,
+          termsAcceptedAt: new Date(),
         },
       });
 
@@ -172,7 +174,7 @@ export const registerSchool = async (req: Request, res: Response) => {
 
       return { school, admin };
     }, {
-      timeout: 10000, // 10 seconds to handle multi-step registration on potentially slow DB
+      timeout: 20000, // 20 seconds to handle multi-step registration
     });
 
     return res.status(201).json({
@@ -318,6 +320,9 @@ export const registerTeacher = async (req: Request, res: Response) => {
           isClaimed: true,
           primarySchoolId: schoolToConnect ? schoolToConnect.id : null,
           activeSchoolId: schoolToConnect ? schoolToConnect.id : null,
+          isIndependent: !!isIndependent,
+          acceptedTerms: true,
+          termsAcceptedAt: new Date(),
         },
       });
 
@@ -382,7 +387,7 @@ export const registerTeacher = async (req: Request, res: Response) => {
       }
 
       return { teacher, studentToConnect, classToConnect };
-    });
+    }, { timeout: 20000 });
 
     if (schoolToConnect) {
       getIO().to(`user:${schoolToConnect.id}`).emit("link:updated", {
@@ -635,6 +640,8 @@ export const registerStudent = async (
           role: UserRole.STUDENT,
           tenantId: school ? school.tenantId : "default-tenant-id",
           schoolId: school ? school.id : null,
+          acceptedTerms: true,
+          termsAcceptedAt: new Date(),
         },
       });
 
@@ -722,7 +729,7 @@ export const registerStudent = async (
       }
 
       return student;
-    });
+    }, { timeout: 20000 });
 
     const io = getIO();
     if (school) {
@@ -882,10 +889,12 @@ export const registerParent = async (
           password: hashedPassword,
           role: UserRole.PARENT,
           parentCode,
+          acceptedTerms: true,
+          termsAcceptedAt: new Date(),
         },
       });
 
-      await UserSubscriptionService.initializeFreePlan(parent.id, UserRole.PARENT);
+      await UserSubscriptionService.initializeFreePlan(parent.id, UserRole.PARENT, tx);
 
 
       let linkResult = null;
@@ -941,7 +950,7 @@ export const registerParent = async (
       }
 
       return { parent, link: linkResult, studentData };
-    });
+    }, { timeout: 20000 });
 
     if (result.studentData) {
       getIO().to(`user:${result.studentData.id}`).emit("link:updated", {
@@ -2576,12 +2585,16 @@ export const googleAuth = async (req: Request, res: Response) => {
 
 export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
   try {
-    const { userType, password, planId, billingCycle } = req.body;
+    const { userType, password, planId, billingCycle, acceptTerms } = req.body;
     const email = req.body.email?.toLowerCase().trim();
     console.log("Finalizing account setup for:", { email, userType, planId });
 
     if (!email || !password || !userType) {
       return res.status(400).json({ success: false, message: "Email, password, and user type are required" });
+    }
+
+    if (!acceptTerms) {
+      return res.status(400).json({ success: false, message: "You must accept the terms and conditions to continue." });
     }
 
     const normalizedRole = (userType as string)?.toUpperCase().trim() as UserRole;
@@ -2593,28 +2606,31 @@ export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Update user password and mark as verified
+      // 1. Initial lookup to get user and relations
       let user: any;
       switch (normalizedRole) {
         case UserRole.ADMIN:
-          user = await tx.admin.update({ 
-            where: { email }, 
-            data: { password: hashedPassword, verified: true },
+          user = await tx.admin.findUnique({ 
+            where: { email },
             include: { schoolAdmins: { include: { school: true } } }
           });
           break;
         case UserRole.TEACHER:
-          user = await tx.teacher.update({ where: { email }, data: { password: hashedPassword, verified: true } });
+          user = await tx.teacher.findUnique({ where: { email } });
           break;
         case UserRole.STUDENT:
-          user = await tx.student.update({ where: { email }, data: { password: hashedPassword, verified: true } });
+          user = await tx.student.findUnique({ where: { email } });
           break;
         case UserRole.PARENT:
-          user = await tx.parent.update({ where: { email }, data: { password: hashedPassword, verified: true } });
+          user = await tx.parent.findUnique({ where: { email } });
           break;
       }
 
-      // 2. If it's an ADMIN and we have a planId (which might be a plan name like 'growth')
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      // 2. If it's an ADMIN and we have a planId
       if (normalizedRole === UserRole.ADMIN && planId) {
         // Resolve the actual plan UUID if planId is a type/name
         let actualPlanId = planId;
@@ -2643,28 +2659,46 @@ export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
           // Initialize User Subscription
           await UserSubscriptionService.initializeFreePlan(user.id, UserRole.ADMIN, tx, actualPlanId);
 
-          // Update School metadata
+          // Update School metadata (billingCycle)
           await tx.school.update({
             where: { id: school.id },
             data: { 
               billingCycle: billingCycle || "monthly",
+              // Ensure name/id match what was initialized
               plan: potentialPlan?.name || school.plan,
-              planId: actualPlanId
-            }
-          });
-          
-          // Update Admin metadata to match
-          await tx.admin.update({
-            where: { id: user.id },
-            data: {
-              plan: potentialPlan?.name || user.plan,
               planId: actualPlanId
             }
           });
         }
       }
 
+      // 3. Final security and metadata update for the user
+      const finalUpdateData = {
+        password: hashedPassword,
+        verified: true,
+        billingCycle: billingCycle || "monthly",
+        acceptedTerms: true,
+        termsAcceptedAt: new Date(),
+      };
+
+      switch (normalizedRole) {
+        case UserRole.ADMIN:
+          user = await tx.admin.update({ where: { id: user.id }, data: finalUpdateData });
+          break;
+        case UserRole.TEACHER:
+          user = await tx.teacher.update({ where: { id: user.id }, data: finalUpdateData });
+          break;
+        case UserRole.STUDENT:
+          user = await tx.student.update({ where: { id: user.id }, data: finalUpdateData });
+          break;
+        case UserRole.PARENT:
+          user = await tx.parent.update({ where: { id: user.id }, data: finalUpdateData });
+          break;
+      }
+
       return user;
+    }, {
+      timeout: 30000 // Increase timeout to 30 seconds to prevent P2028
     });
 
     // Send confirmation email

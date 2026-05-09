@@ -7,6 +7,7 @@ export interface SchoolRegistrationData {
   email: string
   password: string
   subdomain?: string
+  acceptTerms?: boolean
 }
 
 export interface TeacherRegistrationData {
@@ -15,6 +16,8 @@ export interface TeacherRegistrationData {
   password: string
   confirmPassword: string
   tenantId?: string
+  isIndependent?: boolean
+  acceptTerms?: boolean
 }
 
 export interface StudentRegistrationData {

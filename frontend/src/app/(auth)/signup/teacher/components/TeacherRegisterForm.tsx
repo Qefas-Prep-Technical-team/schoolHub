@@ -18,6 +18,9 @@ export default function TeacherRegisterForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, message: '' });
   const [showOverlay, setShowOverlay] = useState(false);
+  const [showOptional, setShowOptional] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -41,7 +44,8 @@ export default function TeacherRegisterForm() {
       confirmPassword: '',
       schoolCode: searchParams.get('schoolCode') || '',
       classCode: searchParams.get('classCode') || '',
-      isIndependent: false
+      isIndependent: false,
+      acceptTerms: false
     }
   });
 
@@ -94,6 +98,7 @@ export default function TeacherRegisterForm() {
         password: data.password,
         confirmPassword: data.confirmPassword,
         isIndependent: data.isIndependent,
+        acceptTerms: data.acceptTerms,
         ...(data.schoolCode && !data.isIndependent && { schoolCode: data.schoolCode.trim() }),
         ...(data.studentCode && { studentCode: data.studentCode.trim() }),
         ...(data.classCode && { classCode: data.classCode.trim() })
@@ -276,81 +281,154 @@ export default function TeacherRegisterForm() {
           )}
         </label>
 
-        {/* Divider */}
-        <div className="relative flex items-center py-4">
-          <div className="flex-grow border-t border-input-border-light dark:border-input-border-dark"></div>
-          <span className="flex-shrink mx-4 text-sm text-[#4c809a] dark:text-gray-400">Optional</span>
-          <div className="flex-grow border-t border-input-border-light dark:border-input-border-dark"></div>
+        {/* Optional Fields Accordion */}
+        <div className="border border-input-border-light dark:border-input-border-dark rounded-lg overflow-hidden transition-all duration-300">
+          <button
+            type="button"
+            onClick={() => setShowOptional(!showOptional)}
+            className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#4c809a]">settings</span>
+              <span className="text-base font-semibold text-[#0d171b] dark:text-gray-300">Optional Information</span>
+            </div>
+            <span className={`material-symbols-outlined transition-transform duration-300 ${showOptional ? 'rotate-180' : ''}`}>
+              expand_more
+            </span>
+          </button>
+
+          <div className={`transition-all duration-300 ease-in-out ${showOptional ? 'max-h-[1000px] opacity-100 p-4 space-y-6' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+            {/* School Code */}
+            <label className="flex flex-col">
+              <div className="flex items-center justify-between pb-2">
+                <p className="text-base font-medium text-[#0d171b] dark:text-gray-300">School Code</p>
+                <div className="relative group">
+                  <span className="material-symbols-outlined text-[#4c809a] dark:text-gray-400 cursor-pointer text-base">
+                    help_outline
+                  </span>
+                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 w-48 bg-slate-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 text-center font-normal">
+                    This code connects you to your school&apos;s portal. Ask your administrator for it.
+                  </div>
+                </div>
+              </div>
+              <input
+                type="text"
+                {...register('schoolCode')}
+                placeholder="Enter your school's Code"
+                className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.schoolCode
+                  ? 'border-red-500 dark:border-red-400'
+                  : 'border-input-border-light dark:border-input-border-dark'
+                  }`}
+                disabled={isPending || isIndependentValue}
+              />
+              {errors.schoolCode && (
+                <p className="text-red-500 text-sm mt-2">{errors.schoolCode.message}</p>
+              )}
+            </label>
+
+            {/* Student Code */}
+            <label className="flex flex-col">
+              <div className="flex items-center justify-between pb-2">
+                <p className="text-base font-medium text-[#0d171b] dark:text-gray-300">Student Code</p>
+              </div>
+              <input
+                type="text"
+                {...register('studentCode')}
+                placeholder="Enter student code (format: stu-123456)"
+                className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.studentCode
+                  ? 'border-red-500 dark:border-red-400'
+                  : 'border-input-border-light dark:border-input-border-dark'
+                  }`}
+                disabled={isPending}
+              />
+              {errors.studentCode && (
+                <p className="text-red-500 text-sm mt-2">{errors.studentCode.message}</p>
+              )}
+              <p className="text-xs text-[#4c809a] dark:text-gray-500 mt-2">
+                Providing a student code will send a connection request to that student.
+              </p>
+            </label>
+
+            {/* Class Code */}
+            <label className="flex flex-col">
+              <div className="flex items-center justify-between pb-2">
+                <p className="text-base font-medium text-[#0d171b] dark:text-gray-300">Class Code</p>
+              </div>
+              <input
+                type="text"
+                {...register('classCode')}
+                placeholder="Enter Class code (format: cls-123456)"
+                className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.classCode
+                  ? 'border-red-500 dark:border-red-400'
+                  : 'border-input-border-light dark:border-input-border-dark'
+                  }`}
+                disabled={isPending}
+              />
+              {errors.classCode && (
+                <p className="text-red-500 text-sm mt-2">{errors.classCode.message}</p>
+              )}
+            </label>
+          </div>
         </div>
 
-        {/* School Code */}
-        <label className="flex flex-col">
-          <div className="flex items-center justify-between pb-2">
-            <p className="text-base font-medium text-[#0d171b] dark:text-gray-300">School Code</p>
-            <div className="relative group">
-              <span className="material-symbols-outlined text-[#4c809a] dark:text-gray-400 cursor-pointer text-base">
-                help_outline
-              </span>
-              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 w-48 bg-slate-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                This code connects you to your school&apos;s portal. Ask your administrator for it.
-              </div>
-            </div>
-          </div>
-          <input
-            type="text"
-            {...register('schoolCode')}
-            placeholder="Enter your school's Code"
-            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.schoolCode
-              ? 'border-red-500 dark:border-red-400'
-              : 'border-input-border-light dark:border-input-border-dark'
-              }`}
-            disabled={isPending || isIndependentValue}
-          />
-          {errors.schoolCode && (
-            <p className="text-red-500 text-sm mt-2">{errors.schoolCode.message}</p>
-          )}
-        </label>
-
-        {/* Student Code */}
-        <label className="flex flex-col">
-          <div className="flex items-center justify-between pb-2">
-            <p className="text-base font-medium text-[#0d171b] dark:text-gray-300">Student Code</p>
-            <span className="text-sm text-[#4c809a] dark:text-gray-400">Optional</span>
-          </div>
-          <input
-            type="text"
-            {...register('studentCode')}
-            placeholder="Enter student code (format: stu-123456)"
-            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.studentCode
-              ? 'border-red-500 dark:border-red-400'
-              : 'border-input-border-light dark:border-input-border-dark'
-              }`}
-            disabled={isPending}
-          />
-          {errors.studentCode && (
-            <p className="text-red-500 text-sm mt-2">{errors.studentCode.message}</p>
-          )}
-          <p className="text-xs text-[#4c809a] dark:text-gray-500 mt-2">
-            Providing a student code will send a connection request to that student.
-          </p>
-        </label>
 
         {/* Independent Teacher Checkbox */}
-        <div className="flex items-center">
-          <input
-            id="independent-teacher-checkbox"
-            type="checkbox"
-            {...register('isIndependent')}
-            className="h-4 w-4 rounded border-input-border-light dark:border-input-border-dark 
-            bg-background-light dark:bg-background-dark text-primary focus:ring-primary/50"
-            disabled={isPending}
-          />
+        <div className="flex items-center p-2 rounded-lg border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-300">
+          <div className="flex items-center h-5">
+            <input
+              id="independent-teacher-checkbox"
+              type="checkbox"
+              {...register('isIndependent')}
+              className="h-5 w-5 rounded border-input-border-light dark:border-input-border-dark 
+              bg-background-light dark:bg-background-dark text-primary focus:ring-primary/50 transition-all cursor-pointer"
+              disabled={isPending}
+            />
+          </div>
           <label
             htmlFor="independent-teacher-checkbox"
-            className="ml-2 block text-sm text-[#0d171b] dark:text-gray-300"
+            className="ml-3 block text-sm font-medium text-[#0d171b] dark:text-gray-300 cursor-pointer"
           >
             I want to create an independent teaching account
           </label>
+        </div>
+
+        {/* Privacy and Policy Checkbox */}
+        <div className="flex flex-col">
+          <div className="flex items-start">
+            <div className="flex items-center h-5">
+              <input
+                id="privacy-policy-checkbox"
+                type="checkbox"
+                {...register('acceptTerms')}
+                className={`h-5 w-5 rounded border bg-background-light dark:bg-background-dark text-primary focus:ring-primary/50 transition-all cursor-pointer ${errors.acceptTerms ? 'border-red-500' : 'border-input-border-light dark:border-input-border-dark'}`}
+                disabled={isPending}
+              />
+            </div>
+            <label
+              htmlFor="privacy-policy-checkbox"
+              className="ml-3 block text-sm text-[#4c809a] dark:text-gray-400"
+            >
+              I agree to the{" "}
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(true)}
+                className="text-primary font-semibold hover:underline"
+              >
+                Terms of Service
+              </button>{" "}
+              and{" "}
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(true)}
+                className="text-primary font-semibold hover:underline"
+              >
+                Privacy Policy
+              </button>
+            </label>
+          </div>
+          {errors.acceptTerms && (
+            <p className="text-red-500 text-xs mt-1 ml-8">{errors.acceptTerms.message}</p>
+          )}
         </div>
 
         {/* Submit Button */}
@@ -400,6 +478,84 @@ export default function TeacherRegisterForm() {
         </p>
       </form>
       </div>
+
+      {/* Privacy Policy Modal */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform animate-in zoom-in duration-300">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+              <h3 className="text-xl font-bold text-[#0d171b] dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">security</span>
+                Privacy Policy
+              </h3>
+              <button 
+                onClick={() => setShowPrivacyModal(false)}
+                className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="p-8 max-h-[60vh] overflow-y-auto text-sm leading-relaxed text-gray-600 dark:text-gray-400 space-y-4">
+              <p className="font-semibold text-[#0d171b] dark:text-white">Last Updated: May 9, 2026</p>
+              <p>Your privacy is important to us. We collect minimal data required for school management, including your name, email, and teaching credentials.</p>
+              <p>We do not sell your data to third parties. All data is encrypted and stored securely on our servers.</p>
+              <p>We use your information to:
+                <ul className="list-disc ml-6 mt-2 space-y-1">
+                  <li>Provide and maintain our Service</li>
+                  <li>Notify you about changes to our Service</li>
+                  <li>Provide customer support</li>
+                  <li>Gather analysis or valuable information so that we can improve our Service</li>
+                </ul>
+              </p>
+              <p>By using Qefas Hub, you consent to our data collection practices as outlined in this policy.</p>
+            </div>
+            <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/50">
+              <button
+                onClick={() => setShowPrivacyModal(false)}
+                className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+              >
+                I Understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Terms of Service Modal */}
+      {showTermsModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform animate-in zoom-in duration-300">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+              <h3 className="text-xl font-bold text-[#0d171b] dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">gavel</span>
+                Terms of Service
+              </h3>
+              <button 
+                onClick={() => setShowTermsModal(false)}
+                className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="p-8 max-h-[60vh] overflow-y-auto text-sm leading-relaxed text-gray-600 dark:text-gray-400 space-y-4">
+              <p className="font-semibold text-[#0d171b] dark:text-white">Last Updated: May 9, 2026</p>
+              <p>By using Qefas Hub, you agree to provide accurate information and use the platform for educational purposes only.</p>
+              <p>Unauthorized use, data scraping, or any attempt to compromise the security of the platform is strictly prohibited.</p>
+              <p>Users are responsible for maintaining the confidentiality of their account and password. You agree to accept responsibility for all activities that occur under your account.</p>
+              <p>We reserve the right to terminate accounts that violate these terms or engage in behavior harmful to other users or the platform.</p>
+              <p>Qefas Hub is provided "as is" without any warranties of any kind, either express or implied.</p>
+            </div>
+            <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/50">
+              <button
+                onClick={() => setShowTermsModal(false)}
+                className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+              >
+                Accept Terms
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

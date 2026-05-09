@@ -100,6 +100,10 @@ export const teacherSchema = yup.object({
     ),
 
   isIndependent: yup.boolean().default(false),
+  acceptTerms: yup
+    .boolean()
+    .oneOf([true], "You must accept the terms and conditions")
+    .required("Terms and conditions must be accepted"),
   studentCode: yup
     .string()
     .optional()
@@ -270,6 +274,10 @@ export const schoolSchema = yup.object({
         return value.length >= 3 && value.length <= 63;
       },
     ),
+  acceptTerms: yup
+    .boolean()
+    .oneOf([true], "You must accept the terms and conditions")
+    .required("Terms and conditions must be accepted"),
 });
 
 export type SchoolFormData = yup.InferType<typeof schoolSchema>;

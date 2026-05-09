@@ -123,6 +123,8 @@ model Admin {
   billingCycle            String    @default("monthly")
   subscriptionPlanId      String?
   schoolAdmins            SchoolAdmin[]
+  acceptedTerms           Boolean   @default(false)
+  termsAcceptedAt         DateTime?
 }
 
 model Teacher {
@@ -166,6 +168,9 @@ model Teacher {
   schoolId                String?
   settings                Json?     @default("{}")
   subscriptionPlanId      String?
+  isIndependent           Boolean   @default(false)
+  acceptedTerms           Boolean   @default(false)
+  termsAcceptedAt         DateTime?
 }
 
 model Student {
@@ -206,6 +211,8 @@ model Student {
   planId                  String?
   billingCycle            String    @default("monthly")
   subscriptionPlanId      String?
+  acceptedTerms           Boolean   @default(false)
+  termsAcceptedAt         DateTime?
 }
 
 model Parent {
@@ -241,6 +248,8 @@ model Parent {
   planId                  String?
   billingCycle            String    @default("monthly")
   subscriptionPlanId      String?
+  acceptedTerms           Boolean   @default(false)
+  termsAcceptedAt         DateTime?
 
   @@map("parents")
 }

@@ -75,9 +75,21 @@
   - [x] Refactored `SchoolSubscriptionService` and `UserSubscriptionService` to support optional transaction clients.
   - [x] Updated `auth.controller.ts` to pass the transaction client (`tx`) to subscription initialization methods.
   - [x] This resolves the issue where sub-transactions couldn't see uncommitted records from the parent transaction.
+- [x] Fixed misconfigured plan scopes in the database:
+  - [x] Corrected 3 Student plans and 2 Teacher plans that were erroneously set to `SCHOOL` scope.
+  - [x] This resolves the "Invalid plan scope" error during Student/Teacher payment verification.
+- [x] Fixed Prisma `P2028` (Transaction not found) during checkout finalization:
+  - [x] Increased interactive transaction timeout to 30s to prevent premature closure during complex onboarding.
+  - [x] Consolidated redundant database updates on `Admin` and `School` models to minimize roundtrips.
+  - [x] Transitioned initial updates to `findUnique` lookups, deferring all persistent state changes to a single final update call per role.
 - [x] Optimized heavy database queries in `School` and `Link` modules to resolve 60s Axios timeouts.
 - [x] Restored `node_modules` integrity by running `npm install` after accidental deletion of `skills` sub-directories.
 - [x] Fixed `express-rate-limit` validation error in `admin.route.ts` that was blocking server startup.
+- [x] **Teacher Registration Enhancements**:
+  - [x] Implemented independent teaching account tracking in the database (`isIndependent` flag).
+  - [x] Added optional fields accordion (School/Student/Class Codes) to reduce form clutter.
+  - [x] Added Privacy and Terms agreement checkbox with functional pop-up modals.
+  - [x] Updated backend validation and registration logic to handle independent accounts and terms agreement.
 
 ## Blockers
 
@@ -85,6 +97,7 @@
 
 ## Next Action
 
+- [ ] Run `npx prisma generate` in backend (resolve EPERM lock).
 - [ ] Ensure all users can successfully complete the checkout flow without relation errors.
 - [ ] Verify trial eligibility logic on the frontend/backend bridge.
 - [ ] Final manual verification of the "Toaster-only" flow across all user roles.
