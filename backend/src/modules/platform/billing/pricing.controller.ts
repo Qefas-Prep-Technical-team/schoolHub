@@ -87,7 +87,13 @@ export const getFeatures = async (req: Request, res: Response) => {
     try {
         let features = await FeatureService.listFeatures();
         
-        return res.status(200).json({ success: true, data: features });
+        // Map featureKey to tag for frontend compatibility
+        const mappedFeatures = features.map((f: any) => ({
+            ...f,
+            tag: f.featureKey
+        }));
+        
+        return res.status(200).json({ success: true, data: mappedFeatures });
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to get features" });
     }

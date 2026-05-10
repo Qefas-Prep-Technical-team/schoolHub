@@ -98,6 +98,7 @@ export const usePlatformFeatures = () => {
             const { data } = await platformClient.get("/platform/pricing/features/manifest", {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
+            if (!data.success) throw new Error(data.message || "Failed to fetch platform features");
             return data.data;
         },
         enabled: !!platform_token,

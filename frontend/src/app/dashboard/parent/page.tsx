@@ -2,6 +2,8 @@ import StudentHero from './components/dashboard/StudentHero'
 import InsightsGrid from './components/dashboard/InsightsGrid'
 import Announcements from './components/dashboard/Announcements'
 import FinancialSummaryCard from './components/dashboard/FinancialSummaryCard'
+import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
+
 
 export default function Home() {
   return (
@@ -39,7 +41,15 @@ export default function Home() {
               <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Financial Status</h2>
               <p className="text-[11px] text-orange-500 font-bold uppercase tracking-widest">Fee management & receipts</p>
             </div>
-            <FinancialSummaryCard />
+             <FinancialSummaryCard />
+             <UsageLimitsCard 
+                role="PARENT"
+                title="Family Management"
+                description="Managing your student accounts and educational capacity."
+                upgradeLink="/dashboard/parent/billing"
+                upgradeLabel="Manage Family Plan"
+             />
+
             
             {/* Quick Helper Card */}
             <div className="p-8 rounded-[2rem] bg-slate-900 dark:bg-orange-600 shadow-2xl relative overflow-hidden group border border-white/10">

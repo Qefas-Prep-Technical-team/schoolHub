@@ -141,6 +141,9 @@ export const studentSchema = yup.object({
       .matches(/^\d{6}$/, "Tenant ID must be a 6-digit code")
       .nullable(),
     teacherCode: yup.string().optional().nullable(),
+    schoolCode: yup.string().optional().nullable(),
+    parentCode: yup.string().optional().nullable(),
+    classCode: yup.string().optional().nullable(),
     acceptTerms: yup
       .boolean()
       .oneOf([true], "You must accept the terms and conditions")
@@ -264,7 +267,10 @@ export const googleAuthSchema = yup.object({
     idToken: yup.string().required("Google ID Token is required"),
     userRole: yup
       .string()
-      .oneOf(["STUDENT", "PARENT", "TEACHER", "ADMIN"], "Invalid user role for Google Login")
+      .oneOf(
+        ["STUDENT", "PARENT", "TEACHER", "ADMIN"],
+        "Invalid user role for Google Login",
+      )
       .optional()
       .nullable(),
   }),

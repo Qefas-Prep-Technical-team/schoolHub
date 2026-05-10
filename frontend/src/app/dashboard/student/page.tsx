@@ -38,6 +38,8 @@ import { Badge } from '@/components/ui/badge';
 import StudentHero from './components/dashboard/StudentHero';
 import ConsoleInsights from './components/dashboard/ConsoleInsights';
 import AcademicHistory from './components/dashboard/AcademicHistory';
+import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
+
 
 export default function StudentHomeDashboard() {
   const { username } = useUserStore();
@@ -227,7 +229,15 @@ export default function StudentHomeDashboard() {
                 </div>
 
                 <div className="lg:col-span-5 space-y-8 flex flex-col">
+                  <UsageLimitsCard 
+                    role="STUDENT"
+                    title="Learning Quota"
+                    description="Monitoring your academic resource allocation and AI tools."
+                    upgradeLink="/dashboard/student/billing"
+                    upgradeLabel="View Learning Plans"
+                  />
                   <div className="bg-slate-900 dark:bg-slate-100 rounded-[3rem] p-10 text-white dark:text-slate-900 shadow-2xl relative overflow-hidden group">
+
                      <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 dark:bg-slate-900/10 rounded-full blur-3xl -translate-y-20 translate-x-10 group-hover:scale-150 transition-transform duration-700" />
                      <div className="relative z-10 space-y-8">
                         <div className="flex items-center justify-between">

@@ -647,6 +647,9 @@ export const getSchoolBillingService = async (schoolId: string, page = 1, limit 
             lastPaymentDate: school.lastPaymentDate,
             paystackCustomerCode: school.paystackCustomerCode,
             billingCycle: school.billingCycle || absoluteLatestTransaction?.billingCycle || 'monthly',
+            amount: school.billingCycle === 'yearly' 
+              ? (subscriptionPlan?.yearlyPrice || 0) 
+              : (subscriptionPlan?.monthlyPrice || 0),
             features: subscriptionPlan?.features || [],
         },
     usage: {

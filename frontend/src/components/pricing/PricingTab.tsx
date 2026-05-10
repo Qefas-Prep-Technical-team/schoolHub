@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { pricingResolver } from '@/lib/pricingResolver';
 import { usePublicPlatformSettings } from '@/lib/api/hooks/usePlatformGovernance';
+import { Sparkles } from 'lucide-react';
 
 interface PricingTabProps {
     billingType: 'monthly' | 'yearly';
@@ -25,7 +26,7 @@ export default function PricingTab({
 }: PricingTabProps) {
     const queryClient = useQueryClient();
     const { data: rawData, isLoading } = useFetchPricing();
-    const { data: settings } = usePublicPlatformSettings();
+    const { data: settings, isLoading: isSettingsLoading } = usePublicPlatformSettings();
     const data = React.useMemo(() => pricingResolver(rawData), [rawData]);
     const { userType, isAuthenticated } = useAuthStore();
     const [value, setValue] = React.useState(0);
@@ -50,7 +51,7 @@ export default function PricingTab({
         }
 
         if (userCategory && !isEnforced(userCategory)) {
-            // If user's own category is disabled, show ALL OTHER enforced categories
+            // If user's own category is disabled, show other enforced categories
             return allCategories.filter(cat => cat !== userCategory && isEnforced(cat));
         }
 
@@ -114,7 +115,7 @@ export default function PricingTab({
                     transition={{ duration: 0.35, ease: 'easeOut' }}
                     className="w-full max-w-6xl"
                 >
-                    {isLoading ? (
+                    {isSettingsLoading || isLoading ? (
                         /* Skeleton loaders */
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {Array.from({ length: 3 }).map((_, i) => (
@@ -123,6 +124,19 @@ export default function PricingTab({
                                     className="h-[520px] rounded-3xl bg-slate-100 dark:bg-slate-800/60 animate-pulse border border-slate-200 dark:border-slate-700"
                                 />
                             ))}
+                        </div>
+                    ) : categories.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 px-6 text-center space-y-6 bg-slate-50 dark:bg-slate-900/40 rounded-[3rem] border border-dashed border-slate-200 dark:border-slate-800">
+                            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                                <Sparkles className="w-10 h-10 text-green-600" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Full Access Protocol</h3>
+                                <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto font-medium">
+                                    Subscription enforcement is currently deactivated for your account type. 
+                                    Enjoy unrestricted access to all premium features.
+                                </p>
+                            </div>
                         </div>
                     ) : (
                         <div className={`grid gap-6

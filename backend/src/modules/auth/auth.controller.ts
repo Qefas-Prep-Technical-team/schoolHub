@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../../config/database";
-import { generateUniqueCode, generateRandomSixDigit } from "../../utils/code-generator";
+import {
+  generateUniqueCode,
+  generateRandomSixDigit,
+} from "../../utils/code-generator";
 import {
   loginUser,
   sendPasswordResetEmail,
@@ -20,7 +23,10 @@ import jwt from "jsonwebtoken";
 import { AdminRole, UserRole, PlanScope } from "@prisma/client";
 import { getIO } from "../../socket";
 import { createNotification } from "../notification/notification.service";
-import { enforceStudentLimit, enforceTeacherLimit } from "../subscription/quota.helpers";
+import {
+  enforceStudentLimit,
+  enforceTeacherLimit,
+} from "../subscription/quota.helpers";
 
 // Simple slugify helper (no extra package)
 const slugify = (value: string) =>
@@ -30,7 +36,6 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9\s-]/g, "") // remove special chars
     .replace(/\s+/g, "-") // spaces to hyphen
     .replace(/-+/g, "-"); // collapse multiple hyphens
-
 
 export const registerSchool = async (req: Request, res: Response) => {
   try {
@@ -107,75 +112,88 @@ export const registerSchool = async (req: Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Fetch the default school FREE plan to share between school and admin
-      const envPlanId = process.env.SCHOOL_FREE_PLAN;
-      const freePlan = envPlanId
-        ? await tx.subscriptionPlan.findUnique({ where: { id: envPlanId } })
-        : await tx.subscriptionPlan.findFirst({
-            where: {
-              planScope: PlanScope.SCHOOL,
-              type: "free",
-              category: "schools",
-            },
-          });
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // 1. Fetch the default school FREE plan to share between school and admin
+        const envPlanId = process.env.SCHOOL_FREE_PLAN;
+        const freePlan = envPlanId
+          ? await tx.subscriptionPlan.findUnique({ where: { id: envPlanId } })
+          : await tx.subscriptionPlan.findFirst({
+              where: {
+                planScope: PlanScope.SCHOOL,
+                type: "free",
+                category: "schools",
+              },
+            });
 
-      if (!freePlan) {
-        throw new Error(envPlanId 
-          ? `Default school plan with ID ${envPlanId} (from SCHOOL_FREE_PLAN) not found.` 
-          : "Default FREE school plan not found in database."
+        if (!freePlan) {
+          throw new Error(
+            envPlanId
+              ? `Default school plan with ID ${envPlanId} (from SCHOOL_FREE_PLAN) not found.`
+              : "Default FREE school plan not found in database.",
+          );
+        }
+
+        // 2. Create the school record
+        const school = await tx.school.create({
+          data: {
+            name: schoolName,
+            subdomain: normalizedSubdomain,
+            schoolEmail: email,
+            tenantId,
+            schoolCode,
+          },
+        });
+
+        // 3. Create the school profile (settings)
+        await tx.schoolSetting.create({
+          data: {
+            schoolId: school.id,
+          },
+        });
+
+        // 4. Create the admin user
+        const admin = await tx.admin.create({
+          data: {
+            name: adminName,
+            email,
+            password: hashedPassword,
+            role: UserRole.ADMIN,
+            adminCode,
+            tenantId,
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
+          },
+        });
+
+        // 5. Link admin to school as owner
+        await tx.schoolAdmin.create({
+          data: {
+            schoolId: school.id,
+            adminId: admin.id,
+            role: AdminRole.SCHOOL_OWNER,
+          },
+        });
+
+        // 6. Initialize subscriptions using the EXACT same plan
+        await SchoolSubscriptionService.initializeFreePlan(
+          school.id,
+          tx,
+          freePlan.id,
         );
-      }
+        await UserSubscriptionService.initializeFreePlan(
+          admin.id,
+          UserRole.ADMIN,
+          tx,
+          freePlan.id,
+        );
 
-      // 2. Create the school record
-      const school = await tx.school.create({
-        data: {
-          name: schoolName,
-          subdomain: normalizedSubdomain,
-          schoolEmail: email,
-          tenantId,
-          schoolCode,
-        },
-      });
-
-      // 3. Create the school profile (settings)
-      await tx.schoolSetting.create({
-        data: {
-          schoolId: school.id,
-        },
-      });
-
-      // 4. Create the admin user
-      const admin = await tx.admin.create({
-        data: {
-          name: adminName,
-          email,
-          password: hashedPassword,
-          role: UserRole.ADMIN,
-          adminCode,
-          tenantId,
-          acceptedTerms: true,
-          termsAcceptedAt: new Date(),
-        },
-      });
-
-      // 5. Link admin to school as owner
-      await tx.schoolAdmin.create({
-        data: {
-          schoolId: school.id,
-          adminId: admin.id,
-          role: AdminRole.SCHOOL_OWNER,
-        },
-      });
-
-      // 6. Initialize subscriptions using the EXACT same plan
-      await SchoolSubscriptionService.initializeFreePlan(school.id, tx, freePlan.id);
-      await UserSubscriptionService.initializeFreePlan(admin.id, UserRole.ADMIN, tx, freePlan.id);
-
-      return { school, admin };
-    }, {
-      timeout: 20000, // 20 seconds to handle multi-step registration
-    });
+        return { school, admin };
+      },
+      {
+        timeout: 20000, // 20 seconds to handle multi-step registration
+      },
+    );
 
     return res.status(201).json({
       success: true,
@@ -306,88 +324,94 @@ export const registerTeacher = async (req: Request, res: Response) => {
     const teacherCode = await generateUniqueCode(prisma, "teacher", fullName);
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await prisma.$transaction(async (tx) => {
-      const teacher = await tx.teacher.create({
-        data: {
-          name: fullName,
-          email,
-          password: hashedPassword,
-          role: UserRole.TEACHER,
-          tenantId: schoolToConnect
-            ? schoolToConnect.tenantId
-            : "default-tenant-id",
-          teacherCode,
-          isClaimed: true,
-          primarySchoolId: schoolToConnect ? schoolToConnect.id : null,
-          activeSchoolId: schoolToConnect ? schoolToConnect.id : null,
-          isIndependent: !!isIndependent,
-          acceptedTerms: true,
-          termsAcceptedAt: new Date(),
-        },
-      });
-
-      await UserSubscriptionService.initializeFreePlan(teacher.id, UserRole.TEACHER, tx);
-
-
-      if (schoolToConnect) {
-        await tx.linkRequest.create({
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const teacher = await tx.teacher.create({
           data: {
-            linkType: "SCHOOL_TEACHER",
-            requesterType: "TEACHER",
-            requesterId: teacher.id,
-            requesterTeacherId: teacher.id,
-            requesterCode: teacher.teacherCode,
-            targetType: "SCHOOL",
-            targetId: schoolToConnect.id,
-            targetSchoolId: schoolToConnect.id,
-            schoolId: schoolToConnect.id,
-            targetCode: schoolToConnect.schoolCode,
-            status: "PENDING",
-            note: "i would like to connect with you",
+            name: fullName,
+            email,
+            password: hashedPassword,
+            role: UserRole.TEACHER,
+            tenantId: schoolToConnect
+              ? schoolToConnect.tenantId
+              : "default-tenant-id",
+            teacherCode,
+            isClaimed: true,
+            primarySchoolId: schoolToConnect ? schoolToConnect.id : null,
+            activeSchoolId: schoolToConnect ? schoolToConnect.id : null,
+            isIndependent: !!isIndependent,
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
           },
         });
-      }
 
-      if (studentToConnect) {
-        await tx.linkRequest.create({
-          data: {
-            linkType: "TEACHER_STUDENT",
-            requesterType: "TEACHER",
-            requesterId: teacher.id,
-            requesterTeacherId: teacher.id,
-            requesterCode: teacher.teacherCode,
-            targetType: "STUDENT",
-            targetId: studentToConnect.id,
-            targetStudentId: studentToConnect.id,
-            targetCode: studentToConnect.studentCode,
-            status: "PENDING",
-            note: "I would like to connect with you",
-            schoolId: studentToConnect.schoolId,
-          },
-        });
-      }
+        await UserSubscriptionService.initializeFreePlan(
+          teacher.id,
+          UserRole.TEACHER,
+          tx,
+        );
 
-      if (classToConnect) {
-        await tx.linkRequest.create({
-          data: {
-            linkType: "TEACHER_CLASS",
-            requesterType: "TEACHER",
-            requesterId: teacher.id,
-            requesterTeacherId: teacher.id,
-            requesterCode: teacher.teacherCode,
-            targetType: "CLASS",
-            targetId: classToConnect.id,
-            classId: classToConnect.id,
-            targetCode: classToConnect.classCode,
-            status: "PENDING",
-            note: "I would like to join this class",
-            schoolId: classToConnect.schoolId,
-          },
-        });
-      }
+        if (schoolToConnect) {
+          await tx.linkRequest.create({
+            data: {
+              linkType: "SCHOOL_TEACHER",
+              requesterType: "TEACHER",
+              requesterId: teacher.id,
+              requesterTeacherId: teacher.id,
+              requesterCode: teacher.teacherCode,
+              targetType: "SCHOOL",
+              targetId: schoolToConnect.id,
+              targetSchoolId: schoolToConnect.id,
+              schoolId: schoolToConnect.id,
+              targetCode: schoolToConnect.schoolCode,
+              status: "PENDING",
+              note: "i would like to connect with you",
+            },
+          });
+        }
 
-      return { teacher, studentToConnect, classToConnect };
-    }, { timeout: 20000 });
+        if (studentToConnect) {
+          await tx.linkRequest.create({
+            data: {
+              linkType: "TEACHER_STUDENT",
+              requesterType: "TEACHER",
+              requesterId: teacher.id,
+              requesterTeacherId: teacher.id,
+              requesterCode: teacher.teacherCode,
+              targetType: "STUDENT",
+              targetId: studentToConnect.id,
+              targetStudentId: studentToConnect.id,
+              targetCode: studentToConnect.studentCode,
+              status: "PENDING",
+              note: "I would like to connect with you",
+              schoolId: studentToConnect.schoolId,
+            },
+          });
+        }
+
+        if (classToConnect) {
+          await tx.linkRequest.create({
+            data: {
+              linkType: "TEACHER_CLASS",
+              requesterType: "TEACHER",
+              requesterId: teacher.id,
+              requesterTeacherId: teacher.id,
+              requesterCode: teacher.teacherCode,
+              targetType: "CLASS",
+              targetId: classToConnect.id,
+              classId: classToConnect.id,
+              targetCode: classToConnect.classCode,
+              status: "PENDING",
+              note: "I would like to join this class",
+              schoolId: classToConnect.schoolId,
+            },
+          });
+        }
+
+        return { teacher, studentToConnect, classToConnect };
+      },
+      { timeout: 20000 },
+    );
 
     if (schoolToConnect) {
       getIO().to(`user:${schoolToConnect.id}`).emit("link:updated", {
@@ -426,10 +450,12 @@ export const registerTeacher = async (req: Request, res: Response) => {
     }
 
     if (classToConnect && classToConnect.schoolId) {
-       getIO().to(`user:${classToConnect.schoolId}`).emit("link:updated", {
-        type: "LINK_REQUEST_RECEIVED",
-        message: `A new teacher has requested to join class ${classToConnect.name}`,
-      });
+      getIO()
+        .to(`user:${classToConnect.schoolId}`)
+        .emit("link:updated", {
+          type: "LINK_REQUEST_RECEIVED",
+          message: `A new teacher has requested to join class ${classToConnect.name}`,
+        });
 
       await createNotification({
         recipientType: "SCHOOL",
@@ -449,7 +475,7 @@ export const registerTeacher = async (req: Request, res: Response) => {
       recipientId: result.teacher.id,
       type: "GENERAL",
       title: "Registration Successful",
-      message: schoolToConnect 
+      message: schoolToConnect
         ? `Your registration is complete and your request to join ${schoolToConnect.name} has been sent.`
         : "Your teacher registration was successful.",
     });
@@ -620,7 +646,6 @@ export const registerStudent = async (
       }
     }
 
-
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -629,107 +654,113 @@ export const registerStudent = async (
       await enforceStudentLimit(school.id);
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      // Create student
-      const student = await tx.student.create({
-        data: {
-          name: fullName.trim(),
-          email: email.toLowerCase().trim(),
-          password: hashedPassword,
-          studentCode,
-          role: UserRole.STUDENT,
-          tenantId: school ? school.tenantId : "default-tenant-id",
-          schoolId: school ? school.id : null,
-          acceptedTerms: true,
-          termsAcceptedAt: new Date(),
-        },
-      });
-
-      await UserSubscriptionService.initializeFreePlan(student.id, UserRole.STUDENT, tx);
-
-
-      const note = "i would like to connect with you";
-
-      // Auto-linking for School
-      if (school) {
-        await tx.linkRequest.create({
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // Create student
+        const student = await tx.student.create({
           data: {
-            linkType: "SCHOOL_STUDENT",
-            requesterType: "STUDENT",
-            requesterId: student.id,
-            requesterStudentId: student.id,
-            requesterCode: student.studentCode,
-            targetType: "SCHOOL",
-            targetId: school.id,
-            targetSchoolId: school.id,
-            schoolId: school.id,
-            targetCode: school.schoolCode,
-            status: "PENDING",
-            note,
+            name: fullName.trim(),
+            email: email.toLowerCase().trim(),
+            password: hashedPassword,
+            studentCode,
+            role: UserRole.STUDENT,
+            tenantId: school ? school.tenantId : "default-tenant-id",
+            schoolId: school ? school.id : null,
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
           },
         });
-      }
 
-      // Auto-linking for Teacher
-      if (teacher) {
-        await tx.linkRequest.create({
-          data: {
-            linkType: "TEACHER_STUDENT",
-            requesterType: "STUDENT",
-            requesterId: student.id,
-            requesterStudentId: student.id,
-            requesterCode: student.studentCode,
-            targetType: "TEACHER",
-            targetId: teacher.id,
-            targetTeacherId: teacher.id,
-            targetCode: teacher.teacherCode,
-            status: "PENDING",
-            note,
-          },
-        });
-      }
+        await UserSubscriptionService.initializeFreePlan(
+          student.id,
+          UserRole.STUDENT,
+          tx,
+        );
 
-      // Auto-linking for Parent
-      if (parent) {
-        await tx.linkRequest.create({
-          data: {
-            linkType: "PARENT_STUDENT",
-            requesterType: "STUDENT",
-            requesterId: student.id,
-            requesterStudentId: student.id,
-            requesterCode: student.studentCode,
-            targetType: "PARENT",
-            targetId: parent.id,
-            targetParentId: parent.id,
-            targetCode: parent.parentCode,
-            status: "PENDING",
-            note,
-          },
-        });
-      }
+        const note = "i would like to connect with you";
 
-      // Auto-linking for Class
-      if (classToConnect) {
-        await tx.linkRequest.create({
-          data: {
-            linkType: "STUDENT_CLASS",
-            requesterType: "STUDENT",
-            requesterId: student.id,
-            requesterStudentId: student.id,
-            requesterCode: student.studentCode,
-            targetType: "CLASS",
-            targetId: classToConnect.id,
-            classId: classToConnect.id,
-            targetCode: classToConnect.classCode,
-            status: "PENDING",
-            note,
-            schoolId: classToConnect.schoolId,
-          },
-        });
-      }
+        // Auto-linking for School
+        if (school) {
+          await tx.linkRequest.create({
+            data: {
+              linkType: "SCHOOL_STUDENT",
+              requesterType: "STUDENT",
+              requesterId: student.id,
+              requesterStudentId: student.id,
+              requesterCode: student.studentCode,
+              targetType: "SCHOOL",
+              targetId: school.id,
+              targetSchoolId: school.id,
+              schoolId: school.id,
+              targetCode: school.schoolCode,
+              status: "PENDING",
+              note,
+            },
+          });
+        }
 
-      return student;
-    }, { timeout: 20000 });
+        // Auto-linking for Teacher
+        if (teacher) {
+          await tx.linkRequest.create({
+            data: {
+              linkType: "TEACHER_STUDENT",
+              requesterType: "STUDENT",
+              requesterId: student.id,
+              requesterStudentId: student.id,
+              requesterCode: student.studentCode,
+              targetType: "TEACHER",
+              targetId: teacher.id,
+              targetTeacherId: teacher.id,
+              targetCode: teacher.teacherCode,
+              status: "PENDING",
+              note,
+            },
+          });
+        }
+
+        // Auto-linking for Parent
+        if (parent) {
+          await tx.linkRequest.create({
+            data: {
+              linkType: "PARENT_STUDENT",
+              requesterType: "STUDENT",
+              requesterId: student.id,
+              requesterStudentId: student.id,
+              requesterCode: student.studentCode,
+              targetType: "PARENT",
+              targetId: parent.id,
+              targetParentId: parent.id,
+              targetCode: parent.parentCode,
+              status: "PENDING",
+              note,
+            },
+          });
+        }
+
+        // Auto-linking for Class
+        if (classToConnect) {
+          await tx.linkRequest.create({
+            data: {
+              linkType: "STUDENT_CLASS",
+              requesterType: "STUDENT",
+              requesterId: student.id,
+              requesterStudentId: student.id,
+              requesterCode: student.studentCode,
+              targetType: "CLASS",
+              targetId: classToConnect.id,
+              classId: classToConnect.id,
+              targetCode: classToConnect.classCode,
+              status: "PENDING",
+              note,
+              schoolId: classToConnect.schoolId,
+            },
+          });
+        }
+
+        return student;
+      },
+      { timeout: 20000 },
+    );
 
     const io = getIO();
     if (school) {
@@ -738,16 +769,20 @@ export const registerStudent = async (
         message: "A new student has requested to connect",
       });
 
-      await createNotification({
-        recipientType: "SCHOOL",
-        recipientId: school.id,
-        senderType: "STUDENT",
-        senderId: result.id,
-        type: "LINK_REQUEST",
-        title: "New Student Join Request",
-        message: `${fullName} has requested to join your school.`,
-        meta: { studentId: result.id, schoolCode },
-      });
+      try {
+        await createNotification({
+          recipientType: "SCHOOL",
+          recipientId: school.id,
+          senderType: "STUDENT",
+          senderId: result.id,
+          type: "LINK_REQUEST",
+          title: "New Student Join Request",
+          message: `${fullName} has requested to join your school.`,
+          meta: { studentId: result.id, schoolCode },
+        });
+      } catch (notifError) {
+        console.error("Failed to create school notification:", notifError);
+      }
     }
     if (teacher) {
       io.to(`user:${teacher.id}`).emit("link:updated", {
@@ -755,16 +790,20 @@ export const registerStudent = async (
         message: "A student has requested to connect with you",
       });
 
-      await createNotification({
-        recipientType: "TEACHER",
-        recipientId: teacher.id,
-        senderType: "STUDENT",
-        senderId: result.id,
-        type: "LINK_REQUEST",
-        title: "Student Connection Request",
-        message: `Student ${fullName} has requested to connect with you.`,
-        meta: { studentId: result.id, teacherCode },
-      });
+      try {
+        await createNotification({
+          recipientType: "TEACHER",
+          recipientId: teacher.id,
+          senderType: "STUDENT",
+          senderId: result.id,
+          type: "LINK_REQUEST",
+          title: "Student Connection Request",
+          message: `Student ${fullName} has requested to connect with you.`,
+          meta: { studentId: result.id, teacherCode },
+        });
+      } catch (notifError) {
+        console.error("Failed to create teacher notification:", notifError);
+      }
     }
     if (parent) {
       io.to(`user:${parent.id}`).emit("link:updated", {
@@ -772,16 +811,20 @@ export const registerStudent = async (
         message: "Your child has registered and requested a link",
       });
 
-      await createNotification({
-        recipientType: "PARENT",
-        recipientId: parent.id,
-        senderType: "STUDENT",
-        senderId: result.id,
-        type: "LINK_REQUEST",
-        title: "Child Connection Request",
-        message: `Your child ${fullName} has registered and requested a connection.`,
-        meta: { studentId: result.id, parentCode },
-      });
+      try {
+        await createNotification({
+          recipientType: "PARENT",
+          recipientId: parent.id,
+          senderType: "STUDENT",
+          senderId: result.id,
+          type: "LINK_REQUEST",
+          title: "Child Connection Request",
+          message: `Your child ${fullName} has registered and requested a connection.`,
+          meta: { studentId: result.id, parentCode },
+        });
+      } catch (notifError) {
+        console.error("Failed to create parent notification:", notifError);
+      }
     }
     if (classToConnect && classToConnect.schoolId) {
       io.to(`user:${classToConnect.schoolId}`).emit("link:updated", {
@@ -789,16 +832,20 @@ export const registerStudent = async (
         message: `A new student has requested to join class ${classToConnect.name}`,
       });
 
-      await createNotification({
-        recipientType: "SCHOOL",
-        recipientId: classToConnect.schoolId,
-        senderType: "STUDENT",
-        senderId: result.id,
-        type: "LINK_REQUEST",
-        title: "Class Join Request",
-        message: `Student ${fullName} has requested to join class ${classToConnect.name}`,
-        meta: { studentId: result.id, classCode },
-      });
+      try {
+        await createNotification({
+          recipientType: "SCHOOL",
+          recipientId: classToConnect.schoolId,
+          senderType: "STUDENT",
+          senderId: result.id,
+          type: "LINK_REQUEST",
+          title: "Class Join Request",
+          message: `Student ${fullName} has requested to join class ${classToConnect.name}`,
+          meta: { studentId: result.id, classCode },
+        });
+      } catch (notifError) {
+        console.error("Failed to create class notification:", notifError);
+      }
     }
 
     // Always notify the student himself
@@ -807,7 +854,7 @@ export const registerStudent = async (
       recipientId: result.id,
       type: "GENERAL",
       title: "Registration Successful",
-      message: school 
+      message: school
         ? `Your registration is complete and your request to join ${school.name} has been sent.`
         : "Your student registration was successful.",
     });
@@ -829,7 +876,8 @@ export const registerStudent = async (
       },
     });
   } catch (error: any) {
-    console.error("Register Student Error:", error);
+    console.error("Register Student Error:", error.message);
+    console.error("Stack:", error.stack);
     return res.status(500).json({
       success: false,
       message: "Server Error",
@@ -881,76 +929,82 @@ export const registerParent = async (
     const hashedPassword = await bcrypt.hash(password, 10);
     const parentCode = await generateUniqueCode(prisma, "parent", fullName);
 
-    const result = await prisma.$transaction(async (tx: any) => {
-      const parent = await tx.parent.create({
-        data: {
-          fullName: fullName.trim(),
-          email: email.toLowerCase().trim(),
-          password: hashedPassword,
-          role: UserRole.PARENT,
-          parentCode,
-          acceptedTerms: true,
-          termsAcceptedAt: new Date(),
-        },
-      });
-
-      await UserSubscriptionService.initializeFreePlan(parent.id, UserRole.PARENT, tx);
-
-
-      let linkResult = null;
-      let studentData = null;
-
-      if (studentCode) {
-        const student = await tx.student.findFirst({
-          where: { studentCode: studentCode.trim() },
+    const result = await prisma.$transaction(
+      async (tx: any) => {
+        const parent = await tx.parent.create({
+          data: {
+            fullName: fullName.trim(),
+            email: email.toLowerCase().trim(),
+            password: hashedPassword,
+            role: UserRole.PARENT,
+            parentCode,
+            acceptedTerms: true,
+            termsAcceptedAt: new Date(),
+          },
         });
 
-        if (!student) {
-          throw new Error("Invalid student code");
+        await UserSubscriptionService.initializeFreePlan(
+          parent.id,
+          UserRole.PARENT,
+          tx,
+        );
+
+        let linkResult = null;
+        let studentData = null;
+
+        if (studentCode) {
+          const student = await tx.student.findFirst({
+            where: { studentCode: studentCode.trim() },
+          });
+
+          if (!student) {
+            throw new Error("Invalid student code");
+          }
+
+          const existingLink = await tx.parentChildLink.findFirst({
+            where: {
+              parentId: parent.id,
+              studentId: student.id,
+            },
+          });
+
+          if (existingLink) {
+            throw new Error("Link already exists");
+          }
+
+          linkResult = await tx.parentChildLink.create({
+            data: {
+              parentId: parent.id,
+              studentId: student.id,
+              studentCode: student.studentCode,
+              status: "pending",
+            },
+          });
+
+          // Also create a standard LinkRequest for the linking hub
+          await tx.linkRequest.create({
+            data: {
+              linkType: "PARENT_STUDENT",
+              requesterType: "PARENT",
+              requesterId: parent.id,
+              requesterParentId: parent.id,
+              requesterCode: parent.parentCode,
+              targetType: "STUDENT",
+              targetId: student.id,
+              targetStudentId: student.id,
+              targetCode: student.studentCode,
+              status: "PENDING",
+              note: "I have registered as your parent",
+            },
+          });
+
+          studentData = student;
         }
 
-        const existingLink = await tx.parentChildLink.findFirst({
-          where: {
-            parentId: parent.id,
-            studentId: student.id,
-          },
-        });
-
-        if (existingLink) {
-          throw new Error("Link already exists");
-        }
-
-        linkResult = await tx.parentChildLink.create({
-          data: {
-            parentId: parent.id,
-            studentId: student.id,
-            studentCode: student.studentCode,
-            status: "pending",
-          },
-        });
-
-        // Also create a standard LinkRequest for the linking hub
-        await tx.linkRequest.create({
-          data: {
-            linkType: "PARENT_STUDENT",
-            requesterType: "PARENT",
-            requesterId: parent.id,
-            requesterParentId: parent.id,
-            requesterCode: parent.parentCode,
-            targetType: "STUDENT",
-            targetId: student.id,
-            targetStudentId: student.id,
-            targetCode: student.studentCode,
-            status: "PENDING",
-            note: "I have registered as your parent",
-          },
-        });
-
-        studentData = student;
-      }
-
-      return { parent, link: linkResult, studentData };
-    }, { timeout: 20000 });
+        return { parent, link: linkResult, studentData };
+      },
+      { timeout: 20000 },
+    );
 
     if (result.studentData) {
       getIO().to(`user:${result.studentData.id}`).emit("link:updated", {
@@ -1012,7 +1066,9 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
     }
 
     // Normalize userType casing
-    const normalizedRole = (userType as string)?.toUpperCase().trim() as UserRole;
+    const normalizedRole = (userType as string)
+      ?.toUpperCase()
+      .trim() as UserRole;
 
     // Validate userType using UserRole enum
     if (!Object.values(UserRole).includes(normalizedRole)) {
@@ -1035,7 +1091,7 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
       data: {
         email,
         code,
-        userType: normalizedRole, 
+        userType: normalizedRole,
         expiresAt,
       },
     });
@@ -1046,13 +1102,33 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
 
     // Detect if user exists to customize email content
     // Sequential check to avoid hitting connection limits (P1001)
-    const admin = await prisma.admin.findUnique({ where: { email }, select: { id: true } });
-    const teacher = !admin ? await prisma.teacher.findUnique({ where: { email }, select: { id: true } }) : null;
-    const student = !admin && !teacher ? await prisma.student.findUnique({ where: { email }, select: { id: true } }) : null;
-    const parent = !admin && !teacher && !student ? await prisma.parent.findUnique({ where: { email }, select: { id: true } }) : null;
-    
+    const admin = await prisma.admin.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+    const teacher = !admin
+      ? await prisma.teacher.findUnique({
+          where: { email },
+          select: { id: true },
+        })
+      : null;
+    const student =
+      !admin && !teacher
+        ? await prisma.student.findUnique({
+            where: { email },
+            select: { id: true },
+          })
+        : null;
+    const parent =
+      !admin && !teacher && !student
+        ? await prisma.parent.findUnique({
+            where: { email },
+            select: { id: true },
+          })
+        : null;
+
     const userExists = !!(admin || teacher || student || parent);
-    const emailType = userExists ? 'confirmation' : 'welcome';
+    const emailType = userExists ? "confirmation" : "welcome";
 
     // Send email via Resend
     const result = await sendVerificationEmail(mainEmail, code, emailType);
@@ -1476,16 +1552,21 @@ export const login = async (req: Request, res: Response) => {
         case UserRole.TEACHER: {
           const teacher = await prisma.teacher.findUnique({
             where: { email },
-            include: { 
+            include: {
               school: true,
               currentSchool: true,
-              primarySchool: true 
+              primarySchool: true,
             },
           });
           if (teacher) {
-            console.log(`Found teacher for email: [${email}]. Normalizing school reference.`);
+            console.log(
+              `Found teacher for email: [${email}]. Normalizing school reference.`,
+            );
             // Normalize school for compatibility with existing code
-            (teacher as any).school = teacher.currentSchool || teacher.primarySchool || (teacher as any).school;
+            (teacher as any).school =
+              teacher.currentSchool ||
+              teacher.primarySchool ||
+              (teacher as any).school;
           } else {
             console.warn(`Teacher NOT found for email: [${email}]`);
           }
@@ -1520,12 +1601,18 @@ export const login = async (req: Request, res: Response) => {
 
     // 2. If not found, search across other roles (Smart Search)
     if (!user) {
-      console.log(`User not found with provided type [${userType}]. Initiating smart search across all roles for email: [${normalizedEmail}]`);
-      const rolesToSearch = Object.values(UserRole).filter((r) => r !== userType);
+      console.log(
+        `User not found with provided type [${userType}]. Initiating smart search across all roles for email: [${normalizedEmail}]`,
+      );
+      const rolesToSearch = Object.values(UserRole).filter(
+        (r) => r !== userType,
+      );
       for (const role of rolesToSearch) {
         user = await fetchUserWithRelations(role as UserRole, normalizedEmail);
         if (user) {
-          console.log(`Smart search SUCCESS: User found with role [${role}] for email: [${normalizedEmail}]`);
+          console.log(
+            `Smart search SUCCESS: User found with role [${role}] for email: [${normalizedEmail}]`,
+          );
           actualRole = role as UserRole;
           break;
         }
@@ -1533,7 +1620,9 @@ export const login = async (req: Request, res: Response) => {
     }
 
     if (!user) {
-      console.error(`CRITICAL: Login failed. User NOT FOUND in any role table for email: [${normalizedEmail}]`);
+      console.error(
+        `CRITICAL: Login failed. User NOT FOUND in any role table for email: [${normalizedEmail}]`,
+      );
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
@@ -1700,7 +1789,9 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
       });
     }
 
-    const normalizedRole = (userType as string)?.toUpperCase().trim() as UserRole;
+    const normalizedRole = (userType as string)
+      ?.toUpperCase()
+      .trim() as UserRole;
 
     if (!Object.values(UserRole).includes(normalizedRole)) {
       return res
@@ -1724,30 +1815,33 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
 
     // Handle "Register them if not registered"
     let user: any;
-    console.log(`Verifying checkout for role: ${normalizedRole}, email: [${email}]`);
+    console.log(
+      `Verifying checkout for role: ${normalizedRole}, email: [${email}]`,
+    );
 
     // Check if user exists
     switch (normalizedRole) {
       case UserRole.ADMIN:
-        user = await prisma.admin.findUnique({ 
-          where: { email }, 
-          include: { 
-            schoolAdmins: { 
-              include: { 
+        user = await prisma.admin.findUnique({
+          where: { email },
+          include: {
+            schoolAdmins: {
+              include: {
                 school: {
-                  select: { id: true, name: true, plan: true, planId: true }
-                } 
-              } 
-            } 
-          } 
+                  select: { id: true, name: true, plan: true, planId: true },
+                },
+              },
+            },
+          },
         });
 
         if (!user) {
           const result = await prisma.$transaction(async (tx) => {
             // 1. Generate standard tenantId (sch-XXXXXX)
             let tenantId: string | undefined;
-            const generateSixDigit = () => Math.floor(100000 + Math.random() * 900000).toString();
-            
+            const generateSixDigit = () =>
+              Math.floor(100000 + Math.random() * 900000).toString();
+
             for (let attempt = 0; attempt < 10; attempt++) {
               const candidate = "sch-" + generateSixDigit();
               const exists = await tx.school.findFirst({
@@ -1761,23 +1855,31 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
             }
 
             if (!tenantId) {
-                throw new Error("Could not generate unique tenantId");
+              throw new Error("Could not generate unique tenantId");
             }
 
             // 2. Generate standard codes using the standard utility
-            const adminCode = await generateUniqueCode(tx as any, "admin", "School Owner");
-            const schoolCode = await generateUniqueCode(tx as any, "school", "My Institution");
+            const adminCode = await generateUniqueCode(
+              tx as any,
+              "admin",
+              "School Owner",
+            );
+            const schoolCode = await generateUniqueCode(
+              tx as any,
+              "school",
+              "My Institution",
+            );
 
             const admin = await tx.admin.create({
-              data: { 
-                email, 
-                name: "School Owner", 
-                role: UserRole.ADMIN, 
-                adminCode, 
-                verified: true, 
+              data: {
+                email,
+                name: "School Owner",
+                role: UserRole.ADMIN,
+                adminCode,
+                verified: true,
                 tenantId,
-                status: "APPROVED" 
-              }
+                status: "APPROVED",
+              },
             });
 
             const school = await tx.school.create({
@@ -1787,20 +1889,20 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
                 tenantId,
                 schoolCode,
                 registrationSource: "PRICING",
-                profileCompleted: false
-              }
+                profileCompleted: false,
+              },
             });
 
             await tx.schoolSetting.create({
-              data: { schoolId: school.id }
+              data: { schoolId: school.id },
             });
 
             await tx.schoolAdmin.create({
-              data: { 
-                adminId: admin.id, 
-                schoolId: school.id, 
-                role: "SCHOOL_OWNER" 
-              }
+              data: {
+                adminId: admin.id,
+                schoolId: school.id,
+                role: "SCHOOL_OWNER",
+              },
             });
 
             return { ...admin, schoolAdmins: [{ school }] };
@@ -1811,27 +1913,57 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
       case UserRole.TEACHER:
         user = await prisma.teacher.findUnique({ where: { email } });
         if (!user) {
-          const teacherCode = await generateUniqueCode(prisma, "teacher", "Teacher");
+          const teacherCode = await generateUniqueCode(
+            prisma,
+            "teacher",
+            "Teacher",
+          );
           user = await prisma.teacher.create({
-            data: { email, name: "Teacher", role: UserRole.TEACHER, teacherCode, verified: true }
+            data: {
+              email,
+              name: "Teacher",
+              role: UserRole.TEACHER,
+              teacherCode,
+              verified: true,
+            },
           });
         }
         break;
       case UserRole.STUDENT:
         user = await prisma.student.findUnique({ where: { email } });
         if (!user) {
-          const studentCode = await generateUniqueCode(prisma, "student", "Student");
+          const studentCode = await generateUniqueCode(
+            prisma,
+            "student",
+            "Student",
+          );
           user = await prisma.student.create({
-            data: { email, name: "Student", role: UserRole.STUDENT, studentCode, verified: true }
+            data: {
+              email,
+              name: "Student",
+              role: UserRole.STUDENT,
+              studentCode,
+              verified: true,
+            },
           });
         }
         break;
       case UserRole.PARENT:
         user = await prisma.parent.findUnique({ where: { email } });
         if (!user) {
-          const parentCode = await generateUniqueCode(prisma, "parent", "Parent");
+          const parentCode = await generateUniqueCode(
+            prisma,
+            "parent",
+            "Parent",
+          );
           user = await prisma.parent.create({
-            data: { email, fullName: "Parent", role: UserRole.PARENT, parentCode, verified: true }
+            data: {
+              email,
+              fullName: "Parent",
+              role: UserRole.PARENT,
+              parentCode,
+              verified: true,
+            },
           });
         }
         break;
@@ -1843,7 +1975,7 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
       userRole: normalizedRole,
       userId: user?.id,
       plan: user?.plan,
-      trialUsed: user?.trialUsed
+      trialUsed: user?.trialUsed,
     });
   } catch (error) {
     console.error("Error verifying checkout code:", error);
@@ -1855,20 +1987,62 @@ export const checkEmail = async (req: Request, res: Response) => {
   try {
     const email = req.body.email?.toLowerCase().trim();
     if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
     }
 
-    const admin = await prisma.admin.findUnique({ where: { email }, select: { id: true, plan: true, trialUsed: true } });
-    if (admin) return res.status(200).json({ success: true, exists: true, role: UserRole.ADMIN, plan: admin.plan, trialUsed: admin.trialUsed });
+    const admin = await prisma.admin.findUnique({
+      where: { email },
+      select: { id: true, plan: true, trialUsed: true },
+    });
+    if (admin)
+      return res.status(200).json({
+        success: true,
+        exists: true,
+        role: UserRole.ADMIN,
+        plan: admin.plan,
+        trialUsed: admin.trialUsed,
+      });
 
-    const teacher = await prisma.teacher.findUnique({ where: { email }, select: { id: true, plan: true, trialUsed: true } });
-    if (teacher) return res.status(200).json({ success: true, exists: true, role: UserRole.TEACHER, plan: teacher.plan, trialUsed: teacher.trialUsed });
+    const teacher = await prisma.teacher.findUnique({
+      where: { email },
+      select: { id: true, plan: true, trialUsed: true },
+    });
+    if (teacher)
+      return res.status(200).json({
+        success: true,
+        exists: true,
+        role: UserRole.TEACHER,
+        plan: teacher.plan,
+        trialUsed: teacher.trialUsed,
+      });
 
-    const student = await prisma.student.findUnique({ where: { email }, select: { id: true, plan: true, trialUsed: true } });
-    if (student) return res.status(200).json({ success: true, exists: true, role: UserRole.STUDENT, plan: student.plan, trialUsed: student.trialUsed });
+    const student = await prisma.student.findUnique({
+      where: { email },
+      select: { id: true, plan: true, trialUsed: true },
+    });
+    if (student)
+      return res.status(200).json({
+        success: true,
+        exists: true,
+        role: UserRole.STUDENT,
+        plan: student.plan,
+        trialUsed: student.trialUsed,
+      });
 
-    const parent = await prisma.parent.findUnique({ where: { email }, select: { id: true, plan: true, trialUsed: true } });
-    if (parent) return res.status(200).json({ success: true, exists: true, role: UserRole.PARENT, plan: parent.plan, trialUsed: parent.trialUsed });
+    const parent = await prisma.parent.findUnique({
+      where: { email },
+      select: { id: true, plan: true, trialUsed: true },
+    });
+    if (parent)
+      return res.status(200).json({
+        success: true,
+        exists: true,
+        role: UserRole.PARENT,
+        plan: parent.plan,
+        trialUsed: parent.trialUsed,
+      });
 
     return res.status(200).json({ success: true, exists: false });
   } catch (error) {
@@ -1941,12 +2115,19 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         });
 
         // Initialize Admin Subscription upon verification
-        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.ADMIN);
+        await UserSubscriptionService.initializeFreePlan(
+          user.id,
+          UserRole.ADMIN,
+        );
 
         // If School Owner, also initialize School Subscription
-        const ownerAdmin = user.schoolAdmins.find((sa: any) => sa.role === AdminRole.SCHOOL_OWNER);
+        const ownerAdmin = user.schoolAdmins.find(
+          (sa: any) => sa.role === AdminRole.SCHOOL_OWNER,
+        );
         if (ownerAdmin) {
-          await SchoolSubscriptionService.initializeFreePlan(ownerAdmin.school.id);
+          await SchoolSubscriptionService.initializeFreePlan(
+            ownerAdmin.school.id,
+          );
         }
 
         const schools = user.schoolAdmins.map((sa: any) => ({
@@ -1987,7 +2168,10 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           data: { verified: true },
         });
         // Initialize Teacher Subscription upon verification
-        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.TEACHER);
+        await UserSubscriptionService.initializeFreePlan(
+          user.id,
+          UserRole.TEACHER,
+        );
         return res.status(200).json({
           success: true,
           message: "Teacher verified successfully!",
@@ -2002,7 +2186,10 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           data: { verified: true },
         });
         // Initialize Student Subscription upon verification
-        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.STUDENT);
+        await UserSubscriptionService.initializeFreePlan(
+          user.id,
+          UserRole.STUDENT,
+        );
         return res.status(200).json({
           success: true,
           message: "Student verified successfully!",
@@ -2017,7 +2204,10 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           data: { verified: true },
         });
         // Initialize Parent Subscription upon verification
-        await UserSubscriptionService.initializeFreePlan(user.id, UserRole.PARENT);
+        await UserSubscriptionService.initializeFreePlan(
+          user.id,
+          UserRole.PARENT,
+        );
         return res.status(200).json({
           success: true,
           message: "Parent verified successfully!",
@@ -2590,116 +2780,147 @@ export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
     console.log("Finalizing account setup for:", { email, userType, planId });
 
     if (!email || !password || !userType) {
-      return res.status(400).json({ success: false, message: "Email, password, and user type are required" });
+      return res.status(400).json({
+        success: false,
+        message: "Email, password, and user type are required",
+      });
     }
 
     if (!acceptTerms) {
-      return res.status(400).json({ success: false, message: "You must accept the terms and conditions to continue." });
+      return res.status(400).json({
+        success: false,
+        message: "You must accept the terms and conditions to continue.",
+      });
     }
 
-    const normalizedRole = (userType as string)?.toUpperCase().trim() as UserRole;
-    
+    const normalizedRole = (userType as string)
+      ?.toUpperCase()
+      .trim() as UserRole;
+
     if (!Object.values(UserRole).includes(normalizedRole)) {
-      return res.status(400).json({ success: false, message: "Invalid user type" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid user type" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Initial lookup to get user and relations
-      let user: any;
-      switch (normalizedRole) {
-        case UserRole.ADMIN:
-          user = await tx.admin.findUnique({ 
-            where: { email },
-            include: { schoolAdmins: { include: { school: true } } }
+
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // 1. Initial lookup to get user and relations
+        let user: any;
+        switch (normalizedRole) {
+          case UserRole.ADMIN:
+            user = await tx.admin.findUnique({
+              where: { email },
+              include: { schoolAdmins: { include: { school: true } } },
+            });
+            break;
+          case UserRole.TEACHER:
+            user = await tx.teacher.findUnique({ where: { email } });
+            break;
+          case UserRole.STUDENT:
+            user = await tx.student.findUnique({ where: { email } });
+            break;
+          case UserRole.PARENT:
+            user = await tx.parent.findUnique({ where: { email } });
+            break;
+        }
+
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        // 2. If it's an ADMIN and we have a planId
+        if (normalizedRole === UserRole.ADMIN && planId) {
+          // Resolve the actual plan UUID if planId is a type/name
+          let actualPlanId = planId;
+          const potentialPlan = await tx.subscriptionPlan.findFirst({
+            where: {
+              OR: [{ id: planId }, { type: planId.toLowerCase() }],
+              planScope: PlanScope.SCHOOL,
+              category: "schools",
+            },
           });
-          break;
-        case UserRole.TEACHER:
-          user = await tx.teacher.findUnique({ where: { email } });
-          break;
-        case UserRole.STUDENT:
-          user = await tx.student.findUnique({ where: { email } });
-          break;
-        case UserRole.PARENT:
-          user = await tx.parent.findUnique({ where: { email } });
-          break;
-      }
 
-      if (!user) {
-        throw new Error("User not found");
-      }
-
-      // 2. If it's an ADMIN and we have a planId
-      if (normalizedRole === UserRole.ADMIN && planId) {
-        // Resolve the actual plan UUID if planId is a type/name
-        let actualPlanId = planId;
-        const potentialPlan = await tx.subscriptionPlan.findFirst({
-          where: {
-            OR: [
-              { id: planId },
-              { type: planId.toLowerCase() }
-            ],
-            planScope: PlanScope.SCHOOL,
-            category: "schools"
+          if (potentialPlan) {
+            actualPlanId = potentialPlan.id;
           }
-        });
-        
-        if (potentialPlan) {
-          actualPlanId = potentialPlan.id;
+
+          // Find the school linked to this admin
+          const school = user.schoolAdmins?.[0]?.school;
+
+          if (school) {
+            // Initialize School Subscription
+            await SchoolSubscriptionService.initializeFreePlan(
+              school.id,
+              tx,
+              actualPlanId,
+            );
+
+            // Initialize User Subscription
+            await UserSubscriptionService.initializeFreePlan(
+              user.id,
+              UserRole.ADMIN,
+              tx,
+              actualPlanId,
+            );
+
+            // Update School metadata (billingCycle)
+            await tx.school.update({
+              where: { id: school.id },
+              data: {
+                billingCycle: billingCycle || "monthly",
+                // Ensure name/id match what was initialized
+                plan: potentialPlan?.name || school.plan,
+                planId: actualPlanId,
+              },
+            });
+          }
         }
 
-        // Find the school linked to this admin
-        const school = user.schoolAdmins?.[0]?.school;
-        
-        if (school) {
-          // Initialize School Subscription
-          await SchoolSubscriptionService.initializeFreePlan(school.id, tx, actualPlanId);
-          
-          // Initialize User Subscription
-          await UserSubscriptionService.initializeFreePlan(user.id, UserRole.ADMIN, tx, actualPlanId);
+        // 3. Final security and metadata update for the user
+        const finalUpdateData = {
+          password: hashedPassword,
+          verified: true,
+          billingCycle: billingCycle || "monthly",
+          acceptedTerms: true,
+          termsAcceptedAt: new Date(),
+        };
 
-          // Update School metadata (billingCycle)
-          await tx.school.update({
-            where: { id: school.id },
-            data: { 
-              billingCycle: billingCycle || "monthly",
-              // Ensure name/id match what was initialized
-              plan: potentialPlan?.name || school.plan,
-              planId: actualPlanId
-            }
-          });
+        switch (normalizedRole) {
+          case UserRole.ADMIN:
+            user = await tx.admin.update({
+              where: { id: user.id },
+              data: finalUpdateData,
+            });
+            break;
+          case UserRole.TEACHER:
+            user = await tx.teacher.update({
+              where: { id: user.id },
+              data: finalUpdateData,
+            });
+            break;
+          case UserRole.STUDENT:
+            user = await tx.student.update({
+              where: { id: user.id },
+              data: finalUpdateData,
+            });
+            break;
+          case UserRole.PARENT:
+            user = await tx.parent.update({
+              where: { id: user.id },
+              data: finalUpdateData,
+            });
+            break;
         }
-      }
 
-      // 3. Final security and metadata update for the user
-      const finalUpdateData = {
-        password: hashedPassword,
-        verified: true,
-        billingCycle: billingCycle || "monthly",
-        acceptedTerms: true,
-        termsAcceptedAt: new Date(),
-      };
-
-      switch (normalizedRole) {
-        case UserRole.ADMIN:
-          user = await tx.admin.update({ where: { id: user.id }, data: finalUpdateData });
-          break;
-        case UserRole.TEACHER:
-          user = await tx.teacher.update({ where: { id: user.id }, data: finalUpdateData });
-          break;
-        case UserRole.STUDENT:
-          user = await tx.student.update({ where: { id: user.id }, data: finalUpdateData });
-          break;
-        case UserRole.PARENT:
-          user = await tx.parent.update({ where: { id: user.id }, data: finalUpdateData });
-          break;
-      }
-
-      return user;
-    }, {
-      timeout: 30000 // Increase timeout to 30 seconds to prevent P2028
-    });
+        return user;
+      },
+      {
+        timeout: 30000, // Increase timeout to 30 seconds to prevent P2028
+      },
+    );
 
     // Send confirmation email
     await sendSetupCompleteEmail(email);
@@ -2710,6 +2931,8 @@ export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Finalize Setup Error:", error);
-    return res.status(500).json({ success: false, message: "Failed to finalize account setup" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to finalize account setup" });
   }
 };

@@ -18,6 +18,8 @@ export default function FinancialSummaryCard() {
   const totalFees = payments?.totalFees ?? 0
   const paidPct = totalFees > 0 ? Math.round((totalPaid / totalFees) * 100) : 0
 
+  const hasData = totalFees > 0 || totalPaid > 0;
+
   return (
     <div className="group relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-6 rounded-3xl shadow-sm border border-slate-200/50 dark:border-white/10 flex flex-col h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-orange-500/30 overflow-hidden">
       {/* Decorative */}
@@ -38,54 +40,74 @@ export default function FinancialSummaryCard() {
         </div>
       </div>
 
-      <div className="flex flex-col mb-6">
-        {isLoading ? (
-          <>
-            <Skeleton className="h-9 w-32 rounded-xl" />
-            <Skeleton className="h-3 w-40 rounded-lg mt-2" />
-          </>
-        ) : (
-          <>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{fmt(totalOutstanding)}</span>
-              {totalOutstanding > 0 && (
-                <span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest bg-rose-500/10 px-1.5 py-0.5 rounded ring-1 ring-rose-500/20">Outstanding</span>
-              )}
-              {totalOutstanding === 0 && totalFees > 0 && (
-                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-500/10 px-1.5 py-0.5 rounded ring-1 ring-emerald-500/20">All Paid ✓</span>
+      {!isLoading && !hasData ? (
+        <div className="flex-1 flex flex-col items-center justify-center py-10 space-y-4 text-center">
+            <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center border border-dashed border-slate-200 dark:border-slate-700">
+                <span className="material-symbols-outlined text-slate-300">database_off</span>
+            </div>
+            <div className="space-y-1">
+                <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 italic">No Data Telemetry</h4>
+                <p className="text-[10px] text-slate-400 font-medium max-w-[160px]">No financial records synchronized for this family.</p>
+            </div>
+            <Link
+                href="/dashboard/parent/payments"
+                className="mt-4 px-6 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:bg-orange-600 hover:text-white transition-all"
+            >
+                View Hub
+            </Link>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col mb-6">
+            {isLoading ? (
+              <>
+                <Skeleton className="h-9 w-32 rounded-xl" />
+                <Skeleton className="h-3 w-40 rounded-lg mt-2" />
+              </>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{fmt(totalOutstanding)}</span>
+                  {totalOutstanding > 0 && (
+                    <span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest bg-rose-500/10 px-1.5 py-0.5 rounded ring-1 ring-rose-500/20">Outstanding</span>
+                  )}
+                  {totalOutstanding === 0 && totalFees > 0 && (
+                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-500/10 px-1.5 py-0.5 rounded ring-1 ring-emerald-500/20">All Paid ✓</span>
+                  )}
+                </div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-2">
+                  {totalOutstanding > 0 ? 'Outstanding Fees' : 'No Outstanding Fees'}
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* Mini Progress Bar */}
+          <div className="flex flex-col gap-2 mb-6">
+            <div className="flex justify-between text-[10px] font-black uppercase tracking-tight">
+              <span className="text-slate-500">Amount Paid</span>
+              {isLoading ? (
+                <Skeleton className="h-3 w-24 rounded-lg" />
+              ) : (
+                <span className="text-orange-600">{fmt(totalPaid)} / {fmt(totalFees || totalPaid)}</span>
               )}
             </div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-2">
-              {totalOutstanding > 0 ? 'Outstanding Fees' : 'No Outstanding Fees'}
-            </p>
-          </>
-        )}
-      </div>
+            <div className="h-2 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5 border border-slate-200 dark:border-white/10">
+              <div
+                className="h-full bg-orange-600 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(234,88,12,0.3)]"
+                style={{ width: isLoading ? '0%' : `${paidPct}%` }}
+              />
+            </div>
+          </div>
 
-      {/* Mini Progress Bar */}
-      <div className="flex flex-col gap-2 mb-6">
-        <div className="flex justify-between text-[10px] font-black uppercase tracking-tight">
-          <span className="text-slate-500">Amount Paid</span>
-          {isLoading ? (
-            <Skeleton className="h-3 w-24 rounded-lg" />
-          ) : (
-            <span className="text-orange-600">{fmt(totalPaid)} / {fmt(totalFees || totalPaid)}</span>
-          )}
-        </div>
-        <div className="h-2 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5 border border-slate-200 dark:border-white/10">
-          <div
-            className="h-full bg-orange-600 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(234,88,12,0.3)]"
-            style={{ width: isLoading ? '0%' : `${paidPct}%` }}
-          />
-        </div>
-      </div>
-
-      <Link
-        href="/dashboard/parent/payments"
-        className="mt-auto w-full py-3 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/20 transition-all duration-300 transform active:scale-[0.98] flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest"
-      >
-        {totalOutstanding > 0 ? 'Make A Payment' : 'View Transactions'} <span className="material-symbols-outlined text-[16px]">credit_card</span>
-      </Link>
+          <Link
+            href="/dashboard/parent/payments"
+            className="mt-auto w-full py-3 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/20 transition-all duration-300 transform active:scale-[0.98] flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest"
+          >
+            {totalOutstanding > 0 ? 'Make A Payment' : 'View Transactions'} <span className="material-symbols-outlined text-[16px]">credit_card</span>
+          </Link>
+        </>
+      )}
     </div>
   )
 }

@@ -29,6 +29,8 @@ import { useRouter } from 'next/navigation';
 import { useFetchPricing } from '@/components/pricing/query';
 import { PricingData } from '@/components/Types/Pricing';
 import { cn } from '@/lib/utils';
+import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
+import { useGlobalFeatures } from '@/lib/api/hooks/useGlobalFeatures';
 
 export default function ParentBillingPage() {
     const router = useRouter();
@@ -37,10 +39,17 @@ export default function ParentBillingPage() {
     const ITEMS_PER_PAGE = 5;
     
     const { data: pricingData } = useFetchPricing();
+    const { data: features } = useGlobalFeatures('parent');
     const { data: billingData, isLoading, isError } = useUserBilling(user?.id as string, { 
         page: currentPage, 
         limit: ITEMS_PER_PAGE 
     });
+
+    React.useEffect(() => {
+        if (features && features.billing === false) {
+            router.push('/dashboard/parent');
+        }
+    }, [features, router]);
 
     if (isLoading) {
         return (
@@ -235,39 +244,14 @@ export default function ParentBillingPage() {
                         </p>
                     </Card>
 
-                    {/* Capacity Card */}
-                    <Card className="rounded-[3rem] border-none shadow-2xl shadow-slate-200/50 dark:shadow-none p-10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl relative group overflow-hidden">
-                        <div className="flex items-center gap-5 mb-8">
-                            <div className="w-14 h-14 bg-orange-600 rounded-[1.2rem] flex items-center justify-center text-white shadow-xl shadow-orange-600/20 group-hover:rotate-12 transition-transform duration-500">
-                                <Users className="w-7 h-7" />
-                            </div>
-                            <div>
-                                <h4 className="text-lg font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">Family Capacity</h4>
-                                <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest mt-0.5">Linked Terminals</p>
-                            </div>
-                        </div>
-                        
-                        <div className="space-y-8">
-                            <div className="space-y-4">
-                                <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
-                                    <span className="text-slate-400">Network Usage</span>
-                                    <span className="text-slate-900 dark:text-white">{usage?.students || 0} / {currentLimits.students}</span>
-                                </div>
-                                <div className="h-4 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden p-1 shadow-inner">
-                                    <motion.div 
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${studentPercentage}%` }}
-                                        transition={{ duration: 1.5, ease: "easeOut" }}
-                                        className="h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded-full shadow-lg" 
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-60">
-                                <AlertCircle size={12} />
-                                <span>Signals optimal within current capacity</span>
-                            </div>
-                        </div>
-                    </Card>
+                    <UsageLimitsCard 
+                        role="PARENT"
+                        title="Family Capacity"
+                        primaryColor="#ea580c"
+                        upgradeLink="/pricing?role=parent"
+                        upgradeLabel="Expand Family Capacity"
+                        description="Synchronizing family network metrics with the core protocol."
+                    />
                 </div>
             </div>
 

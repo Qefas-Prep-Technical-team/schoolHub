@@ -21,7 +21,7 @@ import DateControls from './components/dashboard/DateControls';
 import AlertsPanel from './components/dashboard/AlertsPanel';
 import RecentActivity from './components/dashboard/RecentActivity';
 import QuickActions from './components/dashboard/QuickActions';
-import UsageLimitsCard from './components/dashboard/UsageLimitsCard';
+import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 
 // New Console Components
 import AdminHero from './components/dashboard/AdminHero';

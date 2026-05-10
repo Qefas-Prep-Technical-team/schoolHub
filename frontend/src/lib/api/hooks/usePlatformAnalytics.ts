@@ -31,3 +31,18 @@ export const usePlatformGrowth = () => {
         enabled: !!platform_token,
     });
 };
+
+export const useSubscriptionStats = () => {
+    const { platform_token } = usePlatformStaffStore();
+
+    return useQuery({
+        queryKey: ["platform-subscription-stats"],
+        queryFn: async () => {
+            const { data } = await platformClient.get("/platform/analytics/subscriptions", {
+                headers: { Authorization: `Bearer ${platform_token}` }
+            });
+            return data.data;
+        },
+        enabled: !!platform_token,
+    });
+};

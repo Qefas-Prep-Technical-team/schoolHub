@@ -7,11 +7,20 @@ import {
 } from "@/lib/api/hooks/usePricingManagement"
 import { useUpdatePlatformFeature } from "@/lib/api/hooks/usePlatformSchools"
 import { 
+    usePlatformSettings, 
+    useUpdatePlatformSettings 
+} from "@/lib/api/hooks/usePlatformGovernance"
+import { 
     RefreshCcw, 
     Sparkles, 
     Wrench as FeatureIcon,
-    Search as SearchIcon
+    Search as SearchIcon,
+    WalletCards,
+    Lock,
+    Unlock
 } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -39,8 +48,33 @@ export default function RoleFeaturesContent({
     const queryClient = useQueryClient()
     const { data: entitlementFeatures, isLoading: isLoadingEntitlement } = useEntitlementFeatures()
     const { mutate: updateFeature } = useUpdatePlatformFeature()
+    const { data: platformSettings, isLoading: isLoadingSettings } = usePlatformSettings()
+    const updateSetting = useUpdatePlatformSettings()
     const harvestFeatures = useHarvestFeatures()
     const [updatingId, setUpdatingId] = useState<string | null>(null)
+    const [isUpdatingRevenue, setIsUpdatingRevenue] = useState(false)
+
+    // Map internal role names to pricing categories
+    const roleToCategory: Record<string, string> = {
+        student: 'students',
+        teacher: 'teachers',
+        parent: 'parents',
+        admin: 'schools'
+    }
+
+    const category = roleToCategory[role] || 'schools'
+    const settingKey = `sub_enforced_${category}`
+    const isRevenueEnabled = platformSettings ? (platformSettings[settingKey] !== "false") : true
+
+    const handleRevenueToggle = (checked: boolean) => {
+        setIsUpdatingRevenue(true)
+        updateSetting.mutate({
+            key: settingKey,
+            value: checked ? "true" : "false"
+        }, {
+            onSettled: () => setIsUpdatingRevenue(false)
+        })
+    }
 
     const handleToggle = (id: string, role: string, value: boolean) => {
         const updateData: any = {}
@@ -96,9 +130,58 @@ export default function RoleFeaturesContent({
                 </div>
             </div>
 
+            {/* Revenue Protocol Card */}
+            <div className="bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent border border-indigo-500/20 rounded-[2.5rem] p-8 mb-10 overflow-hidden relative group">
+                <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <WalletCards size={120} />
+                </div>
+                
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
+                    <div className="space-y-3">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10">
+                            <WalletCards size={14} />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Revenue Protocol</span>
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                            Subscription <span className="text-indigo-600">Enforcement</span>
+                        </h2>
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-md">
+                            Toggle the entire billing module for {roleLabel} accounts. When disabled, all {roleLabel} features become free and accessible without an active plan.
+                        </p>
+                    </div>
+
+                    <div className={cn(
+                        "flex items-center gap-6 px-8 py-6 rounded-[2rem] border-2 transition-all duration-500",
+                        isRevenueEnabled 
+                            ? "bg-white dark:bg-slate-900 border-indigo-500 shadow-2xl shadow-indigo-500/20" 
+                            : "bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-white/10 opacity-80"
+                    )}>
+                        <div className="flex flex-col items-end gap-1">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</Label>
+                            <span className={cn("text-xs font-black uppercase tracking-widest", isRevenueEnabled ? "text-indigo-600" : "text-slate-500")}>
+                                {isRevenueEnabled ? "Active Enforcement" : "Deactivated"}
+                            </span>
+                        </div>
+                        <div className="relative">
+                            <Switch 
+                                checked={isRevenueEnabled}
+                                onCheckedChange={handleRevenueToggle}
+                                disabled={isUpdatingRevenue || isLoadingSettings}
+                                className="data-[state=checked]:bg-indigo-600 scale-125"
+                            />
+                            {isUpdatingRevenue && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <RefreshCcw className="animate-spin text-white" size={12} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Features Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {isLoadingEntitlement ? (
+                {(isLoadingEntitlement || isLoadingSettings) ? (
                     Array(4).fill(0).map((_, i) => (
                         <div key={i} className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-6 space-y-6 animate-pulse">
                             <div className="flex items-center gap-4">

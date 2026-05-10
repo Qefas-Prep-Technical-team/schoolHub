@@ -3,6 +3,7 @@ import { AppSidebar } from "./components/app-sidebar"
 import TopNavBar from "./components/TopNavBar"
 import { ProtectedTeacherRoute } from "./components/ProtectedTeacherRoute"
 import { TrialBanner } from "@/components/subscription/TrialBanner"
+import FeatureGuard from "@/components/auth/FeatureGuard"
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     return (
@@ -18,7 +19,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <TopNavBar />
                 <div className="flex-1 overflow-auto p-4 md:p-6 lg:p-10">
                     <TrialBanner />
-                    {children}
+                    <FeatureGuard role="teacher">
+                        {children}
+                    </FeatureGuard>
                 </div>
             </SidebarInset>
         </SidebarProvider>

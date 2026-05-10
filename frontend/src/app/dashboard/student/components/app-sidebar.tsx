@@ -107,7 +107,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
     const pathname = usePathname()
 
     // Fetch dynamic feature toggles from platform config
-    const { data: dynamicFeatures } = useGlobalFeatures('student')
+    const { data: dynamicFeatures, isLoading: isFeaturesLoading } = useGlobalFeatures('student')
 
     useEffect(() => {
         linkService.getProfile().then(setProfile).catch(() => {})
@@ -120,6 +120,8 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
 
     // Get filtered menu items grouped by section based on dynamic or static flags
     const menuSections = useMemo(() => {
+        if (isFeaturesLoading) return null;
+        
         const currentFeatures = dynamicFeatures || STUDENT_FEATURE_FLAGS;
         
         const filtered = studentMenuItems.filter(item => {
@@ -134,7 +136,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
             profile: filtered.filter(item => item.section === 'profile'),
             advanced: filtered.filter(item => item.section === 'advanced'),
         };
-    }, [dynamicFeatures]);
+    }, [dynamicFeatures, isFeaturesLoading]);
 
     return (
         <Sidebar
@@ -178,8 +180,20 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
             {/* Main Menu */}
             <SidebarContent className="mt-10 px-2 flex-1 outline-none">
                 <SidebarMenu>
-                    {/* Render each section */}
-                    {Object.entries(menuSections).map(([sectionKey, items]) => {
+                    {isFeaturesLoading ? (
+                        <div className="flex flex-col gap-3 px-1 mt-2">
+                            {Array.from({ length: 10 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-3 h-10 px-3">
+                                    <div className="h-5 w-5 rounded-md bg-slate-100 dark:bg-white/5 animate-pulse shrink-0" />
+                                    {!isCollapsed && (
+                                        <div className="h-4 w-3/4 rounded-md bg-slate-100 dark:bg-white/5 animate-pulse" />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        /* Render each section */
+                        menuSections && Object.entries(menuSections).map(([sectionKey, items]) => {
                         if (items.length === 0) return null;
 
                         return (
@@ -227,7 +241,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                                 })}
                             </div>
                         );
-                    })}
+                    }))}
                 </SidebarMenu>
             </SidebarContent>
 

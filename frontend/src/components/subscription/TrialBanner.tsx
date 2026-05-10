@@ -12,8 +12,8 @@ export const TrialBanner = () => {
     const isParent = user?.userType === 'PARENT';
     const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId;
     
-    // For admins, use subscription usage hook AND school billing for dates
-    const { data: usageData } = useSubscriptionUsage(isAdmin);
+    // For everyone, use subscription usage hook
+    const { data: usageData } = useSubscriptionUsage();
     const { data: adminBillingData } = useSchoolBilling(isAdmin ? schoolId : '', { limit: 1 });
     
     // For parents, use user billing hook
@@ -21,7 +21,7 @@ export const TrialBanner = () => {
     
     // Determine trial status
     const isTrialByPlan = user?.plan?.toUpperCase()?.includes('TRIAL');
-    const isTrialByUsage = isAdmin && usageData?.isTrial;
+    const isTrialByUsage = usageData?.isTrial;
     const isTrialByBilling = (isParent && parentBillingData?.data?.subscription?.isTrialActive) || 
                              (isAdmin && adminBillingData?.subscription?.isTrialActive);
     

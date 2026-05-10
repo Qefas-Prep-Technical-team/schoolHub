@@ -24,6 +24,13 @@ interface SubscriptionUsageData {
     teachers: number;
     storage: number;
   };
+  planFeatures: Array<{
+    name: string;
+    label: string;
+    enabled: boolean;
+    limit: number | null;
+    isUnlimited: boolean;
+  }>;
   isTrial: boolean;
   subscriptionStatus: string;
 }

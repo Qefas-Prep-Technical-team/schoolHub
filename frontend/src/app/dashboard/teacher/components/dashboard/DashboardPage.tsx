@@ -15,6 +15,7 @@ import InsightsGrid from './InsightsGrid';
 import MessagesAnnouncements from './MessagesAnnouncements';
 import TeacherSchedule from './TeacherSchedule';
 import RecentPersonalActivity from './RecentPersonalActivity';
+import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 import { useNotifications } from '@/lib/api/hooks/useNotifications';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -158,7 +159,14 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Daily Schedule (4 Cols) */}
-                <div className="lg:col-span-4">
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                  <UsageLimitsCard 
+                    role="TEACHER"
+                    title="Teaching Quota"
+                    description="Personal teaching metrics synchronized with school resources."
+                    upgradeLink="/dashboard/teacher/billing"
+                    upgradeLabel="Manage Teacher Plan"
+                  />
                   <TeacherSchedule />
                 </div>
 

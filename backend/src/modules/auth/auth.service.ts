@@ -9,6 +9,7 @@ import { generateUniqueCode } from "../../utils/code-generator";
 import { UserRole } from "@prisma/client";
 import { enforceStudentLimit } from "../subscription/quota.helpers";
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
+import { SubscriptionComplianceService } from "../subscription/subscription-compliance.service";
 
 // Get student by code (for parent to verify before linking)
 export const getStudentByCode = async (req: Request, res: Response) => {
@@ -341,6 +342,7 @@ export const loginUser = async (email: string, password: string) => {
     if (!match) throw new Error("Invalid credentials");
 
     const token = generateAccessToken(student.id, "STUDENT");
+    await SubscriptionComplianceService.verifyAndSyncStatus({ userId: student.id, userType: UserRole.STUDENT });
     return { user: student, token };
   }
 
@@ -355,6 +357,7 @@ export const loginUser = async (email: string, password: string) => {
     if (!match) throw new Error("Invalid credentials");
 
     const token = generateAccessToken(teacher.id, "TEACHER");
+    await SubscriptionComplianceService.verifyAndSyncStatus({ userId: teacher.id, userType: UserRole.TEACHER });
     return { user: teacher, token };
   }
 
@@ -369,6 +372,11 @@ export const loginUser = async (email: string, password: string) => {
     if (!match) throw new Error("Invalid credentials");
 
     const token = generateAccessToken(admin.id, "ADMIN");
+    await SubscriptionComplianceService.verifyAndSyncStatus({ 
+      userId: admin.id, 
+      userType: UserRole.ADMIN,
+      schoolId: admin.schoolId
+    });
     return { user: admin, token };
   }
 
@@ -383,6 +391,7 @@ export const loginUser = async (email: string, password: string) => {
     if (!match) throw new Error("Invalid credentials");
 
     const token = generateAccessToken(parent.id, "PARENT");
+    await SubscriptionComplianceService.verifyAndSyncStatus({ userId: parent.id, userType: UserRole.PARENT });
     return { user: parent, token };
   }
 
@@ -680,6 +689,14 @@ export const googleAuthService = async (
   }
 
   const token = generateAccessToken(user.id, actualRole);
+  
+  // Real-time subscription compliance check
+  await SubscriptionComplianceService.verifyAndSyncStatus({ 
+    userId: user.id, 
+    userType: actualRole,
+    schoolId: user.schoolId
+  });
+
   return { user, token };
 };
 

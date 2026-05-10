@@ -96,8 +96,8 @@ export default function FeatureCard({
                         <div className="flex flex-col gap-2">
                             <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active in Plans</span>
                             <div className="flex flex-wrap gap-2">
-                            {feature.planAccesses?.length > 0 ? (
-                                feature.planAccesses.map((pa: any) => (
+                            {feature.planAccess?.length > 0 ? (
+                                feature.planAccess.map((pa: any) => (
                                     <Badge 
                                         key={pa.plan.id}
                                         variant="outline" 
@@ -118,18 +118,18 @@ export default function FeatureCard({
     }
 
     // Role Mode
-    const isEnabled = !!feature[`${activeRole}Enabled`];
+    const isEnabled = feature[`${activeRole}Enabled`] !== false;
     return (
         <div className={cn(
             "group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500",
-            isEnabled ? "ring-2 ring-indigo-500/20 shadow-xl" : "border-dashed opacity-90 hover:opacity-100"
+            isEnabled ? "ring-2 ring-indigo-500/20 shadow-xl" : "border-dashed opacity-80 hover:opacity-100 bg-slate-50/50 dark:bg-slate-900/50"
         )}>
             <div className="space-y-6">
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-5">
                         <div className={cn(
                             "h-16 w-16 rounded-3xl flex items-center justify-center transition-all duration-500",
-                            isEnabled ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-50 dark:bg-white/5 text-slate-400"
+                            isEnabled ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-100 dark:bg-white/5 text-slate-400 grayscale"
                         )}>
                             {isUpdating ? <RefreshCcw size={24} className="animate-spin" /> : <Sparkles size={24} />}
                         </div>
@@ -150,7 +150,7 @@ export default function FeatureCard({
                         "flex flex-col items-end gap-3 p-4 rounded-3xl border transition-all duration-300",
                         isEnabled 
                         ? "bg-indigo-500/5 border-indigo-500/20 shadow-inner" 
-                        : "bg-slate-50/50 dark:bg-white/5 border-slate-100 dark:border-white/5"
+                        : "bg-slate-100/50 dark:bg-white/5 border-slate-200 dark:border-white/5"
                     )}>
                         <div className="flex items-center gap-3">
                             {isUpdating && <RefreshCcw size={12} className="animate-spin text-indigo-500" />}
@@ -158,12 +158,12 @@ export default function FeatureCard({
                                 checked={isEnabled} 
                                 onCheckedChange={(val) => onToggle?.(feature.id, activeRole!, val)}
                                 disabled={isUpdating}
-                                className="data-[state=checked]:bg-indigo-500 h-7 w-12"
+                                className="data-[state=checked]:bg-indigo-500 data-[state=unchecked]:bg-slate-300 h-7 w-12"
                             />
                         </div>
                         <span className={cn(
                             "text-[9px] font-black uppercase tracking-[0.2em]",
-                            isUpdating ? "text-indigo-400 animate-pulse" : (isEnabled ? "text-emerald-500" : "text-slate-400")
+                            isUpdating ? "text-indigo-400 animate-pulse" : (isEnabled ? "text-emerald-500" : "text-rose-500 font-black")
                         )}>
                             {isUpdating ? "Updating..." : (isEnabled ? "Module Active" : "Module Inactive")}
                         </span>

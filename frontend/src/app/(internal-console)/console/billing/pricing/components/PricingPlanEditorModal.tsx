@@ -39,7 +39,7 @@ interface PricingPlanEditorModalProps {
 
 export default function PricingPlanEditorModal({ plan, isOpen, onClose }: PricingPlanEditorModalProps) {
     const savePlan = useSavePricingPlan()
-    const { data: manifestFeatures } = usePlatformFeatures()
+    const { data: manifestFeatures, isLoading: isManifestLoading, isError: isManifestError, error: manifestError } = usePlatformFeatures()
     const [formData, setFormData] = useState<any>({
         name: "",
         category: "schools",
@@ -103,6 +103,10 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                 }),
                 features: marketingOnly, // Purely visual ad-hoc labels
                 maxStudents: plan.maxStudents ?? '',
+                maxTeachers: plan.maxTeachers ?? '',
+                maxClasses: plan.maxClasses ?? '',
+                maxExams: plan.maxExams ?? '',
+                maxAiUsage: plan.maxAiUsage ?? '',
                 maxStorageGb: plan.maxStorageGb ?? '',
                 trialDays: plan.trialDays ?? '',
                 name: plan.name ?? '',
@@ -177,6 +181,10 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
             monthlyPrice: Number(formData.monthlyPrice || 0) || 0,
             yearlyPrice: Number(formData.yearlyPrice || 0) || 0,
             maxStudents: Number(formData.maxStudents || 0) || 0,
+            maxTeachers: Number(formData.maxTeachers || 0) || 0,
+            maxClasses: Number(formData.maxClasses || 0) || 0,
+            maxExams: Number(formData.maxExams || 0) || 0,
+            maxAiUsage: Number(formData.maxAiUsage || 0) || 0,
             maxStorageGb: Number(formData.maxStorageGb || 0) || 0,
             trialDays: Number(formData.trialDays || 0) || 0,
         }
@@ -273,6 +281,42 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                     />
                                 </div>
                                 <div className="space-y-2">
+                                    <Label className="text-[9px] font-bold text-slate-400">Max Teachers</Label>
+                                    <Input 
+                                        type="number"
+                                        value={formData.maxTeachers} 
+                                        onChange={(e) => setFormData({ ...formData, maxTeachers: e.target.value })}
+                                        className="rounded-xl border-slate-200 dark:border-slate-800 font-black h-12"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-bold text-slate-400">Max Classes</Label>
+                                    <Input 
+                                        type="number"
+                                        value={formData.maxClasses} 
+                                        onChange={(e) => setFormData({ ...formData, maxClasses: e.target.value })}
+                                        className="rounded-xl border-slate-200 dark:border-slate-800 font-black h-12"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-bold text-slate-400">Max Exams</Label>
+                                    <Input 
+                                        type="number"
+                                        value={formData.maxExams} 
+                                        onChange={(e) => setFormData({ ...formData, maxExams: e.target.value })}
+                                        className="rounded-xl border-slate-200 dark:border-slate-800 font-black h-12"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-bold text-slate-400">AI Tokens / Usage</Label>
+                                    <Input 
+                                        type="number"
+                                        value={formData.maxAiUsage} 
+                                        onChange={(e) => setFormData({ ...formData, maxAiUsage: e.target.value })}
+                                        className="rounded-xl border-slate-200 dark:border-slate-800 font-black h-12"
+                                    />
+                                </div>
+                                <div className="space-y-2">
                                     <Label className="text-[9px] font-bold text-slate-400">Storage (GB)</Label>
                                     <Input 
                                         type="number"
@@ -335,10 +379,21 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {!manifestFeatures ? (
+                            {isManifestLoading ? (
                                 <div className="md:col-span-2 py-12 flex flex-col items-center justify-center bg-slate-50/50 dark:bg-white/[0.02] rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800 animate-pulse">
                                     <RefreshCcw className="animate-spin text-indigo-500 mb-3" size={24} />
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Synchronizing Registry...</p>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center px-4">Synchronizing System Registry...</p>
+                                </div>
+                            ) : isManifestError ? (
+                                <div className="md:col-span-2 py-12 flex flex-col items-center justify-center bg-red-50/50 dark:bg-red-900/10 rounded-[2rem] border border-dashed border-red-200 dark:border-red-900/30">
+                                    <Shield size={24} className="text-red-500 mb-3" />
+                                    <p className="text-xs font-bold text-red-500 uppercase tracking-widest text-center px-4">Registry Sync Failed</p>
+                                    <p className="text-[10px] text-red-400 mt-2">{(manifestError as any)?.message || "Check your network connection"}</p>
+                                </div>
+                            ) : !manifestFeatures ? (
+                                <div className="md:col-span-2 py-12 flex flex-col items-center justify-center bg-slate-50/50 dark:bg-white/[0.02] rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800">
+                                    <Shield size={24} className="text-slate-300 mb-3" />
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No Manifest Available</p>
                                 </div>
                             ) : manifestFeatures.filter((mf: any) => {
                                 // Filter by user type flags

@@ -6,6 +6,7 @@ import TopNavBar from "./components/TopNavBar"
 import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute"
 import AdminBottomNav from "./components/AdminBottomNav"
 import { TrialBanner } from "@/components/subscription/TrialBanner"
+import FeatureGuard from "@/components/auth/FeatureGuard"
 
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
 import { useSchoolSettings } from "@/lib/api/hooks/useSchool"
@@ -39,7 +40,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         <TopNavBar isCollapsed={isCollapsed} primaryColor={primaryColor} />
                         <div className="flex-1 overflow-y-auto p-4 md:p-8">
                             <TrialBanner />
-                            {children}
+                            <FeatureGuard role="admin">
+                                {children}
+                            </FeatureGuard>
                         </div>
                     </SidebarInset>
                 </div>

@@ -25,6 +25,7 @@ import {
     ResponsiveContainer
 } from "recharts"
 import { Skeleton } from "@/components/ui/skeleton"
+import { SubscriptionAnalytics } from "./components/SubscriptionAnalytics"
 
 export default function PlatformDashboard() {
     const { data: stats, isLoading: statsLoading } = usePlatformStats()
@@ -147,6 +148,15 @@ export default function PlatformDashboard() {
                         </CardContent>
                     </Card>
                 ))}
+            </div>
+
+            {/* Subscription Analytics Section */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                    <TrendingUp className="text-indigo-500 h-5 w-5" />
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Subscription Performance</h2>
+                </div>
+                <SubscriptionAnalytics />
             </div>
 
             <div className="flex flex-col xl:flex-row gap-8">

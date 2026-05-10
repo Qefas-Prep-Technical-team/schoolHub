@@ -1,12 +1,12 @@
 "use client"
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-    CreditCard, 
-    Calendar, 
-    ShieldCheck, 
-    Zap, 
-    Clock, 
+import {
+    CreditCard,
+    Calendar,
+    ShieldCheck,
+    Zap,
+    Clock,
     AlertCircle,
     CheckCircle2,
 } from 'lucide-react';
@@ -18,6 +18,7 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useUserBilling } from '@/lib/api/hooks/useSchool';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from 'next/navigation';
+import { useGlobalFeatures } from '@/lib/api/hooks/useGlobalFeatures';
 import { useFetchPricing } from '@/components/pricing/query';
 import { PricingData } from '@/components/Types/Pricing';
 import { toast } from 'react-toastify';
@@ -27,12 +28,20 @@ export default function StudentBillingPage() {
     const { user } = useAuthStore();
     const [currentPage, setCurrentPage] = React.useState(1);
     const ITEMS_PER_PAGE = 5;
-    
+
     const { data: pricingData } = useFetchPricing();
-    const { data: billingData, isLoading, isError } = useUserBilling(user?.id as string, { 
-        page: currentPage, 
-        limit: ITEMS_PER_PAGE 
+    const { data: billingData, isLoading, isError } = useUserBilling(user?.id as string, {
+        page: currentPage,
+        limit: ITEMS_PER_PAGE
     });
+
+    const { data: features, isLoading: isFeaturesLoading } = useGlobalFeatures('student');
+
+    React.useEffect(() => {
+        if (!isFeaturesLoading && features && features.billing === false) {
+            router.replace('/dashboard/student');
+        }
+    }, [features, isFeaturesLoading, router]);
 
     if (isLoading) {
         return (
@@ -59,7 +68,7 @@ export default function StudentBillingPage() {
 
     const { subscription, usage, transactions } = billingData.data || {};
     const plan = subscription?.plan?.toUpperCase() || "FREE";
-    
+
     // Plan limits mapping for students
     const planLimits = {
         PRO: { storage: 25 },
@@ -75,12 +84,12 @@ export default function StudentBillingPage() {
 
     // Dynamic pricing retrieval
     const studentPricing = pricingData?.find((d: PricingData) => (d.category as string) === 'students');
-    const activePlanData = studentPricing?.tabs.find((t: any) => 
-        t.type.toLowerCase() === plan.toLowerCase() || 
+    const activePlanData = studentPricing?.tabs.find((t: any) =>
+        t.type.toLowerCase() === plan.toLowerCase() ||
         t.name.toLowerCase() === plan.toLowerCase()
     );
-    const dynamicAmount = activePlanData 
-        ? (cycle === 'monthly' ? activePlanData.pricing.monthly : activePlanData.pricing.yearly) 
+    const dynamicAmount = activePlanData
+        ? (cycle === 'monthly' ? activePlanData.pricing.monthly : activePlanData.pricing.yearly)
         : 0;
 
     const isTrial = subscription?.isTrialActive === true;
@@ -91,11 +100,11 @@ export default function StudentBillingPage() {
         amount: dynamicAmount,
         billingCycle: cycle,
         features: activePlanData?.features || [
-                "Individual Learning Dashboard",
-                "Course Materials Access",
-                "Basic Study Tools",
-                "Result History"
-            ]
+            "Individual Learning Dashboard",
+            "Course Materials Access",
+            "Basic Study Tools",
+            "Result History"
+        ]
     };
 
     const storageGB = ((usage?.storageBytes || 0) / (1024 * 1024 * 1024)).toFixed(1);
@@ -103,7 +112,7 @@ export default function StudentBillingPage() {
 
     return (
         <div className="space-y-8 pb-12 p-6 lg:p-8">
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col md:flex-row md:items-center justify-between gap-4"
@@ -116,10 +125,10 @@ export default function StudentBillingPage() {
                         Manage your individual learning plan and billing.
                     </p>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         className="rounded-2xl font-bold border-2 h-12 px-6"
                         onClick={() => router.push('/pricing?role=student')}
                     >
@@ -167,7 +176,7 @@ export default function StudentBillingPage() {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Plan Highlights</p>
                                 <ul className="space-y-3">
@@ -197,28 +206,34 @@ export default function StudentBillingPage() {
                         </p>
                     </Card>
 
-                    <Card className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl p-8 bg-white dark:bg-slate-900/50">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400">
-                                <Clock className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h4 className="font-black text-slate-900 dark:text-white leading-tight">Resources</h4>
-                                <p className="text-xs text-slate-500 font-medium">Capacity tracking</p>
-                            </div>
-                        </div>
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm font-bold">
-                                    <span className="text-slate-500">Cloud Storage</span>
-                                    <span className="text-slate-900 dark:text-white">{storageGB} GB / {storageLimit} GB</span>
+                    {/* Resources Section - only show if enforcement is active */}
+                    {features?.billing !== false && settings?.sub_enforced_students !== "false" && (
+                        <Card className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl p-8 bg-white dark:bg-slate-900/50">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400">
+                                    <Clock className="w-6 h-6" />
                                 </div>
-                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div className="h-full bg-amber-500" style={{ width: `${storagePercentage}%` }} />
+                                <div className="space-y-1">
+                                    <h4 className="font-black text-slate-900 dark:text-white leading-tight">Resources</h4>
+                                    <p className="text-xs text-slate-500 font-medium tracking-tight">Capacity tracking</p>
                                 </div>
                             </div>
-                        </div>
-                    </Card>
+                            <div className="space-y-6">
+                                <div className="space-y-2.5">
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-sm font-bold text-slate-500">Cloud Storage</span>
+                                        <div className="text-right">
+                                            <span className="text-base font-black text-slate-900 dark:text-white tracking-tight">{storageGB} GB</span>
+                                            <span className="text-xs font-bold text-slate-400 ml-1.5">/ {storageLimit} GB</span>
+                                        </div>
+                                    </div>
+                                    <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                                        <div className="h-full bg-amber-500 shadow-lg" style={{ width: `${storagePercentage}%` }} />
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+                    )}
                 </div>
             </div>
 
@@ -229,8 +244,8 @@ export default function StudentBillingPage() {
                         Payment History
                     </h2>
                 </div>
-                <TransactionHistory 
-                    items={transactions} 
+                <TransactionHistory
+                    items={transactions}
                     totalItems={billingData.totalTransactions}
                     currentPage={currentPage}
                     itemsPerPage={ITEMS_PER_PAGE}

@@ -32,7 +32,7 @@ export const registrationAPI = {
       ApiResponse<ParentRegistrationResponse>
     >(
       "/auth/register/parents", // Your backend endpoint
-      data
+      data,
     );
     return response;
   },
@@ -48,7 +48,7 @@ export const registrationAPI = {
   }) => {
     const response = await apiClient.post<ApiResponse<any>>(
       "/auth/register/school",
-      data
+      data,
     );
     return response;
   },
@@ -63,7 +63,7 @@ export const registrationAPI = {
   }) => {
     const response = await apiClient.post<ApiResponse<any>>(
       "/auth/register/teacher",
-      data
+      data,
     );
     return response;
   },
@@ -73,12 +73,15 @@ export const registrationAPI = {
     email: string;
     password: string;
     confirmPassword: string;
-    tenantId?: string;
+    schoolCode?: string;
     teacherCode?: string;
+    parentCode?: string;
+    classCode?: string;
+    acceptTerms: boolean;
   }) => {
     const response = await apiClient.post<ApiResponse<any>>(
       "/auth/register/student",
-      data
+      data,
     );
     return response;
   },

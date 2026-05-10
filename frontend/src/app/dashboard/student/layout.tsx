@@ -6,6 +6,7 @@ import { ProtectedStudentRoute } from "./components/ProtectedStudentRoute"
 import { StudentSidebar } from "./components/app-sidebar"
 import StudentBottomNav from "./components/StudentBottomNav"
 import { TrialBanner } from "@/components/subscription/TrialBanner"
+import FeatureGuard from "@/components/auth/FeatureGuard"
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     const [isCollapsed, setIsCollapsed] = useState(false)
@@ -30,7 +31,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
                             <div className="p-4 md:p-6 lg:p-8">
                                 <TrialBanner />
-                                {children}
+                                <FeatureGuard role="student">
+                                    {children}
+                                </FeatureGuard>
                             </div>
                         </div>
                     </SidebarInset>

@@ -6,6 +6,7 @@ import TopNavBar from "./components/TopNavBar"
 import { TrialBanner } from "@/components/subscription/TrialBanner"
 import { useState, useEffect } from "react"
 import { ProtectedParentRoute } from "./components/ProtectedParentRoute"
+import FeatureGuard from "@/components/auth/FeatureGuard"
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     return (
@@ -22,7 +23,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     <div className="p-4 md:p-6 lg:p-10">
                         <TrialBanner />
-                        {children}
+                        <FeatureGuard role="parent">
+                            {children}
+                        </FeatureGuard>
                     </div>
                 </div>
             </SidebarInset>

@@ -127,7 +127,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
     const pathname = usePathname()
 
     // Fetch dynamic feature toggles from platform config
-    const { data: dynamicFeatures } = useGlobalFeatures('admin')
+    const { data: dynamicFeatures, isLoading: isFeaturesLoading } = useGlobalFeatures('admin')
 
     useEffect(() => {
         linkService.getProfile().then(setProfile).catch(() => {})
@@ -140,6 +140,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
 
     // Get filtered menu items grouped by section based on dynamic or static flags
     const menuSections = useMemo(() => {
+        if (isFeaturesLoading) return null;
         const currentFeatures = dynamicFeatures || ADMIN_FEATURE_FLAGS;
 
         const filtered = adminMenuItems.filter(item => !!(currentFeatures as any)[item.featureKey]);
@@ -152,7 +153,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
             advanced: filtered.filter(item => item.section === 'advanced'),
             settings: filtered.filter(item => item.section === 'settings'),
         };
-    }, [dynamicFeatures]);
+    }, [dynamicFeatures, isFeaturesLoading]);
 
     return (
         <Sidebar
@@ -202,8 +203,20 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
             {/* Main Menu */}
             <SidebarContent className="mt-10 px-2 flex-1 outline-none">
                 <SidebarMenu>
-                    {/* Render each section */}
-                    {Object.entries(menuSections).map(([sectionKey, items]) => {
+                    {isFeaturesLoading ? (
+                        <div className="flex flex-col gap-3 px-1 mt-2">
+                            {Array.from({ length: 14 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-3 h-10 px-3">
+                                    <div className="h-5 w-5 rounded-md bg-slate-100 dark:bg-white/5 animate-pulse shrink-0" />
+                                    {!isCollapsed && (
+                                        <div className="h-4 w-3/4 rounded-md bg-slate-100 dark:bg-white/5 animate-pulse" />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        /* Render each section */
+                        menuSections && Object.entries(menuSections).map(([sectionKey, items]) => {
                         if (items.length === 0) return null;
 
                         return (
@@ -263,7 +276,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
                                 })}
                             </div>
                         );
-                    })}
+                    }))}
                 </SidebarMenu>
             </SidebarContent>
 

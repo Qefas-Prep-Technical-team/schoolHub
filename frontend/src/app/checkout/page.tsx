@@ -132,10 +132,8 @@ export default function CheckoutPage() {
                 queryClient.invalidateQueries({ queryKey: ['user-profile'] });
             }
             const timer = setTimeout(() => {
-                // Determine target URL: Admins go to billing, others follow redirectBackUrl or dashboard
-                let targetUrl = (role === 'ADMIN') 
-                    ? '/dashboard/admin/billing' 
-                    : (redirectBackUrl || '/dashboard');
+                // Determine target URL: All users go to their respective billing/subscription page
+                let targetUrl = `/dashboard/${role?.toLowerCase() || 'admin'}/billing`;
                 
                 clearCheckout();
                 router.push(targetUrl);
@@ -566,7 +564,7 @@ export default function CheckoutPage() {
                                 </div>
                                 <h2 className="text-4xl font-black text-slate-900 dark:text-white font-lexend mb-4">You're all set!</h2>
                                 <p className="text-slate-500 mb-10 text-lg">
-                                    {role === 'ADMIN' ? 'Redirecting you to the billing page...' : 'Redirecting you to your dashboard...'}
+                                    Redirecting you to your subscription page...
                                 </p>
                                 <Link href="/dashboard">
                                     <Button className="px-10 py-6 text-lg rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black shadow-xl">

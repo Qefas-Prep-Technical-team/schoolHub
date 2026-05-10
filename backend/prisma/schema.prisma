@@ -56,6 +56,16 @@ model School {
   profileCompleted         Boolean   @default(false)
   registrationSource       String?   @default("STANDARD")
   schoolAdmins             SchoolAdmin[]
+  classes                  Class[]
+  exams                    Exam[]
+  subjects                 Subject[]
+  teachers                 Teacher[]
+  students                 Student[]
+  grades                   Grade[]
+  primaryTeachers          Teacher[] @relation("PrimarySchool")
+  currentTeachers          Teacher[] @relation("CurrentSchool")
+  originalStudents         Student[] @relation("OriginalSchool")
+  subscriptionPlan         SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
 }
 
 model SchoolSetting {
@@ -125,6 +135,7 @@ model Admin {
   schoolAdmins            SchoolAdmin[]
   acceptedTerms           Boolean   @default(false)
   termsAcceptedAt         DateTime?
+  subscriptionPlan        SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
 }
 
 model Teacher {
@@ -171,6 +182,14 @@ model Teacher {
   isIndependent           Boolean   @default(false)
   acceptedTerms           Boolean   @default(false)
   termsAcceptedAt         DateTime?
+  subscriptionPlan        SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+
+  school        School?        @relation(fields: [schoolId], references: [id])
+  currentSchool School?        @relation("CurrentSchool", fields: [currentSchoolId], references: [id])
+  primarySchool School?        @relation("PrimarySchool", fields: [primarySchoolId], references: [id])
+  exams         Exam[]
+  classTeachers ClassTeacher[]
+  grades        Grade[]
 }
 
 model Student {
@@ -213,6 +232,14 @@ model Student {
   subscriptionPlanId      String?
   acceptedTerms           Boolean   @default(false)
   termsAcceptedAt         DateTime?
+  subscriptionPlan        SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+
+  school         School?           @relation(fields: [schoolId], references: [id])
+  originalSchool School?           @relation("OriginalSchool", fields: [originalSchoolId], references: [id])
+  enrollments    ClassEnrollment[]
+  examAttempts   ExamAttempt[]
+  grades         Grade[]
+  parentLinks  ParentChildLink[]
 }
 
 model Parent {
@@ -250,6 +277,9 @@ model Parent {
   subscriptionPlanId      String?
   acceptedTerms           Boolean   @default(false)
   termsAcceptedAt         DateTime?
+  subscriptionPlan        SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+
+  children ParentChildLink[]
 
   @@map("parents")
 }
@@ -266,6 +296,9 @@ model ParentChildLink {
   @@unique([parentId, studentId])
   @@index([studentCode])
   @@map("parent_child_links")
+
+  parent  Parent  @relation(fields: [parentId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
 }
 
 model Class {
@@ -281,6 +314,12 @@ model Class {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
+  school      School?           @relation(fields: [schoolId], references: [id])
+  enrollments ClassEnrollment[]
+  exams       Exam[]
+  teachers    ClassTeacher[]
+  grades      Grade[]
+
   @@unique([schoolId, name, section])
   @@map("classes")
 }
@@ -293,6 +332,9 @@ model ClassEnrollment {
 
   @@unique([classId, studentId])
   @@map("class_enrollments")
+
+  class   Class   @relation(fields: [classId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
 }
 
 model VerificationCode {
@@ -362,6 +404,11 @@ model Grade {
 
   @@unique([studentId, examId, subjectPaperId])
   @@map("grades")
+
+  student Student @relation(fields: [studentId], references: [id])
+  school  School  @relation(fields: [schoolId], references: [id])
+  teacher Teacher? @relation(fields: [teacherId], references: [id])
+  class   Class?   @relation(fields: [classId], references: [id])
 }
 
 model LinkRequest {
@@ -494,6 +541,8 @@ model Subject {
 
   @@unique([schoolId, code])
   @@map("subjects")
+
+  school School? @relation(fields: [schoolId], references: [id])
 }
 
 model Department {
@@ -624,6 +673,11 @@ model Exam {
   endDate              DateTime?
   shuffleQuestions     Boolean                @default(false)
 
+  school School? @relation(fields: [schoolId], references: [id])
+  class  Class?  @relation(fields: [classId], references: [id])
+  teacher Teacher? @relation(fields: [teacherId], references: [id])
+  attempts ExamAttempt[]
+
   @@map("exams")
 }
 
@@ -738,6 +792,9 @@ model ExamAttempt {
 
   @@unique([examId, studentId])
   @@map("exam_attempts")
+
+  exam    Exam    @relation(fields: [examId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
 }
 
 model SubjectExamAttempt {
@@ -823,6 +880,9 @@ model ClassTeacher {
 
   @@unique([classId, teacherId])
   @@map("class_teachers")
+
+  class   Class   @relation(fields: [classId], references: [id])
+  teacher Teacher @relation(fields: [teacherId], references: [id])
 }
 
 model BehaviourAlert {
@@ -963,6 +1023,11 @@ model SubscriptionPlan {
   @@map("subscription_plans")
 
   featureAccess PlanFeatureAccess[]
+  schools       School[]
+  admins        Admin[]
+  teachers      Teacher[]
+  students      Student[]
+  parents       Parent[]
 }
 
 model PlanFeatureAccess {

@@ -127,7 +127,7 @@ export function AppSidebar() {
     const pathname = usePathname()
 
     // Fetch dynamic feature toggles from platform config
-    const { data: dynamicFeatures } = useGlobalFeatures('teacher')
+    const { data: dynamicFeatures, isLoading: isFeaturesLoading } = useGlobalFeatures('teacher')
 
     const copyCode = (code: string) => {
         navigator.clipboard.writeText(code)
@@ -136,8 +136,9 @@ export function AppSidebar() {
 
     // Get the current features configuration
     const currentFeatures = useMemo(() => {
+        if (isFeaturesLoading) return null;
         return dynamicFeatures || FEATURE_FLAGS_TEACHERS;
-    }, [dynamicFeatures]);
+    }, [dynamicFeatures, isFeaturesLoading]);
 
     return (
         <Sidebar
@@ -174,7 +175,19 @@ export function AppSidebar() {
 
             {/* Main Menu */}
             <SidebarContent className="py-6 px-3 custom-scrollbar flex flex-col gap-6">
-                {menuGroups.map((group) => (
+                {isFeaturesLoading ? (
+                    <div className="flex flex-col gap-3 px-1 mt-2">
+                        {Array.from({ length: 12 }).map((_, i) => (
+                            <div key={i} className="flex items-center gap-3 h-10 px-3">
+                                <div className="h-5 w-5 rounded-md bg-slate-100 dark:bg-white/5 animate-pulse shrink-0" />
+                                {!isCollapsed && (
+                                    <div className="h-4 w-3/4 rounded-md bg-slate-100 dark:bg-white/5 animate-pulse" />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    menuGroups.map((group) => (
                     <div key={group.label} className="space-y-2">
                         {!isCollapsed && (
                             <h3 className="px-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3">
@@ -226,7 +239,7 @@ export function AppSidebar() {
                             })}
                         </SidebarMenu>
                     </div>
-                ))}
+                )))}
             </SidebarContent>
 
             {/* Footer */}

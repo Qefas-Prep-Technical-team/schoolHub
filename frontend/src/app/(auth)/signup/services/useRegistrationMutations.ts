@@ -58,6 +58,7 @@ export const useStudentRegistration = () => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       authToast.registrationSuccess("Student");
       console.log("Student registration successful:", response.data);
+      // Redirect logic can be handled in the component if needed
     },
     onError: (error: any) => {
       const errorMessage =

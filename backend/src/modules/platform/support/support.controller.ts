@@ -12,18 +12,34 @@ import { getIO } from "../../../socket";
  */
 export const searchSchools = async (req: Request, res: Response) => {
   try {
-    const { query, page = 1, limit = 10 } = req.query as { query?: string; page?: string; limit?: string };
+    const { query, plan, status, page = 1, limit = 10 } = req.query as { query?: string; plan?: string; status?: string; page?: string; limit?: string };
     const skip = (Number(page) - 1) * Number(limit);
     
-    const [schools, total] = await Promise.all([
+    const where: any = {};
+
+    if (query) {
+      where.OR = [
+        { name: { contains: query as string, mode: 'insensitive' } },
+        { tenantId: { contains: query as string, mode: 'insensitive' } },
+        { schoolCode: { contains: query as string, mode: 'insensitive' } },
+      ];
+    }
+
+    if (plan && plan !== 'ALL') {
+      where.OR = [
+        { plan: plan },
+        { subscriptionPlanId: plan },
+        { planId: plan }
+      ];
+    }
+
+    if (status && status !== 'ALL') {
+      where.subscriptionStatus = status;
+    }
+
+    const [schools, total, allPlans] = await Promise.all([
       prisma.school.findMany({
-        where: {
-          OR: [
-            { name: { contains: query as string, mode: 'insensitive' } },
-            { tenantId: { contains: query as string, mode: 'insensitive' } },
-            { schoolCode: { contains: query as string, mode: 'insensitive' } },
-          ]
-        },
+        where,
         select: {
           id: true,
           name: true,
@@ -37,20 +53,59 @@ export const searchSchools = async (req: Request, res: Response) => {
         take: Number(limit),
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.school.count({
-        where: {
-          OR: [
-            { name: { contains: query as string, mode: 'insensitive' } },
-            { tenantId: { contains: query as string, mode: 'insensitive' } },
-            { schoolCode: { contains: query as string, mode: 'insensitive' } },
-          ]
-        }
+      prisma.school.count({ where }),
+      // Fetch all institutional plans
+      prisma.subscriptionPlan.findMany({
+        where: { 
+            OR: [
+                { planScope: 'SCHOOL' },
+                { category: 'schools' },
+                { category: 'INSTITUTION' }
+            ],
+            isActive: true 
+        },
+        orderBy: { sortOrder: 'asc' }
       })
     ]);
+
+    // Count schools for each plan
+    const planBreakdown = await Promise.all(allPlans.map(async (p) => {
+        const count = await prisma.school.count({
+            where: { 
+                OR: [
+                    { subscriptionPlanId: p.id },
+                    { planId: p.id }
+                ]
+            }
+        });
+        return {
+            id: p.id,
+            name: p.name,
+            count,
+            type: p.type
+        };
+    }));
+
+    // Status Breakdown for specific requirement
+    const [paidCount, expiredCount, cancelledCount, trialCount] = await Promise.all([
+        prisma.school.count({ where: { subscriptionStatus: 'ACTIVE', isTrialActive: false, plan: { not: 'FREE' } } }),
+        prisma.school.count({ where: { subscriptionStatus: 'EXPIRED' } }),
+        prisma.school.count({ where: { subscriptionStatus: 'CANCELLED' } }),
+        prisma.school.count({ where: { isTrialActive: true } })
+    ]);
+
+    const statusBreakdown = [
+        { name: 'Paid', count: paidCount, type: 'PAID' },
+        { name: 'Expired', count: expiredCount, type: 'EXPIRED' },
+        { name: 'Cancelled', count: cancelledCount, type: 'CANCELLED' },
+        { name: 'Trial', count: trialCount, type: 'TRIAL' }
+    ];
 
     return res.status(200).json({ 
       success: true, 
       data: schools,
+      planBreakdown,
+      statusBreakdown,
       pagination: {
         total,
         page: Number(page),
@@ -472,7 +527,7 @@ export const searchStudents = async (req: Request, res: Response) => {
       where.subscriptionStatus = status;
     }
 
-    const [students, total] = await Promise.all([
+    const [students, total, allPlans] = await Promise.all([
       prisma.student.findMany({
         where,
         select: {
@@ -489,12 +544,47 @@ export const searchStudents = async (req: Request, res: Response) => {
         take: Number(limit),
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.student.count({ where })
+      prisma.student.count({ where }),
+      // Fetch all student plans
+      prisma.subscriptionPlan.findMany({
+        where: { 
+            OR: [{ planScope: 'STUDENT' }, { category: 'students' }],
+            isActive: true 
+        },
+        orderBy: { sortOrder: 'asc' }
+      })
     ]);
+
+    // Count students for each plan
+    const planBreakdown = await Promise.all(allPlans.map(async (p) => {
+        const count = await prisma.student.count({
+            where: { 
+                OR: [{ subscriptionPlanId: p.id }, { planId: p.id }]
+            }
+        });
+        return { id: p.id, name: p.name, count, type: p.type };
+    }));
+
+    // Status Breakdown
+    const [paidCount, expiredCount, cancelledCount, trialCount] = await Promise.all([
+        prisma.student.count({ where: { subscriptionStatus: 'ACTIVE', isTrialActive: false, plan: { not: 'FREE' } } }),
+        prisma.student.count({ where: { subscriptionStatus: 'EXPIRED' } }),
+        prisma.student.count({ where: { subscriptionStatus: 'CANCELLED' } }),
+        prisma.student.count({ where: { isTrialActive: true } })
+    ]);
+
+    const statusBreakdown = [
+        { name: 'Paid', count: paidCount, type: 'PAID' },
+        { name: 'Expired', count: expiredCount, type: 'EXPIRED' },
+        { name: 'Cancelled', count: cancelledCount, type: 'CANCELLED' },
+        { name: 'Trial', count: trialCount, type: 'TRIAL' }
+    ];
 
     return res.status(200).json({ 
       success: true, 
       data: students,
+      planBreakdown,
+      statusBreakdown,
       pagination: {
         total,
         page: Number(page),
@@ -513,18 +603,32 @@ export const searchStudents = async (req: Request, res: Response) => {
  */
 export const searchTeachers = async (req: Request, res: Response) => {
   try {
-    const { query, page = 1, limit = 20 } = req.query;
+    const { query, plan, status, page = 1, limit = 20 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where = query ? {
-      OR: [
+    const where: any = {};
+    
+    if (query) {
+      where.OR = [
         { name: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
         { teacherCode: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
         { email: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
-      ]
-    } : {};
+      ];
+    }
 
-    const [teachers, total] = await Promise.all([
+    if (plan && plan !== 'ALL') {
+      where.OR = [
+        { plan: plan },
+        { subscriptionPlanId: plan },
+        { planId: plan }
+      ];
+    }
+
+    if (status && status !== 'ALL') {
+      where.subscriptionStatus = status;
+    }
+
+    const [teachers, total, allPlans] = await Promise.all([
       prisma.teacher.findMany({
         where,
         select: {
@@ -533,20 +637,55 @@ export const searchTeachers = async (req: Request, res: Response) => {
           teacherCode: true,
           email: true,
           subscriptionStatus: true,
-          primarySchool: { select: { id: true, name: true } },
-          _count: { select: { teacherSubjects: true } },
+          school: { select: { id: true, name: true } },
+          _count: { select: { classTeachers: true } },
           createdAt: true
         },
         skip,
         take: Number(limit),
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.teacher.count({ where })
+      prisma.teacher.count({ where }),
+      // Fetch all teacher plans
+      prisma.subscriptionPlan.findMany({
+        where: { 
+            OR: [{ planScope: 'TEACHER' }, { category: 'teachers' }],
+            isActive: true 
+        },
+        orderBy: { sortOrder: 'asc' }
+      })
     ]);
+
+    // Count teachers for each plan
+    const planBreakdown = await Promise.all(allPlans.map(async (p) => {
+        const count = await prisma.teacher.count({
+            where: { 
+                OR: [{ subscriptionPlanId: p.id }, { planId: p.id }]
+            }
+        });
+        return { id: p.id, name: p.name, count, type: p.type };
+    }));
+
+    // Status Breakdown
+    const [paidCount, expiredCount, cancelledCount, trialCount] = await Promise.all([
+        prisma.teacher.count({ where: { subscriptionStatus: 'ACTIVE', isTrialActive: false, plan: { not: 'FREE' } } }),
+        prisma.teacher.count({ where: { subscriptionStatus: 'EXPIRED' } }),
+        prisma.teacher.count({ where: { subscriptionStatus: 'CANCELLED' } }),
+        prisma.teacher.count({ where: { isTrialActive: true } })
+    ]);
+
+    const statusBreakdown = [
+        { name: 'Paid', count: paidCount, type: 'PAID' },
+        { name: 'Expired', count: expiredCount, type: 'EXPIRED' },
+        { name: 'Cancelled', count: cancelledCount, type: 'CANCELLED' },
+        { name: 'Trial', count: trialCount, type: 'TRIAL' }
+    ];
 
     return res.status(200).json({ 
       success: true, 
       data: teachers,
+      planBreakdown,
+      statusBreakdown,
       pagination: {
         total,
         page: Number(page),
@@ -565,18 +704,32 @@ export const searchTeachers = async (req: Request, res: Response) => {
  */
 export const searchParents = async (req: Request, res: Response) => {
   try {
-    const { query, page = 1, limit = 20 } = req.query;
+    const { query, plan, status, page = 1, limit = 20 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where = query ? {
-      OR: [
+    const where: any = {};
+    
+    if (query) {
+      where.OR = [
         { fullName: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
         { parentCode: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
         { email: { contains: query as string, mode: 'insensitive' as Prisma.QueryMode } },
-      ]
-    } : {};
+      ];
+    }
 
-    const [parents, total] = await Promise.all([
+    if (plan && plan !== 'ALL') {
+      where.OR = [
+        { plan: plan },
+        { subscriptionPlanId: plan },
+        { planId: plan }
+      ];
+    }
+
+    if (status && status !== 'ALL') {
+      where.subscriptionStatus = status;
+    }
+
+    const [parents, total, allPlans] = await Promise.all([
       prisma.parent.findMany({
         where,
         select: {
@@ -585,19 +738,53 @@ export const searchParents = async (req: Request, res: Response) => {
           parentCode: true,
           email: true,
           subscriptionStatus: true,
-          _count: { select: { children: true } },
           createdAt: true
         },
         skip,
         take: Number(limit),
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.parent.count({ where })
+      prisma.parent.count({ where }),
+      // Fetch all parent plans
+      prisma.subscriptionPlan.findMany({
+        where: { 
+            OR: [{ planScope: 'PARENT' }, { category: 'parents' }],
+            isActive: true 
+        },
+        orderBy: { sortOrder: 'asc' }
+      })
     ]);
+
+    // Count parents for each plan
+    const planBreakdown = await Promise.all(allPlans.map(async (p) => {
+        const count = await prisma.parent.count({
+            where: { 
+                OR: [{ subscriptionPlanId: p.id }, { planId: p.id }]
+            }
+        });
+        return { id: p.id, name: p.name, count, type: p.type };
+    }));
+
+    // Status Breakdown
+    const [paidCount, expiredCount, cancelledCount, trialCount] = await Promise.all([
+        prisma.parent.count({ where: { subscriptionStatus: 'ACTIVE', isTrialActive: false, plan: { not: 'FREE' } } }),
+        prisma.parent.count({ where: { subscriptionStatus: 'EXPIRED' } }),
+        prisma.parent.count({ where: { subscriptionStatus: 'CANCELLED' } }),
+        prisma.parent.count({ where: { isTrialActive: true } })
+    ]);
+
+    const statusBreakdown = [
+        { name: 'Paid', count: paidCount, type: 'PAID' },
+        { name: 'Expired', count: expiredCount, type: 'EXPIRED' },
+        { name: 'Cancelled', count: cancelledCount, type: 'CANCELLED' },
+        { name: 'Trial', count: trialCount, type: 'TRIAL' }
+    ];
 
     return res.status(200).json({ 
       success: true, 
       data: parents,
+      planBreakdown,
+      statusBreakdown,
       pagination: {
         total,
         page: Number(page),
@@ -617,6 +804,20 @@ export const searchParents = async (req: Request, res: Response) => {
 export const getPlatformFeatures = async (req: Request, res: Response) => {
   try {
     const features = await prisma.platformFeature.findMany({
+      include: {
+        planAccess: {
+          include: {
+            plan: {
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                type: true
+              }
+            }
+          }
+        }
+      },
       orderBy: { name: 'asc' }
     });
     
@@ -670,6 +871,22 @@ export const getPublicRoleFeatures = async (req: Request, res: Response) => {
             const roleKey = `${role.toLowerCase()}Enabled` as keyof typeof f;
             featureMap[f.featureKey] = !!f[roleKey];
         });
+
+        // Inject sub_enforced logic for billing feature
+        const categoryMap: Record<string, string> = {
+            student: 'students',
+            teacher: 'teachers',
+            parent: 'parents',
+            admin: 'schools'
+        };
+        const category = categoryMap[role.toLowerCase()];
+        const enforcementSetting = await prisma.platformSettings.findUnique({
+            where: { key: `sub_enforced_${category}` }
+        });
+
+        if (enforcementSetting && enforcementSetting.value === "false") {
+            featureMap['billing'] = false;
+        }
 
         res.json({
             status: "success",

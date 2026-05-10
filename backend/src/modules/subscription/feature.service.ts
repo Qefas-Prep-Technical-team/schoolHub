@@ -7,7 +7,7 @@ export class FeatureService {
   static async listFeatures() {
     return await prisma.platformFeature.findMany({
       include: {
-        planAccesses: {
+        planAccess: {
           include: {
             plan: {
               select: {

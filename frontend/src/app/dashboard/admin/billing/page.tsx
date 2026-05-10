@@ -19,12 +19,14 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useSchoolBilling } from '@/lib/api/hooks/useSchool';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { useGlobalFeatures } from '@/lib/api/hooks/useGlobalFeatures';
 import { useFetchPricing } from '@/components/pricing/query';
 import { PricingData } from '@/components/Types/Pricing';
 import { AtmAccountCard } from '../components/AtmAccountCard';
 import { financeService } from '@/lib/api/services/financeService';
 import { toast } from 'react-toastify';
-import UsageLimitsCard from '../components/dashboard/UsageLimitsCard';
+import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 
 export default function AdminBillingPage() {
     const router = useRouter();
@@ -40,16 +42,21 @@ export default function AdminBillingPage() {
         limit: ITEMS_PER_PAGE 
     });
 
-    const [analytics, setAnalytics] = React.useState<any>(null);
-    const [financeLoading, setFinanceLoading] = React.useState(false);
+    const { data: analytics, isLoading: analyticsLoading } = useQuery({
+        queryKey: ['school-analytics', schoolId],
+        queryFn: () => financeService.getSchoolAnalytics(schoolId!),
+        enabled: !!schoolId
+    });
+
+    const { data: features, isLoading: isFeaturesLoading } = useGlobalFeatures('admin');
 
     React.useEffect(() => {
-        if (schoolId) {
-            financeService.getSchoolAnalytics(schoolId)
-                .then(setAnalytics)
-                .catch(console.error);
+        if (!isFeaturesLoading && features && features.billing === false) {
+            router.replace('/dashboard/admin');
         }
-    }, [schoolId]);
+    }, [features, isFeaturesLoading, router]);
+
+    const [financeLoading, setFinanceLoading] = React.useState(false);
 
     const handleSync = async (accountId?: string) => {
         if (!schoolId) return;
@@ -65,7 +72,7 @@ export default function AdminBillingPage() {
             setFinanceLoading(false);
         }
     };
-    if (isLoading || financeLoading) {
+    if (isLoading || financeLoading || isFeaturesLoading || analyticsLoading) {
         return (
             <div className="space-y-8 pb-12 p-6">
                 <Skeleton className="h-12 w-1/3 rounded-xl" />

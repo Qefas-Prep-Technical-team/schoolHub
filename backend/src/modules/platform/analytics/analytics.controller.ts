@@ -131,3 +131,104 @@ export const getGrowthStats = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: "Failed to fetch growth stats" });
   }
 };
+
+/**
+ * Get subscription distribution and historical growth
+ */
+export const getSubscriptionAnalytics = async (req: Request, res: Response) => {
+  try {
+    // 1. Current distribution (Percentages)
+    const [
+      activePaid,
+      expired,
+      free,
+      trial,
+      cancelled,
+      totalSchools
+    ] = await Promise.all([
+      prisma.schoolSubscription.count({ where: { status: 'ACTIVE', subscriptionType: 'PAID' } }),
+      prisma.schoolSubscription.count({ where: { status: 'EXPIRED' } }),
+      prisma.schoolSubscription.count({ where: { subscriptionType: 'FREE' } }),
+      prisma.schoolSubscription.count({ where: { subscriptionType: 'TRIAL' } }),
+      prisma.schoolSubscription.count({ where: { status: 'CANCELLED' } }),
+      prisma.school.count()
+    ]);
+
+    // Individual users
+    const [userActivePaid, userExpired, userFree, userTrial, userCancelled, totalUsers] = await Promise.all([
+      prisma.userSubscription.count({ where: { status: 'ACTIVE', subscriptionType: 'PAID' } }),
+      prisma.userSubscription.count({ where: { status: 'EXPIRED' } }),
+      prisma.userSubscription.count({ where: { subscriptionType: 'FREE' } }),
+      prisma.userSubscription.count({ where: { subscriptionType: 'TRIAL' } }),
+      prisma.userSubscription.count({ where: { status: 'CANCELLED' } }),
+      prisma.admin.count().then(a => prisma.teacher.count().then(t => prisma.student.count().then(s => prisma.parent.count().then(p => a + t + s + p))))
+    ]);
+
+    const globalTotalEntities = totalSchools + totalUsers;
+    const stats = {
+      paid: {
+        count: activePaid + userActivePaid,
+        percentage: globalTotalEntities > 0 ? ((activePaid + userActivePaid) / globalTotalEntities) * 100 : 0
+      },
+      expired: {
+        count: expired + userExpired,
+        percentage: globalTotalEntities > 0 ? ((expired + userExpired) / globalTotalEntities) * 100 : 0
+      },
+      free: {
+        count: free + userFree,
+        percentage: globalTotalEntities > 0 ? ((free + userFree) / globalTotalEntities) * 100 : 0
+      },
+      trial: {
+        count: trial + userTrial,
+        percentage: globalTotalEntities > 0 ? ((trial + userTrial) / globalTotalEntities) * 100 : 0
+      },
+      cancelled: {
+        count: cancelled + userCancelled,
+        percentage: globalTotalEntities > 0 ? ((cancelled + userCancelled) / globalTotalEntities) * 100 : 0
+      }
+    };
+
+    // 2. Growth over time (Last 6 months)
+    const history = [];
+    for (let i = 5; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        const start = new Date(date.getFullYear(), date.getMonth(), 1);
+        const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
+
+        const [monthPaid, monthExpired, monthFree, monthTrial] = await Promise.all([
+            prisma.subscriptionHistory.count({
+                where: { subscriptionType: 'PAID', createdAt: { gte: start, lte: end } }
+            }),
+            prisma.subscriptionHistory.count({
+                where: { status: 'EXPIRED', createdAt: { gte: start, lte: end } }
+            }),
+            prisma.subscriptionHistory.count({
+                where: { subscriptionType: 'FREE', createdAt: { gte: start, lte: end } }
+            }),
+            prisma.subscriptionHistory.count({
+                where: { subscriptionType: 'TRIAL', createdAt: { gte: start, lte: end } }
+            })
+        ]);
+
+        history.push({
+            month: date.toLocaleString('default', { month: 'short' }),
+            paid: monthPaid,
+            expired: monthExpired,
+            free: monthFree,
+            trial: monthTrial
+        });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        distribution: stats,
+        history
+      }
+    });
+  } catch (error) {
+    console.error("[Subscription Analytics Error]:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch subscription analytics" });
+  }
+};

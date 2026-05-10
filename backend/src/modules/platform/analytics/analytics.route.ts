@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getGlobalStats, getGrowthStats } from "./analytics.controller";
+import { getGlobalStats, getGrowthStats, getSubscriptionAnalytics } from "./analytics.controller";
 import { authenticatePlatformStaff } from "../../../middleware/platformAuthMiddleware";
 
 const router = Router();
@@ -18,5 +18,11 @@ router.get("/stats", getGlobalStats);
  * @desc    Get growth chart data
  */
 router.get("/growth", getGrowthStats);
+
+/**
+ * @route   GET /api/platform/analytics/subscriptions
+ * @desc    Get subscription distribution and history
+ */
+router.get("/subscriptions", getSubscriptionAnalytics);
 
 export default router;

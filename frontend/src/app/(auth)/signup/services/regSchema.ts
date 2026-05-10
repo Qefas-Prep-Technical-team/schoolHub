@@ -199,7 +199,7 @@ export const studentSchema = yup.object({
         return value.trim().length >= 3;
       },
     ),
-  
+
   classCode: yup
     .string()
     .optional()
@@ -211,6 +211,11 @@ export const studentSchema = yup.object({
         return value.trim().length >= 3;
       },
     ),
+
+  acceptTerms: yup
+    .boolean()
+    .required("You must accept the terms and conditions")
+    .oneOf([true], "You must accept the terms and conditions"),
 });
 
 export type StudentFormData = yup.InferType<typeof studentSchema>;

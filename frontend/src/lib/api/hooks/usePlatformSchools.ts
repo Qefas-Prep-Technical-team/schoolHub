@@ -3,13 +3,13 @@ import { platformClient } from "../platformClient"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
 import { toast } from "react-toastify"
 
-export const usePlatformSchools = (query: string = "", page: number = 1, limit: number = 10) => {
+export const usePlatformSchools = (query: string = "", page: number = 1, limit: number = 10, plan: string = "ALL", status: string = "ALL") => {
     const { platform_token } = usePlatformStaffStore()
 
     return useQuery({
-        queryKey: ["platform-schools", query, page, limit],
+        queryKey: ["platform-schools", query, page, limit, plan, status],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/schools?query=${query}&page=${page}&limit=${limit}`, {
+            const { data } = await platformClient.get(`/platform/support/schools?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
@@ -202,13 +202,13 @@ export const useUpdateStudentPlan = () => {
 /**
  * Search teachers across the platform
  */
-export const usePlatformTeachers = (query: string = "", page: number = 1, limit: number = 20) => {
+export const usePlatformTeachers = (query: string = "", page: number = 1, limit: number = 20, plan: string = "ALL", status: string = "ALL") => {
     const { platform_token } = usePlatformStaffStore()
 
     return useQuery({
-        queryKey: ["platform-teachers", query, page, limit],
+        queryKey: ["platform-teachers", query, page, limit, plan, status],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/teachers?query=${query}&page=${page}&limit=${limit}`, {
+            const { data } = await platformClient.get(`/platform/support/teachers?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
@@ -220,13 +220,13 @@ export const usePlatformTeachers = (query: string = "", page: number = 1, limit:
 /**
  * Search parents across the platform
  */
-export const usePlatformParents = (query: string = "", page: number = 1, limit: number = 20) => {
+export const usePlatformParents = (query: string = "", page: number = 1, limit: number = 20, plan: string = "ALL", status: string = "ALL") => {
     const { platform_token } = usePlatformStaffStore()
 
     return useQuery({
-        queryKey: ["platform-parents", query, page, limit],
+        queryKey: ["platform-parents", query, page, limit, plan, status],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/parents?query=${query}&page=${page}&limit=${limit}`, {
+            const { data } = await platformClient.get(`/platform/support/parents?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
@@ -269,6 +269,7 @@ export const useUpdatePlatformFeature = () => {
         },
         onSuccess: (res) => {
             queryClient.invalidateQueries({ queryKey: ["platform-features"] })
+            queryClient.invalidateQueries({ queryKey: ["platform-features-manifest"] })
             toast.success(res.message)
         },
         onError: (err: any) => {

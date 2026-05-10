@@ -20,6 +20,7 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useUserBilling } from '@/lib/api/hooks/useSchool';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from 'next/navigation';
+import { useGlobalFeatures } from '@/lib/api/hooks/useGlobalFeatures';
 import { useFetchPricing } from '@/components/pricing/query';
 import { PricingData } from '@/components/Types/Pricing';
 
@@ -35,7 +36,15 @@ export default function TeacherBillingPage() {
         limit: ITEMS_PER_PAGE 
     });
 
-    if (isLoading || !user) {
+    const { data: features, isLoading: isFeaturesLoading } = useGlobalFeatures('teacher');
+
+    React.useEffect(() => {
+        if (!isFeaturesLoading && features && features.billing === false) {
+            router.replace('/dashboard/teacher');
+        }
+    }, [features, isFeaturesLoading, router]);
+
+    if (isLoading || !user || isFeaturesLoading) {
         return (
             <div className="space-y-8 pb-12 p-6">
                 <Skeleton className="h-12 w-1/3 rounded-xl" />
@@ -210,58 +219,59 @@ export default function TeacherBillingPage() {
                         <p className="text-sm opacity-80 font-medium leading-relaxed">
                             Pro plans unlock unlimited class management and advanced student performance analytics.
                         </p>
-                    </Card>
-
-                    <Card className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl p-8 bg-white dark:bg-slate-900/50">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400">
-                                <Users className="w-6 h-6" />
+                    </Card>                    {/* Capacity Section - only show if enforcement is active */}
+                    {settings?.sub_enforced_teachers !== "false" && (
+                        <Card className="rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl p-8 bg-white dark:bg-slate-900/50">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                    <Users className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h4 className="font-black text-slate-900 dark:text-white leading-tight">Capacity</h4>
+                                    <p className="text-xs text-slate-500 font-medium">System utilization</p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 className="font-black text-slate-900 dark:text-white leading-tight">Capacity</h4>
-                                <p className="text-xs text-slate-500 font-medium">System utilization</p>
-                            </div>
-                        </div>
-                        <div className="space-y-6">
-                            <UsageBar 
-                                label="Managed Classes" 
-                                current={usage?.classes || 0} 
-                                total={currentLimits.classes} 
-                                colorClass="bg-blue-500" 
-                            />
-                            <UsageBar 
-                                label="Student Connections" 
-                                current={usage?.students || 0} 
-                                total={currentLimits.students} 
-                                colorClass="bg-indigo-500" 
-                            />
-                            <UsageBar 
-                                label="Institutional Links" 
-                                current={usage?.schools || 0} 
-                                total={(currentLimits as any).schools} 
-                                colorClass="bg-emerald-500" 
-                            />
+                            <div className="space-y-6">
+                                <UsageBar 
+                                    label="Managed Classes" 
+                                    current={usage?.classes || 0} 
+                                    total={currentLimits.classes} 
+                                    colorClass="bg-blue-500" 
+                                />
+                                <UsageBar 
+                                    label="Student Connections" 
+                                    current={usage?.students || 0} 
+                                    total={currentLimits.students} 
+                                    colorClass="bg-indigo-500" 
+                                />
+                                <UsageBar 
+                                    label="Institutional Links" 
+                                    current={usage?.schools || 0} 
+                                    total={(currentLimits as any).schools} 
+                                    colorClass="bg-emerald-500" 
+                                />
 
-                            {/* Dynamic Features from Database */}
-                            {subscription?.features?.filter((f: any) => 
-                                !['classes', 'students', 'schools', 'storage', 'storagegb'].includes(f.key?.toLowerCase())
-                            ).map((feature: any) => {
-                                const usageKey = feature.key?.toLowerCase();
-                                const currentUsage = (usage as any)?.[usageKey] || 0;
-                                const totalLimit = feature.limit || 0;
-                                
-                                return (
-                                    <UsageBar 
-                                        key={feature.key}
-                                        label={feature.name?.replace(/_/g, ' ') || 'Feature'} 
-                                        current={currentUsage} 
-                                        total={totalLimit} 
-                                        colorClass="bg-slate-400"
-                                    />
-                                );
-                            })}
-                        </div>
-                    </Card>
+                                {/* Dynamic Features from Database */}
+                                {subscription?.features?.filter((f: any) => 
+                                    !['classes', 'students', 'schools', 'storage', 'storagegb'].includes(f.key?.toLowerCase())
+                                ).map((feature: any) => {
+                                    const usageKey = feature.key?.toLowerCase();
+                                    const currentUsage = (usage as any)?.[usageKey] || 0;
+                                    const totalLimit = feature.limit || 0;
+                                    
+                                    return (
+                                        <UsageBar 
+                                            key={feature.key}
+                                            label={feature.name?.replace(/_/g, ' ') || 'Feature'} 
+                                            current={currentUsage}
+                                            total={totalLimit}
+                                            colorClass="bg-slate-500"
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </Card>
+                    )}
                 </div>
             </div>
 

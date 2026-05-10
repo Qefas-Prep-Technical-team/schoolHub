@@ -4,6 +4,7 @@ export interface PlanLimits {
   maxClasses: number;
   maxTeachers: number;
   maxStorageGb: number;
+  maxAiUsage: number;
 }
 
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
@@ -13,6 +14,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxClasses: 3,
     maxTeachers: 5,
     maxStorageGb: 1,
+    maxAiUsage: 10,
   },
   STARTER: {
     maxStudents: 200,
@@ -20,6 +22,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxClasses: 20,
     maxTeachers: 50,
     maxStorageGb: 10,
+    maxAiUsage: 100,
   },
   PRO: { // Generic intermediate fallback
     maxStudents: 1000,
@@ -27,6 +30,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxClasses: 50,
     maxTeachers: 100,
     maxStorageGb: 25,
+    maxAiUsage: 500,
   },
   GROWTH: {
     maxStudents: 999999, // Reflects "Unlimited" as seen in Pricing data
@@ -34,6 +38,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxClasses: 999999,
     maxTeachers: 999999,
     maxStorageGb: 100,
+    maxAiUsage: 999999,
   },
 };
 

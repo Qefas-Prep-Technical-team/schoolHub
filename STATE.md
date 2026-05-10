@@ -97,7 +97,67 @@
 
 ## Next Action
 
-- [ ] Run `npx prisma generate` in backend (resolve EPERM lock).
-- [ ] Ensure all users can successfully complete the checkout flow without relation errors.
+- [x] Run `npx prisma generate` in backend.
+- [x] Fixed JSX syntax error in `checkout/page.tsx` (dangling `div` tags).
+- [x] Restored "Confirm Password" field in checkout registration flow.
+- [x] Integrated Terms & Conditions and Privacy Policy into the pricing/checkout pathway.
+- [x] Added terms audit fields to Google Auth registration.
+- [x] Resolved `PrismaClientValidationError` in `getSchoolStatsService` and `getSchoolStudentsService`:
+    - [x] Added missing explicit relations to `schema.prisma` for `ClassEnrollment`, `ExamAttempt`, `ClassTeacher`, `Grade`, `Class`, `School`, `Student`, `Teacher`, `Exam`, and `Subject`.
+    - [x] Successfully regenerated Prisma Client (`npx prisma generate`) after resolving EPERM locks.
+# Project State: Qefas Hub
+
+## Current Focus
+
+- Final verification of Revenue Architecture console stability.
+- Monitoring for any further Prisma relation mismatches in platform routes.
+
+## Completed
+
+- **Revenue Architecture & Console Stability**:
+  - [x] Resolved "Platform Entitlements" loading hang by fixing Prisma relation name mismatch (`planAccesses` -> `planAccess`) in `FeatureService.listFeatures()`.
+  - [x] Hardened `PricingPlanEditorModal` with robust error handling for manifest synchronization.
+  - [x] Mapped `featureKey` to `tag` in backend controllers to ensure frontend compatibility.
+- **Pricing Editor Enhancements**:
+  - [x] Integrated `maxAiUsage` (AI Tokens) field into the Pricing Plan Editor.
+  - [x] Added `maxTeachers`, `maxClasses`, and `maxExams` quota fields to the internal console for full control.
+  - [x] Synchronized `handleSubmit` payload to correctly persist all new quota fields as numbers.
+- **Registry Maintenance**:
+  - [x] Successfully purged obsolete features (`Behavior & Remarks`, `Linking Hub`, `Teacher Management`) from the platform feature registry.
+  - [x] Cleaned up orphaned `PlanFeatureAccess` links via automated script.
+- **Mobile UI Enhancements**: Admin Bottom Nav, refined Top Nav, and layout padding.
+- **Desktop Responsiveness**: Fluid column spans for the admin overview bento grid.
+
+## Blockers
+
+- None.
+
+## Next Action
+
+- [ ] Complete the redesign of the active state for the Usage Limits Card.
+- [ ] Redesign the Admin Billing Page heading with a more suitable aesthetic (collaborate with user).
 - [ ] Verify trial eligibility logic on the frontend/backend bridge.
 - [ ] Final manual verification of the "Toaster-only" flow across all user roles.
+
+## Platform-Wide Feature Governance (Active Session)
+
+### Current Focus
+- Verification of cross-role feature deactivation logic and route protection.
+- Ensuring zero UI flicker during dynamic platform configuration hydration.
+
+### Completed
+- **Global Feature Guarding**:
+  - [x] Integrated `FeatureGuard` middleware across Admin, Teacher, and Student dashboard layouts.
+  - [x] Expanded `DEFAULT_ROUTE_MAP` in `FeatureGuard.tsx` to include critical routes for all roles (Billing, Exams, Grades, etc.).
+- **UI Performance & UX**:
+  - [x] Eliminated UI flickering across all roles by synchronizing Sidebar menu rendering with global feature flag loading states.
+  - [x] Implemented sophisticated skeleton loaders in `AdminSidebar`, `TeacherSidebar`, and `StudentSidebar` to mask content during initial hydration.
+  - [x] Added explicit role-level redirects on `/billing` pages (Admin, Teacher, Student) to block access when the module is deactivated.
+- **Revenue Console Resilience**:
+  - [x] Updated `PricingTab.tsx` with dynamic fallback logic: if a user's primary role pricing is deactivated, the console now pivots to show other active/enforced categories.
+  - [x] Integrated "Full Access Protocol" messaging with a premium `Sparkles` icon for users with deactivated subscription enforcement.
+
+### Next Action
+- [ ] Perform final QA on Admin portal critical paths to ensure no administrative routes are erroneously blocked.
+- [ ] Monitor the "Full Access Protocol" fallback for edge cases where all pricing categories might be deactivated (rare but theoretically possible).
+
