@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { platformClient } from "../platformClient"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
 import { toast } from "react-toastify"
+import { AxiosError } from "axios";
 
 export const usePlatformFinance = () => {
     const { platform_token } = usePlatformStaffStore()
@@ -9,7 +10,7 @@ export const usePlatformFinance = () => {
     return useQuery({
         queryKey: ["platform-finance"],
         queryFn: async () => {
-            const { data } = await platformClient.get("/platform/finance/transactions", {
+            const { data } = await platformClient.get<{ data: Record<string, unknown>[] }>("/platform/finance/transactions", {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -24,7 +25,7 @@ export const usePlatformSettings = () => {
     return useQuery({
         queryKey: ["platform-settings"],
         queryFn: async () => {
-            const { data } = await platformClient.get("/platform/settings", {
+            const { data } = await platformClient.get<{ data: Record<string, unknown> }>("/platform/settings", {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -37,7 +38,7 @@ export const usePublicPlatformSettings = () => {
     return useQuery({
         queryKey: ["public-platform-settings"],
         queryFn: async () => {
-            const { data } = await platformClient.get("/platform/settings/public");
+            const { data } = await platformClient.get<{ data: Record<string, unknown> }>("/platform/settings/public");
             return data.data;
         }
     })
@@ -48,17 +49,17 @@ export const useUpdatePlatformSettings = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async (settings: any) => {
-            const { data } = await platformClient.post("/platform/settings", settings, {
+        mutationFn: async (settings: Record<string, unknown>) => {
+            const { data } = await platformClient.post<{ message: string }>("/platform/settings", settings, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-settings"] })
             toast.success(res.message)
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ message?: string }>) => {
             toast.error(err.response?.data?.message || "Failed to update settings")
         }
     })
@@ -70,7 +71,7 @@ export const usePlatformAuditLogs = (page: number = 1, limit: number = 10) => {
     return useQuery({
         queryKey: ["platform-audit-logs", page, limit],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/logs?page=${page}&limit=${limit}`, {
+            const { data } = await platformClient.get<Record<string, unknown>>(`/platform/logs?page=${page}&limit=${limit}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;

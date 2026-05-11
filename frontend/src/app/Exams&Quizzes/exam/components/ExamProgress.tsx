@@ -1,7 +1,6 @@
 // src/components/Dashboard/ExamProgress.tsx
 import React from 'react';
 import ProgressBar from './ui/ProgressBar';
-import Button from './ui/Button';
 
 interface ExamProgressProps {
     progress: number;

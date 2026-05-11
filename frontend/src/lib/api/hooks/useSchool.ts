@@ -7,10 +7,10 @@ export const schoolQueryKeys = {
   stats: (schoolId: string) => [...schoolQueryKeys.all, "stats", schoolId] as const,
   teachers: (schoolId: string) => [...schoolQueryKeys.all, "teachers", schoolId] as const,
   performance: (schoolId: string) => [...schoolQueryKeys.all, "performance", schoolId] as const,
-  students: (schoolId: string, params?: any) => [...schoolQueryKeys.all, "students", schoolId, params] as const,
+  students: (schoolId: string, params?: Record<string, unknown>) => [...schoolQueryKeys.all, "students", schoolId, params] as const,
   dashboardSummary: (schoolId: string) => [...schoolQueryKeys.all, "dashboard-summary", schoolId] as const,
-  billing: (schoolId: string, params?: any) => [...schoolQueryKeys.all, "billing", schoolId, params] as const,
-  userBilling: (userId: string, params?: any) => ["user", "billing", userId, params] as const,
+  billing: (schoolId: string, params?: Record<string, unknown>) => [...schoolQueryKeys.all, "billing", schoolId, params] as const,
+  userBilling: (userId: string, params?: Record<string, unknown>) => ["user", "billing", userId, params] as const,
 };
 
 export const useSchoolStats = (schoolId: string) => {
@@ -29,7 +29,7 @@ export const useSchoolTeachers = (schoolId: string) => {
   });
 };
 
-export const useSchoolPerformanceAnalysis = (schoolId: string, stats?: any) => {
+export const useSchoolPerformanceAnalysis = (schoolId: string, stats?: Record<string, unknown>) => {
   return useQuery({
     queryKey: [...schoolQueryKeys.performance(schoolId), stats ? JSON.stringify(stats) : "no-stats"],
     queryFn: async () => {
@@ -65,7 +65,7 @@ export const useSchoolPerformanceAnalysis = (schoolId: string, stats?: any) => {
   });
 };
 
-export const useSchoolStudents = (schoolId: string, params?: any) => {
+export const useSchoolStudents = (schoolId: string, params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: schoolQueryKeys.students(schoolId, params),
     queryFn: () => schoolService.getStudents(schoolId, params),
@@ -86,7 +86,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 export const useUpdateSchoolProfile = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ schoolId, data }: { schoolId: string; data: any }) =>
+    mutationFn: ({ schoolId, data }: { schoolId: string; data: Record<string, unknown> }) =>
       schoolService.updateProfile(schoolId, data),
     onSuccess: (_, { schoolId }) => {
       queryClient.invalidateQueries({ queryKey: [...schoolQueryKeys.all, "profile", schoolId] });
@@ -106,7 +106,7 @@ export const useSchoolSettings = (schoolId: string) => {
 export const useUpdateSchoolSettings = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ schoolId, data }: { schoolId: string; data: any }) =>
+    mutationFn: ({ schoolId, data }: { schoolId: string; data: Record<string, unknown> }) =>
       schoolService.updateSettings(schoolId, data),
     onSuccess: (_, { schoolId }) => {
       queryClient.invalidateQueries({ queryKey: [...schoolQueryKeys.all, "settings", schoolId] });

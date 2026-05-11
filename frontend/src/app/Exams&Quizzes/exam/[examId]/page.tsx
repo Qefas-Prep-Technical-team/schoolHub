@@ -23,7 +23,8 @@ import ExamDetails from './start/components/ExamDetails';
 import QuestionCard from './start/components/QuestionCard';
 import QuestionNavigation from './start/components/QuestionNavigation';
 import ConfirmationModal from "@/app/dashboard/admin/exams/components/ui/ConfirmationModal";
-import Button from './start/components/ui/Button';
+import { SubjectPaper, SubjectAttempt, QuestionAnswer, ExamAttempt } from "@/lib/api/services/examService";
+import { AxiosError } from "axios";
 
 /**
  * Unified Exam Page
@@ -65,7 +66,7 @@ export default function UnifiedExamPage() {
   // Define basic memos first
   const totalDuration = useMemo(() => {
     if (exam?.durationMinutes && exam.durationMinutes > 0) return exam.durationMinutes;
-    return exam?.subjectPapers?.reduce((sum: number, p: any) => sum + (p.durationMinutes || 0), 0) || 0;
+    return exam?.subjectPapers?.reduce((sum: number, p: SubjectPaper) => sum + (p.durationMinutes || 0), 0) || 0;
   }, [exam]);
 
   const startDate = useMemo(() => exam?.startDate ? new Date(exam.startDate) : null, [exam?.startDate]);
@@ -79,16 +80,16 @@ export default function UnifiedExamPage() {
 
   const currentSubjectPapers = useMemo(() => {
     if (attempt?.status === "IN_PROGRESS" && attempt.subjectAttempts?.length > 0) {
-      return attempt.subjectAttempts.map((sa: any) => ({
+      return attempt.subjectAttempts.map((sa: SubjectAttempt) => ({
         ...sa.subjectPaper,
         id: sa.subjectPaperId,
       }));
     }
-    return exam?.subjectPapers || [];
+    return (exam?.subjectPapers || []) as SubjectPaper[];
   }, [exam?.subjectPapers, attempt]);
 
   const activeSubject = useMemo(() => 
-    currentSubjectPapers.find((p: any) => p.id === activeSubjectId), 
+    currentSubjectPapers.find((p: SubjectPaper) => p.id === activeSubjectId), 
     [currentSubjectPapers, activeSubjectId]
   );
 
@@ -161,9 +162,10 @@ export default function UnifiedExamPage() {
         }
       });
       console.log("Answer saved successfully");
-    } catch (error: any) {
-      console.error("Failed to auto-save answer:", error.response?.data || error.message);
-      const serverMsg = error.response?.data?.message || error.message;
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      console.error("Failed to auto-save answer:", axiosError.response?.data || axiosError.message);
+      const serverMsg = axiosError.response?.data?.message || axiosError.message;
       toast.error(`Auto-save failed: ${serverMsg}`);
     }
   };
@@ -172,13 +174,13 @@ export default function UnifiedExamPage() {
     if (activeQuestionIndex < totalQuestionsInActiveSubject - 1) {
       setActiveQuestionIndex(prev => prev + 1);
     } else {
-      const currentSubjectIdx = currentSubjectPapers.findIndex((p: any) => p.id === activeSubjectId) ?? -1;
+      const currentSubjectIdx = currentSubjectPapers.findIndex((p: SubjectPaper) => p.id === activeSubjectId) ?? -1;
       if (currentSubjectIdx < currentSubjectPapers.length - 1) {
         const nextSubject = currentSubjectPapers[currentSubjectIdx + 1];
         if (nextSubject) {
           setActiveSubjectId(nextSubject.id);
           setActiveQuestionIndex(0);
-          toast.info(`Moving to next subject: ${nextSubject.title || nextSubject.subject?.name || "Unnamed Paper"}`, { toastId: "subject-switch" });
+          toast.info(`Moving to next subject: ${nextSubject.title || (nextSubject as any).subject?.name || "Unnamed Paper"}`, { toastId: "subject-switch" });
         }
       }
     }
@@ -217,14 +219,14 @@ export default function UnifiedExamPage() {
       await submitAttemptMutation.mutateAsync(examId as string);
       setShowSubmitModal(false);
       router.push(`/dashboard/student/exams&quizzes/${examId}/result`);
-    } catch (err) {
+    } catch (_err) {
       isSubmittingRef.current = false;
       toast.error("Failed to submit exam");
     }
   };
 
-  const getSavedAnswer = (questionId: string) => {
-    return attempt?.answers?.find((a: any) => a.questionId === questionId)?.answer;
+  const _getSavedAnswer = (questionId: string) => {
+    return (attempt as ExamAttempt)?.answers?.find((a: QuestionAnswer) => a.questionId === questionId)?.answer;
   };
 
   // --- Effects (Moved after memos and callbacks to avoid ReferenceError) ---
@@ -252,7 +254,7 @@ export default function UnifiedExamPage() {
       }
       initialAnswersRestoredRef.current = true;
     }
-  }, [exam, attempt, activeSubjectId, initialAnswersRestoredRef]);
+  }, [exam, attempt, activeSubjectId, initialAnswersRestoredRef, currentSubjectPapers]);
 
   // Sync Timer and Progress
   useEffect(() => {
@@ -286,7 +288,7 @@ export default function UnifiedExamPage() {
     } else if (attempt?.remainingSeconds !== undefined && remainingSeconds === null) {
       setRemainingSeconds(attempt.remainingSeconds);
     }
-  }, [attempt?.startedAt, attempt?.status, totalDuration, handleTimerExpire]);
+  }, [attempt?.startedAt, attempt?.status, attempt?.remainingSeconds, remainingSeconds, totalDuration, handleTimerExpire]);
 
   // PROTECTION: Hide taker view if already submitted
   useEffect(() => {
@@ -347,7 +349,7 @@ export default function UnifiedExamPage() {
             classLabel={`${exam.class?.name || "N/A"} ${exam.class?.section || ""}`}
             durationMinutes={totalDuration}
             subjectName={exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
-            totalQuestions={currentSubjectPapers.reduce((sum: number, p: any) => sum + (p.questions?.length || 0), 0)}
+            totalQuestions={currentSubjectPapers.reduce((sum: number, p: SubjectPaper) => sum + (p.questions?.length || 0), 0)}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -357,7 +359,7 @@ export default function UnifiedExamPage() {
                    Exam Structure
                 </h2>
                 <div className="grid grid-cols-1 gap-4">
-                   {exam.subjectPapers?.map((paper: any) => (
+                   {exam.subjectPapers?.map((paper: SubjectPaper) => (
                     <div key={paper.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1F2937] flex justify-between items-center shadow-sm">
                        <div className="flex flex-col">
                           <span className="font-bold">
@@ -519,7 +521,7 @@ export default function UnifiedExamPage() {
             classLabel={`${exam.class?.name || "N/A"} ${exam.class?.section || ""}`}
             durationMinutes={totalDuration}
             subjectName={exam.subjectPapers?.[0]?.subject?.name || "Multiple Subjects"}
-            totalQuestions={currentSubjectPapers.reduce((sum: number, p: any) => sum + (p.questions?.length || 0), 0)}
+            totalQuestions={currentSubjectPapers.reduce((sum: number, p: SubjectPaper) => sum + (p.questions?.length || 0), 0)}
           />
 
           {exam.instructions && (
@@ -570,7 +572,7 @@ export default function UnifiedExamPage() {
                   totalQuestions={totalQuestionsInActiveSubject}
                   currentQuestion={activeQuestionIndex + 1}
                   remainingSeconds={remainingSeconds || 0}
-                  answeredQuestionIds={activeSubject?.questions?.map((q: any, idx: number) => 
+                  answeredQuestionIds={activeSubject?.questions?.map((q: { id: string }, idx: number) => 
                     localAnswers[q.id] ? idx.toString() : ""
                   ).filter(Boolean) || []}
                   onQuestionSelect={setActiveQuestionIndex}
@@ -579,11 +581,11 @@ export default function UnifiedExamPage() {
                   onTimerExpire={handleTimerExpire}
                 />
                 
-                {currentSubjectPapers && currentSubjectPapers.length > 1 && (
+                 {currentSubjectPapers && currentSubjectPapers.length > 1 && (
                    <div className="mt-6 p-4 rounded-xl border border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937]">
                       <h3 className="text-sm font-bold mb-3 uppercase tracking-wider text-slate-400">Switch Subject</h3>
                       <div className="space-y-2">
-                         {currentSubjectPapers.map((paper: any) => (
+                         {currentSubjectPapers.map((paper: SubjectPaper) => (
                            <button
                              key={paper.id}
                              onClick={() => {
@@ -596,7 +598,7 @@ export default function UnifiedExamPage() {
                                  : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
                              }`}
                            >
-                             {paper.title || paper.subject?.name || "Unnamed Paper"}
+                             {paper.title || (paper as any).subject?.name || "Unnamed Paper"}
                            </button>
                          ))}
                       </div>

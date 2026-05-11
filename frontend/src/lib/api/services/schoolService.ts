@@ -16,9 +16,9 @@ export interface PerformanceAnalysis {
 }
 
 export interface DashboardSummary {
-  recentExams: any[];
+  recentExams: Record<string, unknown>[];
   unassignedCount: number;
-  unassignedTeachers: any[];
+  unassignedTeachers: Record<string, unknown>[];
   classesSummary: {
     id: string;
     name: string;
@@ -77,7 +77,7 @@ export const schoolService = {
     return response.data.data;
   },
 
-  getStudents: async (schoolId: string, params?: any) => {
+  getStudents: async (schoolId: string, params?: Record<string, unknown>) => {
     const response = await apiClient.get(`/schools/${schoolId}/students`, { params });
     return response.data.data;
   },
@@ -87,7 +87,7 @@ export const schoolService = {
     return response.data.data;
   },
 
-  updateProfile: async (schoolId: string, data: any) => {
+  updateProfile: async (schoolId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/schools/${schoolId}/profile`, data);
     return response.data.data;
   },
@@ -97,7 +97,7 @@ export const schoolService = {
     return response.data.data;
   },
 
-  updateSettings: async (schoolId: string, data: any) => {
+  updateSettings: async (schoolId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/schools/${schoolId}/settings`, data);
     return response.data.data;
   },

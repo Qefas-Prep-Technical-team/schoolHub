@@ -187,7 +187,7 @@ export default function MyClassesPage() {
     );
 }
 
-function StatCard({ label, value, icon: Icon, color, bgColor }: { label: string, value: string | number, icon: any, color: string, bgColor: string }) {
+function StatCard({ label, value, icon: Icon, color, bgColor }: { label: string, value: string | number, icon: React.ElementType, color: string, bgColor: string }) {
     return (
         <motion.div 
             whileHover={{ y: -8, scale: 1.02 }}

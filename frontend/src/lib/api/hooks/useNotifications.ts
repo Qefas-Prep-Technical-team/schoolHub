@@ -1,10 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationService, Notification, NotificationPriority } from "../services/notificationService";
 import { toast } from "react-toastify";
+import { AxiosError } from "axios";
 
 export const notificationKeys = {
   all: ["notifications"] as const,
-  list: (options?: any) => [...notificationKeys.all, "list", options] as const,
+  list: (options?: Record<string, unknown>) => [...notificationKeys.all, "list", options] as const,
   unreadCount: () => [...notificationKeys.all, "unreadCount"] as const,
 };
 
@@ -37,13 +36,13 @@ export const useMarkAsRead = () => {
       const previousUnreadCount = queryClient.getQueryData(notificationKeys.unreadCount());
 
       // Optimistically update the unread count
-      queryClient.setQueryData(notificationKeys.unreadCount(), (old: any) => {
+      queryClient.setQueryData(notificationKeys.unreadCount(), (old: { count: number } | undefined) => {
         if (!old || old.count === 0) return old;
         return { ...old, count: Math.max(0, old.count - 1) };
       });
 
       // Optimistically update the list(s)
-      queryClient.setQueriesData({ queryKey: notificationKeys.all }, (old: any) => {
+      queryClient.setQueriesData({ queryKey: notificationKeys.all }, (old: unknown) => {
         if (!old) return old;
         
         // Handle list structure
@@ -54,10 +53,11 @@ export const useMarkAsRead = () => {
         }
         
         // Handle paginated structure if exists
-        if (old.pages) {
+        const oldData = old as { pages?: unknown[] };
+        if (oldData.pages) {
           return {
-            ...old,
-            pages: old.pages.map((page: any) => 
+            ...oldData,
+            pages: oldData.pages.map((page: unknown) => 
               Array.isArray(page) 
                 ? page.map((n: Notification) => n.id === id ? { ...n, isRead: true } : n)
                 : page
@@ -70,7 +70,7 @@ export const useMarkAsRead = () => {
 
       return { previousNotifications, previousUnreadCount };
     },
-    onError: (err, id, context: any) => {
+    onError: (err, id, context: { previousNotifications: unknown; previousUnreadCount: unknown } | undefined) => {
       if (context) {
         queryClient.setQueryData(notificationKeys.all, context.previousNotifications);
         queryClient.setQueryData(notificationKeys.unreadCount(), context.previousUnreadCount);
@@ -90,7 +90,7 @@ export const useMarkAllAsRead = () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
       toast.success("All notifications marked as read");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to mark all as read");
     },
   });

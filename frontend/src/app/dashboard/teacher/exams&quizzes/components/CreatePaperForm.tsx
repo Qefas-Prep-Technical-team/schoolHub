@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,11 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'react-toastify';
-import { Loader2, BookOpen, Clock, FileText, Sparkles, Building2, User } from 'lucide-react';
+import { Loader2, Sparkles, Building2, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
-import { motion } from 'framer-motion';
+
 
 const paperSchema = z.object({
   subjectId: z.string().min(1, "Subject is required"),
@@ -35,7 +35,6 @@ interface CreatePaperFormProps {
 
 export default function CreatePaperForm({ onSuccess }: CreatePaperFormProps) {
   const queryClient = useQueryClient();
-  const router = useRouter();
   const { user } = useAuthStore();
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
 
@@ -66,7 +65,7 @@ export default function CreatePaperForm({ onSuccess }: CreatePaperFormProps) {
         schoolId: selectedSchoolId,
         teacherId: user?.id 
       }),
-    onSuccess: (response: any) => {
+    onSuccess: (response: Record<string, unknown>) => {
       console.log("DEBUG: [CreatePaperForm] Response received:", response);
       toast.success("Subject paper created successfully!");
       queryClient.invalidateQueries({ queryKey: ["teacher-exams"] });
@@ -76,7 +75,7 @@ export default function CreatePaperForm({ onSuccess }: CreatePaperFormProps) {
         console.error("DEBUG: [CreatePaperForm] No paper ID found in response");
       }
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error?.response?.data?.message || "Failed to create paper");
     },
   });
@@ -113,7 +112,7 @@ export default function CreatePaperForm({ onSuccess }: CreatePaperFormProps) {
             <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Your Assigned Subjects in this School:</p>
                 <div className="flex flex-wrap gap-2">
-                    {subjects.map((s: any) => (
+                    {(subjects as Record<string, unknown>[]).map((s: Record<string, unknown>) => (
                         <span key={s.id} className="px-3 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full text-[10px] font-bold text-slate-600 dark:text-slate-300">
                             {s.name}
                         </span>
@@ -138,7 +137,7 @@ export default function CreatePaperForm({ onSuccess }: CreatePaperFormProps) {
                 className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner disabled:opacity-50 appearance-none"
               >
                 <option value="">{isLoadingSubjects ? "Loading subjects..." : "Select a subject..."}</option>
-                {!isLoadingSubjects && subjects.map((s: any) => (
+                {!isLoadingSubjects && (subjects as Record<string, unknown>[]).map((s: Record<string, unknown>) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>

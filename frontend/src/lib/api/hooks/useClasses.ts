@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { classService, ClassJoinRequestData } from "../services/classService";
 import { toast } from "react-toastify";
+import { AxiosError } from "axios";
 import { queryKeys as linkQueryKeys } from "./useLinks";
-import { apiClient } from "../client";
 
 export const classQueryKeys = {
   all: ["classes"] as const,
@@ -49,7 +49,7 @@ export const useRequestToJoinClass = () => {
       queryClient.invalidateQueries({ queryKey: linkQueryKeys.pending() });
       toast.success("Class join request sent successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to send class join request");
     },
   });
@@ -89,13 +89,13 @@ export const useClassStats = (classId: string) => {
 export const useSubmitAttendance = (classId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (records: any[]) => classService.submitAttendance(classId, records),
+    mutationFn: (records: Record<string, unknown>[]) => classService.submitAttendance(classId, records),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...classQueryKeys.all, "attendance", classId] });
       queryClient.invalidateQueries({ queryKey: [...classQueryKeys.all, "attendance-summary", classId] });
       toast.success("Attendance saved successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to save attendance");
     },
   });
@@ -115,12 +115,12 @@ export const useClassTimetable = (classId: string) => {
 export const useUpsertTimetablePeriod = (classId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => classService.upsertTimetablePeriod(classId, data),
+    mutationFn: (data: Record<string, unknown>) => classService.upsertTimetablePeriod(classId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...classQueryKeys.all, "timetable", classId] });
       toast.success("Timetable updated successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to update timetable");
     },
   });
@@ -134,7 +134,7 @@ export const useDeleteTimetablePeriod = (classId: string) => {
       queryClient.invalidateQueries({ queryKey: [...classQueryKeys.all, "timetable", classId] });
       toast.success("Period removed successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to remove period");
     },
   });
@@ -156,7 +156,7 @@ export const useUpdateClass = (id: string) => {
       queryClient.invalidateQueries({ queryKey: classQueryKeys.list() });
       toast.success("Class updated successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to update class");
     },
   });

@@ -8,7 +8,7 @@ export const paymentService = {
     amount: number; 
     email: string; 
     plan: string; 
-    metadata?: any 
+    metadata?: Record<string, unknown> 
   }) => {
     const response = await apiClient.post("/payment/initialize", data);
     return response.data.data;

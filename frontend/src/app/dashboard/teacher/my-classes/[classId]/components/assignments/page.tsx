@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { AssignmentTable } from './components/AssignmentTable'
 import { SearchBar } from './components/SearchBar'
-import { Assignment, NavItem, User } from './components/types'
+import { Assignment } from './components/types'
+import { useMemo } from 'react'
 import { teacherService } from '@/lib/api/services/teacherService'
 import { Loader2 } from 'lucide-react'
 
@@ -16,34 +17,25 @@ export default function AssignmentsPage() {
   const classId = params.classId as string
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['class-assignments', classId],
     queryFn: () => teacherService.getClassAssignments(classId),
     enabled: !!classId,
   })
 
-  const assignments: Assignment[] = (data || []).map((a: any) => ({
-    id: a.id,
-    title: a.title,
-    dueDate: new Date(a.dueDate),
-    status: a.status as 'published' | 'draft' | 'closed',
-    submissions: a.submissions,
-    createdAt: new Date(a.createdAt),
-    updatedAt: new Date(a.updatedAt),
-  }))
+  const assignments: Assignment[] = useMemo(() => {
+    return (data || []).map((a: Record<string, any>) => ({
+      id: a.id,
+      title: a.title,
+      dueDate: new Date(a.dueDate),
+      status: a.status as 'published' | 'draft' | 'closed',
+      submissions: a.submissions,
+      createdAt: new Date(a.createdAt),
+      updatedAt: new Date(a.updatedAt),
+    }))
+  }, [data])
 
   const [filteredAssignments, setFilteredAssignments] = useState<Assignment[]>([])
-
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredAssignments(assignments)
-    } else {
-      const filtered = assignments.filter(assignment =>
-        assignment.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      setFilteredAssignments(filtered)
-    }
-  }, [searchQuery, data]) // Re-run when data changes
 
   useEffect(() => {
     if (!searchQuery.trim()) {

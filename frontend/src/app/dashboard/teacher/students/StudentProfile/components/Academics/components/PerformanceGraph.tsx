@@ -1,5 +1,6 @@
 import { PerformanceData } from "./types";
 import Button from "./ui/Button";
+import Image from "next/image";
 
 
 const PerformanceGraph: React.FC = () => {
@@ -19,11 +20,12 @@ const PerformanceGraph: React.FC = () => {
           {performanceData.subject}
         </Button>
       </div>
-      <div className="mt-6 h-72 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-        <img 
+      <div className="mt-6 h-72 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg relative overflow-hidden">
+        <Image 
           className="w-full h-full object-contain p-4" 
           src={performanceData.imageUrl} 
           alt={performanceData.altText}
+          fill
         />
       </div>
     </div>

@@ -26,7 +26,7 @@ export default function ExamPreviewPage() {
   const questions = Array.from({ length: totalQuestions }, (_, i) => ({
     id: i + 1,
     text: i === 0 
-      ? 'Solve the following linear equation for \'x\':'
+      ? 'Solve the following linear equation for &apos;x&apos;:'
       : `Question ${i + 1} text will appear here...`,
     equation: i === 0 ? '2x + 10 = 40' : undefined,
     options: i === 0 

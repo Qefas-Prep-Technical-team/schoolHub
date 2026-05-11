@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AssessmentScore, GradeSummary, ScoreHistoryT, Student, Teacher } from './components/types';
+import { AssessmentScore, GradeSummary, ScoreHistoryT, Student } from './components/types';
 import BackButton from './components/BackButton';
 import StudentInfoCard from './components/StudentInfoCard';
 import AssessmentBreakdown from './components/AssessmentBreakdown';
@@ -13,12 +13,6 @@ import SuccessModal from './components/SuccessModal';
 
 
 // Mock data
-const teacher: Teacher = {
-  id: '1',
-  name: 'Mr. Harrison',
-  avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDHdQXFaZWwcULd2CKZgF4n0PQyPknFNoc2oonkfcWlWgfZG1SuSx7rJXbLXcbeedDz_hPSstLw1tXf7NhbbSy0W93ahMd8GaIRASupKZ0ztdbx9vLiVkwdyVi-bGP1ejxVhRoyXm6c0gL9N_dfxW2Sfy3g1kJGQuipkp8OG0vSUESVM_NIHfiA-pw9J76osapJLoUwdcNwjR__9CHdijXZoo8L1gOb3vcfP71YzzK99fzpXmU_6xpKff-3k8pTVGvyNS-OoL4rE7Q',
-};
-
 const student: Student = {
   id: '1',
   name: 'Olivia Chen',

@@ -37,7 +37,7 @@ export const useGradeSettingsStore = create<GradeSettingsState>()(
     {
       name: 'grade-settings-storage',
       storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: (state) => {
+      onRehydrateStorage: (_state) => {
         return (rehydratedState) => {
           if (rehydratedState) {
             // Migration: Ensure 'E' exists in the scale for existing users

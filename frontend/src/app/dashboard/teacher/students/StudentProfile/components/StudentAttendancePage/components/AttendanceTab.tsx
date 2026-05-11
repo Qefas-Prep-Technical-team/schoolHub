@@ -10,8 +10,8 @@ import EditModal from './EditModal';
 const AttendanceTab: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<number | null>(9); // October 9th selected by default
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
-  const [currentMonth, setCurrentMonth] = useState<string>('October');
-  const [currentYear, setCurrentYear] = useState<number>(2024);
+  const [currentMonth] = useState<string>('October');
+  const [currentYear] = useState<number>(2024);
 
   // Generate calendar days for October 2024
   const generateDays = (): Day[] => {

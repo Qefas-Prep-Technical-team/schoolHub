@@ -1,17 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { examService, CreateExamDTO, CreatePaperDTO } from "../services/examService";
 import { toast } from "react-toastify";
+import { AxiosError } from "axios";
 
 export const examKeys = {
   all: ["exams"] as const,
   lists: () => [...examKeys.all, "list"] as const,
-  list: (filters: any) => [...examKeys.lists(), filters] as const,
+  list: (filters: Record<string, unknown>) => [...examKeys.lists(), filters] as const,
   details: () => [...examKeys.all, "detail"] as const,
   detail: (id: string) => [...examKeys.details(), id] as const,
   papers: (id: string) => [...examKeys.detail(id), "papers"] as const,
 };
 
-export const useExams = (filters?: any) => {
+export const useExams = (filters?: Record<string, unknown>) => {
   return useQuery({
     queryKey: examKeys.list(filters || {}),
     queryFn: () => examService.getExams(filters),
@@ -43,7 +42,7 @@ export const useCreateExam = () => {
       queryClient.invalidateQueries({ queryKey: examKeys.lists() });
       toast.success("Exam created successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to create exam");
     },
   });
@@ -57,7 +56,7 @@ export const useCreatePaper = (examId: string) => {
       queryClient.invalidateQueries({ queryKey: examKeys.papers(examId) });
       toast.success("Subject paper created successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to create subject paper");
     },
   });
@@ -72,7 +71,7 @@ export const usePublishExam = () => {
       queryClient.invalidateQueries({ queryKey: examKeys.all });
       toast.success("Exam published successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to publish exam");
     },
   });
@@ -87,7 +86,7 @@ export const useUnpublishExam = () => {
       queryClient.invalidateQueries({ queryKey: examKeys.all });
       toast.success("Exam unpublished successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to unpublish exam");
     },
   });
@@ -101,7 +100,7 @@ export const useDeleteExam = () => {
       queryClient.invalidateQueries({ queryKey: examKeys.all });
       toast.success("Exam deleted successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to delete exam");
     },
   });
@@ -116,7 +115,7 @@ export const useUnpublishPaper = (examId: string) => {
       queryClient.invalidateQueries({ queryKey: examKeys.papers(examId) });
       toast.success("Subject paper unpublished successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to unpublish paper");
     },
   });
@@ -130,7 +129,7 @@ export const useDeletePaper = (examId: string) => {
       queryClient.invalidateQueries({ queryKey: examKeys.papers(examId) });
       toast.success("Subject paper deleted successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to delete paper");
     },
   });
@@ -142,8 +141,9 @@ export const useExamAttempt = (examId: string) => {
     queryFn: async () => {
       try {
         return await examService.getExamAttempt(examId);
-      } catch (error: any) {
-        if (error.response?.status === 404) {
+      } catch (error) {
+        const err = error as AxiosError;
+        if (err.response?.status === 404) {
           return null; // Return null if no attempt exists
         }
         throw error;
@@ -170,7 +170,7 @@ export const useStartExamAttempt = () => {
       queryClient.invalidateQueries({ queryKey: [...examKeys.detail(examId), "attempt"] });
       toast.success("Exam started! Good luck.");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to start exam");
     },
   });
@@ -199,7 +199,7 @@ export const useSubmitAttempt = () => {
       queryClient.invalidateQueries({ queryKey: [...examKeys.detail(examId), "attempt"] });
       toast.success("Exam submitted successfully!", { toastId: "exam-submit-success" });
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to submit exam");
     },
   });
@@ -245,7 +245,7 @@ export const useLinkPaperToExam = () => {
       queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
       toast.success("Subject paper linked successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to link subject paper");
     },
   });
@@ -259,7 +259,7 @@ export const useUnlinkPaper = (examId: string) => {
       queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
       toast.success("Subject paper unlinked!");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to unlink paper");
     },
   });

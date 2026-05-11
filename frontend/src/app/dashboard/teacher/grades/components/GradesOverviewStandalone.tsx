@@ -4,7 +4,6 @@ import { useState } from 'react';
 
 const GradesOverviewStandalone: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
 
   const grades = [
     {

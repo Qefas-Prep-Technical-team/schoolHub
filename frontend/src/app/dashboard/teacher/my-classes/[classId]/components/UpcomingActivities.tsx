@@ -1,4 +1,4 @@
-import { Calendar, ArrowRight, Clock, AlertCircle, CheckCircle2, Bookmark } from 'lucide-react';
+import { Calendar, ArrowRight, Clock, CheckCircle2, Bookmark } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface Activity {

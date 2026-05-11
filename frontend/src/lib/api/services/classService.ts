@@ -40,7 +40,7 @@ export const classService = {
     return response.data.data;
   },
 
-  submitAttendance: async (classId: string, records: any[]) => {
+  submitAttendance: async (classId: string, records: Record<string, unknown>[]) => {
     const response = await apiClient.post(`/classes/${classId}/attendance`, { records });
     return response.data.data;
   },
@@ -56,7 +56,7 @@ export const classService = {
     return response.data.data;
   },
 
-  upsertTimetablePeriod: async (classId: string, data: any) => {
+  upsertTimetablePeriod: async (classId: string, data: Record<string, unknown>) => {
     const response = await apiClient.post(`/classes/${classId}/timetable`, data);
     return response.data.data;
   },

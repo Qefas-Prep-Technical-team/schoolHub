@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
+import React from 'react';
 import PageHeader from './PageHeader';
 import TabNavigation from './TabNavigation';
 import ClassStats from './ClassStats';
@@ -10,15 +9,15 @@ import TopPerformingStudents from './TopPerformingStudents';
 import AttendanceSummary from './AttendanceSummary';
 import RecentSubmissions from './RecentSubmissions';
 import QuickActions from './QuickActions';
-import { TabPanel } from 'react-tabs';
+
 
 
 interface ClassOverviewTabProps {
-  stats: any;
-  upcomingActivities: any[];
-  topStudents: any[];
+  stats: Record<string, any>;
+  upcomingActivities: Record<string, any>[];
+  topStudents: Record<string, any>[];
   attendance: any;
-  recentSubmissions: any[];
+  recentSubmissions: Record<string, any>[];
 }
 
 export default function ClassOverviewTab({ 
@@ -50,7 +49,7 @@ export default function ClassOverviewTab({
             {/* Left Column */}
             <div className="space-y-6">
               <UpcomingActivities 
-                activities={upcomingActivities as any}
+                activities={upcomingActivities}
                 onViewAll={() => handleViewAll('activities')}
               />
               

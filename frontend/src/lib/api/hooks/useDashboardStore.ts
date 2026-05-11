@@ -4,8 +4,8 @@ import { persist } from "zustand/middleware";
 interface DashboardState {
   selectedSchoolId: string;
   selectedSchoolName: string;
-  schools: any[];
-  setSchools: (schools: any[]) => void;
+  schools: Record<string, unknown>[];
+  setSchools: (schools: Record<string, unknown>[]) => void;
   setSelectedSchoolId: (schoolId: string, schoolName: string) => void;
 }
 

@@ -21,8 +21,8 @@ export const getSingleLinkRequestService = async ({
   const request = await prisma.linkRequest.findUnique({
     where: { id: requestId },
     include: {
-      requesterAdmin: true,
-      approverAdmin: true,
+      requestedByAdmin: true,
+      approvedByAdmin: true,
       requesterSchool: true,
       targetSchool: true,
       requesterTeacher: true,

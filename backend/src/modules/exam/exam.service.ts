@@ -86,7 +86,7 @@ export const createExamService = async ({
       class: true,
       session: true,
       teacher: true,
-      subjectPapers: true,
+      subjectExamPapers: true,
     },
   });
 };
@@ -193,7 +193,7 @@ export const getExamsService = async (filters: {
       },
       class: true,
       session: true,
-      subjectPapers: {
+      subjectExamPapers: {
         include: {
           subjectPaper: {
             include: {
@@ -220,7 +220,7 @@ export const getExamsService = async (filters: {
 
   const formattedExams = (exams as any[]).map(exam => ({
     ...exam,
-    subjectPapers: exam.subjectPapers.map((link: any) => ({
+    subjectExamPapers: exam.subjectExamPapers.map((link: any) => ({
       ...link.subjectPaper,
       examId: link.examId
     }))
@@ -261,7 +261,7 @@ export const getExamByIdService = async (id: string, excludeCorrectAnswers: bool
       },
       class: true,
       session: true,
-      subjectPapers: {
+      subjectExamPapers: {
         include: {
           subjectPaper: {
             include: {
@@ -281,14 +281,14 @@ export const getExamByIdService = async (id: string, excludeCorrectAnswers: bool
 
   const formattedExam = {
     ...exam,
-    subjectPapers: (exam as any).subjectPapers.map((link: any) => ({
+    subjectExamPapers: (exam as any).subjectExamPapers.map((link: any) => ({
       ...link.subjectPaper,
       examId: link.examId
     }))
   };
 
   if (excludeCorrectAnswers) {
-    formattedExam.subjectPapers.forEach((paper: any) => {
+    formattedExam.subjectExamPapers.forEach((paper: any) => {
       paper.questions = paper.questions.map((q: any) => ({
         ...q,
         correctAnswer: "", // Scrub sensitive data
@@ -792,18 +792,18 @@ export const validateExamService = async (examId: string) => {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     include: {
-      subjectPapers: {
+      subjectExamPapers: {
         include: { subjectPaper: true }
       },
     },
   });
 
   if (!exam) throw new Error("Exam not found");
-  if (!exam.subjectPapers.length) {
+  if (!exam.subjectExamPapers.length) {
     throw new Error("Exam must have at least one subject paper");
   }
 
-  const papers = exam.subjectPapers.map(link => link.subjectPaper);
+  const papers = exam.subjectExamPapers.map(link => link.subjectPaper);
 
   const unpublished = papers.filter(
     (paper) => paper.status !== SubjectPaperStatus.PUBLISHED
@@ -814,7 +814,7 @@ export const validateExamService = async (examId: string) => {
   }
 
   const totalMarks = papers.reduce(
-    (sum, p) => sum + Number(p.totalMarks || 0),
+    (sum: number, p: any) => sum + Number(p.totalMarks || 0),
     0
   );
 
@@ -825,7 +825,7 @@ export const validateExamService = async (examId: string) => {
       validatedAt: new Date(),
     },
     include: {
-      subjectPapers: {
+      subjectExamPapers: {
         include: { subjectPaper: true }
       },
     },
@@ -836,18 +836,18 @@ export const publishExamService = async (examId: string) => {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     include: {
-      subjectPapers: {
+      subjectExamPapers: {
         include: { subjectPaper: true }
       },
     },
   });
 
   if (!exam) throw new Error("Exam not found");
-  if (!exam.subjectPapers.length) {
+  if (!exam.subjectExamPapers.length) {
     throw new Error("Exam must have at least one subject paper");
   }
 
-  const papers = exam.subjectPapers.map(link => link.subjectPaper);
+  const papers = exam.subjectExamPapers.map(link => link.subjectPaper);
 
   const unpublished = papers.filter(
     (paper) => paper.status !== SubjectPaperStatus.PUBLISHED
@@ -858,7 +858,7 @@ export const publishExamService = async (examId: string) => {
   }
 
   const totalMarks = papers.reduce(
-    (sum, p) => sum + Number(p.totalMarks || 0),
+    (sum: number, p: any) => sum + Number(p.totalMarks || 0),
     0
   );
 
@@ -870,7 +870,7 @@ export const publishExamService = async (examId: string) => {
       publishedAt: new Date(),
       totalMarks,
     },
-    include: { subjectPapers: true },
+    include: { subjectExamPapers: true },
   });
 
   if (updatedExam.schoolId) {
@@ -1253,7 +1253,7 @@ export const deleteExamService = async (examId: string) => {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     include: {
-      subjectPapers: {
+      subjectExamPapers: {
         include: {
           subjectPaper: {
             include: {
@@ -1268,7 +1268,7 @@ export const deleteExamService = async (examId: string) => {
   if (!exam) throw new Error("Exam not found");
 
   // Check if any paper in the exam has attempts
-  const hasAttempts = (exam.subjectPapers as any[]).some(link => 
+  const hasAttempts = (exam.subjectExamPapers as any[]).some(link => 
     link.subjectPaper.examAttempts && link.subjectPaper.examAttempts.length > 0
   );
   if (hasAttempts) {

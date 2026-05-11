@@ -20,5 +20,5 @@ export const useRouteGuard = (allowedRoles?: string[]) => {
     if (allowedRoles && user && !allowedRoles.includes(user.role as string)) {
       router.push("/unauthorized");
     }
-  }, [pathname, accessToken, user]);
+  }, [pathname, accessToken, user, allowedRoles, router]);
 };

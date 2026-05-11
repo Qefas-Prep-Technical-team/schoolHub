@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import React, { FC, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -22,7 +21,7 @@ const ClassDetails: FC = () => {
     const classId = params.classId as string;
     const [activeTab, setActiveTab] = useState<TabId>('overview');
 
-    const { data, isLoading, error } = useQuery({
+    const { data, isLoading } = useQuery({
         queryKey: ['class-detail', classId],
         queryFn: () => teacherService.getClassDetail(classId),
         enabled: !!classId,

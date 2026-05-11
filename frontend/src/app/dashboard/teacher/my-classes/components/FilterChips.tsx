@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, X, Layers, BookOpen, GraduationCap, Calendar, Clock, FilterX } from 'lucide-react';
+import { ChevronDown, Layers, BookOpen, GraduationCap, Calendar, Clock, FilterX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
@@ -99,7 +99,17 @@ export default function FilterChips({ filters, onFilterChange, onClearFilters }:
     );
 }
 
-function FilterPill({ label, value, options, icon: Icon, isOpen, onToggle, onChange }: any) {
+interface FilterPillProps {
+    label: string;
+    value: string;
+    options: string[];
+    icon: React.ElementType;
+    isOpen: boolean;
+    onToggle: () => void;
+    onChange: (val: string) => void;
+}
+
+function FilterPill({ label, value, options, icon: Icon, isOpen, onToggle, onChange }: FilterPillProps) {
     return (
         <div className="relative">
             <motion.button

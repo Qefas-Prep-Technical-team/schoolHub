@@ -58,7 +58,7 @@ export const getGradeByIdService = async (id: string) => {
       exam: true,
       examAttempt: {
         include: {
-          subjectAttempts: {
+          subjectExamAttempts: {
             include: {
               subjectPaper: {
                 include: {

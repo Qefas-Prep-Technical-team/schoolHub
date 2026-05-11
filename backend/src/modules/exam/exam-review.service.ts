@@ -102,7 +102,7 @@ export const markSubjectiveAnswerService = async ({
   }
 
   const subjectScore = subjectAttempt.answers.reduce(
-    (sum, ans) => sum + Number(ans.scoreAwarded || 0),
+    (sum: number, ans: any) => sum + Number(ans.scoreAwarded || 0),
     0
   );
 

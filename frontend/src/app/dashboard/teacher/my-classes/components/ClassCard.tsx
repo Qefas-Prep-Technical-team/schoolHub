@@ -1,6 +1,7 @@
 'use client';
 
-import { Users, Calendar, Clock, GraduationCap, BarChart3, ArrowUpRight, BarChart, ChevronRight } from 'lucide-react';
+import { Users, Clock, GraduationCap, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 import { Class } from './type';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -58,9 +59,11 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
 
             {/* Middle: Sleek Wide-Pill Image */}
             <div className="relative h-32 w-full rounded-2xl overflow-hidden mb-6 shadow-md border border-slate-100 dark:border-slate-800/50">
-                <img 
+                <Image 
                     src={classData.image || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop'} 
                     alt={classData.name}
+                    width={800}
+                    height={320}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>

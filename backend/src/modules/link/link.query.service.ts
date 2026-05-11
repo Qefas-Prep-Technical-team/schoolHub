@@ -85,8 +85,8 @@ export const getOutgoingLinkRequestsService = async (
     prisma.linkRequest.findMany({
       where,
       include: {
-        requesterAdmin: true,
-        approverAdmin: true,
+        requestedByAdmin: true,
+        approvedByAdmin: true,
         requesterSchool: true,
         targetSchool: true,
         requesterTeacher: true,
@@ -139,8 +139,8 @@ export const getIncomingPendingLinkRequestsService = async (
     prisma.linkRequest.findMany({
       where,
       include: {
-        requesterAdmin: true,
-        approverAdmin: true,
+        requestedByAdmin: true,
+        approvedByAdmin: true,
         requesterSchool: true,
         targetSchool: true,
         requesterTeacher: true,
@@ -228,8 +228,8 @@ export const getAllLinkRequestsService = async (
     prisma.linkRequest.findMany({
       where,
       include: {
-        requesterAdmin: true,
-        approverAdmin: true,
+        requestedByAdmin: true,
+        approvedByAdmin: true,
         requesterSchool: true,
         targetSchool: true,
         requesterTeacher: true,
@@ -322,8 +322,8 @@ export const getActiveLinksService = async (
             targetStudent: true,
             requesterParent: true,
             targetParent: true,
-            requesterAdmin: true,
-            approverAdmin: true,
+            requestedByAdmin: true,
+            approvedByAdmin: true,
             class: true,
           }
         },

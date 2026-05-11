@@ -128,7 +128,7 @@ export const harvestFeatures = async (req: Request, res: Response) => {
  */
 export const deleteFeature = async (req: Request, res: Response) => {
     try {
-        await FeatureService.deleteFeature(req.params.id);
+        await FeatureService.deleteFeature(req.params.id as string);
         return res.status(200).json({ success: true, message: "Feature deleted" });
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to delete feature" });

@@ -503,6 +503,9 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
     const classId = getSingleString(req.query.classId as string | string[] | undefined);
     const gender = getSingleString(req.query.gender as string | string[] | undefined);
     const status = getSingleString(req.query.status as string | string[] | undefined);
+    const schoolId = getSingleString(req.query.schoolId as string | string[] | undefined);
+    const page = getSingleString(req.query.page as string | string[] | undefined) || "1";
+    const limit = getSingleString(req.query.limit as string | string[] | undefined) || "10";
 
     if (!schoolId) {
       return res.status(400).json({

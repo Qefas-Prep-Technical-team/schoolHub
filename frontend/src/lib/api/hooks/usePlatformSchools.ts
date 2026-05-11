@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { platformClient } from "../platformClient"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
 import { toast } from "react-toastify"
+import { AxiosError } from "axios";
 
 export const usePlatformSchools = (query: string = "", page: number = 1, limit: number = 10, plan: string = "ALL", status: string = "ALL") => {
     const { platform_token } = usePlatformStaffStore()
@@ -9,7 +10,7 @@ export const usePlatformSchools = (query: string = "", page: number = 1, limit: 
     return useQuery({
         queryKey: ["platform-schools", query, page, limit, plan, status],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/schools?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
+            const { data } = await platformClient.get<Record<string, unknown>>(`/platform/support/schools?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
@@ -27,7 +28,7 @@ export const usePlatformSchoolDetails = (id: string) => {
     return useQuery({
         queryKey: ["platform-school-details", id],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/schools/${id}`, {
+            const { data } = await platformClient.get<{ data: Record<string, unknown> }>(`/platform/support/schools/${id}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -42,17 +43,17 @@ export const useUpdateSchoolStatus = () => {
 
     return useMutation({
         mutationFn: async ({ id, status }: { id: string, status: string }) => {
-            const { data } = await platformClient.patch(`/platform/support/schools/${id}/status`, { status }, {
+            const { data } = await platformClient.patch<{ message: string }>(`/platform/support/schools/${id}/status`, { status }, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-schools"] })
             queryClient.invalidateQueries({ queryKey: ["platform-school-details"] })
             toast.success(res.message)
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ message?: string }>) => {
             toast.error(err.response?.data?.message || "Failed to update school status")
         }
     })
@@ -63,17 +64,17 @@ export const useImpersonateAdmin = () => {
 
     return useMutation({
         mutationFn: async (schoolId: string) => {
-            const { data } = await platformClient.post(`/platform/support/impersonate`, { schoolId }, {
+            const { data } = await platformClient.post<{ adminName: string; token: string }>(`/platform/support/impersonate`, { schoolId }, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
         },
-        onSuccess: (data) => {
+        onSuccess: (data: { adminName: string; token: string }) => {
             toast.success(`Access tunnel established for ${data.adminName}`)
             // Open dashboard in new tab with token (impersonation)
             window.open(`/dashboard/admin?token=${data.token}`, "_blank")
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ message?: string }>) => {
             toast.error(err.response?.data?.message || "Impersonation failed")
         }
     })
@@ -84,18 +85,18 @@ export const useUpdateSchoolLimits = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async ({ id, limits }: { id: string, limits: any }) => {
-            const { data } = await platformClient.patch(`/platform/support/schools/${id}/limits`, limits, {
+        mutationFn: async ({ id, limits }: { id: string, limits: Record<string, unknown> }) => {
+            const { data } = await platformClient.patch<{ message: string }>(`/platform/support/schools/${id}/limits`, limits, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-schools"] })
             queryClient.invalidateQueries({ queryKey: ["platform-school-details"] })
             toast.success(res.message)
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ message?: string }>) => {
             toast.error(err.response?.data?.message || "Failed to update school limits")
         }
     })
@@ -109,18 +110,18 @@ export const useUpdateSchoolPlan = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async ({ id, planData }: { id: string, planData: any }) => {
-            const { data } = await platformClient.patch(`/platform/support/schools/${id}/plan`, planData, {
+        mutationFn: async ({ id, planData }: { id: string, planData: Record<string, unknown> }) => {
+            const { data } = await platformClient.patch<{ message: string }>(`/platform/support/schools/${id}/plan`, planData, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-schools"] })
             queryClient.invalidateQueries({ queryKey: ["platform-school-details"] })
             toast.success(res.message)
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ message?: string }>) => {
             toast.error(err.response?.data?.message || "Failed to update school plan")
         }
     })
@@ -135,7 +136,7 @@ export const useAllPlatformPlans = () => {
     return useQuery({
         queryKey: ["platform-all-plans"],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/plans`, {
+            const { data } = await platformClient.get<{ data: Record<string, unknown>[] }>(`/platform/support/plans`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -153,7 +154,7 @@ export const usePlatformStudents = (query: string = "", status: string = "ALL", 
     return useQuery({
         queryKey: ["platform-students", query, status, page, limit],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/students?query=${query}&status=${status}&page=${page}&limit=${limit}`, {
+            const { data } = await platformClient.get<Record<string, unknown>>(`/platform/support/students?query=${query}&status=${status}&page=${page}&limit=${limit}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
@@ -168,7 +169,7 @@ export const usePlatformStudentDetails = (id: string) => {
     return useQuery({
         queryKey: ["platform-student-details", id],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/students/${id}`, {
+            const { data } = await platformClient.get<{ data: Record<string, unknown> }>(`/platform/support/students/${id}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -182,18 +183,18 @@ export const useUpdateStudentPlan = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async ({ id, planData }: { id: string, planData: any }) => {
-            const { data } = await platformClient.patch(`/platform/support/students/${id}/plan`, planData, {
+        mutationFn: async ({ id, planData }: { id: string, planData: Record<string, unknown> }) => {
+            const { data } = await platformClient.patch<{ message: string }>(`/platform/support/students/${id}/plan`, planData, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-students"] })
             queryClient.invalidateQueries({ queryKey: ["platform-student-details"] })
             toast.success(res.message)
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ message?: string }>) => {
             toast.error(err.response?.data?.message || "Failed to update student plan")
         }
     })
@@ -208,7 +209,7 @@ export const usePlatformTeachers = (query: string = "", page: number = 1, limit:
     return useQuery({
         queryKey: ["platform-teachers", query, page, limit, plan, status],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/teachers?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
+            const { data } = await platformClient.get<Record<string, unknown>>(`/platform/support/teachers?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
@@ -226,7 +227,7 @@ export const usePlatformParents = (query: string = "", page: number = 1, limit: 
     return useQuery({
         queryKey: ["platform-parents", query, page, limit, plan, status],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/parents?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
+            const { data } = await platformClient.get<Record<string, unknown>>(`/platform/support/parents?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
@@ -244,7 +245,7 @@ export const usePlatformFeatures = () => {
     return useQuery({
         queryKey: ["platform-features"],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/features`, {
+            const { data } = await platformClient.get<{ data: Record<string, unknown>[] }>(`/platform/support/features`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -261,18 +262,18 @@ export const useUpdatePlatformFeature = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async ({ id, updateData }: { id: string, updateData: any }) => {
-            const { data } = await platformClient.patch(`/platform/support/features/${id}`, updateData, {
+        mutationFn: async ({ id, updateData }: { id: string, updateData: Record<string, unknown> }) => {
+            const { data } = await platformClient.patch<{ message: string }>(`/platform/support/features/${id}`, updateData, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-features"] })
             queryClient.invalidateQueries({ queryKey: ["platform-features-manifest"] })
             toast.success(res.message)
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ message?: string }>) => {
             toast.error(err.response?.data?.message || "Failed to update feature")
         }
     })
@@ -283,7 +284,7 @@ export const usePlatformTeacherDetails = (id: string) => {
     return useQuery({
         queryKey: ["platform-teacher-details", id],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/teachers/${id}`, {
+            const { data } = await platformClient.get<{ data: Record<string, unknown> }>(`/platform/support/teachers/${id}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -297,18 +298,18 @@ export const useUpdateTeacherPlan = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async ({ id, planData }: { id: string, planData: any }) => {
-            const { data } = await platformClient.patch(`/platform/support/teachers/${id}/plan`, planData, {
+        mutationFn: async ({ id, planData }: { id: string, planData: Record<string, unknown> }) => {
+            const { data } = await platformClient.patch<{ message: string }>(`/platform/support/teachers/${id}/plan`, planData, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-teachers"] })
             queryClient.invalidateQueries({ queryKey: ["platform-teacher-details"] })
             toast.success(res.message)
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ message?: string }>) => {
             toast.error(err.response?.data?.message || "Failed to update teacher plan")
         }
     })
@@ -318,7 +319,7 @@ export const usePlatformParentDetails = (id: string) => {
     return useQuery({
         queryKey: ["platform-parent-details", id],
         queryFn: async () => {
-            const { data } = await platformClient.get(`/platform/support/parents/${id}`, {
+            const { data } = await platformClient.get<{ data: Record<string, unknown> }>(`/platform/support/parents/${id}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -332,18 +333,18 @@ export const useUpdateParentPlan = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async ({ id, planData }: { id: string, planData: any }) => {
-            const { data } = await platformClient.patch(`/platform/support/parents/${id}/plan`, planData, {
+        mutationFn: async ({ id, planData }: { id: string, planData: Record<string, unknown> }) => {
+            const { data } = await platformClient.patch<{ message: string }>(`/platform/support/parents/${id}/plan`, planData, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-parents"] })
             queryClient.invalidateQueries({ queryKey: ["platform-parent-details"] })
             toast.success(res.message)
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ message?: string }>) => {
             toast.error(err.response?.data?.message || "Failed to update parent plan")
         }
     })

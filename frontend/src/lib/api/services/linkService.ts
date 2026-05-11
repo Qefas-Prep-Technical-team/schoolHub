@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from "../client";
 
 export type LinkType =
@@ -24,29 +23,29 @@ export interface LinkRequest {
   targetCode?: string;
   expiresAt: string;
   createdAt: string;
-  requesterAdmin?: any;
-  targetAdmin?: any;
-  requesterSchool?: any;
-  targetSchool?: any;
-  requesterTeacher?: any;
-  targetTeacher?: any;
-  requesterStudent?: any;
-  targetStudent?: any;
-  requesterParent?: any;
-  targetParent?: any;
-  relationshipLink?: any;
-  class?: any;
+  requesterAdmin?: Record<string, unknown>;
+  targetAdmin?: Record<string, unknown>;
+  requesterSchool?: Record<string, unknown>;
+  targetSchool?: Record<string, unknown>;
+  requesterTeacher?: Record<string, unknown>;
+  targetTeacher?: Record<string, unknown>;
+  requesterStudent?: Record<string, unknown>;
+  targetStudent?: Record<string, unknown>;
+  requesterParent?: Record<string, unknown>;
+  targetParent?: Record<string, unknown>;
+  relationshipLink?: Record<string, unknown>;
+  class?: Record<string, unknown>;
 }
 
 export const linkService = {
   // Get all link requests (sent and received)
   getLinkRequests: async (options: { page?: number; limit?: number; category?: string; status?: string } = {}) => {
-    const response = await apiClient.get<any>("/links/requests", { params: options });
+    const response = await apiClient.get<Record<string, unknown>>("/links/requests", { params: options });
     return response.data;
   },
   getPendingLinkRequests: async (options: { page?: number; limit?: number; category?: string } = {}) => {
     try {
-      const response = await apiClient.get<any>("/links/requests/pending", { params: options });
+      const response = await apiClient.get<Record<string, unknown>>("/links/requests/pending", { params: options });
       return response.data;
     } catch (error) {
       console.error("Error fetching pending requests:", error);
@@ -75,7 +74,7 @@ export const linkService = {
 
   // Get active links for the current user
   getActiveLinks: async (options: { page?: number; limit?: number; category?: string } = {}) => {
-    const response = await apiClient.get<any>("/links/active", { params: options });
+    const response = await apiClient.get<Record<string, unknown>>("/links/active", { params: options });
     return response.data;
   },
 
@@ -107,7 +106,7 @@ export const linkService = {
 
   // Get single link request by ID
   getLinkRequestById: async (id: string) => {
-    const response = await apiClient.get<any>(`/links/request/${id}`);
+    const response = await apiClient.get<Record<string, unknown>>(`/links/request/${id}`);
     return response.data;
   },
 

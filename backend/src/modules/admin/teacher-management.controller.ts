@@ -498,7 +498,7 @@ export const deleteTimetablePeriod = async (req: Request, res: Response) => {
       });
     }
 
-    await deleteTimetablePeriodService(periodId);
+    await deleteTimetablePeriodService(periodId as string);
 
     return res.status(200).json({
       success: true,

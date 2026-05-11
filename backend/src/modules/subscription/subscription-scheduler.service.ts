@@ -53,7 +53,7 @@ export class SubscriptionScheduler {
       // Close history records for expired schools
       await tx.subscriptionHistory.updateMany({
         where: {
-          schoolId: { in: schoolsToNotify.map(s => s.schoolId) },
+          schoolId: { in: schoolsToNotify.map((s: any) => s.schoolId) },
           endedAt: null,
         },
         data: {
@@ -78,7 +78,7 @@ export class SubscriptionScheduler {
       // Close history records for expired users
       await tx.subscriptionHistory.updateMany({
         where: {
-          userId: { in: usersToNotify.map(u => u.userId) },
+          userId: { in: usersToNotify.map((u: any) => u.userId) },
           endedAt: null,
         },
         data: {

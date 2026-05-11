@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 const AcademicsTabStandalone: React.FC = () => {
-  const [selectedSubject, setSelectedSubject] = useState('Mathematics');
+  const [selectedSubject] = useState('Mathematics');
 
   const subjects = [
     { name: 'Mathematics', teacher: 'Mr. Harrison', score: 88, trend: 'up', icon: 'calculate', active: true },
@@ -104,11 +105,12 @@ const AcademicsTabStandalone: React.FC = () => {
               <span className="material-symbols-outlined">arrow_drop_down</span>
             </button>
           </div>
-          <div className="mt-6 h-72 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-            <img 
+          <div className="mt-6 h-72 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg relative overflow-hidden">
+            <Image 
               className="w-full h-full object-contain p-4" 
               src={performanceData.imageUrl} 
               alt={performanceData.altText}
+              fill
             />
           </div>
         </div>

@@ -8,14 +8,15 @@ import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, FileText, Loader2, Check, Globe, BookOpen, Eye, Settings as SettingsIcon, Trash2 } from "lucide-react";
+import { ChevronLeft, FileText, Loader2, Check, Globe, BookOpen, Eye, Settings as SettingsIcon } from "lucide-react";
 import { toast } from "react-toastify";
 import QuestionManager from "@/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/QuestionManager";
 import ConfirmationModal from "@/app/dashboard/admin/exams/components/ui/ConfirmationModal";
 import ReadingContentModal from "@/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/ReadingContentModal";
 import PaperPreviewModal from "@/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/PaperPreviewModal";
 import EditPaperModal from "@/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/EditPaperModal";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { AxiosError } from "axios";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import SubjectPaperReport from './components/SubjectPaperReport';
@@ -34,7 +35,7 @@ export default function TeacherAddQuestionDashboard() {
     enabled: !!paperId,
   });
 
-  const paper = paperData as any;
+  const paper = paperData as Record<string, unknown>;
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function TeacherAddQuestionDashboard() {
       queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
       toast.success("Subject paper published successfully!");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Publish failed");
     }
   });
@@ -58,7 +59,7 @@ export default function TeacherAddQuestionDashboard() {
       queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
       toast.success("Subject paper unpublished!");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to unpublish paper");
     }
   });
@@ -70,7 +71,7 @@ export default function TeacherAddQuestionDashboard() {
       router.push(`/dashboard/teacher/exams&quizzes`);
       toast.success("Subject paper deleted!");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to delete paper");
     }
   });
@@ -105,7 +106,7 @@ export default function TeacherAddQuestionDashboard() {
 
   // Fetch subjects and teachers for the edit modal
   const paperSchoolId = paper?.schoolId;
-  const fallbackSchoolId = (user as any)?.schools?.[0]?.schoolId || (user as any)?.tenantId || "";
+  const fallbackSchoolId = (user as Record<string, unknown>)?.schools?.[0]?.schoolId || (user as Record<string, unknown>)?.tenantId || "";
   const { data: school } = useSchoolProfile(paperSchoolId || fallbackSchoolId);
   
   const { data: subjects = [] } = useQuery({
@@ -286,7 +287,7 @@ export default function TeacherAddQuestionDashboard() {
 
           <TabsContent value="grades">
             {(() => {
-              const onlineResults = (paper.examAttempts || []).map((a: any) => ({
+              const onlineResults = (paper.examAttempts as Record<string, unknown>[] || []).map((a: Record<string, unknown>) => ({
                 id: a.id,
                 studentName: a.examAttempt?.student?.name,
                 studentCode: a.examAttempt?.student?.studentCode,
@@ -295,9 +296,9 @@ export default function TeacherAddQuestionDashboard() {
                 type: 'ONLINE'
               }));
 
-              const manualResults = (paper.grades || [])
-                .filter((g: any) => !g.examAttemptId && !g.subjectExamAttemptId)
-                .map((g: any) => ({
+              const manualResults = (paper.grades as Record<string, unknown>[] || [])
+                .filter((g: Record<string, unknown>) => !g.examAttemptId && !g.subjectExamAttemptId)
+                .map((g: Record<string, unknown>) => ({
                 id: g.id,
                 studentName: g.student?.name,
                 studentCode: g.student?.studentCode,
@@ -333,7 +334,7 @@ export default function TeacherAddQuestionDashboard() {
                         }))} />}
                         fileName={`${paper.title?.replace(/\s+/g, '_')}_Report.pdf`}
                       >
-                        {({ loading }: any) => (
+                        {({ loading }: { loading: boolean }) => (
                           <Button 
                             className="bg-primary text-white font-black px-6 rounded-2xl shadow-xl shadow-primary/20 gap-2 uppercase tracking-widest text-[10px]"
                             disabled={loading}
@@ -381,7 +382,7 @@ export default function TeacherAddQuestionDashboard() {
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                           {hasResults ? (
-                            allResults.map((result: any) => {
+                            allResults.map((result: Record<string, unknown>) => {
                               const percentage = (result.score / result.maxMarks) * 100;
                               const isPass = percentage >= (paper.passMark || 40);
                               return (

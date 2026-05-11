@@ -62,14 +62,14 @@ export const gradeService = {
     return data.data;
   },
 
-  getGradeHub: async (schoolId: string, filters?: any) => {
+  getGradeHub: async (schoolId: string, filters?: Record<string, unknown>) => {
     const { data } = await apiClient.get("/grades/hub", {
       params: { schoolId, ...filters }
     });
     return data;
   },
 
-  createGradeEntry: async (gradeData: any) => {
+  createGradeEntry: async (gradeData: Record<string, unknown>) => {
     const { data } = await apiClient.post("/grades", gradeData);
     return data.data;
   },
@@ -84,7 +84,7 @@ export const gradeService = {
     return data.data;
   },
 
-  bulkCreateGrades: async (schoolId: string, grades: any[]) => {
+  bulkCreateGrades: async (schoolId: string, grades: Partial<Grade>[]) => {
     const { data } = await apiClient.post("/grades/bulk", { schoolId, grades });
     return data.data;
   }

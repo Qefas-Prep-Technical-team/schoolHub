@@ -395,7 +395,7 @@ export const getSchoolDetails = async (req: Request, res: Response) => {
           select: {
             students: true,
             admins: true,
-            Teacher_Teacher_activeSchoolIdToSchool: true, // Active teachers
+            activeTeachers: true, // Active teachers
             exams: true,
             classes: true
           }
@@ -927,7 +927,7 @@ export const getStudentDetails = async (req: Request, res: Response) => {
             parent: true
           }
         },
-        subscription: true,
+        subscriptionPlan: true,
         _count: {
           select: {
             attendances: true,
@@ -993,7 +993,7 @@ export const updateStudentPlan = async (req: Request, res: Response) => {
     const student = await prisma.student.update({
       where: { id },
       data: updateData,
-      include: { subscription: true }
+      include: { subscriptionPlan: true }
     });
 
     // Create Activity Log
@@ -1056,7 +1056,7 @@ export const getTeacherDetails = async (req: Request, res: Response) => {
             class: true
           }
         },
-        subscription: true,
+        subscriptionPlan: true,
         _count: {
           select: {
             teacherSubjects: true,
@@ -1121,7 +1121,7 @@ export const updateTeacherPlan = async (req: Request, res: Response) => {
     const teacher = await prisma.teacher.update({
       where: { id },
       data: updateData,
-      include: { subscription: true }
+      include: { subscriptionPlan: true }
     });
 
     // Create Activity Log
@@ -1181,7 +1181,7 @@ export const getParentDetails = async (req: Request, res: Response) => {
             }
           }
         },
-        subscription: true,
+        subscriptionPlan: true,
         _count: {
           select: {
             children: true,

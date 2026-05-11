@@ -1,33 +1,33 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { linkService, LinkType } from "../services/linkService";
 import { toast } from "react-toastify";
+import { AxiosError } from "axios";
+import { UseQueryOptions } from "@tanstack/react-query";
 
 export const queryKeys = {
   all: ["links"] as const,
-  requests: (params: any = {}) => [...queryKeys.all, "requests", params] as const,
-  pending: (params: any = {}) => [...queryKeys.all, "requests", "pending", params] as const,
-  active: (params: any = {}) => [...queryKeys.all, "active", params] as const,
+  requests: (params: Record<string, unknown> = {}) => [...queryKeys.all, "requests", params] as const,
+  pending: (params: Record<string, unknown> = {}) => [...queryKeys.all, "requests", "pending", params] as const,
+  active: (params: Record<string, unknown> = {}) => [...queryKeys.all, "active", params] as const,
   profile: () => [...queryKeys.all, "profile"] as const,
 };
 
-export const useLinkRequests = (params: { page?: number; limit?: number; category?: string; status?: string } = {}, options: any = {}) => {
-  return useQuery<any>({
+export const useLinkRequests = (params: { page?: number; limit?: number; category?: string; status?: string } = {}, options: Partial<UseQueryOptions<unknown, AxiosError>> = {}) => {
+  return useQuery({
     queryKey: queryKeys.requests(params),
     queryFn: () => linkService.getLinkRequests(params),
     ...options
   });
 };
 
-export const usePendingLinkRequests = (params: { page?: number; limit?: number; category?: string } = {}, options: any = {}) => {
-  return useQuery<any>({
+export const usePendingLinkRequests = (params: { page?: number; limit?: number; category?: string } = {}, options: Partial<UseQueryOptions<unknown, AxiosError>> = {}) => {
+  return useQuery({
     queryKey: queryKeys.pending(params),
     queryFn: () => linkService.getPendingLinkRequests(params),
     ...options
   });
 };
 
-export const useActiveLinks = (params: { page?: number; limit?: number; category?: string } = {}, options: any = {}) => {
-  return useQuery<any>({
+export const useActiveLinks = (params: { page?: number; limit?: number; category?: string } = {}, options: Partial<UseQueryOptions<unknown, AxiosError>> = {}) => {
+  return useQuery({
     queryKey: queryKeys.active(params),
     queryFn: () => linkService.getActiveLinks(params),
     ...options
@@ -35,13 +35,13 @@ export const useActiveLinks = (params: { page?: number; limit?: number; category
 };
 
 export const useLinkProfile = () => {
-  return useQuery<any>({
+  return useQuery({
     queryKey: queryKeys.profile(),
     queryFn: linkService.getProfile,
   });
 };
 
-export const useSingleLinkRequest = (id: string, options: any = {}) => {
+export const useSingleLinkRequest = (id: string, options: Partial<UseQueryOptions<unknown, AxiosError>> = {}) => {
   return useQuery({
     queryKey: [...queryKeys.all, "request", id],
     queryFn: () => linkService.getLinkRequestById(id),
@@ -59,7 +59,7 @@ export const useCreateLinkRequest = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success("Link request sent successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to send link request");
     },
   });
@@ -78,7 +78,7 @@ export const useRespondToLinkRequest = () => {
         toast.success("Link request rejected");
       }
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to respond to request");
     },
   });
@@ -92,7 +92,7 @@ export const useCancelLinkRequest = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success("Link request cancelled");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to cancel request");
     },
   });
@@ -106,7 +106,7 @@ export const useRevokeActiveLink = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success("Connection revoked");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to revoke link");
     },
   });
@@ -121,7 +121,7 @@ export const useAcceptAllLinkRequests = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success(`Successfully accepted all ${category} requests`);
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to accept all requests");
     },
   });

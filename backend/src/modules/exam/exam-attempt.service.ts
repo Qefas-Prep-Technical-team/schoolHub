@@ -18,7 +18,7 @@ export const startExamAttemptService = async ({
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     include: {
-      subjectPapers: {
+      subjectExamPapers: {
         include: {
           subjectPaper: {
             include: { questions: true },
@@ -52,7 +52,7 @@ export const startExamAttemptService = async ({
       },
     },
     include: {
-      subjectAttempts: {
+      subjectExamAttempts: {
         include: {
           answers: true,
         },
@@ -76,7 +76,7 @@ export const startExamAttemptService = async ({
     }
   }
 
-  const papers = exam.subjectPapers.map(link => link.subjectPaper);
+  const papers = exam.subjectExamPapers.map((link: any) => link.subjectPaper);
 
   const totalMarks = papers.reduce(
     (sum: number, paper: any) => sum + Number(paper.totalMarks || 0),
@@ -97,7 +97,7 @@ export const startExamAttemptService = async ({
       startedAt,
       expiresAt,
       status: ExamAttemptStatus.IN_PROGRESS,
-      subjectAttempts: {
+      subjectExamAttempts: {
         create: papers.map((paper: any) => ({
           subjectPaperId: paper.id,
           totalMarks: Number(paper.totalMarks || 0),
@@ -105,7 +105,7 @@ export const startExamAttemptService = async ({
       },
     },
     include: {
-      subjectAttempts: {
+      subjectExamAttempts: {
         include: {
           subjectPaper: {
             include: {
@@ -198,7 +198,7 @@ export const getExamAttemptService = async ({
     },
     include: {
       exam: true,
-      subjectAttempts: {
+      subjectExamAttempts: {
         include: {
           subjectPaper: {
             include: {
@@ -231,7 +231,7 @@ export const getExamAttemptService = async ({
       },
       include: {
         exam: true,
-        subjectAttempts: {
+        subjectExamAttempts: {
           include: {
             subjectPaper: {
               include: {
@@ -257,7 +257,7 @@ export const getExamAttemptService = async ({
 
   // Scrub correct answers if exam is still in progress
   if (attempt.status === "IN_PROGRESS") {
-    result.subjectAttempts.forEach(sa => {
+    result.subjectExamAttempts.forEach((sa: any) => {
       // Deterministic shuffle if enabled
       if ((attempt as any).exam?.shuffleQuestions) {
         // Use student ID + attempt ID as seed
@@ -284,7 +284,7 @@ export const getExamAttemptService = async ({
         sa.subjectPaper.questions = questions;
       }
 
-      sa.subjectPaper.questions = sa.subjectPaper.questions.map(q => ({
+      sa.subjectPaper.questions = sa.subjectPaper.questions.map((q: any) => ({
         ...q,
         correctAnswer: "",
         explanation: ""
@@ -381,7 +381,7 @@ export const scoreExamAttemptService = async ({
       },
     },
     include: {
-      subjectAttempts: {
+      subjectExamAttempts: {
         include: {
           subjectPaper: {
             include: {
@@ -406,7 +406,7 @@ export const scoreExamAttemptService = async ({
   let totalScore = 0;
   const transactionQueue: any[] = [];
   
-  for (const subjectAttempt of attempt.subjectAttempts) {
+  for (const subjectAttempt of attempt.subjectExamAttempts) {
     let subjectScore = 0;
 
     // Process answers by batching into a single transaction
@@ -466,7 +466,7 @@ export const scoreExamAttemptService = async ({
     include: {
       student: true,
       exam: true,
-      subjectAttempts: {
+      subjectExamAttempts: {
         include: {
           subjectPaper: {
             include: {
@@ -497,7 +497,7 @@ export const scoreExamAttemptService = async ({
   try {
     const gradeTransactions: any[] = [];
     
-    for (const sa of updated.subjectAttempts) {
+    for (const sa of updated.subjectExamAttempts) {
       const subjectName = sa.subjectPaper?.subject?.name || "Unknown Subject";
       gradeTransactions.push(
         prisma.grade.upsert({
@@ -529,7 +529,7 @@ export const scoreExamAttemptService = async ({
     }
 
     // If combined, also create/update a total summary entry
-    if (updated.subjectAttempts.length > 1) {
+    if (updated.subjectExamAttempts.length > 1) {
       gradeTransactions.push(
         prisma.grade.upsert({
           where: { id: `grade-total-${updated.id}` },
@@ -619,7 +619,7 @@ export const getExamResultService = async ({
           class: true,
         },
       },
-      subjectAttempts: {
+      subjectExamAttempts: {
         include: {
           subjectPaper: {
             include: {
@@ -651,7 +651,7 @@ export const getExamResultService = async ({
     }
   }
 
-  const subjectBreakdown = attempt.subjectAttempts.map((subjectAttempt) => ({
+  const subjectBreakdown = attempt.subjectExamAttempts.map((subjectAttempt: any) => ({
     subjectPaperId: subjectAttempt.subjectPaperId,
     subjectId: subjectAttempt.subjectPaper.subjectId,
     subjectName: subjectAttempt.subjectPaper.subject?.name || "Unknown",
@@ -675,7 +675,7 @@ export const getExamResultService = async ({
     totalScore: attempt.totalScore,
     totalMarks: attempt.totalMarks,
     overallPassMark: attempt.exam.mode === 'SINGLE_SUBJECT' 
-      ? (attempt.subjectAttempts[0]?.subjectPaper?.passMark || 40)
+      ? (attempt.subjectExamAttempts[0]?.subjectPaper?.passMark || 40)
       : 40, // Default 40% for combined exams if not specified
     submittedAt: attempt.submittedAt,
     subjects: subjectBreakdown,
@@ -832,7 +832,7 @@ export const getExamReviewDataService = async ({
     },
     include: {
       exam: true,
-      subjectAttempts: {
+      subjectExamAttempts: {
         include: {
           subjectPaper: {
             include: {
@@ -875,14 +875,14 @@ export const getExamReviewDataService = async ({
     totalMarks: attempt.totalMarks,
     status: attempt.status,
     submittedAt: attempt.submittedAt,
-    subjects: attempt.subjectAttempts.map((subjectAttempt) => ({
+    subjects: attempt.subjectExamAttempts.map((subjectAttempt: any) => ({
       subjectPaperId: subjectAttempt.subjectPaperId,
       subjectName: subjectAttempt.subjectPaper?.subject?.name || "Unknown",
       score: subjectAttempt.score,
       totalMarks: subjectAttempt.totalMarks,
-      questions: subjectAttempt.subjectPaper.questions.map((question) => {
+      questions: subjectAttempt.subjectPaper.questions.map((question: any) => {
         const answer = subjectAttempt.answers.find(
-          (ans) => ans.questionId === question.id,
+          (ans: any) => ans.questionId === question.id,
         );
 
         return {
@@ -924,7 +924,7 @@ export const getExamAttemptsService = async ({
     },
     include: {
       student: true,
-      subjectAttempts: {
+      subjectExamAttempts: {
         include: {
           subjectPaper: {
             include: {
@@ -963,7 +963,7 @@ export const getStudentExamAttemptsService = async (studentId: string, page: num
       where,
       include: {
         exam: true,
-        subjectAttempts: {
+        subjectExamAttempts: {
           include: {
             subjectPaper: {
               include: {

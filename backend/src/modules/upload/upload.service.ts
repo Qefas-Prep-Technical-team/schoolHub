@@ -84,20 +84,20 @@ export const uploadBufferToBunnyService = async (
             if (meta) {
               const metricData: any = {
                 id: uuidv4(),
-                fileName: fileName,
+                fileName: safeFileName,
                 fileSize: BigInt(buffer.length),
                 fileType: fileType,
                 schoolId: meta.schoolId
               };
-
-              // Map userType back to safe fields
-              if (meta.userType === "STUDENT") metricData.studentId = meta.userId;
-              if (meta.userType === "TEACHER") metricData.teacherId = meta.userId;
-              if (meta.userType === "PARENT") metricData.parentId = meta.userId;
-
-              await prisma.fileMetric.create({ data: metricData });
-              console.log("[Bunny Service] Metric created:", { fileName, size: buffer.length });
-            }
+ 
+               // Map userType back to safe fields
+               if (meta.userType === "STUDENT") metricData.studentId = meta.userId;
+               if (meta.userType === "TEACHER") metricData.teacherId = meta.userId;
+               if (meta.userType === "PARENT") metricData.parentId = meta.userId;
+ 
+               await prisma.fileMetric.create({ data: metricData });
+               console.log("[Bunny Service] Metric created:", { fileName: safeFileName, size: buffer.length });
+             }
           } catch (metricError) {
             console.error("[Bunny Service] Failed to create metric:", metricError);
             // Don't fail the upload just because metric logging failed

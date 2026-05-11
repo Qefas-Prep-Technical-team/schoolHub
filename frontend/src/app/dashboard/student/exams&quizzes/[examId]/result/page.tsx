@@ -25,7 +25,8 @@ import {
     BarChart3,
     Eye,
     Download,
-    Info
+    Info,
+    LucideIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -340,7 +341,7 @@ export default function ExamResultPage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                            {result?.subjects?.map((sub: any, i: number) => {
+                            {result?.subjects?.map((sub: { subjectName: string; score: number; totalMarks: number; totalQuestions?: number }, i: number) => {
                                 const percent = Math.round((sub.score / sub.totalMarks) * 100);
                                 return (
                                     <CompetencyCard 
@@ -359,7 +360,17 @@ export default function ExamResultPage() {
     );
 }
 
-function PerformanceMetricCard({ icon, label, value, description, trend, subText, highlight }: any) {
+interface MetricCardProps {
+    icon: React.ReactNode;
+    label: string;
+    value: string;
+    description: string;
+    trend?: number;
+    subText?: string;
+    highlight?: boolean;
+}
+
+function PerformanceMetricCard({ icon, label, value, description, trend, subText, highlight }: MetricCardProps) {
     return (
         <div className={cn(
             "p-8 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm space-y-6 transition-all hover:shadow-xl group",
@@ -391,7 +402,13 @@ function PerformanceMetricCard({ icon, label, value, description, trend, subText
     );
 }
 
-function CompetencyCard({ name, percentage, details }: any) {
+interface CompetencyCardProps {
+    name: string;
+    percentage: number;
+    details: string;
+}
+
+function CompetencyCard({ name, percentage, details }: CompetencyCardProps) {
     const isMastery = percentage >= 70;
     const isComp = percentage >= 40;
 

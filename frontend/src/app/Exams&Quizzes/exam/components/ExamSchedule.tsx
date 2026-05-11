@@ -2,15 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 
-export default function ExamSchedule() {
-  // === set exam start/end here ===
-  // For testing: set startTime to a few seconds in the past to see the count-up immediately
-  // const startTime = new Date(Date.now() - 10_000); // started 10s ago (testing)
-  // const endTime = new Date(Date.now() + 5 * 60_000); // ends in 5 minutes (testing)
+// === set exam start/end here ===
+const START_TIME = new Date("2025-12-20T09:00:00");
+const END_TIME = new Date("2025-12-20T10:30:00");
+// ================================
 
-  const startTime = new Date("2025-12-20T09:00:00");
-  const endTime = new Date("2025-12-20T10:30:00");
-  // ================================
+export default function ExamSchedule() {
+  const startTime = START_TIME;
+  const endTime = END_TIME;
 
   type Status = "not_started" | "running" | "ended";
 
@@ -64,7 +63,7 @@ export default function ExamSchedule() {
       mounted = false;
       clearInterval(id);
     };
-  }, [startTime.getTime(), endTime.getTime()]); // stable dependencies
+  }, [startTime, endTime]); // stable dependencies
 
   const statusBadgeClass =
     status === "not_started"

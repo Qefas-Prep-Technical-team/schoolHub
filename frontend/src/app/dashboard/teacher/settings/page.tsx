@@ -11,12 +11,10 @@ import {
     Mail, 
     Lock, 
     Globe, 
-    Eye, 
-    EyeOff,
+    Eye,
     CheckCircle2,
     Loader2,
     Save,
-    ChevronRight,
     ChevronDown,
     School,
     LogOut,
@@ -31,11 +29,11 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useTeacherProfile, useTeacherSettings, useUpdateTeacherSettings } from '@/lib/api/hooks/useTeacher';
-import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
 import { useLogoutMutation } from '@/app/(auth)/login/services/use-auth-mutations';
 import { useEffect } from 'react';
 import { useTheme } from 'next-themes';
+import Image from 'next/image';
 
 export default function TeacherSettingsPage() {
     const { theme: currentTheme, setTheme } = useTheme();
@@ -136,7 +134,13 @@ export default function TeacherSettingsPage() {
                                     <div className="flex items-center gap-6 p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/50">
                                         <div className="h-20 w-20 rounded-[1.5rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-3xl font-black text-white shadow-lg overflow-hidden">
                                             {profile?.profileImage ? (
-                                                <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                                                <Image 
+                                                    src={profile.profileImage} 
+                                                    alt={profile.name} 
+                                                    width={80} 
+                                                    height={80} 
+                                                    className="w-full h-full object-cover" 
+                                                />
                                             ) : (
                                                 profile?.name?.charAt(0) || 'T'
                                             )}
@@ -277,7 +281,7 @@ export default function TeacherSettingsPage() {
                             <CardContent className="p-8 pt-0 space-y-6">
                                 <div className="p-6 rounded-[2rem] bg-emerald-500/10 border border-emerald-500/20 space-y-4">
                                     <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 italic leading-relaxed">
-                                        Extra layer of security. We'll ask for a code on your phone in addition to your password.
+                                        Extra layer of security. We&apos;ll ask for a code on your phone in addition to your password.
                                     </p>
                                     <div className="flex items-center justify-between">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Enable 2FA Protection</span>

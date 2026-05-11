@@ -152,7 +152,7 @@ export const teacherService = {
   /**
    * Update teacher settings
    */
-  updateSettings: async (settings: any) => {
+  updateSettings: async (settings: Record<string, unknown>) => {
     const response = await apiClient.patch("/teacher/settings", settings);
     return response.data.data;
   }

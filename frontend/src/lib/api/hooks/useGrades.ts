@@ -4,11 +4,11 @@ import { gradeService } from "../services/gradeService";
 export const gradeKeys = {
   all: ["grades"] as const,
   lists: () => [...gradeKeys.all, "list"] as const,
-  list: (filters: any) => [...gradeKeys.lists(), filters] as const,
-  admin: (filters: any) => [...gradeKeys.all, "admin", filters] as const,
+  list: (filters: Record<string, unknown>) => [...gradeKeys.lists(), filters] as const,
+  admin: (filters: Record<string, unknown>) => [...gradeKeys.all, "admin", filters] as const,
   details: () => [...gradeKeys.all, "detail"] as const,
   detail: (id: string) => [...gradeKeys.details(), id] as const,
-  hub: (filters: any) => [...gradeKeys.all, "hub", filters] as const,
+  hub: (filters: Record<string, unknown>) => [...gradeKeys.all, "hub", filters] as const,
 };
 
 export const useStudentGrades = (studentId?: string, params?: { page?: number; limit?: number }) => {
@@ -35,7 +35,7 @@ export const useGrade = (id: string) => {
   });
 };
 
-export const useGradeHub = (schoolId: string, filters?: any) => {
+export const useGradeHub = (schoolId: string, filters?: Record<string, unknown>) => {
   return useQuery({
     queryKey: gradeKeys.hub({ schoolId, ...filters }),
     queryFn: () => gradeService.getGradeHub(schoolId, filters),

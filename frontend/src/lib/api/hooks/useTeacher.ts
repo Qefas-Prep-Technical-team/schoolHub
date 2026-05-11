@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { teacherService } from "../services/teacherService";
 import { toast } from "react-toastify";
+import { AxiosError } from "axios";
 
 export const teacherKeys = {
   all: ["teachers"] as const,
@@ -31,7 +32,7 @@ export const useUpdateTeacherProfile = () => {
       queryClient.invalidateQueries({ queryKey: teacherKeys.profile() });
       toast.success("Profile updated successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to update profile");
     },
   });
@@ -43,7 +44,7 @@ export const useRequestTeacherEmailUpdate = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Verification code sent!");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to request email update");
     },
   });
@@ -57,7 +58,7 @@ export const useVerifyTeacherEmailUpdate = () => {
       queryClient.invalidateQueries({ queryKey: teacherKeys.profile() });
       toast.success(data.message || "Email updated successfully!");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to verify code");
     },
   });
@@ -87,12 +88,12 @@ export const useTeacherSettings = () => {
 export const useUpdateTeacherSettings = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (settings: any) => teacherService.updateSettings(settings),
+    mutationFn: (settings: Record<string, unknown>) => teacherService.updateSettings(settings),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...teacherKeys.all, "settings"] });
       toast.success("Settings updated successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to update settings");
     },
   });

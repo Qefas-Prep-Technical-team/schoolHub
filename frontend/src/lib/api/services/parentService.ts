@@ -31,7 +31,7 @@ export const parentService = {
   },
 
   getChildDetails: async (childId: string) => {
-    const response = await apiClient.get<{ success: boolean; data: any }>(`/parents/children/${childId}`);
+    const response = await apiClient.get<{ success: boolean; data: Record<string, unknown> }>(`/parents/children/${childId}`);
     return response.data.data;
   },
 
@@ -42,12 +42,12 @@ export const parentService = {
     profileImage?: string;
     bannerImage?: string;
   }) => {
-    const response = await apiClient.patch<{ success: boolean; data: any }>("/parents/profile", data);
+    const response = await apiClient.patch<{ success: boolean; data: Record<string, unknown> }>("/parents/profile", data);
     return response.data.data;
   },
 
   updateChild: async (childId: string, data: { name?: string; profileImage?: string }) => {
-    const response = await apiClient.patch<{ success: boolean; data: any }>(`/parents/children/${childId}`, data);
+    const response = await apiClient.patch<{ success: boolean; data: Record<string, unknown> }>(`/parents/children/${childId}`, data);
     return response.data.data;
   },
 };

@@ -68,7 +68,7 @@ export const usePlatformReplyTicket = () => {
         },
         onSuccess: (newMessage, variables) => {
             // Instantly append to local cache — message appears immediately
-            queryClient.setQueryData(["ticket-messages", variables.ticketId], (old: any) => {
+            queryClient.setQueryData(["ticket-messages", variables.ticketId], (old: { messages?: Record<string, unknown>[] } | undefined) => {
                 if (!old) return old;
                 return {
                     ...old,

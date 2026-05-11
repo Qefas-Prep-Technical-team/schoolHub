@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { LayoutGrid, List } from 'lucide-react';
+import { LayoutGrid, List, LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 type ViewType = 'Grid View' | 'List View';
@@ -9,7 +9,7 @@ type ViewType = 'Grid View' | 'List View';
 const ViewToggle: React.FC = () => {
   const [viewType, setViewType] = useState<ViewType>('Grid View');
 
-  const views: { type: ViewType; icon: any }[] = [
+  const views: { type: ViewType; icon: LucideIcon }[] = [
     { type: 'Grid View', icon: LayoutGrid },
     { type: 'List View', icon: List },
   ];

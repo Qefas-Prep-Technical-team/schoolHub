@@ -4,14 +4,11 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Loader2, 
   AlertCircle, 
   Settings2,
-  Table as TableIcon,
-  LayoutGrid
 } from 'lucide-react';
 
-import { FilterOption, GradeLetter, Pagination, StudentGrade } from './types';
+import { FilterOption, GradeLetter, StudentGrade } from './types';
 import PageHeader from './PageHeader';
 import Filters from './Filters';
 import GradesTable from './GradesTable';
@@ -89,13 +86,13 @@ const GradesOverview: React.FC = () => {
     },
   });
 
-  const rawData = response?.data || [];
+  const rawData = useMemo(() => response?.data || [], [response?.data]);
   const apiPagination = response?.pagination || { totalPages: 1, total: 0 };
 
   const mappedGrades: StudentGrade[] = useMemo(() => {
     if (!rawData || !Array.isArray(rawData)) return [];
     
-    return rawData.map((item: any) => {
+    return rawData.map((item: Record<string, any>) => {
       const score = item.score || 0;
       const maxMarks = item.maxMarks || 100;
       const percentage = (score / maxMarks) * 100;
@@ -120,25 +117,25 @@ const GradesOverview: React.FC = () => {
   const filters: FilterOption[] = useMemo(() => {
     const activeFilters: FilterOption[] = [];
 
-    const currentSession = sessionsData?.find((s: any) => s.id === selectedSessionId);
+    const currentSession = sessionsData?.find((s: Record<string, unknown>) => s.id === selectedSessionId);
     activeFilters.push({
       label: currentSession ? `Session: ${currentSession.name}` : 'Session: All',
       value: 'session',
       icon: 'expand_more',
       options: [
         { label: 'All Sessions', value: 'all' },
-        ...(sessionsData?.map((s: any) => ({ label: s.name, value: s.id })) || [])
+        ...(sessionsData?.map((s: Record<string, unknown>) => ({ label: s.name as string, value: s.id as string })) || [])
       ]
     });
 
-    const currentClass = classesData?.find((c: any) => c.id === selectedClassId);
+    const currentClass = classesData?.find((c: Record<string, unknown>) => c.id === selectedClassId);
     activeFilters.push({
       label: currentClass ? `Class: ${currentClass.name}` : 'Class: All',
       value: 'class',
       icon: 'expand_more',
       options: [
         { label: 'All Classes', value: 'all' },
-        ...(classesData?.map((c: any) => ({ label: c.name, value: c.id })) || [])
+        ...(classesData?.map((c: Record<string, unknown>) => ({ label: c.name as string, value: c.id as string })) || [])
       ]
     });
 
@@ -243,7 +240,7 @@ const GradesOverview: React.FC = () => {
                     <AlertCircle className="w-10 h-10 text-red-500" />
                   </div>
                   <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">Sync Failure</h3>
-                  <p className="text-slate-700 dark:text-slate-300 mt-2 text-sm font-bold">"The connection to the academic grid was interrupted."</p>
+                  <p className="text-slate-700 dark:text-slate-300 mt-2 text-sm font-bold">&quot;The connection to the academic grid was interrupted.&quot;</p>
                   <Button 
                     variant="link" 
                     onClick={() => queryClient.invalidateQueries({ queryKey: ['teacher-grades'] })}

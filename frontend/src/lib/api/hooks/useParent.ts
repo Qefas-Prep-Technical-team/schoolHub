@@ -1,7 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { parentService } from "../services/parentService";
-import { useToast } from "@/lib/hooks/useToast";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { AxiosError } from "axios";
 
 export const useUpdateParentProfile = () => {
   const queryClient = useQueryClient();
@@ -25,7 +23,7 @@ export const useUpdateParentProfile = () => {
       queryClient.invalidateQueries({ queryKey: ["parent-profile"] });
       toast.success.show("Profile updated successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error.show(error.response?.data?.message || "Failed to update profile");
     },
   });

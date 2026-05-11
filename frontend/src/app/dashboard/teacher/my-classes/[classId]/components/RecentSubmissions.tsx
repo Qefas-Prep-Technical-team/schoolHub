@@ -14,6 +14,8 @@ interface RecentSubmissionsProps {
   onViewAll: () => void;
 }
 
+import Image from 'next/image';
+
 export default function RecentSubmissions({ submissions, onGradeSubmission, onViewAll }: RecentSubmissionsProps) {
   const getStatusColor = (status: Submission['status']) => {
     switch (status) {
@@ -62,9 +64,11 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
             className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800/80 rounded-lg transition-colors"
           >
             <div className="flex items-center gap-4">
-              <img
+              <Image
                 src={submission.avatar}
                 alt={submission.studentName}
+                width={48}
+                height={48}
                 className="w-12 h-12 rounded-full object-cover"
               />
               <div>

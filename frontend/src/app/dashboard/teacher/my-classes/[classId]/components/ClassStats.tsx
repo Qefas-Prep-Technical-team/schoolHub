@@ -58,7 +58,16 @@ export default function ClassStats({ stats }: ClassStatsProps) {
   );
 }
 
-function StatCard({ label, value, subValue, icon: Icon, color, bgColor }: any) {
+interface StatCardProps {
+    label: string;
+    value: string | number;
+    subValue: string;
+    icon: React.ElementType;
+    color: string;
+    bgColor: string;
+}
+
+function StatCard({ label, value, subValue, icon: Icon, color, bgColor }: StatCardProps) {
     return (
         <motion.div
             whileHover={{ y: -5 }}

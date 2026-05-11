@@ -6,6 +6,7 @@ import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { User, AlertCircle } from "lucide-react";
 import { StudentGridSkeleton } from "./StudentSkeleton";
+import { Student } from "./types";
 
 interface StudentGridProps {
   page: number;
@@ -52,9 +53,9 @@ const StudentGrid: React.FC<StudentGridProps> = ({ page, searchQuery, limit, onD
         <div className="p-5 rounded-full bg-red-100 dark:bg-red-900/10 mb-6">
           <AlertCircle className="w-12 h-12 text-red-500" />
         </div>
-        <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 italic">"The Connection was Severed"</h3>
+        <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 italic">&quot;The Connection was Severed&quot;</h3>
         <p className="text-slate-600 dark:text-slate-400 mt-3 max-w-sm text-center text-sm font-bold uppercase tracking-widest leading-relaxed">
-          {(error as any)?.message || "Failed to synchronize student records. Please verify your connection." }
+          {error instanceof Error ? error.message : "Failed to synchronize student records. Please verify your connection." }
         </p>
       </motion.div>
     );
@@ -83,7 +84,7 @@ const StudentGrid: React.FC<StudentGridProps> = ({ page, searchQuery, limit, onD
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       <AnimatePresence mode="popLayout">
-        {students.map((student: any, index: number) => (
+        {students.map((student: Student, index: number) => (
           <motion.div
             key={student.id}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}

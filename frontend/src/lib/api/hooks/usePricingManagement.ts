@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { platformClient } from "../platformClient";
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
 import { toast } from "react-toastify"
+import { AxiosError } from "axios";
 
 /**
  * Hook for platform staff to manage pricing plans
@@ -29,7 +30,7 @@ export const useSavePricingPlan = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async (planData: any) => {
+        mutationFn: async (planData: Record<string, unknown>) => {
             const { data } = await platformClient.post("/platform/pricing/save", planData, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
@@ -41,7 +42,7 @@ export const useSavePricingPlan = () => {
             await queryClient.invalidateQueries({ queryKey: ["fetchPricing"] });
             toast.success("Pricing plan updated successfully");
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ message?: string }>) => {
             toast.error(err.response?.data?.message || "Failed to save plan");
         }
     })
@@ -55,13 +56,13 @@ export const useSeedPricingPlans = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async (payload?: { plans: any[] }) => {
+        mutationFn: async (payload?: { plans: Record<string, unknown>[] }) => {
             const { data } = await platformClient.post("/platform/pricing/seed", payload || {}, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
         },
-        onSuccess: (res: any) => {
+        onSuccess: (res: { message?: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-pricing-plans"] })
             toast.success(res.message || "Plans seeded successfully")
         }
@@ -113,7 +114,7 @@ export const useSavePlatformFeature = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async (featureData: any) => {
+        mutationFn: async (featureData: Record<string, unknown>) => {
             const { data } = await platformClient.post("/platform/pricing/features/save", featureData, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
@@ -158,11 +159,11 @@ export const useHarvestFeatures = () => {
             });
             return data;
         },
-        onSuccess: (res: any) => {
+        onSuccess: (res: { message?: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-features-manifest"] })
             queryClient.invalidateQueries({ queryKey: ["platform-features"] })
             queryClient.invalidateQueries({ queryKey: ["platform-pricing-plans"] })
-            toast.success(res.message)
+            toast.success(res.message || "Success")
         }
     })
 }

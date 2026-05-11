@@ -10,6 +10,7 @@ import { UserRole } from "@prisma/client";
 import { enforceStudentLimit } from "../subscription/quota.helpers";
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
 import { SubscriptionComplianceService } from "../subscription/subscription-compliance.service";
+import { getSingleString } from "../../utils/request-utils";
 
 // Get student by code (for parent to verify before linking)
 export const getStudentByCode = async (req: Request, res: Response) => {
@@ -362,7 +363,10 @@ export const loginUser = async (email: string, password: string) => {
   }
 
   // Check admin
-  const admin = await prisma.admin.findUnique({ where: { email } });
+  const admin = await prisma.admin.findUnique({ 
+    where: { email },
+    include: { schoolAdmins: true }
+  });
   if (admin) {
     if (!admin.password)
       throw new Error(
@@ -375,7 +379,7 @@ export const loginUser = async (email: string, password: string) => {
     await SubscriptionComplianceService.verifyAndSyncStatus({ 
       userId: admin.id, 
       userType: UserRole.ADMIN,
-      schoolId: admin.schoolId
+      schoolId: (admin as any).schoolAdmins?.[0]?.schoolId || null
     });
     return { user: admin, token };
   }
@@ -577,7 +581,7 @@ export const googleAuthService = async (
   const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
     prisma.student.findFirst({ where: { OR: [{ googleId }, { email }] } }),
     prisma.teacher.findFirst({ where: { OR: [{ googleId }, { email }] } }),
-    prisma.admin.findFirst({ where: { OR: [{ googleId }, { email }] } }),
+    prisma.admin.findFirst({ where: { OR: [{ googleId }, { email }] }, include: { schoolAdmins: true } }),
     prisma.parent.findFirst({ where: { OR: [{ googleId }, { email }] } }),
   ]);
 
@@ -694,7 +698,7 @@ export const googleAuthService = async (
   await SubscriptionComplianceService.verifyAndSyncStatus({ 
     userId: user.id, 
     userType: actualRole,
-    schoolId: user.schoolId
+    schoolId: user.schoolId || (user as any).schoolAdmins?.[0]?.schoolId || null
   });
 
   return { user, token };

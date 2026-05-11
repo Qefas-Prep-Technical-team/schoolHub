@@ -1,5 +1,6 @@
-import { User, ArrowRight, Calendar, Activity, GraduationCap } from "lucide-react";
+import { ArrowRight, Calendar, Activity, GraduationCap } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import PerformanceBadge from "./PerformanceBadge";
 import { Student } from "./types";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,13 @@ const StudentCard: React.FC<StudentCardProps> = ({ student }) => {
         <div className="relative w-16 h-16 shrink-0 group-hover:scale-110 transition-transform duration-500">
           <div className="w-full h-full rounded-2xl bg-gradient-to-br from-primary via-primary/80 to-primary/40 text-white flex items-center justify-center overflow-hidden border border-white dark:border-slate-800 shadow-xl shadow-primary/20">
             {student.avatarUrl ? (
-              <img src={student.avatarUrl} alt={student.name} className="w-full h-full object-cover" />
+              <Image 
+                src={student.avatarUrl} 
+                alt={student.name} 
+                width={64} 
+                height={64} 
+                className="w-full h-full object-cover" 
+              />
             ) : (
               <span className="text-lg font-black tracking-tighter">{initials}</span>
             )}

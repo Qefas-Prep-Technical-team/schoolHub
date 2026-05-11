@@ -130,7 +130,7 @@ export const getSessionExamAnalyticsService = async ({
   const exams = await prisma.exam.findMany({
     where: { sessionId },
     include: {
-      subjectPapers: true,
+      subjectExamPapers: true,
       _count: true,
     },
   });

@@ -36,7 +36,7 @@ export default function ExamsQuizzesOverview() {
   const isPersonal = selectedSchoolId === user?.id;
   const category = activeTab === 'exams' ? 'EXAM' : 'QUIZ';
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['teacher-exams', selectedSchoolId, activeTab, filters],
     queryFn: async () => {
       if (activeTab === 'subject-papers') {
@@ -180,7 +180,7 @@ export default function ExamsQuizzesOverview() {
   );
 }
 
-function TabButton({ active, onClick, icon: Icon, label }: { active: boolean, onClick: () => void, icon: any, label: string }) {
+function TabButton({ active, onClick, icon: Icon, label }: { active: boolean, onClick: () => void, icon: React.ElementType, label: string }) {
   return (
     <button
       onClick={onClick}

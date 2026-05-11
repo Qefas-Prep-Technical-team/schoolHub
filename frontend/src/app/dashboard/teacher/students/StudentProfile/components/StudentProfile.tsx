@@ -1,8 +1,6 @@
 'use client';
 
-import ChartsGrid from "./ChartsGrid";
 import ProfileHeader from "./ProfileHeader";
-import StatsGrid from "./StatsGrid";
 import TabsNavigation from "./TabsNavigation";
 import { Student } from "./types";
 

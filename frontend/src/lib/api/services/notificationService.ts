@@ -10,7 +10,7 @@ export interface Notification {
   priority: NotificationPriority;
   title: string;
   message: string;
-  data?: any;
+  data?: Record<string, unknown>;
   link?: string;
   linkRequestId?: string;
   isRead: boolean;
@@ -29,10 +29,10 @@ export const notificationService = {
     if (options?.priority) params.append('priority', options.priority);
 
     const response = await apiClient.get<Notification[]>(`/notifications?${params.toString()}`);
-    const data = (response.data as any).data || [];
+    const responseData = (response.data as unknown as { data: (Notification & { status: string })[] }).data || [];
     
     // Map backend status to frontend isRead
-    return data.map((n: any) => ({
+    return responseData.map((n) => ({
       ...n,
       isRead: n.status === 'READ'
     }));

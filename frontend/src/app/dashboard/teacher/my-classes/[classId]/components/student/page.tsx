@@ -18,7 +18,7 @@ export default function StudentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['class-students', classId, searchQuery, currentPage],
     queryFn: () => teacherService.getStudents({
       classId,
@@ -29,7 +29,7 @@ export default function StudentsPage() {
     enabled: !!classId,
   });
 
-  const students: Student[] = data?.students?.map((s: any) => {
+  const students: Student[] = data?.students?.map((s: Record<string, any>) => {
     console.log(`LOG: [StudentsPage] 🔄 Mapping Student: ${s.name} (UUID: ${s.id})`);
     return {
       id: s.id,

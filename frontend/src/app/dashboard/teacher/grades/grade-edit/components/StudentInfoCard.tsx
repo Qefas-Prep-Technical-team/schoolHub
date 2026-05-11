@@ -1,5 +1,5 @@
 import React from 'react';
-
+import Image from 'next/image';
 import GradeBadge from './GradeBadge';
 import { Student } from './types';
 
@@ -12,10 +12,12 @@ const StudentInfoCard: React.FC<StudentInfoCardProps> = ({ student }) => {
     <div className="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-4 mb-6 flex flex-wrap justify-between items-center gap-4">
       {/* Student Info */}
       <div className="flex items-center gap-4">
-        <img
+        <Image
           className="w-16 h-16 rounded-full object-cover"
           src={student.avatarUrl}
           alt={`Profile of ${student.name}`}
+          width={64}
+          height={64}
         />
         <div>
           <p className="text-xl font-bold text-slate-800 dark:text-slate-100">

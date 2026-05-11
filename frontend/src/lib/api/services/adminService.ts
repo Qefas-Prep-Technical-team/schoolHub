@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from "../client";
 
 export const adminService = {
@@ -13,7 +12,7 @@ export const adminService = {
   /**
    * Get school students (paginated)
    */
-  getSchoolStudents: async (schoolId: string, page: number = 1, limit: number = 10, search?: string, filters?: any) => {
+  getSchoolStudents: async (schoolId: string, page: number = 1, limit: number = 10, search?: string, filters?: Record<string, unknown>) => {
     const response = await apiClient.get("/admin/students", {
       params: { 
         schoolId, 
@@ -53,7 +52,7 @@ export const adminService = {
   /**
    * Upsert timetable period
    */
-  upsertTimetablePeriod: async (teacherId: string, data: any) => {
+  upsertTimetablePeriod: async (teacherId: string, data: Record<string, unknown>) => {
     const response = await apiClient.post(`/admin/teachers/${teacherId}/timetable`, data);
     return response.data.data;
   },
@@ -69,7 +68,7 @@ export const adminService = {
   /**
    * Update teacher details
    */
-  updateTeacher: async (teacherId: string, data: any) => {
+  updateTeacher: async (teacherId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/admin/teachers/${teacherId}`, data);
     return response.data;
   },

@@ -10,8 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { BookOpen, X, Maximize2, Minimize2, ZoomIn } from "lucide-react";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
-import ImageLightbox from "@/components/ui/ImageLightbox";
 import { useState, memo } from "react";
+import Image from "next/image";
 
 interface StudentReadingModalProps {
   isOpen: boolean;
@@ -84,10 +84,13 @@ const StudentReadingModal = memo(({
                           className="relative cursor-zoom-in overflow-hidden rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl w-full"
                           onClick={() => onZoom?.(url, imageLabels[i])}
                         >
-                          <img 
+                          <Image 
                             src={url} 
                             alt={imageLabels[i] || `Passage Illustration ${i + 1}`} 
                             className="w-full h-auto transition-transform duration-500 group-hover:scale-105" 
+                            width={800}
+                            height={600}
+                            layout="responsive"
                           />
                           <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <div className="bg-white/80 dark:bg-black/80 p-4 rounded-full shadow-large transform scale-0 group-hover:scale-110 transition-transform duration-300">

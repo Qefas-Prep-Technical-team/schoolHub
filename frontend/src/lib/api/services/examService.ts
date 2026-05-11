@@ -35,6 +35,32 @@ export interface Exam {
   })[];
 }
 
+export interface QuestionAnswer {
+  id: string;
+  questionId: string;
+  answer: string;
+  isCorrect?: boolean;
+}
+
+export interface SubjectAttempt {
+  id: string;
+  subjectPaperId: string;
+  subjectPaper: SubjectPaper;
+  answers: QuestionAnswer[];
+}
+
+export interface ExamAttempt {
+  id: string;
+  examId: string;
+  studentId: string;
+  status: "IN_PROGRESS" | "SUBMITTED" | "SCORED";
+  startedAt: string;
+  submittedAt?: string;
+  remainingSeconds?: number;
+  subjectAttempts: SubjectAttempt[];
+  answers?: QuestionAnswer[]; // Legacy flat structure support
+}
+
 export interface SubjectPaper {
   id: string;
   examId?: string; // Optional legacy field
@@ -153,8 +179,8 @@ export const examService = {
     return response.data.data;
   },
 
-  updateQuestion: async (questionId: string, data: any) => {
-    const response = await apiClient.patch(`/exams/questions/${questionId}`, data);
+  updateQuestion: async (questionId: string, data: Partial<SubjectExamQuestion>) => {
+    const response = await apiClient.patch<{ data: SubjectExamQuestion }>(`/exams/questions/${questionId}`, data);
     return response.data;
   },
 
@@ -215,12 +241,12 @@ export const examService = {
 
   // Student Attempt Endpoints
   getExamAttempt: async (examId: string) => {
-    const response = await apiClient.get<{ data: any }>(`/exams/${examId}/attempt`);
+    const response = await apiClient.get<{ data: ExamAttempt }>(`/exams/${examId}/attempt`);
     return response.data.data;
   },
 
   getExamAttempts: async (examId: string) => {
-    const response = await apiClient.get<{ data: any[] }>(`/exams/${examId}/attempts`);
+    const response = await apiClient.get<{ data: ExamAttempt[] }>(`/exams/${examId}/attempts`);
     return response.data.data || [];
   },
 

@@ -1,4 +1,4 @@
-import { Users, FilterX, GraduationCap } from 'lucide-react';
+import { FilterX, GraduationCap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface EmptyStateProps {
@@ -27,7 +27,7 @@ export default function EmptyState({ onResetFilters }: EmptyStateProps) {
             </h3>
 
             <p className="text-slate-500 dark:text-slate-400 text-center max-w-sm mb-10 text-xs font-bold uppercase tracking-widest leading-relaxed">
-                Your current filters didn't return any matches. Try relaxing your search criteria or create a fresh curriculum.
+                Your current filters didn&apos;t return any matches. Try relaxing your search criteria or create a fresh curriculum.
             </p>
 
             <div className="flex flex-col items-center gap-4">

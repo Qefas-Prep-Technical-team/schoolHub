@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 interface ExamsTableProps {
-  exams: any[]; // Using any to handle real backend data structure
+  exams: Record<string, unknown>[]; // Using Record<string, unknown> to handle real backend data structure
   activeTab: 'exams' | 'quizzes' | 'subject-papers';
 } 
 

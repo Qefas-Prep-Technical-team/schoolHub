@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentService } from "../services/studentService";
 import { toast } from "react-toastify";
+import { AxiosError } from "axios";
 
 export const studentKeys = {
   all: ["students"] as const,
@@ -30,7 +31,7 @@ export const useUpdateStudentProfile = () => {
       queryClient.invalidateQueries({ queryKey: studentKeys.profile() });
       toast.success("Profile updated successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to update profile");
     },
   });
@@ -42,7 +43,7 @@ export const useRequestEmailUpdate = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Verification code sent!");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to request email update");
     },
   });
@@ -56,7 +57,7 @@ export const useVerifyEmailUpdate = () => {
       queryClient.invalidateQueries({ queryKey: studentKeys.profile() });
       toast.success(data.message || "Email updated successfully!");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to verify code");
     },
   });

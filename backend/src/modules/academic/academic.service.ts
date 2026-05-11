@@ -485,11 +485,6 @@ export const createQuizService = async ({
       status: status || AssessmentStatus.DRAFT,
       aiPrompt: aiPrompt || null,
       instructions: instructions || null,
-      includedSubjects: {
-        create: includedSubjectIds.map((id) => ({
-          subjectId: id,
-        })),
-      },
       questions: {
         create: questions.map((q) => ({
           type: q.type,
@@ -508,7 +503,6 @@ export const createQuizService = async ({
       department: true,
       class: true,
       subject: true,
-      includedSubjects: { include: { subject: true } },
       questions: true,
     },
   });
@@ -568,9 +562,9 @@ export const createExamService = async ({
       departments: departmentIds.length > 0 ? {
         create: departmentIds.map(id => ({ departmentId: id }))
       } : undefined,
-      includedSubjects: {
+      subjectExamPapers: {
         create: includedSubjectIds.map((id) => ({
-          subjectId: id,
+          subjectPaperId: id,
         })),
       },
     },
@@ -579,7 +573,7 @@ export const createExamService = async ({
       departments: { include: { department: true } },
       class: true,
       subject: true,
-      includedSubjects: { include: { subject: true } },
+      subjectExamPapers: { include: { subjectPaper: { include: { subject: true } } } },
     },
   });
 };
@@ -689,7 +683,6 @@ export const getQuizzesService = async ({
       department: true,
       class: true,
       subject: true,
-      includedSubjects: { include: { subject: true } },
       questions: true,
     },
     orderBy: { createdAt: "desc" },
@@ -756,7 +749,7 @@ export const getExamsService = async ({
       departments: { include: { department: true } },
       class: true,
       subject: true,
-      includedSubjects: { include: { subject: true } },
+      subjectExamPapers: { include: { subjectPaper: { include: { subject: true } } } },
     },
     orderBy: { createdAt: "desc" },
   });

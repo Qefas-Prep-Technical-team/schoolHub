@@ -71,7 +71,7 @@ async function seed() {
   // Auto-initialize existing schools that don't have a subscription yet
   const schoolsWithoutSub = await prisma.school.findMany({
     where: {
-      schoolSubscription: { is: null }
+      schoolSubscriptions: { none: {} }
     }
   });
 
