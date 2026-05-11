@@ -15,7 +15,7 @@ interface PlanUpgradeDisplayProps {
 
 export default function PlanUpgradeDisplay({
     currentPlan,
-    isUpgradeFlow,
+    isUpgradeFlow: _,
     currentPlanPrice,
     lastPaymentDate
 }: PlanUpgradeDisplayProps) {
@@ -36,7 +36,7 @@ export default function PlanUpgradeDisplay({
                     Power up your school with a better plan
                 </h2>
                 <p className="text-slate-500 dark:text-slate-400 font-medium text-lg max-w-3xl leading-relaxed">
-                    Choose an upgrade that fits your growing needs. We've simplified the transition with our pro-rated pricing model, ensuring you only pay for what you value.
+                    Choose an upgrade that fits your growing needs. We&apos;ve simplified the transition with our pro-rated pricing model, ensuring you only pay for what you value.
                 </p>
             </div>
 

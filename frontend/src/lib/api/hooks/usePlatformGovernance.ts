@@ -71,10 +71,10 @@ export const usePlatformAuditLogs = (page: number = 1, limit: number = 10) => {
     return useQuery({
         queryKey: ["platform-audit-logs", page, limit],
         queryFn: async () => {
-            const { data } = await platformClient.get<Record<string, unknown>>(`/platform/logs?page=${page}&limit=${limit}`, {
+            const { data } = await platformClient.get<{ data: Record<string, any>[] }>(`/platform/logs?page=${page}&limit=${limit}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
-            return data;
+            return data.data;
         },
         enabled: !!platform_token,
     })

@@ -44,7 +44,7 @@ const KeyBenefits = () => {
                         Everything you need to <span className="bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-400 dark:to-indigo-300 bg-clip-text text-transparent italic">excel.</span>
                     </motion.h2>
                     <p className="text-lg text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-                        We've built a holistic ecosystem that addresses the intricate challenges of modern education, from classroom dynamics to complex administration.
+                        We&apos;ve built a holistic ecosystem that addresses the intricate challenges of modern education, from classroom dynamics to complex administration.
                     </p>
                     <div className="mt-8">
                         <a className="text-blue-600 dark:text-blue-400 font-bold flex items-center gap-2 hover:gap-4 transition-all group cursor-pointer inline-flex">

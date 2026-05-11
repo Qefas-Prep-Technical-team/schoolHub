@@ -35,7 +35,7 @@ export default function TeacherAddQuestionDashboard() {
     enabled: !!paperId,
   });
 
-  const paper = paperData as Record<string, unknown>;
+  const paper = paperData as Record<string, any>;
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -105,15 +105,15 @@ export default function TeacherAddQuestionDashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Fetch subjects and teachers for the edit modal
-  const paperSchoolId = paper?.schoolId;
-  const fallbackSchoolId = (user as Record<string, unknown>)?.schools?.[0]?.schoolId || (user as Record<string, unknown>)?.tenantId || "";
+  const paperSchoolId = paper?.schoolId as string | undefined;
+  const fallbackSchoolId = (user as Record<string, any>)?.schools?.[0]?.schoolId || (user as Record<string, any>)?.tenantId || "";
   const { data: school } = useSchoolProfile(paperSchoolId || fallbackSchoolId);
   
   const { data: subjects = [] } = useQuery({
     queryKey: ["subjects", paperSchoolId],
     queryFn: async () => {
       const { data } = await apiClient.get(`/academic/subjects?schoolId=${paperSchoolId}`);
-      return data.data || data;
+      return data.data || data as any[];
     },
     enabled: !!paperSchoolId && isEditModalOpen,
   });
@@ -122,7 +122,7 @@ export default function TeacherAddQuestionDashboard() {
     queryKey: ["teachers", paperSchoolId],
     queryFn: async () => {
       const { data } = await apiClient.get(`/schools/${paperSchoolId}/teachers`);
-      return data.data || data;
+      return data.data || data as any[];
     },
     enabled: !!paperSchoolId && isEditModalOpen,
   });
@@ -287,7 +287,7 @@ export default function TeacherAddQuestionDashboard() {
 
           <TabsContent value="grades">
             {(() => {
-              const onlineResults = (paper.examAttempts as Record<string, unknown>[] || []).map((a: Record<string, unknown>) => ({
+              const onlineResults = (paper.examAttempts as Record<string, any>[] || []).map((a: Record<string, any>) => ({
                 id: a.id,
                 studentName: a.examAttempt?.student?.name,
                 studentCode: a.examAttempt?.student?.studentCode,
@@ -296,9 +296,9 @@ export default function TeacherAddQuestionDashboard() {
                 type: 'ONLINE'
               }));
 
-              const manualResults = (paper.grades as Record<string, unknown>[] || [])
-                .filter((g: Record<string, unknown>) => !g.examAttemptId && !g.subjectExamAttemptId)
-                .map((g: Record<string, unknown>) => ({
+              const manualResults = (paper.grades as Record<string, any>[] || [])
+                .filter((g: Record<string, any>) => !g.examAttemptId && !g.subjectExamAttemptId)
+                .map((g: Record<string, any>) => ({
                 id: g.id,
                 studentName: g.student?.name,
                 studentCode: g.student?.studentCode,
@@ -327,7 +327,7 @@ export default function TeacherAddQuestionDashboard() {
 
                     {isMounted && hasResults ? (
                       <PDFDownloadLink
-                        document={<SubjectPaperReport paper={paper} school={school} attempts={allResults.map(r => ({
+                        document={<SubjectPaperReport paper={paper} school={school as any} attempts={allResults.map(r => ({
                           ...r,
                           totalMarks: r.maxMarks,
                           examAttempt: { student: { name: r.studentName, studentCode: r.studentCode } }
@@ -382,7 +382,7 @@ export default function TeacherAddQuestionDashboard() {
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                           {hasResults ? (
-                            allResults.map((result: Record<string, unknown>) => {
+                            allResults.map((result: Record<string, any>) => {
                               const percentage = (result.score / result.maxMarks) * 100;
                               const isPass = percentage >= (paper.passMark || 40);
                               return (

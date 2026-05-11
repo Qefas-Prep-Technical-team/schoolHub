@@ -42,7 +42,7 @@ const CommunicationHub: React.FC = () => {
                             </div>
                             <div className="relative">
                                 <p className="text-sm italic text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 font-medium leading-relaxed">
-                                    "Hi Sarah, Leo has shown great progress in algebra this week! Check the new materials."
+                                    &quot;Hi Sarah, Leo has shown great progress in algebra this week! Check the new materials.&quot;
                                 </p>
                                 <div className="absolute -left-2 top-4 w-4 h-4 bg-slate-50 dark:bg-slate-800/50 border-l border-t border-slate-100 dark:border-slate-700 rotate-[-45deg]"></div>
                             </div>

@@ -16,7 +16,7 @@
     - [x] Migrated legacy `<img>` elements to `next/image` in `StudentCard`, `StudentInfoCard`, `ClassCard`, and `RecentSubmissions` for LCP optimization.
   - [x] **Registry & Assessments Stabilization**:
     - [x] Hardened `SubjectPaperReport` and `TeacherPaperDetailPage` with strict prop types and improved accessibility (alt text).
-    - [x] Fixed unescaped HTML entities in `EmptyState`, `ExamPreviewPage`, and `SubjectPaperReport`.
+    - [x] Fixed unescaped HTML entities in `EmptyState`, `ExamPreviewPage`, `SubjectPaperReport`, and `TeacherSettingsPage`.
     - [x] Refined `GradesOverview` logic to fix dependency array warnings and ensure stable state management.
   - [x] **Modular Architecture Alignment**: Synchronized standalone and integrated versions of the Grades module to maintain parity across dashboard layouts.
 - **Backend Build Stabilization & Schema Normalization**:
@@ -38,6 +38,11 @@
   - [x] Implemented independent teaching account tracking in the database (`isIndependent` flag).
   - [x] Added backend validation and registration logic to handle independent accounts and terms agreement.
   - [x] Fixed `auth.service.ts` import paths and school ID resolution for admins.
+- **Final Build Stabilization**:
+  - [x] Resolved `logs.map` type error by standardizing `usePlatformAuditLogs` return signature.
+  - [x] Standardized mutation hooks (`seedPlans`, `harvestFeatures`) to accept `void` payloads, resolving `.mutate()` call errors.
+  - [x] Synchronized `acceptTerms` validation across all registration schemas and forms (Parent, Teacher, Student, School).
+  - [x] Hardened `GoogleLoginButton` and `AddQuestionPage` by replacing implicit `any` and loose object types with `Record<string, any>`.
 
 ## Blockers
 
@@ -48,4 +53,3 @@
 - [ ] Run a final `npm run build` on the frontend to verify zero remaining errors.
 - [ ] Perform final QA on the Exams & Quizzes module to ensure all hardened types accurately reflect the backend schema.
 - [ ] Monitor the platform for any runtime regressions following the frontend refactor.
-

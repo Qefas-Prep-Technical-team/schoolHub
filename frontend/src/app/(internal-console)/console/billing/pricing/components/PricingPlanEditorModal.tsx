@@ -32,7 +32,7 @@ import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
 interface PricingPlanEditorModalProps {
-    plan: any
+    plan: Record<string, any>
     isOpen: boolean
     onClose: () => void
 }
@@ -40,7 +40,7 @@ interface PricingPlanEditorModalProps {
 export default function PricingPlanEditorModal({ plan, isOpen, onClose }: PricingPlanEditorModalProps) {
     const savePlan = useSavePricingPlan()
     const { data: manifestFeatures, isLoading: isManifestLoading, isError: isManifestError, error: manifestError } = usePlatformFeatures()
-    const [formData, setFormData] = useState<any>({
+    const [formData, setFormData] = useState<Record<string, any>>({
         name: "",
         category: "schools",
         type: "PAID",
@@ -55,7 +55,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
         isPopular: false,
         hasTrial: false
     })
-    const [limitEditingFeature, setLimitEditingFeature] = useState<any>(null)
+    const [limitEditingFeature, setLimitEditingFeature] = useState<Record<string, any> | null>(null)
 
     useEffect(() => {
         if (plan) {
@@ -63,11 +63,11 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
             const relationalAccess = plan.featureAccess || []
             
             // 1. Identify which legacy features are actually linked to manifest tags
-            const linkedTags = new Set(relationalAccess.map((ra: any) => ra.feature?.tag))
+            const linkedTags = new Set(relationalAccess.map((ra: Record<string, any>) => ra.feature?.tag))
             
             // 2. Build the linkedFeatures array (manifest-backed items)
             // We want to map what's in the DB to our internal editing state
-            const linked = relationalAccess.map((ra: any) => ({
+            const linked = relationalAccess.map((ra: Record<string, any>) => ({
                 name: ra.name || ra.feature?.name || ra.feature?.tag,
                 tag: ra.tag || ra.feature?.tag,
                 enabled: ra.enabled
@@ -77,7 +77,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
             // A feature is "marketing-only" if it's in the features array but NOT linked to a tag
             const marketingOnly = legacyFeatures.filter((f: string) => {
                 // Check if this string is a name or tag of a relational access
-                const isLinked = relationalAccess.some((ra: any) => 
+                const isLinked = relationalAccess.some((ra: Record<string, any>) => 
                     ra.feature?.name === f || ra.feature?.tag === f
                 )
                 return !isLinked
@@ -87,7 +87,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                 ...plan,
                 monthlyPrice: plan.pricing?.monthly ?? plan.monthlyPrice ?? '',
                 yearlyPrice: plan.pricing?.yearly ?? plan.yearlyPrice ?? '',
-                linkedFeatures: relationalAccess.map((ra: any) => {
+                linkedFeatures: relationalAccess.map((ra: Record<string, any>) => {
                     const manifestName = (ra.name !== null && ra.name !== undefined) ? ra.name : (ra.feature?.name || ra.feature?.tag);
                     const existsInMarketing = plan.features?.includes(manifestName);
                     
@@ -136,14 +136,14 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
     const removeFeature = (index: number) => {
         setFormData({ 
             ...formData, 
-            linkedFeatures: formData.linkedFeatures.filter((_: any, i: number) => i !== index) 
+            linkedFeatures: formData.linkedFeatures.filter((_: Record<string, any>, i: number) => i !== index) 
         })
     }
 
     const handleSubmit = async () => {
         // 1. Registry-backed labels (linked to entitlements)
         const entitlementLabels = formData.linkedFeatures
-            .filter((f: any) => f.enabled && f.showLabel !== false && f.name && f.name.trim() !== "")
+            .filter((f: Record<string, any>) => f.enabled && f.showLabel !== false && f.name && f.name.trim() !== "")
             .map((f: any) => f.name.trim());
 
         // 2. Ad-hoc labels (standalone strings)
@@ -155,8 +155,8 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
             .filter(label => label && label.trim() !== "");
 
         const relationalAccess = formData.linkedFeatures
-            .filter((f: any) => f.featureId || (f.tag && f.tag !== ""))
-            .map((f: any) => ({
+            .filter((f: Record<string, any>) => f.featureId || (f.tag && f.tag !== ""))
+            .map((f: Record<string, any>) => ({
                 featureId: f.featureId,
                 tag: f.tag,
                 name: f.name, // Save the custom label back to relational access too
@@ -388,7 +388,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                 <div className="md:col-span-2 py-12 flex flex-col items-center justify-center bg-red-50/50 dark:bg-red-900/10 rounded-[2rem] border border-dashed border-red-200 dark:border-red-900/30">
                                     <Shield size={24} className="text-red-500 mb-3" />
                                     <p className="text-xs font-bold text-red-500 uppercase tracking-widest text-center px-4">Registry Sync Failed</p>
-                                    <p className="text-[10px] text-red-400 mt-2">{(manifestError as any)?.message || "Check your network connection"}</p>
+                                    <p className="text-[10px] text-red-400 mt-2">{(manifestError as Record<string, any>)?.message || "Check your network connection"}</p>
                                 </div>
                             ) : !manifestFeatures ? (
                                 <div className="md:col-span-2 py-12 flex flex-col items-center justify-center bg-slate-50/50 dark:bg-white/[0.02] rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800">
@@ -415,12 +415,12 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                 if (formData.category === 'parents') return mf.parentEnabled;
                                 if (formData.category === 'students') return mf.studentEnabled;
                                 return true;
-                            }).sort((a: any, b: any) => {
-                                const aEnabled = formData.linkedFeatures?.find((lf: any) => lf.featureId === a.id || (lf.tag === a.tag && a.tag))?.enabled ? 1 : 0;
-                                const bEnabled = formData.linkedFeatures?.find((lf: any) => lf.featureId === b.id || (lf.tag === b.tag && b.tag))?.enabled ? 1 : 0;
+                            }).sort((a: Record<string, any>, b: Record<string, any>) => {
+                                const aEnabled = formData.linkedFeatures?.find((lf: Record<string, any>) => lf.featureId === a.id || (lf.tag === a.tag && a.tag))?.enabled ? 1 : 0;
+                                const bEnabled = formData.linkedFeatures?.find((lf: Record<string, any>) => lf.featureId === b.id || (lf.tag === b.tag && b.tag))?.enabled ? 1 : 0;
                                 return bEnabled - aEnabled;
-                            }).map((mf: any) => {
-                                const linked = formData.linkedFeatures?.find((lf: any) => (lf.featureId === mf.id) || (lf.tag === mf.tag && mf.tag));
+                            }).map((mf: Record<string, any>) => {
+                                const linked = formData.linkedFeatures?.find((lf: Record<string, any>) => (lf.featureId === mf.id) || (lf.tag === mf.tag && mf.tag));
                                 const isEnabled = linked?.enabled ?? false;
 
                                 return (
@@ -476,7 +476,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                                     value={linked?.name || ""}
                                                     onChange={(e) => {
                                                         const current = [...(formData.linkedFeatures || [])];
-                                                        const idx = current.findIndex(lf => (lf.featureId === mf.id) || (lf.tag === mf.tag && mf.tag));
+                                                        const idx = current.findIndex((lf: Record<string, any>) => (lf.featureId === mf.id) || (lf.tag === mf.tag && mf.tag));
                                                         if (idx > -1) {
                                                             current[idx] = { ...current[idx], name: e.target.value };
                                                             setFormData({ ...formData, linkedFeatures: current });
@@ -530,7 +530,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                         variant="ghost" 
                                         size="icon" 
                                         onClick={() => {
-                                            const newFeats = (formData.features || []).filter((_: any, idx: number) => idx !== i);
+                                            const newFeats = (formData.features || []).filter((_: Record<string, any>, idx: number) => idx !== i);
                                             setFormData({ ...formData, features: newFeats });
                                         }}
                                         className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-all h-12 w-12"
@@ -561,8 +561,8 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {/* Registry Linked Summary */}
-                            {formData.linkedFeatures?.filter((lf: any) => lf.enabled).map((lf: any) => {
-                                const manifest = manifestFeatures?.find((mf: any) => mf.id === lf.featureId || mf.tag === lf.tag);
+                            {formData.linkedFeatures?.filter((lf: Record<string, any>) => lf.enabled).map((lf: Record<string, any>) => {
+                                const manifest = manifestFeatures?.find((mf: Record<string, any>) => mf.id === lf.featureId || mf.tag === lf.tag);
                                 const hasCustomName = lf.name !== null && lf.name !== undefined && lf.name !== "";
                                 const isHidden = lf.showLabel === false || !hasCustomName;
                                 const displayLabel = hasCustomName ? lf.name : (manifest?.marketingLabel || manifest?.name || lf.tag);
@@ -643,7 +643,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                 checked={formData.linkedFeatures?.find((lf: any) => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag))?.showLabel !== false}
                                 onCheckedChange={(val) => {
                                     const current = [...(formData.linkedFeatures || [])];
-                                    const idx = current.findIndex(lf => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag));
+                                    const idx = current.findIndex((lf: Record<string, any>) => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag));
                                     if (idx > -1) {
                                         current[idx] = { ...current[idx], showLabel: val };
                                         setFormData({ ...formData, linkedFeatures: current });
@@ -661,7 +661,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                 value={formData.linkedFeatures?.find((lf: any) => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag))?.limitValue || ""}
                                 onChange={(e) => {
                                     const current = [...(formData.linkedFeatures || [])];
-                                    const idx = current.findIndex(lf => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag));
+                                    const idx = current.findIndex((lf: Record<string, any>) => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag));
                                     if (idx > -1) {
                                         current[idx] = { ...current[idx], limitValue: e.target.value };
                                         setFormData({ ...formData, linkedFeatures: current });
@@ -680,7 +680,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
                                 value={formData.linkedFeatures?.find((lf: any) => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag))?.setupLimit || ""}
                                 onChange={(e) => {
                                     const current = [...(formData.linkedFeatures || [])];
-                                    const idx = current.findIndex(lf => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag));
+                                    const idx = current.findIndex((lf: Record<string, any>) => (lf.featureId === limitEditingFeature?.id) || (lf.tag === limitEditingFeature?.tag && limitEditingFeature?.tag));
                                     if (idx > -1) {
                                         current[idx] = { ...current[idx], setupLimit: e.target.value };
                                         setFormData({ ...formData, linkedFeatures: current });

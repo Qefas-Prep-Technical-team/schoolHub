@@ -91,7 +91,7 @@ export default function PlatformLogsPage() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            logs?.map((log: any) => (
+                            logs?.map((log: Record<string, any>) => (
                                 <TableRow key={log.id} className="border-slate-800 hover:bg-white/[0.02] transition-colors group">
                                     <TableCell className="pl-8 py-5">
                                         <div className="flex items-center gap-3">

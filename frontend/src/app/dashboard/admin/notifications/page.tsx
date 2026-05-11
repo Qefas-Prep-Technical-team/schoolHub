@@ -145,7 +145,7 @@ export default function NotificationsPage() {
               <Bell className="h-10 w-10 text-gray-300" />
             </div>
             <h3 className="text-2xl font-black mb-2">All clear!</h3>
-            <p className="text-gray-500 max-w-sm mx-auto font-medium">You don't have any notifications at the moment.</p>
+            <p className="text-gray-500 max-w-sm mx-auto font-medium">You don&apos;t have any notifications at the moment.</p>
           </CardContent>
         </Card>
       ) : (

@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, X, Info, AlertCircle, ExternalLink, ChevronRight, Mail, Megaphone, Activity } from 'lucide-react';
+import { Bell, Check, X, Info, AlertCircle, ChevronRight, Mail, Megaphone, Activity } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
-  DropdownMenuItem, 
   DropdownMenuTrigger,
   DropdownMenuLabel,
   DropdownMenuSeparator
@@ -29,7 +28,7 @@ import { Notification } from '@/lib/api/services/notificationService';
 export default function NotificationCenter() {
   const router = useRouter();
   const { userType } = useAuthStore();
-  const { data: notifications = [], isLoading: isLoadingNotifications } = useNotifications({ limit: 10 });
+  const { data: notifications = [] } = useNotifications({ limit: 10 });
   const { data: unreadCountData } = useUnreadCount();
   const unreadCount = unreadCountData?.count || 0;
 
@@ -145,7 +144,7 @@ export default function NotificationCenter() {
                   <Megaphone className="h-6 w-6 text-gray-400" />
                 </div>
                 <p className="font-bold text-gray-900 dark:text-white">No messages yet</p>
-                <p className="text-sm text-gray-500 mt-1">We'll let you know when school announcements or messages arrive.</p>
+                <p className="text-sm text-gray-500 mt-1">We&apos;ll let you know when school announcements or messages arrive.</p>
               </div>
             ) : (
               <div className="flex flex-col">

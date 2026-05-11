@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useAuthModalStore } from '@/utils/AuthModalStore';
 import dynamic from 'next/dynamic';
 import { LogIn, UserPlus, GraduationCap, ChevronLeft, Shield, User, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 // Dynamic imports for forms to keep the initial bundle light
 const TeacherLoginForm = dynamic(() => import('@/app/(auth)/login/teacher/components/TeacherLoginForm'), {
@@ -124,7 +123,7 @@ const AuthModal = () => {
                                     <button
                                         key={role.key}
                                         onClick={() => {
-                                            setRole(role.key as any);
+                                            setRole(role.key as "school" | "TEACHER" | "STUDENT" | "PARENT");
                                             setView(view === 'login-role' ? 'login-form' : 'signup-form');
                                         }}
                                         className="flex flex-col items-center p-6 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-primary hover:shadow-xl hover:-translate-y-1 transition-all group bg-slate-50/50 dark:bg-slate-800/50"
@@ -150,7 +149,7 @@ const AuthModal = () => {
                             </div>
                             <div className="text-center mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
                                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                                    Don't have an account?{" "}
+                                    Don&apos;t have an account?{" "}
                                     <button 
                                         onClick={() => setView('signup-form')}
                                         className="font-bold text-blue-600 hover:underline"

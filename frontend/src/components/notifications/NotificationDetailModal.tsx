@@ -19,7 +19,6 @@ import {
   AlertCircle, 
   Clock, 
   Calendar,
-  ExternalLink,
   ChevronRight,
   Activity,
   Mail,
@@ -31,7 +30,7 @@ import { useRouter } from 'next/navigation';
 import { useSingleLinkRequest } from '@/lib/api/hooks/useLinks';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Badge as UIBadge } from "@/components/ui/badge";
 
 interface NotificationDetailModalProps {
@@ -53,13 +52,13 @@ export default function NotificationDetailModal({
 }: NotificationDetailModalProps) {
   const router = useRouter();
   const { user } = useAuthStore();
-  const linkId = notification?.linkRequestId || (notification?.data as any)?.linkId;
+  const linkId = notification?.linkRequestId || (notification?.data as Record<string, any>)?.linkId;
   const { data: linkRequest, isLoading: isLoadingLink } = useSingleLinkRequest(
     notification?.type === 'LINK_REQUEST' ? linkId : '',
     { enabled: isOpen && notification?.type === 'LINK_REQUEST' && !!linkId }
   );
 
-  const lr = linkRequest as any;
+  const lr = linkRequest as Record<string, any>;
 
   if (!notification) return null;
 
@@ -170,7 +169,7 @@ export default function NotificationDetailModal({
         <div className="p-8 pt-8 space-y-6">
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-[1.5rem] p-6 border border-slate-100 dark:border-slate-800">
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-bold text-sm italic">
-              "{notification.message}"
+              &quot;{notification.message}&quot;
             </p>
           </div>
 

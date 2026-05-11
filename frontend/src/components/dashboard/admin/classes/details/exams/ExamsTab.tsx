@@ -8,7 +8,7 @@ import FilterButton from './components/FilterButton';
 import { Exam } from './components/types';
 
 interface ClassExamsTabProps {
-  exams?: any[];
+  exams?: Record<string, any>[];
 }
 
 export default function ClassExamsTab({ exams = [] }: ClassExamsTabProps) {
@@ -21,7 +21,7 @@ export default function ClassExamsTab({ exams = [] }: ClassExamsTabProps) {
     id: e.id,
     title: e.title,
     type: e.type || e.scope.toLowerCase(), // fallbacks
-    status: e.status.toLowerCase() as any,
+    status: e.status.toLowerCase() as Exam['status'],
     subjectId: e.subjectId,
     subjectName: e.subject?.name || 'General',
     classId: e.classId,
@@ -141,7 +141,7 @@ export default function ClassExamsTab({ exams = [] }: ClassExamsTabProps) {
             No exams found
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mb-6 font-medium">
-            This class doesn't have any exams or quizzes scheduled yet.
+            This class doesn&apos;t have any exams or quizzes scheduled yet.
           </p>
           <button
             onClick={handleCreateExam}

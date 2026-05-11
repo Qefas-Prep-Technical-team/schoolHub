@@ -92,7 +92,7 @@ export default function TeacherProfilePage() {
     };
 
     const handleSave = async () => {
-        const { email, ...rest } = formData;
+        const { email: _, ...rest } = formData;
         await updateProfile.mutateAsync(rest);
         setIsEditing(false);
     };
@@ -403,7 +403,7 @@ export default function TeacherProfilePage() {
                                                     {verifyEmailUpdate.isPending ? <Loader2 className="animate-spin" /> : "Submit Code"}
                                                 </Button>
                                             </div>
-                                            <p className="text-xs font-bold text-white/60 text-center">We've dispatched a security token to <b>{formData.email}</b></p>
+                                            <p className="text-xs font-bold text-white/60 text-center">We&apos;ve dispatched a security token to <b>{formData.email}</b></p>
                                         </div>
                                     )}
 

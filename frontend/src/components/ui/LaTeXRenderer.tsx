@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useMemo, memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -13,32 +13,31 @@ interface LaTeXRendererProps {
 
 const LaTeXRenderer = memo(({ content, className = "", onZoom }: LaTeXRendererProps) => {
 
-  if (!content) return null;
-  const components: any = useMemo(() => ({
+  const components: Record<string, any> = useMemo(() => ({
     // Add custom list rendering since Tailwind Typography (prose) is not active
-    ul: ({ children }: any) => (
+    ul: ({ children }: { children?: React.ReactNode }) => (
       <ul className="list-disc pl-6 my-4 space-y-1.5 text-slate-700 dark:text-slate-300">
         {children}
       </ul>
     ),
-    ol: ({ children }: any) => (
+    ol: ({ children }: { children?: React.ReactNode }) => (
       <ol className="list-decimal pl-6 my-4 space-y-1.5 text-slate-700 dark:text-slate-300">
         {children}
       </ol>
     ),
-    li: ({ children }: any) => (
+    li: ({ children }: { children?: React.ReactNode }) => (
       <li className="leading-relaxed">
         {children}
       </li>
     ),
-    img: ({ src, alt }: { src?: any; alt?: any }) => (
+    img: ({ src, alt }: { src?: string; alt?: string }) => (
       <figure className="my-6 text-center group">
         <div 
           className="relative inline-block cursor-zoom-in overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg"
-          onClick={() => onZoom?.((src as string) || "", (alt as string) || undefined)}
+          onClick={() => onZoom?.(src || "", alt || undefined)}
         >
           <img 
-            src={src as string} 
+            src={src} 
             alt={alt} 
             className="mx-auto max-h-[500px] object-contain transition-transform duration-500 group-hover:scale-105" 
           />
@@ -56,6 +55,8 @@ const LaTeXRenderer = memo(({ content, className = "", onZoom }: LaTeXRendererPr
       </figure>
     )
   }), [onZoom]);
+
+  if (!content) return null;
 
   return (
     <div className={`prose dark:prose-invert max-w-none prose-p:leading-relaxed prose-li:my-0 prose-ol:list-decimal prose-ul:list-disc ${className}`}>

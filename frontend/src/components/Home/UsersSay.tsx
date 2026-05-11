@@ -1,13 +1,12 @@
 "use client"
 import React, { FC } from 'react';
 import { motion } from 'framer-motion';
-import Box from '@mui/material/Box';
 import Image from 'next/image';
 import { Star } from 'lucide-react';
 import { useFetchWhatUsersSay } from './query';
 
 const UsersSay: FC = () => {
-    const { data, isLoading } = useFetchWhatUsersSay();
+    const { data } = useFetchWhatUsersSay();
 
     return (
         <section className="py-32 bg-slate-50 dark:bg-slate-950/50 rounded-[3rem] my-20">
@@ -37,7 +36,7 @@ const UsersSay: FC = () => {
                                 ))}
                             </div>
                             <blockquote className="text-xl font-light italic text-slate-700 dark:text-slate-300 mb-8 flex-grow leading-relaxed">
-                                "{user.comment}"
+                                &quot;{user.comment}&quot;
                             </blockquote>
                             <div className="flex items-center gap-4 border-t border-slate-200 dark:border-slate-800 pt-8 mt-auto">
                                 <div className="relative w-14 h-14 rounded-full overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-500">
