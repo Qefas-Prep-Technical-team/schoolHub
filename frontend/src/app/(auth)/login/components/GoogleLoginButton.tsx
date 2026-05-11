@@ -15,7 +15,8 @@ export default function GoogleLoginButton({ userType }: GoogleLoginButtonProps) 
     const { data: settings, isLoading: settingsLoading } = usePublicPlatformSettings();
 
     const googleAuthEnabledGlobal = settings?.google_auth_enabled !== "false";
-    const googleAuthEnabledForRole = settings?.google_login_feature?.[userType.toLowerCase()] !== false;
+    const googleLoginFeature = settings?.google_login_feature as Record<string, boolean> | undefined;
+    const googleAuthEnabledForRole = googleLoginFeature?.[userType.toLowerCase()] !== false;
     const isEnabled = googleAuthEnabledGlobal && googleAuthEnabledForRole;
 
     if (settingsLoading) return <div className="h-14 w-full bg-slate-50 dark:bg-slate-800 animate-pulse rounded-xl" />;
@@ -38,9 +39,10 @@ export default function GoogleLoginButton({ userType }: GoogleLoginButtonProps) 
             });
 
             if (error) throw error;
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Google login error:", error);
-            toast.error(error.message || "Failed to initialize Google login");
+            const message = error instanceof Error ? error.message : "Failed to initialize Google login";
+            toast.error(message);
             setIsLoading(false);
         }
     };
