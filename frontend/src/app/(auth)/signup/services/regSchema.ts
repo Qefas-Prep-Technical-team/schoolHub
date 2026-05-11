@@ -46,6 +46,11 @@ export const parentSchema = yup.object({
         return /^stu-\d{6}$/.test(value);
       },
     ),
+
+  acceptTerms: yup
+    .boolean()
+    .required("You must accept the terms and conditions")
+    .oneOf([true], "You must accept the terms and conditions"),
 });
 
 export type ParentFormData = yup.InferType<typeof parentSchema>;
