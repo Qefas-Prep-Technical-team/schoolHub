@@ -43,11 +43,11 @@ export default function PricingManagerPage() {
     const seedPlans = useSeedPricingPlans()
     const [selectedCategory, setSelectedCategory] = useState("schools")
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
-    const [isEditing, setIsEditing] = useState<any>(null)
+    const [isEditing, setIsEditing] = useState<Record<string, any> | null>(null)
 
     const isEnforced = settings?.[`sub_enforced_${selectedCategory}`] !== "false"
 
-    const filteredCategory = categories?.find((c: any) => c.category === selectedCategory)
+    const filteredCategory = categories?.find((c: Record<string, any>) => c.category === selectedCategory)
 
     return (
         <div className="space-y-10 pb-20">
@@ -174,7 +174,7 @@ export default function PricingManagerPage() {
                         </div>
                     </Card>
                 ) : (
-                    filteredCategory.tabs.map((plan: any) => (
+                    filteredCategory.tabs.map((plan: Record<string, any>) => (
                         <motion.div
                             key={plan.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -224,7 +224,7 @@ export default function PricingManagerPage() {
                                         <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Linked Entitlements</div>
                                         <ul className="space-y-3">
                                             {/* Relational Features (Entitlements) */}
-                                            {plan.featureAccess?.filter((fa: any) => fa.enabled).map((fa: any, idx: number) => (
+                                            {plan.featureAccess?.filter((fa: Record<string, any>) => fa.enabled).map((fa: Record<string, any>, idx: number) => (
                                                 <li key={`relational-${idx}`} className="flex items-start gap-3 text-xs font-bold text-slate-700 dark:text-slate-300">
                                                     <Shield size={16} className="text-indigo-500 shrink-0" />
                                                     <div className="flex flex-col">

@@ -56,7 +56,7 @@ export const useSeedPricingPlans = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async (payload?: { plans: Record<string, unknown>[] }) => {
+        mutationFn: async (payload: { plans: Record<string, unknown>[] } | void) => {
             const { data } = await platformClient.post("/platform/pricing/seed", payload || {}, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
@@ -153,7 +153,7 @@ export const useHarvestFeatures = () => {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async (payload?: { category?: string, role?: string }) => {
+        mutationFn: async (payload: { category?: string, role?: string } | void) => {
             const { data } = await platformClient.post("/platform/pricing/features/harvest", payload || {}, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
