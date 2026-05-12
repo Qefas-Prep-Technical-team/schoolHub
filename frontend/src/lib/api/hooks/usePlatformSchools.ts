@@ -4,13 +4,255 @@ import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
 import { toast } from "react-toastify"
 import { AxiosError } from "axios";
 
+export interface PlatformPlanTab {
+    id: string;
+    name: string;
+    type: string;
+    [key: string]: any;
+}
+
+export interface PlatformPlanCategory {
+    category: string;
+    tabs: PlatformPlanTab[];
+}
+
+export interface PlatformParentDetails {
+    id: string;
+    fullName: string;
+    email: string;
+    parentCode: string;
+    phone?: string;
+    subscriptionStatus: string;
+    plan: string;
+    createdAt: string;
+    verified: boolean;
+    role: string;
+    trialEndsAt?: string;
+    subscriptionEnd?: string;
+    children: {
+        id: string;
+        studentId: string;
+        student: {
+            id: string;
+            name: string;
+            studentCode: string;
+            school?: {
+                id: string;
+                name: string;
+                schoolCode: string;
+            };
+        };
+    }[];
+    _count: {
+        children: number;
+        payments: number;
+    };
+}
+
+export interface PlatformParentSummary {
+    id: string;
+    fullName: string;
+    email: string;
+    parentCode: string;
+    phone?: string;
+    subscriptionStatus: string;
+    createdAt: string;
+    _count?: {
+        children: number;
+    };
+}
+
+export interface PlatformStatusBreakdown {
+    type: string;
+    count: number;
+}
+
+export interface PlatformStudentSummary {
+    id: string;
+    name: string;
+    studentCode: string;
+    email: string;
+    gradeLevel: string;
+    subscriptionStatus: string;
+    createdAt: string;
+    school?: {
+        id: string;
+        name: string;
+    };
+}
+
+export interface PlatformTeacherSummary {
+    id: string;
+    name: string;
+    teacherCode: string;
+    email: string;
+    jobTitle: string;
+    subscriptionStatus: string;
+    createdAt: string;
+    primarySchool?: {
+        id: string;
+        name: string;
+    };
+}
+
+export interface PlatformPaginatedResponse<T> {
+    success: boolean;
+    data: T[];
+    planBreakdown: any[];
+    statusBreakdown: any[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
+export interface PlatformSchoolDetails {
+    id: string;
+    name: string;
+    schoolCode: string;
+    tenantId: string;
+    logo?: string;
+    schoolEmail?: string;
+    phone?: string;
+    address?: string;
+    subscriptionStatus: string;
+    plan: string;
+    subscriptionPlanId?: string;
+    subscriptionEnd?: string;
+    isTrialActive: boolean;
+    trialEndsAt?: string;
+    billingCycle?: string;
+    lastPaymentDate?: string;
+    createdAt: string;
+    maxStudentsOverride?: number;
+    maxExamsOverride?: number;
+    maxClassesOverride?: number;
+    maxStorageGbOverride?: number;
+    maxTeachersOverride?: number;
+    paystackCustomerCode?: string;
+    paystackSubaccountCode?: string;
+    paystackSubaccountStatus?: string;
+    subscriptionPlan?: {
+        id: string;
+        name: string;
+        maxStudents?: number;
+        maxExams?: number;
+        maxClasses?: number;
+        maxStorageGb?: number;
+        maxTeachers?: number;
+        maxParents?: number;
+    };
+    settlementAccounts?: {
+        id: string;
+        paystackSubaccountCode: string;
+        paystackSubaccountStatus: string;
+        bankName: string;
+        accountNumber: string;
+        percentageCharge: number;
+        isDefault: boolean;
+    }[];
+    emailLogs?: {
+        subject: string;
+        recipientEmail: string;
+        body: string;
+        status: string;
+        type: string;
+        createdAt: string;
+    }[];
+    _count?: {
+        students: number;
+        Teacher_Teacher_activeSchoolIdToSchool: number;
+        admins: number;
+        exams: number;
+        classes: number;
+    };
+}
+
+export interface PlatformTeacherDetails {
+    id: string;
+    name: string;
+    email: string;
+    teacherCode: string;
+    subscriptionStatus: string;
+    plan: string;
+    createdAt: string;
+    verified: boolean;
+    role: string;
+    subscriptionPlanId?: string;
+    isTrialActive: boolean;
+    trialEndsAt?: string;
+    subscriptionEnd?: string;
+    profileImage?: string;
+    jobTitle?: string;
+    gender?: string;
+    bio?: string;
+    authProvider?: string;
+    billingCycle?: string;
+    lastPaymentDate?: string;
+    primarySchool?: {
+        id: string;
+        name: string;
+        schoolCode: string;
+        tenantId: string;
+    };
+    teacherSubjects?: any[];
+    classTeachers?: any[];
+    _count?: {
+        teacherSubjects: number;
+        classTeachers: number;
+        exams: number;
+    };
+}
+
+export interface PlatformStudentDetails {
+    id: string;
+    name: string;
+    email: string;
+    studentCode: string;
+    subscriptionStatus: string;
+    plan: string;
+    createdAt: string;
+    verified: boolean;
+    role: string;
+    gradeLevel?: string;
+    subscriptionPlanId?: string;
+    isTrialActive: boolean;
+    trialEndsAt?: string;
+    subscriptionEnd?: string;
+    profileImage?: string;
+    dateOfBirth?: string;
+    termAverage?: number;
+    authProvider?: string;
+    billingCycle?: string;
+    lastPaymentDate?: string;
+    school?: {
+        id: string;
+        name: string;
+        schoolCode: string;
+        tenantId: string;
+    };
+    department?: any;
+    classes?: any[];
+    parentLinks?: any[];
+    _count?: {
+        attendances: number;
+        behaviourAlerts: number;
+        examAttempts: number;
+        grades: number;
+        classes?: number;
+    };
+}
+
+
 export const usePlatformSchools = (query: string = "", page: number = 1, limit: number = 10, plan: string = "ALL", status: string = "ALL") => {
     const { platform_token } = usePlatformStaffStore()
 
     return useQuery({
         queryKey: ["platform-schools", query, page, limit, plan, status],
         queryFn: async () => {
-            const { data } = await platformClient.get<Record<string, unknown>>(`/platform/support/schools?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
+            const { data } = await platformClient.get<PlatformPaginatedResponse<PlatformSchoolSummary>>(`/platform/support/schools?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
@@ -28,7 +270,7 @@ export const usePlatformSchoolDetails = (id: string) => {
     return useQuery({
         queryKey: ["platform-school-details", id],
         queryFn: async () => {
-            const { data } = await platformClient.get<{ data: Record<string, unknown> }>(`/platform/support/schools/${id}`, {
+            const { data } = await platformClient.get<{ data: PlatformSchoolDetails }>(`/platform/support/schools/${id}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -136,7 +378,7 @@ export const useAllPlatformPlans = () => {
     return useQuery({
         queryKey: ["platform-all-plans"],
         queryFn: async () => {
-            const { data } = await platformClient.get<{ data: Record<string, unknown>[] }>(`/platform/support/plans`, {
+            const { data } = await platformClient.get<{ data: PlatformPlanCategory[] }>(`/platform/support/plans`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -148,13 +390,13 @@ export const useAllPlatformPlans = () => {
 /**
  * Search students across the platform
  */
-export const usePlatformStudents = (query: string = "", status: string = "ALL", page: number = 1, limit: number = 20) => {
+export const usePlatformStudents = (query: string = "", status: string = "ALL", page: number = 1, limit: number = 20, plan: string = "ALL") => {
     const { platform_token } = usePlatformStaffStore()
 
     return useQuery({
-        queryKey: ["platform-students", query, status, page, limit],
+        queryKey: ["platform-students", query, status, page, limit, plan],
         queryFn: async () => {
-            const { data } = await platformClient.get<Record<string, unknown>>(`/platform/support/students?query=${query}&status=${status}&page=${page}&limit=${limit}`, {
+            const { data } = await platformClient.get<PlatformPaginatedResponse<PlatformStudentSummary>>(`/platform/support/students?query=${query}&status=${status}&page=${page}&limit=${limit}&plan=${plan}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
@@ -169,7 +411,7 @@ export const usePlatformStudentDetails = (id: string) => {
     return useQuery({
         queryKey: ["platform-student-details", id],
         queryFn: async () => {
-            const { data } = await platformClient.get<{ data: Record<string, unknown> }>(`/platform/support/students/${id}`, {
+            const { data } = await platformClient.get<{ data: PlatformStudentDetails }>(`/platform/support/students/${id}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -209,7 +451,7 @@ export const usePlatformTeachers = (query: string = "", page: number = 1, limit:
     return useQuery({
         queryKey: ["platform-teachers", query, page, limit, plan, status],
         queryFn: async () => {
-            const { data } = await platformClient.get<Record<string, unknown>>(`/platform/support/teachers?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
+            const { data } = await platformClient.get<PlatformPaginatedResponse<PlatformTeacherSummary>>(`/platform/support/teachers?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
@@ -227,7 +469,7 @@ export const usePlatformParents = (query: string = "", page: number = 1, limit: 
     return useQuery({
         queryKey: ["platform-parents", query, page, limit, plan, status],
         queryFn: async () => {
-            const { data } = await platformClient.get<Record<string, unknown>>(`/platform/support/parents?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
+            const { data } = await platformClient.get<PlatformPaginatedResponse<PlatformParentSummary>>(`/platform/support/parents?query=${query}&page=${page}&limit=${limit}&plan=${plan}&status=${status}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;
@@ -284,7 +526,7 @@ export const usePlatformTeacherDetails = (id: string) => {
     return useQuery({
         queryKey: ["platform-teacher-details", id],
         queryFn: async () => {
-            const { data } = await platformClient.get<{ data: Record<string, unknown> }>(`/platform/support/teachers/${id}`, {
+            const { data } = await platformClient.get<{ data: PlatformTeacherDetails }>(`/platform/support/teachers/${id}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;
@@ -319,7 +561,7 @@ export const usePlatformParentDetails = (id: string) => {
     return useQuery({
         queryKey: ["platform-parent-details", id],
         queryFn: async () => {
-            const { data } = await platformClient.get<{ data: Record<string, unknown> }>(`/platform/support/parents/${id}`, {
+            const { data } = await platformClient.get<{ data: PlatformParentDetails }>(`/platform/support/parents/${id}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data.data;

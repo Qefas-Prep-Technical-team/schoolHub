@@ -8,6 +8,7 @@ interface ProgressBarProps {
   labelPosition?: 'inside' | 'outside';
   height?: 'sm' | 'md' | 'lg';
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export default function ProgressBar({
@@ -18,9 +19,10 @@ export default function ProgressBar({
   labelPosition = 'outside',
   height = 'md',
   className,
+  style,
 }: ProgressBarProps) {
   const percentage = Math.min((value / maxValue) * 100, 100);
-  
+
   const heightClasses = {
     sm: 'h-1.5',
     md: 'h-2.5',
@@ -35,7 +37,7 @@ export default function ProgressBar({
           <span>{value}/{maxValue} ({percentage.toFixed(0)}%)</span>
         </div>
       )}
-      
+
       <div className={cn(
         'w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden',
         heightClasses[height]
@@ -45,7 +47,7 @@ export default function ProgressBar({
             'h-full rounded-full transition-all duration-500 ease-out',
             color
           )}
-          style={{ width: `${percentage}%` }}
+          style={{ width: `${percentage}%`, ...style }}
         >
           {showLabel && labelPosition === 'inside' && (
             <span className="absolute right-2 text-xs font-bold text-white mix-blend-difference">

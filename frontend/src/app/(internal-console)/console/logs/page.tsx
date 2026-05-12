@@ -1,6 +1,6 @@
 "use client"
 
-import { usePlatformAuditLogs } from "@/lib/api/hooks/usePlatformGovernance"
+import { usePlatformAuditLogs, PlatformAuditLog } from "@/lib/api/hooks/usePlatformGovernance"
 import { 
     History, 
     Search, 
@@ -81,7 +81,7 @@ export default function PlatformLogsPage() {
                                     <TableCell colSpan={6} className="py-4 px-8"><Skeleton className="h-8 w-full bg-slate-950" /></TableCell>
                                 </TableRow>
                             ))
-                        ) : logs?.length === 0 ? (
+                        ) : (logs?.data?.length ?? 0) === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="h-60 text-center">
                                     <div className="flex flex-col items-center gap-3 text-slate-600">
@@ -91,7 +91,7 @@ export default function PlatformLogsPage() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            logs?.map((log: Record<string, any>) => (
+                            logs?.data?.map((log: PlatformAuditLog) => (
                                 <TableRow key={log.id} className="border-slate-800 hover:bg-white/[0.02] transition-colors group">
                                     <TableCell className="pl-8 py-5">
                                         <div className="flex items-center gap-3">
@@ -118,7 +118,7 @@ export default function PlatformLogsPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="font-mono text-[10px] text-slate-500">
-                                        {log.entityId.substring(0, 8)}...
+                                        {log.entityId?.substring(0, 8) || "N/A"}...
                                     </TableCell>
                                     <TableCell className="text-xs text-slate-400 font-medium">
                                         {new Date(log.createdAt).toLocaleString()}

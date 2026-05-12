@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import { 
-  Bell, 
-  Check, 
-  X, 
-  Info, 
-  AlertCircle, 
-  Trash2, 
-  CheckCircle2, 
+import {
+  Bell,
+  Check,
+  X,
+  Info,
+  AlertCircle,
+  Trash2,
+  CheckCircle2,
   Clock,
   ExternalLink,
   MoreVertical,
@@ -17,11 +17,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { 
-  useNotifications, 
-  useMarkAsRead, 
+import {
+  useNotifications,
+  useMarkAsRead,
   useMarkAllAsRead,
-  useDeleteNotification 
+  useDeleteNotification
 } from '@/lib/api/hooks/useNotifications';
 import { useRespondToLinkRequest, useAcceptAllLinkRequests } from '@/lib/api/hooks/useLinks';
 import { cn } from '@/lib/utils';
@@ -34,7 +34,7 @@ export default function NotificationsPage() {
   const [selectedNotification, setSelectedNotification] = React.useState<Notification | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const { data: notifications = [], isLoading, isError, refetch } = useNotifications();
-  
+
   const markAsReadMutation = useMarkAsRead();
   const markAllAsReadMutation = useMarkAllAsRead();
   const deleteMutation = useDeleteNotification();
@@ -110,7 +110,7 @@ export default function NotificationsPage() {
 
         <div className="flex flex-wrap gap-3">
           {unreadNotifications.length > 0 && (
-            <Button 
+            <Button
               onClick={() => markAllAsReadMutation.mutate()}
               disabled={markAllAsReadMutation.isPending}
               variant="outline"
@@ -120,9 +120,9 @@ export default function NotificationsPage() {
               Mark all read
             </Button>
           )}
-          
+
           {linkRequests.length > 0 && (
-            <Button 
+            <Button
               onClick={() => {
                 if (window.confirm('Accept all pending link requests?')) {
                   acceptAllMutation.mutate(undefined as any);
@@ -151,12 +151,12 @@ export default function NotificationsPage() {
       ) : (
         <div className="grid gap-4">
           {notifications.map((n: Notification) => (
-            <Card 
-              key={n.id} 
+            <Card
+              key={n.id}
               className={cn(
                 "rounded-3xl border-none transition-all duration-300 group overflow-hidden cursor-pointer",
-                !n.isRead 
-                  ? "bg-white dark:bg-gray-800 shadow-xl shadow-primary/5 ring-1 ring-primary/10" 
+                !n.isRead
+                  ? "bg-white dark:bg-gray-800 shadow-xl shadow-primary/5 ring-1 ring-primary/10"
                   : "bg-gray-50/50 dark:bg-gray-900/50 opacity-80"
               )}
               onClick={() => handleOpenModal(n)}
@@ -195,20 +195,20 @@ export default function NotificationsPage() {
 
                     <div className="flex flex-wrap items-center justify-between gap-4 mt-2">
                       <div className="flex gap-3">
-                        {n.type === 'LINK_REQUEST' && !n.isRead && n.data?.linkId && (
+                        {n.type === 'LINK_REQUEST' && !n.isRead && Boolean(n.data?.linkId) && (
                           <>
-                            <Button 
+                            <Button
                               size="sm"
-                              onClick={() => handleLinkAction(n.id, n.data.linkId, 'ACCEPT')}
+                              onClick={() => handleLinkAction(n.id, n.data!.linkId as string, 'ACCEPT')}
                               disabled={respondMutation.isPending}
                               className="px-5 rounded-xl bg-primary text-white font-bold text-xs h-10 shadow-md shadow-primary/20 hover:scale-105 transition-all"
                             >
                               <Check size={16} className="mr-1.5" /> Accept
                             </Button>
-                            <Button 
+                            <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleLinkAction(n.id, n.data.linkId, 'REJECT')}
+                              onClick={() => handleLinkAction(n.id, n.data!.linkId as string, 'REJECT')}
                               disabled={respondMutation.isPending}
                               className="px-5 rounded-xl border-2 font-bold text-xs h-10 hover:bg-gray-50"
                             >
@@ -218,7 +218,7 @@ export default function NotificationsPage() {
                         )}
 
                         {n.link && (
-                          <Button 
+                          <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => {
@@ -234,9 +234,9 @@ export default function NotificationsPage() {
 
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         {!n.isRead && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleMarkAsRead(n.id)}
                             className="h-10 w-10 rounded-xl text-gray-400 hover:text-primary"
                             title="Mark as read"
@@ -244,9 +244,9 @@ export default function NotificationsPage() {
                             <Check size={18} />
                           </Button>
                         )}
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => deleteMutation.mutate(n.id)}
                           className="h-10 w-10 rounded-xl text-gray-400 hover:text-red-500"
                           title="Delete"
@@ -262,7 +262,7 @@ export default function NotificationsPage() {
           ))}
         </div>
       )}
-      <NotificationDetailModal 
+      <NotificationDetailModal
         notification={selectedNotification}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

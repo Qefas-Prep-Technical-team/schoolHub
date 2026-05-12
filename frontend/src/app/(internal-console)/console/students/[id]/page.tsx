@@ -4,7 +4,8 @@ import { useParams, useRouter } from "next/navigation"
 import { 
     usePlatformStudentDetails,
     useUpdateStudentPlan,
-    useAllPlatformPlans
+    useAllPlatformPlans,
+    PlatformStudentDetails
 } from "@/lib/api/hooks/usePlatformSchools"
 import { useResetStudentSubscription } from "@/lib/api/hooks/usePlatformBilling"
 import { 
@@ -153,7 +154,7 @@ export default function StudentDetailsPage() {
                         className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                         asChild
                     >
-                        <Link href={`/console/schools/${student.schoolId}`}>
+                        <Link href={`/console/schools/${student.school?.id}`}>
                             <ExternalLinkIcon size={16} className="mr-2" /> View School
                         </Link>
                     </Button>
@@ -270,7 +271,7 @@ export default function StudentDetailsPage() {
                                             <p className="text-xs text-slate-500 font-medium">Tenant ID: {student.school?.tenantId || "N/A"}</p>
                                         </div>
                                         <Button variant="ghost" size="icon" className="ml-auto" asChild>
-                                            <Link href={`/console/schools/${student.schoolId}`}>
+                                            <Link href={`/console/schools/${student.school?.id}`}>
                                                 <ExternalLinkIcon size={18} />
                                             </Link>
                                         </Button>
@@ -323,8 +324,8 @@ export default function StudentDetailsPage() {
 
                           {activeTab === "classes" && (
                               <div className="space-y-4">
-                                  {student.classes?.length > 0 ? (
-                                      student.classes.map((enrollment: any) => (
+                                  {(student.classes?.length ?? 0) > 0 ? (
+                                      student.classes!.map((enrollment) => (
                                           <div key={enrollment.id} className="p-5 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center justify-between group hover:border-indigo-500/30 transition-all">
                                               <div className="flex items-center gap-4">
                                                   <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
@@ -351,8 +352,8 @@ export default function StudentDetailsPage() {
 
                           {activeTab === "parents" && (
                               <div className="space-y-4">
-                                  {student.parentLinks?.length > 0 ? (
-                                      student.parentLinks.map((link: any) => (
+                                  {(student.parentLinks?.length ?? 0) > 0 ? (
+                                      student.parentLinks!.map((link) => (
                                           <div key={link.id} className="p-5 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center justify-between group hover:border-indigo-500/30 transition-all">
                                               <div className="flex items-center gap-4">
                                                   <div className="h-10 w-10 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-500">
@@ -446,7 +447,7 @@ export default function StudentDetailsPage() {
                                                       value={editData.subscriptionPlanId || editData.plan}
                                                       onChange={(e) => {
                                                           const val = e.target.value;
-                                                          const selectedPlan = plans?.flatMap((c: any) => c.tabs).find((t: any) => t.id === val || t.type === val);
+                                                          const selectedPlan = plans?.flatMap((c) => c.tabs).find((t) => t.id === val || t.type === val);
                                                           setEditData({
                                                               ...editData,
                                                               subscriptionPlanId: selectedPlan?.id || "",
@@ -456,7 +457,7 @@ export default function StudentDetailsPage() {
                                                       className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
                                                   >
                                                       <option value="FREE">FREE TIER</option>
-                                                      {plans?.map((cat: any) => (
+                                                      {plans?.map((cat) => (
                                                           <optgroup key={cat.category} label={cat.category.toUpperCase()}>
                                                               {cat.tabs.map((plan: any) => (
                                                                   <option key={plan.id} value={plan.id}>

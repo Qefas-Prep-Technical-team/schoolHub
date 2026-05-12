@@ -32,7 +32,7 @@ import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
 interface PricingPlanEditorModalProps {
-    plan: Record<string, any>
+    plan: Record<string, any> | null
     isOpen: boolean
     onClose: () => void
 }

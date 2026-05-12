@@ -53,7 +53,7 @@ export default function TeacherProfilePage() {
     name: teacher.name,
     title: teacher.title || 'Teacher',
     avatar: teacher.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(teacher.name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`,
-    status: teacher.verified ? 'active' as const : 'pending' as const,
+    status: teacher.verified ? 'active' as const : 'inactive' as const,
     isClaimed: teacher.isClaimed,
     primarySchoolId: teacher.primarySchoolId,
     personalInfo: {

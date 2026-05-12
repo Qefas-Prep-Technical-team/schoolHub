@@ -738,7 +738,10 @@ export const searchParents = async (req: Request, res: Response) => {
           parentCode: true,
           email: true,
           subscriptionStatus: true,
-          createdAt: true
+          createdAt: true,
+          _count: {
+            select: { children: true }
+          }
         },
         skip,
         take: Number(limit),

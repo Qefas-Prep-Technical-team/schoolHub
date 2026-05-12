@@ -5,15 +5,17 @@ interface ProgressCircleProps {
   label?: string;
   sublabel?: string;
   className?: string;
+  primaryColor?: string;
 }
 
-export default function ProgressCircle({ 
-  value, 
+export default function ProgressCircle({
+  value,
   size = 120,
   strokeWidth = 12,
   label,
   sublabel,
-  className = ''
+  className = '',
+  primaryColor
 }: ProgressCircleProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -25,18 +27,18 @@ export default function ProgressCircle({
       <svg className="size-full transform -rotate-90" viewBox={`0 0 ${size} ${size}`}>
         <defs>
           <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#4F46E5" />
-            <stop offset="100%" stopColor="#818CF8" />
+            <stop offset="0%" stopColor={primaryColor || "#4F46E5"} />
+            <stop offset="100%" stopColor={primaryColor || "#818CF8"} />
           </linearGradient>
           <filter id="glow">
-            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
             <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
-        
+
         {/* Background circle */}
         <circle
           className="stroke-slate-100 dark:stroke-slate-800/50"
@@ -46,7 +48,7 @@ export default function ProgressCircle({
           fill="none"
           strokeWidth={strokeWidth}
         />
-        
+
         {/* Progress circle */}
         <circle
           className="transition-all duration-1000 ease-in-out"
@@ -62,7 +64,7 @@ export default function ProgressCircle({
           filter="url(#glow)"
         />
       </svg>
-      
+
       {/* Center content */}
       <div className="absolute flex flex-col items-center justify-center">
         {label && (

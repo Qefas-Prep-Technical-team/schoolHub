@@ -4,7 +4,8 @@ import { useState, use } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { 
     usePlatformParentDetails,
-    useUpdateParentPlan
+    useUpdateParentPlan,
+    PlatformParentDetails
 } from "@/lib/api/hooks/usePlatformSchools"
 import { useResetParentSubscription } from "@/lib/api/hooks/usePlatformBilling"
 import { 
@@ -248,8 +249,8 @@ export default function PlatformParentDetailsPage() {
 
                             <TabsContent value="children">
                                 <div className="space-y-4">
-                                    {parent.children?.length > 0 ? (
-                                        parent.children.map((link: any) => (
+                                    {(parent.children?.length ?? 0) > 0 ? (
+                                        parent.children!.map((link) => (
                                             <Card key={link.id} className="p-6 bg-white dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-sm hover:border-indigo-500/30 transition-all group">
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                                    <div className="flex items-center gap-5">
@@ -297,7 +298,7 @@ export default function PlatformParentDetailsPage() {
     )
 }
 
-function ContactInfo({ icon: Icon, label, value }: { icon: any, label: string, value: string }) {
+function ContactInfo({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) {
     return (
         <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 group hover:border-indigo-500/30 transition-all">
             <div className="h-10 w-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-slate-400 group-hover:text-indigo-500 transition-colors shadow-sm">
@@ -311,7 +312,7 @@ function ContactInfo({ icon: Icon, label, value }: { icon: any, label: string, v
     )
 }
 
-function SubscriptionPanel({ parent, onUpdate }: { parent: any, onUpdate: any }) {
+function SubscriptionPanel({ parent, onUpdate }: { parent: PlatformParentDetails, onUpdate: any }) {
     const [isEditing, setIsEditing] = useState(false)
     const [formData, setFormData] = useState({
         plan: parent.plan,

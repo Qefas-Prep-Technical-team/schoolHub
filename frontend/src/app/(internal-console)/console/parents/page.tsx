@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { 
-    usePlatformParents 
+    usePlatformParents,
+    PlatformParentSummary
 } from "@/lib/api/hooks/usePlatformSchools"
 import { 
     Search as SearchIcon, 
@@ -42,10 +43,10 @@ export default function PlatformParentsPage() {
 
     // Status-based summary cards (Normal Style)
     const statusCards = [
-        { title: "Paid Parents", value: statusBreakdown.find((s: any) => s.type === 'PAID')?.count || 0, icon: CreditCard, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-        { title: "Expired Subs", value: statusBreakdown.find((s: any) => s.type === 'EXPIRED')?.count || 0, icon: LockIcon, color: "text-red-500", bg: "bg-red-500/10" },
-        { title: "Cancelled", value: statusBreakdown.find((s: any) => s.type === 'CANCELLED')?.count || 0, icon: ShieldIcon, color: "text-slate-500", bg: "bg-slate-500/10" },
-        { title: "Active Trials", value: statusBreakdown.find((s: any) => s.type === 'TRIAL')?.count || 0, icon: SettingsIcon, color: "text-amber-500", bg: "bg-amber-500/10" },
+        { title: "Paid Parents", value: statusBreakdown.find((s) => s.type === 'PAID')?.count || 0, icon: CreditCard, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+        { title: "Expired Subs", value: statusBreakdown.find((s) => s.type === 'EXPIRED')?.count || 0, icon: LockIcon, color: "text-red-500", bg: "bg-red-500/10" },
+        { title: "Cancelled", value: statusBreakdown.find((s) => s.type === 'CANCELLED')?.count || 0, icon: ShieldIcon, color: "text-slate-500", bg: "bg-slate-500/10" },
+        { title: "Active Trials", value: statusBreakdown.find((s) => s.type === 'TRIAL')?.count || 0, icon: SettingsIcon, color: "text-amber-500", bg: "bg-amber-500/10" },
     ]
 
     return (
@@ -84,7 +85,7 @@ export default function PlatformParentsPage() {
                             className="bg-transparent text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 focus:outline-none cursor-pointer"
                         >
                             <option value="ALL">All Plans</option>
-                            {planBreakdown.map((p: any) => (
+                            {planBreakdown.map((p) => (
                                 <option key={p.id} value={p.name}>{p.name}</option>
                             ))}
                         </select>
@@ -135,7 +136,7 @@ export default function PlatformParentsPage() {
                     [
                         { name: "Total Parents", count: pagination?.total || 0, type: 'TOTAL' },
                         ...planBreakdown
-                    ].map((plan: any, i: number) => (
+                    ].map((plan, i: number) => (
                         <div key={i} className="relative h-[180px] w-full rounded-[2rem] p-6 text-white overflow-hidden shadow-2xl transition-transform hover:scale-[1.02] cursor-pointer group">
                             {/* Dynamic Gradient Background */}
                             <div className={cn(
@@ -213,7 +214,7 @@ export default function PlatformParentsPage() {
                                     </td>
                                 </tr>
                             ) : (
-                                parents?.map((parent: any, index: number) => (
+                                parents?.map((parent, index: number) => (
                                     <tr 
                                         key={parent.id}
                                         className="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"

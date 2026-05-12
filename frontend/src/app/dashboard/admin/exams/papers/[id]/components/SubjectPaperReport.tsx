@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
-import { CreatePaperForm } from "../../components/CreatePaperForm";
+import { CreatePaperForm } from "../../../components/CreatePaperForm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FilePlus, ArrowLeft } from "lucide-react";
 import Link from "next/link";

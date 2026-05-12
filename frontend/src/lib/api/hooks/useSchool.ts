@@ -1,16 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
-import { schoolService } from "../services/schoolService";
+import { schoolService, SchoolStats } from "../services/schoolService";
 import { paymentService } from "../services/paymentService";
 
 export const schoolQueryKeys = {
   all: ["school"] as const,
-  stats: (schoolId: string) => [...schoolQueryKeys.all, "stats", schoolId] as const,
-  teachers: (schoolId: string) => [...schoolQueryKeys.all, "teachers", schoolId] as const,
-  performance: (schoolId: string) => [...schoolQueryKeys.all, "performance", schoolId] as const,
-  students: (schoolId: string, params?: Record<string, unknown>) => [...schoolQueryKeys.all, "students", schoolId, params] as const,
-  dashboardSummary: (schoolId: string) => [...schoolQueryKeys.all, "dashboard-summary", schoolId] as const,
-  billing: (schoolId: string, params?: Record<string, unknown>) => [...schoolQueryKeys.all, "billing", schoolId, params] as const,
-  userBilling: (userId: string, params?: Record<string, unknown>) => ["user", "billing", userId, params] as const,
+  stats: (schoolId: string) =>
+    [...schoolQueryKeys.all, "stats", schoolId] as const,
+  teachers: (schoolId: string) =>
+    [...schoolQueryKeys.all, "teachers", schoolId] as const,
+  performance: (schoolId: string) =>
+    [...schoolQueryKeys.all, "performance", schoolId] as const,
+  students: (schoolId: string, params?: Record<string, unknown>) =>
+    [...schoolQueryKeys.all, "students", schoolId, params] as const,
+  dashboardSummary: (schoolId: string) =>
+    [...schoolQueryKeys.all, "dashboard-summary", schoolId] as const,
+  billing: (schoolId: string, params?: Record<string, unknown>) =>
+    [...schoolQueryKeys.all, "billing", schoolId, params] as const,
+  userBilling: (userId: string, params?: Record<string, unknown>) =>
+    ["user", "billing", userId, params] as const,
 };
 
 export const useSchoolStats = (schoolId: string) => {
@@ -29,13 +36,19 @@ export const useSchoolTeachers = (schoolId: string) => {
   });
 };
 
-export const useSchoolPerformanceAnalysis = (schoolId: string, stats?: Record<string, unknown>) => {
+export const useSchoolPerformanceAnalysis = (
+  schoolId: string,
+  stats?: SchoolStats,
+) => {
   return useQuery({
-    queryKey: [...schoolQueryKeys.performance(schoolId), stats ? JSON.stringify(stats) : "no-stats"],
+    queryKey: [
+      ...schoolQueryKeys.performance(schoolId),
+      stats ? JSON.stringify(stats) : "no-stats",
+    ],
     queryFn: async () => {
       const cacheKey = `ai_analysis_${schoolId}`;
       const cached = localStorage.getItem(cacheKey);
-      
+
       // If we have stats and a cached result, check if the stats match the cached stats
       if (cached && stats) {
         try {
@@ -51,12 +64,12 @@ export const useSchoolPerformanceAnalysis = (schoolId: string, stats?: Record<st
 
       // If no cache or stats changed, fetch new analysis
       const data = await schoolService.getPerformanceAnalysis(schoolId);
-      
+
       // Store new analysis with current stats
       if (stats) {
         localStorage.setItem(cacheKey, JSON.stringify({ stats, data }));
       }
-      
+
       return data;
     },
     enabled: !!schoolId && !!stats,
@@ -65,7 +78,10 @@ export const useSchoolPerformanceAnalysis = (schoolId: string, stats?: Record<st
   });
 };
 
-export const useSchoolStudents = (schoolId: string, params?: Record<string, unknown>) => {
+export const useSchoolStudents = (
+  schoolId: string,
+  params?: Record<string, unknown>,
+) => {
   return useQuery({
     queryKey: schoolQueryKeys.students(schoolId, params),
     queryFn: () => schoolService.getStudents(schoolId, params),
@@ -86,11 +102,20 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 export const useUpdateSchoolProfile = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ schoolId, data }: { schoolId: string; data: Record<string, unknown> }) =>
-      schoolService.updateProfile(schoolId, data),
+    mutationFn: ({
+      schoolId,
+      data,
+    }: {
+      schoolId: string;
+      data: Record<string, unknown>;
+    }) => schoolService.updateProfile(schoolId, data),
     onSuccess: (_, { schoolId }) => {
-      queryClient.invalidateQueries({ queryKey: [...schoolQueryKeys.all, "profile", schoolId] });
-      queryClient.invalidateQueries({ queryKey: schoolQueryKeys.stats(schoolId) });
+      queryClient.invalidateQueries({
+        queryKey: [...schoolQueryKeys.all, "profile", schoolId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: schoolQueryKeys.stats(schoolId),
+      });
     },
   });
 };
@@ -106,10 +131,17 @@ export const useSchoolSettings = (schoolId: string) => {
 export const useUpdateSchoolSettings = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ schoolId, data }: { schoolId: string; data: Record<string, unknown> }) =>
-      schoolService.updateSettings(schoolId, data),
+    mutationFn: ({
+      schoolId,
+      data,
+    }: {
+      schoolId: string;
+      data: Record<string, unknown>;
+    }) => schoolService.updateSettings(schoolId, data),
     onSuccess: (_, { schoolId }) => {
-      queryClient.invalidateQueries({ queryKey: [...schoolQueryKeys.all, "settings", schoolId] });
+      queryClient.invalidateQueries({
+        queryKey: [...schoolQueryKeys.all, "settings", schoolId],
+      });
     },
   });
 };
@@ -123,18 +155,24 @@ export const useSchoolDashboardSummary = (schoolId: string) => {
   });
 };
 
-export const useSchoolBilling = (schoolId: string, params?: { page?: number; limit?: number }) => {
+export const useSchoolBilling = (
+  schoolId: string,
+  params?: { page?: number; limit?: number },
+) => {
   return useQuery({
     queryKey: schoolQueryKeys.billing(schoolId, params),
     queryFn: () => schoolService.getBilling(schoolId, params),
     enabled: !!schoolId,
-    staleTime: 0,                // Always consider data stale — re-fetch on every mount
-    refetchOnWindowFocus: true,  // Re-fetch when user returns to tab/page after checkout
-    refetchInterval: 30000,      // Refetch every 30 seconds
+    staleTime: 0, // Always consider data stale — re-fetch on every mount
+    refetchOnWindowFocus: true, // Re-fetch when user returns to tab/page after checkout
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 };
 
-export const useUserBilling = (userId: string, params?: { page?: number; limit?: number }) => {
+export const useUserBilling = (
+  userId: string,
+  params?: { page?: number; limit?: number },
+) => {
   return useQuery({
     queryKey: schoolQueryKeys.userBilling(userId, params),
     queryFn: () => paymentService.getBilling(params),

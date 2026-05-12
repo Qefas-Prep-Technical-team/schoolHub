@@ -4,7 +4,8 @@ import { useParams, useRouter } from "next/navigation"
 import { 
     usePlatformTeacherDetails,
     useUpdateTeacherPlan,
-    useAllPlatformPlans
+    useAllPlatformPlans,
+    PlatformTeacherDetails
 } from "@/lib/api/hooks/usePlatformSchools"
 import { useResetTeacherSubscription } from "@/lib/api/hooks/usePlatformBilling"
 import { 
@@ -148,13 +149,13 @@ export default function TeacherDetailsPage() {
                     <ChevronLeftIcon size={20} className="mr-2" /> Back to Index
                 </Button>
                 <div className="flex gap-3">
-                    {teacher.School_Teacher_primarySchoolIdToSchool && (
+                    {teacher.primarySchool && (
                         <Button 
                             variant="outline" 
                             className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                             asChild
                         >
-                            <Link href={`/console/schools/${teacher.School_Teacher_primarySchoolIdToSchool.id}`}>
+                            <Link href={`/console/schools/${teacher.primarySchool.id}`}>
                                 <ExternalLinkIcon size={16} className="mr-2" /> View School
                             </Link>
                         </Button>
@@ -262,12 +263,12 @@ export default function TeacherDetailsPage() {
                                             <SchoolIcon size={24} />
                                         </div>
                                         <div>
-                                            <p className="text-lg font-bold text-slate-900 dark:text-white">{teacher.School_Teacher_primarySchoolIdToSchool?.name || "Independent Teacher"}</p>
-                                            <p className="text-xs text-slate-500 font-medium">Tenant ID: {teacher.School_Teacher_primarySchoolIdToSchool?.tenantId || "N/A"}</p>
+                                            <p className="text-lg font-bold text-slate-900 dark:text-white">{teacher.primarySchool?.name || "Independent Teacher"}</p>
+                                            <p className="text-xs text-slate-500 font-medium">Tenant ID: {teacher.primarySchool?.tenantId || "N/A"}</p>
                                         </div>
-                                        {teacher.School_Teacher_primarySchoolIdToSchool && (
+                                        {teacher.primarySchool && (
                                             <Button variant="ghost" size="icon" className="ml-auto" asChild>
-                                                <Link href={`/console/schools/${teacher.School_Teacher_primarySchoolIdToSchool.id}`}>
+                                                <Link href={`/console/schools/${teacher.primarySchool.id}`}>
                                                     <ExternalLinkIcon size={18} />
                                                 </Link>
                                             </Button>
@@ -321,8 +322,8 @@ export default function TeacherDetailsPage() {
 
                           {activeTab === "subjects" && (
                               <div className="space-y-4">
-                                  {teacher.teacherSubjects?.length > 0 ? (
-                                      teacher.teacherSubjects.map((ts: any) => (
+                                  {(teacher.teacherSubjects?.length ?? 0) > 0 ? (
+                                      teacher.teacherSubjects!.map((ts) => (
                                           <div key={ts.id} className="p-5 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center justify-between group hover:border-indigo-500/30 transition-all">
                                               <div className="flex items-center gap-4">
                                                   <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
@@ -349,8 +350,8 @@ export default function TeacherDetailsPage() {
 
                           {activeTab === "classes" && (
                               <div className="space-y-4">
-                                  {teacher.classTeachers?.length > 0 ? (
-                                      teacher.classTeachers.map((tc: any) => (
+                                  {(teacher.classTeachers?.length ?? 0) > 0 ? (
+                                      teacher.classTeachers!.map((tc) => (
                                           <div key={tc.id} className="p-5 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center justify-between group hover:border-indigo-500/30 transition-all">
                                               <div className="flex items-center gap-4">
                                                   <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
@@ -441,7 +442,7 @@ export default function TeacherDetailsPage() {
                                                       value={editData.subscriptionPlanId || editData.plan}
                                                       onChange={(e) => {
                                                           const val = e.target.value;
-                                                          const selectedPlan = plans?.flatMap((c: any) => c.tabs).find((t: any) => t.id === val || t.type === val);
+                                                          const selectedPlan = plans?.flatMap((c) => c.tabs).find((t) => t.id === val || t.type === val);
                                                           setEditData({
                                                               ...editData,
                                                               subscriptionPlanId: selectedPlan?.id || "",
@@ -451,7 +452,7 @@ export default function TeacherDetailsPage() {
                                                       className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
                                                   >
                                                       <option value="FREE">FREE TIER</option>
-                                                      {plans?.map((cat: any) => (
+                                                      {plans?.map((cat) => (
                                                           <optgroup key={cat.category} label={cat.category.toUpperCase()}>
                                                               {cat.tabs.map((plan: any) => (
                                                                   <option key={plan.id} value={plan.id}>

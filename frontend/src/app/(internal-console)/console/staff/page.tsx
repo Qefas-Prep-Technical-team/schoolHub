@@ -1,7 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { usePlatformStaffList, useUpdateStaffRole, useResetStaffCredentials } from "@/lib/api/hooks/usePlatformStaff"
+import { 
+    usePlatformStaffList, 
+    useUpdateStaffRole, 
+    useResetStaffCredentials,
+    PlatformStaffMember
+} from "@/lib/api/hooks/usePlatformStaff"
 import { 
     Users, 
     ShieldCheck, 
@@ -17,7 +22,7 @@ import {
     Search,
     Shield
 } from "lucide-react"
-import { usePlatformAuditLogs } from "@/lib/api/hooks/usePlatformGovernance"
+import { usePlatformAuditLogs, PlatformAuditLog } from "@/lib/api/hooks/usePlatformGovernance"
 import { formatDistanceToNow } from "date-fns"
 import { 
     Table, 
@@ -99,12 +104,12 @@ export default function PlatformStaffPage() {
                                 </TableRow>
                             ))
                         ) : (
-                            staff?.map((member: any) => (
+                            staff?.map((member: PlatformStaffMember) => (
                                 <TableRow key={member.id} className="border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
                                     <TableCell className="pl-8 py-6">
                                         <div className="flex items-center gap-3">
                                             <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 font-black text-xs uppercase">
-                                                {member.fullName.split(' ').map((n:any) => n[0]).join('')}
+                                                {member.fullName.split(' ').map((n) => n[0]).join('')}
                                             </div>
                                             <div>
                                                 <p className="font-bold text-slate-900 dark:text-white leading-tight">{member.fullName}</p>
@@ -236,7 +241,7 @@ export default function PlatformStaffPage() {
                                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No activity recorded yet</p>
                             </div>
                         ) : (
-                            logs.map((log: any) => (
+                            logs?.map((log: PlatformAuditLog) => (
                                 <div key={log.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:border-indigo-500/30 transition-all">
                                     <div className="flex items-center gap-4">
                                         <div className={cn(

@@ -4,6 +4,28 @@ import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
 import { toast } from "react-toastify"
 import { AxiosError } from "axios";
 
+export interface PlatformAuditLog {
+    id: string;
+    action: string;
+    entityId?: string;
+    entityType?: string;
+    staff?: {
+        id: string;
+        fullName: string;
+    };
+    createdAt: string;
+}
+
+export interface PlatformAuditLogResponse {
+    data: PlatformAuditLog[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
 export const usePlatformFinance = () => {
     const { platform_token } = usePlatformStaffStore()
 
@@ -71,10 +93,10 @@ export const usePlatformAuditLogs = (page: number = 1, limit: number = 10) => {
     return useQuery({
         queryKey: ["platform-audit-logs", page, limit],
         queryFn: async () => {
-            const { data } = await platformClient.get<{ data: Record<string, any>[] }>(`/platform/logs?page=${page}&limit=${limit}`, {
+            const { data } = await platformClient.get<PlatformAuditLogResponse>(`/platform/logs?page=${page}&limit=${limit}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
-            return data.data;
+            return data;
         },
         enabled: !!platform_token,
     })

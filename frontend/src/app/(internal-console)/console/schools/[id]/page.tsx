@@ -6,7 +6,8 @@ import {
     useUpdateSchoolPlan, 
     useAllPlatformPlans,
     useUpdateSchoolStatus,
-    useImpersonateAdmin
+    useImpersonateAdmin,
+    PlatformSchoolDetails
 } from "@/lib/api/hooks/usePlatformSchools"
 import { useResetSchoolSubscription } from "@/lib/api/hooks/usePlatformBilling"
 import { 
@@ -103,8 +104,8 @@ export default function SchoolDetailsPage() {
         }
         
         // Find the plan type string to match the 'plan' field
-        const flatPlans = plans?.flatMap((c: any) => c.tabs) || []
-        const currentPlanObj = flatPlans.find((p: any) => p.id === selectedPlanId)
+        const flatPlans = plans?.flatMap((c) => c.tabs) || []
+        const currentPlanObj = flatPlans.find((p) => p.id === selectedPlanId)
         if (currentPlanObj) {
             planData.plan = currentPlanObj.type.toUpperCase()
         }
@@ -324,8 +325,8 @@ export default function SchoolDetailsPage() {
 
                           {activeTab === "emails" && (
                               <div className="space-y-4">
-                                 {school.emailLogs?.length > 0 ? (
-                                     school.emailLogs.map((log: any, idx: number) => (
+                                 {(school.emailLogs?.length ?? 0) > 0 ? (
+                                     school.emailLogs!.map((log, idx: number) => (
                                          <div key={idx} className="p-5 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-slate-100 dark:border-slate-800 group hover:border-indigo-500/30 transition-all overflow-hidden relative">
                                              <div className="flex items-start justify-between gap-4 relative z-10">
                                                 <div className="flex gap-4">
@@ -595,7 +596,7 @@ export default function SchoolDetailsPage() {
 
                                                  {school.settlementAccounts && school.settlementAccounts.length > 0 ? (
                                                      <div className="space-y-3">
-                                                         {school.settlementAccounts.map((settlement: any, idx: number) => (
+                                                         {school.settlementAccounts.map((settlement, idx: number) => (
                                                              <div key={settlement.id || idx} className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-white/5">
                                                                  <div className="flex justify-between items-start mb-2">
                                                                      <div className="flex items-center gap-2">
@@ -689,7 +690,7 @@ export default function SchoolDetailsPage() {
                                     onChange={(e) => setSelectedPlanId(e.target.value)}
                                 >
                                     <option value="">Select a plan</option>
-                                    {plans?.map((cat: any) => (
+                                    {plans?.map((cat) => (
                                         <optgroup key={cat.category} label={cat.category.toUpperCase()} className="bg-white dark:bg-slate-900">
                                             {cat.tabs.map((p: any) => (
                                                 <option key={p.id} value={p.id}>{p.name} ({p.type})</option>

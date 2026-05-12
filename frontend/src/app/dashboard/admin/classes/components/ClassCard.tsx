@@ -139,8 +139,8 @@ export default function ClassCard({
 
           <div className="flex items-center gap-4 p-4 rounded-3xl bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 mb-8">
             <div className="size-12 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-md">
-                {classData.teacher.avatarUrl ? (
-                  <img src={classData.teacher.avatarUrl} alt="" className="w-full h-full object-cover" />
+                {classData.teacher?.avatarUrl ? (
+                  <img src={classData.teacher?.avatarUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400">
                     <User size={20} />
@@ -150,7 +150,7 @@ export default function ClassCard({
             <div>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Class Teacher</p>
                 <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate max-w-[150px]">
-                  {classData.teacher.name}
+                  {classData.teacher?.name || "No Teacher Assigned"}
                 </p>
             </div>
           </div>

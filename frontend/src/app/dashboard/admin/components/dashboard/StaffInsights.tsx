@@ -17,6 +17,7 @@ interface StaffInsight {
   iconColor: string;
   iconBg: string;
   severity: 'high' | 'medium' | 'low';
+  customColor?: string;
   action?: {
     label: string;
     onClick: () => void;
@@ -26,7 +27,7 @@ interface StaffInsight {
 export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryColor?: string }) {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
-  
+
   const { data: summary, isLoading } = useSchoolDashboardSummary(schoolId);
 
   const insights = useMemo<StaffInsight[]>(() => {
@@ -51,7 +52,7 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
     }
 
     const lowCoverageClasses = summary.classesSummary.filter(c => c.teacherCount === 0);
-    
+
     if (lowCoverageClasses.length > 0) {
       list.push({
         id: 'coverage',
@@ -108,28 +109,28 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
   };
 
   return (
-    <div 
+    <div
       className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[3rem] border border-white/20 dark:border-slate-800/50 overflow-hidden flex flex-col group transition-all"
       style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
     >
-      <div 
-        className="absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700" 
+      <div
+        className="absolute top-0 right-0 h-40 w-40 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700"
         style={{ backgroundColor: primaryColor }}
       />
-      
+
       <div className="px-10 py-8 relative z-10">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-             <div className="flex items-center gap-3 mb-1">
-                <div className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Personnel Metrics</span>
-             </div>
-             <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter italic uppercase">
-               Faculty Insights
-             </h3>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Personnel Metrics</span>
+            </div>
+            <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter italic uppercase">
+              Faculty Insights
+            </h3>
           </div>
           <div className="h-12 w-12 rounded-2xl flex items-center justify-center text-white dark:text-slate-900 group-hover:scale-110 transition-transform" style={{ backgroundColor: primaryColor, boxShadow: `0 10px 15px -3px ${primaryColor}40` }}>
-             <Users size={24} />
+            <Users size={24} />
           </div>
         </div>
       </div>
@@ -143,7 +144,7 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
         ) : insights.length === 0 ? (
           <div className="py-10 flex flex-col items-center justify-center text-center px-4">
             <div className="h-12 w-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-300 mb-3">
-               <Users size={24} />
+              <Users size={24} />
             </div>
             <p className="text-sm font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest leading-none mb-2">No data available currently</p>
             <p className="text-[10px] text-slate-500 font-bold italic max-w-[250px]">
@@ -164,9 +165,9 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
                   style={{ '--hover-border': `${primaryColor}20` } as any}
                 >
                   <div className="flex items-start gap-4">
-                    <div 
-                        className={cn("p-3 rounded-2xl shrink-0 group-hover/item:scale-110 transition-transform", !insight.customColor && insight.iconBg)}
-                        style={insight.customColor ? { backgroundColor: `${insight.customColor}15`, color: insight.customColor } : {}}
+                    <div
+                      className={cn("p-3 rounded-2xl shrink-0 group-hover/item:scale-110 transition-transform", !insight.customColor && insight.iconBg)}
+                      style={insight.customColor ? { backgroundColor: `${insight.customColor}15`, color: insight.customColor } : {}}
                     >
                       <Icon className={cn("h-6 w-6", !insight.customColor && insight.iconColor)} />
                     </div>

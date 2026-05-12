@@ -19,7 +19,7 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useSchoolBilling } from '@/lib/api/hooks/useSchool';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useGlobalFeatures } from '@/lib/api/hooks/useGlobalFeatures';
 import { useFetchPricing } from '@/components/pricing/query';
 import { PricingData } from '@/components/Types/Pricing';
@@ -30,6 +30,7 @@ import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 
 export default function AdminBillingPage() {
     const router = useRouter();
+    const queryClient = useQueryClient();
     const { user } = useAuthStore();
     const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId;
     
@@ -65,7 +66,7 @@ export default function AdminBillingPage() {
             const result = await financeService.syncSubaccountStatus(schoolId, accountId);
             toast.success(result.message);
             const updated = await financeService.getSchoolAnalytics(schoolId);
-            setAnalytics(updated);
+            queryClient.setQueryData(['school-analytics', schoolId], updated);
         } catch (error: any) {
             toast.error(error.message || "Sync failed");
         } finally {

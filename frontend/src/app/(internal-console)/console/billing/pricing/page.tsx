@@ -279,7 +279,7 @@ export default function PricingManagerPage() {
             </div>
 
             <PricingPlanEditorModal 
-                plan={isEditing} 
+                plan={isEditing as any} 
                 isOpen={!!isEditing} 
                 onClose={() => setIsEditing(null)} 
             />

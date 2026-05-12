@@ -34,6 +34,7 @@
   - [x] Integrated `maxAiUsage` (AI Tokens) field into the Pricing Plan Editor.
   - [x] Added `maxTeachers`, `maxClasses`, and `maxExams` quota fields to the internal console for full control.
   - [x] Synchronized `handleSubmit` payload to correctly persist all new quota fields as numbers.
+  - [x] Fixed TypeScript type mismatch for `plan` prop in `PricingPlanEditorModal` by allowing `null` values.
 - **Teacher Registration & Linking**:
   - [x] Implemented independent teaching account tracking in the database (`isIndependent` flag).
   - [x] Added backend validation and registration logic to handle independent accounts and terms agreement.

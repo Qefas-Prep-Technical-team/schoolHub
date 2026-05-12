@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Loader2, Link as LinkIcon, FileText } from 'lucide-react';
 import { useSubjectPapers, useLinkPaperToExam } from '@/lib/api/hooks/useExams';
+import { SubjectPaper } from '@/lib/api/services/examService';
 
 interface AddExistingPaperModalProps {
   examId: string;
@@ -25,9 +26,9 @@ export default function AddExistingPaperModal({ examId, trigger }: AddExistingPa
   const { data: papers = [], isLoading } = useSubjectPapers({ unlinkedOnly: false });
   const linkMutation = useLinkPaperToExam();
 
-  const filteredPapers = papers.filter(p => 
+  const filteredPapers = papers.filter((p: SubjectPaper) =>
     (p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.subject?.name?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      p.subject?.name?.toLowerCase().includes(searchTerm.toLowerCase())) &&
     !p.exams?.some(link => link.examId === examId)
   );
 
@@ -50,11 +51,11 @@ export default function AddExistingPaperModal({ examId, trigger }: AddExistingPa
         <DialogHeader>
           <DialogTitle>Add Existing Subject Paper</DialogTitle>
         </DialogHeader>
-        
+
         <div className="relative mt-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input 
-            placeholder="Search by title or subject..." 
+          <Input
+            placeholder="Search by title or subject..."
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -73,9 +74,9 @@ export default function AddExistingPaperModal({ examId, trigger }: AddExistingPa
               <p className="text-slate-500 text-sm italic">No unlinked papers found matching your search.</p>
             </div>
           ) : (
-            filteredPapers.map((paper) => (
-              <div 
-                key={paper.id} 
+            filteredPapers.map((paper: SubjectPaper) => (
+              <div
+                key={paper.id}
                 className="flex items-center justify-between p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"
               >
                 <div>
@@ -86,8 +87,8 @@ export default function AddExistingPaperModal({ examId, trigger }: AddExistingPa
                     {paper.subject?.name || 'No Subject'} • {paper.durationMinutes} mins • {paper._count?.questions || 0} questions
                   </p>
                 </div>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={() => handleLink(paper.id)}
                   disabled={linkMutation.isPending}
                   className="gap-1 min-w-[80px]"

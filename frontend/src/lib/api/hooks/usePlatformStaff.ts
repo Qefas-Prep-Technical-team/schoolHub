@@ -4,13 +4,33 @@ import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
 import { toast } from "react-toastify"
 import { AxiosError } from "axios";
 
+export interface PlatformStaffMember {
+    id: string;
+    fullName: string;
+    email: string;
+    role: string;
+    isActive: boolean;
+    lastLoginAt?: string;
+    createdAt: string;
+}
+
+export interface PlatformStaffListResponse {
+    data: PlatformStaffMember[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
 export const usePlatformStaffList = (page: number = 1, limit: number = 10) => {
     const { platform_token } = usePlatformStaffStore()
 
     return useQuery({
         queryKey: ["platform-staff-list", page, limit],
         queryFn: async () => {
-            const { data } = await platformClient.get<Record<string, unknown>>(`/platform/staff?page=${page}&limit=${limit}`, {
+            const { data } = await platformClient.get<PlatformStaffListResponse>(`/platform/staff?page=${page}&limit=${limit}`, {
                 headers: { Authorization: `Bearer ${platform_token}` }
             });
             return data;

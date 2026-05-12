@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 interface Action {
   id: string;
   title: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; size?: number; strokeWidth?: number }>;
   description: string;
   color: string;
   iconColor: string;
@@ -67,7 +67,7 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
       icon: Calendar,
       description: 'Create timetable',
       color: '', // Will use custom
-      iconColor: '', 
+      iconColor: '',
       bgColor: '',
       href: '/dashboard/admin/classes',
     },
@@ -130,13 +130,13 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
                 "bg-white/10 dark:bg-black/20 border-white/10 hover:bg-white/20",
                 "active:scale-95"
               )}
-              style={{ 
-                '--hover-border': `${primaryColor}50`, 
+              style={{
+                '--hover-border': `${primaryColor}50`,
                 '--shadow-hover': `${primaryColor}10`,
                 boxShadow: `0 10px 15px -3px ${primaryColor}10`
               } as any}
             >
-              <div 
+              <div
                 className={cn(
                   "p-3 rounded-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6",
                   !isCustom && action.bgColor,
@@ -164,10 +164,10 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
           {actions.length} Shortcuts Available
         </p>
-        <Link 
-            href="/dashboard/admin/settings"
-            className="text-[9px] font-black hover:text-white transition-all uppercase flex items-center gap-1 tracking-widest"
-            style={{ color: primaryColor }}
+        <Link
+          href="/dashboard/admin/settings"
+          className="text-[9px] font-black hover:text-white transition-all uppercase flex items-center gap-1 tracking-widest"
+          style={{ color: primaryColor }}
         >
           Settings <Settings size={10} />
         </Link>
