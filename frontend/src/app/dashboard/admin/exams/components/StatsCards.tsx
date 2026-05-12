@@ -4,7 +4,6 @@ import { Exam } from "@/lib/api/services/examService";
 import { Trophy, Activity, Calendar, FileEdit, Zap, TrendingUp } from "lucide-react";
 import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
-import { cn } from "@/lib/utils";
 
 interface StatsCardsProps {
     exams: Exam[];

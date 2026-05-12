@@ -77,15 +77,6 @@ const ParentListPage: React.FC = () => {
         setSearchQuery(query);
     };
 
-    const handleMessageParent = (parentName: string) => {
-        console.log(`Opening message dialog for ${parentName}`);
-        // Implement messaging logic
-    };
-
-    const handleCallParent = (parentName: string) => {
-        console.log(`Initiating call to ${parentName}`);
-        // Implement calling logic
-    };
 
     return (
         <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden">

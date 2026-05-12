@@ -17,7 +17,7 @@ export default function RightPanel() {
 
                 <div className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800">
                     <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.2em] italic">
-                        “Educating the next generation of global innovators.”
+                        &ldquo;Educating the next generation of global innovators.&rdquo;
                     </p>
                 </div>
             </div>

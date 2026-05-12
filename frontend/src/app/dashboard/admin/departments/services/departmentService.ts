@@ -11,7 +11,7 @@ export interface Department {
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
-  subjects?: any[];
+  subjects?: unknown[];
 }
 
 export interface CreateDepartmentDTO {

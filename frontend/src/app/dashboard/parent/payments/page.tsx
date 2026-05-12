@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { WalletCards, Loader2, CheckCircle2 } from "lucide-react"
+import { WalletCards, Loader2 } from "lucide-react"
 import { toast } from "react-toastify"
 import { BankStatusBanner } from "../../admin/components/BankStatusBanner"
 
@@ -22,12 +22,12 @@ export default function ParentPaymentPage() {
     const [term, setTerm] = useState<string>("First Term")
     const [session, setSession] = useState<string>("2024/2025")
     const [loading, setLoading] = useState(false)
-    const [schoolStatus, setSchoolStatus] = useState<any>(null)
+    const [schoolStatus, setSchoolStatus] = useState<Record<string, unknown> | null>(null)
 
     React.useEffect(() => {
         if (selectedChildId) {
             const child = children.find(c => c.studentId === selectedChildId)
-            const schoolId = (child as any)?.schoolId || (user as any)?.schoolId
+            const schoolId = (child as Record<string, unknown>)?.schoolId || (user as Record<string, unknown>)?.schoolId
             if (schoolId) {
                 financeService.getSchoolAnalytics(schoolId)
                     .then(res => setSchoolStatus(res.paymentStatus))
@@ -55,7 +55,7 @@ export default function ParentPaymentPage() {
             
             // Note: In refined production code, schoolId should be part of the child object in auth store.
             // For now, we'll assume it might be there as an extra field if we updated the backend.
-            const schoolId = (child as any).schoolId || (user as any).schoolId; // Fallback or improved logic
+            const schoolId = (child as Record<string, unknown>).schoolId || (user as Record<string, unknown>).schoolId; // Fallback or improved logic
 
             const data = await financeService.initializePayment({
                 schoolId: schoolId,
@@ -71,8 +71,8 @@ export default function ParentPaymentPage() {
             } else {
                 toast.error("Failed to get payment URL")
             }
-        } catch (error: any) {
-            toast.error(error.message || "Failed to initialize payment")
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "Failed to initialize payment")
         } finally {
             setLoading(false)
         }
@@ -82,7 +82,7 @@ export default function ParentPaymentPage() {
         <div className="p-6 max-w-4xl mx-auto space-y-8">
             <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-bold tracking-tight">School Fee Payment</h1>
-                <p className="text-muted-foreground">Make secure payments directly to your child's school account.</p>
+                <p className="text-muted-foreground">Make secure payments directly to your child&apos;s school account.</p>
             </div>
 
             {schoolStatus && <BankStatusBanner status={schoolStatus.status} />}

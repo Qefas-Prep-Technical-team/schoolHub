@@ -10,12 +10,9 @@ import {
   AlertCircle,
   HelpCircle,
   Target,
-  TrendingUp,
-  Zap,
-  GraduationCap,
-  Eye,
-  ChevronRight
+  Eye
 } from "lucide-react";
+import NextImage from 'next/image';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
@@ -78,7 +75,7 @@ export default function ExamReviewPage() {
             </div>
 
             <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-2 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
-                {subjects.map((sub: any, idx: number) => (
+                {subjects.map((sub: Record<string, any>, idx: number) => (
                     <button
                         key={idx}
                         onClick={() => setActiveSubjectIndex(idx)}
@@ -140,7 +137,7 @@ export default function ExamReviewPage() {
 
                     <div className="pt-4">
                         <div className="flex flex-wrap gap-2">
-                             {currentSubject?.questions?.map((q: any, qIdx: number) => (
+                             {currentSubject?.questions?.map((q: Record<string, any>, qIdx: number) => (
                                 <div 
                                     key={qIdx} 
                                     className={cn(
@@ -160,7 +157,7 @@ export default function ExamReviewPage() {
 
             {/* Questions Stream */}
             <div className="lg:col-span-9 space-y-12">
-                {currentSubject?.questions?.map((q: any, idx: number) => {
+                {currentSubject?.questions?.map((q: Record<string, any>, idx: number) => {
                     const isCorrect = q.studentAnswer === q.correctAnswer;
                     return (
                         <div key={idx} className="group relative">
@@ -196,12 +193,14 @@ export default function ExamReviewPage() {
                                     {q.images && q.images.length > 0 && (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {q.images.map((url: string, i: number) => (
-                                                <img 
-                                                  key={i} 
-                                                  src={url} 
-                                                  alt={`Question Figure ${i + 1}`} 
-                                                  className="rounded-3xl border border-slate-100 dark:border-slate-800 shadow-lg w-full" 
-                                                />
+                                                <div key={i} className="relative aspect-video rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-lg w-full">
+                                                  <NextImage 
+                                                    src={url} 
+                                                    alt={`Question Figure ${i + 1}`} 
+                                                    fill
+                                                    className="object-cover" 
+                                                  />
+                                                </div>
                                             ))}
                                         </div>
                                     )}

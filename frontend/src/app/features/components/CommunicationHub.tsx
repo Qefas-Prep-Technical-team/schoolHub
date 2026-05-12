@@ -1,5 +1,6 @@
 "use client"
 import React from 'react';
+import NextImage from 'next/image';
 import { motion } from 'framer-motion';
 
 const CommunicationHub: React.FC = () => {
@@ -15,10 +16,12 @@ const CommunicationHub: React.FC = () => {
                         className="relative"
                     >
                         <div className="aspect-square rounded-[3rem] overflow-hidden shadow-2xl relative">
-                            <img 
+                            <NextImage 
                                 className="w-full h-full object-cover" 
                                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlouDyM4VUCHVIFqomHEaIqGIR0py8NXH9HVYWIXwy2iy8afI-cY16Rm-YoR0-KYW5Ic8f8whqYXdzYnbYHOqGCh7ynaJp92BRlJ-kP8l97PhLJThayPGb3SMldQpyegTyv_BKYM1lCsa8dzKrvIjIRLDTm6REE6R1xd0De7sr2Q3GwvwI7kFBGwAilQnTy1l9BcF2wGqcgZoR63rvezoSIN_eAZU8j86lOccYwhvw9hnOrMFZgnySewU6IzItoNzIWLQRy1Tt-7k" 
                                 alt="Teachers and parents collaborating"
+                                width={600}
+                                height={600}
                             />
                             <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent"></div>
                         </div>

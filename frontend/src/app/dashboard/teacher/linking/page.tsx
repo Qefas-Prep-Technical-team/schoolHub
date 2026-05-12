@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Link2,
   Search,
-  Plus,
   UserPlus,
   MoreVertical,
   Check,
@@ -14,16 +13,11 @@ import {
   ShieldCheck,
   Mail,
   Copy,
-  ExternalLink,
   Info,
   Hash,
-  ChevronRight,
-  ArrowUpRight,
-  CheckCircle2,
-  AlertCircle,
-  Shield,
   Loader2
 } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +49,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { linkService, LinkRequest, LinkType } from '@/lib/api/services/linkService';
+import { LinkType } from '@/lib/api/services/linkService';
 import {
   useLinkRequests,
   useActiveLinks,
@@ -110,7 +104,7 @@ function LinkingHub() {
   const { data: networkTotalData } = useLinkRequests({ category: 'network', status: 'PENDING', limit: 1 }, { enabled: isPersonal });
   const { data: classroomTotalData } = useLinkRequests({ category: 'classroom', status: 'PENDING', limit: 1 }, { enabled: isPersonal });
 
-  const { data: profileResponse, isLoading: isLoadingProfile } = useLinkProfile();
+  const { data: profileResponse } = useLinkProfile();
   const profile = profileResponse?.data || {};
 
   const currentSchool = schools.find(s => s.id === selectedSchoolId);
@@ -120,7 +114,11 @@ function LinkingHub() {
   const cancelMutation = useCancelLinkRequest();
   const revokeMutation = useRevokeActiveLink();
 
-  const getPeer = (item: any) => {
+  const getPeer = (item: { 
+    approvedFromRequest?: any;
+    targetStudent?: any; targetTeacher?: any; targetParent?: any; targetSchool?: any; approverAdmin?: any;
+    requesterStudent?: any; requesterTeacher?: any; requesterParent?: any; requesterSchool?: any; requesterAdmin?: any;
+  }) => {
     const r = item.approvedFromRequest || item;
     const participants = [
       r.targetStudent, r.targetTeacher, r.targetParent, r.targetSchool, r.approverAdmin,
@@ -140,20 +138,20 @@ function LinkingHub() {
       peerCode: item.studentCode || item.teacherCode || item.parentCode || 
                 (item.leftEntityId === user?.id ? item.rightCode : item.leftCode) || 
                 (item.requesterId === user?.id ? item.targetCode : item.requesterCode)
-    };
-  });
+    } as const;
+  }) as any[];
 
   // Normalized Data
-  const activeLinks = normalizeList((activeLinksData as any)?.items);
-  const requests = normalizeList((requestsData as any)?.items);
+  const activeLinks = normalizeList((activeLinksData as { items?: unknown[] })?.items || []);
+  const requests = normalizeList((requestsData as { items?: unknown[] })?.items || []);
   const pendingRequests = requests.filter(r => r.status === 'PENDING');
 
-  const networkPendingCount = (networkTotalData as any)?.pagination?.total || 0;
-  const classroomPendingCount = (classroomTotalData as any)?.pagination?.total || 0;
+  const networkPendingCount = (networkTotalData as { pagination?: { total: number } })?.pagination?.total || 0;
+  const classroomPendingCount = (classroomTotalData as { pagination?: { total: number } })?.pagination?.total || 0;
 
   const currentPagination = subTab === 'active' 
-    ? (activeLinksData as any)?.pagination 
-    : (requestsData as any)?.pagination;
+    ? (activeLinksData as { pagination?: unknown })?.pagination 
+    : (requestsData as { pagination?: unknown })?.pagination;
 
   const handleRespond = async (id: string, action: 'ACCEPT' | 'REJECT') => {
     respondMutation.mutate({ id, action });
@@ -321,11 +319,11 @@ function LinkingHub() {
                 <EmptyState message={`No active ${isPersonal ? mainTab : ''} connections found.`} />
               ) : (
                 activeLinks
-                  .filter((link: any) => 
+                  .filter((link: { peerName: string, peerEmail: string }) => 
                     link.peerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                     link.peerEmail.toLowerCase().includes(searchQuery.toLowerCase())
                   )
-                  .map((link: any) => (
+                  .map((link: unknown) => (
                     <MemberCard key={link.id} link={link} onRevoke={handleRevoke} onCopy={copyToClipboard} />
                   ))
               )
@@ -334,11 +332,11 @@ function LinkingHub() {
                 <EmptyState message={`No pending ${isPersonal ? mainTab : ''} requests found.`} />
               ) : (
                 pendingRequests
-                  .filter((req: any) => 
+                  .filter((req: { peerName: string, peerEmail: string }) => 
                     req.peerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                     req.peerEmail.toLowerCase().includes(searchQuery.toLowerCase())
                   )
-                  .map((req: any) => (
+                  .map((req: unknown) => (
                     <RequestCard key={req.id} req={req} user={user} onRespond={handleRespond} onCancel={handleCancel} />
                   ))
               )
@@ -395,14 +393,14 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
-function MemberCard({ link, onRevoke, onCopy }: any) {
+function MemberCard({ link, onRevoke, onCopy }: { link: any, onRevoke: (id: string) => void, onCopy: (text: string) => void }) {
   return (
     <Card className="rounded-2xl overflow-hidden border-none shadow-sm hover:shadow-lg transition-all group border-gray-100 dark:border-gray-800">
       <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 p-4 flex flex-row items-center justify-between space-y-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all overflow-hidden border border-gray-100 dark:border-gray-800">
             {link.peerImage ? (
-              <img src={link.peerImage} alt={link.peerName} className="h-full w-full object-cover" />
+              <Image src={link.peerImage} alt={link.peerName} width={40} height={40} className="h-full w-full object-cover" />
             ) : (
               <UserPlus size={20} />
             )}
@@ -441,7 +439,7 @@ function MemberCard({ link, onRevoke, onCopy }: any) {
   );
 }
 
-function RequestCard({ req, user, onRespond, onCancel }: any) {
+function RequestCard({ req, user, onRespond, onCancel }: { req: any, user: any, onRespond: (id: string, action: 'ACCEPT' | 'REJECT') => void, onCancel: (id: string) => void }) {
   return (
     <Card className="rounded-2xl overflow-hidden border border-orange-100 dark:border-orange-500/20 shadow-sm hover:shadow-md transition-all">
       <CardHeader className="p-4">
@@ -451,7 +449,7 @@ function RequestCard({ req, user, onRespond, onCancel }: any) {
         </div>
         <div className="flex items-center gap-3 mt-3">
           <div className="w-10 h-10 bg-gray-50 dark:bg-gray-900 rounded-xl flex items-center justify-center overflow-hidden border border-orange-50 dark:border-orange-900/20">
-            {req.peerImage ? <img src={req.peerImage} alt={req.peerName} className="h-full w-full object-cover" /> : <Clock size={18} className="text-orange-500" />}
+            {req.peerImage ? <Image src={req.peerImage} alt={req.peerName} width={40} height={40} className="h-full w-full object-cover" /> : <Clock size={18} className="text-orange-500" />}
           </div>
           <div className="min-w-0">
             <CardTitle className="text-sm font-black truncate">{req.peerName}</CardTitle>
@@ -525,7 +523,7 @@ function ConnectModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
         <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
           <div className="space-y-2">
             <label className="text-xs font-black uppercase tracking-widest text-gray-400 pl-1">Connection Type</label>
-            <Select value={linkType} onValueChange={(val: any) => setLinkType(val)}>
+            <Select value={linkType} onValueChange={(val: string) => setLinkType(val as LinkType)}>
               <SelectTrigger className="h-14 rounded-2xl border-2 border-gray-100 bg-gray-50/50 px-4 focus:ring-primary focus:border-primary transition-all">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>

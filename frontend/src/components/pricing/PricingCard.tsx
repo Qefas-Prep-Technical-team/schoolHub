@@ -3,12 +3,11 @@ import Box from '@mui/material/Box';
 import React, { FC } from 'react';
 import PricingTab from './PricingTab';
 import { useBillingStore } from '@/utils/PricingPage';
-import { useTheme } from 'next-themes';
+
 import { motion } from 'framer-motion';
 
 const PricingCard: FC = () => {
     const { billingType, setBillingType } = useBillingStore();
-    const { theme } = useTheme();
 
     return (
         <Box className="container mx-auto md:p-6 pb-24 relative z-20">

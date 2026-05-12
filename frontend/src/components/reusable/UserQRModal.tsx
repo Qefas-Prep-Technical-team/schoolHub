@@ -9,6 +9,7 @@ import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useLinkProfile } from "@/lib/api/hooks/useLinks";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface UserQRModalProps {
   isOpen: boolean;
@@ -67,10 +68,11 @@ export const UserQRModal: React.FC<UserQRModalProps> = ({ isOpen, onClose }) => 
                 {isLoading ? (
                     <div className="w-full h-full bg-slate-200 dark:bg-slate-800" />
                 ) : displayImage ? (
-                    <img 
+                    <Image 
                         src={displayImage} 
                         alt={displayName || "Profile"} 
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                     />
                 ) : (
                     <User className="w-8 h-8 text-blue-600 dark:text-blue-400" />

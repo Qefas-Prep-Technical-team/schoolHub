@@ -23,7 +23,7 @@ import ExamDetails from './start/components/ExamDetails';
 import QuestionCard from './start/components/QuestionCard';
 import QuestionNavigation from './start/components/QuestionNavigation';
 import ConfirmationModal from "@/app/dashboard/admin/exams/components/ui/ConfirmationModal";
-import { SubjectPaper, SubjectAttempt, QuestionAnswer, ExamAttempt } from "@/lib/api/services/examService";
+import { SubjectPaper, SubjectAttempt } from "@/lib/api/services/examService";
 import { AxiosError } from "axios";
 
 /**
@@ -180,7 +180,7 @@ export default function UnifiedExamPage() {
         if (nextSubject) {
           setActiveSubjectId(nextSubject.id);
           setActiveQuestionIndex(0);
-          toast.info(`Moving to next subject: ${nextSubject.title || (nextSubject as any).subject?.name || "Unnamed Paper"}`, { toastId: "subject-switch" });
+          toast.info(`Moving to next subject: ${nextSubject.title || (nextSubject as { subject?: { name?: string } }).subject?.name || "Unnamed Paper"}`, { toastId: "subject-switch" });
         }
       }
     }
@@ -219,14 +219,10 @@ export default function UnifiedExamPage() {
       await submitAttemptMutation.mutateAsync(examId as string);
       setShowSubmitModal(false);
       router.push(`/dashboard/student/exams&quizzes/${examId}/result`);
-    } catch (_err) {
+    } catch {
       isSubmittingRef.current = false;
       toast.error("Failed to submit exam");
     }
-  };
-
-  const _getSavedAnswer = (questionId: string) => {
-    return (attempt as ExamAttempt)?.answers?.find((a: QuestionAnswer) => a.questionId === questionId)?.answer;
   };
 
   // --- Effects (Moved after memos and callbacks to avoid ReferenceError) ---
@@ -241,8 +237,8 @@ export default function UnifiedExamPage() {
     if (attempt?.subjectAttempts && !initialAnswersRestoredRef.current) {
       const restoredAnswers: Record<string, string> = {};
       let hasAnswers = false;
-      attempt.subjectAttempts.forEach((sa: any) => {
-        sa.answers?.forEach((a: any) => {
+      attempt.subjectAttempts.forEach((sa: { answers?: { questionId: string, answer: string }[] }) => {
+        sa.answers?.forEach((a) => {
           restoredAnswers[a.questionId] = a.answer;
           hasAnswers = true;
         });
@@ -598,7 +594,7 @@ export default function UnifiedExamPage() {
                                  : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
                              }`}
                            >
-                             {paper.title || (paper as any).subject?.name || "Unnamed Paper"}
+                             {paper.title || (paper as { subject?: { name?: string } }).subject?.name || "Unnamed Paper"}
                            </button>
                          ))}
                       </div>

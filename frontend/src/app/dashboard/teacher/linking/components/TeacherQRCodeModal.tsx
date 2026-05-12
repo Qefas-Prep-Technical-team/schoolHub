@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import { Copy, User, GraduationCap, School, Users, QrCode } from "lucide-react";
+import { Copy, GraduationCap, School, Users, QrCode } from "lucide-react";
 
 interface TeacherQRCodeModalProps {
   isOpen: boolean;

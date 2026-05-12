@@ -29,12 +29,12 @@ export default function PerformanceChart() {
         
         let filteredGrades = student.grades;
         if (selectedSubject !== 'All Subjects') {
-            filteredGrades = student.grades.filter((g: any) => 
+            filteredGrades = student.grades.filter((g: { subject?: string, subjectPaper?: { subject?: { name: string } } }) => 
                 (g.subject || g.subjectPaper?.subject?.name) === selectedSubject
             );
         }
 
-        return [...filteredGrades].reverse().map((g: any) => ({
+        return [...filteredGrades].reverse().map((g: { createdAt: string, score: number, maxMarks: number, subject?: string, subjectPaper?: { subject?: { name: string } } }) => ({
             date: format(new Date(g.createdAt), 'MMM dd'),
             score: Math.round((g.score / g.maxMarks) * 100),
             subject: g.subject || g.subjectPaper?.subject?.name || 'Unknown'
@@ -43,7 +43,7 @@ export default function PerformanceChart() {
 
     const subjects = useMemo(() => {
         if (!student?.grades) return ['All Subjects'];
-        const uniqueSubjects = Array.from(new Set(student.grades.map((g: any) => 
+        const uniqueSubjects = Array.from(new Set(student.grades.map((g: { subject?: string, subjectPaper?: { subject?: { name: string } } }) => 
             g.subject || g.subjectPaper?.subject?.name
         ).filter(Boolean)));
         return ['All Subjects', ...uniqueSubjects];
@@ -71,7 +71,7 @@ export default function PerformanceChart() {
                         onChange={(e) => setSelectedSubject(e.target.value)}
                         className="bg-slate-100 dark:bg-white/5 border-none rounded-xl text-[11px] font-black uppercase tracking-widest text-slate-700 dark:text-white focus:ring-4 focus:ring-orange-500/10 py-3 px-6 cursor-pointer outline-none transition-all"
                     >
-                        {subjects.map((subject: any) => (
+                        {subjects.map((subject) => (
                             <option key={subject} value={subject}>
                                 {subject}
                             </option>

@@ -1,4 +1,5 @@
 import React, { FC } from 'react';
+import NextImage from 'next/image';
 import { motion } from 'framer-motion';
 
 const HeroSection: FC = () => {
@@ -41,7 +42,7 @@ const HeroSection: FC = () => {
                         <div className="flex items-center -space-x-4">
                             {[1, 2, 3, 4].map((i) => (
                                 <div key={i} className="w-12 h-12 rounded-full border-4 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                                    <img src={`https://i.pravatar.cc/150?u=${i}`} alt="User" className="w-full h-full object-cover" />
+                                    <NextImage src={`https://i.pravatar.cc/150?u=${i}`} alt="User" width={48} height={48} className="w-full h-full object-cover" />
                                 </div>
                             ))}
                             <div className="w-12 h-12 rounded-full border-4 border-white dark:border-slate-900 bg-blue-600 flex items-center justify-center text-white text-xs font-bold">

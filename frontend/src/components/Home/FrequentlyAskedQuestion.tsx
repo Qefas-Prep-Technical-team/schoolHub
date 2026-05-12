@@ -10,7 +10,7 @@ import {
 import { useFetchFrequentlyAsked } from './query';
 
 const FrequentlyAskedQuestion: FC = () => {
-    const { data, isLoading } = useFetchFrequentlyAsked();
+    const { data } = useFetchFrequentlyAsked();
 
     return (
         <section className="py-24 px-6 max-w-4xl mx-auto">

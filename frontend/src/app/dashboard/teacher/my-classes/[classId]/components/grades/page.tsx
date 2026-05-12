@@ -14,17 +14,30 @@ export default function GradesPage() {
   const params = useParams()
   const classId = params.classId as string
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters, setFilters] = useState<GradeFilter>({})
+  const [filters] = useState<GradeFilter>({})
   const [editingGrade, setEditingGrade] = useState<StudentGrade | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['class-grades', classId],
     queryFn: () => teacherService.getClassGrades(classId),
     enabled: !!classId,
   })
 
-  const grades: StudentGrade[] = (data || []).map((g: any) => ({
+  const grades: StudentGrade[] = (data || []).map((g: {
+    id: string;
+    studentId: string;
+    studentName: string;
+    avatar?: string;
+    grades: {
+      continuousAssessment: GradeScore;
+      exams: GradeScore;
+      total: number;
+      position?: number;
+    };
+    status: GradeStatus;
+    lastUpdated?: string | Date;
+  }) => ({
     id: g.id,
     studentId: g.studentId,
     studentName: g.studentName,
@@ -65,7 +78,7 @@ export default function GradesPage() {
     }
 
     setFilteredGrades(filtered)
-  }, [searchQuery, data, filters])
+  }, [searchQuery, grades, filters])
 
   const handleEditGrade = (grade: StudentGrade) => {
     setEditingGrade(grade)
@@ -84,24 +97,9 @@ export default function GradesPage() {
     // Navigate to student grade details
   }
 
-  const handleImportGrades = () => {
-    console.log('Import grades')
-    // Implement import logic
-  }
-
-  const handleExportGrades = () => {
-    console.log('Export grades')
-    // Implement export logic
-  }
-
   const handleFilterClick = () => {
     console.log('Open filter dialog')
     // Implement filter dialog
-  }
-
-  const handleLogout = () => {
-    console.log('Logout')
-    // Implement logout logic
   }
 
   if (isLoading) {

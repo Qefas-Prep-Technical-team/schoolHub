@@ -1,26 +1,18 @@
 import { ThemeToggle } from '@/app/theme-toggle';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import Image from 'next/image';
-import React, { FC, useEffect, useState } from 'react';
+import NextImage from 'next/image';
+import React, { FC } from 'react';
 import { Button as Button2 } from "@/components/ui/button";
 import { mainTab } from '../Types/Nav';
 import Link from 'next/link';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
-import { useAuthModalStore } from '@/utils/AuthModalStore';
-import { motion } from 'framer-motion';
 import { LayoutDashboard, LogIn, Rocket } from 'lucide-react';
 interface BigNavBarProps {
     pages: mainTab[];
     handleCloseNavMenu: () => void
 }
-const BigNavBar: FC<BigNavBarProps> = ({ pages, handleCloseNavMenu }) => {
+const BigNavBar: FC<BigNavBarProps> = ({ pages }) => {
     const { isAuthenticated } = useAuthStore();
-    const { openModal } = useAuthModalStore();
-
-
-
 
     return (
         <Box
@@ -29,7 +21,7 @@ const BigNavBar: FC<BigNavBarProps> = ({ pages, handleCloseNavMenu }) => {
             {/* Left: Logo */}
             <Link href="/" className="group flex items-center gap-3 transition-transform duration-300 hover:scale-105">
                 <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 shadow-lg shadow-blue-600/10 group-hover:rotate-6 transition-transform overflow-hidden p-1.5 border border-slate-200 dark:border-slate-800">
-                    <img src="/logo/favicon.svg" alt="Qefas Hub Logo" className="h-full w-full object-contain" />
+                    <NextImage src="/logo/favicon.svg" alt="Qefas Hub Logo" width={40} height={40} className="h-full w-full object-contain" />
                 </div>
                 <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase font-sans">
                     Qefas <span className="text-blue-600">Hub</span>

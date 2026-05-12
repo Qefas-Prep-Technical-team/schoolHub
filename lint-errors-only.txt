@@ -1,0 +1,627 @@
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:60:103:29  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:82:28:21  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:84:28:95  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:131:27:21  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:133:27:80  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:137:12:119  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:151:129:21  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:177:438:40  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:179:438:46  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:188:56:13  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:190:56:72  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:192:56:168  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:196:526:36  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:198:526:42  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:207:58:11  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:209:58:150  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:217:560:40  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:219:560:46  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:228:55:13  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:230:55:146  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:236:546:40  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:238:546:46  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:247:54:13  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:249:54:155  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:257:69:13  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:267:30:22  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:271:69:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:285:25:52  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:287:49:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:295:35:26  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:297:43:61  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:299:58:83  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:303:66:81  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:307:70:69  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:309:80:76  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:311:90:74  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:315:122:71  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:321:139:79  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:323:146:40  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:325:147:22  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:327:158:40  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:329:159:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:343:391:116  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:345:398:62  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:347:411:63  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:349:418:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:351:418:80  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:353:419:100  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:355:420:100  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:357:422:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:359:423:98  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:361:479:107  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:363:504:117  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:365:504:128  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:367:533:114  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:369:564:82  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:371:564:127  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:373:565:93  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:375:602:67  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:377:643:77  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:379:646:87  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:381:661:75  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:383:664:87  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:385:680:75  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:387:683:87  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:409:46:63  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:411:50:66  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:413:177:69  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:415:227:93  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:417:227:138  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:419:282:36  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:431:18:23  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:435:14:22  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:437:37:108  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:439:37:132  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:443:19:14  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:445:23:26  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:447:100:61  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:464:34:11  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:470:80:27  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:472:92:36  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:474:194:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:504:72:24  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:506:79:60  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:508:86:27  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:510:94:54  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:516:103:36  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:518:225:70  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:520:225:78  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:522:231:63  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:524:242:55  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:530:121:52  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:538:129:49  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:542:237:60  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:564:315:93  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:568:27:13  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:574:55:58  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:576:59:82  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:578:60:85  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:580:61:80  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:582:62:78  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:584:109:34  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:586:187:52  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:588:250:51  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:596:99:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:598:289:51  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:600:695:63  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:640:48:67  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:642:49:66  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:644:50:63  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:646:51:67  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:648:90:52  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:650:141:34  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:652:220:57  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:664:462:84  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:688:45:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:690:52:27  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:692:85:111  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:694:94:111  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:696:121:51  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:698:194:68  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:702:46:67  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:704:47:66  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:706:48:63  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:708:49:67  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:710:88:52  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:712:139:34  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:714:217:57  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:726:457:84  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:730:36:64  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:757:136:21  Error: 'targetUrl' is never reassigned. Use 'const' instead.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:759:194:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:761:228:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:763:245:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:765:269:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:767:294:38  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:771:333:68  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:773:339:49  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:775:340:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:777:361:124  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:779:411:49  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:781:565:120  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:783:638:96  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:785:756:82  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:787:756:88  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:795:22:29  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:819:70:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:821:107:58  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:823:264:55  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:827:38:57  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:843:132:53  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:852:79:59  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:854:80:65  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:856:81:62  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:861:162:21  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:893:69:49  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:897:230:82  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:899:321:242  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:908:38:17  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:910:147:54  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:912:163:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:961:126:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:963:146:78  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:970:235:98  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1017:84:33  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1025:75:59  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1027:108:58  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1033:27:45  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1035:48:46  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1037:84:70  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1039:197:13  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1041:197:94  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1045:21:45  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1051:31:63  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1053:106:52  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1055:140:69  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1057:143:230  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1075:137:20  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1081:23:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1083:53:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1085:76:12  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1087:97:55  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1089:137:58  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1091:147:73  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1093:186:155  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1107:70:37  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1109:70:127  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1121:156:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1123:165:71  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1143:131:59  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1145:135:46  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1163:20:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1179:29:18  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1181:73:33  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1205:94:35  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1211:240:74  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1213:321:234  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1215:347:53  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1217:347:112  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1219:415:233  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1221:419:41  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1223:419:105  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1225:430:253  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1229:14:14  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1233:96:73  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1249:115:61  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1251:121:25  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1253:121:50  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1255:148:57  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1257:184:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1259:205:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1265:77:62  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1267:89:60  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1269:94:68  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1291:33:13  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1293:65:22  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1295:126:53  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1301:7:13  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1329:81:33  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1331:81:42  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1345:42:80  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1347:60:50  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1351:81:33  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1353:81:42  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1357:81:33  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1359:81:42  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1411:27:40  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1413:32:46  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1415:35:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1417:43:74  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1419:44:58  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1421:44:66  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1425:109:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1427:128:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1429:147:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1433:15:54  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1447:26:48  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1449:48:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1451:108:79  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1453:216:55  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1455:278:75  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1459:24:54  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1461:146:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1490:8:12  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1492:9:11  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1494:22:73  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1500:230:9  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1502:231:13  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1504:232:11  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1510:47:38  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1512:48:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1518:60:40  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1520:61:41  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1525:86:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1527:96:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1529:96:57  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1531:112:26  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1538:117:24  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1540:200:34  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1542:227:35  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1544:297:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1558:36:11  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1560:48:66  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1562:50:48  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1564:160:46  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1576:50:38  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1580:66:40  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1582:68:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1584:69:41  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1586:73:58  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1591:142:70  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1598:286:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1600:299:45  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1617:48:38  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1619:64:40  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1621:66:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1623:67:41  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1627:72:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1632:102:22  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1634:110:27  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1636:206:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1638:232:45  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1642:230:11  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1644:231:11  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1646:234:52  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1648:234:65  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1652:311:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1654:351:55  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1656:360:64  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1658:366:60  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1664:167:11  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1666:168:10  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1668:169:12  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1670:170:13  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1672:171:12  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1674:204:14  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1676:204:22  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1680:269:54  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1682:272:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1684:295:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1688:34:11  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1690:60:26  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1692:132:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1694:177:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1728:292:4  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1730:321:70  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1732:362:31  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1734:370:73  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1736:385:220  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1738:410:245  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1740:434:4  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1754:446:36  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1756:462:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1758:464:50  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1760:472:33  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1762:472:70  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1764:482:54  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1766:523:33  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1768:525:55  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1770:525:92  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1772:525:151  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1774:585:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1776:614:50  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1778:618:221  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1780:650:66  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1782:669:85  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1784:685:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1786:796:51  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1788:889:31  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1790:889:176  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1792:903:80  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1794:917:70  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1796:940:30  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1798:965:221  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1800:976:241  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1804:11:12  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1806:12:11  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1808:36:69  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1818:228:123  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1820:228:135  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1858:128:57  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1898:47:21  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1917:117:70  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1933:170:50  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1945:257:33  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1947:257:94  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1949:336:66  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1951:460:43  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1953:466:212  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1955:490:83  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1979:40:54  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1981:43:58  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1983:45:22  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1985:52:26  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1987:75:29  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1989:79:47  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:1991:80:29  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2001:104:21  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2003:453:72  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2005:466:72  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2007:498:84  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2009:515:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2017:51:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2019:81:28  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2037:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2039:170:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2046:215:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2078:187:78  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2097:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2099:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2106:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2125:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2127:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2134:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2153:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2155:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2162:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2181:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2183:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2190:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2209:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2211:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2218:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2237:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2239:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2246:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2265:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2267:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2274:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2293:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2295:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2302:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2320:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2322:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2329:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2347:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2349:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2356:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2374:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2376:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2383:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2401:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2403:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2410:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2428:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2430:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2437:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2455:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2457:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2464:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2483:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2485:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2492:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2510:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2512:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2519:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2537:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2539:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2546:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2565:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2567:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2574:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2592:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2594:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2601:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2619:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2621:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2628:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2646:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2648:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2655:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2673:100:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2675:146:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2682:191:110  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2688:93:51  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2690:98:11  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2692:98:93  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2698:89:55  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2700:90:35  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2702:90:66  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2709:191:21  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2711:291:63  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2735:210:74  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2741:49:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2743:61:28  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2749:89:55  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2751:90:35  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2753:90:66  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2760:191:21  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2762:291:63  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2766:58:21  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2768:101:77  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2779:39:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2781:51:33  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2783:56:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2785:57:35  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2787:79:21  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2789:219:74  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2846:70:51  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2848:71:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2850:143:31  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2852:144:35  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2874:51:17  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2878:143:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2880:168:52  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2884:10:12  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2886:17:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2888:49:43  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2890:65:63  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2952:104:57  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:2976:132:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3010:25:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3042:53:75  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3044:71:80  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3048:39:60  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3050:52:24  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3052:135:60  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3080:79:21  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3086:129:61  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3097:41:9  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3101:203:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3109:56:24  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3113:217:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3163:58:195  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3169:25:54  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3171:30:40  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3173:30:67  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3178:58:40  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3180:58:66  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3182:74:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3184:85:97  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`. 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3196:32:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3198:37:54  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3200:46:74  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3202:74:49  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3249:15:54  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3251:109:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3326:87:58  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3340:106:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3342:130:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3356:11:13  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3395:23:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3467:10:31  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3471:28:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3473:32:84  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3475:35:67  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3505:29:57  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3507:100:71  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3509:111:51  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3545:323:37  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3547:323:68  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3563:50:112  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3565:81:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3567:143:66  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3569:163:53  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3576:222:109  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3582:28:62  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3584:29:19  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3602:64:58  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3604:65:70  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3606:103:93  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3608:138:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3610:197:49  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3614:240:79  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3616:263:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3618:303:47  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3622:493:49  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3624:554:42  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3626:580:33  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3628:580:157  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3661:685:123  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3663:685:134  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3673:105:33  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3675:117:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3677:308:87  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3679:323:24  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3768:61:32  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3770:62:45  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3772:71:39  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3774:119:27  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3776:125:35  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3778:179:41  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3780:179:59  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3782:302:60  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3850:60:53  Error: Optional chain expressions can return undefined by design - 
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3853:77:22  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3855:310:59  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3857:357:55  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3878:119:104  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3884:112:107  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3892:44:48  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3894:151:72  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3919:88:58  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3921:111:62  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3923:250:62  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3925:255:69  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3927:257:49  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3929:259:68  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3958:199:73  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3984:77:47  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:3992:20:9  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4006:17:12  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4071:226:10  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4073:227:13  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4075:228:11  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4081:38:45  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4083:109:52  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4085:109:109  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4087:116:35  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4089:125:35  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4091:290:75  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4093:290:112  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4095:299:69  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4097:300:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4099:301:41  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4101:330:87  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4103:385:68  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4132:22:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4140:95:46  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4187:27:48  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4198:16:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4200:17:38  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4202:18:31  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4204:19:15  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4206:20:37  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4220:25:46  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4254:27:55  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4266:87:61  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4293:32:70  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4340:183:86  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4346:244:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4348:245:33  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4350:601:56  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4405:86:36  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4407:87:35  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4415:37:21  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4417:94:22  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4439:11:26  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4453:11:17  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4464:11:19  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4496:4:78  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4520:55:87  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4522:61:44  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4561:72:41  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4622:47:21  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4694:25:24  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4717:59:23  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4719:66:25  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4721:73:47  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4723:151:42  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4725:218:50  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4737:141:19  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4739:142:16  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4741:153:17  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4743:165:58  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4745:213:26  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4747:251:38  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4751:41:10  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4768:16:36  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4787:11:20  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4789:101:20  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4791:102:22  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4793:200:23  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4795:201:21  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4797:236:18  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4799:237:15  Error: Unexpected any. Specify a different type.  
+C:\Users\Student\Documents\GitHub\schoolHub\lint-errors-utf8.txt:4801:238:19  Error: Unexpected any. Specify a different type.  

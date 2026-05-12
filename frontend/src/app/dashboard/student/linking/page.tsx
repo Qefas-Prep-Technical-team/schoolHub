@@ -7,6 +7,7 @@ import {
   Clock, ShieldCheck, Copy, ArrowUpRight, Hash,
   Zap, Globe, Shield, Loader2, QrCode
 } from 'lucide-react';
+import NextImage from 'next/image';
 import StudentQRCodeModal from './components/StudentQRCodeModal';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,12 +23,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
 import QRCode from "react-qr-code";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useLinkRequests, useActiveLinks, useLinkProfile, useRespondToLinkRequest, useRevokeActiveLink, useCreateLinkRequest, useCancelLinkRequest } from '@/lib/api/hooks/useLinks';
 import { useRequestToJoinClass } from '@/lib/api/hooks/useClasses';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { ConfirmationModal } from '@/components/reusable/ConfirmationModal';
-import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/utils/clipboard';
 import Pagination from '@/components/ui/Pagination';
@@ -62,7 +62,6 @@ export default function LinkingHub() {
   const respondMutation = useRespondToLinkRequest();
   const revokeMutation = useRevokeActiveLink();
   const cancelMutation = useCancelLinkRequest();
-  const createMutation = useCreateLinkRequest();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
@@ -268,10 +267,11 @@ export default function LinkingHub() {
                   </div>
                   <div className="h-24 w-24 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center p-1.5 shadow-2xl relative group-hover:rotate-3 transition-transform overflow-hidden">
                      {profile.profileImage || user?.profileImage ? (
-                        <img 
+                        <NextImage 
                           src={profile.profileImage || user?.profileImage} 
                           alt={profile.name} 
-                          className="h-full w-full object-cover rounded-xl"
+                          fill
+                          className="object-cover rounded-xl"
                         />
                      ) : (
                         <Zap size={40} className="text-yellow-300 fill-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.5)]" />
@@ -536,7 +536,7 @@ function EmptyState({ message }: { message: string }) {
 
 // --- Sub-components for better organization ---
 
-function ConnectionCard({ link, onRevoke, isRevoking }: any) {
+function ConnectionCard({ link, onRevoke, isRevoking }: Record<string, any>) {
   const isClass = link.variant === 'classroom';
 
   return (
@@ -548,11 +548,11 @@ function ConnectionCard({ link, onRevoke, isRevoking }: any) {
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-4">
             <div className={cn(
-               "h-12 w-12 rounded-xl flex items-center justify-center border group-hover:scale-110 transition-transform overflow-hidden",
+               "h-12 w-12 rounded-xl flex items-center justify-center border group-hover:scale-110 transition-transform overflow-hidden relative",
                isClass ? "bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800" : "bg-rose-50 dark:bg-pink-900/20 border-blue-100 dark:border-pink-700"
             )}>
               {link.peerImage ? (
-                <img src={link.peerImage} alt={link.peerName} className="h-full w-full object-cover" />
+                <NextImage src={link.peerImage} alt={link.peerName} fill className="object-cover" />
               ) : (
                 <ShieldCheck size={24} className={isClass ? "text-purple-500" : "text-pink-500"} />
               )}
@@ -621,7 +621,7 @@ function ConnectionCard({ link, onRevoke, isRevoking }: any) {
   );
 }
 
-function PendingCard({ req, onRespond, onCancel, userId, isResponding, isCancelling }: any) {
+function PendingCard({ req, onRespond, onCancel, userId, isResponding, isCancelling }: Record<string, any>) {
   const isOutgoing = req.requesterId === userId;
   const isClass = req.variant === 'classroom';
 
@@ -650,11 +650,11 @@ function PendingCard({ req, onRespond, onCancel, userId, isResponding, isCancell
       <div className="p-6 space-y-6 pt-10">
         <div className="flex items-center gap-4">
           <div className={cn(
-             "h-12 w-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 overflow-hidden",
+             "h-12 w-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 overflow-hidden relative",
              isClass ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20" : "bg-orange-50 text-orange-600 dark:bg-orange-900/20"
           )}>
             {req.peerImage ? (
-              <img src={req.peerImage} alt={req.peerName} className="h-full w-full object-cover" />
+              <NextImage src={req.peerImage} alt={req.peerName} fill className="object-cover" />
             ) : (
               <Clock size={24} />
             )}
@@ -682,7 +682,7 @@ function PendingCard({ req, onRespond, onCancel, userId, isResponding, isCancell
             isClass ? "bg-purple-50/30 border-purple-100 dark:bg-purple-900/10 dark:border-purple-800/50" : "bg-orange-50/30 border-orange-100 dark:bg-orange-900/10 dark:border-orange-800/50"
           )}>
              <div className={cn("absolute top-0 left-0 w-1 h-full opacity-50 transition-opacity group-hover/note:opacity-100", isClass ? "bg-purple-300" : "bg-orange-300")} />
-            <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 italic line-clamp-2 leading-relaxed">"{req.note}"</p>
+            <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 italic line-clamp-2 leading-relaxed">&quot;{req.note}&quot;</p>
           </div>
         )}
 
@@ -726,7 +726,7 @@ function PendingCard({ req, onRespond, onCancel, userId, isResponding, isCancell
   );
 }
 
-function ConnectModal({ isOpen, onClose }: any) {
+function ConnectModal({ isOpen, onClose }: Record<string, any>) {
   const [code, setCode] = useState('');
   const [note, setNote] = useState('');
   const [linkType, setLinkType] = useState('STUDENT_CLASS');

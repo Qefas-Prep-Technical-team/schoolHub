@@ -92,7 +92,19 @@ const GradesOverview: React.FC = () => {
   const mappedGrades: StudentGrade[] = useMemo(() => {
     if (!rawData || !Array.isArray(rawData)) return [];
     
-    return rawData.map((item: Record<string, any>) => {
+    return rawData.map((item: {
+      id?: string | number;
+      score?: number;
+      maxMarks?: number;
+      student?: { name?: string; studentCode?: string };
+      name?: string;
+      studentId?: string;
+      subjectPaper?: { title?: string };
+      subject?: string;
+      category?: string;
+      status?: string;
+      remarks?: string;
+    }) => {
       const score = item.score || 0;
       const maxMarks = item.maxMarks || 100;
       const percentage = (score / maxMarks) * 100;

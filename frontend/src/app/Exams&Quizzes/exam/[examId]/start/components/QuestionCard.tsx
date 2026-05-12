@@ -1,12 +1,11 @@
 // src/components/Dashboard/QuestionCard.tsx
 'use client';
 
-import React, { useState, memo } from 'react';
-import { Question } from './types';
+import React, { memo } from 'react';
 import QuestionOptionComponent from './QuestionOption';
 import Button from './ui/Button';
 import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
-import ImageLightbox from '@/components/ui/ImageLightbox';
+import NextImage from 'next/image';
 import { ZoomIn } from 'lucide-react';
 
 interface QuestionCardProps {
@@ -67,13 +66,14 @@ const QuestionCard: React.FC<QuestionCardProps> = memo(({
                         {images.map((url, i) => (
                             <figure key={i} className="flex flex-col gap-2 group">
                                 <div 
-                                    className="relative cursor-zoom-in overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm w-full h-auto bg-white dark:bg-slate-900"
+                                    className="relative aspect-video cursor-zoom-in overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm w-full bg-white dark:bg-slate-900"
                                     onClick={() => onZoom?.(url, imageLabels[i])}
                                 >
-                                    <img 
+                                    <NextImage 
                                         src={url} 
                                         alt={imageLabels[i] || `Question Image ${i + 1}`} 
-                                        className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-105" 
+                                        fill
+                                        className="object-contain transition-transform duration-500 group-hover:scale-105" 
                                     />
                                     <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         <div className="bg-white/80 dark:bg-black/80 p-3 rounded-full shadow-large transform scale-0 group-hover:scale-110 transition-transform duration-300">

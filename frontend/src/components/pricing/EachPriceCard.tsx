@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
     CheckCircle2, Zap, Shield, Rocket, Loader2,
-    Cloud, ArrowRight, Sparkles, Star, BadgeCheck
+    Cloud, ArrowRight, Star, BadgeCheck
 } from 'lucide-react';
 import { useCheckoutStore } from '@/utils/CheckoutStore';
 
@@ -18,7 +18,7 @@ interface EachPriceCardProps extends PricingTab {
 
 const EachPriceCard: FC<EachPriceCardProps> = ({
     name, description, pricing, type, trialDays, features, hasTrial,
-    isPopular, category, index = 0, storage, featureAccess
+    isPopular, category, index = 0, storage
 }) => {
     const { billingType } = useBillingStore();
     const { user, isAuthenticated } = useAuthStore();

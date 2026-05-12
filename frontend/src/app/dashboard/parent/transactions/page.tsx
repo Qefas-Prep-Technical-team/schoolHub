@@ -8,11 +8,21 @@ import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { Loader2, History } from "lucide-react"
 
+interface Transaction {
+    id: string;
+    createdAt: string;
+    student?: { name: string };
+    paymentType: string;
+    amount: number;
+    paymentReference: string;
+    status: string;
+}
+
 /**
  * Parent Transaction History Page
  */
 export default function ParentTransactionPage() {
-    const [transactions, setTransactions] = useState<any[]>([])
+    const [transactions, setTransactions] = useState<Transaction[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -106,6 +116,6 @@ export default function ParentTransactionPage() {
     )
 }
 
-function cn(...classes: any[]) {
+function cn(...classes: (string | boolean | undefined)[]) {
     return classes.filter(Boolean).join(' ');
 }

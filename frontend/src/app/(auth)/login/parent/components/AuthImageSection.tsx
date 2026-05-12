@@ -25,7 +25,7 @@ export default function AuthImageSection() {
                     <h3 className="text-white font-black text-2xl tracking-tighter leading-tight">Stay Connected</h3>
                 </div>
                 <p className="text-white/60 text-xs font-semibold uppercase tracking-widest leading-loose">
-                    "Support every step of their journey with real-time academic intelligence."
+                    &ldquo;Support every step of their journey with real-time academic intelligence.&rdquo;
                 </p>
             </div>
         </div>

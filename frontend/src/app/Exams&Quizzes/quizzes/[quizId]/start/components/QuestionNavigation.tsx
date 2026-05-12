@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from './ui/Button';
-import { cn } from '@/lib/utils';
 
 interface QuestionNavigationProps {
     totalQuestions: number;

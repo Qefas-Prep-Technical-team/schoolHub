@@ -93,7 +93,7 @@ export default function AddExistingPaperModal({ examId, trigger }: AddExistingPa
                   disabled={linkMutation.isPending}
                   className="gap-1 min-w-[80px]"
                 >
-                  {linkMutation.isPending && (linkMutation.variables as any)?.paperId === paper.id ? (
+                  {linkMutation.isPending && (linkMutation.variables as { paperId?: string })?.paperId === paper.id ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     <LinkIcon className="h-3 w-3" />

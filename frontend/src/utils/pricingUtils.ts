@@ -7,8 +7,7 @@
 export const calculateProRatedAmount = (
     currentPlanPrice: number,
     newPlanPrice: number,
-    lastPaymentDate: string | Date | null,
-    _billingType: 'monthly' | 'yearly'
+    lastPaymentDate: string | Date | null
 ) => {
     const defaultRes = { amount: newPlanPrice, discount: 0, isUpgrade: newPlanPrice > currentPlanPrice, resetCycle: true, diffDays: 0 };
     

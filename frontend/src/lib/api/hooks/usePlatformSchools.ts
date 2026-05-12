@@ -8,7 +8,7 @@ export interface PlatformPlanTab {
     id: string;
     name: string;
     type: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface PlatformPlanCategory {
@@ -98,8 +98,8 @@ export interface PlatformTeacherSummary {
 export interface PlatformPaginatedResponse<T> {
     success: boolean;
     data: T[];
-    planBreakdown: any[];
-    statusBreakdown: any[];
+    planBreakdown: Record<string, unknown>[];
+    statusBreakdown: Record<string, unknown>[];
     pagination: {
         total: number;
         page: number;
@@ -197,8 +197,8 @@ export interface PlatformTeacherDetails {
         schoolCode: string;
         tenantId: string;
     };
-    teacherSubjects?: any[];
-    classTeachers?: any[];
+    teacherSubjects?: unknown[];
+    classTeachers?: unknown[];
     _count?: {
         teacherSubjects: number;
         classTeachers: number;
@@ -233,9 +233,9 @@ export interface PlatformStudentDetails {
         schoolCode: string;
         tenantId: string;
     };
-    department?: any;
-    classes?: any[];
-    parentLinks?: any[];
+    department?: unknown;
+    classes?: unknown[];
+    parentLinks?: unknown[];
     _count?: {
         attendances: number;
         behaviourAlerts: number;

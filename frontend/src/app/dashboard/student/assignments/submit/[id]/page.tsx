@@ -95,7 +95,7 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
     const timer = setInterval(calculateTimeRemaining, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [mockAssignment.dueDate]);
 
   const handleFileUpload = (files: File[]) => {
     files.forEach((file) => {
@@ -183,7 +183,7 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
       
       console.log('Draft saved:', draftData);
       alert('Draft saved successfully!');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving draft:', error);
       alert('Failed to save draft. Please try again.');
     } finally {
@@ -234,7 +234,7 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
       
       // Redirect to success page or assignment list
       router.push('/assignments?submitted=true');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error submitting assignment:', error);
       alert('Submission failed. Please try again.');
     } finally {

@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures"
 
 interface FeatureGuardProps {
@@ -64,7 +64,7 @@ export default function FeatureGuard({ role, children, routeMap = DEFAULT_ROUTE_
         )
 
         if (activeGuard) {
-            const [_, featureKey] = activeGuard
+            const [, featureKey] = activeGuard
             if (features[featureKey] === false) {
                 console.warn(`[FeatureGuard] Access denied to ${pathname}. Feature ${featureKey} is disabled.`)
                 router.replace(`/dashboard/${role}`)

@@ -1,8 +1,8 @@
 'use client'
 import { cn } from '@/lib/utils'
 import { getGradeStatusColor, formatPosition, calculateLetterGrade, getLetterGradeColor } from './gradeUtils'
-import { EditGradeDialog } from './EditGradeDialog'
 import { StudentGrade } from './types'
+import Image from 'next/image'
 import { Icon } from '../../Icon'
 
 interface GradeTableProps {
@@ -97,9 +97,11 @@ function GradeRow({ grade, onEdit, onView }: GradeRowProps) {
           className="flex items-center gap-3 hover:text-primary transition-colors text-left"
         >
           {grade.avatar && (
-            <img
+            <Image
               src={grade.avatar}
               alt={grade.studentName}
+              width={32}
+              height={32}
               className="h-8 w-8 rounded-full"
             />
           )}

@@ -17,13 +17,7 @@ interface PricingTabProps {
     lastPaymentDate?: string | Date | null;
 }
 
-export default function PricingTab({
-    billingType,
-    setBillingType,
-    isUpgradeFlow,
-    currentPlanPrice,
-    lastPaymentDate
-}: PricingTabProps) {
+export default function PricingTab({}: PricingTabProps) {
     const queryClient = useQueryClient();
     const { data: rawData, isLoading } = useFetchPricing();
     const { data: settings, isLoading: isSettingsLoading } = usePublicPlatformSettings();
@@ -69,7 +63,7 @@ export default function PricingTab({
         if (value >= categories.length) setValue(0);
     }, [categories, value]);
 
-    const filteredData = data?.find((d: any) => 
+    const filteredData = data?.find((d: { category?: string; tabs: unknown[] }) => 
         d.category?.toLowerCase() === categories[value]?.toLowerCase()
     );
 

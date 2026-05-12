@@ -13,7 +13,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'react-toastify';
 import { Loader2, Sparkles, Building2, User } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 

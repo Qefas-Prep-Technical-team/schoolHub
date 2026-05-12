@@ -4,7 +4,7 @@ interface GradesHeaderProps {
   onAddGrade: () => void;
 }
 
-const GradesHeader: React.FC<GradesHeaderProps> = ({ onAddGrade: _onAddGrade }) => {
+const GradesHeader: React.FC<GradesHeaderProps> = () => {
   return (
     <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 px-4 sm:px-6 lg:px-8 py-3 bg-white dark:bg-background-dark sticky top-0 z-10">
       <div className="flex items-center gap-4 text-slate-900 dark:text-slate-100">

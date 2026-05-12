@@ -1,5 +1,6 @@
-import { Trophy, TrendingUp, User, Award, Star } from 'lucide-react';
+import { Trophy, TrendingUp, Award, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 interface Student {
   id: string;
@@ -56,9 +57,11 @@ export default function TopPerformingStudents({ students, onViewAll }: TopPerfor
             <div className="flex items-center gap-5">
               <div className="relative">
                 <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-700 shadow-md">
-                    <img
+                    <Image
                         src={student.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop'}
                         alt={student.name}
+                        width={56}
+                        height={56}
                         className="w-full h-full object-cover"
                     />
                 </div>

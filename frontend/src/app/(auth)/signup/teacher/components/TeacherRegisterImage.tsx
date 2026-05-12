@@ -2,6 +2,7 @@
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
+import NextImage from "next/image";
 import "swiper/css";
 import "swiper/css/pagination";
 
@@ -29,9 +30,10 @@ export default function TeacherRegisterImageSlider() {
           >
             {images.map((src, i) => (
               <SwiperSlide key={i} className="w-full h-full">
-                <img
+                <NextImage
                   src={src}
                   alt={`Teacher slide ${i + 1}`}
+                  fill
                   className="w-full h-full object-cover"
                 />
               </SwiperSlide>
@@ -51,7 +53,7 @@ export default function TeacherRegisterImageSlider() {
             </div>
           </div>
           <p className="text-white/90 text-sm leading-relaxed font-light">
-            "Join a network of passionate teachers using modern tools to manage classrooms, track progress, and build a brighter future for every student."
+            &ldquo;Join a network of passionate teachers using modern tools to manage classrooms, track progress, and build a brighter future for every student.&rdquo;
           </p>
         </div>
       </div>

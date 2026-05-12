@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useCreateLinkRequest } from "@/lib/api/hooks/useLinks";
-import { Loader2, School, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "react-toastify";
+import { AxiosError } from "axios";
 
 export default function JoinSchoolPage() {
   const { code } = useParams<{ code: string }>();
@@ -34,7 +34,7 @@ export default function JoinSchoolPage() {
       console.log(`JoinSchoolPage: Initiating join request for school ${code}`);
       
       // Determine link type based on user role
-      let linkType: any = "SCHOOL_STUDENT";
+      let linkType: "SCHOOL_STUDENT" | "SCHOOL_TEACHER" = "SCHOOL_STUDENT";
       if (user.userType === "TEACHER") linkType = "SCHOOL_TEACHER";
       
       createLink({
@@ -91,7 +91,7 @@ export default function JoinSchoolPage() {
         </div>
         <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-4">Oops! Something went wrong</h1>
         <p className="text-xl text-slate-600 dark:text-gray-300 max-w-md mb-8">
-          {(error as any)?.response?.data?.message || "Failed to join school. The code might be invalid or you might already be connected."}
+          {(error as AxiosError<{message?: string}>)?.response?.data?.message || "Failed to join school. The code might be invalid or you might already be connected."}
         </p>
         <div className="flex gap-4">
           <Button onClick={() => router.push("/dashboard")} variant="outline" className="rounded-xl h-12 px-8 font-bold">

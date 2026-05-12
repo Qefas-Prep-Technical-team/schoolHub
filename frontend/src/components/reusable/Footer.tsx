@@ -1,5 +1,6 @@
 "use client";
 import Box from '@mui/material/Box';
+import NextImage from 'next/image';
 import { usePathname } from 'next/navigation';
 import React, { FC } from 'react';
 
@@ -27,7 +28,7 @@ const Footer: FC = () => {
                     <div className="flex flex-col items-center md:items-start">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center p-1.5 shadow-lg shadow-blue-500/20">
-                                <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
+                                <NextImage src="/logo/favicon.svg" alt="Qefas Hub" width={40} height={40} className="h-full w-full object-contain" />
                             </div>
                             <h3 className="text-xl font-black text-white tracking-tight uppercase">Qefas <span className="text-blue-500">Hub</span></h3>
                         </div>

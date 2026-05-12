@@ -1,10 +1,7 @@
 'use client';
 
 import {
-    School,
-    Laptop,
     Calendar,
-    Clock,
     FileText,
     Trophy,
     Target,
@@ -12,13 +9,11 @@ import {
     ArrowRight,
     Edit2,
     Trash2,
-    Undo2,
-    Zap
+    Undo2
 } from 'lucide-react';
 import { useDeleteExam, useUnpublishExam } from '@/lib/api/hooks/useExams';
 import { useRouter } from 'next/navigation';
 import DropdownMenu from './ui/DropdownMenu';
-import Link from 'next/link';
 import { Exam } from '@/lib/api/services/examService';
 import { format } from 'date-fns';
 import { useState } from 'react';
@@ -27,7 +22,6 @@ import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
 import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
-import { Button } from '@/components/ui/button';
 
 interface AssessmentCardProps {
     assessment: Exam;
@@ -112,13 +106,13 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
             <div className="flex-1 relative z-10">
                 <h3 
                     className="text-2xl font-black text-slate-900 dark:text-white mb-3 group-hover:text-primary transition-colors leading-[1.1] uppercase tracking-tighter"
-                    style={{ '--primary': primaryColor } as any}
+                    style={{ '--primary': primaryColor } as React.CSSProperties}
                 >
                     {assessment.title}
                 </h3>
                 {assessment.description && (
                     <p className="text-sm font-medium text-slate-500 line-clamp-2 mb-8 leading-relaxed italic">
-                        "{assessment.description}"
+                        &quot;{assessment.description}&quot;
                     </p>
                 )}
             </div>
@@ -145,7 +139,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
 
                 {assessment.departments && assessment.departments.length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                        {assessment.departments.map((d: any) => (
+                        {assessment.departments.map((d: { department?: { id: string, name: string } }) => (
                             <span key={d.department?.id} className="text-[9px] font-black bg-slate-50 dark:bg-white/5 text-slate-500 px-3 py-1 rounded-lg border border-slate-100 dark:border-white/10 uppercase tracking-tighter">
                                 {d.department?.name}
                             </span>
@@ -181,7 +175,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                             setIsUnpublishDialogOpen(false);
                             toast.success("Exam unpublished successfully!");
                         },
-                        onError: (error: any) => {
+                        onError: (error: { response?: { data?: { message?: string } } }) => {
                             toast.error(error.response?.data?.message || "Failed to unpublish exam");
                         }
                     });
@@ -202,7 +196,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                             setIsDeleteDialogOpen(false);
                             toast.success("Exam deleted successfully!");
                         },
-                        onError: (error: any) => {
+                        onError: (error: { response?: { data?: { message?: string } } }) => {
                             toast.error(error.response?.data?.message || "Failed to delete exam");
                         }
                     });

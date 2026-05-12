@@ -1,7 +1,6 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "./components/app-sidebar"
 import TopNavBar from "./components/TopNavBar"
-import { ProtectedTeacherRoute } from "./components/ProtectedTeacherRoute"
 import { TrialBanner } from "@/components/subscription/TrialBanner"
 import FeatureGuard from "@/components/auth/FeatureGuard"
 

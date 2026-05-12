@@ -2,7 +2,6 @@
 import React, { FC, useState } from 'react';
 import { GraduationCap, User, Presentation } from 'lucide-react';
 import { useRouter } from 'next/navigation'; // ✅ App Router
-import Link from 'next/link';
 
 const Buttons: FC = () => {
     const [activeRole, setActiveRole] = useState<'school' | 'individual' | 'teacher' | null>(null);

@@ -19,7 +19,15 @@ interface EditGradeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (id: string, score: number, remarks: string) => void;
-  grade: Record<string, any> | null;
+  grade: {
+    id: string;
+    name: string;
+    studentCode: string;
+    assessmentType: string;
+    score: number | string;
+    maxMarks: number;
+    remarks?: string;
+  } | null;
   isSaving?: boolean;
 }
 

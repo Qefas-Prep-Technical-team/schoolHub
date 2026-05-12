@@ -1,22 +1,18 @@
 'use client';
 
-import { Search, ListFilter, UserPlus, FileDown, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { Search, UserPlus, FileDown, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ToolbarProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onAddStudent: () => void;
-  filters: string[];
-  onFilterClick: (filter: string) => void;
 }
 
 export function Toolbar({
   searchQuery,
   onSearchChange,
   onAddStudent,
-  filters,
-  onFilterClick,
 }: ToolbarProps) {
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10 w-full">

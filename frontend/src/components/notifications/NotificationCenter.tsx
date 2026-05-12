@@ -55,7 +55,7 @@ export default function NotificationCenter() {
       }
       lastSeenId.current = latestNotification.id;
     }
-  }, [notifications]);
+  }, [notifications, handleOpenModal]);
 
   const handleMarkAsRead = (id: string) => {
     markAsReadMutation.mutate(id);
@@ -65,7 +65,7 @@ export default function NotificationCenter() {
     markAllAsReadMutation.mutate();
   };
 
-  const handleOpenModal = (notification: Notification) => {
+  const handleOpenModal = React.useCallback((notification: Notification) => {
     setSelectedNotification(notification);
     // Add a small delay to ensure DropdownMenu closes before Dialog opens
     // This fixes focus/z-index issues in Radix UI
@@ -75,7 +75,8 @@ export default function NotificationCenter() {
         handleMarkAsRead(notification.id);
       }
     }, 150);
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLinkAction = async (notificationId: string, linkId: string, action: 'ACCEPT' | 'REJECT') => {
     respondMutation.mutate(

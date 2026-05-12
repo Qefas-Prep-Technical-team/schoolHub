@@ -39,7 +39,8 @@ export default function Dashboard() {
         classId: filters.classId === 'all' ? undefined : filters.classId,
         departmentIds: filters.departmentId === 'all' ? undefined : [filters.departmentId],
         status: filters.status === 'all' ? undefined : filters.status,
-        category: filters.category === 'all' ? undefined : filters.category as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        category: filters.category === 'all' ? undefined : (filters.category as string),
     });
 
     const { data: papers = [], isLoading: isLoadingPapers, isError: isErrorPapers } = useSubjectPapers();
@@ -57,7 +58,7 @@ export default function Dashboard() {
                 {/* Operational Control Terminal */}
                 <SearchFilters
                     filters={filters}
-                    onFilterChange={(newFilters: any) => setFilters(prev => ({ ...prev, ...newFilters }))}
+                    onFilterChange={(newFilters: Record<string, unknown>) => setFilters(prev => ({ ...prev, ...newFilters }))}
                 />
 
                 <div className="mt-12">

@@ -22,7 +22,7 @@ const TYPE_DISPLAY: Record<string, string> = {
 };
 
 export default function LoadingDashboard({
-  userType = "USER" as any,
+  userType = "USER" as UserType,
   duration = 3200,
 }: { userType?: UserType | null; duration?: number }) {
   const [currentStepIdx, setCurrentStepIdx] = useState(0);

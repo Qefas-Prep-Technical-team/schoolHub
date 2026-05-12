@@ -13,19 +13,26 @@ export default function ExamsPage() {
   const params = useParams()
   const classId = params.classId as string
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters, setFilters] = useState<ExamFilter>({})
+  const [filters] = useState<ExamFilter>({})
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['class-exams', classId],
     queryFn: () => teacherService.getClassAssignments(classId), // Fetches all assessments
     enabled: !!classId,
   })
 
   // Map backend exam format to frontend exam format
-  const exams: Exam[] = (data || []).map((e: any) => ({
+  const exams: Exam[] = (data || []).map((e: {
+    id: string;
+    title: string;
+    dueDate?: string | Date;
+    createdAt: string | Date;
+    updatedAt: string | Date;
+    status: ExamStatus;
+  }) => ({
     id: e.id,
     title: e.title,
-    type: e.title.toLowerCase().includes('quiz') ? 'quiz' : 'exam', // Heuristic if type not explicit yet
+    type: e.title.toLowerCase().includes('quiz') ? 'quiz' : 'exam',
     questions: 0,
     totalMarks: 0,
     scheduledDate: new Date(e.dueDate || e.createdAt),
@@ -64,7 +71,7 @@ export default function ExamsPage() {
     }
 
     setFilteredExams(filtered)
-  }, [searchQuery, data, filters])
+  }, [searchQuery, exams, filters])
 
   const handleViewExam = (exam: Exam) => {
     console.log('View exam:', exam)
@@ -93,19 +100,9 @@ export default function ExamsPage() {
     // Implement export logic
   }
 
-  const handleCreateExam = () => {
-    console.log('Create new exam')
-    // Navigate to exam creator
-  }
-
   const handleFilterClick = () => {
     console.log('Open filter dialog')
     // Implement filter dialog
-  }
-
-  const handleLogout = () => {
-    console.log('Logout')
-    // Implement logout logic
   }
 
   if (isLoading) {

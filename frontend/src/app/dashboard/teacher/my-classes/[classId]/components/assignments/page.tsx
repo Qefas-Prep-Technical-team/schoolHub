@@ -24,7 +24,15 @@ export default function AssignmentsPage() {
   })
 
   const assignments: Assignment[] = useMemo(() => {
-    return (data || []).map((a: Record<string, any>) => ({
+    return (data || []).map((a: {
+      id: string;
+      title: string;
+      dueDate: string | Date;
+      status: string;
+      submissions: { submitted: number; total: number };
+      createdAt: string | Date;
+      updatedAt: string | Date;
+    }) => ({
       id: a.id,
       title: a.title,
       dueDate: new Date(a.dueDate),
@@ -61,11 +69,6 @@ export default function AssignmentsPage() {
   const handleGradeAssignment = (assignment: Assignment) => {
     console.log('Grade assignment:', assignment)
     // Implement grade logic
-  }
-
-  const handleAddAssignment = () => {
-    console.log('Add new assignment')
-    // Implement add assignment logic
   }
 
   if (isLoading) {

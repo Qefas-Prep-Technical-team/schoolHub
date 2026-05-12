@@ -3,14 +3,13 @@ import { Box } from '@mui/material';
 import React, { FC } from 'react';
 import { useFetchPricingFAQ } from './query';
 import { PRICING_FAQ } from '@/lib/constants/plansData';
-import { useTheme } from 'next-themes';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, MessageCircle, ArrowRight } from 'lucide-react';
 
 const FrequentlyAskedQuestions: FC = () => {
     const { data: apiData } = useFetchPricingFAQ()
     const data = apiData || PRICING_FAQ;
-    const { theme } = useTheme();
     const [openIndex, setOpenIndex] = React.useState<string | null>(null);
 
     return (

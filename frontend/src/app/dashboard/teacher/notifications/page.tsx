@@ -4,16 +4,12 @@ import React, { useState } from 'react';
 import { 
   Bell, 
   Check, 
-  X, 
   Info, 
   AlertCircle, 
   Trash2, 
-  CheckCircle2, 
   Clock,
-  ExternalLink,
   ChevronRight,
   Loader2,
-  Filter,
   Search as SearchIcon,
   Megaphone,
   Mail,
@@ -31,18 +27,15 @@ import {
 } from '@/lib/api/hooks/useNotifications';
 import { useRespondToLinkRequest } from '@/lib/api/hooks/useLinks';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
 import NotificationDetailModal from '@/components/notifications/NotificationDetailModal';
 import { Notification } from '@/lib/api/services/notificationService';
-
 export default function TeacherNotificationsPage() {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread' | 'requests'>('all');
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: notifications = [], isLoading, isError, refetch } = useNotifications();
+  const { data: notifications = [], isLoading, refetch } = useNotifications();
   
   const markAsReadMutation = useMarkAsRead();
   const markAllAsReadMutation = useMarkAllAsRead();

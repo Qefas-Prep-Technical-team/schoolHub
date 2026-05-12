@@ -1,8 +1,6 @@
 'use client';
 
 import React from 'react';
-import PageHeader from './PageHeader';
-import TabNavigation from './TabNavigation';
 import ClassStats from './ClassStats';
 import UpcomingActivities from './UpcomingActivities';
 import TopPerformingStudents from './TopPerformingStudents';
@@ -13,11 +11,41 @@ import QuickActions from './QuickActions';
 
 
 interface ClassOverviewTabProps {
-  stats: Record<string, any>;
-  upcomingActivities: Record<string, any>[];
-  topStudents: Record<string, any>[];
-  attendance: any;
-  recentSubmissions: Record<string, any>[];
+  stats: {
+    averageGrade: number;
+    assignmentsCompleted: number;
+    quizzesCompleted: number;
+    upcomingDeadlines: number;
+    participationRate: number;
+  };
+  upcomingActivities: {
+    id: string;
+    title: string;
+    type: 'quiz' | 'assignment' | 'exam' | 'project';
+    date: string;
+    description: string;
+    status: 'upcoming' | 'overdue' | 'completed';
+    icon: string;
+    color: 'yellow' | 'orange' | 'red' | 'blue' | 'green';
+  }[];
+  topStudents: {
+    id: string;
+    name: string;
+    rank: number;
+    score: number;
+    avatar: string;
+    improvement: string;
+  }[];
+  attendance: Record<string, unknown>;
+  recentSubmissions: {
+    id: string;
+    studentName: string;
+    studentAvatar?: string;
+    assignmentTitle: string;
+    submittedAt: string;
+    status: 'graded' | 'pending' | 'late';
+    score?: string;
+  }[];
 }
 
 export default function ClassOverviewTab({ 

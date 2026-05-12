@@ -1,13 +1,12 @@
 "use client"
 import React, { FC } from 'react';
-import { useTheme } from 'next-themes';
+import NextImage from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { PlayCircle, Verified, Star } from 'lucide-react';
 
 const IntroSection: FC = () => {
-    const { theme } = useTheme();
 
     return (
         <section className="relative min-h-[85vh] w-full flex items-center justify-center overflow-hidden bg-slate-950">
@@ -106,7 +105,7 @@ const IntroSection: FC = () => {
                     <div className="flex -space-x-3">
                         {[1, 2, 3, 4].map((i) => (
                             <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
-                                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} alt="Avatar" className="w-full h-full rounded-full" />
+                                <NextImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} alt="Avatar" width={40} height={40} className="w-full h-full rounded-full" />
                             </div>
                         ))}
                     </div>

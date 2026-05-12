@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import StudentExamHeader from './components/StudentExamHeader';
-import Header from './components/Header';
 import ExamDetailsGrid from './components/ExamDetailsGrid';
 import InstructionsCard from './components/InstructionsCard';
 import Footer from './components/Footer';
@@ -74,24 +73,12 @@ export default function StudentExamPreview() {
         router.push(`/exams/${id}/take`);
     };
 
-    const handleNotifications = () => {
-        console.log('Open notifications');
-    };
-
-    const handleHelp = () => {
-        console.log('Open help');
-    };
-
     if (!id) {
         return <div>Loading...</div>;
     }
 
     return (
         <main>
-            {/* <Header
-                onNotifications={handleNotifications}
-                onHelp={handleHelp}
-            /> */}
 
             <main className="layout-container flex h-full grow flex-col">
                 <div className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex flex-1 justify-center">

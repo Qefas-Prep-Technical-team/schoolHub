@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Send, Plus, Search, MessageSquare, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
+import { Send, Plus, Search, MessageSquare, Clock, CheckCircle2 } from "lucide-react";
 import { useSupportTickets, useTicketMessages, useCreateTicket, useSendTicketMessage } from "@/lib/api/hooks/useSupportTickets";
 import { useSupportSocket } from "@/lib/hooks/useSupportSocket";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -19,7 +18,7 @@ export default function SharedSupportCenter() {
   const [newMessage, setNewMessage] = useState("");
 
   const { data: tickets, isLoading: ticketsLoading } = useSupportTickets();
-  const { data: ticketDetails, isLoading: detailsLoading } = useTicketMessages(activeTicketId || undefined);
+  const { data: ticketDetails } = useTicketMessages(activeTicketId || undefined);
   useSupportSocket(activeTicketId || undefined);
 
   const createTicket = useCreateTicket();
@@ -56,21 +55,21 @@ export default function SharedSupportCenter() {
     );
   };
 
-  const statusColors: any = {
+  const statusColors: Record<string, string> = {
     OPEN: "bg-amber-500/10 text-amber-600 border-amber-500/20",
     IN_PROGRESS: "bg-blue-500/10 text-blue-600 border-blue-500/20",
     RESOLVED: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
     CLOSED: "bg-slate-500/10 text-slate-600 border-slate-500/20",
   };
 
-  const priorityColors: any = {
+  const priorityColors: Record<string, string> = {
     LOW: "bg-slate-100 text-slate-600",
     MEDIUM: "bg-blue-100 text-blue-600",
     HIGH: "bg-orange-100 text-orange-600",
     URGENT: "bg-red-100 text-red-600",
   };
 
-  const filteredTickets = tickets?.filter((t: any) => 
+  const filteredTickets = tickets?.filter((t: { subject: string; description: string }) => 
     t.subject?.toLowerCase().includes(search.toLowerCase()) || 
     t.description?.toLowerCase().includes(search.toLowerCase())
   ) || [];
@@ -148,7 +147,7 @@ export default function SharedSupportCenter() {
               <p className="text-slate-500 text-sm font-medium">No tickets found</p>
             </div>
           ) : (
-            filteredTickets.map((ticket: any) => (
+            filteredTickets.map((ticket: { id: string; status: string; createdAt: string; subject: string; description: string; _count?: { messages: number } }) => (
               <button
                 key={ticket.id}
                 onClick={() => setActiveTicketId(ticket.id)}
@@ -215,7 +214,7 @@ export default function SharedSupportCenter() {
                 </div>
               </div>
 
-              {ticketDetails.messages?.map((msg: any) => {
+              {ticketDetails.messages?.map((msg: { id: string; senderRole: string; senderName?: string; createdAt: string; content: string }) => {
                 const isAgent = msg.senderRole === "SUPPORT_AGENT";
                 
                 return (

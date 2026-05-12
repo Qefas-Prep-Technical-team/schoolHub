@@ -2,6 +2,7 @@
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import NextImage from "next/image";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -31,9 +32,10 @@ export default function ParentImageSlider() {
           >
             {images.map((src, i) => (
               <SwiperSlide key={i} className="w-full h-full">
-                <img
+                <NextImage
                   src={src}
                   alt={`Parent involvement slide ${i + 1}`}
+                  fill
                   className="w-full h-full object-cover"
                 />
               </SwiperSlide>
@@ -53,7 +55,7 @@ export default function ParentImageSlider() {
             </div>
           </div>
           <p className="text-white/90 text-sm leading-relaxed font-light">
-            "Join thousands of parents actively tracking their children's progress, easily communicating with teachers, and actively monitoring assignments seamlessly."
+            &ldquo;Join thousands of parents actively tracking their children&apos;s progress, easily communicating with teachers, and actively monitoring assignments seamlessly.&rdquo;
           </p>
         </div>
       </div>

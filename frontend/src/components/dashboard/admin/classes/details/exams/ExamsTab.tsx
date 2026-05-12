@@ -8,7 +8,7 @@ import FilterButton from './components/FilterButton';
 import { Exam } from './components/types';
 
 interface ClassExamsTabProps {
-  exams?: Record<string, any>[];
+  exams?: Record<string, unknown>[];
 }
 
 export default function ClassExamsTab({ exams = [] }: ClassExamsTabProps) {
@@ -58,7 +58,7 @@ export default function ClassExamsTab({ exams = [] }: ClassExamsTabProps) {
     }
 
     setFilteredExams(filtered);
-  }, [filters, exams]);
+  }, [filters, exams, mappedExams]);
 
   const handleCreateExam = () => {
     router.push(`/dashboard/admin/classes/${classId}/exams/create`);

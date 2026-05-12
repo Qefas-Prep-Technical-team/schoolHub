@@ -22,11 +22,6 @@ const nextConfig = {
   },
   transpilePackages: ["@react-pdf/renderer", "@react-pdf/pdfkit", "yoga-layout"],
   experimental: {
-    // Silences the "Next.js inferred your workspace root" warning
-    // Turbopack uses this to determine the root of the project
-    turbopack: {
-      root: "..",
-    },
   },
 };
 

@@ -7,7 +7,7 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import { useAuthModalStore } from '@/utils/AuthModalStore';
 
 const FinalCTA = () => {
-    const { openModal } = useAuthModalStore();
+    useAuthModalStore();
     return (
         <section className="py-40 px-6">
             <motion.div 

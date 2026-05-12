@@ -5,10 +5,6 @@ import { motion } from 'framer-motion';
 import { 
     CreditCard, 
     Calendar, 
-    ArrowUpRight, 
-    CheckCircle2, 
-    XCircle, 
-    Clock,
     ChevronLeft,
     ChevronRight,
     ArrowRight,

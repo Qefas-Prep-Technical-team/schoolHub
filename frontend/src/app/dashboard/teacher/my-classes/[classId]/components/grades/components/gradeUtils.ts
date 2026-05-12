@@ -1,5 +1,4 @@
 
-import { cn } from '@/lib/utils'
 import { GradeStatus, StudentGrade } from './types'
 
 export function getGradeStatusColor(status: GradeStatus): string {

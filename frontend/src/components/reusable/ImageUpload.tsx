@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import NextImage from 'next/image';
 import { Upload, Loader2, X, Image as ImageIcon } from 'lucide-react';
 import { imageService } from '@/lib/api/services/imageService';
 import { toast } from 'react-toastify';
@@ -44,9 +45,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       // 2. Callback to update parent state with the public URL
       onChange(publicUrl);
       toast.success(`${label} uploaded successfully!`);
-    } catch (error: any) {
-      console.error('Upload failed details:', error.response?.data || error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to upload image.';
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      console.error('Upload failed details:', err.response?.data || error);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to upload image.';
       toast.error(errorMessage);
     } finally {
       setIsUploading(false);
@@ -76,7 +78,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         >
           {value ? (
             <>
-              <img src={value} alt={label} className="w-full h-full object-cover" />
+              <NextImage src={value} alt={label} width={200} height={200} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity gap-2">
                  <Upload className="text-white" size={24} />
                  <span className="text-[8px] font-black uppercase text-white tracking-widest">Replace</span>

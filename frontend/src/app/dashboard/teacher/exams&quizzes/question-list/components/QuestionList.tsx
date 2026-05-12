@@ -1,9 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
 import { GripVertical, Edit2, Trash2, CheckCircle, Clock, FileText } from 'lucide-react';
-;
 import {
   DndContext,
   closestCenter,
@@ -12,9 +9,10 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DraggableAttributes,
 } from '@dnd-kit/core';
+import { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -50,8 +48,8 @@ const QuestionCard = ({
   onDelete: () => void;
   onEdit: () => void;
   isDragging?: boolean;
-  attributes?: any;
-  listeners?: any;
+  attributes?: DraggableAttributes;
+  listeners?: SyntheticListenerMap;
   setNodeRef?: (node: HTMLElement | null) => void;
   style?: React.CSSProperties;
 }) => {

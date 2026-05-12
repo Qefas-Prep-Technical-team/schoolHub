@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect } from "react";
@@ -11,7 +10,7 @@ import { toast } from "react-toastify";
 import { apiClient } from "@/lib/api/client";
 import { Loader2, LayoutGrid, FileText, Settings2, School, Calendar, ArrowRight, AlertCircle, Check, CheckCircle2, Zap, ShieldCheck, Cpu, Globe, Target, Layers } from "lucide-react";
 
-import { examService, CreateExamDTO } from "@/lib/api/services/examService";
+import { examService, CreateExamDTO, SubjectPaper } from "@/lib/api/services/examService";
 import { useExamStore } from "@/store/examStore";
 import { useSessions } from "@/lib/api/hooks/useSessions";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
@@ -58,7 +57,7 @@ export default function CreateExamForm() {
     watch,
     formState: { errors },
   } = useForm<ExamFormValues>({
-    resolver: zodResolver(examSchema) as any,
+    resolver: zodResolver(examSchema),
     defaultValues: {
       title: "",
       description: "",
@@ -110,8 +109,9 @@ export default function CreateExamForm() {
 
   // TRIGGER 1: Auto-select school if exactly 1 school is available
   useEffect(() => {
-    if (user && (user as any).schools?.length === 1 && !watchedSchoolId) {
-      setValue("schoolId", (user as any).schools[0].schoolId);
+    const schools = (user as { schools?: { schoolId: string }[] })?.schools;
+    if (user && schools?.length === 1 && !watchedSchoolId) {
+      setValue("schoolId", schools[0].schoolId);
     }
   }, [user, setValue, watchedSchoolId]);
 
@@ -154,7 +154,7 @@ export default function CreateExamForm() {
       setExamContext(data.id, data.schoolId, data.sessionId || "");
       router.push(`/dashboard/admin/exams/${data.id}/papers`);
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } }, message?: string }) => {
       const message = error.response?.data?.message || error.message || "Failed to create exam";
       toast.error(typeof message === 'string' ? message : "An error occurred");
     },
@@ -193,10 +193,10 @@ export default function CreateExamForm() {
               <select
                 {...register("schoolId")}
                 className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+                style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
               >
                 <option value="">Choose a school...</option>
-                {(user as any)?.schools?.map((s: any) => (
+                {(user as { schools?: { schoolId: string, schoolName: string }[] })?.schools?.map((s) => (
                   <option key={s.schoolId} value={s.schoolId}>{s.schoolName}</option>
                 ))}
               </select>
@@ -212,10 +212,10 @@ export default function CreateExamForm() {
                 <select
                   {...register("sessionId")}
                   className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                  style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+                  style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
                 >
                   <option value="">No Session (Select to link)</option>
-                  {sessions.data?.map((session: any) => (
+                  {sessions.data?.map((session: { id: string, name: string }) => (
                     <option key={session.id} value={session.id}>{session.name}</option>
                   ))}
                 </select>
@@ -255,7 +255,7 @@ export default function CreateExamForm() {
                 placeholder="e.g. 2026 FIRST TERM PERFORMANCE SYNC"
                 {...register("title")}
                 className="h-16 px-6 rounded-2xl bg-slate-50/50 dark:bg-white/5 border-2 border-slate-50 dark:border-white/5 focus:border-primary transition-all font-bold text-slate-700 dark:text-slate-200"
-                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+                style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
               />
               {errors.title && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.title.message}</p>}
             </div>
@@ -307,7 +307,7 @@ export default function CreateExamForm() {
                 <select 
                     {...register("scope")} 
                     className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                    style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+                    style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
                 >
                   <option value="SCHOOL">Whole Institutional Network</option>
                   <option value="CLASS">Specific Class Cluster</option>
@@ -322,10 +322,10 @@ export default function CreateExamForm() {
                 <select
                   {...register("classId")}
                   className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                  style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+                  style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
                 >
                   <option value="">Select Class Module...</option>
-                  {classesData?.map((c: any) => (
+                  {classesData?.map((c: { id: string, name: string, section?: string }) => (
                     <option key={c.id} value={c.id}>{c.name} {c.section}</option>
                   ))}
                 </select>
@@ -344,7 +344,7 @@ export default function CreateExamForm() {
             
             {departmentsData && departmentsData.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {departmentsData.map((d: any) => {
+                {departmentsData.map((d: { id: string, name: string, code?: string }) => {
                   const isSelected = watch("departmentIds")?.includes(d.id);
                   return (
                     <div 
@@ -366,7 +366,7 @@ export default function CreateExamForm() {
                         borderColor: isSelected ? primaryColor : undefined,
                         backgroundColor: isSelected ? `${primaryColor}10` : undefined,
                         boxShadow: isSelected ? `0 20px 40px -10px ${primaryColor}20` : undefined
-                      } as any}
+                      } as React.CSSProperties}
                     >
                       <div className={cn(
                           "size-8 rounded-xl flex items-center justify-center transition-all duration-500",
@@ -411,7 +411,7 @@ export default function CreateExamForm() {
                   setValueAs: (v) => v === "true",
                 })}
                 className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+                style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
               >
                 <option value="true">Immediate Sync (Visible On Completion)</option>
                 <option value="false">Temporal Delay (Released on Date)</option>

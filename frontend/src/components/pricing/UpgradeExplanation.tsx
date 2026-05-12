@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Info, Calendar, CreditCard, ArrowRight } from 'lucide-react';
+import { Info, Calendar, CreditCard } from 'lucide-react';
 
 export default function UpgradeExplanation() {
     return (

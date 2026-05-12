@@ -21,15 +21,6 @@ export default function SchedulingSection({ formData, onChange }: SchedulingSect
     return new Date(now.getTime() - offset).toISOString().slice(0, 16);
   };
 
-  const getDefaultEndDateTime = () => {
-    if (formData.startDateTime && formData.duration) {
-      const start = new Date(formData.startDateTime);
-      const duration = parseInt(formData.duration) || 60;
-      const end = new Date(start.getTime() + duration * 60000);
-      return end.toISOString().slice(0, 16);
-    }
-    return '';
-  };
 
   return (
     <div>

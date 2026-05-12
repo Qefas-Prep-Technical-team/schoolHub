@@ -15,7 +15,6 @@ interface PlanUpgradeDisplayProps {
 
 export default function PlanUpgradeDisplay({
     currentPlan,
-    isUpgradeFlow: _,
     currentPlanPrice,
     lastPaymentDate
 }: PlanUpgradeDisplayProps) {

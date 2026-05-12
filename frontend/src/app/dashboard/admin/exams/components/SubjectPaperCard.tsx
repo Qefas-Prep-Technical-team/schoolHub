@@ -4,18 +4,10 @@ import { SubjectPaper, examService } from '@/lib/api/services/examService';
 import { 
   FileText, 
   User, 
-  Calendar, 
-  BookOpen, 
   Trash2, 
-  Loader2, 
-  Zap, 
-  Clock, 
-  Target, 
   ArrowRight,
-  ShieldCheck,
   Workflow
 } from 'lucide-react';
-import Link from 'next/link';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
@@ -30,7 +22,7 @@ interface SubjectPaperCardProps {
     subject?: { name: string }, 
     teacher?: { name: string },
     exam?: { title: string },
-    exams?: any[],
+    exams?: { id: string, title: string }[],
     _count?: { questions: number }
   };
   examId?: string;
@@ -62,7 +54,7 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
       toast.success('Subject paper deleted successfully');
       setIsDeleteModalOpen(false);
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(error.response?.data?.message || 'Failed to delete paper');
     }
   });
@@ -123,7 +115,7 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
         <div className="flex-1 relative z-10">
           <h3 
             className="text-2xl font-black text-slate-900 dark:text-white mb-3 group-hover:text-primary transition-colors leading-[1.1] uppercase tracking-tighter"
-            style={{ '--primary': primaryColor } as any}
+            style={{ '--primary': primaryColor } as React.CSSProperties}
           >
             {paper.title || `${paper.subject?.name} Assessment`}
           </h3>

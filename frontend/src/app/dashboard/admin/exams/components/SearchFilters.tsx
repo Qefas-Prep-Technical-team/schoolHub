@@ -5,7 +5,6 @@ import Input from './ui/Input';
 import Select from './ui/Select';
 import Button from './ui/Button';
 import { useQuery } from '@tanstack/react-query';
-import { sessionService } from '@/lib/api/services/sessionService';
 import { apiClient } from '@/lib/api/client';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
@@ -74,7 +73,7 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
 
     const sessionOptions = [
         { value: 'all', label: 'All Sessions' },
-        ...(Array.isArray(sessions) ? sessions : []).map((s: any) => ({ value: s.id, label: s.name })),
+        ...(Array.isArray(sessions) ? sessions : []).map((s: { id: string, name: string }) => ({ value: s.id, label: s.name })),
     ];
 
     const termOptions = [
@@ -86,12 +85,12 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
 
     const classOptions = [
         { value: 'all', label: 'All Classes' },
-        ...(Array.isArray(classes) ? classes : []).map((c: any) => ({ value: c.id, label: `${c.name} ${c.section || ''}`.trim() })),
+        ...(Array.isArray(classes) ? classes : []).map((c: { id: string, name: string, section?: string }) => ({ value: c.id, label: `${c.name} ${c.section || ''}`.trim() })),
     ];
 
     const departmentOptions = [
         { value: 'all', label: 'All Depts' },
-        ...(Array.isArray(departments) ? departments : []).map((d: any) => ({ value: d.id, label: d.name })),
+        ...(Array.isArray(departments) ? departments : []).map((d: { id: string, name: string }) => ({ value: d.id, label: d.name })),
     ];
 
     const isLoadingAny = isLoadingSessions || isLoadingClasses || isLoadingDepts;

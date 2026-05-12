@@ -557,7 +557,7 @@ export default function StudentRegisterForm() {
               <p>Unauthorized use, data scraping, or any attempt to compromise the security of the platform is strictly prohibited.</p>
               <p>Users are responsible for maintaining the confidentiality of their account and password. You agree to accept responsibility for all activities that occur under your account.</p>
               <p>We reserve the right to terminate accounts that violate these terms or engage in behavior harmful to other users or the platform.</p>
-              <p>Qefas Hub is provided "as is" without any warranties of any kind, either express or implied.</p>
+              <p>Qefas Hub is provided &ldquo;as is&rdquo; without any warranties of any kind, either express or implied.</p>
             </div>
             <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/50">
               <button

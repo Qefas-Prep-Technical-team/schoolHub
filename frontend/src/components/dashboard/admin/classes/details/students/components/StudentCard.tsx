@@ -1,5 +1,6 @@
 import React from 'react';
 import { User } from 'lucide-react';
+import NextImage from 'next/image';
 import { Student } from './types';
 import PerformanceBadge from './PerformanceBadge';
 
@@ -15,10 +16,12 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) => {
       onClick={() => onClick?.(student)}
     >
       {student.profileImage ? (
-        <img
+        <NextImage
           alt={student.fullName}
           src={student.profileImage}
-          className="w-20 h-20 rounded-full object-cover mb-4"
+          width={80}
+          height={80}
+          className="rounded-full object-cover mb-4"
         />
       ) : (
         <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mb-4">

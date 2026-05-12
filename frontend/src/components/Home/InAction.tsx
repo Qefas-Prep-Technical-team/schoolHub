@@ -1,10 +1,9 @@
 "use client"
 import React, { FC } from 'react';
 import dynamic from 'next/dynamic';
-const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as React.ComponentType<Record<string, unknown>>;
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import Box from '@mui/material/Box';
 import { useFetchInAction } from './query';
 import { Play } from 'lucide-react';
 

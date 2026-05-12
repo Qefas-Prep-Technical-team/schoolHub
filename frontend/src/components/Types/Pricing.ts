@@ -38,5 +38,5 @@ export interface FeatureAccess {
   name: string;
   enabled: boolean;
   limitValue?: number;
-  meta?: any;
+  meta?: Record<string, unknown>;
 }

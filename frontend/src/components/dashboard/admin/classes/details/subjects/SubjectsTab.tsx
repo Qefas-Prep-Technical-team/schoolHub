@@ -8,11 +8,10 @@ import AddSubjectModal from './components/AddSubjectModal';
 import { Subject } from './components/types';
 
 interface ClassSubjectsTabProps {
-  classSubjects?: any[];
-  className?: string;
+  classSubjects?: Record<string, unknown>[];
 }
 
-export default function ClassSubjectsTab({ classSubjects = [], className = '' }: ClassSubjectsTabProps) {
+export default function ClassSubjectsTab({ classSubjects = [] }: ClassSubjectsTabProps) {
   const router = useRouter();
   const params = useParams();
   const classId = params.id as string;
@@ -41,7 +40,7 @@ export default function ClassSubjectsTab({ classSubjects = [], className = '' }:
 
   useEffect(() => {
     setCurrentSubjects(subjects);
-  }, [classSubjects]);
+  }, [classSubjects, subjects]);
 
   const handleSubjectClick = (subject: Subject) => {
     router.push(`/dashboard/admin/subjects/${subject.id}`);

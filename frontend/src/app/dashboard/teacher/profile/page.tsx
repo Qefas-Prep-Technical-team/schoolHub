@@ -20,6 +20,7 @@ import {
     MapPin,
     Loader2
 } from 'lucide-react';
+import Image from 'next/image';
 import { 
     useTeacherProfile, 
     useUpdateTeacherProfile, 
@@ -92,7 +93,8 @@ export default function TeacherProfilePage() {
     };
 
     const handleSave = async () => {
-        const { email: _, ...rest } = formData;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { email, ...rest } = formData;
         await updateProfile.mutateAsync(rest);
         setIsEditing(false);
     };
@@ -116,7 +118,12 @@ export default function TeacherProfilePage() {
                 {/* Cover Photo / Pattern */}
                 <div className="h-48 md:h-80 w-full overflow-hidden bg-slate-950 md:rounded-[3rem] relative shadow-2xl">
                     {profile.bannerImage ? (
-                        <img src={profile.bannerImage} alt="Banner" className="w-full h-full object-cover" />
+                        <Image
+                          src={profile.bannerImage}
+                          alt="Banner"
+                          fill
+                          className="w-full h-full object-cover"
+                        />
                     ) : (
                         <div className="absolute inset-0 opacity-30">
                             <div className="absolute top-0 -left-20 w-80 h-80 bg-primary blur-[120px] rounded-full animate-pulse" />
@@ -130,7 +137,13 @@ export default function TeacherProfilePage() {
                     <div className="relative shrink-0">
                         <div className="h-32 w-32 md:h-44 md:w-44 rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-4xl md:text-6xl font-black text-white shadow-2xl border-4 border-white dark:border-slate-950 hover:scale-105 transition-transform duration-500 overflow-hidden">
                             {profile.profileImage ? (
-                                <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                                <Image
+                                  src={profile.profileImage}
+                                  alt={profile.name}
+                                  width={176}
+                                  height={176}
+                                  className="w-full h-full object-cover"
+                                />
                             ) : (
                                 initials
                             )}

@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import NextImage from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuthModalStore } from '@/utils/AuthModalStore';
 import dynamic from 'next/dynamic';
@@ -83,7 +84,7 @@ const AuthModal = () => {
                         <div className="space-y-8 py-4">
                             <div className="text-center space-y-2">
                                 <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-xl border border-slate-100 dark:border-slate-800 p-3">
-                                    <img src="/logo/favicon.svg" alt="Qefas Hub" className="w-full h-full object-contain" />
+                                    <NextImage src="/logo/favicon.svg" alt="Qefas Hub" width={80} height={80} className="w-full h-full object-contain" />
                                 </div>
                                 <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Welcome to Qefas Hub</h2>
                                 <p className="text-slate-500 dark:text-slate-400 text-lg">Choose how you want to continue</p>

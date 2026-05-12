@@ -3,15 +3,11 @@
 import { useState } from 'react';
 import { 
   ChevronRight, 
-  ArrowLeft, 
+  ArrowLeft,
   Trophy, 
-  User, 
   FileText,
-  BarChart3,
   GraduationCap,
-  Percent,
   Download,
-  Search,
   Sparkles,
   Zap,
   TrendingUp,
@@ -61,8 +57,8 @@ export default function StudentGradesPage() {
   const handleBackToExams = () => setSelectedExamId(null);
 
   const calculateCumulativeAvg = () => {
-    const examPercents = attemptsData?.attempts?.map((a: any) => (a.totalScore / (a.totalMarks || 1)) * 100) || [];
-    const standalonePercents = standaloneGradesData?.grades?.map((g: any) => (g.score / (g.maxMarks || 1)) * 100) || [];
+    const examPercents = attemptsData?.attempts?.map((a: Record<string, any>) => (a.totalScore / (a.totalMarks || 1)) * 100) || [];
+    const standalonePercents = standaloneGradesData?.grades?.map((g: Record<string, any>) => (g.score / (g.maxMarks || 1)) * 100) || [];
     const allPercents = [...examPercents, ...standalonePercents];  
     if (allPercents.length === 0) return "3.8"; // Default placeholder if empty
     const avg = allPercents.reduce((acc, curr) => acc + (curr || 0), 0) / allPercents.length;
@@ -135,7 +131,7 @@ export default function StudentGradesPage() {
             <div className="grid grid-cols-4 gap-6">
               {isLoadingAttempts ? (
                 [1, 2, 3, 4].map(i => <div key={i} className="h-56 rounded-[2.5rem] bg-white animate-pulse" />)
-              ) : attempts.map((attempt: any) => {
+              ) : attempts.map((attempt: Record<string, any>) => {
                   const scorePercent = Math.round((attempt.totalScore / (attempt.totalMarks || 1)) * 100);
                   let grade = "C"; let color = "text-[#0856c8]"; let bg = "bg-[#d9e2ff]";
                   if (scorePercent >= 75) grade = "A";
@@ -194,7 +190,7 @@ export default function StudentGradesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {standaloneGrades.map((grade: any) => {
+                  {standaloneGrades.map((grade: Record<string, any>) => {
                     const percent = Math.round((grade.score / (grade.maxMarks || 1)) * 100);
                     return (
                       <tr key={grade.id} className="hover:bg-slate-50/50 transition-colors group">
@@ -260,7 +256,7 @@ export default function StudentGradesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {isLoadingAttempts ? (
                   [1, 2].map(i => <div key={i} className="h-48 rounded-3xl bg-slate-100 animate-pulse" />)
-                ) : attempts.map((attempt: any) => {
+                ) : attempts.map((attempt: Record<string, any>) => {
                     const scorePercent = Math.round((attempt.totalScore / (attempt.totalMarks || 1)) * 100);
                     let grade = "C"; let color = "text-[#0856C8]"; let bg = "bg-[#D9E2FF]";
                     if (scorePercent >= 75) grade = "A";
@@ -300,7 +296,7 @@ export default function StudentGradesPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {standaloneGrades.map((grade: any) => {
+                {standaloneGrades.map((grade: Record<string, any>) => {
                   const percent = Math.round((grade.score / (grade.maxMarks || 1)) * 100);
                   const isQuiz = grade.remarks?.toLowerCase().includes('quiz');
                   const Icon = isQuiz ? Zap : FileText;
@@ -490,7 +486,7 @@ function DetailedStudentResult({ examId, onBack }: { examId: string, onBack: () 
                     <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1" />
                 </div>
                 <div className="grid grid-cols-1 gap-6">
-                    {result.subjects?.map((sub: any, i: number) => {
+                    {result.subjects?.map((sub: Record<string, any>, i: number) => {
                         const percent = Math.round((sub.score / (sub.totalMarks || 1)) * 100);
                         return (
                             <div key={i} className="group p-5 md:p-8 rounded-[2rem] md:rounded-[3rem] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:hover:shadow-2xl hover:border-primary/40 transition-all duration-500 overflow-hidden relative">

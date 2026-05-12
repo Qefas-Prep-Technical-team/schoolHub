@@ -21,6 +21,22 @@ interface UsageLimitsCardProps {
   role?: 'ADMIN' | 'PARENT' | 'TEACHER' | 'STUDENT';
 }
 
+interface PlanFeature {
+  name: string;
+  label: string;
+  enabled: boolean;
+  limit: number;
+}
+
+interface Metric {
+  id: string;
+  label: string;
+  count: number | string;
+  limit: number | string;
+  percent: number;
+  color: string;
+}
+
 export default function UsageLimitsCard({ 
   primaryColor = '#2563eb',
   title = "Usage Limits",
@@ -130,16 +146,16 @@ export default function UsageLimitsCard({
   ];
 
   // Filter metrics based on role
-  const metrics = allMetrics.filter(m => {
+  const metrics: Metric[] = allMetrics.filter(m => {
     if (role === 'ADMIN') return true;
     if (role === 'PARENT') return ['students', 'exams', 'storage', 'ai'].includes(m.id);
     if (role === 'TEACHER') return ['exams', 'classes', 'storage'].includes(m.id);
     if (role === 'STUDENT') return ['exams', 'classes', 'storage'].includes(m.id);
     return false;
   }).concat(
-    (data.planFeatures || [])
-      .filter((f: any) => f.enabled && f.limit > 0)
-      .map((f: any) => ({
+    ((data.planFeatures as PlanFeature[]) || [])
+      .filter((f) => f.enabled && f.limit > 0)
+      .map((f) => ({
         id: f.name,
         label: f.label,
         count: 0, 
@@ -149,8 +165,8 @@ export default function UsageLimitsCard({
       }))
   );
 
-  const otherFeatures = (data.planFeatures || [])
-    .filter((f: any) => f.enabled && (f.limit <= 0 || !f.limit));
+  const otherFeatures = ((data.planFeatures as PlanFeature[]) || [])
+    .filter((f) => f.enabled && (f.limit <= 0 || !f.limit));
 
   const chipColors = [
     "bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-900/30",
@@ -162,7 +178,7 @@ export default function UsageLimitsCard({
     "bg-cyan-500/10 text-cyan-600 border-cyan-200 dark:border-cyan-900/30",
   ];
 
-  const hasWarning = Object.values(percentages).some((p: any) => p >= 80);
+  const hasWarning = Object.values(percentages).some((p) => (p as number) >= 80);
 
   return (
     <Card 
@@ -210,7 +226,7 @@ export default function UsageLimitsCard({
       </div>
 
       <div className="space-y-7">
-        {metrics.map((m: any, i) => (
+        {metrics.map((m, i) => (
           <div key={i} className="space-y-2.5">
             <div className="flex justify-between items-end">
               <span className="text-sm font-bold text-slate-500">{m.label}</span>
@@ -248,7 +264,7 @@ export default function UsageLimitsCard({
               <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Premium Features Locked-In</h5>
             </div>
             <div className="flex flex-wrap gap-2">
-              {otherFeatures.map((f: any, i: number) => {
+              {otherFeatures.map((f, i: number) => {
                 const colorClass = chipColors[i % chipColors.length];
                 return (
                   <motion.div

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Clock } from 'lucide-react';
+import { X } from 'lucide-react';
 import QuestionViewer from './QuestionViewer';
 import ExamInfo from './ExamInfo';
 import Breadcrumbs from './Breadcrumbs';

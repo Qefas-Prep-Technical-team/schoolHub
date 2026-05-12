@@ -1,8 +1,9 @@
 'use client';
 
-import { Phone, Eye, User, Award, ShieldCheck, Mail, MoreVertical } from 'lucide-react';
+import { Phone, Eye, User, Award, ShieldCheck } from 'lucide-react';
 import { Student } from './types';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 interface StudentTableProps {
   students: Student[];
@@ -47,9 +48,11 @@ export function StudentTable({ students, onView, onCall }: StudentTableProps) {
             <div className="col-span-5 flex items-center gap-5">
                <div className="relative">
                   <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-700 shadow-md">
-                      <img
+                      <Image
                         src={student.avatar}
                         alt={student.name}
+                        width={56}
+                        height={56}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
                   </div>

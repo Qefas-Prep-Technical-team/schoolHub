@@ -66,7 +66,7 @@ export default function MetaText({ initialSeconds = 45, onResend }: Props) {
   return (
     <div className="mt-6 text-center">
       <p className="text-sm text-gray-500 dark:text-gray-400">
-        Didn't receive the code?{' '}
+        Didn&apos;t receive the code?{' '}
         <button
           type="button"
           disabled={seconds > 0 || sending}

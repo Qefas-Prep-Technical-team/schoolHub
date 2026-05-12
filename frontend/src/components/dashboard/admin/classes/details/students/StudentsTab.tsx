@@ -8,7 +8,7 @@ import BulkActions from './components/BulkActions';
 import { Student, FilterOptions } from './components/types';
 
 interface ClassStudentsTabProps {
-  enrollments?: any[];
+  enrollments?: Record<string, unknown>[];
 }
 
 export default function ClassStudentsTab({ enrollments = [] }: ClassStudentsTabProps) {
@@ -73,7 +73,7 @@ export default function ClassStudentsTab({ enrollments = [] }: ClassStudentsTabP
     });
 
     setFilteredStudents(filtered);
-  }, [filters, enrollments]);
+  }, [filters, enrollments, students]);
 
   const handleExport = () => {
     console.log('Exporting class list for:', classId);

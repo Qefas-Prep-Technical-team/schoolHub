@@ -8,7 +8,7 @@ import { StudentTable } from './components/StudentTable';
 import { Pagination } from './components/Pagination';
 import { Student } from './components/types';
 import { teacherService } from '@/lib/api/services/teacherService';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function StudentsPage() {
@@ -18,7 +18,7 @@ export default function StudentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['class-students', classId, searchQuery, currentPage],
     queryFn: () => teacherService.getStudents({
       classId,
@@ -29,17 +29,25 @@ export default function StudentsPage() {
     enabled: !!classId,
   });
 
-  const students: Student[] = data?.students?.map((s: Record<string, any>) => {
+  const students: Student[] = data?.students?.map((s: {
+    id: string;
+    name: string;
+    gender?: string;
+    status?: string;
+    avatarUrl?: string;
+    performance?: string;
+    attendance?: number;
+  }) => {
     console.log(`LOG: [StudentsPage] 🔄 Mapping Student: ${s.name} (UUID: ${s.id})`);
     return {
       id: s.id,
       name: s.name,
       studentId: `#${s.id.slice(-5).toUpperCase()}`,
-      gender: s.gender || 'N/A',
-      status: (s.status || 'Active').toLowerCase(),
+      gender: (s.gender?.toLowerCase() as Student['gender']) || 'male',
+      status: (s.status?.toLowerCase() as Student['status']) || 'active',
       avatar: s.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.name}`,
       performance: s.performance || 'Medium',
-      attendance: s.attendance || 100
+      attendance: (s.attendance?.toString()) || '100%'
     };
   }) || [];
 
@@ -59,9 +67,6 @@ export default function StudentsPage() {
     console.log('Registering new student into module...');
   };
 
-  const handleFilterClick = (filter: string) => {
-    console.log('Applying context filter:', filter);
-  };
 
   if (isLoading) {
     return (
@@ -104,8 +109,6 @@ export default function StudentsPage() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onAddStudent={handleAddStudent}
-            filters={['Performance', 'Attendance', 'Status']}
-            onFilterClick={handleFilterClick}
           />
       </div>
 

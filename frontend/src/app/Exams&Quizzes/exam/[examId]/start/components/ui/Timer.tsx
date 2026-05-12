@@ -1,7 +1,7 @@
 // src/components/UI/Timer.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
 interface TimerProps {
   seconds: number;

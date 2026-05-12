@@ -24,7 +24,7 @@ export default function LeftPanel() {
                     <h3 className="text-white font-black text-2xl tracking-tighter leading-tight">Inspire Minds</h3>
                 </div>
                 <p className="text-white/60 text-xs font-semibold uppercase tracking-widest leading-loose">
-                    "Empowering educators with real-time academic intelligence."
+                    &ldquo;Empowering educators with real-time academic intelligence.&rdquo;
                 </p>
             </div>
         </div>

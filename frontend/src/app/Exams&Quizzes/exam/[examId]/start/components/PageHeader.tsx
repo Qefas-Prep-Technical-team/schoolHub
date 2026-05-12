@@ -1,6 +1,5 @@
 // src/components/Header/PageHeader.tsx
 import React from 'react';
-import Button from './ui/Button';
 import Breadcrumbs from './Breadcrumbs';
 
 interface PageHeaderProps {

@@ -1,7 +1,7 @@
 // src/components/Dashboard/QuestionNavigation.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Timer from './ui/Timer';
 import QuestionButton from './ui/QuestionButton';
 import Button from './ui/Button';
@@ -24,8 +24,7 @@ const QuestionNavigation: React.FC<QuestionNavigationProps> = ({
     answeredQuestionIds = [],
     onQuestionSelect,
     onNextQuestion,
-    onSubmit,
-    onTimerExpire
+    onSubmit
 }) => {
     return (
         <div className="sticky top-6 rounded-xl border border-[#E5E7EB] dark:border-[#374151] bg-white dark:bg-[#1F2937] p-6">

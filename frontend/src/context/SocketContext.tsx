@@ -40,6 +40,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       return;
     }
 
+    if (socket) return;
+
     // Initialize socket connection
     // Extract base URL from NEXT_PUBLIC_API_URL or use NEXT_PUBLIC_SOCKET_URL if provided
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -50,7 +52,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         // Robust way to get the origin (e.g. https://api.example.com/api -> https://api.example.com)
         const url = new URL(apiUrl);
         socketUrl = url.origin;
-      } catch (e) {
+      } catch {
         // Fallback to string replacement if URL is not absolute
         socketUrl = apiUrl.replace(/\/api$/, "").replace(/\/$/, "");
       }
@@ -90,7 +92,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     return () => {
       newSocket.disconnect();
     };
-  }, [anyAuthenticated, currentUserId, isPlatformAuthenticated]);
+  }, [anyAuthenticated, currentUserId, socket]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

@@ -8,8 +8,6 @@ import BasicInfoSection from './BasicInfoSection';
 import ConfigurationSection from './ConfigurationSection';
 import SchedulingSection from './SchedulingSection';
 import AdvancedOptionsSection from './AdvancedOptionsSection';
-import Link from 'next/link';
-
 
 export default function CreateExamQuiz() {
   const router = useRouter();

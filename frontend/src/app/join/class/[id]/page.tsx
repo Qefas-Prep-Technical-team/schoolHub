@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { usePreviewClassById, useRequestToJoinClass } from "@/lib/api/hooks/useClasses";
-import { Loader2, Users, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 
 export default function JoinClassPage() {
@@ -83,8 +84,8 @@ export default function JoinClassPage() {
   }
 
   if (classError || joinError) {
-    const errorMsg = (joinError as any)?.response?.data?.message || 
-                   (classError as any)?.response?.data?.message || 
+    const errorMsg = (joinError as AxiosError<{message?: string}>)?.response?.data?.message || 
+                   (classError as AxiosError<{message?: string}>)?.response?.data?.message || 
                    "Failed to process join request. The class might not exist or you might already be enrolled.";
                    
     return (

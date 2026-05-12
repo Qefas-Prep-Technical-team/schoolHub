@@ -1,13 +1,12 @@
+/* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Noto_Sans, Roboto, Lexend } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "next-themes";
 import NavBar from "@/components/reusable/NavBar";
 import { ThemeClientProvider } from "@/context/ThemeClientProvider";
 import Footer from "@/components/reusable/Footer";
 import 'leaflet/dist/leaflet.css';
-import { QueryClientProvider } from "@tanstack/react-query";
-import queryClient from "@/lib/queryClient";
+import 'leaflet/dist/leaflet.css';
 import Providers from "@/utils/providers";
 import NextTopLoader from 'nextjs-toploader';
 import AppInitializer from "@/utils/AppInitializer";

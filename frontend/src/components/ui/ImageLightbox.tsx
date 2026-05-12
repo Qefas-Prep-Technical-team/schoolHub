@@ -4,10 +4,10 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X, ZoomIn } from "lucide-react";
+import { X } from "lucide-react";
+import Image from "next/image";
 
 interface ImageLightboxProps {
   isOpen: boolean;
@@ -30,11 +30,12 @@ export default function ImageLightbox({ isOpen, onClose, src, alt }: ImageLightb
             <X size={24} />
           </button>
           
-          <div className="flex-1 w-full flex items-center justify-center overflow-auto custom-scrollbar">
-            <img 
+          <div className="flex-1 w-full relative min-h-[50vh] flex items-center justify-center overflow-auto custom-scrollbar">
+            <Image 
               src={src} 
-              alt={alt} 
-              className="max-w-full max-h-full object-contain shadow-2xl animate-in zoom-in-95 duration-300"
+              alt={alt || "Image Preview"} 
+              fill
+              className="object-contain shadow-2xl animate-in zoom-in-95 duration-300"
             />
           </div>
 

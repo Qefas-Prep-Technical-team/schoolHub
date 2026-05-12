@@ -1,6 +1,6 @@
 "use client"
 import React from 'react';
-import Image from 'next/image';
+
 import { motion } from 'framer-motion';
 import { Bolt, CheckCircle2, Apple, PlayCircle, Bell, Calendar, MessageSquare, Settings, ClipboardList, CalendarCheck } from 'lucide-react';
 

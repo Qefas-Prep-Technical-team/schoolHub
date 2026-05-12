@@ -16,12 +16,10 @@ export function BulkGradeActions({
   onBulkUpdate,
   className
 }: BulkGradeActionsProps) {
-  const [isOpen, setIsOpen] = useState(false)
   const [status, setStatus] = useState<GradeStatus>('graded')
 
   const handleApply = () => {
     onBulkUpdate({ status })
-    setIsOpen(false)
   }
 
   if (selectedGrades.length === 0) return null
@@ -60,7 +58,7 @@ export function BulkGradeActions({
           </button>
           
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={() => {}}
             className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             <Icon name="x" className="h-4 w-4" />

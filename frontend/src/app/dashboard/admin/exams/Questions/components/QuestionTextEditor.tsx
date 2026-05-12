@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect } from 'react';
 import FormulaToolbar from './FormulaToolbar';
 import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
@@ -412,7 +413,7 @@ const QuestionTextEditor: React.FC<QuestionTextEditorProps> = ({
                                 <div className="flex gap-3">
                                    <div className="font-black text-primary bg-primary/10 w-6 h-6 rounded-lg flex items-center justify-center shrink-0">1</div>
                                    <p className="text-slate-600 dark:text-slate-400">
-                                     <span className="font-black text-slate-900 dark:text-white">Smart Formatting:</span> Simply type your question text. Highlight any part of your text and use the toolbar buttons (Bold, Italic, Lists) to apply styling instantly using standard Markdown.
+                                     <span className="font-black text-slate-900 dark:text-white">Smart Formatting:</span> Simply type your question text. Highlight portions of your text and use the toolbar buttons (Bold, Italic, Lists) to apply styling instantly using standard Markdown.
                                    </p>
                                 </div>
                             </div>
@@ -420,7 +421,7 @@ const QuestionTextEditor: React.FC<QuestionTextEditorProps> = ({
                                 <div className="flex gap-3">
                                    <div className="font-black text-primary bg-primary/10 w-6 h-6 rounded-lg flex items-center justify-center shrink-0">2</div>
                                    <p className="text-slate-600 dark:text-slate-400">
-                                     <span className="font-black text-slate-900 dark:text-white">The Math Engine:</span> Click any math symbol in the toolbar to insert code. <span className="font-black underline decoration-primary/30">Crucially:</span> all math MUST be wrapped in <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded text-primary">$</code> signs (e.g. <code className="text-blue-500 font-bold">$num^2$</code> or <code className="text-blue-500 font-bold">$\frac{8}{9}$</code>) for it to render correctly.
+                                     <span className="font-black text-slate-900 dark:text-white">The Math Engine:</span> Click math symbols in the toolbar to insert code. <span className="font-black underline decoration-primary/30">Crucially:</span> all math MUST be wrapped in <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded text-primary">$</code> signs (e.g. <code className="text-blue-500 font-bold">$num^2$</code> or <code className="text-blue-500 font-bold">$\frac{8}{9}$</code>) for it to render correctly.
                                    </p>
                                 </div>
                             </div>

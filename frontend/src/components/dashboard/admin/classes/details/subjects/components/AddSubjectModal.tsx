@@ -15,8 +15,7 @@ type Semester = Subject["semester"];
 const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ 
   isOpen, 
   onClose, 
-  onSave,
-  classId 
+  onSave
 }) => {
 const [formData, setFormData] = useState<{
   name: string;

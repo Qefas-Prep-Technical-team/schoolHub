@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import colors from '@/styles/colors';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
@@ -32,7 +33,7 @@ export default function Navbar() {
         >
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-                <img src="/logo/favicon.svg" alt="Qefas Hub Logo" className="h-8 w-8" />
+                <Image src="/logo/favicon.svg" alt="Qefas Hub Logo" width={32} height={32} />
                 <span className="font-bold text-lg tracking-tight">Qefas Hub</span>
             </Link>
 

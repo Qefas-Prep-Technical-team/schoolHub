@@ -19,7 +19,7 @@ export default function ProtectedRoute({
   userTypes = [],
   fallback
 }: ProtectedRouteProps) {
-  const { isChecking, user } = useProtectedRoute({
+  const { isChecking } = useProtectedRoute({
     redirectTo,
     requireAuth,
     userTypes

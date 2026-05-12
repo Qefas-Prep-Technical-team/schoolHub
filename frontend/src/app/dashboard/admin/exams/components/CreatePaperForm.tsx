@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -35,8 +34,8 @@ export function CreatePaperForm({
 }: {
   examId?: string;
   schoolId?: string;
-  subjects: any[];
-  teachers: any[];
+  subjects: { id: string, name: string }[];
+  teachers: { id: string, name: string }[];
   isLoadingData: boolean;
   redirectOnSuccess?: string;
 }) {
@@ -44,7 +43,7 @@ export function CreatePaperForm({
   const router = useRouter();
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<PaperFormValues>({
-    resolver: zodResolver(paperSchema) as any,
+    resolver: zodResolver(paperSchema),
     defaultValues: {
       subjectId: "",
       teacherId: "",
@@ -56,8 +55,8 @@ export function CreatePaperForm({
   });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: PaperFormValues) => examService.createSubjectPaper(examId || "", { ...data, schoolId } as any),
-    onSuccess: (response: any) => {
+    mutationFn: (data: PaperFormValues) => examService.createSubjectPaper(examId || "", { ...data, schoolId } as unknown as Parameters<typeof examService.createSubjectPaper>[1]),
+    onSuccess: (response: { id: string }) => {
       toast.success("Subject paper created!");
       queryClient.invalidateQueries({ queryKey: ["exam-papers", examId] });
       queryClient.invalidateQueries({ queryKey: ["subject-papers"] });
@@ -68,7 +67,7 @@ export function CreatePaperForm({
         reset();
       }
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(error?.response?.data?.message || "Failed to create paper");
     },
   });

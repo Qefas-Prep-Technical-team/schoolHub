@@ -4,7 +4,7 @@ import { useFetchFeatuersinFeaturesPage } from './query';
 import Box from '@mui/material/Box';
 
 const Features: FC = () => {
-    const { data, isLoading, error } = useFetchFeatuersinFeaturesPage();
+    const { data } = useFetchFeatuersinFeaturesPage();
     const formatText = (text: string, code: string) => {
         const [before, after] = text.split('{{code}}');
         return (

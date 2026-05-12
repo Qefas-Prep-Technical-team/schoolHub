@@ -4,8 +4,8 @@ import { PricingTab as PricingTabType } from '../Types/Pricing';
 import { useBillingStore } from '@/utils/PricingPage';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Zap, Shield, Rocket, Loader2, Cloud, ArrowRight, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { CheckCircle2, Zap, Shield, Rocket, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import { useCheckoutStore } from '@/utils/CheckoutStore';
 import { calculateProRatedAmount } from '@/utils/pricingUtils';
 
@@ -18,8 +18,8 @@ interface UpgradePriceCardProps extends PricingTabType {
 }
 
 const UpgradePriceCard: FC<UpgradePriceCardProps> = ({ 
-    name, description, pricing, type, trialDays, features, hasTrial, isPopular, category, index = 0,
-    storage, currentPlan, currentPlanPrice, lastPaymentDate
+    name, description, pricing, type, features, isPopular,
+    currentPlan, currentPlanPrice, lastPaymentDate
 }) => {
     const { billingType } = useBillingStore();
     const { isAuthenticated, user } = useAuthStore();

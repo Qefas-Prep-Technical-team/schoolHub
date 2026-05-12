@@ -52,13 +52,13 @@ export default function NotificationDetailModal({
 }: NotificationDetailModalProps) {
   const router = useRouter();
   const { user } = useAuthStore();
-  const linkId = notification?.linkRequestId || (notification?.data as Record<string, any>)?.linkId;
+  const linkId = notification?.linkRequestId || (notification?.data as Record<string, unknown> & { linkId?: string })?.linkId;
   const { data: linkRequest, isLoading: isLoadingLink } = useSingleLinkRequest(
     notification?.type === 'LINK_REQUEST' ? linkId : '',
     { enabled: isOpen && notification?.type === 'LINK_REQUEST' && !!linkId }
   );
 
-  const lr = linkRequest as Record<string, any>;
+  const lr = linkRequest as Record<string, unknown> & { status?: string; requesterId?: string; targetStudent?: Record<string, string>; targetTeacher?: Record<string, string>; targetParent?: Record<string, string>; requesterStudent?: Record<string, string>; requesterTeacher?: Record<string, string>; requesterParent?: Record<string, string>; targetSchool?: Record<string, string>; requesterSchool?: Record<string, string>; targetType?: string; requesterType?: string };
 
   if (!notification) return null;
 

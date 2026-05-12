@@ -84,7 +84,7 @@ export default function PageHeader({ classData, onAddAnnouncement }: PageHeaderP
   );
 }
 
-function HeroMetaItem({ icon: Icon, label, value }: { icon: any, label: string, value: string }) {
+function HeroMetaItem({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) {
     return (
         <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-slate-500">

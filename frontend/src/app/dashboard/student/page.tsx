@@ -5,16 +5,12 @@ import {
   Trophy, 
   Target, 
   Zap, 
-  Brain, 
   TrendingUp, 
-  TrendingDown,
   BookOpen, 
   Calendar,
   ChevronRight,
   Sparkles,
-  Search,
   ArrowUpRight,
-  UserPlus,
   Star
 } from 'lucide-react';
 import { 
@@ -58,8 +54,8 @@ export default function StudentHomeDashboard() {
 
     const subjectsMap: Record<string, { total: number, score: number, count: number }> = {};
     
-    attempts.forEach((attempt: any) => {
-      attempt.subjectAttempts?.forEach((sa: any) => {
+    attempts.forEach((attempt: { subjectAttempts?: { subjectPaper: { subject: { name: string }, totalMarks: number }, score: number }[] }) => {
+      attempt.subjectAttempts?.forEach((sa) => {
         const subName = sa.subjectPaper.subject.name;
         if (!subjectsMap[subName]) subjectsMap[subName] = { total: 0, score: 0, count: 0 };
         subjectsMap[subName].score += sa.score;
@@ -68,7 +64,7 @@ export default function StudentHomeDashboard() {
       });
     });
 
-    standaloneGrades?.forEach((grade: any) => {
+    standaloneGrades?.forEach((grade: { subject: string, score: number, maxScore: number }) => {
       const subName = grade.subject;
       if (!subjectsMap[subName]) subjectsMap[subName] = { total: 0, score: 0, count: 0 };
       subjectsMap[subName].score += grade.score;
@@ -116,13 +112,13 @@ export default function StudentHomeDashboard() {
         return 0.0;
     };
 
-    attempts?.forEach((a: any) => {
+    attempts?.forEach((a: Record<string, any>) => {
         const p = (a.totalScore / (a.totalMarks || 1)) * 100;
         totalPoints += getPoints(p);
         totalWeight += 1;
     });
 
-    standaloneGrades?.forEach((g: any) => {
+    standaloneGrades?.forEach((g: Record<string, any>) => {
         const p = (g.score / (g.maxMarks || 1)) * 100;
         totalPoints += getPoints(p);
         totalWeight += 1;
@@ -176,7 +172,7 @@ export default function StudentHomeDashboard() {
                             <div className="space-y-8">
                                 <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 shadow-inner italic">
                                     <p className="text-slate-600 dark:text-slate-300 font-bold leading-relaxed text-sm">
-                                        "{analysis.advice}"
+                                        &quot;{analysis.advice}&quot;
                                     </p>
                                 </div>
 
@@ -299,7 +295,7 @@ export default function StudentHomeDashboard() {
   );
 }
 
-function QuickAction({ icon: Icon, label, color }: { icon: any, label: string, color: string }) {
+function QuickAction({ icon: Icon, label, color }: { icon: React.ElementType, label: string, color: string }) {
   return (
     <button className="flex flex-col items-center justify-center p-5 bg-white dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all group">
       <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-current/20 group-hover:scale-110 transition-transform", color)}>

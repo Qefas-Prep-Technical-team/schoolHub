@@ -4,7 +4,7 @@ import SubjectPaperCard from './SubjectPaperCard';
 import { SubjectPaper } from '@/lib/api/services/examService';
 
 interface SubjectPaperGridProps {
-    papers: any[];
+    papers: Parameters<typeof SubjectPaperCard>[0]['paper'][];
 }
 
 export default function SubjectPaperGrid({ papers }: SubjectPaperGridProps) {

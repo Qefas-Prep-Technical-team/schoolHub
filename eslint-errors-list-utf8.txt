@@ -1,0 +1,627 @@
+﻿C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\login\callback\page.tsx:103:29 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\login\parent\components\AuthImageSection.tsx:28:21 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\login\parent\components\AuthImageSection.tsx:28:95 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\login\teacher\components\LeftPanel.tsx:27:21 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\login\teacher\components\LeftPanel.tsx:27:80 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\login\teacher\components\RightPanel.tsx:12:119 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\onboarding\_components\RoleBaseFlow.tsx:129:21 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\parent\components\ParentForm.tsx:438:40 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\parent\components\ParentForm.tsx:438:46 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\parent\components\ParentImage.tsx:56:13 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\parent\components\ParentImage.tsx:56:72 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\parent\components\ParentImage.tsx:56:168 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\school\components\SchoolCard.tsx:526:36 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\school\components\SchoolCard.tsx:526:42 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\school\components\SchoolSlider.tsx:58:11 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\school\components\SchoolSlider.tsx:58:150 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\student\components\StudentRegisterForm.tsx:560:40 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\student\components\StudentRegisterForm.tsx:560:46 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\student\components\StudentRegisterImageSlider.tsx:55:13 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\student\components\StudentRegisterImageSlider.tsx:55:146 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\teacher\components\TeacherRegisterForm.tsx:546:40 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\teacher\components\TeacherRegisterForm.tsx:546:46 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\teacher\components\TeacherRegisterImage.tsx:54:13 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\signup\teacher\components\TeacherRegisterImage.tsx:54:155 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(auth)\verification\components\MetaText.tsx:69:13 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\auth\login\usePlatformAuthMutations.ts:30:22 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\auth\setup\page.tsx:69:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\page.tsx:25:52 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\page.tsx:49:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:35:26 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:43:61 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:58:83 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:66:81 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:70:69 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:80:76 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:90:74 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:122:71 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:139:79 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:146:40 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:147:22 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:158:40 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:159:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:391:116 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:398:62 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:411:63 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:418:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:418:80 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:419:100 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:420:100 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:422:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:423:98 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:479:107 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:504:117 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:504:128 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:533:114 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:564:82 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:564:127 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:565:93 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:602:67 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:643:77 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:646:87 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:661:75 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:664:87 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:680:75 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\components\PricingPlanEditorModal.tsx:683:87 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\page.tsx:46:63 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\page.tsx:50:66 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\page.tsx:177:69 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\page.tsx:227:93 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\page.tsx:227:138 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\billing\pricing\page.tsx:282:36 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\components\AddFeatureModal.tsx:18:23 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\components\DeleteFeatureModal.tsx:14:22 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\components\DeleteFeatureModal.tsx:37:108 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\components\DeleteFeatureModal.tsx:37:132 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\components\FeatureCard.tsx:19:14 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\components\FeatureCard.tsx:23:26 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\components\FeatureCard.tsx:100:61 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\components\RoleFeaturesContent.tsx:34:11 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\components\RoleFeaturesContent.tsx:80:27 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\components\RoleFeaturesContent.tsx:92:36 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\components\RoleFeaturesContent.tsx:194:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\page.tsx:72:24 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\page.tsx:79:60 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\page.tsx:86:27 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\page.tsx:94:54 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\page.tsx:103:36 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\page.tsx:225:70 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\page.tsx:225:78 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\page.tsx:231:63 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\features\page.tsx:242:55 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\finance\page.tsx:121:52 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\monitoring\page.tsx:129:49 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\page.tsx:237:60 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\parents\[id]\page.tsx:315:93 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\[id]\page.tsx:99:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\[id]\page.tsx:289:51 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\[id]\page.tsx:695:63 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\components\LimitsModal.tsx:27:13 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\page.tsx:55:58 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\page.tsx:59:82 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\page.tsx:60:85 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\page.tsx:61:80 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\page.tsx:62:78 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\page.tsx:109:34 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\page.tsx:187:52 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\schools\page.tsx:250:51 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\students\[id]\page.tsx:462:84 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\students\page.tsx:48:67 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\students\page.tsx:49:66 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\students\page.tsx:50:63 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\students\page.tsx:51:67 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\students\page.tsx:90:52 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\students\page.tsx:141:34 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\students\page.tsx:220:57 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\support\page.tsx:45:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\support\page.tsx:52:27 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\support\page.tsx:85:111 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\support\page.tsx:94:111 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\support\page.tsx:121:51 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\support\page.tsx:194:68 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\teachers\[id]\page.tsx:457:84 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\teachers\page.tsx:46:67 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\teachers\page.tsx:47:66 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\teachers\page.tsx:48:63 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\teachers\page.tsx:49:67 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\teachers\page.tsx:88:52 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\teachers\page.tsx:139:34 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\(internal-console)\console\teachers\page.tsx:217:57 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\Exams&Quizzes\exam\[examId]\page.tsx:183:86 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\Exams&Quizzes\exam\[examId]\page.tsx:244:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\Exams&Quizzes\exam\[examId]\page.tsx:245:33 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\Exams&Quizzes\exam\[examId]\page.tsx:601:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\about\components\AboutCTA.tsx:36:64 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:136:21 'targetUrl' is never reassigned. Use 'const' instead.  prefer-const
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:194:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:228:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:245:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:269:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:294:38 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:333:68 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:339:49 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:340:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:361:124 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:411:49 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:565:120 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:638:96 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:756:82 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\checkout\page.tsx:756:88 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\attendance\components\AbsentStaffList.tsx:22:29 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\billing\page.tsx:70:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\billing\page.tsx:107:58 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\billing\page.tsx:264:55 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\billing\upgrade\page.tsx:38:57 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\classes\components\ClassCard.tsx:132:53 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\classes\components\ClassModal.tsx:79:59 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\classes\components\ClassModal.tsx:80:65 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\classes\components\ClassModal.tsx:81:62 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\classes\components\ClassModal.tsx:162:21 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\classes\page.tsx:69:49 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\classes\page.tsx:230:82 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\classes\page.tsx:321:242 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\classes\services\classService.ts:38:17 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\classes\services\classService.ts:147:54 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\classes\services\classService.ts:163:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\NotificationCenter.tsx:131:59 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\NotificationCenter.tsx:135:46 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\TopNavBar.tsx:20:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\app-sidebar.tsx:126:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\app-sidebar.tsx:146:78 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\app-sidebar.tsx:235:98 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\AdminInsights.tsx:84:33 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\AlertsPanel.tsx:75:59 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\AlertsPanel.tsx:108:58 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\AttendanceChart.tsx:27:45 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\AttendanceChart.tsx:48:46 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\AttendanceChart.tsx:84:70 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\AttendanceChart.tsx:197:13 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\AttendanceChart.tsx:197:94 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\DonutChart.tsx:21:45 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\ExamStatus.tsx:31:63 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\ExamStatus.tsx:106:52 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\ExamStatus.tsx:140:69 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\ExamStatus.tsx:143:230 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\QuickActions.tsx:137:20 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\RecentActivity.tsx:23:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\RecentActivity.tsx:53:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\RecentActivity.tsx:76:12 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\RecentActivity.tsx:97:55 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\RecentActivity.tsx:137:58 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\RecentActivity.tsx:147:73 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\RecentActivity.tsx:186:155 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\SchoolPerformance.tsx:70:37 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\SchoolPerformance.tsx:70:127 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\StaffInsights.tsx:156:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\components\dashboard\StaffInsights.tsx:165:71 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\components\DepartmentModal.tsx:29:18 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\components\DepartmentModal.tsx:73:33 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\page.tsx:94:35 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\page.tsx:240:74 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\page.tsx:321:234 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\page.tsx:347:53 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\page.tsx:347:112 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\page.tsx:415:233 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\page.tsx:419:41 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\page.tsx:419:105 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\page.tsx:430:253 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\departments\services\departmentService.ts:14:14 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\AddExistingPaperModal.tsx:96:73 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\AssessmentCard.tsx:115:61 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\AssessmentCard.tsx:121:25 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\AssessmentCard.tsx:121:50 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\AssessmentCard.tsx:148:57 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\AssessmentCard.tsx:184:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\AssessmentCard.tsx:205:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\SearchFilters.tsx:77:62 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\SearchFilters.tsx:89:60 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\SearchFilters.tsx:94:68 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\SubjectPaperCard.tsx:33:13 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\SubjectPaperCard.tsx:65:22 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\SubjectPaperCard.tsx:126:53 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\components\SubjectPaperGrid.tsx:7:13 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\new\paper\page.tsx:81:33 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\new\paper\page.tsx:81:42 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\page.tsx:42:80 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\page.tsx:60:50 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\papers\[id]\components\SubjectPaperReport.tsx:81:33 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\papers\[id]\components\SubjectPaperReport.tsx:81:42 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\papers\[id]\page.tsx:81:33 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\exams\papers\[id]\page.tsx:81:42 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\bank-setup\page.tsx:27:40 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\bank-setup\page.tsx:32:46 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\bank-setup\page.tsx:35:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\bank-setup\page.tsx:43:74 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\bank-setup\page.tsx:44:58 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\bank-setup\page.tsx:44:66 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\bank-setup\page.tsx:109:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\bank-setup\page.tsx:128:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\bank-setup\page.tsx:147:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\global-transactions\page.tsx:15:54 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\page.tsx:26:48 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\page.tsx:48:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\page.tsx:108:79 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\page.tsx:216:55 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\page.tsx:278:75 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\transactions\page.tsx:24:54 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\finance\transactions\page.tsx:146:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\BulkIndividualReports.tsx:8:12 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\BulkIndividualReports.tsx:9:11 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\BulkIndividualReports.tsx:22:73 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\ExamGradeReport.tsx:230:9 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\ExamGradeReport.tsx:231:13 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\ExamGradeReport.tsx:232:11 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:47:38 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:48:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:60:40 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:61:41 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:86:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:96:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:96:57 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:112:26 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:117:24 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:200:34 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:227:35 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeEntryModal.tsx:297:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeHub.tsx:36:11 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeHub.tsx:48:66 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeHub.tsx:50:48 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeHub.tsx:160:46 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeOCRModal.tsx:50:38 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeOCRModal.tsx:66:40 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeOCRModal.tsx:68:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeOCRModal.tsx:69:41 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeOCRModal.tsx:73:58 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeOCRModal.tsx:142:70 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeOCRModal.tsx:286:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeOCRModal.tsx:299:45 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeUploadModal.tsx:48:38 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeUploadModal.tsx:64:40 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeUploadModal.tsx:66:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeUploadModal.tsx:67:41 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeUploadModal.tsx:72:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeUploadModal.tsx:102:22 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeUploadModal.tsx:110:27 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeUploadModal.tsx:206:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\GradeUploadModal.tsx:232:45 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\IndividualStudentReport.tsx:230:11 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\IndividualStudentReport.tsx:231:11 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\IndividualStudentReport.tsx:234:52 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\IndividualStudentReport.tsx:234:65 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\IndividualStudentReport.tsx:311:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\IndividualStudentReport.tsx:351:55 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\IndividualStudentReport.tsx:360:64 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\IndividualStudentReport.tsx:366:60 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionComprehensiveReport.tsx:167:11 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionComprehensiveReport.tsx:168:10 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionComprehensiveReport.tsx:169:12 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionComprehensiveReport.tsx:170:13 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionComprehensiveReport.tsx:171:12 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionComprehensiveReport.tsx:204:14 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionComprehensiveReport.tsx:204:22 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionComprehensiveReport.tsx:269:54 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionComprehensiveReport.tsx:272:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionComprehensiveReport.tsx:295:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionReportModal.tsx:34:11 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionReportModal.tsx:60:26 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionReportModal.tsx:132:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\components\InstitutionReportModal.tsx:177:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:292:4 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:321:70 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:362:31 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:370:73 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:385:220 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:410:245 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:434:4 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:446:36 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:462:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:464:50 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:472:33 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:472:70 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:482:54 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:523:33 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:525:55 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:525:92 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:525:151 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:585:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:614:50 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:618:221 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:650:66 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:669:85 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:685:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:796:51 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:889:31 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:889:176 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:903:80 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:917:70 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:940:30 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:965:221 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\page.tsx:976:241 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\utils\batchPDFDownloader.tsx:11:12 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\utils\batchPDFDownloader.tsx:12:11 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\grades\utils\batchPDFDownloader.tsx:36:69 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\linking\components\ConnectionCard.tsx:228:123 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\linking\components\ConnectionCard.tsx:228:135 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\notifications\page.tsx:128:57 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\school-profile\edit\components\ImageUpload.tsx:47:21 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\school-profile\edit\components\PreviewPanel.tsx:117:70 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\school-profile\page.tsx:170:50 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\school-profile\page.tsx:257:33 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\school-profile\page.tsx:257:94 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\school-profile\page.tsx:336:66 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\school-profile\page.tsx:460:43 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\school-profile\page.tsx:466:212 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\school-profile\page.tsx:490:83 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:40:54 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:43:58 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:45:22 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:52:26 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:75:29 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:79:47 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:80:29 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:104:21 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:453:72 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:466:72 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:498:84 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\settings\page.tsx:515:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\AcademicPerformancePage.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\AcademicPerformancePage.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\AcademicPerformancePage.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\PerformanceChart.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\PerformanceChart.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\PerformanceChart.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\SubjectsTable.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\SubjectsTable.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\SubjectsTable.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\SummaryCards.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\SummaryCards.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\SummaryCards.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\TeacherComments.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\TeacherComments.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\TeacherComments.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\Toolbar.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\Toolbar.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\AcademicPerformance\Toolbar.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\BehaviourPage.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\BehaviourPage.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\BehaviourPage.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\Filters.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\Filters.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\Filters.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\PageHeading.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\PageHeading.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\PageHeading.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\StatsCards.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\StatsCards.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\StatsCards.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\Timeline.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\Timeline.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\Behaviour\Timeline.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\ClassInformation.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\ClassInformation.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\ClassInformation.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\InfoPage.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\InfoPage.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\InfoPage.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\ParentGuardian.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\ParentGuardian.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\ParentGuardian.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\PersonalInformation.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\PersonalInformation.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\PersonalInformation.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\Statistics.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\Statistics.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\InfoPage\Statistics.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\StudentHeroCard.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\StudentHeroCard.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\StudentHeroCard.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\StudentTabs.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\StudentTabs.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\StudentTabs.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\attendance\AttendanceCalendar.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\attendance\AttendanceCalendar.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\attendance\AttendanceCalendar.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\attendance\AttendancePage.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\attendance\AttendancePage.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\attendance\AttendancePage.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\attendance\StatsCards.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\attendance\StatsCards.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\components\attendance\StatsCards.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\page.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\page.tsx:146:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\[id]\page.tsx:191:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\components\FilterChips.tsx:51:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\components\FilterChips.tsx:81:28 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\components\StudentsTable.tsx:100:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\components\StudentsTable.tsx:170:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\components\StudentsTable.tsx:215:110 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\students\page.tsx:187:78 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\[id]\page.tsx:89:55 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\[id]\page.tsx:90:35 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\[id]\page.tsx:90:66 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\[id]\page.tsx:191:21 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\[id]\page.tsx:291:63 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\components\SubjectCard.tsx:93:51 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\components\SubjectCard.tsx:98:11 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\components\SubjectCard.tsx:98:93 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\components\SubjectModal.tsx:89:55 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\components\SubjectModal.tsx:90:35 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\components\SubjectModal.tsx:90:66 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\components\SubjectModal.tsx:191:21 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\components\SubjectModal.tsx:291:63 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\page.tsx:210:74 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\services\subjectService.ts:49:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\subjects\services\subjectService.ts:61:28 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\[id]\page.tsx:70:51 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\[id]\page.tsx:71:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\[id]\page.tsx:143:31 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\[id]\page.tsx:144:35 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\[id]\schedule\AddScheduleModal.tsx:51:17 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\[id]\schedule\AddScheduleModal.tsx:143:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\[id]\schedule\AddScheduleModal.tsx:168:52 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\[id]\schedule\SchedulePage.tsx:10:12 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\[id]\schedule\SchedulePage.tsx:17:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\[id]\schedule\SchedulePage.tsx:49:43 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\[id]\schedule\SchedulePage.tsx:65:63 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\components\AddTeacherModal.tsx:58:21 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\components\AddTeacherModal.tsx:101:77 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\page.tsx:39:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\page.tsx:51:33 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\page.tsx:56:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\page.tsx:57:35 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\page.tsx:79:21 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\admin\teachers\page.tsx:219:74 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\billing\page.tsx:104:57 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\components\TopNavBar.tsx:25:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\components\app-sidebar.tsx:132:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\exams&results\components\exam-list.tsx:53:75 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\exams&results\components\exam-list.tsx:71:80 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\exams&results\components\sidebar-right.tsx:39:60 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\exams&results\components\sidebar-right.tsx:52:24 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\exams&results\components\sidebar-right.tsx:135:60 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\my-children\components\AddChildCard.tsx:79:21 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\my-children\components\ChildCard.tsx:129:61 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\my-children\components\ChildDetailsDrawer\ChildDetailsDrawer.tsx:41:9 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\my-children\components\ChildDetailsDrawer\ChildDetailsDrawer.tsx:203:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\my-children\components\EditChildModal.tsx:56:24 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\my-children\components\PendingRequestsDialog.tsx:217:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\page.tsx:58:195 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\payments\page.tsx:25:54 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\payments\page.tsx:30:40 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\payments\page.tsx:30:67 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\payments\page.tsx:58:40 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\payments\page.tsx:58:66 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\payments\page.tsx:74:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\payments\page.tsx:85:97 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\performance\components\PerformanceChart.tsx:32:56 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\performance\components\PerformanceChart.tsx:37:54 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\performance\components\PerformanceChart.tsx:46:74 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\performance\components\PerformanceChart.tsx:74:49 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\transactions\page.tsx:15:54 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\parent\transactions\page.tsx:109:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\billing\page.tsx:87:58 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\components\TopNavBar.tsx:23:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\components\app-sidebar.tsx:106:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\components\app-sidebar.tsx:130:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\components\dashboard\AcademicHistory.tsx:11:13 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\page.tsx:29:57 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\page.tsx:100:71 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\page.tsx:111:51 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\result\page.tsx:323:37 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\result\page.tsx:323:68 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\review\page.tsx:50:112 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\review\page.tsx:81:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\review\page.tsx:143:66 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\review\page.tsx:163:53 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\review\page.tsx:222:109 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\take\page.tsx:28:62 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\[examId]\take\page.tsx:29:19 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\components\StatsCards.tsx:10:31 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\page.tsx:28:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\page.tsx:32:84 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\exams&quizzes\page.tsx:35:67 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:64:58 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:65:70 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:103:93 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:138:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:197:49 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:240:79 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:263:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:303:47 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:493:49 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:554:42 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:580:33 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\grades\page.tsx:580:157 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\linking\page.tsx:685:123 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\linking\page.tsx:685:134 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\my-classes\page.tsx:105:33 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\my-classes\page.tsx:117:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\my-classes\page.tsx:308:87 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\my-classes\page.tsx:323:24 `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\page.tsx:61:32 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\page.tsx:62:45 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\page.tsx:71:39 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\page.tsx:119:27 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\page.tsx:125:35 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\page.tsx:179:41 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\page.tsx:179:59 `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\page.tsx:302:60 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\settings\page.tsx:60:53 Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong.  @typescript-eslint/no-non-null-asserted-optional-chain
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\settings\page.tsx:77:22 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\settings\page.tsx:310:59 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\student\settings\page.tsx:357:55 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\assignments\components\AssignmentCard.tsx:119:104 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\assignments\components\AssignmentFilters.tsx:112:107 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\assignments\page.tsx:44:48 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\assignments\page.tsx:151:72 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\billing\page.tsx:88:58 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\billing\page.tsx:111:62 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\billing\page.tsx:250:62 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\billing\page.tsx:255:69 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\billing\page.tsx:257:49 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\billing\page.tsx:259:68 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\components\SchoolSwitcher.tsx:17:12 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\components\app-sidebar.tsx:199:73 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\components\dashboard\InsightsGrid.tsx:77:47 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\components\dashboard\RecentPersonalActivity.tsx:20:9 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\components\SubjectPaperReport.tsx:226:10 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\components\SubjectPaperReport.tsx:227:13 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\components\SubjectPaperReport.tsx:228:11 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:38:45 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:109:52 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:109:109 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:116:35 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:125:35 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:290:75 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:290:112 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:299:69 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:300:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:301:41 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:330:87 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\exams&quizzes\add-question\page.tsx:385:68 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\grades\components\EditGradeModal.tsx:22:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\grades\components\GradesOverview.tsx:95:46 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\my-classes\[classId]\components\ClassOverviewTab.tsx:16:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\my-classes\[classId]\components\ClassOverviewTab.tsx:17:38 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\my-classes\[classId]\components\ClassOverviewTab.tsx:18:31 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\my-classes\[classId]\components\ClassOverviewTab.tsx:19:15 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\my-classes\[classId]\components\ClassOverviewTab.tsx:20:37 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\my-classes\[classId]\components\PageHeader.tsx:87:61 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\my-classes\[classId]\components\assignments\page.tsx:27:48 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\my-classes\[classId]\components\exams&quizzes\page.tsx:25:46 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\my-classes\[classId]\components\grades\page.tsx:27:55 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\dashboard\teacher\my-classes\[classId]\components\student\page.tsx:32:70 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\join\class\[id]\page.tsx:86:36 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\join\class\[id]\page.tsx:87:35 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\join\school\[code]\page.tsx:37:21 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\app\join\school\[code]\page.tsx:94:22 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\Home\InAction.tsx:4:78 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\Types\Pricing.ts:41:10 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\dashboard\admin\classes\details\exams\ExamsTab.tsx:11:26 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\dashboard\admin\classes\details\students\StudentsTab.tsx:11:17 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\dashboard\admin\classes\details\subjects\SubjectsTab.tsx:11:19 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\notifications\NotificationDetailModal.tsx:55:87 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\notifications\NotificationDetailModal.tsx:61:44 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\pricing\PricingTab.tsx:72:41 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\reusable\ImageUpload.tsx:47:21 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\reuseables\LoadingDashboard.tsx:25:24 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\shared\SupportCenter.tsx:59:23 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\shared\SupportCenter.tsx:66:25 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\shared\SupportCenter.tsx:73:47 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\shared\SupportCenter.tsx:151:42 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\shared\SupportCenter.tsx:218:50 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\subscription\UsageLimitsCard.tsx:141:19 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\subscription\UsageLimitsCard.tsx:142:16 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\subscription\UsageLimitsCard.tsx:153:17 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\subscription\UsageLimitsCard.tsx:165:58 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\subscription\UsageLimitsCard.tsx:213:26 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\subscription\UsageLimitsCard.tsx:251:38 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\components\ui\LaTeXRenderer.tsx:16:36 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\lib\api\hooks\usePlatformSchools.ts:11:20 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\lib\api\hooks\usePlatformSchools.ts:101:20 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\lib\api\hooks\usePlatformSchools.ts:102:22 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\lib\api\hooks\usePlatformSchools.ts:200:23 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\lib\api\hooks\usePlatformSchools.ts:201:21 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\lib\api\hooks\usePlatformSchools.ts:236:18 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\lib\api\hooks\usePlatformSchools.ts:237:15 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+C:\Users\Student\Documents\GitHub\schoolHub\frontend\src\lib\api\hooks\usePlatformSchools.ts:238:19 Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
