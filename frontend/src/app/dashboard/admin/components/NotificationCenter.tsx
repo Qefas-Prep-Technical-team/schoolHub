@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Bell, Check, X, Info, AlertCircle, ExternalLink, Mail, Megaphone, Activity } from 'lucide-react';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuLabel,
   DropdownMenuSeparator
@@ -13,11 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { notificationService, Notification } from '@/lib/api/services/notificationService';
-import { 
-  useNotifications, 
-  useUnreadCount, 
-  useMarkAsRead, 
-  useMarkAllAsRead 
+import {
+  useNotifications,
+  useUnreadCount,
+  useMarkAsRead,
+  useMarkAllAsRead
 } from '@/lib/api/hooks/useNotifications';
 import { useRespondToLinkRequest } from '@/lib/api/hooks/useLinks';
 import { linkService } from '@/lib/api/services/linkService';
@@ -66,7 +66,7 @@ export default function NotificationCenter() {
   };
 
   const handleLinkAction = async (notification: Notification, action: 'ACCEPT' | 'REJECT') => {
-    const linkId = notification.data?.linkId;
+    const linkId = typeof notification.data?.linkId === 'string' ? notification.data.linkId : undefined;
     if (!linkId) return;
 
     respondMutation.mutate(
@@ -105,14 +105,14 @@ export default function NotificationCenter() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      
+
       <DropdownMenuContent align="end" className="w-[380px] p-0 shadow-2xl border-border bg-background rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b">
           <DropdownMenuLabel className="p-0 font-bold text-base">Activity & Notifications</DropdownMenuLabel>
           {unreadCount > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="h-8 text-xs text-primary hover:text-primary/80 font-semibold"
               onClick={handleMarkAllAsRead}
             >
@@ -133,8 +133,8 @@ export default function NotificationCenter() {
           ) : (
             <div className="flex flex-col">
               {filteredNotifications.map((n: any) => (
-                <div 
-                  key={n.id} 
+                <div
+                  key={n.id}
                   className={cn(
                     "p-4 border-b hover:bg-accent/50 transition-colors relative group cursor-pointer",
                     !n.isRead && "bg-primary/5 dark:bg-primary/10"
@@ -148,12 +148,12 @@ export default function NotificationCenter() {
                   {!n.isRead && (
                     <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-primary rounded-full" />
                   )}
-                  
+
                   <div className="flex gap-3">
                     <div className="mt-0.5 bg-background border rounded-full p-1.5 shrink-0 h-8 w-8 flex items-center justify-center">
                       {getTypeIcon(n.type)}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start mb-1">
                         <p className="font-bold text-[13px] leading-tight text-gray-900 dark:text-white truncate pr-4">
@@ -163,7 +163,7 @@ export default function NotificationCenter() {
                           {new Date(n.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      
+
                       <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-normal mb-2">
                         {n.message}
                       </p>
@@ -171,19 +171,19 @@ export default function NotificationCenter() {
                       {/* Action buttons for Link Requests */}
                       {n.type === 'LINK_REQUEST' && !n.isRead && (
                         <div className="flex gap-2 mt-2">
-                          <Button 
+                          <Button
                             disabled={respondMutation.isPending}
                             onClick={() => handleLinkAction(n, 'ACCEPT')}
-                            size="sm" 
+                            size="sm"
                             className="h-8 bg-primary hover:bg-primary/90 text-white font-bold text-[11px] px-3 rounded-lg shadow-sm shadow-primary/20"
                           >
                             <Check className="h-3 w-3 mr-1" /> Accept
                           </Button>
-                          <Button 
+                          <Button
                             disabled={respondMutation.isPending}
                             onClick={() => handleLinkAction(n, 'REJECT')}
-                            variant="outline" 
-                            size="sm" 
+                            variant="outline"
+                            size="sm"
                             className="h-8 text-[11px] font-bold px-3 rounded-lg border-gray-200"
                           >
                             <X className="h-3 w-3 mr-1 text-red-500" /> Decline
@@ -193,9 +193,9 @@ export default function NotificationCenter() {
 
                       {/* Link to details if exists */}
                       {n.link && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className="h-7 text-[11px] mt-1 p-0 text-primary hover:bg-transparent"
                           onClick={() => {
                             handleMarkAsRead(n.id);
@@ -212,15 +212,15 @@ export default function NotificationCenter() {
             </div>
           )}
         </div>
-        
+
         <DropdownMenuSeparator className="m-0" />
         <div className="p-3">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="w-full h-9 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white"
             asChild
           >
-            <Link 
+            <Link
               href={`/dashboard/${userType?.toLowerCase() || 'admin'}/notifications`}
               onClick={() => setIsOpen(false)}
             >

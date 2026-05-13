@@ -41,22 +41,6 @@ export default function NotificationCenter() {
 
   const lastSeenId = React.useRef<string | null>(null);
 
-  useEffect(() => {
-    if (notifications.length > 0) {
-      const latestNotification = notifications[0];
-      if (lastSeenId.current && latestNotification.id !== lastSeenId.current && !latestNotification.isRead) {
-        toast.info(
-          <div className="flex flex-col gap-1 cursor-pointer" onClick={() => handleOpenModal(latestNotification)}>
-            <p className="font-bold text-sm">{latestNotification.title}</p>
-            <p className="text-xs opacity-90">{latestNotification.message}</p>
-          </div>,
-          { icon: getTypeIcon(latestNotification.type) }
-        );
-      }
-      lastSeenId.current = latestNotification.id;
-    }
-  }, [notifications, handleOpenModal]);
-
   const handleMarkAsRead = (id: string) => {
     markAsReadMutation.mutate(id);
   };
@@ -77,6 +61,22 @@ export default function NotificationCenter() {
     }, 150);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const latestNotification = notifications[0];
+      if (lastSeenId.current && latestNotification.id !== lastSeenId.current && !latestNotification.isRead) {
+        toast.info(
+          <div className="flex flex-col gap-1 cursor-pointer" onClick={() => handleOpenModal(latestNotification)}>
+            <p className="font-bold text-sm">{latestNotification.title}</p>
+            <p className="text-xs opacity-90">{latestNotification.message}</p>
+          </div>,
+          { icon: getTypeIcon(latestNotification.type) }
+        );
+      }
+      lastSeenId.current = latestNotification.id;
+    }
+  }, [notifications, handleOpenModal]);
 
   const handleLinkAction = async (notificationId: string, linkId: string, action: 'ACCEPT' | 'REJECT') => {
     respondMutation.mutate(

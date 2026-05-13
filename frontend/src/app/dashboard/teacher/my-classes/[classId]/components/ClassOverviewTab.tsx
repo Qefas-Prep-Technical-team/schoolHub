@@ -36,15 +36,21 @@ interface ClassOverviewTabProps {
     avatar: string;
     improvement: string;
   }[];
-  attendance: Record<string, unknown>;
+  attendance: {
+    overallPercentage: number;
+    present: number;
+    absent: number;
+    late: number;
+    trend: string;
+  };
   recentSubmissions: {
     id: string;
     studentName: string;
-    studentAvatar?: string;
-    assignmentTitle: string;
-    submittedAt: string;
-    status: 'graded' | 'pending' | 'late';
-    score?: string;
+    avatar: string;
+    assignment: string;
+    submittedDate: string;
+    status: 'pending' | 'graded' | 'late';
+    grade?: number;
   }[];
 }
 

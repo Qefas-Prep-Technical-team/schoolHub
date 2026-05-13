@@ -21,6 +21,34 @@ import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import SubjectPaperReport from './components/SubjectPaperReport';
 
+export interface Paper {
+  id: string;
+  title: string;
+  status: string;
+  schoolId: string;
+  teacherId?: string;
+  createdAt: string | Date;
+  totalMarks: number;
+  durationMinutes: number;
+  passMark?: number;
+  readingContent?: string;
+  subject?: {
+    name: string;
+  };
+  teacher?: {
+    name: string;
+  };
+  school?: {
+    name: string;
+    logo?: string;
+    settings?: {
+      themeColor?: string;
+    };
+  };
+  examAttempts?: any[];
+  grades?: any[];
+}
+
 export default function TeacherPaperDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -34,7 +62,7 @@ export default function TeacherPaperDetailPage() {
     enabled: !!paperId,
   });
 
-  const paper = paperData as Record<string, unknown>;
+  const paper = paperData as Paper;
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -119,7 +147,8 @@ export default function TeacherPaperDetailPage() {
 
   // Fetch subjects and teachers for the edit modal
   const paperSchoolId = paper?.schoolId;
-  const fallbackSchoolId = (user as Record<string, unknown>)?.schools?.[0]?.schoolId || (user as Record<string, unknown>)?.tenantId || "";
+  const userTyped = user as any;
+  const fallbackSchoolId = userTyped?.schools?.[0]?.schoolId || userTyped?.tenantId || "";
   const { data: school } = useSchoolProfile(paperSchoolId || fallbackSchoolId);
   
   const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery({
@@ -319,22 +348,22 @@ export default function TeacherPaperDetailPage() {
           <TabsContent value="grades">
             {(() => {
               // Normalize and merge results from online attempts and manual grades
-              const onlineResults = (paper.examAttempts as Record<string, unknown>[] || []).map((a: Record<string, unknown>) => ({
+              const onlineResults = (paper.examAttempts || []).map((a: any) => ({
                 id: a.id,
                 studentName: a.examAttempt?.student?.name,
                 studentCode: a.examAttempt?.student?.studentCode,
-                score: a.score,
+                score: a.score as number || 0,
                 maxMarks: a.totalMarks || paper.totalMarks,
                 type: 'ONLINE'
               }));
 
-              const manualResults = (paper.grades as Record<string, unknown>[] || [])
-                .filter((g: Record<string, unknown>) => !g.examAttemptId && !g.subjectExamAttemptId)
-                .map((g: Record<string, unknown>) => ({
+              const manualResults = (paper.grades || [])
+                .filter((g: any) => !g.examAttemptId && !g.subjectExamAttemptId)
+                .map((g: any) => ({
                 id: g.id,
                 studentName: g.student?.name,
                 studentCode: g.student?.studentCode,
-                score: g.score,
+                score: g.score as number || 0,
                 maxMarks: g.maxMarks,
                 type: 'MANUAL',
                 gradeId: g.id
@@ -345,10 +374,10 @@ export default function TeacherPaperDetailPage() {
 
               // Statistics
               const avgScore = hasResults 
-                ? (allResults.reduce((sum, r) => sum + r.score, 0) / allResults.length).toFixed(1)
+                ? (allResults.reduce((sum, r) => sum + (r.score as number), 0) / allResults.length).toFixed(1)
                 : '0.0';
-              const highBox = hasResults ? Math.max(...allResults.map(r => r.score)).toFixed(1) : '0.0';
-              const lowBox = hasResults ? Math.min(...allResults.map(r => r.score)).toFixed(1) : '0.0';
+              const highBox = hasResults ? Math.max(...allResults.map(r => r.score as number)).toFixed(1) : '0.0';
+              const lowBox = hasResults ? Math.min(...allResults.map(r => r.score as number)).toFixed(1) : '0.0';
 
               return (
                 <div className="space-y-6">
@@ -423,7 +452,7 @@ export default function TeacherPaperDetailPage() {
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                           {hasResults ? (
-                            allResults.map((result: Record<string, unknown>) => {
+                            allResults.map((result: any) => {
                               const percentage = (result.score / result.maxMarks) * 100;
                               const isPass = percentage >= (paper.passMark || 40);
                               return (

@@ -8,7 +8,7 @@ import AddSubjectModal from './components/AddSubjectModal';
 import { Subject } from './components/types';
 
 interface ClassSubjectsTabProps {
-  classSubjects?: Record<string, unknown>[];
+  classSubjects?: any[];
 }
 
 export default function ClassSubjectsTab({ classSubjects = [] }: ClassSubjectsTabProps) {

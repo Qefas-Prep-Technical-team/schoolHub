@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { GradeFilter, StudentGrade } from './components/types'
+import { GradeFilter, StudentGrade, GradeScore, GradeStatus } from './components/types'
 import { GradeStatistics } from './components/GradeStatistics'
 import { GradeToolbar } from './components/GradeToolbar'
 import { GradeTable } from './components/GradeTable'

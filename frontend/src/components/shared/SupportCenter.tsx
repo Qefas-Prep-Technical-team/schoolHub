@@ -169,9 +169,9 @@ export default function SharedSupportCenter() {
                 <h3 className="font-bold text-slate-900 dark:text-white mb-1 truncate pr-4 text-sm">{ticket.subject}</h3>
                 <div className="flex items-center justify-between">
                    <p className="text-xs text-slate-500 truncate mt-1 flex-1">{ticket.description}</p>
-                   {ticket._count?.messages > 0 && (
+                   {(ticket._count?.messages || 0) > 0 && (
                      <Badge className="ml-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-none rounded-full h-5 px-1.5 flex items-center justify-center text-[10px] min-w-[20px]">
-                        {ticket._count.messages}
+                        {ticket._count?.messages}
                      </Badge>
                    )}
                 </div>

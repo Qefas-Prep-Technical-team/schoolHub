@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { classService, ClassJoinRequestData } from "../services/classService";
+import { apiClient } from "../client";
 import { toast } from "react-toastify";
 import { AxiosError } from "axios";
 import { queryKeys as linkQueryKeys } from "./useLinks";

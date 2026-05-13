@@ -349,7 +349,7 @@ export default function ParentSettingsPage() {
                    </div>
                    <Switch 
                      checked={theme === 'system'} 
-                     onCheckedChange={(checked) => setTheme(checked ? 'system' : theme)}
+                     onCheckedChange={(checked) => setTheme(checked ? 'system' : theme || 'light')}
                    />
                 </div>
               </CardContent>

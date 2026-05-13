@@ -21,7 +21,7 @@ const ClassDetails: FC = () => {
     const classId = params.classId as string;
     const [activeTab, setActiveTab] = useState<TabId>('overview');
 
-    const { data, isLoading } = useQuery({
+    const { data, isLoading, isError } = useQuery({
         queryKey: ['class-detail', classId],
         queryFn: () => teacherService.getClassDetail(classId),
         enabled: !!classId,
@@ -39,7 +39,7 @@ const ClassDetails: FC = () => {
         );
     }
 
-    if (error || !data) {
+    if (isError || !data) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center">
                 <div className="w-24 h-24 bg-rose-500/10 text-rose-500 rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl">

@@ -104,11 +104,11 @@ export default function PendingRequestsDialog({ isOpen, onOpenChange }: PendingR
                   <EmptyState icon={<UserPlus />} title="No pending requests" description="Sent linking requests will appear here until accepted." />
                 ) : (
                   requests.map((request) => (
-                    <RequestItem 
-                      key={request.id} 
-                      request={request} 
-                      onCancel={() => handleCancel(request.id)} 
-                      isCancelling={isCancelling === request.id} 
+                    <RequestItem
+                      key={request.id}
+                      request={request}
+                      onCancel={() => handleCancel(request.id)}
+                      isCancelling={isCancelling === request.id}
                     />
                   ))
                 )}
@@ -121,10 +121,10 @@ export default function PendingRequestsDialog({ isOpen, onOpenChange }: PendingR
                   <EmptyState icon={<Users />} title="No active links" description="Your linked students will appear here." />
                 ) : (
                   activeLinks.map((link) => (
-                    <RequestItem 
-                      key={link.id} 
-                      request={link} 
-                      onCancel={() => handleCancel(link.id, true)} 
+                    <RequestItem
+                      key={link.id}
+                      request={link}
+                      onCancel={() => handleCancel(link.id, true)}
                       isCancelling={isCancelling === link.id}
                       isActive
                     />
@@ -136,8 +136,8 @@ export default function PendingRequestsDialog({ isOpen, onOpenChange }: PendingR
         </div>
 
         <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => onOpenChange(false)}
             className="rounded-xl px-8 font-bold border-2"
           >
@@ -149,18 +149,19 @@ export default function PendingRequestsDialog({ isOpen, onOpenChange }: PendingR
   )
 }
 
-function getDisplayName(request: LinkRequest) {
-  const target = request.targetAdmin || request.targetTeacher || request.targetStudent || request.targetParent || request.targetSchool;
-  const requester = request.requesterAdmin || request.requesterTeacher || request.requesterStudent || request.requesterParent || request.requesterSchool;
-  
+function getDisplayName(request: LinkRequest): string {
+  const target = (request.targetAdmin || request.targetTeacher || request.targetStudent || request.targetParent || request.targetSchool) as any;
+  const requester = (request.requesterAdmin || request.requesterTeacher || request.requesterStudent || request.requesterParent || request.requesterSchool) as any;
+
   // If we have a target name, it's usually what we want to show for sent requests
   // If we have a requester name, it's what we want to show for received requests
-  return target?.name || target?.fullName || requester?.name || requester?.fullName || request.targetCode;
+  const name = target?.name || target?.fullName || requester?.name || requester?.fullName || request.targetCode || 'Unknown';
+  return String(name);
 }
 
-function RequestItem({ request, onCancel, isCancelling, isActive = false }: { 
-  request: LinkRequest, 
-  onCancel: () => void, 
+function RequestItem({ request, onCancel, isCancelling, isActive = false }: {
+  request: LinkRequest,
+  onCancel: () => void,
   isCancelling: boolean,
   isActive?: boolean
 }) {

@@ -35,10 +35,10 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
   // Fetch real-time billing data to get the accurate plan and limit
   const { data: billingData } = useUserBilling(user?.id || '', { limit: 1 })
   const subscription = billingData?.data?.subscription
-  
+
   const plan = subscription?.plan?.toUpperCase() || user?.plan?.toUpperCase() || 'FREE'
   const isTrial = subscription?.isTrialActive === true || plan.includes('TRIAL')
-  
+
   // Define limits based on plan
   const planLimits: Record<string, number> = {
     'FREE': 1,
@@ -72,7 +72,7 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
         linkType: 'PARENT_STUDENT',
         note: 'Linking child to parent account'
       })
-      
+
       toast.success.show("Link request sent successfully. Once the student or admin accepts, you'll see them here.")
       setIsOpen(false)
       setStudentCode('')
@@ -87,18 +87,18 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !isLimitReached && setIsOpen(open)}>
       <DialogTrigger asChild>
-        <div 
+        <div
           onClick={(e) => {
             if (isLimitReached) {
               e.preventDefault()
               e.stopPropagation()
-              toast.info.show("Premium Feature: Upgrade your plan to link more student nodes.")
+              toast.info("Premium Feature: Upgrade your plan to link more student nodes.")
             }
           }}
           className={cn(
             "flex flex-col items-center justify-center gap-6 rounded-[3rem] border-4 border-dashed p-10 min-h-[400px] transition-all relative overflow-hidden group animate-in fade-in zoom-in-95 duration-1000",
-            isLimitReached 
-              ? "border-orange-500/20 bg-orange-500/[0.02] cursor-default shadow-inner" 
+            isLimitReached
+              ? "border-orange-500/20 bg-orange-500/[0.02] cursor-default shadow-inner"
               : "border-slate-200 dark:border-white/5 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl hover:bg-white dark:hover:bg-slate-900 hover:border-orange-600/50 hover:shadow-orange-600/10 cursor-pointer shadow-2xl"
           )}
         >
@@ -113,8 +113,8 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
 
           <div className={cn(
             "size-24 rounded-[2rem] flex items-center justify-center transition-all duration-500 shadow-xl",
-            isLimitReached 
-              ? "bg-orange-600/10 text-orange-600 border-2 border-orange-600/20" 
+            isLimitReached
+              ? "bg-orange-600/10 text-orange-600 border-2 border-orange-600/20"
               : "bg-slate-100 dark:bg-white/5 text-slate-400 group-hover:bg-orange-600 group-hover:text-white group-hover:rotate-12 group-hover:scale-110"
           )}>
             {isLimitReached ? (
@@ -123,7 +123,7 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
               <UserPlus size={32} />
             )}
           </div>
-          
+
           <div className="text-center space-y-3">
             <h3 className={cn(
               "text-2xl font-black uppercase tracking-tight",
@@ -132,7 +132,7 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
               {isLimitReached ? "Limit Reached" : "Link Node"}
             </h3>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest leading-relaxed max-w-[240px]">
-              {isLimitReached 
+              {isLimitReached
                 ? `Current tier (${isTrial ? 'Free Trial' : plan}) is restricted to ${limit} student ${limit === 1 ? 'node' : 'nodes'}.`
                 : "Authorize a new student terminal by entering their unique identity code."
               }
@@ -140,7 +140,7 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
           </div>
 
           {isLimitReached ? (
-            <Button 
+            <Button
               className="mt-4 h-14 px-8 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-orange-600/20 active:scale-95 transition-all"
               onClick={(e) => {
                 e.stopPropagation()
@@ -151,12 +151,12 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
             </Button>
           ) : (
             <div className="mt-4 p-3 rounded-full bg-orange-600/10 text-orange-600 opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0">
-               <ChevronRight size={20} />
+              <ChevronRight size={20} />
             </div>
           )}
         </div>
       </DialogTrigger>
-      
+
       <DialogContent className="sm:max-w-[500px] p-0 border-none bg-white/90 dark:bg-slate-900/90 backdrop-blur-3xl rounded-[3rem] overflow-hidden shadow-2xl">
         <DialogHeader className="p-10 pb-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
           <div className="flex items-center gap-4">
@@ -177,8 +177,8 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
                 Student Access Code
               </label>
               <div className="relative group">
-                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
-                 <Input
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
+                <Input
                   id="studentCode"
                   placeholder="e.g. STU-2024-001"
                   className="h-16 pl-12 rounded-2xl bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 focus:ring-orange-500/20 focus:border-orange-500/50 transition-all font-bold text-sm"
@@ -195,15 +195,15 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
 
           <DialogFooter className="pt-4 flex-col sm:flex-row gap-4">
             <DialogClose asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-16 flex-1 rounded-2xl border-2 border-slate-200 dark:border-white/10 font-black text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
               >
                 Abort
               </Button>
             </DialogClose>
-            <Button 
-              onClick={handleLinkChild} 
+            <Button
+              onClick={handleLinkChild}
               disabled={isSubmitting || !studentCode.trim()}
               className="h-16 flex-[2] rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-600/20 font-black text-xs uppercase tracking-widest transition-all active:scale-95 group"
             >

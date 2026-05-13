@@ -31,7 +31,7 @@ const LaTeXRenderer = memo(({ content, className = "", onZoom }: LaTeXRendererPr
         {children}
       </li>
     ),
-    img: ({ src, alt }: { src?: string; alt?: string }) => (
+    img: ({ src, alt, ...props }: any) => (
       <figure className="my-6 text-center group">
         <div 
           className="relative inline-block cursor-zoom-in overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg min-w-[200px] min-h-[100px]"

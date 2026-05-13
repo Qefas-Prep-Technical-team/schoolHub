@@ -115,7 +115,7 @@ export default function StudentDetailsPage() {
     const handleResetSubscription = async () => {
         if (!confirm("Are you sure you want to reset this student's subscription? This will clear all overrides and revert them to the FREE plan.")) return
         try {
-            await resetSubscriptionMutation.mutateAsync(student.id)
+            await resetSubscriptionMutation.mutateAsync({ studentId: student.id })
         } catch (error) {
             console.error("Failed to reset subscription:", error)
         }

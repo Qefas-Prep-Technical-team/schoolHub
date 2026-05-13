@@ -64,7 +64,7 @@ export default function StudentHomeDashboard() {
       });
     });
 
-    standaloneGrades?.forEach((grade: { subject: string, score: number, maxScore: number }) => {
+    (standaloneGrades as any[])?.forEach((grade) => {
       const subName = grade.subject;
       if (!subjectsMap[subName]) subjectsMap[subName] = { total: 0, score: 0, count: 0 };
       subjectsMap[subName].score += grade.score;

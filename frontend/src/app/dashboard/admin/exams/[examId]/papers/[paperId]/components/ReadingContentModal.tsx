@@ -1,30 +1,80 @@
-import { ReactNode } from 'react';
+"use client";
 
-interface ButtonProps {
-    children: ReactNode;
-    variant: 'primary' | 'secondary' | 'outline';
-    onClick?: () => void;
-    className?: string;
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api/client";
+import { toast } from "react-toastify";
+import { Loader2 } from "lucide-react";
+
+interface ReadingContentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  paperId: string;
+  initialContent?: string;
 }
 
-const Button: React.FC<ButtonProps> = ({ children, variant, onClick, className = '' }) => {
-    const baseStyles = "flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 text-sm font-medium leading-normal tracking-[0.015em]";
+export default function ReadingContentModal({
+  isOpen,
+  onClose,
+  paperId,
+  initialContent = "",
+}: ReadingContentModalProps) {
+  const [content, setContent] = useState(initialContent);
+  const queryClient = useQueryClient();
 
-    const variants = {
-        primary: "bg-primary text-white hover:bg-primary/90",
-        secondary: "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600",
-        outline: "bg-transparent text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-    };
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.patch(`/exams/papers/${paperId}`, { readingContent: content });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
+      toast.success("Reading content updated!");
+      onClose();
+    },
+    onError: () => {
+      toast.error("Failed to update reading content");
+    },
+  });
 
-    return (
-        <button
-            className={`${baseStyles} ${variants[variant]} ${className}`}
-            onClick={onClick}
-        >
-            <span className="truncate">{children}</span>
-        </button>
-    );
-};
-
-export default Button;
-
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Reading Content</DialogTitle>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="text-sm text-slate-500 mb-4 font-medium uppercase tracking-widest text-[10px]">
+            Add or edit the reading passage/content for this paper.
+          </p>
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Type or paste reading content here..."
+            className="min-h-[300px] rounded-2xl border-slate-200 focus:ring-primary font-medium"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} className="rounded-xl font-bold">
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            className="rounded-xl font-bold bg-primary text-white"
+          >
+            {updateMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Save Changes"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

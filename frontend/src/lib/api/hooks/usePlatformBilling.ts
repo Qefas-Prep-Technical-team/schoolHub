@@ -1,5 +1,8 @@
 import { toast } from "react-toastify"
 import { AxiosError } from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { usePlatformStaffStore } from "@/store/usePlatformStaffStore";
+import { platformClient } from "../platformClient";
 
 export const usePlatformPlans = () => {
     const { platform_token } = usePlatformStaffStore()
@@ -27,7 +30,7 @@ export const useResetStudentSubscription = () => {
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-students"] })
             queryClient.invalidateQueries({ queryKey: ["platform-student-details"] })
             toast.success(res.message)
@@ -49,7 +52,7 @@ export const useUpdatePlatformPlan = () => {
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-plans"] })
             toast.success(res.message)
         },
@@ -70,7 +73,7 @@ export const useCreatePlatformPlan = () => {
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-plans"] })
             toast.success(res.message)
         },
@@ -91,7 +94,7 @@ export const useAssignSchoolPlan = () => {
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-schools"] })
             toast.success(res.message)
         },
@@ -112,7 +115,7 @@ export const useResetSchoolSubscription = () => {
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-schools"] })
             queryClient.invalidateQueries({ queryKey: ["platform-school-detail"] })
             toast.success(res.message)
@@ -133,7 +136,7 @@ export const useResetTeacherSubscription = () => {
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-teachers"] })
             queryClient.invalidateQueries({ queryKey: ["platform-teacher-details"] })
             toast.success(res.message)
@@ -154,7 +157,7 @@ export const useResetParentSubscription = () => {
             });
             return data;
         },
-        onSuccess: (res) => {
+        onSuccess: (res: { message: string }) => {
             queryClient.invalidateQueries({ queryKey: ["platform-parents"] })
             queryClient.invalidateQueries({ queryKey: ["platform-parent-details"] })
             toast.success(res.message)

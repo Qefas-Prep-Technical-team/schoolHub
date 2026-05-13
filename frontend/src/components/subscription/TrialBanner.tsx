@@ -14,7 +14,7 @@ export const TrialBanner = () => {
     
     // For everyone, use subscription usage hook
     const { data: usageData } = useSubscriptionUsage();
-    const { data: adminBillingData } = useSchoolBilling(isAdmin ? schoolId : '', { limit: 1 });
+    const { data: adminBillingData } = useSchoolBilling(isAdmin ? (schoolId || '') : '', { limit: 1 });
     
     // For parents, use user billing hook
     const { data: parentBillingData } = useUserBilling(isParent ? user?.id : '', { limit: 1 });

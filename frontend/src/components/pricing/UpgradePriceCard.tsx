@@ -47,7 +47,7 @@ const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
     const isDeactivated = isLowerPlan && !isCurrentPlan;
 
     const proRata = amount && currentPlanPrice 
-        ? calculateProRatedAmount(currentPlanPrice, amount, lastPaymentDate || null, billingType)
+        ? calculateProRatedAmount(currentPlanPrice, amount, lastPaymentDate || null)
         : { amount: amount || 0, isUpgrade: false };
 
     const handleAction = (e: React.MouseEvent) => {

@@ -8,7 +8,7 @@ import {
   Settings2,
 } from 'lucide-react';
 
-import { FilterOption, GradeLetter, StudentGrade } from './types';
+import { FilterOption, GradeLetter, StudentGrade, GradeStatus } from './types';
 import PageHeader from './PageHeader';
 import Filters from './Filters';
 import GradesTable from './GradesTable';
@@ -120,7 +120,7 @@ const GradesOverview: React.FC = () => {
         maxMarks: maxMarks,
         totalScore: `${percentage.toFixed(1)}%`,
         grade: calculateGrade(score, maxMarks, gradingScale) as GradeLetter,
-        status: item.status || 'Graded',
+        status: (item.status || 'Graded') as GradeStatus,
         remarks: item.remarks || ''
       };
     });
@@ -129,25 +129,25 @@ const GradesOverview: React.FC = () => {
   const filters: FilterOption[] = useMemo(() => {
     const activeFilters: FilterOption[] = [];
 
-    const currentSession = sessionsData?.find((s: Record<string, unknown>) => s.id === selectedSessionId);
+    const currentSession = (sessionsData as any[])?.find((s: any) => s.id === selectedSessionId);
     activeFilters.push({
       label: currentSession ? `Session: ${currentSession.name}` : 'Session: All',
       value: 'session',
       icon: 'expand_more',
       options: [
         { label: 'All Sessions', value: 'all' },
-        ...(sessionsData?.map((s: Record<string, unknown>) => ({ label: s.name as string, value: s.id as string })) || [])
+        ...((sessionsData as any[])?.map((s: any) => ({ label: s.name as string, value: s.id as string })) || [])
       ]
     });
 
-    const currentClass = classesData?.find((c: Record<string, unknown>) => c.id === selectedClassId);
+    const currentClass = (classesData as any[])?.find((c: any) => c.id === selectedClassId);
     activeFilters.push({
       label: currentClass ? `Class: ${currentClass.name}` : 'Class: All',
       value: 'class',
       icon: 'expand_more',
       options: [
         { label: 'All Classes', value: 'all' },
-        ...(classesData?.map((c: Record<string, unknown>) => ({ label: c.name as string, value: c.id as string })) || [])
+        ...((classesData as any[])?.map((c: any) => ({ label: c.name as string, value: c.id as string })) || [])
       ]
     });
 

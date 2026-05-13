@@ -8,7 +8,7 @@ import BulkActions from './components/BulkActions';
 import { Student, FilterOptions } from './components/types';
 
 interface ClassStudentsTabProps {
-  enrollments?: Record<string, unknown>[];
+  enrollments?: any[];
 }
 
 export default function ClassStudentsTab({ enrollments = [] }: ClassStudentsTabProps) {

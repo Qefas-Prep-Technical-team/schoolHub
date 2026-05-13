@@ -2,10 +2,28 @@ import { Eye, Edit, PlusCircle, Trash2, Calendar, FileText, BarChart3, Clock } f
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
+export interface Exam {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string | Date;
+  totalMarks?: number;
+  durationMinutes?: number;
+  subject?: {
+    name: string;
+  };
+  class?: {
+    name: string;
+  };
+  exams?: any[];
+  questions?: any[];
+  subjectPapers?: any[];
+}
+
 interface ExamsTableProps {
-  exams: Record<string, unknown>[]; // Using Record<string, unknown> to handle real backend data structure
+  exams: Exam[];
   activeTab: 'exams' | 'quizzes' | 'subject-papers';
-} 
+}
 
 export default function ExamsTable({ exams, activeTab }: ExamsTableProps) {
   const isSubjectPaperTab = activeTab === 'subject-papers';
@@ -74,16 +92,16 @@ export default function ExamsTable({ exams, activeTab }: ExamsTableProps) {
                     <BarChart3 size={10} />
                     {isSubjectPaperTab ? (exam.subject?.name || 'No Subject') : (exam.class?.name || 'All Classes')}
                   </div>
-                  {isSubjectPaperTab && exam.exams?.length > 0 && (
+                  {isSubjectPaperTab && (exam.exams?.length || 0) > 0 && (
                     <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary/70 bg-primary/5 px-2 py-1 rounded-lg">
                       <PlusCircle size={10} />
-                      Linked to {exam.exams.length} Exam{exam.exams.length > 1 ? 's' : ''}
+                      Linked to {exam.exams?.length} Exam{(exam.exams?.length || 0) > 1 ? 's' : ''}
                     </div>
                   )}
                   <span className="text-slate-300 dark:text-slate-700 mx-1">•</span>
                   <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
                     <Calendar size={12} />
-                    {new Date(exam.createdAt).toLocaleDateString()}
+                    {new Date(exam.createdAt || '').toLocaleDateString()}
                   </div>
                 </div>
               </div>

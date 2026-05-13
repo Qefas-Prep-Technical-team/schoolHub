@@ -27,8 +27,8 @@ export default function ParentPaymentPage() {
     React.useEffect(() => {
         if (selectedChildId) {
             const child = children.find(c => c.studentId === selectedChildId)
-            const schoolId = (child as Record<string, unknown>)?.schoolId || (user as Record<string, unknown>)?.schoolId
-            if (schoolId) {
+            const schoolId = (child as any)?.schoolId || (user as any)?.schoolId
+            if (schoolId && typeof schoolId === 'string') {
                 financeService.getSchoolAnalytics(schoolId)
                     .then(res => setSchoolStatus(res.paymentStatus))
                     .catch(console.error)
@@ -55,10 +55,10 @@ export default function ParentPaymentPage() {
             
             // Note: In refined production code, schoolId should be part of the child object in auth store.
             // For now, we'll assume it might be there as an extra field if we updated the backend.
-            const schoolId = (child as Record<string, unknown>).schoolId || (user as Record<string, unknown>).schoolId; // Fallback or improved logic
+            const schoolId = (child as any).schoolId || (user as any).schoolId; // Fallback or improved logic
 
             const data = await financeService.initializePayment({
-                schoolId: schoolId,
+                schoolId: schoolId as string,
                 studentId: selectedChildId,
                 amount: parseFloat(amount),
                 term,
@@ -85,7 +85,7 @@ export default function ParentPaymentPage() {
                 <p className="text-muted-foreground">Make secure payments directly to your child&apos;s school account.</p>
             </div>
 
-            {schoolStatus && <BankStatusBanner status={schoolStatus.status} />}
+            {schoolStatus && <BankStatusBanner status={schoolStatus.status as any} />}
 
             <Card>
                 <CardHeader>

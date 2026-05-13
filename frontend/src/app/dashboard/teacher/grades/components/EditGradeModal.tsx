@@ -66,6 +66,7 @@ const EditGradeModal: React.FC<EditGradeModalProps> = ({
       return;
     }
 
+    if (!grade) return;
     onSave(grade.id, numericScore, remarks);
   };
 

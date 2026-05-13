@@ -1,0 +1,100 @@
+﻿src/app/(internal-console)/console/students/[id]/page.tsx(118,57): error TS2345: Argument of type 'string' is not assignable to parameter of type '{ studentId: string; }'.
+src/app/dashboard/parent/my-children/components/PendingRequestsDialog.tsx(173,11): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+src/app/dashboard/parent/notifications/page.tsx(242,27): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/app/dashboard/parent/notifications/page.tsx(244,35): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+src/app/dashboard/parent/payments/page.tsx(30,79): error TS2352: Conversion of type 'User | null' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'User' is not comparable to type 'Record<string, unknown>'.
+    Index signature for type 'string' is missing in type 'User'.
+src/app/dashboard/parent/payments/page.tsx(32,51): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/app/dashboard/parent/payments/page.tsx(58,78): error TS2352: Conversion of type 'User | null' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'User' is not comparable to type 'Record<string, unknown>'.
+    Index signature for type 'string' is missing in type 'User'.
+src/app/dashboard/parent/payments/page.tsx(61,17): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/app/dashboard/parent/payments/page.tsx(88,48): error TS2322: Type 'unknown' is not assignable to type '"none" | "active" | "pending" | "unverified"'.
+src/app/dashboard/parent/performance/components/PerformanceChart.tsx(12,5): error TS2305: Module '"recharts"' has no exported member 'Defs'.
+src/app/dashboard/parent/performance/components/PerformanceChart.tsx(13,5): error TS2305: Module '"recharts"' has no exported member 'LinearGradient'.
+src/app/dashboard/parent/performance/components/PerformanceChart.tsx(14,5): error TS2305: Module '"recharts"' has no exported member 'Stop'.
+src/app/dashboard/parent/performance/components/ProfileHeader.tsx(57,34): error TS2339: Property 'school' does not exist on type 'ChildDetails'.
+src/app/dashboard/parent/performance/components/ProfileHeader.tsx(63,42): error TS2339: Property 'classes' does not exist on type 'ChildDetails'.
+src/app/dashboard/parent/settings/page.tsx(352,61): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'SetStateAction<string>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<string>'.
+src/app/dashboard/student/exams&quizzes/[examId]/page.tsx(79,86): error TS2367: This comparison appears to be unintentional because the types '"IN_PROGRESS" | undefined' and '"EXPIRED"' have no overlap.
+src/app/dashboard/student/exams&quizzes/[examId]/result/page.tsx(201,79): error TS2339: Property 'createdAt' does not exist on type 'ExamAttempt'.
+src/app/dashboard/student/page.tsx(67,31): error TS2345: Argument of type '(grade: { subject: string; score: number; maxScore: number; }) => void' is not assignable to parameter of type '(value: Grade, index: number, array: Grade[]) => void'.
+  Types of parameters 'grade' and 'value' are incompatible.
+    Property 'maxScore' is missing in type 'Grade' but required in type '{ subject: string; score: number; maxScore: number; }'.
+src/app/dashboard/student/page.tsx(71,43): error TS2339: Property 'maxMarks' does not exist on type '{ subject: string; score: number; maxScore: number; }'.
+src/app/dashboard/teacher/exams&quizzes/add-question/page.tsx(281,21): error TS2322: Type '{ paperId: string; examId: string; paper: Record<string, any>; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'paperId' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/app/dashboard/teacher/exams&quizzes/add-question/page.tsx(454,9): error TS2322: Type '{ isOpen: boolean; onClose: () => void; paperId: string; initialContent: any; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'isOpen' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/app/dashboard/teacher/exams&quizzes/add-question/page.tsx(461,9): error TS2322: Type '{ isOpen: boolean; onClose: () => void; paper: Record<string, any>; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'isOpen' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/app/dashboard/teacher/exams&quizzes/add-question/page.tsx(467,9): error TS2322: Type '{ isOpen: boolean; onClose: () => void; paper: Record<string, any>; subjects: any; teachers: any; isLoadingData: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'isOpen' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/app/dashboard/teacher/exams&quizzes/components/CreatePaperForm.tsx(61,5): error TS2322: Type '(data: PaperFormValues) => Promise<SubjectPaper>' is not assignable to type 'MutationFunction<Record<string, unknown>, { subjectId: string; title: string; instructions: string; durationMinutes: number; totalMarks: number; readingContent?: string | undefined; }>'.
+  Type 'Promise<SubjectPaper>' is not assignable to type 'Promise<Record<string, unknown>>'.
+    Type 'SubjectPaper' is not assignable to type 'Record<string, unknown>'.
+      Index signature for type 'string' is missing in type 'SubjectPaper'.
+src/app/dashboard/teacher/exams&quizzes/components/CreatePaperForm.tsx(72,21): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/app/dashboard/teacher/exams&quizzes/components/CreatePaperForm.tsx(115,31): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/app/dashboard/teacher/exams&quizzes/components/CreatePaperForm.tsx(116,29): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/app/dashboard/teacher/exams&quizzes/components/CreatePaperForm.tsx(140,27): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/app/dashboard/teacher/exams&quizzes/components/CreatePaperForm.tsx(140,38): error TS2322: Type 'unknown' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/app/dashboard/teacher/exams&quizzes/components/CreatePaperForm.tsx(140,51): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(57,13): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(70,48): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(75,57): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(75,94): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(77,53): error TS2339: Property 'length' does not exist on type '{}'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(80,34): error TS18046: 'exam.exams' is of type 'unknown'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(80,58): error TS18046: 'exam.exams' is of type 'unknown'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(86,31): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(95,89): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(100,57): error TS2339: Property 'length' does not exist on type '{}'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(100,93): error TS2339: Property 'length' does not exist on type '{}'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(109,19): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(117,131): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/app/dashboard/teacher/exams&quizzes/components/ExamsTable.tsx(118,17): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(240,23): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(240,31): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(248,17): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(248,25): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(248,35): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(258,45): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: PropsWithChildren<TextProps> | SVGTextProps): Text', gave the following error.
+    Type '{}' is not assignable to type 'ReactNode'.
+  Overload 2 of 2, '(props: PropsWithChildren<TextProps> | SVGTextProps, context: any): Text', gave the following error.
+    Type '{}' is not assignable to type 'ReactNode'.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(261,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: PropsWithChildren<ViewProps>): View', gave the following error.
+    Type 'unknown' is not assignable to type 'ReactNode'.
+  Overload 2 of 2, '(props: PropsWithChildren<ViewProps>, context: any): View', gave the following error.
+    Type 'unknown' is not assignable to type 'ReactNode'.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(261,83): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: ImageProps): Image', gave the following error.
+    Type '{ src: string; style: { width: number; height: number; borderRadius: number; }; alt: string; }' is not assignable to type 'IntrinsicAttributes & (IntrinsicClassAttributes<Image> & Readonly<ImageProps>)'.
+      Property 'alt' does not exist on type 'IntrinsicAttributes & (IntrinsicClassAttributes<Image> & Readonly<ImageProps>)'.
+  Overload 2 of 2, '(props: ImageProps, context: any): Image', gave the following error.
+    Type '{ src: string; style: { width: number; height: number; borderRadius: number; }; alt: string; }' is not assignable to type 'IntrinsicAttributes & (IntrinsicClassAttributes<Image> & Readonly<ImageProps>)'.
+      Property 'alt' does not exist on type 'IntrinsicAttributes & (IntrinsicClassAttributes<Image> & Readonly<ImageProps>)'.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(268,44): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: PropsWithChildren<TextProps> | SVGTextProps): Text', gave the following error.
+    Type 'unknown' is not assignable to type 'ReactNode'.
+  Overload 2 of 2, '(props: PropsWithChildren<TextProps> | SVGTextProps, context: any): Text', gave the following error.
+    Type 'unknown' is not assignable to type 'ReactNode'.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(280,61): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(284,61): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/dashboard/teacher/exams&quizzes/papers/[id]/components/SubjectPaperReport.tsx(292,14): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: PropsWithChildren<TextProps> | SVGTextProps): Text', gave the following error.
+    Type '{ children: (string | {})[]; style: { fontSize: number; color: string; fontWeight: string; }; }' is not assignable to type 'IntrinsicAttributes & (IntrinsicClassAttributes<Text> & Readonly<PropsWithChildren<TextProps> | SVGTextProps>)'.
+      Types of property 'children' are incompatible.
+        Type '(string | {})[]' is not assignable to type 'ReactNode'.
+          Type '(string | {})[]' is not assignable to type 'Iterable<ReactNode>'.
+            The types returned by '[Symbol.iterator]().next(...)' are incompatible between these types.
+              Type 'IteratorResult<string | {}, undefined>' is not assignable to type 'IteratorResult<ReactNode, any>'.
+                Type 'IteratorYieldResult<string | {}>' is not assignable to type 'IteratorResult<ReactNode, any>'.

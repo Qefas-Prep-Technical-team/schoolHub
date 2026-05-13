@@ -223,9 +223,9 @@ const styles = StyleSheet.create({
 });
 
 interface SubjectPaperReportProps {
-  paper: Record<string, unknown>;
-  attempts: Record<string, unknown>[];
-  school: Record<string, unknown>;
+  paper: any;
+  attempts: any[];
+  school: any;
 }
 
 const SubjectPaperReport: React.FC<SubjectPaperReportProps> = ({
@@ -258,7 +258,7 @@ const SubjectPaperReport: React.FC<SubjectPaperReportProps> = ({
             <Text style={styles.schoolName}>{school?.name || 'Academic Institution'}</Text>
             <Text style={styles.reportTitle}>Subject Performance Analysis</Text>
           </View>
-          {school?.logo && <Image src={school.logo as string} style={styles.logo} alt="School Logo" />}
+          {school?.logo && <Image src={school.logo as string} style={styles.logo} />}
         </View>
 
         {/* Paper Metadata */}

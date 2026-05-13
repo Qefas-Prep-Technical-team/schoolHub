@@ -8,10 +8,7 @@ import {
     Tooltip,
     ResponsiveContainer,
     Area,
-    AreaChart,
-    Defs,
-    LinearGradient,
-    Stop
+    AreaChart
 } from 'recharts';
 import { Download, Filter } from 'lucide-react';
 import { useChildExams } from '@/lib/api/hooks/useChildExams';

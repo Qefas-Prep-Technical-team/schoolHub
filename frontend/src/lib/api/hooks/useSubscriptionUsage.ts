@@ -9,6 +9,7 @@ interface SubscriptionUsageData {
     classes: number;
     teachers: number;
     storageGb: number;
+    aiUsage: number;
   };
   usage: {
     students: number;
@@ -16,6 +17,7 @@ interface SubscriptionUsageData {
     classes: number;
     teachers: number;
     storageGb: number;
+    aiUsage: number;
   };
   percentages: {
     students: number;
@@ -23,6 +25,7 @@ interface SubscriptionUsageData {
     classes: number;
     teachers: number;
     storage: number;
+    aiUsage: number;
   };
   planFeatures: Array<{
     name: string;

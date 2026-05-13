@@ -54,7 +54,7 @@ export default function NotificationDetailModal({
   const { user } = useAuthStore();
   const linkId = notification?.linkRequestId || (notification?.data as Record<string, unknown> & { linkId?: string })?.linkId;
   const { data: linkRequest, isLoading: isLoadingLink } = useSingleLinkRequest(
-    notification?.type === 'LINK_REQUEST' ? linkId : '',
+    notification?.type === 'LINK_REQUEST' ? (linkId || '') : '',
     { enabled: isOpen && notification?.type === 'LINK_REQUEST' && !!linkId }
   );
 

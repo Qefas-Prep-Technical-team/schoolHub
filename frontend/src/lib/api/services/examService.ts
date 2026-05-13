@@ -29,9 +29,9 @@ export interface Exam {
   totalMarks?: number;
   totalQuestions?: number;
   totalPapers?: number;
-  subjectPapers?: (SubjectPaper & { 
-    subject?: { name: string }, 
-    questions?: SubjectExamQuestion[] 
+  subjectPapers?: (SubjectPaper & {
+    subject?: { name: string };
+    questions?: SubjectExamQuestion[];
   })[];
 }
 
@@ -53,7 +53,7 @@ export interface ExamAttempt {
   id: string;
   examId: string;
   studentId: string;
-  status: "IN_PROGRESS" | "SUBMITTED" | "SCORED";
+  status: "IN_PROGRESS" | "SUBMITTED" | "SCORED" | "EXPIRED";
   startedAt: string;
   submittedAt?: string;
   remainingSeconds?: number;
@@ -67,6 +67,7 @@ export interface SubjectPaper {
   exams?: { examId: string; exam?: Exam }[];
   subjectId?: string;
   teacherId?: string;
+  teacher?: { name: string };
   schoolId?: string;
   title: string;
   instructions: string;
@@ -144,7 +145,9 @@ export const examService = {
     category?: string;
     status?: string;
   }) => {
-    const response = await apiClient.get<{ data: Exam[] }>("/exams", { params });
+    const response = await apiClient.get<{ data: Exam[] }>("/exams", {
+      params,
+    });
     return response.data.data || [];
   },
 
@@ -172,15 +175,23 @@ export const examService = {
     return response.data.data;
   },
 
-  createSubjectPaper: async (examId: string | null | undefined, data: CreatePaperDTO) => {
-   
+  createSubjectPaper: async (
+    examId: string | null | undefined,
+    data: CreatePaperDTO,
+  ) => {
     const url = examId ? `/exams/${examId}/papers` : "/exams/papers";
     const response = await apiClient.post<{ data: SubjectPaper }>(url, data);
     return response.data.data;
   },
 
-  updateQuestion: async (questionId: string, data: Partial<SubjectExamQuestion>) => {
-    const response = await apiClient.patch<{ data: SubjectExamQuestion }>(`/exams/questions/${questionId}`, data);
+  updateQuestion: async (
+    questionId: string,
+    data: Partial<SubjectExamQuestion>,
+  ) => {
+    const response = await apiClient.patch<{ data: SubjectExamQuestion }>(
+      `/exams/questions/${questionId}`,
+      data,
+    );
     return response.data;
   },
 
@@ -190,12 +201,16 @@ export const examService = {
   },
 
   validatePaper: async (examId: string, paperId: string) => {
-    const response = await apiClient.post(`/exams/${examId}/papers/${paperId}/validate`);
+    const response = await apiClient.post(
+      `/exams/${examId}/papers/${paperId}/validate`,
+    );
     return response.data;
   },
 
   publishPaper: async (examId: string, paperId: string) => {
-    const response = await apiClient.post(`/exams/${examId}/papers/${paperId}/publish`);
+    const response = await apiClient.post(
+      `/exams/${examId}/papers/${paperId}/publish`,
+    );
     return response.data;
   },
 
@@ -220,33 +235,50 @@ export const examService = {
   },
 
   unpublishPaper: async (examId: string, paperId: string) => {
-    const response = await apiClient.post(`/exams/${examId}/papers/${paperId}/unpublish`);
+    const response = await apiClient.post(
+      `/exams/${examId}/papers/${paperId}/unpublish`,
+    );
     return response.data;
   },
 
   deletePaper: async (examId: string, paperId: string) => {
-    const response = await apiClient.delete(`/exams/${examId}/papers/${paperId}`);
+    const response = await apiClient.delete(
+      `/exams/${examId}/papers/${paperId}`,
+    );
     return response.data;
   },
-  
-  updateSubjectPaper: async (paperId: string, data: Partial<CreatePaperDTO>) => {
-    const response = await apiClient.patch<{ data: SubjectPaper }>(`/exams/papers/${paperId}`, data);
+
+  updateSubjectPaper: async (
+    paperId: string,
+    data: Partial<CreatePaperDTO>,
+  ) => {
+    const response = await apiClient.patch<{ data: SubjectPaper }>(
+      `/exams/papers/${paperId}`,
+      data,
+    );
     return response.data.data;
   },
 
   updateExam: async (id: string, data: Partial<CreateExamDTO>) => {
-    const response = await apiClient.patch<{ data: Exam }>(`/exams/${id}`, data);
+    const response = await apiClient.patch<{ data: Exam }>(
+      `/exams/${id}`,
+      data,
+    );
     return response.data.data;
   },
 
   // Student Attempt Endpoints
   getExamAttempt: async (examId: string) => {
-    const response = await apiClient.get<{ data: ExamAttempt }>(`/exams/${examId}/attempt`);
+    const response = await apiClient.get<{ data: ExamAttempt }>(
+      `/exams/${examId}/attempt`,
+    );
     return response.data.data;
   },
 
   getExamAttempts: async (examId: string) => {
-    const response = await apiClient.get<{ data: ExamAttempt[] }>(`/exams/${examId}/attempts`);
+    const response = await apiClient.get<{ data: ExamAttempt[] }>(
+      `/exams/${examId}/attempts`,
+    );
     return response.data.data || [];
   },
 
@@ -255,7 +287,10 @@ export const examService = {
     return response.data.data;
   },
 
-  saveAnswer: async (examId: string, data: { subjectPaperId: string, questionId: string, answer: string }) => {
+  saveAnswer: async (
+    examId: string,
+    data: { subjectPaperId: string; questionId: string; answer: string },
+  ) => {
     const response = await apiClient.post(`/exams/${examId}/answers`, data);
     return response.data;
   },
@@ -266,43 +301,56 @@ export const examService = {
   },
 
   deleteExamAttempt: async (examId: string, studentId: string) => {
-    const response = await apiClient.delete(`/exams/${examId}/attempts/${studentId}`);
+    const response = await apiClient.delete(
+      `/exams/${examId}/attempts/${studentId}`,
+    );
     return response.data;
   },
 
   getExamResult: async (examId: string, studentId?: string) => {
-    const url = studentId ? `/exams/${examId}/result?studentId=${studentId}` : `/exams/${examId}/result`;
+    const url = studentId
+      ? `/exams/${examId}/result?studentId=${studentId}`
+      : `/exams/${examId}/result`;
     const response = await apiClient.get(url);
     return response.data.data;
   },
 
   getExamReview: async (examId: string, studentId?: string) => {
-    const url = studentId ? `/exams/${examId}/review?studentId=${studentId}` : `/exams/${examId}/review`;
+    const url = studentId
+      ? `/exams/${examId}/review?studentId=${studentId}`
+      : `/exams/${examId}/review`;
     const response = await apiClient.get(url);
     return response.data.data;
   },
 
   getSubjectPapers: async (params?: { unlinkedOnly?: boolean }) => {
-    const response = await apiClient.get<{ data: SubjectPaper[] }>("/exams/papers/all", { params });
+    const response = await apiClient.get<{ data: SubjectPaper[] }>(
+      "/exams/papers/all",
+      { params },
+    );
     return response.data.data || [];
   },
 
   linkSubjectPaperToExam: async (paperId: string, examId: string) => {
-    const response = await apiClient.patch(`/exams/papers/${paperId}/link`, { examId });
+    const response = await apiClient.patch(`/exams/papers/${paperId}/link`, {
+      examId,
+    });
     return response.data;
   },
   unlinkSubjectPaper: async (paperId: string, examId?: string) => {
-    const response = await apiClient.patch(`/exams/papers/${paperId}/unlink`, { examId });
+    const response = await apiClient.patch(`/exams/papers/${paperId}/unlink`, {
+      examId,
+    });
     return response.data;
   },
 
   getMyExamAttempts: async (params?: { page?: number; limit?: number }) => {
-    const response = await apiClient.get('/exams/my/attempts', { params });
+    const response = await apiClient.get("/exams/my/attempts", { params });
     return response.data;
   },
 
   getMyStats: async () => {
-    const response = await apiClient.get('/exams/my/stats');
+    const response = await apiClient.get("/exams/my/stats");
     return response.data.data;
   },
 };

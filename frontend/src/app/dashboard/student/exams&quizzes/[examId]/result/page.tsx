@@ -198,7 +198,7 @@ export default function ExamResultPage() {
                                         {result?.title || exam?.title}
                                     </h1>
                                     <p className="text-lg md:text-xl text-slate-500 font-bold italic opacity-60">
-                                        Evaluated on {format(new Date(attempt.createdAt), "MMMM d, yyyy")}
+                                        Evaluated on {format(new Date(attempt.startedAt), "MMMM d, yyyy")}
                                     </p>
                                 </div>
 

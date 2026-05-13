@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import { useGlobalFeatures } from '@/lib/api/hooks/useGlobalFeatures';
 import { useFetchPricing } from '@/components/pricing/query';
 import { PricingData } from '@/components/Types/Pricing';
+import { usePublicPlatformSettings } from '@/lib/api/hooks/usePlatformGovernance';
 
 export default function TeacherBillingPage() {
     const router = useRouter();
@@ -37,6 +38,7 @@ export default function TeacherBillingPage() {
     });
 
     const { data: features, isLoading: isFeaturesLoading } = useGlobalFeatures('teacher');
+    const { data: settings, isLoading: isSettingsLoading } = usePublicPlatformSettings();
 
     React.useEffect(() => {
         if (!isFeaturesLoading && features && features.billing === false) {
@@ -44,7 +46,7 @@ export default function TeacherBillingPage() {
         }
     }, [features, isFeaturesLoading, router]);
 
-    if (isLoading || !user || isFeaturesLoading) {
+    if (isLoading || !user || isFeaturesLoading || isSettingsLoading) {
         return (
             <div className="space-y-8 pb-12 p-6">
                 <Skeleton className="h-12 w-1/3 rounded-xl" />

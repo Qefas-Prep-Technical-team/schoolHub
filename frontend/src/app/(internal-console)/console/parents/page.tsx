@@ -2,12 +2,13 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { 
+import {
     usePlatformParents,
-    PlatformParentSummary
+    PlatformParentSummary,
+    PlatformPlanBreakdownItem
 } from "@/lib/api/hooks/usePlatformSchools"
-import { 
-    Search as SearchIcon, 
+import {
+    Search as SearchIcon,
     Users as ParentIcon,
     Mail as MailIcon,
     UserCircle as UserIcon,
@@ -35,9 +36,9 @@ export default function PlatformParentsPage() {
     const [planFilter, setPlanFilter] = useState("ALL")
     const [currentPage, setCurrentPage] = useState(1)
     const { data: response, isLoading } = usePlatformParents(searchQuery, currentPage, 10, planFilter, statusFilter)
-    
+
     const parents = response?.data || []
-    const planBreakdown = response?.planBreakdown || []
+    const planBreakdown: PlatformPlanBreakdownItem[] = response?.planBreakdown || []
     const statusBreakdown = response?.statusBreakdown || []
     const pagination = response?.pagination
 
@@ -64,7 +65,7 @@ export default function PlatformParentsPage() {
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                             <SearchIcon className="text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
                         </div>
-                        <Input 
+                        <Input
                             placeholder="Search name, code, or email..."
                             value={searchQuery}
                             onChange={(e) => {
@@ -76,7 +77,7 @@ export default function PlatformParentsPage() {
                     </div>
                     <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 h-14 shadow-sm">
                         <FilterIcon size={14} className="text-slate-400" />
-                        <select 
+                        <select
                             value={planFilter}
                             onChange={(e) => {
                                 setPlanFilter(e.target.value)
@@ -90,7 +91,7 @@ export default function PlatformParentsPage() {
                             ))}
                         </select>
                     </div>
-                    <select 
+                    <select
                         value={statusFilter}
                         onChange={(e) => {
                             setStatusFilter(e.target.value)
@@ -142,13 +143,13 @@ export default function PlatformParentsPage() {
                             <div className={cn(
                                 "absolute inset-0 z-0",
                                 plan.type === 'TOTAL' ? "bg-gradient-to-br from-indigo-900 via-slate-900 to-black" :
-                                plan.type?.toUpperCase() === 'FREE' ? "bg-gradient-to-br from-slate-600 to-slate-900" :
-                                plan.type?.toUpperCase() === 'TRIAL' ? "bg-gradient-to-br from-amber-500 to-orange-700" :
-                                "bg-gradient-to-br from-indigo-500 to-purple-800"
+                                    plan.type?.toUpperCase() === 'FREE' ? "bg-gradient-to-br from-slate-600 to-slate-900" :
+                                        plan.type?.toUpperCase() === 'TRIAL' ? "bg-gradient-to-br from-amber-500 to-orange-700" :
+                                            "bg-gradient-to-br from-indigo-500 to-purple-800"
                             )}></div>
-                            
+
                             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-125 transition-transform"></div>
-                            
+
                             <div className="relative z-10 flex flex-col h-full justify-between">
                                 <div className="flex justify-between items-start">
                                     <div>
@@ -215,7 +216,7 @@ export default function PlatformParentsPage() {
                                 </tr>
                             ) : (
                                 parents?.map((parent, index: number) => (
-                                    <tr 
+                                    <tr
                                         key={parent.id}
                                         className="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
                                         onClick={() => router.push(`/console/parents/${parent.id}`)}
@@ -252,8 +253,8 @@ export default function PlatformParentsPage() {
                                                     </Badge>
                                                     <Badge className={cn(
                                                         "rounded-full px-3 py-1 font-black text-[9px] uppercase tracking-widest border-none",
-                                                        parent.subscriptionStatus === 'ACTIVE' 
-                                                            ? "bg-emerald-500/10 text-emerald-500" 
+                                                        parent.subscriptionStatus === 'ACTIVE'
+                                                            ? "bg-emerald-500/10 text-emerald-500"
                                                             : "bg-amber-500/10 text-amber-500"
                                                     )}>
                                                         {parent.subscriptionStatus}
@@ -284,7 +285,7 @@ export default function PlatformParentsPage() {
 
             {/* Pagination Controls */}
             {!isLoading && pagination && pagination.total > 0 && (
-                <Pagination 
+                <Pagination
                     currentPage={currentPage}
                     totalPages={pagination.totalPages}
                     totalItems={pagination.total}

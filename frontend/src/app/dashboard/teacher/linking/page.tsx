@@ -105,7 +105,7 @@ function LinkingHub() {
   const { data: classroomTotalData } = useLinkRequests({ category: 'classroom', status: 'PENDING', limit: 1 }, { enabled: isPersonal });
 
   const { data: profileResponse } = useLinkProfile();
-  const profile = profileResponse?.data || {};
+  const profile = (profileResponse?.data || {}) as any;
 
   const currentSchool = schools.find(s => s.id === selectedSchoolId);
   const activeSchoolCode = currentSchool?.linkingCode || currentSchool?.schoolCode || profile?.schoolCode;
@@ -150,8 +150,8 @@ function LinkingHub() {
   const classroomPendingCount = (classroomTotalData as { pagination?: { total: number } })?.pagination?.total || 0;
 
   const currentPagination = subTab === 'active' 
-    ? (activeLinksData as { pagination?: unknown })?.pagination 
-    : (requestsData as { pagination?: unknown })?.pagination;
+    ? (activeLinksData as any)?.pagination 
+    : (requestsData as any)?.pagination;
 
   const handleRespond = async (id: string, action: 'ACCEPT' | 'REJECT') => {
     respondMutation.mutate({ id, action });
@@ -224,7 +224,7 @@ function LinkingHub() {
               <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-none shadow-none font-bold text-[10px]">Context</Badge>
             </div>
             <p className="text-3xl font-black text-gray-900 dark:text-white truncate">
-               {isPersonal ? 'Personal Hub' : (currentSchool?.name || 'School')}
+               {(isPersonal ? 'Personal Hub' : (currentSchool?.name || 'School')) as any}
             </p>
             <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-[0.10em]">Active Workspace</p>
           </CardContent>
@@ -323,7 +323,7 @@ function LinkingHub() {
                     link.peerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                     link.peerEmail.toLowerCase().includes(searchQuery.toLowerCase())
                   )
-                  .map((link: unknown) => (
+                  .map((link: any) => (
                     <MemberCard key={link.id} link={link} onRevoke={handleRevoke} onCopy={copyToClipboard} />
                   ))
               )
@@ -336,7 +336,7 @@ function LinkingHub() {
                     req.peerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                     req.peerEmail.toLowerCase().includes(searchQuery.toLowerCase())
                   )
-                  .map((req: unknown) => (
+                  .map((req: any) => (
                     <RequestCard key={req.id} req={req} user={user} onRespond={handleRespond} onCancel={handleCancel} />
                   ))
               )

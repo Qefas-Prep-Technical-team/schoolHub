@@ -6,13 +6,13 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useChildDetails } from "@/lib/api/hooks/useParentChildren";
-import { 
-  User, 
-  GraduationCap, 
-  Calendar, 
-  Activity, 
-  ShieldAlert, 
-  TrendingUp, 
+import {
+  User,
+  GraduationCap,
+  Calendar,
+  Activity,
+  ShieldAlert,
+  TrendingUp,
   ChevronRight,
   X,
   ArrowRight,
@@ -152,10 +152,10 @@ export default function ChildDetailsDrawer({
                     <div className="flex items-center gap-6">
                       <div className="relative">
                         <div className="size-32 rounded-[2.5rem] overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl relative">
-                          <Image 
-                            src={child.imageUrl || placeholderUrl} 
-                            alt={child.name} 
-                            fill 
+                          <Image
+                            src={child.imageUrl || placeholderUrl}
+                            alt={child.name}
+                            fill
                             className="object-cover"
                             unoptimized
                           />
@@ -197,9 +197,9 @@ export default function ChildDetailsDrawer({
                       <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Intelligent Logs (Recent Grades)</h4>
                       {isLoading && <div className="size-3 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />}
                     </div>
-                    
+
                     <div className="space-y-3">
-                      {fullDetails?.grades?.length > 0 ? (
+                      {fullDetails?.grades && fullDetails.grades.length > 0 ? (
                         fullDetails.grades.map((grade: any, i: number) => (
                           <div key={i} className="p-4 rounded-2xl bg-white dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:border-orange-600/30 transition-all">
                             <div className="flex items-center gap-3">

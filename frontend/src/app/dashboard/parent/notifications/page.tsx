@@ -52,7 +52,7 @@ export default function ParentNotificationsPage() {
       // Show if:
       // 1. Notification has no child context (global announcement, link request for parent, etc)
       // 2. Notification has child context and it matches selectedChildId
-      const notificationChildId = n.data?.childId || n.data?.studentId;
+      const notificationChildId = (n.data as any)?.childId || (n.data as any)?.studentId;
       const childMatch = !notificationChildId || notificationChildId === selectedChildId;
       
       const searchMatch = n.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -239,9 +239,9 @@ export default function ParentNotificationsPage() {
                               </Badge>
                             )}
                           </div>
-                          {n.data?.childName && (
+                          {(n.data as any)?.childName && (
                             <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">
-                              Re: {n.data.childName}
+                              Re: {(n.data as any).childName}
                             </span>
                           )}
                         </div>

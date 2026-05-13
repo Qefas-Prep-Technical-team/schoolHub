@@ -22,6 +22,7 @@ import { useGlobalFeatures } from '@/lib/api/hooks/useGlobalFeatures';
 import { useFetchPricing } from '@/components/pricing/query';
 import { PricingData } from '@/components/Types/Pricing';
 import { toast } from 'react-toastify';
+import { usePublicPlatformSettings } from '@/lib/api/hooks/usePlatformGovernance';
 
 export default function StudentBillingPage() {
     const router = useRouter();
@@ -36,6 +37,7 @@ export default function StudentBillingPage() {
     });
 
     const { data: features, isLoading: isFeaturesLoading } = useGlobalFeatures('student');
+    const { data: settings, isLoading: isSettingsLoading } = usePublicPlatformSettings();
 
     React.useEffect(() => {
         if (!isFeaturesLoading && features && features.billing === false) {
@@ -43,7 +45,7 @@ export default function StudentBillingPage() {
         }
     }, [features, isFeaturesLoading, router]);
 
-    if (isLoading) {
+    if (isLoading || isSettingsLoading) {
         return (
             <div className="space-y-8 pb-12 p-6">
                 <Skeleton className="h-12 w-1/3 rounded-xl" />

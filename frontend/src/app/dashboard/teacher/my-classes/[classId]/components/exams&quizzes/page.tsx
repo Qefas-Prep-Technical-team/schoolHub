@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { ExamToolbar } from './components/ExamToolbar'
 import { ExamTable } from './components/ExamTable'
-import { Exam, ExamFilter } from './components/types'
+import { Exam, ExamFilter, ExamStatus } from './components/types'
 import { teacherService } from '@/lib/api/services/teacherService'
 import { Loader2 } from 'lucide-react'
 

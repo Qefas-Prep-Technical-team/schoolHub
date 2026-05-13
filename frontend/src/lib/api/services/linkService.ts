@@ -37,15 +37,42 @@ export interface LinkRequest {
   class?: Record<string, unknown>;
 }
 
+export interface PaginatedLinkRequestsResponse {
+  success: boolean;
+  message: string;
+  items: LinkRequest[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 export const linkService = {
   // Get all link requests (sent and received)
-  getLinkRequests: async (options: { page?: number; limit?: number; category?: string; status?: string } = {}) => {
-    const response = await apiClient.get<Record<string, unknown>>("/links/requests", { params: options });
+  getLinkRequests: async (
+    options: {
+      page?: number;
+      limit?: number;
+      category?: string;
+      status?: string;
+    } = {},
+  ) => {
+    const response = await apiClient.get<Record<string, unknown>>(
+      "/links/requests",
+      { params: options },
+    );
     return response.data;
   },
-  getPendingLinkRequests: async (options: { page?: number; limit?: number; category?: string } = {}) => {
+  getPendingLinkRequests: async (
+    options: { page?: number; limit?: number; category?: string } = {},
+  ) => {
     try {
-      const response = await apiClient.get<Record<string, unknown>>("/links/requests/pending", { params: options });
+      const response = await apiClient.get<PaginatedLinkRequestsResponse>(
+        "/links/requests/pending",
+        { params: options },
+      );
       return response.data;
     } catch (error) {
       console.error("Error fetching pending requests:", error);
@@ -73,8 +100,13 @@ export const linkService = {
   },
 
   // Get active links for the current user
-  getActiveLinks: async (options: { page?: number; limit?: number; category?: string } = {}) => {
-    const response = await apiClient.get<Record<string, unknown>>("/links/active", { params: options });
+  getActiveLinks: async (
+    options: { page?: number; limit?: number; category?: string } = {},
+  ) => {
+    const response = await apiClient.get<PaginatedLinkRequestsResponse>(
+      "/links/active",
+      { params: options },
+    );
     return response.data;
   },
 
@@ -106,7 +138,9 @@ export const linkService = {
 
   // Get single link request by ID
   getLinkRequestById: async (id: string) => {
-    const response = await apiClient.get<Record<string, unknown>>(`/links/request/${id}`);
+    const response = await apiClient.get<Record<string, unknown>>(
+      `/links/request/${id}`,
+    );
     return response.data;
   },
 

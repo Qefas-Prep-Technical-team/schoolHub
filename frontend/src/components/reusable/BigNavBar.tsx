@@ -9,7 +9,7 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { LayoutDashboard, LogIn, Rocket } from 'lucide-react';
 interface BigNavBarProps {
     pages: mainTab[];
-    handleCloseNavMenu: () => void
+    handleCloseNavMenu?: () => void
 }
 const BigNavBar: FC<BigNavBarProps> = ({ pages }) => {
     const { isAuthenticated } = useAuthStore();

@@ -8,7 +8,7 @@ import FilterButton from './components/FilterButton';
 import { Exam } from './components/types';
 
 interface ClassExamsTabProps {
-  exams?: Record<string, unknown>[];
+  exams?: any[];
 }
 
 export default function ClassExamsTab({ exams = [] }: ClassExamsTabProps) {
