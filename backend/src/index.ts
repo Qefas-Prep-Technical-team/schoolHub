@@ -23,6 +23,8 @@ app.use(
       "http://localhost:3000",
       "https://qefashub.flexitistudio.com",
       "https://www.qefashub.flexitistudio.com",
+      "https://schoolhub.flexitistudio.com",
+      "https://www.schoolhub.flexitistudio.com",
     ],
     credentials: true,
   }),
