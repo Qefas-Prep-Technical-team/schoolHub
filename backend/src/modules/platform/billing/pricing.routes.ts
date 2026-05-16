@@ -32,8 +32,8 @@ router.get("/all", listAllPlans);
 router.get("/stats", getStats);
 
 // Mutate plans (OWNER & FINANCE_ADMIN only)
-router.post("/save", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), savePlan);
-router.post("/seed", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), seedPlans);
+router.post("/save", authorizePlatformRole(["OWNER", "FINANCE_ADMIN", "TECH_ADMIN"]), savePlan);
+router.post("/seed", authorizePlatformRole(["OWNER", "FINANCE_ADMIN", "TECH_ADMIN"]), seedPlans);
 
 // Feature Manifest Management
 router.get("/features/manifest", getFeatures);

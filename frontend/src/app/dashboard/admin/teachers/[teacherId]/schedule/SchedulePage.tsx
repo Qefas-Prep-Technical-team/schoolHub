@@ -5,19 +5,24 @@ import WeeklyTimetable from './WeeklyTimetable'
 import AddScheduleModal from './AddScheduleModal'
 import { useTeacherTimetable } from '@/lib/api/hooks/useAdmin'
 import { Loader2 } from 'lucide-react'
+import { format, addWeeks, startOfWeek, endOfWeek } from 'date-fns'
 
 interface SchedulePageProps {
   teacher: any
   teacherId: string
+  primaryColor: string
 }
 
-export default function SchedulePage({ teacher, teacherId }: SchedulePageProps) {
+export default function SchedulePage({ teacher, teacherId, primaryColor }: SchedulePageProps) {
   const { data: timetableData, isLoading } = useTeacherTimetable(teacherId)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState<any>(null)
+  const [currentDate, setCurrentDate] = useState(new Date())
   
-  // Hardcoded for now as it's not dynamic in the current UI design
-  const [currentWeek] = useState('Current Week Schedule')
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
+  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
+  
+  const currentWeekLabel = `${format(weekStart, 'MMM dd')} - ${format(weekEnd, 'MMM dd, yyyy')}`
 
   if (isLoading) {
     return (
@@ -29,11 +34,10 @@ export default function SchedulePage({ teacher, teacherId }: SchedulePageProps) 
   }
 
   const handlePreviousWeek = () => {
-    console.log('Previous week')
+    setCurrentDate(addWeeks(currentDate, -1))
   }
-
   const handleNextWeek = () => {
-    console.log('Next week')
+    setCurrentDate(addWeeks(currentDate, 1))
   }
 
   const handleAddClass = () => {
@@ -85,7 +89,7 @@ export default function SchedulePage({ teacher, teacherId }: SchedulePageProps) 
   return (
     <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
       <TimetableToolbar
-        currentWeek={currentWeek}
+        currentWeek={currentWeekLabel}
         onPreviousWeek={handlePreviousWeek}
         onNextWeek={handleNextWeek}
         onAddClass={handleAddClass}
@@ -95,6 +99,8 @@ export default function SchedulePage({ teacher, teacherId }: SchedulePageProps) 
       <WeeklyTimetable
         classes={formattedClasses}
         onClassClick={handleClassClick}
+        themeColor={primaryColor}
+        currentDate={currentDate}
       />
 
       <AddScheduleModal

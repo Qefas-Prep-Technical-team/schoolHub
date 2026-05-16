@@ -48,7 +48,7 @@ export default function ExamStatus({ primaryColor = '#2563eb' }: { primaryColor?
       grade: e.class?.name || 'All Grades',
       status,
       time: start ? new Date(start).toLocaleDateString() : 'TBD',
-      teacher: e.teacher?.name || 'Academic Dept',
+      teacher: e.teacher?.name || 'Teacher',
       description: e.description || ''
     };
   });
@@ -78,7 +78,7 @@ export default function ExamStatus({ primaryColor = '#2563eb' }: { primaryColor?
         return {
           icon: CheckCircle,
           color: 'bg-slate-500/10 text-slate-600 border-slate-500/20',
-          label: 'Archived',
+          label: 'Completed',
         };
     }
   };
@@ -94,7 +94,7 @@ export default function ExamStatus({ primaryColor = '#2563eb' }: { primaryColor?
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Academic Overview</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Exam Overview</span>
           </div>
           <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter italic uppercase">
             Exam Status
@@ -185,7 +185,7 @@ export default function ExamStatus({ primaryColor = '#2563eb' }: { primaryColor?
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-amber-500" />
             <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-              System Update: <span className="text-slate-900 dark:text-white">1 exam ending</span>
+              Update: <span className="text-slate-900 dark:text-white">1 exam ending</span>
             </p>
           </div>
           <button className="text-[10px] font-black hover:tracking-widest transition-all uppercase" style={{ color: primaryColor }}>

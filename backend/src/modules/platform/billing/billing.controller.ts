@@ -180,13 +180,25 @@ export const resetSchoolSubscription = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "School not found" });
     }
 
-    // 2. Perform the reset
+    // 2. Find the default FREE plan for institutions
+    const freePlan = await prisma.subscriptionPlan.findFirst({
+      where: { 
+        type: "FREE",
+        isActive: true,
+        OR: [
+          { category: "INSTITUTION" },
+          { planScope: "SCHOOL" }
+        ]
+      }
+    });
+
+    // 3. Perform the reset
     const school = await prisma.school.update({
       where: { id: schoolId },
       data: {
         plan: "FREE",
-        subscriptionPlanId: null,
-        subscriptionStatus: SubscriptionStatus.INACTIVE,
+        subscriptionPlanId: freePlan?.id || null,
+        subscriptionStatus: SubscriptionStatus.ACTIVE, // Free tier is active by default
         isTrialActive: false,
         trialUsed: false,
         trialEndsAt: null,
@@ -195,6 +207,9 @@ export const resetSchoolSubscription = async (req: Request, res: Response) => {
         maxExamsOverride: null,
         maxClassesOverride: null,
         maxStorageGbOverride: null,
+        maxTeachersOverride: null,
+        maxParentsOverride: null,
+        maxAiUsageOverride: null
       }
     });
 
@@ -252,12 +267,17 @@ export const resetStudentSubscription = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Student not found" });
     }
 
+    // Find free student plan
+    const freePlan = await prisma.subscriptionPlan.findFirst({
+      where: { type: "FREE", planScope: "STUDENT", isActive: true }
+    });
+
     const student = await prisma.student.update({
       where: { id: studentId },
       data: {
         plan: "FREE",
-        subscriptionPlanId: null,
-        subscriptionStatus: SubscriptionStatus.INACTIVE,
+        subscriptionPlanId: freePlan?.id || null,
+        subscriptionStatus: SubscriptionStatus.ACTIVE,
         isTrialActive: false,
         trialUsed: false,
         trialEndsAt: null,
@@ -316,12 +336,17 @@ export const resetTeacherSubscription = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Teacher not found" });
     }
 
+    // Find free teacher plan
+    const freePlan = await prisma.subscriptionPlan.findFirst({
+      where: { type: "FREE", planScope: "TEACHER", isActive: true }
+    });
+
     const teacher = await prisma.teacher.update({
       where: { id: teacherId },
       data: {
         plan: "FREE",
-        subscriptionPlanId: null,
-        subscriptionStatus: SubscriptionStatus.INACTIVE,
+        subscriptionPlanId: freePlan?.id || null,
+        subscriptionStatus: SubscriptionStatus.ACTIVE,
         isTrialActive: false,
         trialUsed: false,
         trialEndsAt: null,
@@ -370,16 +395,22 @@ export const resetParentSubscription = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Parent ID is required" });
     }
 
+    // Find free parent plan
+    const freePlan = await prisma.subscriptionPlan.findFirst({
+      where: { type: "FREE", planScope: "PARENT", isActive: true }
+    });
+
     // Update parent plan to FREE and clear dates
     const parent = await prisma.parent.update({
       where: { id },
       data: {
         plan: "FREE",
-        subscriptionStatus: SubscriptionStatus.INACTIVE,
+        subscriptionPlanId: freePlan?.id || null,
+        subscriptionStatus: SubscriptionStatus.ACTIVE,
         isTrialActive: false,
         trialEndsAt: null,
         subscriptionEnd: null,
-        planId: null
+        planId: null // Legacy field?
       }
     });
 

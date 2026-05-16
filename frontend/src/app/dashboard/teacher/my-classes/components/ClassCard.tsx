@@ -60,7 +60,7 @@ export default function ClassCard({ classData, onClick }: ClassCardProps) {
             {/* Middle: Sleek Wide-Pill Image */}
             <div className="relative h-32 w-full rounded-2xl overflow-hidden mb-6 shadow-md border border-slate-100 dark:border-slate-800/50">
                 <Image 
-                    src={classData.image || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop'} 
+                    src={classData.image || '/users/user 1.jpeg'} 
                     alt={classData.name}
                     width={800}
                     height={320}

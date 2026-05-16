@@ -66,7 +66,7 @@ export default function RecentActivity({ primaryColor = '#2563eb' }: { primaryCo
       variants={containerVariants}
       className={cn(
         "relative overflow-hidden group min-h-[750px] flex flex-col",
-        "bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl",
+        "bg-white/40 dark:bg-slate-950/60 backdrop-blur-3xl",
         "rounded-[3rem] border border-white/20 dark:border-slate-800/50",
         "p-8 md:p-10 transition-all duration-500"
       )}
@@ -85,7 +85,7 @@ export default function RecentActivity({ primaryColor = '#2563eb' }: { primaryCo
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Institutional Pulse</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Recent Activity</span>
           </div>
           <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter">
             Recent Activity
@@ -126,10 +126,10 @@ export default function RecentActivity({ primaryColor = '#2563eb' }: { primaryCo
                   <Bell size={32} />
                </div>
                <p className="text-sm font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest">
-                  Static Baseline
+                  No Activity
                </p>
                <p className="text-xs text-slate-500 font-bold">
-                  No institutional events captured in the last cycle.
+                  No recent events recorded.
                </p>
             </motion.div>
           ) : (
@@ -198,7 +198,7 @@ export default function RecentActivity({ primaryColor = '#2563eb' }: { primaryCo
          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <p className="hidden sm:block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Live Activity Monitor</p>
+                <p className="hidden sm:block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Activity Monitoring</p>
             </div>
             
             <div className="flex items-center gap-2">

@@ -9,6 +9,7 @@ export const createSessionService = async ({
   startDate,
   endDate,
   isActive,
+  termDates,
 }: {
   adminId: string;
   schoolId: string;
@@ -16,6 +17,7 @@ export const createSessionService = async ({
   startDate: string;
   endDate: string;
   isActive?: boolean;
+  termDates?: { term: string; startDate: string; endDate: string }[];
 }) => {
   const allowed = await hasActiveSchoolLink({
     userId: adminId,
@@ -39,6 +41,16 @@ export const createSessionService = async ({
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       isActive: !!isActive,
+      termPeriods: termDates ? {
+        create: termDates.map((td) => ({
+          term: td.term as any,
+          startDate: new Date(td.startDate),
+          endDate: new Date(td.endDate),
+        })),
+      } : undefined,
+    },
+    include: {
+      termPeriods: true,
     },
   });
 };
@@ -46,6 +58,9 @@ export const createSessionService = async ({
 export const getSessionsService = async (schoolId?: string) => {
   return prisma.session.findMany({
     where: schoolId ? { schoolId } : {},
+    include: {
+      termPeriods: true,
+    },
     orderBy: { createdAt: "desc" },
   });
 };

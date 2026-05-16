@@ -25,8 +25,8 @@ export default function SchoolPerformance({ analysis, isLoading, primaryColor = 
 
     const chartData = useMemo(() => {
         if (!analysis || !analysis.subjectBreakdown) return [
-            { name: 'Excellence', value: 0, color: primaryColor },
-            { name: 'Competency', value: 0, color: '#3b82f6' },
+            { name: 'High Performers', value: 0, color: primaryColor },
+            { name: 'Average', value: 0, color: '#3b82f6' },
             { name: 'Review', value: 0, color: '#f43f5e' },
         ];
 
@@ -36,8 +36,8 @@ export default function SchoolPerformance({ analysis, isLoading, primaryColor = 
         const total = excellentCount + goodCount + atRiskCount || 1;
 
         return [
-            { name: 'Excellence', value: Math.round((excellentCount / total) * 100), color: primaryColor },
-            { name: 'Competency', value: Math.round((goodCount / total) * 100), color: '#3b82f6' },
+            { name: 'High Performers', value: Math.round((excellentCount / total) * 100), color: primaryColor },
+            { name: 'Average', value: Math.round((goodCount / total) * 100), color: '#3b82f6' },
             { name: 'Review', value: Math.round((atRiskCount / total) * 100), color: '#f43f5e' },
         ];
     }, [analysis, primaryColor]);
@@ -59,7 +59,7 @@ export default function SchoolPerformance({ analysis, isLoading, primaryColor = 
                         >
                             <Sparkles size={24} className="animate-pulse" />
                         </div>
-                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Academic <span style={{ color: primaryColor }}>Performance</span></h2>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">School <span style={{ color: primaryColor }}>Performance</span></h2>
                     </div>
  
                     <div className="space-y-6">
@@ -92,9 +92,9 @@ export default function SchoolPerformance({ analysis, isLoading, primaryColor = 
                             <div className="p-6 rounded-[2rem] bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/10 shadow-sm transition-colors hover:bg-blue-500/10">
                                 <div className="flex items-center gap-2 text-blue-500 mb-2">
                                     <ShieldCheck size={16} />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600">System Status</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600">Status</span>
                                 </div>
-                                <p className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter italic">NORMAL</p>
+                                <p className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter italic">Normal</p>
                             </div>
                         </div>
                     </div>

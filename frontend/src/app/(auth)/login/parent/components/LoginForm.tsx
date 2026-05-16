@@ -78,7 +78,7 @@ export default function LoginForm() {
             <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
                 <div>
                     <InputField
-                        label="Guardian Email"
+                        label="Email Address"
                         icon="mail"
                         type="email"
                         placeholder="parent@school.edu"
@@ -96,7 +96,7 @@ export default function LoginForm() {
 
                 <div>
                     <InputField
-                        label="Security Phrase"
+                        label="Password"
                         icon="lock"
                         type="password"
                         placeholder="••••••••••••"
@@ -122,7 +122,7 @@ export default function LoginForm() {
                     <>
                         <div className="relative flex items-center py-4">
                             <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
-                            <span className="flex-shrink-0 mx-6 text-[10px] uppercase font-black tracking-[0.2em] text-slate-400 dark:text-slate-500">Secure SSO</span>
+                            <span className="flex-shrink-0 mx-6 text-[10px] uppercase font-black tracking-[0.2em] text-slate-400 dark:text-slate-500">Or continue with</span>
                             <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
                         </div>
                         
@@ -135,7 +135,7 @@ export default function LoginForm() {
                         href={ROUTES.AUTH.FORGOT_PASSWORD} 
                         className="text-[10px] font-black text-indigo-500 hover:text-indigo-400 uppercase tracking-widest transition-colors duration-200"
                     >
-                        Recover Access
+                        Forgot Password?
                     </Link>
                 </div>
             </form>

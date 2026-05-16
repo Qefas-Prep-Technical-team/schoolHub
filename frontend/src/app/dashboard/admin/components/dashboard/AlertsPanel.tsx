@@ -41,7 +41,7 @@ export default function AlertsPanel({ primaryColor = '#2563eb' }: { primaryColor
 
   return (
     <div 
-      className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[3rem] border border-white/20 dark:border-slate-800/50 p-10 flex-1 relative group overflow-hidden flex flex-col transition-all"
+      className="bg-white/40 dark:bg-slate-950/60 backdrop-blur-3xl rounded-[3rem] border border-white/20 dark:border-slate-800/50 p-10 flex-1 relative group overflow-hidden flex flex-col transition-all"
       style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
     >
       <div 
@@ -56,7 +56,7 @@ export default function AlertsPanel({ primaryColor = '#2563eb' }: { primaryColor
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
                     <span className="relative inline-flex rounded-full size-2 bg-rose-500" />
                 </span>
-                <span className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em]">Priority Stream</span>
+                <span className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em]">Recent Alerts</span>
             </div>
             <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter italic uppercase">
                 Alerts & Notices
@@ -164,7 +164,7 @@ export default function AlertsPanel({ primaryColor = '#2563eb' }: { primaryColor
       <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800 relative z-10 flex items-center justify-between">
          <div className="flex items-center gap-2">
             <Sparkles size={14} style={{ color: primaryColor }} />
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Monitor Active</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Monitoring</p>
          </div>
          <div className="flex items-center gap-2">
             <button 

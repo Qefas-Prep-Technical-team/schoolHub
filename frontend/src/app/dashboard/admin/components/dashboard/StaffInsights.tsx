@@ -38,7 +38,7 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
     if (summary.unassignedCount > 0) {
       list.push({
         id: 'unassigned',
-        title: `${summary.unassignedCount} Unassigned Faculty`,
+        title: `${summary.unassignedCount} Unassigned Teachers`,
         description: `Personnel like ${summary.unassignedTeachers.map(t => t.name).join(', ')} are awaiting class assignment.`,
         icon: UserX,
         iconColor: 'text-rose-600 dark:text-rose-400',
@@ -57,7 +57,7 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
       list.push({
         id: 'coverage',
         title: `${lowCoverageClasses.length} Unassigned Classes`,
-        description: `Classes including ${lowCoverageClasses.slice(0, 2).map(c => c.name).join(', ')} have no primary faculty assigned.`,
+        description: `Classes including ${lowCoverageClasses.slice(0, 2).map(c => c.name).join(', ')} have no primary teacher assigned.`,
         icon: Building,
         iconColor: 'text-amber-600 dark:text-amber-400',
         iconBg: 'bg-amber-500/10',
@@ -66,8 +66,8 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
     } else if (summary.classesSummary.length > 0) {
       list.push({
         id: 'full-coverage',
-        title: 'Full Faculty Coverage',
-        description: `All ${summary.classesSummary.length} classes have verified faculty assignment.`,
+        title: 'Full Teacher Coverage',
+        description: `All ${summary.classesSummary.length} classes have verified teacher assignment.`,
         icon: Building,
         iconColor: 'text-emerald-600 dark:text-emerald-400',
         iconBg: 'bg-emerald-500/10',
@@ -123,10 +123,10 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
           <div className="space-y-1">
             <div className="flex items-center gap-3 mb-1">
               <div className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Personnel Metrics</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Staff Overview</span>
             </div>
             <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter italic uppercase">
-              Faculty Insights
+              Teacher Updates
             </h3>
           </div>
           <div className="h-12 w-12 rounded-2xl flex items-center justify-center text-white dark:text-slate-900 group-hover:scale-110 transition-transform" style={{ backgroundColor: primaryColor, boxShadow: `0 10px 15px -3px ${primaryColor}40` }}>
@@ -148,7 +148,7 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
             </div>
             <p className="text-sm font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest leading-none mb-2">No data available currently</p>
             <p className="text-[10px] text-slate-500 font-bold italic max-w-[250px]">
-              Faculty insights will appear once teachers are assigned.
+              Teacher updates will appear once teachers are assigned.
             </p>
           </div>
         ) : (
@@ -212,11 +212,11 @@ export default function StaffInsights({ primaryColor = '#2563eb' }: { primaryCol
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Staffing Stability
+                  Staff Status
                 </span>
               </div>
               <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter italic">
-                {workload}% STABLE
+                {workload}% OPTIMAL
               </span>
             </div>
 

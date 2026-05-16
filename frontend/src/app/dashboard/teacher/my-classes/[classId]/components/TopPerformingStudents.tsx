@@ -58,7 +58,7 @@ export default function TopPerformingStudents({ students, onViewAll }: TopPerfor
               <div className="relative">
                 <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-700 shadow-md">
                     <Image
-                        src={student.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop'}
+                        src={student.avatar || `/users/user ${(idx % 6) + 1}.jpeg`}
                         alt={student.name}
                         width={56}
                         height={56}

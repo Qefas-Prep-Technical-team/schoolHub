@@ -42,7 +42,7 @@ import { format } from "date-fns"
 export default function SchoolDetailsPage() {
     const { id } = useParams()
     const router = useRouter()
-    const { data: school, isLoading } = usePlatformSchoolDetails(id as string)
+    const { data: school, isLoading, error, refetch } = usePlatformSchoolDetails(id as string)
     const { data: plans } = useAllPlatformPlans()
     const updatePlan = useUpdateSchoolPlan()
     const toggleStatus = useUpdateSchoolStatus()
@@ -81,16 +81,31 @@ export default function SchoolDetailsPage() {
         )
     }
 
-    if (!school) return (
-        <div className="flex flex-col items-center justify-center h-screen space-y-4">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">School not found</h1>
-            <Button onClick={() => router.push("/console/schools")}>Return to Ecosystem</Button>
+    if (error || !school) return (
+        <div className="flex flex-col items-center justify-center h-[70vh] space-y-6 text-center px-4">
+            <div className="h-20 w-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-2">
+                <BuildingIcon size={40} className="opacity-20" />
+            </div>
+            <div className="space-y-2">
+                <h1 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">School not found</h1>
+                <p className="text-slate-500 dark:text-slate-400 font-bold text-sm max-w-md">
+                    {error ? "We encountered an issue while retrieving this school's records. Please check the ID or try again." : "The school record you're looking for doesn't exist or has been removed from the platform."}
+                </p>
+            </div>
+            <div className="flex items-center gap-4 pt-4">
+                <Button variant="outline" className="rounded-2xl font-black uppercase tracking-widest text-[10px]" onClick={() => router.push("/console/schools")}>
+                    Back to Schools
+                </Button>
+                <Button className="rounded-2xl font-black uppercase tracking-widest text-[10px] bg-indigo-600 hover:bg-indigo-700" onClick={() => refetch()}>
+                    Retry Connection
+                </Button>
+            </div>
         </div>
     )
 
     const stats = [
         { label: "Students", value: school._count?.students || 0, icon: UsersIcon, color: "text-blue-400" },
-        { label: "Teachers", value: school._count?.Teacher_Teacher_activeSchoolIdToSchool || 0, icon: BookOpenIcon, color: "text-emerald-400" },
+        { label: "Teachers", value: school._count?.teachers || 0, icon: BookOpenIcon, color: "text-emerald-400" },
         { label: "Admins", value: school._count?.admins || 0, icon: ShieldCheckIcon, color: "text-indigo-400" },
         { label: "Exams", value: school._count?.exams || 0, icon: FileTextIcon, color: "text-orange-400" },
     ]
@@ -256,34 +271,34 @@ export default function SchoolDetailsPage() {
                                 {[
                                     { 
                                         label: "Students", 
-                                        current: school._count?.students || 0, 
-                                        total: school.maxStudentsOverride || school.subscriptionPlan?.maxStudents || 100, 
+                                        current: school.usage?.usage?.students ?? school._count?.students ?? 0, 
+                                        total: school.usage?.limits?.students ?? (school.maxStudentsOverride || school.subscriptionPlan?.maxStudents || 100), 
                                         icon: UsersIcon,
                                         color: "indigo"
                                     },
                                     { 
                                         label: "Teachers", 
-                                        current: school._count?.Teacher_Teacher_activeSchoolIdToSchool || 0, 
-                                        total: 50, // Static default or from plan
+                                        current: school.usage?.usage?.teachers ?? school._count?.teachers ?? 0, 
+                                        total: school.usage?.limits?.teachers ?? (school.maxTeachersOverride || school.subscriptionPlan?.maxTeachers || 50), 
                                         icon: BookOpenIcon,
                                         color: "emerald"
                                     },
                                     { 
                                         label: "Exams", 
-                                        current: school._count?.exams || 0, 
-                                        total: school.maxExamsOverride || school.subscriptionPlan?.maxExams || 50, 
+                                        current: school.usage?.usage?.exams ?? school._count?.exams ?? 0, 
+                                        total: school.usage?.limits?.exams ?? (school.maxExamsOverride || school.subscriptionPlan?.maxExams || 50), 
                                         icon: FileTextIcon,
                                         color: "orange"
                                     },
                                     { 
                                         label: "Cloud Storage (GB)", 
-                                        current: 0, // Placeholder
-                                        total: school.maxStorageGbOverride || school.subscriptionPlan?.maxStorageGb || 2, 
+                                        current: school.usage?.usage?.storageGb ?? 0, 
+                                        total: school.usage?.limits?.storageGb ?? (school.maxStorageGbOverride || school.subscriptionPlan?.maxStorageGb || 2), 
                                         icon: CloudIcon,
                                         color: "blue"
                                     }
                                 ].map((item, idx) => {
-                                    const percent = Math.min(Math.round((item.current / item.total) * 100), 100);
+                                    const percent = item.total > 0 ? Math.min(Math.round((item.current / item.total) * 100), 100) : 0;
                                     
                                     // Map item colors to specific classes for direct use (avoiding dynamic template literals that tailwind might miss)
                                     const styles: any = {
@@ -376,7 +391,7 @@ export default function SchoolDetailsPage() {
                                              </div>
                                              <div>
                                                  <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-2">
-                                                     {school.subscriptionPlan?.name || school.plan || "Free"}
+                                                     {school.usage?.planName || school.subscriptionPlan?.name || school.plan || "Free Tier"}
                                                  </h3>
                                                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                                      STATUS: 
@@ -426,7 +441,7 @@ export default function SchoolDetailsPage() {
                                                  </div>
                                                  <div className="text-right">
                                                      <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                         {school.maxStudentsOverride || school.subscriptionPlan?.maxStudents || "Unlimited"}
+                                                         {school.usage?.limits?.students || "Unlimited"}
                                                      </p>
                                                      {(school.maxStudentsOverride !== null && school.maxStudentsOverride !== undefined) && (
                                                          <Badge className="bg-orange-500/10 text-orange-600 border-none text-[8px] px-1.5 h-4">OVERRIDE</Badge>
@@ -449,7 +464,7 @@ export default function SchoolDetailsPage() {
                                                  </div>
                                                  <div className="text-right">
                                                      <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                         {school.maxTeachersOverride || school.subscriptionPlan?.maxTeachers || "Unlimited"}
+                                                         {school.usage?.limits?.teachers || "Unlimited"}
                                                      </p>
                                                      {(school.maxTeachersOverride !== null && school.maxTeachersOverride !== undefined) && (
                                                          <Badge className="bg-orange-500/10 text-orange-600 border-none text-[8px] px-1.5 h-4">OVERRIDE</Badge>
@@ -472,7 +487,7 @@ export default function SchoolDetailsPage() {
                                                  </div>
                                                  <div className="text-right">
                                                      <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                         {school.maxStorageGbOverride || school.subscriptionPlan?.maxStorageGb || "Unlimited"} GB
+                                                         {school.usage?.limits?.storageGb || "Unlimited"} GB
                                                      </p>
                                                      {(school.maxStorageGbOverride !== null && school.maxStorageGbOverride !== undefined) && (
                                                          <Badge className="bg-orange-500/10 text-orange-600 border-none text-[8px] px-1.5 h-4">OVERRIDE</Badge>
@@ -495,7 +510,7 @@ export default function SchoolDetailsPage() {
                                                  </div>
                                                  <div className="text-right">
                                                      <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                         {school.maxExamsOverride || school.subscriptionPlan?.maxExams || "Unlimited"}
+                                                         {school.usage?.limits?.exams || "Unlimited"}
                                                      </p>
                                                      {(school.maxExamsOverride !== null && school.maxExamsOverride !== undefined) && (
                                                          <Badge className="bg-orange-500/10 text-orange-600 border-none text-[8px] px-1.5 h-4">OVERRIDE</Badge>
@@ -518,7 +533,7 @@ export default function SchoolDetailsPage() {
                                                  </div>
                                                  <div className="text-right">
                                                      <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                         {school.maxClassesOverride || school.subscriptionPlan?.maxClasses || "Unlimited"}
+                                                         {school.usage?.limits?.classes || "Unlimited"}
                                                      </p>
                                                      {(school.maxClassesOverride !== null && school.maxClassesOverride !== undefined) && (
                                                          <Badge className="bg-orange-500/10 text-orange-600 border-none text-[8px] px-1.5 h-4">OVERRIDE</Badge>

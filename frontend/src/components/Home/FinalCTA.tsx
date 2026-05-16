@@ -14,10 +14,10 @@ const FinalCTA = () => {
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="max-w-6xl mx-auto rounded-[3.5rem] bg-slate-950 text-white p-12 md:p-24 relative overflow-hidden text-center shadow-2xl border border-white/10"
+                className="max-w-6xl mx-auto rounded-3xl md:rounded-[3.5rem] bg-[#020617] text-white p-8 md:p-24 relative overflow-hidden text-center border border-white/10 transition-colors duration-500"
             >
                 {/* Vibrant Background Gradients */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-slate-950 to-indigo-900/40 z-0" />
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-slate-950 to-indigo-900/40 z-0 transition-colors duration-500" />
                 
                 <motion.div 
                     animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
@@ -37,15 +37,15 @@ const FinalCTA = () => {
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.2 }}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 text-blue-200 rounded-full text-xs font-bold uppercase tracking-widest mb-8 shadow-xl"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 text-blue-200 rounded-full text-xs font-bold uppercase tracking-widest mb-8 shadow-xl transition-colors"
                     >
                         <Sparkles className="w-4 h-4 text-blue-400" /> Start Your Journey
                     </motion.div>
 
-                    <h2 className="text-3xl sm:text-5xl md:text-7xl font-black mb-8 leading-[1.2] sm:leading-[1.1] tracking-tight font-lexend text-transparent bg-clip-text bg-gradient-to-br from-white via-blue-100 to-indigo-200 px-4">
+                    <h2 className="text-3xl sm:text-5xl md:text-7xl font-black mb-8 leading-[1.1] tracking-tight font-lexend text-transparent bg-clip-text bg-gradient-to-br from-white via-blue-100 to-indigo-200 px-2">
                         Ready to lead the future of education?
                     </h2>
-                    <p className="text-xl md:text-2xl text-blue-100/70 mb-12 font-light leading-relaxed max-w-2xl mx-auto">
+                    <p className="text-lg md:text-2xl text-blue-100/70 mb-12 font-light leading-relaxed max-w-2xl mx-auto transition-colors px-4">
                         Join hundreds of institutions worldwide and transform your management experience today with Qefas Hub.
                     </p>
                     

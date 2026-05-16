@@ -14,7 +14,7 @@ export default function StudentLoginPage() {
                 Student Portal
               </h1>
               <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-sm">
-                Unlock your potential. Enter your educational credentials to access your personalized learning dashboard.
+                Welcome back. Log in to access your classes, assignments, and results.
               </p>
             </div>
             <LoginForm />

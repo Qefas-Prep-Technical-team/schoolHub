@@ -93,7 +93,7 @@ export default function LoginForm() {
       <div>
         <label className="flex flex-col">
           <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-2 ml-1">
-            Institutional Email
+            Email Address
           </p>
           <input
             type="email"
@@ -115,7 +115,7 @@ export default function LoginForm() {
         <label className="flex flex-col group">
           <div className="flex justify-between items-baseline">
             <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-2 ml-1">
-              Secret Passphrase
+              Password
             </p>
           </div>
 
@@ -133,7 +133,7 @@ export default function LoginForm() {
               href={ROUTES.AUTH.FORGOT_PASSWORD}
               className="text-[10px] font-black text-indigo-500 hover:text-indigo-400 uppercase tracking-widest transition-colors duration-200"
             >
-              Recover Access
+              Forgot Password?
             </Link>
           </div>
         </label>
@@ -168,7 +168,7 @@ export default function LoginForm() {
           </div>
           <div className="relative flex justify-center text-[10px] uppercase font-black tracking-[0.2em]">
               <span className="bg-white dark:bg-slate-900 px-6 text-slate-400 dark:text-slate-500">
-                  Secure SSO
+                  Or continue with
               </span>
           </div>
       </div>

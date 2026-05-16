@@ -9,7 +9,7 @@ export default function RightPanel() {
                         Teacher Portal
                     </h1>
                     <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-sm">
-                        Welcome back, Instructor. Access your educational workspace to inspire and track every learner's journey.
+                        Welcome back. Sign in to your account to manage your classes and track student progress.
                     </p>
                 </div>
 

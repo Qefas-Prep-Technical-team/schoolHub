@@ -48,7 +48,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-transparent">
       <main className="max-w-[1600px] mx-auto space-y-6 md:space-y-8 lg:space-y-10">
         
-        {/* Institutional Identity Banner */}
+        {/* School Banner */}
         <AdminHero schoolName={schoolName} primaryColor={primaryColor} />
 
         <AnimatePresence mode="wait">
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
             transition={{ duration: 0.4 }}
             className="space-y-6 md:space-y-8 lg:space-y-10"
           >
-            {/* Telemetry Insights Grid */}
+            {/* School Stats Overview */}
             <AdminInsights stats={stats} isLoading={statsLoading} primaryColor={primaryColor} />
 
             {/* Main Operational Bento Grid */}
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
               
               {/* Primary Content Area (Left, 7/8 Cols) */}
               <div className="lg:col-span-7 xl:col-span-8 space-y-6 xl:space-y-8">
-                {/* Academic Trajectory Chart */}
+                {/* Performance Chart */}
                 <SchoolPerformance analysis={analysis} isLoading={analysisLoading} primaryColor={primaryColor} />
 
                 {/* Sub-Metric Panels */}
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
                   <ExamStatus primaryColor={primaryColor} />
                 </div>
                 
-                {/* Institutional Staff Insights */}
+                {/* Staff Information */}
                 <StaffInsights primaryColor={primaryColor} />
               </div>
 
@@ -85,11 +85,11 @@ export default function AdminDashboard() {
                 <UsageLimitsCard primaryColor={primaryColor} />
 
                 {/* Quick Access Context */}
-                <div className="bg-slate-900 dark:bg-slate-100 rounded-[2rem] md:rounded-[3rem] p-6 lg:p-8 xl:p-10 text-white dark:text-slate-900 shadow-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 dark:bg-slate-900/10 rounded-full blur-3xl -translate-y-20 translate-x-10 group-hover:scale-150 transition-transform duration-700" />
+                <div className="bg-slate-900 dark:bg-slate-950 rounded-[2rem] md:rounded-[3rem] p-6 lg:p-8 xl:p-10 text-white shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 dark:bg-white/5 rounded-full blur-3xl -translate-y-20 translate-x-10 group-hover:scale-150 transition-transform duration-700" />
                   <div className="relative z-10 space-y-8">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-2xl font-black uppercase tracking-tighter italic">Administrative <span style={{ color: primaryColor }}>Pulse</span></h3>
+                        <h3 className="text-2xl font-black uppercase tracking-tighter italic">Dashboard <span style={{ color: primaryColor }}>Activity</span></h3>
                         <Sparkles size={24} style={{ color: primaryColor, fill: primaryColor }} />
                     </div>
                     <QuickActions primaryColor={primaryColor} />

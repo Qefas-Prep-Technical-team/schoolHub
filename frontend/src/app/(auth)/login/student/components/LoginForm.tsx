@@ -81,7 +81,7 @@ export default function LoginForm() {
             <div className="flex flex-col">
                 <label className="flex flex-col">
                     <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-2 ml-1">
-                        Learning Credential
+                        Email Address
                     </p>
                     <input
                         type="email"
@@ -102,7 +102,7 @@ export default function LoginForm() {
             <div className="flex flex-col">
                 <label className="flex flex-col group">
                     <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-2 ml-1">
-                        Access Key
+                        Password
                     </p>
                     <PasswordField
                         value={passwordValue || ""}
@@ -142,7 +142,7 @@ export default function LoginForm() {
                     <>
                         <div className="relative flex items-center py-4">
                             <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
-                            <span className="flex-shrink-0 mx-6 text-[10px] uppercase font-black tracking-[0.2em] text-slate-400 dark:text-slate-500">Secure SSO</span>
+                            <span className="flex-shrink-0 mx-6 text-[10px] uppercase font-black tracking-[0.2em] text-slate-400 dark:text-slate-500">Or continue with</span>
                             <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
                         </div>
                         
@@ -155,7 +155,7 @@ export default function LoginForm() {
                         href={ROUTES.AUTH.FORGOT_PASSWORD} 
                         className="text-[10px] font-black text-indigo-500 hover:text-indigo-400 uppercase tracking-widest transition-colors duration-200"
                     >
-                        Recover Access
+                        Forgot Password?
                     </Link>
                 </div>
             </div>

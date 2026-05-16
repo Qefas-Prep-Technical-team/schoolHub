@@ -65,11 +65,11 @@ export default function AdminHero({ schoolName, primaryColor = '#2563eb' }: Admi
                             className="h-12 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all text-white"
                             style={{ backgroundColor: primaryColor, boxShadow: `0 20px 25px -5px ${primaryColor}30` }}
                         >
-                            Dashboard Settings <ChevronRight size={14} />
+                            Settings <ChevronRight size={14} />
                         </Link>
                         <div className="flex items-center gap-2 text-slate-400">
                              <ShieldCheck size={18} style={{ color: primaryColor }} />
-                             <span className="text-[10px] font-black uppercase tracking-widest">Secure Session</span>
+                             <span className="text-[10px] font-black uppercase tracking-widest">Secure</span>
                         </div>
                     </div>
                 </div>
@@ -83,8 +83,8 @@ export default function AdminHero({ schoolName, primaryColor = '#2563eb' }: Admi
                             <LayoutDashboard size={24} />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">System Mode</p>
-                            <p className="font-black text-slate-900 dark:text-white whitespace-nowrap uppercase italic">Live Status</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Status</p>
+                            <p className="font-black text-slate-900 dark:text-white whitespace-nowrap uppercase italic">Live</p>
                         </div>
                     </div>
                 </div>

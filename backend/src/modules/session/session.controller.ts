@@ -8,7 +8,7 @@ import {
 
 export const createSession = async (req: Request, res: Response) => {
   try {
-    const { schoolId, name, startDate, endDate, isActive } = req.body;
+    const { schoolId, name, startDate, endDate, isActive, termDates } = req.body;
 
     if (!req.user || req.user.userType !== UserRole.ADMIN) {
       return res.status(403).json({
@@ -24,6 +24,7 @@ export const createSession = async (req: Request, res: Response) => {
       startDate,
       endDate,
       isActive,
+      termDates,
     });
 
     return res.status(201).json({

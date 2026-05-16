@@ -113,7 +113,7 @@ export interface PlatformSchoolSummary {
   createdAt: string;
   _count?: {
     students: number;
-    Teacher_Teacher_activeSchoolIdToSchool: number;
+    teachers: number;
     admins: number;
     exams: number;
     classes: number;
@@ -188,10 +188,40 @@ export interface PlatformSchoolDetails {
   }[];
   _count?: {
     students: number;
-    Teacher_Teacher_activeSchoolIdToSchool: number;
+    teachers: number;
     admins: number;
     exams: number;
     classes: number;
+  };
+  usage?: {
+    planName: string;
+    subscriptionStatus: string;
+    limits: {
+      students: number;
+      exams: number;
+      classes: number;
+      teachers: number;
+      storageGb: number;
+      aiUsage: number;
+    };
+    usage: {
+      students: number;
+      exams: number;
+      classes: number;
+      teachers: number;
+      storageGb: number;
+      aiUsage: number;
+    };
+    percentages: {
+      students: number;
+      exams: number;
+      classes: number;
+      teachers: number;
+      storageGb: number;
+      aiUsage: number;
+    };
+    planFeatures: any[];
+    isTrial: boolean;
   };
 }
 

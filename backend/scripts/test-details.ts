@@ -28,7 +28,7 @@ async function main() {
           select: {
             students: true,
             admins: true,
-            Teacher_Teacher_activeSchoolIdToSchool: true,
+            teachers: true,
             exams: true,
             classes: true
           }

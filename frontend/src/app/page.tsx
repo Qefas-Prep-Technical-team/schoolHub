@@ -6,6 +6,7 @@ import IntroSection from "@/components/Home/IntroSection";
 import KeyBenefits from "@/components/Home/KeyBenefits";
 import UsersSay from "@/components/Home/UsersSay";
 import MobileExperience from "@/components/Home/MobileExperience";
+import StatsSection from "@/components/Home/StatsSection";
 import FinalCTA from "@/components/Home/FinalCTA";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from "react";
@@ -18,32 +19,36 @@ export default function Home() {
   return (
     <QueryClientProvider client={queryClient}>
       <motion.div 
-        className="fixed top-0 left-0 right-0 h-1 bg-blue-600 z-[100] origin-left"
+        className="fixed top-0 left-0 right-0 h-1 bg-[#111827] z-[100] origin-left"
         style={{ scaleX: scrollYProgress }}
       />
-      <main className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-500 overflow-x-hidden noise-bg">
-        {/* Hero Section */}
+      {/* dashdesign01 "Lumina Finance" — light lavender-white / dark navy base */}
+      <main className="min-h-screen bg-[#fcf8ff] dark:bg-[#0a0f1e] text-[#1a1a2b] dark:text-white overflow-x-hidden transition-colors duration-300">
+        {/* Hero — split layout with dashboard mockup */}
         <IntroSection />
         
-        {/* Institutional Partners & Value Props */}
+        {/* Partner strip + Platform highlights with phone mockup */}
         <KeyBenefits />
 
-        {/* Mobile Experience Showcase */}
+        {/* Stats bar — dark navy band */}
+        <StatsSection />
+
+        {/* Mobile app CTA — phone + watch devices */}
         <MobileExperience />
 
-        {/* Features Grid */}
+        {/* Features bento grid */}
         <Features />
 
-        {/* Testimonials */}
+        {/* Testimonials — white cards */}
         <UsersSay />
 
-        {/* Video Showcase */}
+        {/* Video showcase */}
         <InAction />
 
-        {/* FAQ Section */}
+        {/* FAQ */}
         <FrequentlyAskedQuestion />
 
-        {/* Final CTA Section */}
+        {/* Final dark CTA */}
         <FinalCTA />
       </main>
     </QueryClientProvider>

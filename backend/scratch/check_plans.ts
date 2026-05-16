@@ -1,8 +1,9 @@
-import prisma from "../src/config/database";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
 async function main() {
   const plans = await prisma.subscriptionPlan.findMany({
-    select: { category: true, type: true, isActive: true }
+    where: { type: "FREE" }
   });
   console.log(JSON.stringify(plans, null, 2));
 }

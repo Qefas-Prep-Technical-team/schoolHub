@@ -118,82 +118,82 @@ export default function ManageTeachersPage() {
     ]
 
     return (
-        <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500 relative">
-            <div className="max-w-[1600px] mx-auto space-y-12">
-
+        <div className="min-h-screen bg-white dark:bg-slate-950 p-4 md:p-10 transition-colors duration-500 relative">
+            <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-12">
+            
                 {/* Header */}
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-                    <div className="space-y-4">
-                        <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 md:gap-8 px-4 md:px-0">
+                    <div className="space-y-3 md:space-y-4 text-center lg:text-left">
+                        <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 mx-auto lg:mx-0">
                             <div className="size-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Teacher Management</span>
+                            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Teacher Management</span>
                         </div>
                         <div>
-                            <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
+                            <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-tight md:leading-[0.9]">
                                 Teachers<span style={{ color: primaryColor }}>.</span>
                             </h1>
-                            <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
+                            <p className="mt-2 md:mt-4 text-sm md:text-lg font-medium text-slate-500 max-w-xl mx-auto lg:mx-0">
                                 Manage all school teachers, their assigned subjects, and verify new teacher accounts.
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center lg:justify-start gap-4">
                         <Button
                             style={{ backgroundColor: primaryColor, boxShadow: `0 20px 25px -5px ${primaryColor}4D` }}
-                            className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 hover:scale-105 active:scale-95 transition-all border-0"
+                            className="h-14 md:h-16 w-full md:w-auto px-8 md:px-10 rounded-2xl md:rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 hover:scale-105 active:scale-95 transition-all border-0 text-[10px] md:text-base"
                             onClick={() => setIsAddModalOpen(true)}
                         >
-                            <UserPlus size={20} strokeWidth={3} />
+                            <UserPlus size={18} strokeWidth={3} />
                             Add New Teacher
                         </Button>
                     </div>
                 </div>
 
                 {/* Analytics Hub */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-8 px-4 md:px-0">
                     {isLoading
                         ? Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 space-y-6">
-                                <Skeleton className="h-14 w-14 rounded-2xl" />
+                            <div key={i} className="p-6 md:p-10 rounded-2xl md:rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 space-y-4 md:space-y-6">
+                                <Skeleton className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-2xl" />
                                 <div className="space-y-2">
-                                    <Skeleton className="h-3 w-24" />
-                                    <Skeleton className="h-12 w-20" />
+                                    <Skeleton className="h-3 w-16 md:w-24" />
+                                    <Skeleton className="h-8 md:h-12 w-12 md:w-20" />
                                 </div>
                             </div>
                         ))
                         : stats.map((stat, index) => (
                             <div
                                 key={index}
-                                className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 relative overflow-hidden group transition-all"
-                                style={{ boxShadow: `0 25px 50px -12px ${stat.color}15` }}
+                                className="p-5 md:p-10 rounded-2xl md:rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 relative overflow-hidden group transition-all"
+                                style={{ boxShadow: `0 15px 30px -12px ${stat.color}10` }}
                             >
                                 <div
-                                    className="absolute -right-6 -bottom-6 size-40 rounded-full blur-3xl opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none"
+                                    className="absolute -right-4 md:-right-6 -bottom-4 md:-bottom-6 size-24 md:size-40 rounded-full blur-2xl md:blur-3xl opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none"
                                     style={{ backgroundColor: stat.color }}
                                 />
-                                <div className="relative z-10 space-y-6">
+                                <div className="relative z-10 space-y-4 md:space-y-6">
                                     <div className="flex items-center justify-between">
                                         <div
-                                            className="size-14 rounded-2xl flex items-center justify-center border shadow-inner transition-transform duration-500 group-hover:scale-110"
+                                            className="size-10 md:size-14 rounded-xl md:rounded-2xl flex items-center justify-center border shadow-inner transition-transform duration-500 group-hover:scale-110"
                                             style={{
                                                 backgroundColor: `${stat.color}10`,
                                                 borderColor: `${stat.color}20`,
                                                 color: stat.color
                                             }}
                                         >
-                                            <stat.icon size={24} strokeWidth={2.5} />
+                                            <stat.icon size={20} strokeWidth={2.5} />
                                         </div>
-                                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                                        <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[9px] font-black uppercase tracking-widest text-slate-400">
                                             <TrendingUp size={10} /> Live
                                         </div>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{stat.label}</p>
-                                        <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
+                                        <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5 md:mb-1">{stat.label}</p>
+                                        <h3 className="text-2xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
                                             {stat.value}
                                         </h3>
-                                        <p className="text-[10px] font-bold text-slate-500 mt-4 uppercase tracking-widest flex items-center gap-2">
+                                        <p className="hidden md:flex text-[10px] font-bold text-slate-500 mt-4 uppercase tracking-widest items-center gap-2">
                                             <Zap size={12} className="text-slate-300" /> {stat.desc}
                                         </p>
                                     </div>
@@ -204,9 +204,9 @@ export default function ManageTeachersPage() {
                 </div>
 
                 {/* Controls */}
-                <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-                    <div className="relative group flex-1 max-w-xl">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 md:gap-6 p-3 md:p-4 rounded-2xl md:rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 mx-4 md:mx-0">
+                    <div className="relative group flex-1">
+                        <Search className="absolute left-5 md:left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={18} />
                         <input
                             type="text"
                             placeholder="Search teachers..."
@@ -215,30 +215,30 @@ export default function ManageTeachersPage() {
                                 setSearchTerm(e.target.value)
                                 setCurrentPage(0)
                             }}
-                            className="w-full h-16 pl-16 pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
+                            className="w-full h-12 md:h-16 pl-12 md:pl-16 pr-5 md:pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-xl md:rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-sm md:text-base text-slate-700 dark:text-slate-200"
                             style={{ '--tw-ring-color': `${primaryColor}20` } as any}
                         />
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <div className="flex bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-2xl p-1.5 shadow-sm">
+                    <div className="flex items-center gap-3 md:gap-4 justify-between sm:justify-end">
+                        <div className="flex bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-xl md:rounded-2xl p-1 md:p-1.5 shadow-sm">
                             <button
                                 onClick={() => setViewMode('grid')}
-                                className={cn("size-12 rounded-xl flex items-center justify-center transition-all", viewMode === 'grid' ? "bg-slate-50 dark:bg-white/10 shadow-inner" : "text-slate-400 hover:text-slate-600")}
+                                className={cn("size-10 md:size-12 rounded-lg md:rounded-xl flex items-center justify-center transition-all", viewMode === 'grid' ? "bg-slate-50 dark:bg-white/10 shadow-inner" : "text-slate-400 hover:text-slate-600")}
                                 style={{ color: viewMode === 'grid' ? primaryColor : undefined }}
                             >
-                                <LayoutGrid size={20} strokeWidth={3} />
+                                <LayoutGrid size={18} strokeWidth={3} />
                             </button>
                             <button
                                 onClick={() => setViewMode('list')}
-                                className={cn("size-12 rounded-xl flex items-center justify-center transition-all", viewMode === 'list' ? "bg-slate-50 dark:bg-white/10 shadow-inner" : "text-slate-400 hover:text-slate-600")}
+                                className={cn("size-10 md:size-12 rounded-lg md:rounded-xl flex items-center justify-center transition-all", viewMode === 'list' ? "bg-slate-50 dark:bg-white/10 shadow-inner" : "text-slate-400 hover:text-slate-600")}
                                 style={{ color: viewMode === 'list' ? primaryColor : undefined }}
                             >
-                                <List size={20} strokeWidth={3} />
+                                <List size={18} strokeWidth={3} />
                             </button>
                         </div>
-                        <Button variant="outline" className="h-16 px-8 rounded-[2rem] border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-3 hidden sm:flex hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
-                            <Download size={22} strokeWidth={3} className="text-slate-400" />
+                        <Button variant="outline" className="h-12 md:h-16 px-4 md:px-8 rounded-xl md:rounded-[2rem] border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                            <Download size={18} strokeWidth={3} className="text-slate-400" />
                         </Button>
                     </div>
                 </div>
@@ -251,28 +251,28 @@ export default function ManageTeachersPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8"
                         >
                             {isLoading ? (
-                                [1, 2, 3].map(i => <Skeleton key={i} className="h-[400px] rounded-[4rem] bg-slate-50 dark:bg-white/5" />)
+                                [1, 2, 3].map(i => <Skeleton key={i} className="h-[300px] md:h-[400px] rounded-none md:rounded-[4rem] bg-slate-50 dark:bg-white/5" />)
                             ) : paginatedTeachers.map((teacher) => (
                                 <div
                                     key={teacher.id}
-                                    className="group relative bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[4rem] p-10 hover:-translate-y-2 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col"
+                                    className="group relative bg-white dark:bg-slate-900/40 backdrop-blur-3xl border-y md:border border-slate-100 dark:border-white/5 rounded-none md:rounded-[4rem] p-6 md:p-10 md:hover:-translate-y-2 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col"
                                     style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
                                     onClick={() => router.push(`/dashboard/admin/teachers/${teacher.id}`)}
                                 >
                                     <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full blur-[80px] opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none" style={{ backgroundColor: primaryColor }} />
 
-                                    <div className="flex justify-between items-start mb-10 relative z-10">
+                                    <div className="flex justify-between items-start mb-6 md:mb-10 relative z-10">
                                         <div
-                                            className="size-24 rounded-[2.5rem] overflow-hidden border-4 border-white dark:border-slate-800 group-hover:scale-110 transition-transform duration-500"
-                                            style={{ boxShadow: `0 20px 25px -5px ${primaryColor}33` }}
+                                            className="size-20 md:size-24 rounded-2xl md:rounded-[2.5rem] overflow-hidden border-2 md:border-4 border-white dark:border-slate-800 md:group-hover:scale-110 transition-transform duration-500"
+                                            style={{ boxShadow: `0 15px 20px -5px ${primaryColor}22` }}
                                         >
                                             <img src={teacher.profileImage} alt={teacher.name} className="size-full object-cover" />
                                         </div>
                                         <div className={cn(
-                                            "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                                            "px-3 md:px-4 py-1 md:py-1.5 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest border",
                                             teacher.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
                                         )}>
                                             {teacher.status}
@@ -280,55 +280,57 @@ export default function ManageTeachersPage() {
                                     </div>
 
                                     <div className="flex-1 relative z-10">
-                                        <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-2 leading-[0.9] uppercase tracking-tighter">
+                                        <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mb-1.5 md:mb-2 leading-tight md:leading-[0.9] uppercase tracking-tighter">
                                             {teacher.name}
                                         </h3>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">{teacher.email}</p>
+                                        <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 md:mb-8">{teacher.email}</p>
 
-                                        <div className="flex flex-wrap gap-2 mb-10">
+                                        <div className="flex flex-wrap gap-1.5 md:gap-2 mb-6 md:mb-10">
                                             {teacher.subjects.slice(0, 3).map((subject: string, i: number) => (
-                                                <span key={i} className="text-[9px] font-black bg-slate-50 dark:bg-white/5 text-slate-500 px-3 py-1 rounded-lg border border-slate-100 dark:border-white/10 uppercase tracking-tighter">
+                                                <span key={i} className="text-[8px] md:text-[9px] font-black bg-slate-50 dark:bg-white/5 text-slate-500 px-2.5 md:px-3 py-1 rounded-md md:rounded-lg border border-slate-100 dark:border-white/10 uppercase tracking-tighter">
                                                     {subject}
                                                 </span>
                                             ))}
                                             {teacher.subjects.length > 3 && (
-                                                <span className="text-[9px] font-black bg-slate-50 dark:bg-white/5 text-slate-400 px-3 py-1 rounded-lg border border-slate-100 dark:border-white/10 uppercase tracking-tighter">
-                                                    +{teacher.subjects.length - 3} More
+                                                <span className="text-[8px] md:text-[9px] font-black bg-slate-50 dark:bg-white/5 text-slate-400 px-2.5 md:px-3 py-1 rounded-md md:rounded-lg border border-slate-100 dark:border-white/10 uppercase tracking-tighter">
+                                                    +{teacher.subjects.length - 3}
                                                 </span>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="pt-8 border-t border-slate-50 dark:border-white/5 flex items-center justify-between relative z-10">
+                                    <div className="pt-6 md:pt-8 border-t border-slate-50 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Faculty ID</span>
+                                            <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest">Faculty ID</span>
                                             <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tighter">{teacher.teacherCode || 'UNASSIGNED'}</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            {teacher.status === 'pending' && teacher.isClaimed === false && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={(e) => { e.stopPropagation(); handleResendEmail(teacher.id); }}
-                                                    className="h-8 px-3 rounded-lg text-[10px] font-black uppercase tracking-widest bg-amber-50 dark:bg-amber-500/10 text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-all border border-amber-100 dark:border-amber-500/20"
-                                                >
-                                                    <Mail size={12} className="mr-1.5" />
-                                                    Resend Invite
-                                                </Button>
-                                            )}
-                                            {teacher.primarySchoolId === schoolId && !teacher.isClaimed && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={(e) => { e.stopPropagation(); setEditingTeacher(teacher); }}
-                                                    className="h-8 px-3 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 dark:bg-white/5 text-slate-600 hover:bg-slate-100 dark:hover:bg-white/10 transition-all border border-slate-200 dark:border-white/10"
-                                                >
-                                                    <Edit2 size={12} className="mr-1.5" />
-                                                    Edit
-                                                </Button>
-                                            )}
-                                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all" style={{ color: primaryColor }}>
-                                                <span>Access Profile</span>
+                                        <div className="flex items-center gap-2 justify-between md:justify-end">
+                                            <div className="flex items-center gap-2">
+                                                {teacher.status === 'pending' && teacher.isClaimed === false && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={(e) => { e.stopPropagation(); handleResendEmail(teacher.id); }}
+                                                        className="h-8 px-3 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-amber-50 dark:bg-amber-500/10 text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-all border border-amber-100 dark:border-amber-500/20"
+                                                    >
+                                                        <Mail size={12} className="mr-1.5" />
+                                                        Resend
+                                                    </Button>
+                                                )}
+                                                {teacher.primarySchoolId === schoolId && !teacher.isClaimed && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={(e) => { e.stopPropagation(); setEditingTeacher(teacher); }}
+                                                        className="h-8 px-3 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-slate-50 dark:bg-white/5 text-slate-600 hover:bg-slate-100 dark:hover:bg-white/10 transition-all border border-slate-200 dark:border-white/10"
+                                                    >
+                                                        <Edit2 size={12} className="mr-1.5" />
+                                                        Edit
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all" style={{ color: primaryColor }}>
+                                                <span className="hidden sm:inline">Access Profile</span>
                                                 <ArrowRight size={14} strokeWidth={3} />
                                             </div>
                                         </div>
@@ -342,18 +344,18 @@ export default function ManageTeachersPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[4rem] overflow-hidden transition-all"
+                            className="bg-white dark:bg-slate-950 border-y md:border border-slate-100 dark:border-white/5 rounded-none md:rounded-[4rem] overflow-hidden transition-all"
                             style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
                         >
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
+                            <div className="overflow-x-auto scrollbar-hide">
+                                <table className="w-full text-left border-collapse min-w-[800px] lg:min-w-0">
                                     <thead>
                                         <tr className="border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
-                                            <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Personnel</th>
-                                            <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Specialization</th>
-                                            <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">ID HASH</th>
-                                            <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Auth Status</th>
-                                            <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                                            <th className="px-6 md:px-10 py-6 md:py-8 text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Personnel</th>
+                                            <th className="px-6 md:px-10 py-6 md:py-8 text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Specialization</th>
+                                            <th className="px-6 md:px-10 py-6 md:py-8 text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">ID HASH</th>
+                                            <th className="px-6 md:px-10 py-6 md:py-8 text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Auth Status</th>
+                                            <th className="px-6 md:px-10 py-6 md:py-8 text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50 dark:divide-white/5">
@@ -361,75 +363,53 @@ export default function ManageTeachersPage() {
                                             <tr>
                                                 <td colSpan={5} className="px-10 py-40 text-center">
                                                     <div className="flex flex-col items-center gap-6">
-                                                        <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 animate-spin" style={{ borderTopColor: primaryColor }} />
-                                                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading teachers...</span>
+                                                        <div className="size-12 md:size-16 rounded-full border-4 border-slate-100 dark:border-white/5 animate-spin" style={{ borderTopColor: primaryColor }} />
+                                                        <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading teachers...</span>
                                                     </div>
                                                 </td>
                                             </tr>
                                         ) : paginatedTeachers.map((teacher) => (
                                             <tr key={teacher.id} className="group hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-all cursor-pointer" onClick={() => router.push(`/dashboard/admin/teachers/${teacher.id}`)}>
-                                                <td className="px-10 py-8">
-                                                    <div className="flex items-center gap-6">
-                                                        <div className="size-16 rounded-3xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-lg group-hover:scale-110 transition-transform">
+                                                <td className="px-6 md:px-10 py-6 md:py-8">
+                                                    <div className="flex items-center gap-4 md:gap-6">
+                                                        <div className="size-12 md:size-16 rounded-2xl md:rounded-3xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-lg md:group-hover:scale-110 transition-transform">
                                                             <img src={teacher.profileImage} alt={teacher.name} className="size-full object-cover" />
                                                         </div>
                                                         <div>
-                                                            <div className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                                                            <div className="text-base md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
                                                                 {teacher.name}
                                                             </div>
-                                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{teacher.email}</div>
+                                                            <div className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5 md:mt-1">{teacher.email}</div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-10 py-8">
-                                                    <div className="flex flex-wrap gap-2">
+                                                <td className="px-6 md:px-10 py-6 md:py-8">
+                                                    <div className="flex flex-wrap gap-1.5 md:gap-2">
                                                         {teacher.subjects.slice(0, 2).map((subject: string, i: number) => (
-                                                            <Badge key={i} variant="outline" className="rounded-xl px-3 py-1 text-[9px] font-black uppercase tracking-widest bg-slate-50/50 dark:bg-white/5 border-none text-slate-500">
+                                                            <Badge key={i} variant="outline" className="rounded-lg md:rounded-xl px-2.5 md:px-3 py-0.5 md:py-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest bg-slate-50/50 dark:bg-white/5 border-none text-slate-500">
                                                                 {subject}
                                                             </Badge>
                                                         ))}
-                                                        {teacher.subjects.length > 2 && <span className="text-[9px] font-black text-slate-400 uppercase">+{teacher.subjects.length - 2} More</span>}
+                                                        {teacher.subjects.length > 2 && <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase">+{teacher.subjects.length - 2}</span>}
                                                     </div>
                                                 </td>
-                                                <td className="px-10 py-8">
-                                                    <code className="text-[10px] font-black text-slate-400 bg-slate-100 dark:bg-white/5 px-4 py-1.5 rounded-xl uppercase tracking-widest border border-slate-200 dark:border-white/5">
+                                                <td className="px-6 md:px-10 py-6 md:py-8">
+                                                    <code className="text-[9px] md:text-[10px] font-black text-slate-400 bg-slate-100 dark:bg-white/5 px-3 md:px-4 py-1 md:py-1.5 rounded-lg md:rounded-xl uppercase tracking-widest border border-slate-200 dark:border-white/5">
                                                         {teacher.teacherCode || 'UNASSIGNED'}
                                                     </code>
                                                 </td>
-                                                <td className="px-10 py-8">
+                                                <td className="px-6 md:px-10 py-6 md:py-8">
                                                     <div className="flex items-center gap-2">
                                                         <div className={cn("size-2 rounded-full", teacher.status === 'active' ? 'bg-emerald-500' : 'bg-amber-500')} />
-                                                        <span className={cn("text-[10px] font-black uppercase tracking-widest", teacher.status === 'active' ? 'text-emerald-600' : 'text-amber-600')}>
-                                                            {teacher.status === 'active' ? 'Verified Teacher' : 'Pending Verification'}
+                                                        <span className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-widest", teacher.status === 'active' ? 'text-emerald-600' : 'text-amber-600')}>
+                                                            {teacher.status === 'active' ? 'Verified' : 'Pending'}
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="px-10 py-8 text-right">
+                                                <td className="px-6 md:px-10 py-6 md:py-8 text-right">
                                                     <div className="flex justify-end items-center gap-2">
-                                                        {teacher.status === 'pending' && teacher.isClaimed === false && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={(e) => { e.stopPropagation(); handleResendEmail(teacher.id); }}
-                                                                className="h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest bg-amber-50 dark:bg-amber-500/10 text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-all"
-                                                            >
-                                                                <Mail size={14} className="mr-2" />
-                                                                Resend Invite
-                                                            </Button>
-                                                        )}
-                                                        {teacher.primarySchoolId === schoolId && !teacher.isClaimed && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={(e) => { e.stopPropagation(); setEditingTeacher(teacher); }}
-                                                                className="h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 dark:bg-white/5 text-slate-600 hover:bg-slate-100 dark:hover:bg-white/10 transition-all"
-                                                            >
-                                                                <Edit2 size={14} className="mr-2" />
-                                                                Edit
-                                                            </Button>
-                                                        )}
-                                                        <Button variant="ghost" size="icon" className="size-12 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm border border-transparent hover:border-slate-100 transition-all">
-                                                            <ChevronRight size={20} className="text-slate-400" />
+                                                        <Button variant="ghost" size="icon" className="size-10 md:size-12 rounded-xl md:rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm border border-transparent hover:border-slate-100 transition-all">
+                                                            <ChevronRight size={18} className="text-slate-400" />
                                                         </Button>
                                                     </div>
                                                 </td>
@@ -444,22 +424,22 @@ export default function ManageTeachersPage() {
 
                 {/* Pagination Controls */}
                 {!isLoading && filteredTeachers.length > 0 && (
-                    <div className="flex items-center justify-between p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-3xl" style={{ boxShadow: `0 25px 50px -12px ${primaryColor}10` }}>
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-4 md:p-6 bg-white dark:bg-slate-900 border-y md:border border-slate-100 dark:border-white/5 rounded-none md:rounded-3xl mx-4 md:mx-0" style={{ boxShadow: `0 25px 50px -12px ${primaryColor}10` }}>
+                        <span className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">
                             Showing {currentPage * itemsPerPage + 1} – {Math.min((currentPage + 1) * itemsPerPage, filteredTeachers.length)} of {filteredTeachers.length} Personnel
                         </span>
 
                         <div className="flex items-center gap-2">
                             <Button
                                 variant="outline"
-                                className="h-10 px-4 rounded-xl text-xs font-black uppercase tracking-widest border-slate-100 dark:border-white/5"
+                                className="h-10 px-4 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest border-slate-100 dark:border-white/5"
                                 onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
                                 disabled={currentPage === 0}
                             >
                                 <ChevronLeft size={16} className="mr-2" />
                                 Prev
                             </Button>
-                            <div className="flex items-center gap-1 px-4">
+                            <div className="hidden sm:flex items-center gap-1 px-4">
                                 {Array.from({ length: totalPages }).map((_, i) => (
                                     <button
                                         key={i}
@@ -475,7 +455,7 @@ export default function ManageTeachersPage() {
                             </div>
                             <Button
                                 variant="outline"
-                                className="h-10 px-4 rounded-xl text-xs font-black uppercase tracking-widest border-slate-100 dark:border-white/5"
+                                className="h-10 px-4 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest border-slate-100 dark:border-white/5"
                                 onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
                                 disabled={currentPage >= totalPages - 1}
                             >

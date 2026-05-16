@@ -2,9 +2,11 @@
 
 import React from 'react';
 import NextImage from 'next/image';
+import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuthModalStore } from '@/utils/AuthModalStore';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { LogIn, UserPlus, GraduationCap, ChevronLeft, Shield, User, Users } from 'lucide-react';
 
 // Dynamic imports for forms to keep the initial bundle light
@@ -36,6 +38,7 @@ const SchoolRegisterForm = dynamic(() => import('@/app/(auth)/signup/school/comp
 
 const AuthModal = () => {
     const { isOpen, view, selectedRole, closeModal, setView, setRole } = useAuthModalStore();
+    const router = useRouter();
 
     if (!isOpen) return null;
 
@@ -120,21 +123,28 @@ const AuthModal = () => {
                         <div className="space-y-6">
                             {renderHeader("Select your role", "Choose your category to continue", true)}
                             <div className="grid grid-cols-2 gap-4">
-                                {roles.map((role) => (
-                                    <button
-                                        key={role.key}
-                                        onClick={() => {
-                                            setRole(role.key as "school" | "TEACHER" | "STUDENT" | "PARENT");
-                                            setView(view === 'login-role' ? 'login-form' : 'signup-form');
-                                        }}
-                                        className="flex flex-col items-center p-6 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-primary hover:shadow-xl hover:-translate-y-1 transition-all group bg-slate-50/50 dark:bg-slate-800/50"
-                                    >
-                                        <div className={`w-14 h-14 rounded-full ${role.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner`}>
-                                            <role.icon className={`w-7 h-7 ${role.color}`} />
-                                        </div>
-                                        <span className="font-bold text-slate-900 dark:text-white">{role.title}</span>
-                                    </button>
-                                ))}
+                                {roles.map((role) => {
+                                    const type = view === 'login-role' ? 'login' : 'signup';
+                                    let rolePath = role.key.toLowerCase();
+                                    if (type === 'login' && rolePath === 'school') {
+                                        rolePath = 'school-admin';
+                                    }
+                                    const href = `/${type}/${rolePath}`;
+
+                                    return (
+                                        <Link
+                                            key={role.key}
+                                            href={href}
+                                            onClick={() => closeModal()}
+                                            className="flex flex-col items-center p-6 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-primary hover:shadow-xl hover:-translate-y-1 transition-all group bg-slate-50/50 dark:bg-slate-800/50"
+                                        >
+                                            <div className={`w-14 h-14 rounded-full ${role.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner`}>
+                                                <role.icon className={`w-7 h-7 ${role.color}`} />
+                                            </div>
+                                            <span className="font-bold text-slate-900 dark:text-white">{role.title}</span>
+                                        </Link>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

@@ -29,9 +29,9 @@ router.get("/schools", listSchoolSubscriptions);
 /**
  * @route   POST /api/platform/billing/reset
  */
-router.post("/reset", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), resetSchoolSubscription);
-router.post("/reset-student", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), resetStudentSubscription);
-router.post("/reset-teacher", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), resetTeacherSubscription);
-router.post("/reset-parent", authorizePlatformRole(["OWNER", "FINANCE_ADMIN"]), resetParentSubscription);
+router.post("/reset", authorizePlatformRole(["OWNER", "FINANCE_ADMIN", "TECH_ADMIN"]), resetSchoolSubscription);
+router.post("/reset-student", authorizePlatformRole(["OWNER", "FINANCE_ADMIN", "TECH_ADMIN"]), resetStudentSubscription);
+router.post("/reset-teacher", authorizePlatformRole(["OWNER", "FINANCE_ADMIN", "TECH_ADMIN"]), resetTeacherSubscription);
+router.post("/reset-parent", authorizePlatformRole(["OWNER", "FINANCE_ADMIN", "TECH_ADMIN"]), resetParentSubscription);
 
 export default router;

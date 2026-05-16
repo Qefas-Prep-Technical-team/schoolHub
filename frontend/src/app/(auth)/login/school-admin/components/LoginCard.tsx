@@ -8,7 +8,7 @@ export default function LoginCard() {
           Admin Portal
         </h1>
         <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-sm">
-          Welcome back. Overseas, analyze, and manage your institution from the global main HQ.
+          Welcome back. Sign in to oversee and manage your school&apos;s operations.
         </p>
       </div>
 

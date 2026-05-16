@@ -1,5 +1,13 @@
 import { apiClient } from "../client";
 
+export interface TermPeriod {
+  id: string;
+  sessionId: string;
+  term: "FIRST" | "SECOND" | "THIRD";
+  startDate: string;
+  endDate: string;
+}
+
 export interface Session {
   id: string;
   name: string; // e.g., "2023/2024 Academic Session"
@@ -9,6 +17,7 @@ export interface Session {
   schoolId: string;
   createdAt: string;
   updatedAt: string;
+  termPeriods?: TermPeriod[];
 }
 
 export interface CreateSessionDTO {
@@ -16,6 +25,7 @@ export interface CreateSessionDTO {
   startDate: string;
   endDate: string;
   schoolId: string;
+  termDates?: { term: string; startDate: string; endDate: string }[];
 }
 
 export const sessionService = {

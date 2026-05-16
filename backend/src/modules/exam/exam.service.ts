@@ -212,19 +212,28 @@ export const getExamsService = async (filters: {
         take: 1, // Only need the most recent/unique attempt
         orderBy: { updatedAt: 'desc' }
       } : false,
+      _count: {
+        select: { examAttempts: true }
+      }
     },
     orderBy: {
       createdAt: "desc",
     },
   });
 
-  const formattedExams = (exams as any[]).map(exam => ({
-    ...exam,
-    subjectExamPapers: exam.subjectExamPapers.map((link: any) => ({
+  const formattedExams = (exams as any[]).map(exam => {
+    const papers = exam.subjectExamPapers.map((link: any) => ({
       ...link.subjectPaper,
       examId: link.examId
-    }))
-  }));
+    }));
+    
+    return {
+      ...exam,
+      subjectExamPapers: papers,
+      totalPapers: papers.length,
+      totalQuestions: papers.reduce((sum: number, p: any) => sum + (p.questions?.length || 0), 0)
+    };
+  });
 
   // If filtered for a student, enforce result visibility logic
   if (studentId) {
@@ -374,6 +383,9 @@ export const getSubjectPapersService = async (filters: {
       },
       questions: {
         select: { id: true }
+      },
+      _count: {
+        select: { examAttempts: true }
       }
     },
     orderBy: { createdAt: 'desc' }

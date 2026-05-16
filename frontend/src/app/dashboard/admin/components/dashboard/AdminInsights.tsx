@@ -44,7 +44,7 @@ export default function AdminInsights({ stats, isLoading, primaryColor = '#2563e
             trend: "Active"
         },
         {
-            label: "Active Courses",
+            label: "Total Subjects",
             value: stats?.subjects?.toLocaleString() || "0",
             icon: BookOpen,
             color: "text-emerald-600",
@@ -52,7 +52,7 @@ export default function AdminInsights({ stats, isLoading, primaryColor = '#2563e
             trend: "Verified"
         },
         {
-            label: "School Status",
+            label: "Attendance Rate",
             value: "98%",
             icon: CalendarCheck,
             color: "text-rose-600",

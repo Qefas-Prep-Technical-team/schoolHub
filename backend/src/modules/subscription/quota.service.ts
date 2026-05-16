@@ -55,12 +55,12 @@ export const getSchoolUsageService = async (schoolId: string) => {
     : (PLAN_LIMITS[planName.toUpperCase()] || PLAN_LIMITS[DEFAULT_PLAN]);
 
   const limits = {
-    students: (school as any).maxStudentsOverride ?? baseLimits.maxStudents,
-    exams: (school as any).maxExamsOverride ?? baseLimits.maxExams,
-    classes: (school as any).maxClassesOverride ?? baseLimits.maxClasses,
-    teachers: (school as any).maxTeachersOverride ?? baseLimits.maxTeachers,
-    storageGb: (school as any).maxStorageGbOverride ?? baseLimits.maxStorageGb,
-    aiUsage: (school as any).maxAiUsageOverride ?? baseLimits.maxAiUsage,
+    students: school.maxStudentsOverride ?? baseLimits.maxStudents,
+    exams: school.maxExamsOverride ?? baseLimits.maxExams,
+    classes: school.maxClassesOverride ?? baseLimits.maxClasses,
+    teachers: school.maxTeachersOverride ?? baseLimits.maxTeachers,
+    storageGb: school.maxStorageGbOverride ?? baseLimits.maxStorageGb,
+    aiUsage: school.maxAiUsageOverride ?? baseLimits.maxAiUsage,
   };
 
   // 4. Resolve Feature-Specific Access and Limits
@@ -220,12 +220,12 @@ export const getUserUsageService = async (userId: string, role: string) => {
     : (PLAN_LIMITS[planName.toUpperCase()] || PLAN_LIMITS[DEFAULT_PLAN]);
 
   const limits = {
-    students: (user as any).maxStudentsOverride ?? baseLimits.maxStudents,
-    exams: (user as any).maxExamsOverride ?? baseLimits.maxExams,
-    classes: (user as any).maxClassesOverride ?? baseLimits.maxClasses,
-    teachers: (user as any).maxTeachersOverride ?? baseLimits.maxTeachers,
-    storageGb: (user as any).maxStorageGbOverride ?? baseLimits.maxStorageGb,
-    aiUsage: (user as any).maxAiUsageOverride ?? baseLimits.maxAiUsage,
+    students: user.maxStudentsOverride ?? baseLimits.maxStudents,
+    exams: user.maxExamsOverride ?? baseLimits.maxExams,
+    classes: user.maxClassesOverride ?? baseLimits.maxClasses,
+    teachers: user.maxTeachersOverride ?? baseLimits.maxTeachers,
+    storageGb: user.maxStorageGbOverride ?? baseLimits.maxStorageGb,
+    aiUsage: user.maxAiUsageOverride ?? baseLimits.maxAiUsage,
   };
 
   // 4. Resolve Feature-Specific Access (Metrics vs Chips)

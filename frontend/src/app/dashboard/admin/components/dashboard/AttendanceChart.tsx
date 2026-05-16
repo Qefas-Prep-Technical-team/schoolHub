@@ -94,7 +94,7 @@ export default function AcademicPerformanceChart({ primaryColor = '#2563eb' }: {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="h-2 w-2 rounded-full animate-bounce" style={{ backgroundColor: primaryColor }} />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Academic Trends</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Student Grades</span>
           </div>
           <h3 className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter">
             Student Performance
@@ -192,7 +192,7 @@ export default function AcademicPerformanceChart({ primaryColor = '#2563eb' }: {
           <Lightbulb size={20} />
         </div>
         <div>
-          <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: primaryColor }}>Notice</p>
+          <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: primaryColor }}>Insight</p>
           <p className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed italic">
             "{analysis?.insight || "School performance is currently within expected ranges."}"
           </p>

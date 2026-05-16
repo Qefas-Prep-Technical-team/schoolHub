@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { createActivityLog } from "../logs/logs.controller";
 import { getSingleString } from "../../../utils/request-utils";
+import { getSchoolUsageService } from "../../subscription/quota.service";
 import { PricingService } from "../billing/pricing.service";
 import { getIO } from "../../../socket";
 
@@ -372,7 +373,13 @@ export const updateSchoolLimits = async (req: Request, res: Response) => {
  */
 export const getSchoolDetails = async (req: Request, res: Response) => {
   try {
-    const id = req.params.id as string;
+    const id = (req.params.id as string)?.trim();
+    
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Missing school ID" });
+    }
+
+    console.log(`[PlatformSupport] Fetching school details for: ${id}`);
 
     const school = await prisma.school.findFirst({
       where: {
@@ -389,13 +396,13 @@ export const getSchoolDetails = async (req: Request, res: Response) => {
           orderBy: {
             createdAt: "desc"
           },
-          take: 50 // Limit to last 50 emails for performance
+          take: 50
         },
         _count: {
           select: {
             students: true,
             admins: true,
-            activeTeachers: true, // Active teachers
+            teachers: true, // Use base teachers relation for more reliable count
             exams: true,
             classes: true
           }
@@ -404,10 +411,25 @@ export const getSchoolDetails = async (req: Request, res: Response) => {
     });
 
     if (!school) {
+      console.warn(`[PlatformSupport] School NOT FOUND for ID: ${id}`);
       return res.status(404).json({ success: false, message: "School not found" });
     }
 
-    return res.status(200).json({ success: true, data: school });
+    // Fetch real-time usage data
+    let usageData = null;
+    try {
+      usageData = await getSchoolUsageService(school.id);
+    } catch (e) {
+      console.warn("[SupportController] Failed to fetch usage data:", e);
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      data: {
+        ...school,
+        usage: usageData
+      } 
+    });
   } catch (error) {
     console.error("Failed to get school details:", error);
     return res.status(500).json({ success: false, message: "Failed to fetch school details" });
