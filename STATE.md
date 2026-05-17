@@ -111,6 +111,8 @@
     - [x] Added `maxParentsOverride?: number;` to the `PlatformSchoolDetails` interface in [usePlatformSchools.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/usePlatformSchools.ts) to match the database model definition.
     - [x] Resolved type error in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/schools/[id]/page.tsx) where `school.maxParentsOverride` was causing the Next.js build worker to exit due to a type check error.
     - [x] Verified full type check safety by running `npx tsc --noEmit` on the frontend workspace with 100% clean success.
+- **Console Dashboard Chart Tooltip Formatter Fix**:
+    - [x] Resolved type error in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/page.tsx) where the Recharts Tooltip `formatter` parameters did not match strict type definitions. Changed parameter `name: string` to `name: any` to satisfy Recharts compatibility.
 
 - **Frontend Type Safety & Hardening (Final Build Stabilization)**:
   - [x] **Resolved All TS Errors**: Successfully achieved a clean `npx tsc --noEmit` state across the entire frontend.

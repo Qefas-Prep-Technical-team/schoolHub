@@ -234,7 +234,7 @@ export default function PlatformDashboard() {
                                             borderRadius: '12px' 
                                         }}
                                         itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-                                        formatter={(value: any, name: string) => {
+                                        formatter={(value: any, name: any) => {
                                             if (name === 'revenue') return [`₦${Number(value).toLocaleString()}`, 'Revenue'];
                                             if (name === 'totalSchools') return [value, 'New Schools'];
                                             return [value, name];
