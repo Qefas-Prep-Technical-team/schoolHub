@@ -232,7 +232,6 @@ model Teacher {
   subjects                Subject[]
   teacherSubjects         TeacherSubject[]
   timetablePeriods        TimetablePeriod[]
-  userSubscriptions       UserSubscription?  @relation("TeacherSubscription")
 }
 
 model Student {
@@ -295,7 +294,6 @@ model Student {
   targetLinkRequests      LinkRequest[]     @relation("TargetStudent")
   parentLinks             ParentChildLink[]
   payments                Payment[]
-  userSubscriptions       UserSubscription? @relation("StudentSubscription")
 }
 
 model Parent {
@@ -345,7 +343,6 @@ model Parent {
   children                ParentChildLink[]
   subscriptionPlan        SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
   payments                Payment[]
-  userSubscriptions       UserSubscription? @relation("ParentSubscription")
 
   @@map("parents")
 }
@@ -1263,10 +1260,7 @@ model UserSubscription {
   autoRenew          Boolean            @default(true)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  parent             Parent?            @relation("ParentSubscription", fields: [userId], references: [id], map: "user_subscriptions_parent_fkey")
-  student            Student?           @relation("StudentSubscription", fields: [userId], references: [id], map: "user_subscriptions_student_fkey")
   subscriptionPlan   SubscriptionPlan   @relation(fields: [subscriptionPlanId], references: [id])
-  teacher            Teacher?           @relation("TeacherSubscription", fields: [userId], references: [id], map: "user_subscriptions_teacher_fkey")
 
   @@map("user_subscriptions")
 }

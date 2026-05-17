@@ -18,6 +18,7 @@ export interface PricingData {
 export type CategoryType = 'individuals' | 'schools' | 'teachers';
 
 export interface PricingTab {
+  id?: string;
   type: string; // e.g. 'student', 'parent1', 'pro'
   name: string;
   pricing: {

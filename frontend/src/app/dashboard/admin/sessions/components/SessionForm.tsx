@@ -1,19 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { sessionService, CreateSessionDTO } from "@/lib/api/services/sessionService";
+import { sessionService, CreateSessionDTO, Session } from "@/lib/api/services/sessionService";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "react-toastify";
-import { Loader2, Calendar, Plus, Zap, ShieldCheck } from "lucide-react";
+import { Loader2, Calendar, Plus, Zap, Save, X } from "lucide-react";
 import { useEffect } from "react";
 import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
-import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 const sessionSchema = z.object({
   name: z.string().min(5, "Session name must be at least 5 characters (e.g. 2025/2026 Academic Session)"),
@@ -25,14 +21,88 @@ const sessionSchema = z.object({
     startDate: z.string().min(1, "Term start date is required"),
     endDate: z.string().min(1, "Term end date is required"),
   })).min(3, "All three terms must have dates"),
+}).superRefine((data, ctx) => {
+  const sessionStart = new Date(data.startDate);
+  const sessionEnd = new Date(data.endDate);
+
+  // 1. Session dates validation
+  if (sessionStart >= sessionEnd) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Session start date must be before end date",
+      path: ["endDate"],
+    });
+  }
+
+  // 2. Term dates validation
+  data.termDates.forEach((term, index) => {
+    const termStart = new Date(term.startDate);
+    const termEnd = new Date(term.endDate);
+
+    // Term internal order
+    if (termStart >= termEnd) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${term.term} Term start must be before end`,
+        path: ["termDates", index, "endDate"],
+      });
+    }
+
+    // Term within session bounds
+    if (termStart < sessionStart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${term.term} Term cannot start before the session starts`,
+        path: ["termDates", index, "startDate"],
+      });
+    }
+    if (termEnd > sessionEnd) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${term.term} Term cannot end after the session ends`,
+        path: ["termDates", index, "endDate"],
+      });
+    }
+
+    // 3. Sequential terms validation
+    if (index > 0) {
+      const prevTerm = data.termDates[index - 1];
+      const prevTermEnd = new Date(prevTerm.endDate);
+      
+      if (termStart <= prevTermEnd) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${term.term} Term must start after ${prevTerm.term} Term ends`,
+          path: ["termDates", index, "startDate"],
+        });
+      }
+    }
+  });
 });
 
 type SessionFormValues = z.infer<typeof sessionSchema>;
 
-export function CreateSessionForm({ schoolId, onSuccess }: { schoolId: string; onSuccess?: () => void }) {
+// Helper to format date for input[type="date"]
+const formatDateForInput = (dateString?: string) => {
+  if (!dateString) return "";
+  return new Date(dateString).toISOString().split('T')[0];
+};
+
+export function SessionForm({ 
+  schoolId, 
+  initialData, 
+  onSuccess,
+  onCancel
+}: { 
+  schoolId: string; 
+  initialData?: Session; 
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}) {
   const queryClient = useQueryClient();
   const { data: settings } = useSchoolSettings(schoolId);
   const primaryColor = settings?.themeColor || '#2563eb';
+  const isEditing = !!initialData;
 
   const {
     register,
@@ -42,6 +112,7 @@ export function CreateSessionForm({ schoolId, onSuccess }: { schoolId: string; o
     formState: { errors },
   } = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema) as any,
+    mode: "onChange",
     defaultValues: {
       name: "",
       startDate: "",
@@ -55,16 +126,41 @@ export function CreateSessionForm({ schoolId, onSuccess }: { schoolId: string; o
     },
   });
 
+  // Populate form if editing
+  useEffect(() => {
+    if (initialData) {
+      setValue("name", initialData.name);
+      setValue("startDate", formatDateForInput(initialData.startDate));
+      setValue("endDate", formatDateForInput(initialData.endDate));
+      
+      if (initialData.termPeriods && initialData.termPeriods.length > 0) {
+        const sortedTerms = [...initialData.termPeriods].sort((a, b) => {
+          const order = { FIRST: 0, SECOND: 1, THIRD: 2 };
+          return order[a.term] - order[b.term];
+        });
+
+        sortedTerms.forEach((tp, idx) => {
+          setValue(`termDates.${idx}.startDate` as any, formatDateForInput(tp.startDate));
+          setValue(`termDates.${idx}.endDate` as any, formatDateForInput(tp.endDate));
+          setValue(`termDates.${idx}.term` as any, tp.term);
+        });
+      }
+    }
+  }, [initialData, setValue]);
+
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: CreateSessionDTO) => sessionService.createSession(data),
+    mutationFn: (data: SessionFormValues) => 
+      isEditing 
+        ? sessionService.updateSession(initialData.id, data)
+        : sessionService.createSession(data),
     onSuccess: () => {
-      toast.success("Academic session created successfully!");
+      toast.success(isEditing ? "Session updated successfully!" : "Academic session created successfully!");
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
-      reset();
+      reset(); // Always clear the form on success
       if (onSuccess) onSuccess();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to create session");
+      toast.error(error.response?.data?.message || `Failed to ${isEditing ? 'update' : 'create'} session`);
     },
   });
 
@@ -138,6 +234,11 @@ export function CreateSessionForm({ schoolId, onSuccess }: { schoolId: string; o
                   {...register(`termDates.${index}.startDate` as any)}
                   className="h-10 px-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 text-xs font-bold"
                 />
+                {(errors.termDates as any)?.[index]?.startDate && (
+                  <p className="text-red-500 text-[9px] font-black uppercase tracking-tight">
+                    {(errors.termDates as any)[index].startDate.message}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">End Date</Label>
@@ -146,14 +247,18 @@ export function CreateSessionForm({ schoolId, onSuccess }: { schoolId: string; o
                   {...register(`termDates.${index}.endDate` as any)}
                   className="h-10 px-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 text-xs font-bold"
                 />
+                {(errors.termDates as any)?.[index]?.endDate && (
+                  <p className="text-red-500 text-[9px] font-black uppercase tracking-tight">
+                    {(errors.termDates as any)[index].endDate.message}
+                  </p>
+                )}
               </div>
             </div>
           </div>
         ))}
-        {errors.termDates && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.termDates.message}</p>}
       </div>
 
-      <div className="pt-4">
+      <div className="pt-4 flex flex-col gap-4">
           <Button
             type="submit"
             disabled={isPending}
@@ -163,19 +268,31 @@ export function CreateSessionForm({ schoolId, onSuccess }: { schoolId: string; o
             {isPending ? (
               <span className="flex items-center gap-3">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                CREATING SESSION...
+                {isEditing ? 'SAVING...' : 'CREATING SESSION...'}
               </span>
             ) : (
               <span className="flex items-center gap-3">
-                <Plus size={20} strokeWidth={3} />
-                CREATE SESSION
+                {isEditing ? <Save size={20} strokeWidth={3} /> : <Plus size={20} strokeWidth={3} />}
+                {isEditing ? 'SAVE CHANGES' : 'CREATE SESSION'}
               </span>
             )}
           </Button>
+
+          {isEditing && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onCancel}
+              className="w-full h-12 rounded-2xl text-slate-400 font-bold uppercase tracking-widest gap-2 hover:bg-slate-100 dark:hover:bg-white/5"
+            >
+              <X size={16} />
+              Cancel Edit
+            </Button>
+          )}
       </div>
       
       <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-center italic">
-        * Only administrators can create new sessions
+        * Only administrators can {isEditing ? 'modify' : 'create'} sessions
       </p>
     </form>
   );

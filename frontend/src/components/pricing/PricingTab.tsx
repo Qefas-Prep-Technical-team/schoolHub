@@ -8,6 +8,7 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { pricingResolver } from '@/lib/pricingResolver';
 import { usePublicPlatformSettings } from '@/lib/api/hooks/usePlatformGovernance';
 import { Sparkles } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PricingTabProps {
     billingType: 'monthly' | 'yearly';
@@ -74,11 +75,24 @@ export default function PricingTab({}: PricingTabProps) {
         teachers: 'Teachers',
     };
 
+    const isAnyLoading = isLoading || isSettingsLoading;
+
     return (
         <Box className="w-full flex flex-col items-center">
 
-            {/* Category Switcher — only show when more than one category */}
-            {categories.length > 1 && (
+            {/* Category Switcher Skeleton — show while loading to prevent layout shift */}
+            {isAnyLoading && (
+                <div className="flex items-center justify-center mb-12 p-1 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/70 rounded-2xl">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="px-6 py-2.5">
+                            <Skeleton className="h-5 w-24 rounded-lg bg-slate-200/50 dark:bg-slate-700/50" />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Category Switcher — only show when more than one category and not loading */}
+            {!isAnyLoading && categories.length > 1 && (
                 <div className="flex items-center justify-center mb-12 p-1 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/70 rounded-2xl">
                     {categories.map((cat, index) => (
                         <button

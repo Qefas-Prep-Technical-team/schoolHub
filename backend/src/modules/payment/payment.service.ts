@@ -338,6 +338,7 @@ export const getUserBillingService = async (userId: string, role: string, page =
             lastPaymentDate: true,
             paystackCustomerCode: true,
             billingCycle: true,
+            subscriptionPlanId: true,
         }
     });
 
@@ -454,6 +455,7 @@ export const getUserBillingService = async (userId: string, role: string, page =
             isTrialActive: user.isTrialActive,
             lastPaymentDate: user.lastPaymentDate,
             paystackCustomerCode: user.paystackCustomerCode,
+            subscriptionPlanId: user.subscriptionPlanId,
             billingCycle: user.billingCycle || 'MONTHLY',
             features: subscriptionPlan?.featureAccess?.map((fa: any) => ({
                 key: fa.feature.featureKey,

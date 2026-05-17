@@ -1,11 +1,11 @@
 "use client"
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-    CreditCard, 
-    Calendar, 
-    ShieldCheck, 
-    Zap, 
+import {
+    CreditCard,
+    Calendar,
+    ShieldCheck,
+    Zap,
     AlertCircle,
     CheckCircle2,
     Plus,
@@ -33,14 +33,14 @@ export default function AdminBillingPage() {
     const queryClient = useQueryClient();
     const { user } = useAuthStore();
     const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId;
-    
+
     const [currentPage, setCurrentPage] = React.useState(1);
     const ITEMS_PER_PAGE = 5;
-    
+
     const { data: pricingData } = useFetchPricing();
-    const { data: billingData, isLoading, isError } = useSchoolBilling(schoolId as string, { 
-        page: currentPage, 
-        limit: ITEMS_PER_PAGE 
+    const { data: billingData, isLoading, isError } = useSchoolBilling(schoolId as string, {
+        page: currentPage,
+        limit: ITEMS_PER_PAGE
     });
 
     const { data: analytics, isLoading: analyticsLoading } = useQuery({
@@ -105,9 +105,9 @@ export default function AdminBillingPage() {
     // Dynamic pricing retrieval
     const schoolPricing = pricingData?.find((d: PricingData) => d.category === 'schools');
     const activePlanData = schoolPricing?.tabs?.find((t: any) => t.type.toLowerCase() === currentPlan.toLowerCase());
-    const dynamicAmount = activePlanData 
-        ? (cycle === 'monthly' ? activePlanData.pricing.monthly : activePlanData.pricing.yearly) 
-        : 0;
+    const dynamicAmount = activePlanData
+        ? (cycle === 'monthly' ? activePlanData.pricing.monthly : activePlanData.pricing.yearly)
+        : subscription?.amount || 0;  // Use backend amount as fallback
 
     const isTrial = subscription?.isTrialActive === true;
 
@@ -122,30 +122,30 @@ export default function AdminBillingPage() {
 
     return (
         <div className="space-y-8 pb-20 max-w-[1600px] mx-auto">
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col md:flex-row md:items-center justify-between gap-6"
             >
                 <div className="space-y-1">
                     <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
-                        Protocol & Tier
+                        Subscription & Billing
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">
-                        Manage institutional subscription status and liquidity parameters
+                        Manage your school's subscription plan and billing details
                     </p>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         className="rounded-2xl font-black text-[10px] uppercase tracking-widest bg-white dark:bg-slate-900 border-2 h-14 px-8 shadow-sm"
                         onClick={() => router.push('/dashboard/admin/billing/upgrade')}
                     >
-                        Switch Protocol
+                        Change Plan
                     </Button>
-                    <Button className="rounded-2xl font-black text-[10px] uppercase tracking-widest bg-primary hover:bg-primary text-white h-14 px-8 shadow-xl shadow-primary/20">
-                        Manage Settlement Methods
+                    <Button className="rounded-2xl font-black text-[10px] uppercase tracking-widest bg-primary hover:bg-primary text-primary-foreground h-14 px-8 shadow-xl shadow-primary/20">
+                        Manage Payment Methods
                     </Button>
                 </div>
             </motion.div>
@@ -157,7 +157,7 @@ export default function AdminBillingPage() {
                         <div className="flex justify-between items-start relative z-10">
                             <div className="space-y-4">
                                 <Badge className="bg-primary/20 text-primary border-none px-4 py-1.5 font-black uppercase tracking-[0.2em] text-[10px]">
-                                    Current Protocol
+                                    Current Plan
                                 </Badge>
                                 <div className="space-y-1">
                                     <CardTitle className="text-5xl font-black capitalize tracking-tighter italic">
@@ -193,7 +193,7 @@ export default function AdminBillingPage() {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Plan Highlights</p>
                                 <ul className="space-y-3">
@@ -210,27 +210,27 @@ export default function AdminBillingPage() {
                 </Card>
 
                 <div className="space-y-6">
-                    <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-gradient-to-br from-primary to-primary text-white p-10 relative group">
+                    <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-primary text-primary-foreground p-10 relative group">
                         <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform pointer-events-none">
                             <Zap size={100} />
                         </div>
                         <div className="mb-10 flex justify-between items-start relative z-10">
-                            <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/10 backdrop-blur-md">
-                                <Zap className="w-7 h-7 text-white" />
+                            <div className="w-14 h-14 bg-primary-foreground/10 rounded-2xl flex items-center justify-center border border-primary-foreground/10 backdrop-blur-md">
+                                <Zap className="w-7 h-7 text-primary-foreground" />
                             </div>
-                            <Button size="sm" className="bg-white/10 hover:bg-white/20 border-none rounded-xl text-[9px] font-black uppercase tracking-widest">
+                            <Button size="sm" className="bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-none rounded-xl text-[9px] font-black uppercase tracking-widest">
                                 Details
                             </Button>
                         </div>
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2">Next Liquidity Event</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2">Next Payment</h4>
                         <div className="flex items-baseline gap-2 mb-6 relative z-10">
                             <span className="text-5xl font-black tracking-tighter italic">₦{subscriptionInfo.amount.toLocaleString()}</span>
                             <span className="text-xs font-bold opacity-70 uppercase tracking-widest">/ {subscriptionInfo.billingCycle}</span>
                         </div>
                         <p className="text-xs opacity-70 font-medium leading-relaxed relative z-10">
-                            {subscriptionInfo.status === 'ACTIVE' 
-                                ? "Automatic protocol renewal scheduled. Ensure settlement methods are valid."
-                                : "Initialize a subscription tier to continue accessing premium institutional conduits."}
+                            {subscriptionInfo.status === 'ACTIVE'
+                                ? "Your plan will renew automatically. Please ensure your payment method is up to date."
+                                : "Subscribe to a plan to unlock premium features for your school."}
                         </p>
                     </Card>
 
@@ -246,25 +246,25 @@ export default function AdminBillingPage() {
                                 <Landmark size={28} />
                             </div>
                             <div className="space-y-1">
-                                <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">Settlement Vault</h2>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Active conduits for automatic fee disbursements</p>
+                                <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">Bank Accounts</h2>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Active accounts for receiving payments</p>
                             </div>
                         </div>
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             className="font-black text-[10px] uppercase tracking-[0.2em] text-primary hover:bg-primary/5 gap-2"
                             onClick={() => router.push("/dashboard/admin/finance/bank-setup")}
                         >
                             <Plus className="h-3 w-3" />
-                            Manage Conduits
+                            Add Bank Account
                         </Button>
                     </div>
                     <div className="flex flex-nowrap overflow-x-auto gap-6 pb-4 no-scrollbar snap-x mt-6">
                         {analytics.accounts.map((acc: any) => (
                             <div key={acc.id} className="snap-center flex-shrink-0 w-full md:w-[380px]">
-                                <AtmAccountCard 
-                                    account={acc} 
+                                <AtmAccountCard
+                                    account={acc}
                                     onRefresh={(id) => handleSync(id)}
                                 />
                             </div>
@@ -280,13 +280,13 @@ export default function AdminBillingPage() {
                     </div>
                     <div className="space-y-1">
                         <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">
-                            Liquidity Stream
+                            Transaction History
                         </h2>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Historical record of all successfully processed transitions</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">A complete record of all your past payments and receipts</p>
                     </div>
                 </div>
-                <TransactionHistory 
-                    items={transactions} 
+                <TransactionHistory
+                    items={transactions}
                     totalItems={billingData.totalTransactions}
                     currentPage={currentPage}
                     itemsPerPage={ITEMS_PER_PAGE}

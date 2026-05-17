@@ -1,12 +1,12 @@
 "use client"
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-    CreditCard, 
-    Calendar, 
-    ShieldCheck, 
-    Zap, 
-    Clock, 
+import {
+    CreditCard,
+    Calendar,
+    ShieldCheck,
+    Zap,
+    Clock,
     AlertCircle,
     CheckCircle2,
     Users,
@@ -30,11 +30,11 @@ export default function TeacherBillingPage() {
     const { user } = useAuthStore();
     const [currentPage, setCurrentPage] = React.useState(1);
     const ITEMS_PER_PAGE = 5;
-    
+
     const { data: pricingData } = useFetchPricing();
-    const { data: billingData, isLoading, isError } = useUserBilling(user?.id as string, { 
-        page: currentPage, 
-        limit: ITEMS_PER_PAGE 
+    const { data: billingData, isLoading, isError } = useUserBilling(user?.id as string, {
+        page: currentPage,
+        limit: ITEMS_PER_PAGE
     });
 
     const { data: features, isLoading: isFeaturesLoading } = useGlobalFeatures('teacher');
@@ -73,7 +73,7 @@ export default function TeacherBillingPage() {
 
     const { subscription, usage, transactions, totalTransactions } = billingData.data || {};
     const plan = (subscription?.plan || "FREE").toUpperCase();
-    
+
     // Plan limits mapping for teachers
     const planLimits = {
         PRO: { classes: 100, students: 1000, schools: 10 },
@@ -82,18 +82,18 @@ export default function TeacherBillingPage() {
     };
 
     const currentLimits = planLimits[plan as keyof typeof planLimits] || planLimits.FREE;
-    
+
     const cycle = subscription?.billingCycle || "monthly";
 
     // Dynamic pricing retrieval
     const teacherPricing = pricingData?.find((d: PricingData) => d.category === 'teachers');
-    const activePlanData = teacherPricing?.tabs.find((t: any) => 
-        t.type.toLowerCase() === plan.toLowerCase() || 
+    const activePlanData = teacherPricing?.tabs.find((t: any) =>
+        t.type.toLowerCase() === plan.toLowerCase() ||
         t.name.toLowerCase() === plan.toLowerCase()
     );
-    const dynamicAmount = activePlanData 
-        ? (cycle === 'monthly' ? activePlanData.pricing.monthly : activePlanData.pricing.yearly) 
-        : 0;
+    const dynamicAmount = activePlanData
+        ? (cycle === 'monthly' ? activePlanData.pricing.monthly : activePlanData.pricing.yearly)
+        : subscription?.amount || 0;  // Use backend amount as fallback
 
     const isTrial = subscription?.isTrialActive === true;
     const subscriptionInfo = {
@@ -103,11 +103,11 @@ export default function TeacherBillingPage() {
         amount: dynamicAmount,
         billingCycle: cycle,
         features: activePlanData?.features || [
-                "Single Class Management",
-                "Basic Quiz Maker",
-                "Lesson Planner",
-                "Result Entry"
-            ]
+            "Single Class Management",
+            "Basic Quiz Maker",
+            "Lesson Planner",
+            "Result Entry"
+        ]
     };
 
     const UsageBar = ({ label, current, total, colorClass }: any) => {
@@ -129,7 +129,7 @@ export default function TeacherBillingPage() {
 
     return (
         <div className="space-y-8 pb-12 p-6 lg:p-8">
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col md:flex-row md:items-center justify-between gap-4"
@@ -142,10 +142,10 @@ export default function TeacherBillingPage() {
                         Manage your professional tools and classroom capacity.
                     </p>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         className="rounded-2xl font-bold border-2 h-12 px-6"
                         onClick={() => router.push('/pricing?role=teacher')}
                     >
@@ -193,7 +193,7 @@ export default function TeacherBillingPage() {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Educator Privileges</p>
                                 <ul className="space-y-3">
@@ -234,37 +234,37 @@ export default function TeacherBillingPage() {
                                 </div>
                             </div>
                             <div className="space-y-6">
-                                <UsageBar 
-                                    label="Managed Classes" 
-                                    current={usage?.classes || 0} 
-                                    total={currentLimits.classes} 
-                                    colorClass="bg-blue-500" 
+                                <UsageBar
+                                    label="Managed Classes"
+                                    current={usage?.classes || 0}
+                                    total={currentLimits.classes}
+                                    colorClass="bg-blue-500"
                                 />
-                                <UsageBar 
-                                    label="Student Connections" 
-                                    current={usage?.students || 0} 
-                                    total={currentLimits.students} 
-                                    colorClass="bg-indigo-500" 
+                                <UsageBar
+                                    label="Student Connections"
+                                    current={usage?.students || 0}
+                                    total={currentLimits.students}
+                                    colorClass="bg-indigo-500"
                                 />
-                                <UsageBar 
-                                    label="Institutional Links" 
-                                    current={usage?.schools || 0} 
-                                    total={(currentLimits as any).schools} 
-                                    colorClass="bg-emerald-500" 
+                                <UsageBar
+                                    label="Institutional Links"
+                                    current={usage?.schools || 0}
+                                    total={(currentLimits as any).schools}
+                                    colorClass="bg-emerald-500"
                                 />
 
                                 {/* Dynamic Features from Database */}
-                                {subscription?.features?.filter((f: any) => 
+                                {subscription?.features?.filter((f: any) =>
                                     !['classes', 'students', 'schools', 'storage', 'storagegb'].includes(f.key?.toLowerCase())
                                 ).map((feature: any) => {
                                     const usageKey = feature.key?.toLowerCase();
                                     const currentUsage = (usage as any)?.[usageKey] || 0;
                                     const totalLimit = feature.limit || 0;
-                                    
+
                                     return (
-                                        <UsageBar 
+                                        <UsageBar
                                             key={feature.key}
-                                            label={feature.name?.replace(/_/g, ' ') || 'Feature'} 
+                                            label={feature.name?.replace(/_/g, ' ') || 'Feature'}
                                             current={currentUsage}
                                             total={totalLimit}
                                             colorClass="bg-slate-500"
@@ -284,8 +284,8 @@ export default function TeacherBillingPage() {
                         Transaction Archives
                     </h2>
                 </div>
-                <TransactionHistory 
-                    items={transactions} 
+                <TransactionHistory
+                    items={transactions}
                     totalItems={totalTransactions || 0}
                     currentPage={currentPage}
                     itemsPerPage={ITEMS_PER_PAGE}

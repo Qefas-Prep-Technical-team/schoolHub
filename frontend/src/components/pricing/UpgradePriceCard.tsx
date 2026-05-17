@@ -13,13 +13,15 @@ interface UpgradePriceCardProps extends PricingTabType {
     category?: string;
     index?: number;
     currentPlan?: string;
+    currentPlanId?: string;
+    currentBillingCycle?: string;
     currentPlanPrice?: number;
     lastPaymentDate?: string | Date | null;
 }
 
-const UpgradePriceCard: FC<UpgradePriceCardProps> = ({ 
-    name, description, pricing, type, features, isPopular,
-    currentPlan, currentPlanPrice, lastPaymentDate
+const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
+    id, name, description, pricing, type, features, isPopular,
+    currentPlan, currentPlanId, currentBillingCycle, currentPlanPrice, lastPaymentDate
 }) => {
     const { billingType } = useBillingStore();
     const { isAuthenticated, user } = useAuthStore();
@@ -28,32 +30,37 @@ const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
     const [isLoading, setIsLoading] = useState(false);
 
     const amount = billingType === 'monthly' ? pricing?.monthly : pricing?.yearly;
-    
-    const planOrder: Record<string, number> = {
-        'free': 0,
-        'starter': 1,
-        'growth': 2,
-        'pro': 3
-    };
 
-    const currentPlanLevel = planOrder[user?.plan?.toLowerCase() || 'free'] ?? 0;
-    const targetPlanLevel = planOrder[type?.toLowerCase() || 'free'] ?? 0;
-    const isLowerPlan = targetPlanLevel < currentPlanLevel;
+    // Prioritize the real-time currentPlanId/Plan prop over the potentially stale auth store cache
+    const activePlanId = currentPlanId || user?.subscriptionPlanId;
+    const activePlanName = currentPlan || user?.plan || 'free';
+    const activeBillingCycle = currentBillingCycle || user?.billingCycle || 'monthly';
 
-    // Logic to check if this is the current plan - use prop for real-time accuracy
-    const isCurrentPlan = isAuthenticated && 
-        (currentPlan?.toLowerCase() === type?.toLowerCase() || user?.plan?.toLowerCase() === type?.toLowerCase());
+    // Robust matching using both ID (primary) and name/type (fallback)
+    const isPlanMatch = (id && activePlanId && id === activePlanId) || 
+                       (type?.toLowerCase() === activePlanName.toLowerCase());
 
-    const isDeactivated = isLowerPlan && !isCurrentPlan;
+    // Check if this is the current plan with matching billing cycle (fully disabled)
+    const isCurrentPlanAndCycle = isAuthenticated && isPlanMatch &&
+        (activeBillingCycle.toLowerCase() === billingType.toLowerCase());
 
-    const proRata = amount && currentPlanPrice 
+    // Check if this is the current plan but different billing cycle (can be selected)
+    const isCurrentPlanDifferentCycle = isAuthenticated &&
+        (activePlanName.toLowerCase() === type?.toLowerCase()) &&
+        (activeBillingCycle.toLowerCase() !== billingType.toLowerCase());
+
+    // Deactivate FREE plans in the upgrade flow as requested
+    const isFreePlan = type?.toLowerCase() === 'free';
+    const isDeactivated = isFreePlan;
+
+
+    const proRata = amount && currentPlanPrice
         ? calculateProRatedAmount(currentPlanPrice, amount, lastPaymentDate || null)
         : { amount: amount || 0, isUpgrade: false };
 
     const handleAction = (e: React.MouseEvent) => {
-        if (isCurrentPlan || isDeactivated) return;
-        e.stopPropagation();
-        
+        if (isCurrentPlanAndCycle || isDeactivated) return;
+
         setCheckoutDetails({
             plan: type,
             billing: billingType,
@@ -74,21 +81,20 @@ const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
     };
 
     return (
-        <motion.div 
-            whileHover={(!isCurrentPlan && !isDeactivated) ? { y: -12, scale: 1.02 } : {}}
+        <motion.div
+            whileHover={(!isCurrentPlanAndCycle && !isDeactivated) ? { y: -12, scale: 1.02 } : {}}
             onClick={handleAction}
-            className={`group relative flex flex-col rounded-[3rem] border-2 transition-all duration-500 w-full h-full min-h-[650px] ${
-                isCurrentPlan 
-                ? 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 opacity-70 grayscale-[0.5] cursor-not-allowed pointer-events-none' 
+            className={`group relative flex flex-col rounded-[3rem] border-2 transition-all duration-500 w-full h-full min-h-[650px] ${isCurrentPlanAndCycle
+                ? 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 opacity-70 grayscale-[0.5] cursor-not-allowed pointer-events-none'
                 : isDeactivated
-                ? 'border-slate-100 dark:border-slate-800/30 bg-slate-100/20 dark:bg-slate-900/10 opacity-40 grayscale cursor-not-allowed pointer-events-none'
-                : isPopular 
-                ? 'border-blue-600 dark:border-blue-500 bg-white dark:bg-slate-900 shadow-2xl cursor-pointer' 
-                : 'border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl cursor-pointer'
-            }`}
+                    ? 'border-slate-100 dark:border-slate-800/30 bg-slate-100/20 dark:bg-slate-900/10 opacity-40 grayscale cursor-not-allowed pointer-events-none'
+                    : isPopular
+                        ? 'border-blue-600 dark:border-blue-500 bg-white dark:bg-slate-900 shadow-2xl cursor-pointer'
+                        : 'border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl cursor-pointer'
+                }`}
         >
             {/* Active Plan Indicator */}
-            {isCurrentPlan && (
+            {isCurrentPlanAndCycle && (
                 <div className="absolute top-8 right-8 z-30">
                     <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">
                         Active
@@ -98,12 +104,11 @@ const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
             <div className="flex-grow p-10 relative z-10 flex flex-col">
                 {/* Header */}
                 <div className="flex flex-col gap-6 mb-10">
-                    <div className={`w-14 h-14 flex items-center justify-center rounded-2xl ${
-                        isPopular ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                    }`}>
+                    <div className={`w-14 h-14 flex items-center justify-center rounded-2xl ${isPopular ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}>
                         {getIcon()}
                     </div>
-                    
+
                     <div>
                         <h3 className="text-3xl font-black text-slate-900 dark:text-white capitalize mb-2 tracking-tight">
                             {name || type}
@@ -130,7 +135,7 @@ const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-[9px] font-black rounded-lg uppercase tracking-widest animate-pulse">Pro-rated Price</span>
                             <span className="text-[10px] font-bold text-slate-400">Saved for current plan</span>
                         </div>
-                    ) : isCurrentPlan ? (
+                    ) : isCurrentPlanAndCycle ? (
                         <div className="text-[10px] font-bold text-blue-500 mt-2 flex items-center gap-2">
                             <Sparkles className="w-3 h-3" />
                             <span>Your current active subscription price</span>
@@ -153,21 +158,20 @@ const UpgradePriceCard: FC<UpgradePriceCardProps> = ({
                 </div>
 
                 <div className="mt-auto pt-8 border-t border-slate-100 dark:border-slate-800/50">
-                    <button 
+                    <button
                         onClick={handleAction}
-                        disabled={isLoading || isCurrentPlan || isDeactivated}
-                        className={`w-full py-5 rounded-[1.5rem] font-black transition-all flex items-center justify-center gap-2 ${
-                            (isCurrentPlan || isDeactivated)
+                        disabled={isLoading || isCurrentPlanAndCycle || isDeactivated}
+                        className={`w-full py-5 rounded-[1.5rem] font-black transition-all flex items-center justify-center gap-2 ${(isCurrentPlanAndCycle || isDeactivated)
                             ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-                            : isPopular 
-                            ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 hover:bg-blue-700' 
-                            : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:scale-[1.02]'
-                        }`}
+                            : isPopular
+                                ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 hover:bg-blue-700'
+                                : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:scale-[1.02]'
+                            }`}
                     >
                         {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                             <>
-                                <span>{isCurrentPlan ? 'Current Active Plan' : isDeactivated ? 'Already Upgraded' : 'Select This Plan'}</span>
-                                {!isCurrentPlan && !isDeactivated && <ArrowRight className="w-5 h-5" />}
+                                <span>{isCurrentPlanAndCycle ? 'Active Plan' : isDeactivated ? 'Plan Unavailable' : 'Select This Plan'}</span>
+                                {!isCurrentPlanAndCycle && !isDeactivated && <ArrowRight className="w-5 h-5" />}
                             </>
                         )}
                     </button>

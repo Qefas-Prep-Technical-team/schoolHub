@@ -448,43 +448,59 @@ export const updateSchoolPlan = async (req: Request, res: Response) => {
       subscriptionStatus, 
       subscriptionEnd,
       isTrialActive,
-      trialEndsAt
+      trialEndsAt,
+      billingCycle
     } = req.body;
 
-    const updateData: any = {
-      plan,
-      subscriptionStatus,
-      isTrialActive: isTrialActive ?? false,
-    };
+    const school = await prisma.$transaction(async (tx) => {
+        const updateData: any = {
+            plan,
+            subscriptionStatus,
+            isTrialActive: isTrialActive ?? false,
+            billingCycle: billingCycle || undefined
+        };
 
-    if (subscriptionPlanId) {
-      // Resolve plan ID (handle hardcoded constants if DB is out of sync)
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subscriptionPlanId);
-      if (!isUuid && subscriptionPlanId.includes('-')) {
-        // Resolve by type (e.g., 'schools-starter' -> category='schools', type='starter')
-        const parts = subscriptionPlanId.split('-');
-        const category = parts[0];
-        const type = parts[1];
-        
-        const resolved = await PricingService.getPlan(type, category);
-        if (resolved?.id) {
-          updateData.subscriptionPlanId = resolved.id;
-        } else {
-          console.warn(`Could not resolve plan constant: ${subscriptionPlanId}`);
-          // Fallback: don't set subscriptionPlanId if it can't be resolved to a DB record
+        if (subscriptionPlanId) {
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subscriptionPlanId);
+            if (!isUuid && subscriptionPlanId.includes('-')) {
+                const parts = subscriptionPlanId.split('-');
+                const category = parts[0];
+                const type = parts[1];
+                const resolved = await PricingService.getPlan(type, category);
+                if (resolved?.id) {
+                    updateData.subscriptionPlanId = resolved.id;
+                }
+            } else if (isUuid) {
+                updateData.subscriptionPlanId = subscriptionPlanId;
+            }
         }
-      } else if (isUuid) {
-        updateData.subscriptionPlanId = subscriptionPlanId;
-      }
-    }
 
-    if (subscriptionEnd) updateData.subscriptionEnd = new Date(subscriptionEnd);
-    if (trialEndsAt) updateData.trialEndsAt = new Date(trialEndsAt);
+        if (subscriptionEnd) updateData.subscriptionEnd = new Date(subscriptionEnd);
+        if (trialEndsAt) updateData.trialEndsAt = new Date(trialEndsAt);
 
-    const school = await prisma.school.update({
-      where: { id },
-      data: updateData,
-      include: { subscriptionPlan: true }
+        // Update school
+        const updatedSchool = await tx.school.update({
+            where: { id },
+            data: updateData,
+            include: { subscriptionPlan: true }
+        });
+
+        // Use PricingService to sync everything else (SchoolSubscription, Admins, History)
+        if (updatedSchool.subscriptionPlanId) {
+            await PricingService.recordSubscriptionChange({
+                entityId: id,
+                entityType: 'SCHOOL',
+                planId: updatedSchool.subscriptionPlanId,
+                status: updatedSchool.subscriptionStatus,
+                type: updatedSchool.subscriptionPlan?.type || (isTrialActive ? 'TRIAL' : 'PAID'),
+                expiresAt: updatedSchool.subscriptionEnd,
+                billingCycle: updatedSchool.billingCycle,
+                note: 'Manual plan override via platform support console',
+                staffId: (req as any).staff?.id
+            });
+        }
+
+        return updatedSchool;
     });
 
     // Create Activity Log
@@ -1021,6 +1037,20 @@ export const updateStudentPlan = async (req: Request, res: Response) => {
       include: { subscriptionPlan: true }
     });
 
+    // Record the change in subscription tracking tables
+    if (student.subscriptionPlanId) {
+        await PricingService.recordSubscriptionChange({
+            entityId: id,
+            entityType: 'STUDENT',
+            planId: student.subscriptionPlanId,
+            status: student.subscriptionStatus,
+            type: student.subscriptionPlan?.type || 'PAID',
+            expiresAt: student.subscriptionEnd,
+            note: 'Manual plan override via platform support console',
+            staffId: (req as any).staff?.id
+        });
+    }
+
     // Create Activity Log
     const loggingStaff = (req as any).staff;
     if (loggingStaff) {
@@ -1149,6 +1179,20 @@ export const updateTeacherPlan = async (req: Request, res: Response) => {
       include: { subscriptionPlan: true }
     });
 
+    // Record the change in subscription tracking tables
+    if (teacher.subscriptionPlanId) {
+        await PricingService.recordSubscriptionChange({
+            entityId: id,
+            entityType: 'TEACHER',
+            planId: teacher.subscriptionPlanId,
+            status: teacher.subscriptionStatus,
+            type: teacher.subscriptionPlan?.type || 'PAID',
+            expiresAt: teacher.subscriptionEnd,
+            note: 'Manual plan override via platform support console',
+            staffId: (req as any).staff?.id
+        });
+    }
+
     // Create Activity Log
     const loggingStaff = (req as any).staff;
     if (loggingStaff) {
@@ -1245,8 +1289,23 @@ export const updateParentPlan = async (req: Request, res: Response) => {
         subscriptionStatus: subscriptionStatus !== undefined ? subscriptionStatus : undefined,
         trialEndsAt: trialEndsAt !== undefined ? (trialEndsAt ? new Date(trialEndsAt) : null) : undefined,
         subscriptionEnd: subscriptionEnd !== undefined ? (subscriptionEnd ? new Date(subscriptionEnd) : null) : undefined,
-      }
+      },
+      include: { subscriptionPlan: true }
     });
+
+    // Record the change in subscription tracking tables
+    if (parent.subscriptionPlanId) {
+        await PricingService.recordSubscriptionChange({
+            entityId: id,
+            entityType: 'PARENT',
+            planId: parent.subscriptionPlanId,
+            status: parent.subscriptionStatus,
+            type: parent.subscriptionPlan?.type || 'PAID',
+            expiresAt: parent.subscriptionEnd,
+            note: 'Manual plan override via platform support console',
+            staffId: (req as any).staff?.id
+        });
+    }
 
     // Create Activity Log
     const loggingStaff = (req as any).staff;

@@ -33,7 +33,9 @@ interface User {
   trialUsed?: boolean;
   trialEndsAt?: string;
   plan?: string;
+  billingCycle?: string;
   subscriptionStatus?: string;
+  subscriptionPlanId?: string;
 }
 
 interface AuthState {

@@ -8,6 +8,8 @@ import { useBillingStore } from '@/utils/PricingPage';
 
 interface PlanUpgradeDisplayProps {
     currentPlan?: string;
+    currentPlanId?: string;
+    currentBillingCycle?: string;
     isUpgradeFlow?: boolean;
     currentPlanPrice?: number;
     lastPaymentDate?: string | Date | null;
@@ -15,6 +17,8 @@ interface PlanUpgradeDisplayProps {
 
 export default function PlanUpgradeDisplay({
     currentPlan,
+    currentPlanId,
+    currentBillingCycle,
     currentPlanPrice,
     lastPaymentDate
 }: PlanUpgradeDisplayProps) {
@@ -87,6 +91,8 @@ export default function PlanUpgradeDisplay({
                                     {...plan}
                                     index={index}
                                     currentPlan={currentPlan}
+                                    currentPlanId={currentPlanId}
+                                    currentBillingCycle={currentBillingCycle}
                                     currentPlanPrice={currentPlanPrice}
                                     lastPaymentDate={lastPaymentDate}
                                 />

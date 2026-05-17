@@ -156,6 +156,7 @@ export interface PlatformSchoolDetails {
   maxClassesOverride?: number;
   maxStorageGbOverride?: number;
   maxTeachersOverride?: number;
+  maxParentsOverride?: number;
   paystackCustomerCode?: string;
   paystackSubaccountCode?: string;
   paystackSubaccountStatus?: string;

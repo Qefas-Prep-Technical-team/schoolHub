@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-    CreditCard, 
-    Calendar, 
-    ShieldCheck, 
-    Users, 
-    Clock, 
+import {
+    CreditCard,
+    Calendar,
+    ShieldCheck,
+    Users,
+    Clock,
     AlertCircle,
     CheckCircle2,
     Baby,
@@ -37,12 +37,12 @@ export default function ParentBillingPage() {
     const { user } = useAuthStore();
     const [currentPage, setCurrentPage] = React.useState(1);
     const ITEMS_PER_PAGE = 5;
-    
+
     const { data: pricingData } = useFetchPricing();
     const { data: features } = useGlobalFeatures('parent');
-    const { data: billingData, isLoading, isError } = useUserBilling(user?.id as string, { 
-        page: currentPage, 
-        limit: ITEMS_PER_PAGE 
+    const { data: billingData, isLoading, isError } = useUserBilling(user?.id as string, {
+        page: currentPage,
+        limit: ITEMS_PER_PAGE
     });
 
     React.useEffect(() => {
@@ -88,7 +88,7 @@ export default function ParentBillingPage() {
 
     const { subscription, usage, transactions } = billingData.data || {};
     const plan = subscription?.plan?.toUpperCase() || "FREE";
-    
+
     // Plan limits mapping for parents
     const planLimits = {
         PRO: { students: 100 }, // Unlimited
@@ -101,13 +101,13 @@ export default function ParentBillingPage() {
 
     // Dynamic pricing retrieval
     const parentPricing = pricingData?.find((d: PricingData) => (d.category as string) === 'parents');
-    const activePlanData = parentPricing?.tabs.find((t: any) => 
-        t.type.toLowerCase() === plan.toLowerCase() || 
+    const activePlanData = parentPricing?.tabs.find((t: any) =>
+        t.type.toLowerCase() === plan.toLowerCase() ||
         t.name.toLowerCase() === plan.toLowerCase()
     );
-    const dynamicAmount = activePlanData 
-        ? (cycle === 'monthly' ? activePlanData.pricing.monthly : activePlanData.pricing.yearly) 
-        : 0;
+    const dynamicAmount = activePlanData
+        ? (cycle === 'monthly' ? activePlanData.pricing.monthly : activePlanData.pricing.yearly)
+        : subscription?.amount || 0;  // Use backend amount as fallback
 
     const isTrial = subscription?.isTrialActive === true;
     const subscriptionInfo = {
@@ -117,11 +117,11 @@ export default function ParentBillingPage() {
         amount: dynamicAmount,
         billingCycle: cycle,
         features: activePlanData?.features || [
-                "Link 1 student account",
-                "Basic result view",
-                "Attendance overview",
-                "Profile management"
-            ]
+            "Link 1 student account",
+            "Basic result view",
+            "Attendance overview",
+            "Profile management"
+        ]
     };
 
     const studentPercentage = Math.min(((usage?.students || 0) / currentLimits.students) * 100, 100);
@@ -148,9 +148,9 @@ export default function ParentBillingPage() {
                         Control your family service access, manage linked student capacity, and review financial transaction history.
                     </p>
                 </div>
-                
+
                 <div className="flex items-center gap-3 w-full md:w-auto">
-                    <Button 
+                    <Button
                         className="h-14 px-10 rounded-[1.8rem] bg-orange-600 hover:bg-orange-700 text-white shadow-2xl shadow-orange-600/30 transition-all font-black text-xs uppercase tracking-widest active:scale-95 group"
                         onClick={() => router.push('/pricing?role=parent')}
                     >
@@ -164,7 +164,7 @@ export default function ParentBillingPage() {
                 {/* Main Subscription Card */}
                 <Card className="lg:col-span-2 rounded-[3.5rem] border-none shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                    
+
                     <CardHeader className="bg-slate-900 dark:bg-orange-600 p-10 text-white relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full translate-x-24 -translate-y-24 blur-3xl" />
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
@@ -200,7 +200,7 @@ export default function ParentBillingPage() {
                                         </span>
                                     </div>
                                 </div>
-                                
+
                                 <div className="space-y-3">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Next Dispatch Cycle</p>
                                     <div className="flex items-center gap-4 bg-slate-50 dark:bg-white/[0.03] p-4 rounded-2xl border border-slate-100 dark:border-white/5">
@@ -209,7 +209,7 @@ export default function ParentBillingPage() {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="space-y-5">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Authorized Protocols</p>
                                 <ul className="space-y-4">
@@ -244,7 +244,7 @@ export default function ParentBillingPage() {
                         </p>
                     </Card>
 
-                    <UsageLimitsCard 
+                    <UsageLimitsCard
                         role="PARENT"
                         title="Family Capacity"
                         primaryColor="#ea580c"
@@ -272,8 +272,8 @@ export default function ParentBillingPage() {
                 </div>
 
                 <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 overflow-hidden shadow-xl">
-                    <TransactionHistory 
-                        items={transactions} 
+                    <TransactionHistory
+                        items={transactions}
                         totalItems={billingData.totalTransactions}
                         currentPage={currentPage}
                         itemsPerPage={ITEMS_PER_PAGE}

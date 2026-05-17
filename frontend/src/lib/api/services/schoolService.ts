@@ -36,6 +36,7 @@ export interface SchoolBilling {
     lastPaymentDate: string | null;
     paystackCustomerCode: string | null;
     billingCycle: string | null;
+    subscriptionPlanId?: string;
     amount: number;
     features: string[];
   };

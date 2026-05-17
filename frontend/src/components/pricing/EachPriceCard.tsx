@@ -29,23 +29,13 @@ const EachPriceCard: FC<EachPriceCardProps> = ({
     const amount = billingType === 'monthly' ? pricing?.monthly : pricing?.yearly;
     const canUseTrial = hasTrial && (!isAuthenticated || !user?.trialUsed);
 
-    const planOrder: Record<string, number> = {
-        'free': 0,
-        'starter': 1,
-        'growth': 2,
-        'pro': 3
-    };
-
-    const currentPlanLevel = planOrder[user?.plan?.toLowerCase() || 'free'] ?? 0;
-    const targetPlanLevel = planOrder[type?.toLowerCase() || 'free'] ?? 0;
-    const isLowerPlan = targetPlanLevel < currentPlanLevel;
-
     const isCurrentPlan =
         isAuthenticated &&
         !!user?.plan &&
-        user.plan.toLowerCase() === type?.toLowerCase();
+        user.plan.toLowerCase() === type?.toLowerCase() &&
+        (user.billingCycle || 'monthly').toLowerCase() === billingType.toLowerCase();
 
-    const isDeactivated = isLowerPlan && !isCurrentPlan;
+    const isDeactivated = false; // Disable hierarchy-based deactivation per user request
     const isTrialPlan = isCurrentPlan && !!user?.trialUsed;
 
     const handleAction = (e: React.MouseEvent) => {

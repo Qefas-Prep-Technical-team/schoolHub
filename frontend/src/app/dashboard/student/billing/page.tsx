@@ -92,7 +92,7 @@ export default function StudentBillingPage() {
     );
     const dynamicAmount = activePlanData
         ? (cycle === 'monthly' ? activePlanData.pricing.monthly : activePlanData.pricing.yearly)
-        : 0;
+        : subscription?.amount || 0;  // Use backend amount as fallback
 
     const isTrial = subscription?.isTrialActive === true;
     const subscriptionInfo = {

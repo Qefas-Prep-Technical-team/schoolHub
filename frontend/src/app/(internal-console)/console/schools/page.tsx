@@ -87,9 +87,9 @@ export default function SchoolsManagementPage() {
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{card.title}</p>
-                                <p className="text-xl font-black text-slate-900 dark:text-white leading-none mt-1">
+                                <div className="text-xl font-black text-slate-900 dark:text-white leading-none mt-1">
                                     {isLoading ? <Skeleton className="h-6 w-12" /> : card.value}
-                                </p>
+                                </div>
                             </div>
                         </div>
                     </Card>

@@ -25,8 +25,8 @@ This project follows the global Flexiti engineering standards.
 
 ## 4. Blackboard Protocol (STATE.md)
 - `STATE.md` is the system's working memory.
-- Every session MUST start by reading `STATE.md`.
-- Every session MUST end by updating `STATE.md` with Current Focus, Completed, Blockers, and Next Action.
+- Follow the workflow defined in [SKILL_BLACKBOARD_PROTOCOL.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/SKILL_BLACKBOARD_PROTOCOL.md).
+- Every session MUST start by reading `STATE.md` and end by updating it with current progress, sectioned by day and date.
 
 ## 5. Prohibited Patterns
 - No flat folder structures for complex backends.

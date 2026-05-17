@@ -5,6 +5,7 @@ import { Sparkles, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import { useSubscriptionUsage } from '@/lib/api/hooks/useSubscriptionUsage';
 import { useUserBilling, useSchoolBilling } from '@/lib/api/hooks/useSchool';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const TrialBanner = () => {
     const { user } = useAuthStore();
@@ -13,12 +14,14 @@ export const TrialBanner = () => {
     const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId;
     
     // For everyone, use subscription usage hook
-    const { data: usageData } = useSubscriptionUsage();
-    const { data: adminBillingData } = useSchoolBilling(isAdmin ? (schoolId || '') : '', { limit: 1 });
+    const { data: usageData, isLoading: isUsageLoading } = useSubscriptionUsage();
+    const { data: adminBillingData, isLoading: isAdminBillingLoading } = useSchoolBilling(isAdmin ? (schoolId || '') : '', { limit: 1 });
     
     // For parents, use user billing hook
-    const { data: parentBillingData } = useUserBilling(isParent ? user?.id : '', { limit: 1 });
+    const { data: parentBillingData, isLoading: isParentBillingLoading } = useUserBilling(isParent ? user?.id : '', { limit: 1 });
     
+    const isLoading = isUsageLoading || (isAdmin && isAdminBillingLoading) || (isParent && isParentBillingLoading);
+
     // Determine trial status
     const isTrialByPlan = user?.plan?.toUpperCase()?.includes('TRIAL');
     const isTrialByUsage = usageData?.isTrial;
@@ -26,6 +29,25 @@ export const TrialBanner = () => {
                              (isAdmin && adminBillingData?.subscription?.isTrialActive);
     
     const isTrial = !!isTrialByPlan || !!isTrialByUsage || !!isTrialByBilling;
+
+    if (isLoading) {
+        return (
+            <div className="mb-6">
+                <div className="relative overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800/50 p-0.5 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
+                    <div className="relative bg-white dark:bg-slate-900 rounded-[14px] p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 w-full">
+                            <Skeleton className="w-12 h-12 rounded-xl" />
+                            <div className="space-y-2 flex-1">
+                                <Skeleton className="h-5 w-32" />
+                                <Skeleton className="h-4 w-full max-w-[400px]" />
+                            </div>
+                        </div>
+                        <Skeleton className="h-11 w-32 rounded-xl" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // Determine expiration date from all possible sources
     const trialEndsAt = user?.trialEndsAt 

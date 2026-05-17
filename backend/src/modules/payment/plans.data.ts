@@ -5,7 +5,7 @@ export const PRICING_PLANS = [
       {
         "id": "parents-free",
         "type": "free",
-        "name": "Parent Free",
+        "name": "Parent Basic",
         "pricing": { "monthly": 0, "yearly": 0 },
         "description": "Essential monitoring for one child's academic journey",
         "features": [
@@ -17,7 +17,15 @@ export const PRICING_PLANS = [
         "hasTrial": false,
         "trialDays": 0,
         "isPopular": false,
-        "storage": "1GB"
+        "storage": "1GB",
+        "planScope": "PARENT",
+        "maxStudents": 1,
+        "maxExams": 10,
+        "maxClasses": 5,
+        "maxTeachers": 10,
+        "maxParents": 1,
+        "maxAiUsage": 5,
+        "maxStorageGb": 1
       },
       {
         "id": "parents-essential",
@@ -34,7 +42,15 @@ export const PRICING_PLANS = [
         "hasTrial": true,
         "trialDays": 14,
         "isPopular": true,
-        "storage": "5GB"
+        "storage": "5GB",
+        "planScope": "PARENT",
+        "maxStudents": 3,
+        "maxExams": 50,
+        "maxClasses": 15,
+        "maxTeachers": 30,
+        "maxParents": 2,
+        "maxAiUsage": 50,
+        "maxStorageGb": 5
       },
       {
         "id": "parents-pro",
@@ -51,7 +67,15 @@ export const PRICING_PLANS = [
         "hasTrial": true,
         "trialDays": 14,
         "isPopular": false,
-        "storage": "15GB"
+        "storage": "15GB",
+        "planScope": "PARENT",
+        "maxStudents": 999999,
+        "maxExams": 999999,
+        "maxClasses": 999999,
+        "maxTeachers": 999999,
+        "maxParents": 999999,
+        "maxAiUsage": 200,
+        "maxStorageGb": 15
       }
     ]
   },
@@ -61,7 +85,7 @@ export const PRICING_PLANS = [
       {
         "id": "students-free",
         "type": "free",
-        "name": "Student Free",
+        "name": "Student Basic",
         "pricing": { "monthly": 0, "yearly": 0 },
         "description": "Foundational access to learning materials and results",
         "features": [
@@ -73,7 +97,15 @@ export const PRICING_PLANS = [
         "hasTrial": false,
         "trialDays": 0,
         "isPopular": false,
-        "storage": "1GB"
+        "storage": "1GB",
+        "planScope": "STUDENT",
+        "maxStudents": 1,
+        "maxExams": 10,
+        "maxClasses": 5,
+        "maxTeachers": 10,
+        "maxParents": 1,
+        "maxAiUsage": 5,
+        "maxStorageGb": 1
       },
       {
         "id": "students-essential",
@@ -90,7 +122,15 @@ export const PRICING_PLANS = [
         "hasTrial": true,
         "trialDays": 7,
         "isPopular": true,
-        "storage": "10GB"
+        "storage": "10GB",
+        "planScope": "STUDENT",
+        "maxStudents": 1,
+        "maxExams": 999999,
+        "maxClasses": 50,
+        "maxTeachers": 100,
+        "maxParents": 2,
+        "maxAiUsage": 100,
+        "maxStorageGb": 10
       },
       {
         "id": "students-pro",
@@ -107,7 +147,15 @@ export const PRICING_PLANS = [
         "hasTrial": true,
         "trialDays": 14,
         "isPopular": false,
-        "storage": "25GB"
+        "storage": "25GB",
+        "planScope": "STUDENT",
+        "maxStudents": 1,
+        "maxExams": 999999,
+        "maxClasses": 999999,
+        "maxTeachers": 999999,
+        "maxParents": 999999,
+        "maxAiUsage": 999999,
+        "maxStorageGb": 25
       }
     ]
   },
@@ -117,7 +165,7 @@ export const PRICING_PLANS = [
       {
         "id": "schools-free",
         "type": "free",
-        "name": "Free Tier",
+        "name": "Institutional Basic",
         "pricing": { "monthly": 0, "yearly": 0 },
         "description": "Foundational tools for emerging schools to streamline basic operations",
         "features": [
@@ -131,7 +179,15 @@ export const PRICING_PLANS = [
         "hasTrial": false,
         "trialDays": 0,
         "isPopular": false,
-        "storage": "1GB"
+        "storage": "1GB",
+        "planScope": "SCHOOL",
+        "maxStudents": 50,
+        "maxExams": 200,
+        "maxClasses": 10,
+        "maxTeachers": 10,
+        "maxParents": 100,
+        "maxAiUsage": 20,
+        "maxStorageGb": 2
       },
       {
         "id": "schools-starter",
@@ -150,7 +206,15 @@ export const PRICING_PLANS = [
         "hasTrial": true,
         "trialDays": 14,
         "isPopular": true,
-        "storage": "10GB"
+        "storage": "10GB",
+        "planScope": "SCHOOL",
+        "maxStudents": 500,
+        "maxExams": 2000,
+        "maxClasses": 100,
+        "maxTeachers": 50,
+        "maxParents": 1000,
+        "maxAiUsage": 200,
+        "maxStorageGb": 20
       },
       {
         "id": "schools-growth",
@@ -169,7 +233,15 @@ export const PRICING_PLANS = [
         "hasTrial": true,
         "trialDays": 30,
         "isPopular": false,
-        "storage": "100GB"
+        "storage": "100GB",
+        "planScope": "SCHOOL",
+        "maxStudents": 999999,
+        "maxExams": 999999,
+        "maxClasses": 999999,
+        "maxTeachers": 999999,
+        "maxParents": 999999,
+        "maxAiUsage": 999999,
+        "maxStorageGb": 100
       }
     ]
   },
@@ -179,7 +251,7 @@ export const PRICING_PLANS = [
       {
         "id": "teachers-free",
         "type": "free",
-        "name": "Educator Free",
+        "name": "Educator Basic",
         "pricing": { "monthly": 0, "yearly": 0 },
         "description": "Essential digital companion for individual educators",
         "features": [
@@ -192,7 +264,15 @@ export const PRICING_PLANS = [
         "hasTrial": false,
         "trialDays": 0,
         "isPopular": false,
-        "storage": "2GB"
+        "storage": "2GB",
+        "planScope": "TEACHER",
+        "maxStudents": 100,
+        "maxExams": 50,
+        "maxClasses": 5,
+        "maxTeachers": 1,
+        "maxParents": 100,
+        "maxAiUsage": 10,
+        "maxStorageGb": 5
       },
       {
         "id": "teachers-essential",
@@ -211,7 +291,15 @@ export const PRICING_PLANS = [
         "hasTrial": true,
         "trialDays": 7,
         "isPopular": true,
-        "storage": "10GB"
+        "storage": "10GB",
+        "planScope": "TEACHER",
+        "maxStudents": 500,
+        "maxExams": 200,
+        "maxClasses": 20,
+        "maxTeachers": 1,
+        "maxParents": 500,
+        "maxAiUsage": 100,
+        "maxStorageGb": 20
       },
       {
         "id": "teachers-pro",
@@ -230,27 +318,35 @@ export const PRICING_PLANS = [
         "hasTrial": true,
         "trialDays": 14,
         "isPopular": false,
-        "storage": "25GB"
+        "storage": "25GB",
+        "planScope": "TEACHER",
+        "maxStudents": 999999,
+        "maxExams": 999999,
+        "maxClasses": 999999,
+        "maxTeachers": 1,
+        "maxParents": 999999,
+        "maxAiUsage": 999999,
+        "maxStorageGb": 50
       }
     ]
   }
 ];
 
 export const PRICING_FAQ = [
-    {
-        "question": "How do I choose the right plan for my school?",
-        "answer": "Consider the size of your school and the specific features you need. Our Starter plan is great for small schools, while the Growth plan offers advanced features for larger institutions."
-    },
-    {
-        "question": "Can I switch plans later?",
-        "answer": "Yes, you can upgrade or downgrade your plan at any time. The changes will take effect at the start of your next billing cycle."
-    },
-    {
-        "question": "Is there a free trial available?",
-        "answer": "Yes, we offer a free trial for all our premium plans. You can explore the features and decide which plan works best for you before committing."
-    },
-    {
-        "question": "What payment methods do you accept?",
-        "answer": "We accept major credit cards, bank transfers, and other secure payment methods through our integrated payment gateway."
-    }
+  {
+    "question": "How do I choose the right plan for my school?",
+    "answer": "Consider the size of your school and the specific features you need. Our Starter plan is great for small schools, while the Growth plan offers advanced features for larger institutions."
+  },
+  {
+    "question": "Can I switch plans later?",
+    "answer": "Yes, you can upgrade or downgrade your plan at any time. The changes will take effect at the start of your next billing cycle."
+  },
+  {
+    "question": "Is there a free trial available?",
+    "answer": "Yes, we offer a free trial for all our premium plans. You can explore the features and decide which plan works best for you before committing."
+  },
+  {
+    "question": "What payment methods do you accept?",
+    "answer": "We accept major credit cards, bank transfers, and other secure payment methods through our integrated payment gateway."
+  }
 ];

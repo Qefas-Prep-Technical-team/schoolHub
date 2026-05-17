@@ -69,6 +69,8 @@ export default function UpgradePlanPage() {
             >
                 <PlanUpgradeDisplay 
                     currentPlan={subscription?.plan}
+                    currentPlanId={subscription?.subscriptionPlanId}
+                    currentBillingCycle={currentCycle}
                     isUpgradeFlow={true}
                     currentPlanPrice={currentPlanPrice}
                     lastPaymentDate={subscription?.lastPaymentDate}

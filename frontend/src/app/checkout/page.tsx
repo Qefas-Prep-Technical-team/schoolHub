@@ -69,7 +69,7 @@ export default function CheckoutPage() {
                 }
             }
         }
-        
+
         // Fallback to any category if role-specific lookup failed
         if (!selectedPlanTab) {
             for (const cat of pricingData) {
@@ -99,10 +99,10 @@ export default function CheckoutPage() {
     // 2. Not an upgrade flow (isUpgrade)
     // 3. User is NOT authenticated (New registration) OR User is authenticated but on FREE plan and hasn't used trial
     const canUseTrial = hasPlanTrial && !isUpgrade && (
-        !isAuthenticated || 
+        !isAuthenticated ||
         (user?.plan?.toUpperCase() === 'FREE' && !user?.trialUsed)
     );
-    
+
     // Apply pro-rated discount if this is an upgrade
     const finalAmount = (isUpgrade && discountedAmount !== undefined) ? discountedAmount : amount;
 
@@ -132,12 +132,17 @@ export default function CheckoutPage() {
                 queryClient.invalidateQueries({ queryKey: ['user-profile'] });
             }
             const timer = setTimeout(() => {
-                // Determine target URL: All users go to their respective billing/subscription page
-                let targetUrl = `/dashboard/${role?.toLowerCase() || 'admin'}/billing`;
-                
+                // Determine target URL: All users go to their respective dashboard
+                let targetUrl = `/dashboard/${role?.toLowerCase() || 'admin'}`;
+
+                // If redirectBackUrl was set (pre-checkout flow), use that instead
+                if (redirectBackUrl) {
+                    targetUrl = redirectBackUrl;
+                }
+
                 clearCheckout();
                 router.push(targetUrl);
-            }, 3000);
+            }, 2000);
             return () => clearTimeout(timer);
         }
     }, [step, router, clearCheckout, queryClient, user, role, redirectBackUrl]);
@@ -210,7 +215,7 @@ export default function CheckoutPage() {
                 userType: role,
                 plan: plan // Pass selected plan type
             });
-            
+
             if (res.data.userId) {
                 setRegisteredUserId(res.data.userId);
             }
@@ -253,7 +258,7 @@ export default function CheckoutPage() {
         e.preventDefault();
         if (password.length < 6) return toast.error("Password must be at least 6 characters");
         if (password !== confirmPassword) return toast.error("Passwords do not match");
-        
+
         setIsLoading(true);
         try {
             await apiClient.post('/auth/finalize-checkout-setup', {
@@ -295,7 +300,7 @@ export default function CheckoutPage() {
             try {
                 toast.loading("Verifying payment...", { toastId: "verify" });
                 await paymentService.verify({ reference: reference.reference, plan, billingType: billing as "monthly" | "yearly" });
-                
+
                 // Refresh billing status immediately
                 if (queryClient) {
                     queryClient.invalidateQueries({ queryKey: ['school'] });
@@ -304,16 +309,16 @@ export default function CheckoutPage() {
                 }
 
                 toast.update("verify", { render: "Payment verified!", type: "success", isLoading: false, autoClose: 2000 });
-                
+
                 // Sync updated plan to auth store so pricing page reflects it immediately
                 updateUser({
                     plan: plan || undefined,
                     subscriptionStatus: 'ACTIVE',
                     trialUsed: canUseTrial ? true : user?.trialUsed,
                 });
-                
+
                 setIsLoading(false); // Clear initializing state
-                
+
                 if (!isAuthenticated && !isReturningUser) {
                     setStep('POST_PAYMENT_SETUP');
                 } else {
@@ -347,7 +352,7 @@ export default function CheckoutPage() {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-8 items-start">
-                
+
                 {/* Left Column: Form Flow */}
                 <div className="w-full md:w-3/5 bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 p-8 md:p-12 overflow-hidden relative">
                     <Link href="/pricing" className="inline-flex items-center text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors mb-8">
@@ -366,7 +371,7 @@ export default function CheckoutPage() {
                                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
                                         <div className="relative">
                                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                            <input 
+                                            <input
                                                 type="email" required
                                                 value={email} onChange={(e) => setEmail(e.target.value)}
                                                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none"
@@ -394,7 +399,7 @@ export default function CheckoutPage() {
                                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Verification Code</label>
                                         <div className="relative">
                                             <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                            <input 
+                                            <input
                                                 type="text" required maxLength={6}
                                                 value={otp} onChange={(e) => setOtp(e.target.value)}
                                                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 text-center tracking-widest font-black text-2xl transition-all outline-none"
@@ -405,12 +410,12 @@ export default function CheckoutPage() {
                                     <Button type="submit" disabled={isLoading} className="w-full py-6 text-lg rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2">
                                         {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Continue"}
                                     </Button>
-                                    
+
                                     <div className="text-center mt-4">
                                         <p className="text-sm text-slate-500">
                                             Didn't receive the code?{' '}
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 onClick={handleResendOtp}
                                                 disabled={resendTimer > 0 || isLoading}
                                                 className={`font-bold transition-colors ${resendTimer > 0 ? 'text-slate-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-700'}`}
@@ -434,13 +439,13 @@ export default function CheckoutPage() {
                                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Password</label>
                                         <div className="relative">
                                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                            <input 
+                                            <input
                                                 type={showPassword ? "text" : "password"} required minLength={6}
                                                 value={password} onChange={(e) => setPassword(e.target.value)}
                                                 className="w-full pl-12 pr-12 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none"
                                                 placeholder="••••••••"
                                             />
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
                                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
@@ -454,7 +459,7 @@ export default function CheckoutPage() {
                                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Confirm Password</label>
                                         <div className="relative">
                                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                            <input 
+                                            <input
                                                 type={showPassword ? "text" : "password"} required minLength={6}
                                                 value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                                                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all outline-none"
@@ -496,12 +501,12 @@ export default function CheckoutPage() {
                                         </label>
                                     </div>
 
-                                    <Button 
-                                        type="submit" 
-                                        disabled={isLoading || !acceptTerms} 
+                                    <Button
+                                        type="submit"
+                                        disabled={isLoading || !acceptTerms}
                                         className={`w-full py-6 text-lg rounded-2xl font-black shadow-lg transition-all flex items-center justify-center gap-2 
-                                            ${acceptTerms 
-                                                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/30' 
+                                            ${acceptTerms
+                                                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/30'
                                                 : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'}`}
                                     >
                                         {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save & Continue to Payment"}
@@ -522,8 +527,8 @@ export default function CheckoutPage() {
                                         <p className="text-slate-500 text-xs">Protected by Secure Gateway</p>
                                     </div>
                                 </div>
-                                <Button 
-                                    onClick={handlePayment} 
+                                <Button
+                                    onClick={handlePayment}
                                     disabled={isLoading}
                                     className="w-full py-8 text-xl rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 font-black shadow-xl transition-all flex items-center justify-center gap-2"
                                 >
@@ -547,7 +552,7 @@ export default function CheckoutPage() {
                                     </div>
                                     <h2 className="text-3xl font-black text-slate-900 dark:text-white font-lexend mb-2">Payment Successful!</h2>
                                     <p className="text-slate-500 mb-8">Your subscription is active and your account is ready.</p>
-                                    
+
                                     <Link href={`/login/${role === 'ADMIN' ? 'school-admin' : role?.toLowerCase() || 'school-admin'}`}>
                                         <Button className="w-full py-6 text-lg rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2">
                                             Go to Login <ArrowRight className="w-5 h-5" />
@@ -564,9 +569,9 @@ export default function CheckoutPage() {
                                 </div>
                                 <h2 className="text-4xl font-black text-slate-900 dark:text-white font-lexend mb-4">You're all set!</h2>
                                 <p className="text-slate-500 mb-10 text-lg">
-                                    Redirecting you to your subscription page...
+                                    Redirecting you to your dashboard...
                                 </p>
-                                <Link href="/dashboard">
+                                <Link href={`/dashboard/${role?.toLowerCase() || 'admin'}`}>
                                     <Button className="px-10 py-6 text-lg rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black shadow-xl">
                                         Go to Dashboard
                                     </Button>
@@ -581,9 +586,9 @@ export default function CheckoutPage() {
                     <div className="bg-slate-900 dark:bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
                         {/* Decorative Background */}
                         <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl" />
-                        
+
                         <h3 className="text-xl font-bold mb-6 text-slate-300 uppercase tracking-widest text-xs">Order Summary</h3>
-                        
+
                         <div className="flex items-center gap-4 mb-8">
                             <div className="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center">
                                 <ShieldCheck className="w-8 h-8 text-blue-400" />
@@ -601,13 +606,13 @@ export default function CheckoutPage() {
                             </div>
 
                             {isUpgrade && discountedAmount !== undefined && amount > discountedAmount && (
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     className="flex justify-between items-center text-emerald-400 font-bold bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/20"
                                 >
                                     <span className="flex items-center gap-2 text-xs">
-                                        <Zap className="w-4 h-4" /> 
+                                        <Zap className="w-4 h-4" />
                                         Upgrade Credit (Pro-rated)
                                     </span>
                                     <span className="text-sm">- ₦{(amount - discountedAmount).toLocaleString()}</span>
@@ -615,7 +620,7 @@ export default function CheckoutPage() {
                             )}
 
                             {isUpgrade && (discountedAmount === undefined || amount === discountedAmount) && (
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     className="text-[10px] text-amber-400 font-black uppercase tracking-widest bg-amber-400/10 p-3 rounded-xl text-center border border-amber-400/20"

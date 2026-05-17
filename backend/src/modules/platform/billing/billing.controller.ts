@@ -3,6 +3,7 @@ import prisma from "../../../config/database";
 import { LinkStatus, SubscriptionStatus, SubscriptionType } from "@prisma/client";
 import { createActivityLog } from "../logs/logs.controller";
 import { getSingleString } from "../../../utils/request-utils";
+import { PricingService } from "./pricing.service";
 
 /**
  * List all subscription plans
@@ -112,7 +113,20 @@ export const assignSchoolToPlan = async (req: Request, res: Response) => {
         subscriptionStatus: (status as SubscriptionStatus) || SubscriptionStatus.ACTIVE,
         subscriptionEnd: endDate ? new Date(endDate) : null,
         isTrialActive: false
-      }
+      },
+      include: { subscriptionPlan: true }
+    });
+
+    // Record subscription change in historical and active tables
+    await PricingService.recordSubscriptionChange({
+      entityId: schoolId,
+      entityType: 'SCHOOL',
+      planId: planId,
+      status: (status as SubscriptionStatus) || SubscriptionStatus.ACTIVE,
+      type: school.subscriptionPlan?.type || 'PAID',
+      expiresAt: endDate ? new Date(endDate) : null,
+      note: `Manual plan assignment via admin console`,
+      staffId: (req as any).staff?.id
     });
 
     // Activity Log
@@ -183,43 +197,47 @@ export const resetSchoolSubscription = async (req: Request, res: Response) => {
     // 2. Find the default FREE plan for institutions
     const freePlan = await prisma.subscriptionPlan.findFirst({
       where: { 
-        type: "FREE",
+        type: { equals: "free", mode: 'insensitive' },
         isActive: true,
         OR: [
-          { category: "INSTITUTION" },
+          { category: { equals: "INSTITUTION", mode: 'insensitive' } },
+          { category: { equals: "schools", mode: 'insensitive' } },
           { planScope: "SCHOOL" }
         ]
       }
     });
 
-    // 3. Perform the reset
-    const school = await prisma.school.update({
-      where: { id: schoolId },
-      data: {
-        plan: "FREE",
-        subscriptionPlanId: freePlan?.id || null,
-        subscriptionStatus: SubscriptionStatus.ACTIVE, // Free tier is active by default
-        isTrialActive: false,
-        trialUsed: false,
-        trialEndsAt: null,
-        subscriptionEnd: null,
-        maxStudentsOverride: null,
-        maxExamsOverride: null,
-        maxClassesOverride: null,
-        maxStorageGbOverride: null,
-        maxTeachersOverride: null,
-        maxParentsOverride: null,
-        maxAiUsageOverride: null
-      }
-    });
+    // 3. Perform the reset and sync using PricingService
+    // This will handle SchoolSubscription, School record, and all Admin records
+    if (freePlan) {
+        await PricingService.recordSubscriptionChange({
+            entityId: schoolId,
+            entityType: 'SCHOOL',
+            planId: freePlan.id,
+            status: 'ACTIVE',
+            type: 'FREE',
+            expiresAt: null,
+            billingCycle: 'monthly',
+            note: 'Subscription reset to default FREE tier via console',
+            staffId: (req as any).staff?.id
+        });
+    } else {
+        // Fallback if free plan is not found in DB
+        await prisma.school.update({
+            where: { id: schoolId },
+            data: {
+                plan: "FREE",
+                subscriptionStatus: SubscriptionStatus.ACTIVE,
+                isTrialActive: false,
+                trialUsed: false,
+                trialEndsAt: null,
+                subscriptionEnd: null,
+                billingCycle: 'monthly'
+            }
+        });
+    }
 
-    // 3. Clean up school_subscriptions table
-    await prisma.schoolSubscription.deleteMany({
-      where: { schoolId }
-    });
-
-    // 4. Reset linked teachers and students if necessary?
-    // User asked to "reset their subscription", so focusing on school level first.
+    const school = await prisma.school.findUnique({ where: { id: schoolId } });
 
     // 5. Activity Log
     const loggingStaff = (req as any).staff;
@@ -285,10 +303,19 @@ export const resetStudentSubscription = async (req: Request, res: Response) => {
       }
     });
 
-    // Clean up user_subscriptions table
-    await prisma.userSubscription.deleteMany({
-      where: { userId: studentId, userType: "STUDENT" }
-    });
+    // Clean up and sync user_subscriptions table
+    if (freePlan) {
+        await PricingService.recordSubscriptionChange({
+            entityId: studentId,
+            entityType: 'STUDENT',
+            planId: freePlan.id,
+            status: 'ACTIVE',
+            type: 'FREE',
+            expiresAt: null,
+            note: 'Subscription reset to default FREE tier via console',
+            staffId: (req as any).staff?.id
+        });
+    }
 
     // Activity Log
     const loggingStaff = (req as any).staff;
@@ -354,10 +381,19 @@ export const resetTeacherSubscription = async (req: Request, res: Response) => {
       }
     });
 
-    // Clean up user_subscriptions table
-    await prisma.userSubscription.deleteMany({
-      where: { userId: teacherId, userType: "TEACHER" }
-    });
+    // Clean up and sync user_subscriptions table
+    if (freePlan) {
+        await PricingService.recordSubscriptionChange({
+            entityId: teacherId,
+            entityType: 'TEACHER',
+            planId: freePlan.id,
+            status: 'ACTIVE',
+            type: 'FREE',
+            expiresAt: null,
+            note: 'Subscription reset to default FREE tier via console',
+            staffId: (req as any).staff?.id
+        });
+    }
 
     // Activity Log
     const loggingStaff = (req as any).staff;
@@ -414,10 +450,19 @@ export const resetParentSubscription = async (req: Request, res: Response) => {
       }
     });
 
-    // Delete any active user_subscriptions for this parent
-    await prisma.userSubscription.deleteMany({
-      where: { userId: id, userType: "PARENT" }
-    });
+    // Sync user_subscriptions table
+    if (freePlan) {
+        await PricingService.recordSubscriptionChange({
+            entityId: id,
+            entityType: 'PARENT',
+            planId: freePlan.id,
+            status: 'ACTIVE',
+            type: 'FREE',
+            expiresAt: null,
+            note: 'Subscription reset to default FREE tier via console',
+            staffId: (req as any).staff?.id
+        });
+    }
 
     // Log the action
     const loggingStaff = (req as any).staff;

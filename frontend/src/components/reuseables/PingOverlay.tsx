@@ -2,8 +2,63 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, Lock, Loader2 } from "lucide-react";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 export default function PingOverlay() {
+  const { userType } = useAuthStore();
+
+  const getThemeVars = () => {
+    switch (userType) {
+      case "STUDENT":
+        return {
+          textColor: "text-pink-600",
+          textLight: "text-pink-600/70",
+          orb1: "bg-pink-600/20",
+          orb2: "bg-purple-500/20",
+          ring: "border-pink-600/50",
+          gradientCore: "from-pink-600/20 to-purple-500/20",
+          loaderGradient: "from-transparent via-pink-600 to-transparent",
+          lockColor: "text-purple-500"
+        };
+      case "PARENT":
+        return {
+          textColor: "text-orange-500",
+          textLight: "text-orange-500/70",
+          orb1: "bg-orange-500/20",
+          orb2: "bg-amber-500/20",
+          ring: "border-orange-500/50",
+          gradientCore: "from-orange-500/20 to-amber-500/20",
+          loaderGradient: "from-transparent via-orange-500 to-transparent",
+          lockColor: "text-amber-500"
+        };
+      case "TEACHER":
+        return {
+          textColor: "text-purple-600",
+          textLight: "text-purple-600/70",
+          orb1: "bg-purple-600/20",
+          orb2: "bg-indigo-500/20",
+          ring: "border-purple-600/50",
+          gradientCore: "from-purple-600/20 to-indigo-500/20",
+          loaderGradient: "from-transparent via-purple-600 to-transparent",
+          lockColor: "text-indigo-500"
+        };
+      case "ADMIN":
+      default:
+        return {
+          textColor: "text-primary",
+          textLight: "text-primary/70",
+          orb1: "bg-primary/20",
+          orb2: "bg-indigo-500/20",
+          ring: "border-primary/50",
+          gradientCore: "from-primary/20 to-indigo-500/20",
+          loaderGradient: "from-transparent via-primary to-transparent",
+          lockColor: "text-indigo-500"
+        };
+    }
+  };
+
+  const theme = getThemeVars();
+
   return (
     <AnimatePresence>
       <motion.div
@@ -23,7 +78,7 @@ export default function PingOverlay() {
             y: [0, 30, 0],
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-[120px]"
+          className={`absolute -top-24 -left-24 w-96 h-96 ${theme.orb1} rounded-full blur-[120px]`}
         />
         <motion.div
           animate={{
@@ -32,7 +87,7 @@ export default function PingOverlay() {
             y: [0, -50, 0],
           }}
           transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-          className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px]"
+          className={`absolute -bottom-24 -right-24 w-96 h-96 ${theme.orb2} rounded-full blur-[120px]`}
         />
 
         {/* Central Content Card */}
@@ -58,7 +113,7 @@ export default function PingOverlay() {
                   delay: i * 1,
                   ease: "easeOut"
                 }}
-                className="absolute w-20 h-20 rounded-full border border-primary/50"
+                className={`absolute w-20 h-20 rounded-full border ${theme.ring}`}
               />
             ))}
             
@@ -75,15 +130,15 @@ export default function PingOverlay() {
               }}
               className="relative w-24 h-24 flex items-center justify-center rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-white/20"
             >
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/20 to-indigo-500/20 animate-pulse" />
-              <ShieldCheck size={48} className="text-primary relative z-10" />
+              <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${theme.gradientCore} animate-pulse`} />
+              <ShieldCheck size={48} className={`${theme.textColor} relative z-10`} />
               
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                 className="absolute -right-2 -top-2 w-8 h-8 rounded-full bg-white dark:bg-slate-800 shadow-md flex items-center justify-center border border-white/10"
               >
-                <Lock size={14} className="text-indigo-500" />
+                <Lock size={14} className={theme.lockColor} />
               </motion.div>
             </motion.div>
           </div>
@@ -107,10 +162,10 @@ export default function PingOverlay() {
               <motion.div
                 animate={{ x: ["-100%", "100%"] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-primary to-transparent"
+                className={`absolute top-0 bottom-0 w-1/2 bg-gradient-to-r ${theme.loaderGradient}`}
               />
             </div>
-            <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-primary/70">
+            <div className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest ${theme.textLight}`}>
               <Loader2 size={12} className="animate-spin" />
               Establishing Handshake
             </div>

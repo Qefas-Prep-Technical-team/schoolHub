@@ -2,6 +2,15 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { 
+    Dialog, 
+    DialogContent, 
+    DialogDescription, 
+    DialogFooter, 
+    DialogHeader, 
+    DialogTitle, 
+    DialogTrigger 
+} from "@/components/ui/dialog"
+import { 
     usePlatformSchoolDetails, 
     useUpdateSchoolPlan, 
     useAllPlatformPlans,
@@ -29,7 +38,8 @@ import {
     Lock as LockIcon,
     Unlock as UnlockIcon,
     Cloud as CloudIcon,
-    RefreshCcw as ResetIcon
+    RotateCcw as RotateCcwIcon,
+    History as HistoryIcon
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -54,6 +64,9 @@ export default function SchoolDetailsPage() {
     const [status, setStatus] = useState("")
     const [endDate, setEndDate] = useState("")
     const [isTrial, setIsTrial] = useState(false)
+    const [billingCycle, setBillingCycle] = useState("monthly")
+    const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
+    const [resetConfirmText, setResetConfirmText] = useState("")
 
     useEffect(() => {
         if (school) {
@@ -61,6 +74,7 @@ export default function SchoolDetailsPage() {
             setStatus(school.subscriptionStatus || "INACTIVE")
             setEndDate(school.subscriptionEnd ? new Date(school.subscriptionEnd).toISOString().split('T')[0] : "")
             setIsTrial(school.isTrialActive || false)
+            setBillingCycle(school.billingCycle || "monthly")
         }
     }, [school])
 
@@ -115,7 +129,8 @@ export default function SchoolDetailsPage() {
             subscriptionPlanId: selectedPlanId,
             subscriptionStatus: status,
             subscriptionEnd: endDate ? new Date(endDate).toISOString() : null,
-            isTrialActive: isTrial
+            isTrialActive: isTrial,
+            billingCycle: billingCycle
         }
         
         // Find the plan type string to match the 'plan' field
@@ -126,12 +141,6 @@ export default function SchoolDetailsPage() {
         }
 
         updatePlan.mutate({ id: id as string, planData })
-    }
-
-    const handleResetSubscription = () => {
-        if (window.confirm(`Are you sure you want to RESET the subscription for ${school.name}? This will revert them to the FREE plan and clear all overrides and trial settings.`)) {
-            resetSubscription.mutate({ schoolId: id as string })
-        }
     }
 
     return (
@@ -300,7 +309,6 @@ export default function SchoolDetailsPage() {
                                 ].map((item, idx) => {
                                     const percent = item.total > 0 ? Math.min(Math.round((item.current / item.total) * 100), 100) : 0;
                                     
-                                    // Map item colors to specific classes for direct use (avoiding dynamic template literals that tailwind might miss)
                                     const styles: any = {
                                         indigo: { bg: "bg-indigo-500/10", text: "text-indigo-600 dark:text-indigo-400", bar: "bg-indigo-500" },
                                         emerald: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", bar: "bg-emerald-500" },
@@ -338,46 +346,7 @@ export default function SchoolDetailsPage() {
                               </div>
                           )}
 
-                          {activeTab === "emails" && (
-                              <div className="space-y-4">
-                                 {(school.emailLogs?.length ?? 0) > 0 ? (
-                                     school.emailLogs!.map((log, idx: number) => (
-                                         <div key={idx} className="p-5 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-slate-100 dark:border-slate-800 group hover:border-indigo-500/30 transition-all overflow-hidden relative">
-                                             <div className="flex items-start justify-between gap-4 relative z-10">
-                                                <div className="flex gap-4">
-                                                    <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
-                                                        <MailIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm text-slate-900 dark:text-slate-100 font-bold truncate max-w-md">{log.subject}</p>
-                                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
-                                                            {new Date(log.createdAt).toLocaleString()} • RECIPIENT: {log.recipientEmail}
-                                                        </p>
-                                                        <div className="mt-3 text-xs text-slate-600 dark:text-slate-400 line-clamp-2 italic" dangerouslySetInnerHTML={{ __html: log.body }}></div>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right shrink-0">
-                                                    <span className={cn(
-                                                        "text-[10px] font-black uppercase px-2 py-1 rounded-lg",
-                                                        log.status === "SENT" ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
-                                                    )}>
-                                                        {log.status}
-                                                    </span>
-                                                    <p className="text-[9px] text-slate-400 font-bold mt-2 uppercase tracking-tighter">{log.type}</p>
-                                                </div>
-                                             </div>
-                                         </div>
-                                     ))
-                                 ) : (
-                                     <div className="py-20 text-center">
-                                         <MailIcon size={40} className="mx-auto text-slate-200 dark:text-slate-800 mb-4" />
-                                         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No communications recorded</p>
-                                     </div>
-                                 )}
-                              </div>
-                          )}
-
-                         {activeTab === "subscription" && (
+                          {activeTab === "subscription" && (
                               <div className="space-y-8">
                                  {/* Plan Identity Section */}
                                  <div className="p-8 bg-indigo-500/5 border border-indigo-500/10 rounded-[2rem] relative overflow-hidden">
@@ -423,255 +392,124 @@ export default function SchoolDetailsPage() {
                                      </div>
                                  </div>
 
-                                 {/* Resource Limits Section */}
-                                 <div className="space-y-4">
-                                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Resource Quotas & Entitlements</h4>
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                         {/* Students */}
-                                         <div className="p-6 bg-slate-50 dark:bg-slate-950 rounded-[2rem] border border-slate-100 dark:border-white/5 group hover:bg-white dark:hover:bg-slate-900 transition-all">
-                                             <div className="flex items-start justify-between">
-                                                 <div className="flex items-center gap-4">
-                                                     <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-                                                         <UsersIcon size={20} />
-                                                     </div>
-                                                     <div>
-                                                         <p className="text-sm font-bold text-slate-900 dark:text-slate-200">Student Capacity</p>
-                                                         <p className="text-[10px] text-slate-500 font-medium">Max active enrollments</p>
-                                                     </div>
-                                                 </div>
-                                                 <div className="text-right">
-                                                     <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                         {school.usage?.limits?.students || "Unlimited"}
-                                                     </p>
-                                                     {(school.maxStudentsOverride !== null && school.maxStudentsOverride !== undefined) && (
-                                                         <Badge className="bg-orange-500/10 text-orange-600 border-none text-[8px] px-1.5 h-4">OVERRIDE</Badge>
-                                                     )}
-                                                 </div>
-                                             </div>
-                                         </div>
-
-                                         {/* Teachers */}
-                                         <div className="p-6 bg-slate-50 dark:bg-slate-950 rounded-[2rem] border border-slate-100 dark:border-white/5 group hover:bg-white dark:hover:bg-slate-900 transition-all">
-                                             <div className="flex items-start justify-between">
-                                                 <div className="flex items-center gap-4">
-                                                     <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
-                                                         <BookOpenIcon size={20} />
-                                                     </div>
-                                                     <div>
-                                                         <p className="text-sm font-bold text-slate-900 dark:text-slate-200">Teacher Capacity</p>
-                                                         <p className="text-[10px] text-slate-500 font-medium">Max staff accounts</p>
-                                                     </div>
-                                                 </div>
-                                                 <div className="text-right">
-                                                     <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                         {school.usage?.limits?.teachers || "Unlimited"}
-                                                     </p>
-                                                     {(school.maxTeachersOverride !== null && school.maxTeachersOverride !== undefined) && (
-                                                         <Badge className="bg-orange-500/10 text-orange-600 border-none text-[8px] px-1.5 h-4">OVERRIDE</Badge>
-                                                     )}
-                                                 </div>
-                                             </div>
-                                         </div>
-
-                                         {/* Storage */}
-                                         <div className="p-6 bg-slate-50 dark:bg-slate-950 rounded-[2rem] border border-slate-100 dark:border-white/5 group hover:bg-white dark:hover:bg-slate-900 transition-all">
-                                             <div className="flex items-start justify-between">
-                                                 <div className="flex items-center gap-4">
-                                                     <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
-                                                         <SaveIcon size={20} />
-                                                     </div>
-                                                     <div>
-                                                         <p className="text-sm font-bold text-slate-900 dark:text-slate-200">Cloud Storage</p>
-                                                         <p className="text-[10px] text-slate-500 font-medium">Global disk quota</p>
-                                                     </div>
-                                                 </div>
-                                                 <div className="text-right">
-                                                     <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                         {school.usage?.limits?.storageGb || "Unlimited"} GB
-                                                     </p>
-                                                     {(school.maxStorageGbOverride !== null && school.maxStorageGbOverride !== undefined) && (
-                                                         <Badge className="bg-orange-500/10 text-orange-600 border-none text-[8px] px-1.5 h-4">OVERRIDE</Badge>
-                                                     )}
-                                                 </div>
-                                             </div>
-                                         </div>
-
-                                         {/* Exams */}
-                                         <div className="p-6 bg-slate-50 dark:bg-slate-950 rounded-[2rem] border border-slate-100 dark:border-white/5 group hover:bg-white dark:hover:bg-slate-900 transition-all">
-                                             <div className="flex items-start justify-between">
-                                                 <div className="flex items-center gap-4">
-                                                     <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
-                                                         <FileTextIcon size={20} />
-                                                     </div>
-                                                     <div>
-                                                         <p className="text-sm font-bold text-slate-900 dark:text-slate-200">Termly Exams</p>
-                                                         <p className="text-[10px] text-slate-500 font-medium">Active assessment cycles</p>
-                                                     </div>
-                                                 </div>
-                                                 <div className="text-right">
-                                                     <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                         {school.usage?.limits?.exams || "Unlimited"}
-                                                     </p>
-                                                     {(school.maxExamsOverride !== null && school.maxExamsOverride !== undefined) && (
-                                                         <Badge className="bg-orange-500/10 text-orange-600 border-none text-[8px] px-1.5 h-4">OVERRIDE</Badge>
-                                                     )}
-                                                 </div>
-                                             </div>
-                                         </div>
-
-                                         {/* Classes */}
-                                         <div className="p-6 bg-slate-50 dark:bg-slate-950 rounded-[2rem] border border-slate-100 dark:border-white/5 group hover:bg-white dark:hover:bg-slate-900 transition-all">
-                                             <div className="flex items-start justify-between">
-                                                 <div className="flex items-center gap-4">
-                                                     <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
-                                                         <BuildingIcon size={20} />
-                                                     </div>
-                                                     <div>
-                                                         <p className="text-sm font-bold text-slate-900 dark:text-slate-200">Classes Capacity</p>
-                                                         <p className="text-[10px] text-slate-500 font-medium">Max active classrooms</p>
-                                                     </div>
-                                                 </div>
-                                                 <div className="text-right">
-                                                     <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                         {school.usage?.limits?.classes || "Unlimited"}
-                                                     </p>
-                                                     {(school.maxClassesOverride !== null && school.maxClassesOverride !== undefined) && (
-                                                         <Badge className="bg-orange-500/10 text-orange-600 border-none text-[8px] px-1.5 h-4">OVERRIDE</Badge>
-                                                     )}
-                                                 </div>
-                                             </div>
-                                         </div>
-
-                                         {/* Parents */}
-                                         <div className="p-6 bg-slate-50 dark:bg-slate-950 rounded-[2rem] border border-slate-100 dark:border-white/5 group hover:bg-white dark:hover:bg-slate-900 transition-all">
-                                             <div className="flex items-start justify-between">
-                                                 <div className="flex items-center gap-4">
-                                                     <div className="h-10 w-10 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-500 group-hover:scale-110 transition-transform">
-                                                         <UsersIcon size={20} />
-                                                     </div>
-                                                     <div>
-                                                         <p className="text-sm font-bold text-slate-900 dark:text-slate-200">Parent Capacity</p>
-                                                         <p className="text-[10px] text-slate-500 font-medium">Max linked guardians</p>
-                                                     </div>
-                                                 </div>
-                                                 <div className="text-right">
-                                                     <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                         {school.subscriptionPlan?.maxParents || "Unlimited"}
-                                                     </p>
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     </div>
+                                 {/* Resource Quotas Section */}
+                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {[
+                                        { label: "Students", value: school.usage?.limits?.students || "Unlimited", icon: UsersIcon, color: "text-blue-400", override: school.maxStudentsOverride !== null },
+                                        { label: "Teachers", value: school.usage?.limits?.teachers || "Unlimited", icon: BookOpenIcon, color: "text-purple-400", override: school.maxTeachersOverride !== null },
+                                        { label: "Storage", value: `${school.usage?.limits?.storageGb || "Unlimited"} GB`, icon: SaveIcon, color: "text-emerald-400", override: school.maxStorageGbOverride !== null },
+                                        { label: "Exams", value: school.usage?.limits?.exams || "Unlimited", icon: FileTextIcon, color: "text-orange-400", override: school.maxExamsOverride !== null },
+                                        { label: "Classes", value: school.usage?.limits?.classes || "Unlimited", icon: BuildingIcon, color: "text-indigo-400", override: school.maxClassesOverride !== null },
+                                        { label: "Parents", value: school.subscriptionPlan?.maxParents || "Unlimited", icon: UsersIcon, color: "text-pink-400", override: school.maxParentsOverride !== null },
+                                    ].map((q, i) => (
+                                        <div key={i} className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <q.icon size={16} className={q.color} />
+                                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{q.label}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-black text-slate-900 dark:text-white">{q.value}</span>
+                                                {q.override && <Badge className="bg-orange-500/10 text-orange-600 border-none text-[8px] px-1 h-3 tracking-tighter">OVERRIDE</Badge>}
+                                            </div>
+                                        </div>
+                                    ))}
                                  </div>
 
-                                 {/* Timeline & Financials Section */}
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                                     <div className="p-6 bg-slate-900 dark:bg-slate-950 rounded-[2rem] text-white">
-                                         <div className="flex items-center gap-3 mb-6">
-                                             <ClockIcon size={20} className="text-indigo-400" />
-                                             <h4 className="text-sm font-black uppercase tracking-widest">Lifecycle Analytics</h4>
-                                         </div>
-                                         <div className="space-y-5">
-                                             <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                                                 <span className="text-xs text-slate-400 font-bold uppercase">Expires On</span>
-                                                 <span className="text-sm font-black">{school.subscriptionEnd ? format(new Date(school.subscriptionEnd), "PPP") : "N/A"}</span>
+                                 {/* Lifecycle & Financial Metadata */}
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                     <div className="p-6 bg-slate-950 rounded-3xl border border-white/5 space-y-4">
+                                         <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                            <ClockIcon size={12} className="text-indigo-400" /> Subscription Lifecycle
+                                         </h4>
+                                         <div className="space-y-3">
+                                             <div className="flex justify-between items-center text-xs">
+                                                 <span className="text-slate-400 font-medium">Expires On</span>
+                                                 <span className="text-white font-bold">{school.subscriptionEnd ? format(new Date(school.subscriptionEnd), "PPP") : "N/A"}</span>
                                              </div>
-                                             <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                                                 <span className="text-xs text-slate-400 font-bold uppercase">Trial Period</span>
-                                                 <span className={cn("text-sm font-black", school.isTrialActive ? "text-indigo-400" : "text-slate-500")}>
-                                                     {school.isTrialActive ? (school.trialEndsAt ? format(new Date(school.trialEndsAt), "PPP") : "Active") : "Expired/None"}
+                                             <div className="flex justify-between items-center text-xs">
+                                                 <span className="text-slate-400 font-medium">Trial End</span>
+                                                 <span className={cn("font-bold", school.isTrialActive ? "text-indigo-400" : "text-slate-600")}>
+                                                     {school.trialEndsAt ? format(new Date(school.trialEndsAt), "PPP") : "No Active Trial"}
                                                  </span>
                                              </div>
-                                             <div className="flex justify-between items-center">
-                                                 <span className="text-xs text-slate-400 font-bold uppercase">Created At</span>
-                                                 <span className="text-sm font-black">{format(new Date(school.createdAt), "PPP")}</span>
+                                             <div className="flex justify-between items-center text-xs border-t border-white/5 pt-3">
+                                                 <span className="text-slate-400 font-medium">Created At</span>
+                                                 <span className="text-slate-500 font-bold">{format(new Date(school.createdAt), "PPP")}</span>
                                              </div>
                                          </div>
                                      </div>
 
-                                     <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem]">
-                                         <div className="flex items-center gap-3 mb-6">
-                                             <CreditCardIcon size={20} className="text-emerald-500" />
-                                             <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Financial Metadata</h4>
-                                         </div>
-                                         
-                                         <div className="space-y-6">
-                                             <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-                                                 <span className="text-xs text-slate-400 font-bold uppercase">Last Payment</span>
-                                                 <span className="text-sm font-black text-slate-900 dark:text-white">{school.lastPaymentDate ? format(new Date(school.lastPaymentDate), "PPP") : "No Payment Recorded"}</span>
+                                     <div className="p-6 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-slate-100 dark:border-slate-800 space-y-4">
+                                         <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                            <CreditCardIcon size={12} className="text-emerald-500" /> Financial Context
+                                         </h4>
+                                         <div className="space-y-3">
+                                             <div className="flex justify-between items-center text-xs">
+                                                 <span className="text-slate-400 font-medium">Last Payment</span>
+                                                 <span className="text-slate-900 dark:text-white font-bold">{school.lastPaymentDate ? format(new Date(school.lastPaymentDate), "PPP") : "Never"}</span>
                                              </div>
-
-                                             <div className="space-y-4">
-                                                 <div className="flex items-center gap-2 mb-2">
-                                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Settlement Accounts</span>
-                                                     <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[8px] px-1.5 h-4">
-                                                         {school.settlementAccounts?.length || 0} CONFIGURED
-                                                     </Badge>
-                                                 </div>
-
-                                                 {school.settlementAccounts && school.settlementAccounts.length > 0 ? (
-                                                     <div className="space-y-3">
-                                                         {school.settlementAccounts.map((settlement, idx: number) => (
-                                                             <div key={settlement.id || idx} className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-white/5">
-                                                                 <div className="flex justify-between items-start mb-2">
-                                                                     <div className="flex items-center gap-2">
-                                                                         <span className="text-[10px] font-mono text-slate-500">{settlement.paystackSubaccountCode}</span>
-                                                                         {settlement.isDefault && (
-                                                                             <Badge className="bg-indigo-500 text-white border-none text-[8px] px-1.5 h-4">DEFAULT</Badge>
-                                                                         )}
-                                                                     </div>
-                                                                     <Badge className={cn(
-                                                                         "border-none text-[8px] font-black uppercase px-1.5 h-4",
-                                                                         settlement.paystackSubaccountStatus === "active" ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-500/10 text-slate-500"
-                                                                     )}>
-                                                                         {settlement.paystackSubaccountStatus || "pending"}
-                                                                     </Badge>
-                                                                 </div>
-                                                                 <div className="flex justify-between items-end">
-                                                                     <div>
-                                                                         <p className="text-xs font-black text-slate-900 dark:text-white uppercase">{settlement.bankName || "No Bank Name"}</p>
-                                                                         <p className="text-[10px] font-mono text-slate-500">{settlement.accountNumber || "No Account Number"}</p>
-                                                                     </div>
-                                                                     <div className="text-right">
-                                                                         <p className="text-[10px] text-slate-400 font-bold uppercase">Split Charge</p>
-                                                                         <p className="text-xs font-black text-slate-900 dark:text-white">{settlement.percentageCharge || 0}%</p>
-                                                                     </div>
-                                                                 </div>
-                                                             </div>
-                                                         ))}
-                                                     </div>
-                                                 ) : (
-                                                     <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-white/5">
-                                                         <div className="flex justify-between items-center mb-2">
-                                                             <span className="text-[10px] font-mono text-slate-500">{school.paystackSubaccountCode || "NOT_ASSIGNED"}</span>
-                                                             <Badge className={cn(
-                                                                 "border-none text-[8px] font-black uppercase px-1.5 h-4",
-                                                                 school.paystackSubaccountStatus === "active" ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-500/10 text-slate-500"
-                                                             )}>
-                                                                 {school.paystackSubaccountStatus || "pending"}
-                                                             </Badge>
-                                                         </div>
-                                                         <p className="text-[10px] text-slate-400 italic">No detailed settlement records found. Relying on school-level metadata.</p>
-                                                     </div>
-                                                 )}
+                                             <div className="flex justify-between items-center text-xs">
+                                                 <span className="text-slate-400 font-medium">Settlement Status</span>
+                                                 <Badge className={cn(
+                                                     "border-none text-[8px] font-black",
+                                                     school.paystackSubaccountStatus === "active" ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-500/10 text-slate-500"
+                                                 )}>{school.paystackSubaccountStatus || "UNLINKED"}</Badge>
                                              </div>
-
-                                             <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-white/5">
-                                                 <span className="text-xs text-slate-400 font-bold uppercase">Customer Code</span>
-                                                 <span className="text-[10px] font-mono text-slate-500">{school.paystackCustomerCode || "N/A"}</span>
+                                             <div className="flex justify-between items-center text-xs border-t border-slate-100 dark:border-slate-800 pt-3">
+                                                 <span className="text-slate-400 font-medium">Customer Code</span>
+                                                 <span className="font-mono text-[10px] text-slate-500">{school.paystackCustomerCode || "N/A"}</span>
                                              </div>
                                          </div>
                                      </div>
                                  </div>
                               </div>
-                         )}
+                          )}
 
-                         {activeTab === "staff" && (
-                              <div className="py-20 text-center opacity-40">
-                                  <UsersIcon size={48} className="mx-auto text-slate-400 mb-4" />
-                                  <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Directory loading...</p>
+                          {activeTab === "staff" && (
+                               <div className="py-20 text-center">
+                                   <UsersIcon size={48} className="mx-auto text-slate-200 dark:text-slate-800 mb-4" />
+                                   <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Directory data pending synchronization</p>
+                               </div>
+                          )}
+
+                          {activeTab === "emails" && (
+                              <div className="space-y-4">
+                                 {(school.emailLogs?.length ?? 0) > 0 ? (
+                                     school.emailLogs!.map((log, idx: number) => (
+                                         <div key={idx} className="p-5 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-slate-100 dark:border-slate-800 group hover:border-indigo-500/30 transition-all overflow-hidden relative">
+                                             <div className="flex items-start justify-between gap-4 relative z-10">
+                                                <div className="flex gap-4">
+                                                    <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
+                                                        <MailIcon size={20} className="text-indigo-600 dark:text-indigo-400" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-slate-900 dark:text-slate-100 font-bold truncate max-w-md">{log.subject}</p>
+                                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                                                            {new Date(log.createdAt).toLocaleString()} • RECIPIENT: {log.recipientEmail}
+                                                        </p>
+                                                        <div className="mt-3 text-xs text-slate-600 dark:text-slate-400 line-clamp-2 italic" dangerouslySetInnerHTML={{ __html: log.body }}></div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <span className={cn(
+                                                        "text-[10px] font-black uppercase px-2 py-1 rounded-lg",
+                                                        log.status === "SENT" ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
+                                                    )}>
+                                                        {log.status}
+                                                    </span>
+                                                    <p className="text-[9px] text-slate-400 font-bold mt-2 uppercase tracking-tighter">{log.type}</p>
+                                                </div>
+                                             </div>
+                                         </div>
+                                     ))
+                                 ) : (
+                                     <div className="py-20 text-center">
+                                         <MailIcon size={40} className="mx-auto text-slate-200 dark:text-slate-800 mb-4" />
+                                         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No communications recorded</p>
+                                     </div>
+                                 )}
                               </div>
-                         )}
+                          )}
                     </div>
                 </div>
 
@@ -705,7 +543,7 @@ export default function SchoolDetailsPage() {
                                     onChange={(e) => setSelectedPlanId(e.target.value)}
                                 >
                                     <option value="">Select a plan</option>
-                                    {plans?.map((cat) => (
+                                    {plans?.filter(cat => cat.category === 'schools').map((cat) => (
                                         <optgroup key={cat.category} label={cat.category.toUpperCase()} className="bg-white dark:bg-slate-900">
                                             {cat.tabs.map((p: any) => (
                                                 <option key={p.id} value={p.id}>{p.name} ({p.type})</option>
@@ -744,6 +582,19 @@ export default function SchoolDetailsPage() {
                                 </div>
                             </div>
 
+                            {/* Billing Cycle */}
+                            <div className="space-y-2">
+                                <label className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest ml-1">Billing Cycle</label>
+                                <select 
+                                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
+                                    value={billingCycle}
+                                    onChange={(e) => setBillingCycle(e.target.value)}
+                                >
+                                    <option value="monthly">Monthly</option>
+                                    <option value="yearly">Yearly</option>
+                                </select>
+                            </div>
+
                             {/* Trial Toggle */}
                             <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-white/5 mt-2">
                                 <div className="flex items-center gap-3">
@@ -775,15 +626,57 @@ export default function SchoolDetailsPage() {
                                     <p className="text-[9px] text-slate-400 ml-1">destructive administrative actions</p>
                                 </div>
                                 
-                                <Button 
-                                    variant="outline"
-                                    className="w-full border-red-500/20 text-red-500 hover:bg-red-500/10 h-14 rounded-2xl font-bold"
-                                    onClick={handleResetSubscription}
-                                    disabled={resetSubscription.isPending}
-                                >
-                                    <ResetIcon size={18} className={cn("mr-2", resetSubscription.isPending && "animate-spin")} /> 
-                                    {resetSubscription.isPending ? "Resetting Account..." : "Reset Subscription"}
-                                </Button>
+                                <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button 
+                                            variant="outline"
+                                            className="w-full border-red-500/20 text-red-500 hover:bg-red-500/10 h-14 rounded-2xl font-bold"
+                                            disabled={resetSubscription.isPending}
+                                        >
+                                            <RotateCcwIcon size={18} className={cn("mr-2", resetSubscription.isPending && "animate-spin")} /> 
+                                            {resetSubscription.isPending ? "Resetting Account..." : "Reset Subscription"}
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="bg-slate-900 border-slate-800 text-white rounded-[2rem] shadow-2xl">
+                                        <DialogHeader>
+                                            <DialogTitle className="text-xl font-black tracking-tight text-white uppercase">Confirm Reset</DialogTitle>
+                                            <DialogDescription className="text-slate-400 text-sm">
+                                                This will revert <span className="text-white font-bold">{school.name}</span> to the default FREE plan. All manual overrides and trials will be cleared.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="py-6 space-y-4">
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Type <span className="text-red-500 font-black">"reset"</span> to authorize:</p>
+                                            <input 
+                                                type="text"
+                                                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                                                placeholder="reset"
+                                                value={resetConfirmText}
+                                                onChange={(e) => setResetConfirmText(e.target.value)}
+                                            />
+                                        </div>
+                                        <DialogFooter>
+                                            <Button 
+                                                variant="ghost" 
+                                                onClick={() => setIsResetDialogOpen(false)}
+                                                className="text-slate-400 hover:text-white rounded-xl"
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button 
+                                                variant="destructive"
+                                                disabled={resetConfirmText.toLowerCase() !== "reset" || resetSubscription.isPending}
+                                                onClick={() => {
+                                                    resetSubscription.mutate({ schoolId: id as string })
+                                                    setIsResetDialogOpen(false)
+                                                    setResetConfirmText("")
+                                                }}
+                                                className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-8"
+                                            >
+                                                Confirm Reset
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
 
                             <p className="text-[10px] text-slate-500 text-center leading-relaxed">

@@ -26,7 +26,7 @@
     - [x] Optimized image handling by migrating `<img>` to `next/image` in `UserQRModal.tsx`, `Navbar.tsx`, `ImageLightbox.tsx`, and `LaTeXRenderer.tsx`.
     - [x] Cleaned up unused imports, variables, and parameters in `ProtectedRoute.tsx`, `Buttons.tsx`, `GetStartedRoleSelect.tsx`, `useGradeSettingsStore.ts`, `pricingUtils.ts`, and `SocketContext.tsx`.
     - [x] Fixed `next.config.ts` by removing unrecognized `turbopack` experimental key.
-    - [x] Resolved lockfile duplication by removing redundant `frontend/package-lock.json`.
+    - [x] Resolved lockfile duplication by removing redundant `frontend/packag e-lock.json`.
 - **Frontend Type Safety & Hardening (Teacher Dashboard)**:
   - [x] **Strict Typing Enforcement**: Replaced hundreds of instances of `any` with specific interfaces or `Record<string, unknown>` across `Exams`, `Grades`, `My Classes`, and `Students` modules.
   - [x] **Standardized Error Handling**: Integrated `AxiosError<{ message?: string }>` for all React Query mutations and queries, ensuring consistent error propagation and UI feedback.
@@ -106,6 +106,12 @@
 
 ## Completed
 
+### Sunday, May 17, 2026
+- **Console Schools Details Type Mismatch Fix**:
+    - [x] Added `maxParentsOverride?: number;` to the `PlatformSchoolDetails` interface in [usePlatformSchools.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/usePlatformSchools.ts) to match the database model definition.
+    - [x] Resolved type error in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(internal-console)/console/schools/[id]/page.tsx) where `school.maxParentsOverride` was causing the Next.js build worker to exit due to a type check error.
+    - [x] Verified full type check safety by running `npx tsc --noEmit` on the frontend workspace with 100% clean success.
+
 - **Frontend Type Safety & Hardening (Final Build Stabilization)**:
   - [x] **Resolved All TS Errors**: Successfully achieved a clean `npx tsc --noEmit` state across the entire frontend.
   - [x] **Interface Synchronization**: Updated `SubscriptionUsageData`, `ChildDetails`, and `ExamAttempt` interfaces to match backend API return shapes.
@@ -145,9 +151,15 @@
   - [x] Resolved scope issues in `admin.controller.ts` by defining missing variables from `req.query`.
   - [x] Successfully achieved a clean `npm run build` state for the entire backend project.
 - **Revenue Architecture & Console Stability**:
-  - [x] Resolved "Platform Entitlements" loading hang by fixing Prisma relation name mismatch (`planAccesses` -> `planAccess`) in `FeatureService.listFeatures()`.
-  - [x] Hardened `PricingPlanEditorModal` with robust error handling for manifest synchronization.
-  - [x] Mapped `featureKey` to `tag` in backend controllers to ensure frontend compatibility.
+  - [x] **Resolved "Platform Entitlements" loading hang** by fixing Prisma relation name mismatch (`planAccesses` -> `planAccess`) in `FeatureService.listFeatures()`.
+  - [x] **Hardened PricingPlanEditorModal** with robust error handling for manifest synchronization.
+  - [x] **Subscription Reset & Sync Refactor**:
+    - [x] Implemented `PricingService.recordSubscriptionChange` for atomic transaction updates across `SchoolSubscription`, `UserSubscription`, and `SubscriptionHistory`.
+    - [x] Refactored `billing.controller.ts` and `support.controller.ts` to ensure full deep cleanup and audit logging for all subscription resets and manual overrides.
+    - [x] Filtered the "System Override" plan dropdown in the school detail view to only show relevant `schools` plans.
+    - [x] Resolved a hydration error in the Schools Management page caused by invalid DOM nesting (`Skeleton` inside `p`).
+    - [x] Fixed Prisma validation error in `recordSubscriptionChange` by normalizing plan types to the `SubscriptionType` enum.
+    - [x] Implemented cascading synchronization to ensure associated `Admin` users are updated whenever their parent `School` subscription is reset or overridden.
 - **Pricing Editor Enhancements**:
   - [x] Integrated `maxAiUsage` (AI Tokens) field into the Pricing Plan Editor.
   - [x] Added `maxTeachers`, `maxClasses`, and `maxExams` quota fields to the internal console for full control.
@@ -231,12 +243,25 @@
     - [x] **Relation Name Synchronization**: Resolved persistent `teachers` vs `Teacher_Teacher_activeSchoolIdToSchool` mismatch across frontend hooks, backend controllers, and test scripts.
     - [x] **Interface Alignment**: Hardened `PlatformSchoolDetails` with missing `usage` and `teachers` properties to match the actual backend API response.
     - [x] **Student Profile Grid Fix**: Resolved type mismatch in the schedule grid's `onCellClick` handler, fixing the final blocker in the student dashboard.
-    - [x] **Backend Reliability**: Verified `npm run build` in the backend, confirming full schema normalization and type-safe quota logic.
+    - [x] **Backend Reliability**: Verified `npm run build` in the backend, confirming full schema normalization, type-safe quota logic, and resolving polymorphic Postgres transaction aborts (`25P02`) in `PricingService` for `ADMIN` users.
 
+- [x] Created **Task Planning Skill** (`SKILL_TASK_PLANNING.md`) to automate granular task list generation and tracking.
 ## Next Action
 
 - [ ] Translate Stitch-generated HTML design into production Next.js + Tailwind components for `IntroSection`, `KeyBenefits`, `MobileExperience`, `UsersSay`, and `FinalCTA`.
 - [ ] Perform a full navigation smoke test on mobile to verify `nextjs-toploader` behavior during role-based redirects.
+- [ ] Apply **Task Planning Skill** to all future complex tasks to ensure robust progress tracking.
 - [ ] Conduct a final audit of authentication labels to ensure 100% consistency across all roles.
 - [ ] Verify AI usage reporting in the admin dashboard for newly created student attempts.
 - [ ] Finalize production-ready asset optimizations (image compression).
+
+### Saturday, May 16, 2026
+- **Pricing Deactivation Logic Refinement**:
+    - [x] Updated `isCurrentPlan` to check both plan type and billing cycle, allowing users to switch between monthly and yearly versions of the same plan.
+    - [x] Removed hierarchy-based deactivation (`isLowerPlan`), enabling users to view and select all other plans (including downgrades) from the UI.
+    - [x] Synchronized `billingCycle` state across `auth-store`, `EachPriceCard`, and `UpgradePriceCard` components.
+- **Administrative Subscription Management**:
+    - [x] Centralized subscription synchronization in `PricingService.recordSubscriptionChange`, implementing deep sync for `School` and all associated `Admin` records.
+    - [x] Modernized the manual override and reset flows in `support.controller.ts` and `billing.controller.ts` to support the new `billingCycle` logic.
+    - [x] Updated the Platform Console UI to allow manual overrides for `billingCycle` (Monthly/Yearly).
+    - [x] Ensured that resetting a school subscription correctly reverts both the school and its admins to the default "Monthly FREE" tier.

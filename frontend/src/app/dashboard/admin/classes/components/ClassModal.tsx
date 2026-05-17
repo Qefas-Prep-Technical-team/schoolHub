@@ -21,9 +21,12 @@ import {
 import { classService, Class } from "../services/classService"
 import { subjectService, Subject } from "../../subjects/services/subjectService"
 import { departmentService, Department } from "../../departments/services/departmentService"
+import { sessionService, Session } from "@/lib/api/services/sessionService"
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
 import { apiClient } from "@/lib/api/client"
 import { toast } from "react-toastify"
+import { Search, Users, BookOpen, Building2, GraduationCap, Calendar, Zap } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface ClassModalProps {
   isOpen: boolean
@@ -53,14 +56,24 @@ const ClassModal: React.FC<ClassModalProps> = ({
   classItem,
 }) => {
   const [loading, setLoading] = useState(false)
+  const [fetchingData, setFetchingData] = useState(false)
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [students, setStudents] = useState<Student[]>([])
+  const [sessions, setSessions] = useState<Session[]>([])
+  
+  const [teacherSearch, setTeacherSearch] = useState("")
+  const [subjectSearch, setSubjectSearch] = useState("")
+  const [departmentSearch, setDepartmentSearch] = useState("")
+  const [studentSearch, setStudentSearch] = useState("")
+  const [sessionSearch, setSessionSearch] = useState("")
+
   const [formData, setFormData] = useState({
     name: "",
     section: "",
-    teacherId: "",
+    sessionId: "",
+    selectedTeacherIds: [] as string[],
     selectedSubjectIds: [] as string[],
     selectedDepartmentIds: [] as string[],
     selectedStudentIds: [] as string[],
@@ -75,7 +88,8 @@ const ClassModal: React.FC<ClassModalProps> = ({
         setFormData({
           name: classItem.name,
           section: classItem.section || "",
-          teacherId: classItem.teachers?.find(t => t.isLead)?.teacherId || classItem.teachers?.[0]?.teacherId || "",
+          sessionId: (classItem as any).sessionId || "",
+          selectedTeacherIds: classItem.teachers?.map(t => t.teacherId) || [],
           selectedSubjectIds: classItem.subjects?.map((s: any) => s.subject?.id || s.id) || [],
           selectedDepartmentIds: classItem.departments?.map((d: any) => d.department?.id || d.id) || [],
           selectedStudentIds: classItem.enrollments?.map((e: any) => e.student?.id || e.id) || [],
@@ -84,7 +98,8 @@ const ClassModal: React.FC<ClassModalProps> = ({
         setFormData({
           name: "",
           section: "",
-          teacherId: "",
+          sessionId: "",
+          selectedTeacherIds: [],
           selectedSubjectIds: [],
           selectedDepartmentIds: [],
           selectedStudentIds: [],
@@ -94,25 +109,30 @@ const ClassModal: React.FC<ClassModalProps> = ({
   }, [isOpen, classItem])
 
   const fetchInitialData = async () => {
+    setFetchingData(true)
     try {
       const statusRes = await apiClient.get(`/admin/admin-status/${user?.email}`);
       const schoolId = statusRes.data.data.schoolAdmins?.[0]?.schoolId;
       
       if (schoolId) {
-        const [teachersData, subjectsData, departmentsData, studentsData] = await Promise.all([
+        const [teachersData, subjectsData, departmentsData, studentsData, sessionsData] = await Promise.all([
           classService.getSchoolTeachers(schoolId),
           subjectService.getSubjects(schoolId),
           departmentService.getDepartments(schoolId),
-          classService.getSchoolStudents(schoolId)
+          classService.getSchoolStudents(schoolId),
+          sessionService.getSessions()
         ])
         setTeachers(teachersData)
         setSubjects(subjectsData)
         setDepartments(departmentsData)
         setStudents(studentsData)
+        setSessions(sessionsData)
       }
     } catch (error) {
       console.error("Failed to fetch initial data", error)
-      toast.error("Failed to load teachers or subjects")
+      toast.error("Failed to load school data")
+    } finally {
+      setFetchingData(false)
     }
   }
 
@@ -133,10 +153,11 @@ const ClassModal: React.FC<ClassModalProps> = ({
         await classService.updateClass(classItem.id, {
           name: formData.name,
           section: formData.section,
-          teacherIds: formData.teacherId && formData.teacherId !== "none" ? [formData.teacherId] : [],
+          teacherIds: formData.selectedTeacherIds,
           departmentIds: formData.selectedDepartmentIds,
           studentIds: formData.selectedStudentIds,
-        });
+          sessionId: formData.sessionId || undefined,
+        } as any);
 
         // Update subjects with replacement strategy (allows removal)
         await classService.replaceSubjects(classItem.id, formData.selectedSubjectIds);
@@ -151,9 +172,10 @@ const ClassModal: React.FC<ClassModalProps> = ({
           schoolId,
           subjectIds: formData.selectedSubjectIds,
           departmentIds: formData.selectedDepartmentIds,
-          teacherIds: formData.teacherId && formData.teacherId !== "none" ? [formData.teacherId] : [],
+          teacherIds: formData.selectedTeacherIds,
           studentIds: formData.selectedStudentIds,
-        });
+          sessionId: formData.sessionId || undefined,
+        } as any);
         toast.success("Class created successfully!");
       }
 
@@ -165,6 +187,15 @@ const ClassModal: React.FC<ClassModalProps> = ({
     } finally {
       setLoading(false)
     }
+  }
+
+  const toggleTeacher = (teacherId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedTeacherIds: prev.selectedTeacherIds.includes(teacherId)
+        ? prev.selectedTeacherIds.filter(id => id !== teacherId)
+        : [...prev.selectedTeacherIds, teacherId]
+    }))
   }
 
   const toggleSubject = (subjectId: string) => {
@@ -194,6 +225,41 @@ const ClassModal: React.FC<ClassModalProps> = ({
     }))
   }
 
+  const filteredTeachers = teachers.filter(t => 
+    t.name.toLowerCase().includes(teacherSearch.toLowerCase()) || 
+    t.email.toLowerCase().includes(teacherSearch.toLowerCase())
+  );
+
+  const filteredSubjects = subjects.filter(s => 
+    s.name.toLowerCase().includes(subjectSearch.toLowerCase())
+  );
+
+  const filteredDepartments = departments.filter(d => 
+    d.name.toLowerCase().includes(departmentSearch.toLowerCase())
+  );
+
+  const filteredStudents = students.filter(s => 
+    s.name.toLowerCase().includes(studentSearch.toLowerCase()) || 
+    s.email.toLowerCase().includes(studentSearch.toLowerCase()) ||
+    s.studentCode.toLowerCase().includes(studentSearch.toLowerCase())
+  );
+
+  const filteredSessions = sessions.filter(s => 
+    s.name.toLowerCase().includes(sessionSearch.toLowerCase())
+  );
+
+  const FormSkeleton = () => (
+    <div className="p-8 space-y-6">
+      <div className="grid grid-cols-2 gap-6">
+        <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
+        <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
+      </div>
+      <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-10 w-full" /></div>
+      <div className="space-y-2"><Skeleton className="h-4 w-40" /><Skeleton className="h-32 w-full" /></div>
+      <div className="space-y-2"><Skeleton className="h-4 w-40" /><Skeleton className="h-32 w-full" /></div>
+    </div>
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none shadow-2xl">
@@ -203,187 +269,265 @@ const ClassModal: React.FC<ClassModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-6 bg-white dark:bg-slate-900 max-h-[70vh] overflow-y-auto">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                Class Name
-              </Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="bg-slate-50 dark:bg-slate-800/50 border-none rounded-lg py-3 px-4 text-sm focus:ring-2 focus:ring-blue-500 transition-all"
-                placeholder="e.g. Grade 10"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                Class Section
-              </Label>
-              <Input
-                value={formData.section}
-                onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-                className="bg-slate-50 dark:bg-slate-800/50 border-none rounded-lg py-3 px-4 text-sm focus:ring-2 focus:ring-blue-500 transition-all"
-                placeholder="e.g. A, Science, Blue"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-              Assign Lead Educator
-            </Label>
-            <Select 
-                value={formData.teacherId} 
-                onValueChange={(value) => setFormData({ ...formData, teacherId: value })}
-            >
-              <SelectTrigger className="bg-slate-50 dark:bg-slate-800/50 border-none rounded-lg py-3 px-4 text-sm focus:ring-2 focus:ring-blue-500 transition-all">
-                <SelectValue placeholder="Select Teacher..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No Teacher Assigned</SelectItem>
-                {teachers.map((teacher) => (
-                  <SelectItem key={teacher.id} value={teacher.id}>
-                    {teacher.name} ({teacher.email})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-              Select Curriculum Subjects
-            </Label>
-            <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-              {subjects.map((subject) => (
-                <div 
-                  key={subject.id} 
-                  onClick={() => toggleSubject(subject.id)}
-                  className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ${
-                    formData.selectedSubjectIds.includes(subject.id) 
-                      ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' 
-                      : 'hover:bg-slate-200 dark:hover:bg-slate-700'
-                  }`}
+        {fetchingData ? (
+          <FormSkeleton />
+        ) : (
+          <form onSubmit={handleSubmit} className="p-8 space-y-6 bg-white dark:bg-slate-900 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <GraduationCap size={14} className="text-blue-500" /> Class Name
+                </Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 rounded-xl py-3 px-4 text-sm transition-all"
+                  placeholder="e.g. Grade 10"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Calendar size={14} className="text-orange-500" /> Class Session
+                </Label>
+                <Select 
+                    value={formData.sessionId} 
+                    onValueChange={(value) => setFormData({ ...formData, sessionId: value })}
                 >
-                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                    formData.selectedSubjectIds.includes(subject.id) 
-                      ? 'bg-blue-600 border-blue-600' 
-                      : 'border-slate-300 dark:border-slate-600'
-                  }`}>
-                    {formData.selectedSubjectIds.includes(subject.id) && (
-                      <span className="material-symbols-outlined text-[12px] text-white font-bold">
-                        check
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-sm truncate">{subject.name}</span>
-                </div>
-              ))}
-            </div>
-            <p className="text-[10px] text-slate-400">
-              Selected: {formData.selectedSubjectIds.length} subjects
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-              Assign Academic Departments
-            </Label>
-            <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-900 dark:text-white">
-              {departments.map((dept) => (
-                <div 
-                  key={dept.id} 
-                  onClick={() => toggleDepartment(dept.id)}
-                  className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ${
-                    formData.selectedDepartmentIds.includes(dept.id) 
-                      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-medium' 
-                      : 'hover:bg-slate-200 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                    formData.selectedDepartmentIds.includes(dept.id) 
-                      ? 'bg-emerald-600 border-emerald-600 shadow-sm' 
-                      : 'border-slate-300 dark:border-slate-600'
-                  }`}>
-                    {formData.selectedDepartmentIds.includes(dept.id) && (
-                      <span className="material-symbols-outlined text-[12px] text-white font-bold leading-none">
-                        check
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-sm truncate">{dept.name}</span>
-                </div>
-              ))}
-            </div>
-            <p className="text-[10px] text-slate-400 font-medium">
-              Selected: {formData.selectedDepartmentIds.length} departments
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-              Assign Enrolled Students
-            </Label>
-            <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-              {students.length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-4">No connected students found for this school.</p>
-              ) : (
-                students.map((student) => (
-                  <div 
-                    key={student.id} 
-                    onClick={() => toggleStudent(student.id)}
-                    className={`flex items-center justify-between p-3 rounded-md cursor-pointer transition-colors ${
-                      formData.selectedStudentIds.includes(student.id) 
-                        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' 
-                        : 'hover:bg-slate-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                        formData.selectedStudentIds.includes(student.id) 
-                          ? 'bg-blue-600 border-blue-600' 
-                          : 'border-slate-300 dark:border-slate-600'
-                      }`}>
-                        {formData.selectedStudentIds.includes(student.id) && (
-                          <span className="material-symbols-outlined text-[12px] text-white font-bold">
-                            check
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold truncate">{student.name}</span>
-                        <span className="text-[10px] opacity-70">{student.email} • {student.studentCode}</span>
+                  <SelectTrigger className="bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 rounded-xl py-3 px-4 text-sm transition-all">
+                    <SelectValue placeholder="Select Session..." />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-2 border-slate-100 shadow-xl">
+                    <div className="p-2 border-b">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                        <Input 
+                          placeholder="Search sessions..." 
+                          className="pl-9 h-9 text-xs border-none bg-slate-100 rounded-lg"
+                          value={sessionSearch}
+                          onChange={(e) => setSessionSearch(e.target.value)}
+                        />
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
+                    {filteredSessions.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-slate-400">No sessions found</div>
+                    ) : (
+                      filteredSessions.map((session) => (
+                        <SelectItem key={session.id} value={session.id} className="rounded-lg">
+                          {session.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <p className="text-[10px] text-slate-400 font-medium">
-              Selected: {formData.selectedStudentIds.length} students
-            </p>
-          </div>
 
-          <DialogFooter className="flex items-center justify-end gap-4 pt-4 border-t dark:border-slate-800 mt-6 sticky bottom-0 bg-white dark:bg-slate-900">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onClose}
-              className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full shadow-lg hover:shadow-blue-500/30 transition-all active:scale-95"
-            >
-              {loading ? "Saving..." : classItem ? "Update Class" : "Create Class"}
-            </Button>
-          </DialogFooter>
-        </form>
+            <div className="space-y-3">
+              <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Users size={14} className="text-emerald-500" /> Assign Educators / Teachers
+              </Label>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-4 border-2 border-slate-100 dark:border-white/5">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <Input 
+                    placeholder="Search teachers by name or email..." 
+                    className="pl-10 bg-white dark:bg-slate-900 border-none rounded-lg text-sm shadow-sm"
+                    value={teacherSearch}
+                    onChange={(e) => setTeacherSearch(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                  {filteredTeachers.map((teacher) => (
+                    <div 
+                      key={teacher.id} 
+                      onClick={() => toggleTeacher(teacher.id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2 ${
+                        formData.selectedTeacherIds.includes(teacher.id) 
+                          ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' 
+                          : 'bg-white dark:bg-slate-900 border-transparent hover:border-slate-200'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                        formData.selectedTeacherIds.includes(teacher.id) 
+                          ? 'bg-emerald-600 border-emerald-600' 
+                          : 'border-slate-200 dark:border-slate-700'
+                      }`}>
+                        {formData.selectedTeacherIds.includes(teacher.id) && (
+                          <span className="material-symbols-outlined text-[14px] text-white font-bold">check</span>
+                        )}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-bold truncate">{teacher.name}</span>
+                        <span className="text-[10px] opacity-60 truncate">{teacher.email}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <BookOpen size={14} className="text-blue-500" /> Select Curriculum Subjects
+              </Label>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-4 border-2 border-slate-100 dark:border-white/5">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <Input 
+                    placeholder="Search subjects..." 
+                    className="pl-10 bg-white dark:bg-slate-900 border-none rounded-lg text-sm shadow-sm"
+                    value={subjectSearch}
+                    onChange={(e) => setSubjectSearch(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                  {filteredSubjects.map((subject) => (
+                    <div 
+                      key={subject.id} 
+                      onClick={() => toggleSubject(subject.id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2 ${
+                        formData.selectedSubjectIds.includes(subject.id) 
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500/30 text-blue-700 dark:text-blue-300' 
+                          : 'bg-white dark:bg-slate-900 border-transparent hover:border-slate-200'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                        formData.selectedSubjectIds.includes(subject.id) 
+                          ? 'bg-blue-600 border-blue-600' 
+                          : 'border-slate-200 dark:border-slate-700'
+                      }`}>
+                        {formData.selectedSubjectIds.includes(subject.id) && (
+                          <span className="material-symbols-outlined text-[14px] text-white font-bold">check</span>
+                        )}
+                      </div>
+                      <span className="text-sm font-bold truncate">{subject.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Building2 size={14} className="text-indigo-500" /> Assign Academic Departments
+              </Label>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-4 border-2 border-slate-100 dark:border-white/5">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <Input 
+                    placeholder="Search departments..." 
+                    className="pl-10 bg-white dark:bg-slate-900 border-none rounded-lg text-sm shadow-sm"
+                    value={departmentSearch}
+                    onChange={(e) => setDepartmentSearch(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                  {filteredDepartments.map((dept) => (
+                    <div 
+                      key={dept.id} 
+                      onClick={() => toggleDepartment(dept.id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2 ${
+                        formData.selectedDepartmentIds.includes(dept.id) 
+                          ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500/30 text-indigo-700 dark:text-indigo-300 font-bold' 
+                          : 'bg-white dark:bg-slate-900 border-transparent hover:border-slate-200'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                        formData.selectedDepartmentIds.includes(dept.id) 
+                          ? 'bg-indigo-600 border-indigo-600 shadow-sm' 
+                          : 'border-slate-200 dark:border-slate-700'
+                      }`}>
+                        {formData.selectedDepartmentIds.includes(dept.id) && (
+                          <span className="material-symbols-outlined text-[14px] text-white font-bold leading-none">check</span>
+                        )}
+                      </div>
+                      <span className="text-sm font-bold truncate">{dept.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Users size={14} className="text-blue-500" /> Assign Enrolled Students
+              </Label>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-4 border-2 border-slate-100 dark:border-white/5">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <Input 
+                    placeholder="Search students by name, email or code..." 
+                    className="pl-10 bg-white dark:bg-slate-900 border-none rounded-lg text-sm shadow-sm"
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                  {filteredStudents.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                      <Users size={32} className="opacity-20 mb-2" />
+                      <p className="text-xs">No matching students found</p>
+                    </div>
+                  ) : (
+                    filteredStudents.map((student) => (
+                      <div 
+                        key={student.id} 
+                        onClick={() => toggleStudent(student.id)}
+                        className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all border-2 ${
+                          formData.selectedStudentIds.includes(student.id) 
+                            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500/30 text-blue-700 dark:text-blue-300' 
+                            : 'bg-white dark:bg-slate-900 border-transparent hover:border-slate-200 shadow-sm'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                            formData.selectedStudentIds.includes(student.id) 
+                              ? 'bg-blue-600 border-blue-600' 
+                              : 'border-slate-200 dark:border-slate-700'
+                          }`}>
+                            {formData.selectedStudentIds.includes(student.id) && (
+                              <span className="material-symbols-outlined text-[14px] text-white font-bold">check</span>
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-black truncate">{student.name}</span>
+                            <span className="text-[10px] opacity-60">{student.email} • {student.studentCode}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                  {formData.selectedStudentIds.length} Students Selected
+                </p>
+                <div className="h-[2px] flex-1 mx-4 bg-slate-100 dark:bg-white/5 rounded-full" />
+                <Zap size={12} className="text-orange-400" />
+              </div>
+            </div>
+
+            <DialogFooter className="flex items-center justify-end gap-4 pt-6 border-t dark:border-slate-800 mt-6 sticky bottom-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={onClose}
+                className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="px-10 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg hover:shadow-blue-500/30 transition-all active:scale-95 py-6"
+              >
+                {loading ? "Processing..." : classItem ? "Update Class" : "Create Class"}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   )

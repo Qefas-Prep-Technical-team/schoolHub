@@ -3,6 +3,7 @@ import { ClassScope, UserRole } from "@prisma/client";
 import prisma from "../../config/database";
 import { createNotification } from "../notification/notification.service";
 import { canManageClass } from "./class.permissions";
+import { getSchoolUsageService } from "../subscription/quota.service";
 import {
   addStudentToClassService,
   approveClassService,
@@ -51,6 +52,36 @@ export const createClass = async (req: Request, res: Response) => {
         message: "Invalid class scope",
       });
     }
+
+    // --- Subscription Quota Check ---
+    if (schoolId) {
+      try {
+        const usageData = await getSchoolUsageService(schoolId);
+        if (!usageData) {
+          return res.status(500).json({
+            success: false,
+            message: "Error verifying subscription. Failed to create class.",
+          });
+        }
+
+        const { usage, limits } = usageData;
+        if (usage.classes >= limits.classes) {
+          return res.status(403).json({
+            success: false,
+            message: `Class limit exceeded for your current plan (${limits.classes} classes max). Please upgrade to create more classes.`,
+          });
+        }
+      } catch (quotaError: any) {
+        console.error("Quota check failed:", quotaError);
+        // If it's a "School not found" or similar, we might want to continue or fail.
+        // Given the requirement: "if you cant find their subuscrition tell them error creating class"
+        return res.status(500).json({
+          success: false,
+          message: "Error verifying subscription. Failed to create class.",
+        });
+      }
+    }
+    // --------------------------------
 
     const newClass = await createClassService({
       currentUserId: req.user.id,

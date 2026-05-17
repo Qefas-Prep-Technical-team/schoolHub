@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sessionService, Session } from "@/lib/api/services/sessionService";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
-import { CreateSessionForm } from "./components/CreateSessionForm";
+import { SessionForm } from "./components/SessionForm";
 import {
   Calendar,
   Archive,
@@ -20,7 +20,9 @@ import {
   Activity,
   ArrowUpRight,
   Clock,
-  Layers
+  Layers,
+  Edit,
+  X
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -29,6 +31,8 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,7 +45,9 @@ import {
 export default function SessionsPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
 
   const { data: settings } = useSchoolSettings(schoolId);
   const primaryColor = settings?.themeColor || '#2563eb';
@@ -167,15 +173,37 @@ export default function SessionsPage() {
             </motion.div>
           )}
 
-          {/* Initialization Terminal */}
+          {/* Session Form Terminal */}
           <div className="p-8 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl space-y-8">
-            <div className="flex items-center gap-4">
-              <div className="size-12 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400">
-                <Plus size={24} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={cn(
+                  "size-12 rounded-2xl flex items-center justify-center transition-colors",
+                  editingSession ? "bg-amber-500/10 text-amber-500" : "bg-slate-50 dark:bg-white/5 text-slate-400"
+                )}>
+                  {editingSession ? <Edit size={24} /> : <Plus size={24} />}
+                </div>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                  {editingSession ? 'Edit Session' : 'Create New Session'}
+                </h2>
               </div>
-              <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Create New Session</h2>
+              {editingSession && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setEditingSession(null)}
+                  className="rounded-full hover:bg-slate-100 dark:hover:bg-white/5"
+                >
+                  <X size={18} />
+                </Button>
+              )}
             </div>
-            <CreateSessionForm schoolId={schoolId} />
+            <SessionForm 
+              schoolId={schoolId} 
+              initialData={editingSession || undefined}
+              onSuccess={() => setEditingSession(null)}
+              onCancel={() => setEditingSession(null)}
+            />
           </div>
         </div>
 
@@ -259,8 +287,14 @@ export default function SessionsPage() {
                           <DropdownMenuContent align="end" className="w-56 rounded-[1.5rem] p-2 border-2 border-slate-100 dark:border-white/5">
                             <DropdownMenuLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 py-2">Session Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/5" />
-                            <DropdownMenuItem className="rounded-xl gap-3 font-bold py-3 cursor-pointer">
-                              <Layers size={16} /> View Details
+                            <DropdownMenuItem 
+                              className="rounded-xl gap-3 font-bold py-3 cursor-pointer"
+                              onClick={() => {
+                                setEditingSession(session);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                            >
+                              <Edit size={16} /> Edit Session
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="rounded-xl gap-3 font-bold py-3 text-red-500 hover:bg-red-500/10 cursor-pointer"
