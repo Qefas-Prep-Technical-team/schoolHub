@@ -62,7 +62,12 @@ export function TabsTrigger({ value, children, className }: { value: string; chi
 
   return (
     <button
-      onClick={() => context.setActiveTab(value)}
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        context.setActiveTab(value);
+      }}
       className={cn(
         "relative flex h-9 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-bold transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary",
         isActive ? "text-slate-900 dark:text-white" : "hover:text-slate-700 dark:hover:text-slate-200",

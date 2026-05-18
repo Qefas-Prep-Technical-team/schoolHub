@@ -123,8 +123,13 @@ export const canManageDepartment = async ({
   userType: UserRole;
   departmentId: string;
 }) => {
-  const department = await prisma.department.findUnique({
-    where: { id: departmentId },
+  const department = await prisma.department.findFirst({
+    where: {
+      OR: [
+        { id: departmentId },
+        { code: departmentId },
+      ],
+    },
   });
 
   if (!department || department.isArchived) return false;

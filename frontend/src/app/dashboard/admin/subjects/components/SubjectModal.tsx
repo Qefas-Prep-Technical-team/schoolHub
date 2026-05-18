@@ -39,7 +39,10 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
   onSuccess,
   subject,
 }) => {
-  const [loading, setLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isFetchingData, setIsFetchingData] = useState(false)
+  const [deptSearch, setDeptSearch] = useState("")
+  const [teacherSearch, setTeacherSearch] = useState("")
   const [departments, setDepartments] = useState<Department[]>([])
   const [formData, setFormData] = useState<{
     name: string;
@@ -60,48 +63,42 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
   const [schemes, setSchemes] = useState<Partial<SchemeOfWork>[]>([])
 
   const { user } = useAuthStore()
-  const [schoolId, setSchoolId] = useState<string>("");
-  
-  useEffect(() => {
-    const checkStatus = async () => {
-      if (user?.email) {
-        try {
-            const res = await apiClient.get(`/admin/admin-status/${user.email}`);
-            setSchoolId(res.data.data.schoolAdmins?.[0]?.schoolId || "");
-        } catch (err) {
-            console.error("Auth check failed", err);
-        }
-      }
-    };
-    checkStatus();
-  }, [user?.email]);
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
 
-  const { data: schoolTeachers = [] } = useSchoolTeachers(schoolId);
+  const { data: schoolTeachers = [], isLoading: teachersLoading } = useSchoolTeachers(schoolId);
 
   useEffect(() => {
     if (isOpen) {
-      fetchDepartments()
-      if (subject?.id) {
-        setFormData({
-          name: subject.name,
-          code: subject.code,
-          description: subject.description || "",
-          departmentIds: subject.departments?.map((d: any) => d.departmentId) || [],
-          teacherIds: (subject as any).teacherSubjects?.map((ts: any) => ts.teacherId) || [],
-          scope: "SCHOOL",
-        })
-        fetchScheme(subject.id)
-      } else {
-        setFormData({
-          name: "",
-          code: "",
-          description: "",
-          departmentIds: [],
-          teacherIds: [],
-          scope: "SCHOOL",
-        })
-        setSchemes([{ week: 1, topic: "", term: 1 }])
+      setIsSaving(false)
+      const loadAllData = async () => {
+        setIsFetchingData(true)
+        setDeptSearch("")
+        setTeacherSearch("")
+        await fetchDepartments()
+        if (subject?.id) {
+          setFormData({
+            name: subject.name,
+            code: subject.code,
+            description: subject.description || "",
+            departmentIds: subject.departments?.map((d: any) => d.departmentId) || [],
+            teacherIds: (subject as any).teacherSubjects?.map((ts: any) => ts.teacherId) || [],
+            scope: "SCHOOL",
+          })
+          await fetchScheme(subject.id)
+        } else {
+          setFormData({
+            name: "",
+            code: "",
+            description: "",
+            departmentIds: [],
+            teacherIds: [],
+            scope: "SCHOOL",
+          })
+          setSchemes([{ week: 1, topic: "", term: 1 }])
+        }
+        setIsFetchingData(false)
       }
+      loadAllData()
     }
   }, [isOpen, subject, schoolId])
 
@@ -142,7 +139,7 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setIsSaving(true)
     try {
       if (!schoolId) {
         toast.error("School context not found. Please try logging in again.");
@@ -192,9 +189,20 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
       console.error("Failed to save subject", error)
       toast.error(error.response?.data?.message || "Failed to save subject");
     } finally {
-      setLoading(false)
+      setIsSaving(false)
     }
   }
+
+  const filteredDepartments = departments.filter(dep => 
+    dep.name.toLowerCase().includes(deptSearch.toLowerCase())
+  );
+
+  const filteredTeachers = schoolTeachers.filter((teacher: any) => 
+    teacher.name.toLowerCase().includes(teacherSearch.toLowerCase()) ||
+    teacher.teacherCode?.toLowerCase().includes(teacherSearch.toLowerCase())
+  );
+
+  const isModalLoading = isFetchingData || teachersLoading;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -202,27 +210,64 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
         <DialogHeader className="p-8 border-b dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900 flex-shrink-0">
           <DialogTitle className="text-3xl font-black font-headline text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
              <div className="p-2 bg-blue-600 rounded-xl"><BookOpen className="h-6 w-6 text-white" /></div>
-             {subject?.id ? "Edit Subject Profile" : "Initialize New Subject"}
+             {subject?.id ? "Edit Subject" : "Add New Subject"}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
-          <Tabs defaultValue="settings" className="w-full flex-1 flex flex-col min-h-0">
-            <div className="px-8 border-b dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
-                <TabsList className="bg-transparent border-none p-0 h-14 gap-8">
+          {isModalLoading ? (
+            <div className="flex-1 p-8 space-y-8 animate-pulse bg-slate-50/30 dark:bg-slate-900/50">
+              <div className="flex gap-8 h-12 border-b dark:border-slate-800">
+                <div className="w-32 h-6 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                <div className="w-32 h-6 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <div className="w-24 h-4 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                  <div className="w-full h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+                </div>
+                <div className="space-y-3">
+                  <div className="w-24 h-4 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                  <div className="w-full h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                  <div className="w-full h-11 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+                  <div className="space-y-2 h-[200px] bg-slate-100 dark:bg-slate-800/40 rounded-3xl p-3 border border-slate-100 dark:border-slate-700" />
+                </div>
+                <div className="space-y-4">
+                  <div className="w-32 h-4 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                  <div className="w-full h-11 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+                  <div className="space-y-2 h-[200px] bg-slate-100 dark:bg-slate-800/40 rounded-3xl p-3 border border-slate-100 dark:border-slate-700" />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="w-36 h-4 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                <div className="w-full h-24 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+              </div>
+            </div>
+          ) : (
+            <Tabs defaultValue="settings" className="w-full flex-1 flex flex-col min-h-0">
+            <div className="px-8 py-4 border-b dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-center flex-shrink-0">
+                <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl gap-1.5 h-12 flex items-center justify-center max-w-sm w-full border border-slate-200/55 dark:border-white/5 shadow-inner">
                     <TabsTrigger 
                         value="settings" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-blue-600 rounded-none h-full px-1 text-sm font-black uppercase tracking-widest gap-2.5 transition-all"
+                        className="flex-1 rounded-lg h-full text-[10px] font-black uppercase tracking-wider gap-2 transition-all duration-300 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-md text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
                     >
-                        <Settings className="h-4 w-4" />
-                        Base Settings
+                        <Settings className="h-3.5 w-3.5" />
+                        General Settings
                     </TabsTrigger>
                     <TabsTrigger 
                         value="curriculum" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-blue-600 rounded-none h-full px-1 text-sm font-black uppercase tracking-widest gap-2.5 transition-all"
+                        className="flex-1 rounded-lg h-full text-[10px] font-black uppercase tracking-wider gap-2 transition-all duration-300 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:text-blue-600 data-[state=active]:text-blue-400 data-[state=active]:shadow-md text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
                     >
-                        <Sparkles className="h-4 w-4" />
-                        Curriculum
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Curriculum Plan
                     </TabsTrigger>
                 </TabsList>
             </div>
@@ -260,59 +305,82 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
                         {/* Departments */}
                         <div className="space-y-4">
                             <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Target Departments</Label>
-                            <div className="space-y-2 max-h-[250px] overflow-y-auto p-3 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
-                                {departments.map(dep => (
-                                    <div 
-                                        key={dep.id}
-                                        onClick={() => {
-                                            const isSelected = formData.departmentIds.includes(dep.id);
-                                            const newIds = isSelected 
-                                                ? formData.departmentIds.filter(id => id !== dep.id)
-                                                : [...formData.departmentIds, dep.id];
-                                            setFormData({ ...formData, departmentIds: newIds });
-                                        }}
-                                        className={`flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all border ${
-                                            formData.departmentIds.includes(dep.id) 
-                                                ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20 translate-x-1' 
-                                                : 'bg-slate-50 dark:bg-slate-900 border-transparent hover:border-blue-500/30'
-                                        }`}
-                                    >
-                                        <span className="text-xs font-black uppercase tracking-tight">{dep.name}</span>
-                                        {formData.departmentIds.includes(dep.id) && <Plus className="h-3 w-3 ml-auto rotate-45" />}
-                                    </div>
-                                ))}
+                            <Input 
+                                type="text"
+                                placeholder="Search departments..."
+                                value={deptSearch}
+                                onChange={(e) => setDeptSearch(e.target.value)}
+                                className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-2xl h-11 px-4 font-bold shadow-sm"
+                            />
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto p-3 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm scrollbar-thin">
+                                {filteredDepartments.length > 0 ? (
+                                    filteredDepartments.map(dep => (
+                                        <div 
+                                            key={dep.id}
+                                            onClick={() => {
+                                                const targetId = dep.departmentId || dep.id;
+                                                const isSelected = formData.departmentIds.includes(targetId);
+                                                const newIds = isSelected 
+                                                    ? formData.departmentIds.filter(id => id !== targetId)
+                                                    : [...formData.departmentIds, targetId];
+                                                setFormData({ ...formData, departmentIds: newIds });
+                                            }}
+                                            className={`flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all border ${
+                                                formData.departmentIds.includes(dep.departmentId || dep.id) 
+                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20 translate-x-1' 
+                                                    : 'bg-slate-50 dark:bg-slate-900 border-transparent hover:border-blue-500/30'
+                                            }`}
+                                        >
+                                            <span className="text-xs font-black uppercase tracking-tight">{dep.name}</span>
+                                            {formData.departmentIds.includes(dep.departmentId || dep.id) && <Plus className="h-3 w-3 ml-auto rotate-45" />}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-xs font-black uppercase text-slate-400">No departments found</div>
+                                )}
                             </div>
                         </div>
 
                         {/* Teachers */}
                         <div className="space-y-4">
-                            <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Faculty Assignment</Label>
-                            <div className="space-y-2 max-h-[250px] overflow-y-auto p-3 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
-                                {schoolTeachers.map((teacher: any) => (
-                                    <div 
-                                        key={teacher.id}
-                                        onClick={() => {
-                                            const isSelected = formData.teacherIds.includes(teacher.id);
-                                            const newIds = isSelected 
-                                                ? formData.teacherIds.filter(id => id !== teacher.id)
-                                                : [...formData.teacherIds, teacher.id];
-                                            setFormData({ ...formData, teacherIds: newIds });
-                                        }}
-                                        className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border ${
-                                            formData.teacherIds.includes(teacher.id) 
-                                                ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20 translate-x-1' 
-                                                : 'bg-slate-50 dark:bg-slate-900 border-transparent hover:border-blue-500/30'
-                                        }`}
-                                    >
-                                        <div className={`h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-black ${formData.teacherIds.includes(teacher.id) ? 'bg-white/20' : 'bg-blue-100 text-blue-600'}`}>
-                                            {teacher.name.charAt(0)}
+                            <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Assign Teachers</Label>
+                            <Input 
+                                type="text"
+                                placeholder="Search teachers..."
+                                value={teacherSearch}
+                                onChange={(e) => setTeacherSearch(e.target.value)}
+                                className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-2xl h-11 px-4 font-bold shadow-sm"
+                            />
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto p-3 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm scrollbar-thin">
+                                {filteredTeachers.length > 0 ? (
+                                    filteredTeachers.map((teacher: any) => (
+                                        <div 
+                                            key={teacher.id}
+                                            onClick={() => {
+                                                const isSelected = formData.teacherIds.includes(teacher.id);
+                                                const newIds = isSelected 
+                                                    ? formData.teacherIds.filter(id => id !== teacher.id)
+                                                    : [...formData.teacherIds, teacher.id];
+                                                setFormData({ ...formData, teacherIds: newIds });
+                                            }}
+                                            className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border ${
+                                                formData.teacherIds.includes(teacher.id) 
+                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20 translate-x-1' 
+                                                    : 'bg-slate-50 dark:bg-slate-900 border-transparent hover:border-blue-500/30'
+                                            }`}
+                                        >
+                                            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-black ${formData.teacherIds.includes(teacher.id) ? 'bg-white/20' : 'bg-blue-100 text-blue-600'}`}>
+                                                {teacher.name.charAt(0)}
+                                            </div>
+                                            <div className="flex flex-col text-left">
+                                                <span className="text-xs font-black uppercase tracking-tight">{teacher.name}</span>
+                                                <span className={`text-[10px] font-bold ${formData.teacherIds.includes(teacher.id) ? 'text-blue-100' : 'text-slate-500 uppercase'}`}>{teacher.teacherCode}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-col text-left">
-                                            <span className="text-xs font-black uppercase tracking-tight">{teacher.name}</span>
-                                            <span className={`text-[10px] font-bold ${formData.teacherIds.includes(teacher.id) ? 'text-blue-100' : 'text-slate-500 uppercase'}`}>{teacher.teacherCode}</span>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-xs font-black uppercase text-slate-400">No teachers found</div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -324,7 +392,7 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-2xl p-5 text-sm font-medium shadow-sm"
                             rows={3}
-                            placeholder="Provide a high-level overview of this academic course..."
+                            placeholder="Provide a brief overview of this subject..."
                         />
                     </div>
                 </TabsContent>
@@ -332,8 +400,8 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
                 <TabsContent value="curriculum" className="space-y-8 mt-0">
                     <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
                         <div className="text-left">
-                            <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Curriculum Roadmap</h4>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Plan your teaching milestones week-by-week</p>
+                            <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Curriculum Plan</h4>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Plan your weekly topics and objectives</p>
                         </div>
                         <Button 
                             type="button" 
@@ -414,15 +482,15 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
                                     <Sparkles className="h-10 w-10 text-slate-300" />
                                 </div>
                                 <div className="max-w-xs">
-                                    <h5 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">No roadmap initialized</h5>
-                                    <p className="text-xs text-slate-500 font-medium mt-1">Start by adding your first week of teaching topics and objectives.</p>
+                                    <h5 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">No curriculum plan added</h5>
+                                    <p className="text-xs text-slate-500 font-medium mt-1">Start by adding weekly topics and objectives.</p>
                                 </div>
                                 <Button 
                                     type="button"
                                     onClick={addSchemeRow}
                                     className="bg-blue-600 hover:bg-blue-700 text-white font-black uppercase text-[10px] px-8 rounded-full h-11"
                                 >
-                                    Start Planning
+                                    Add Week 1
                                 </Button>
                             </div>
                         )}
@@ -441,20 +509,21 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
                     }} 
                     className="font-black text-xs uppercase tracking-widest mr-auto hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
-                    Discard Changes
+                    Cancel
                 </Button>
                 <div className="flex gap-4">
                     <Button 
                         type="submit" 
-                        disabled={loading} 
+                        disabled={isSaving} 
                         className="bg-blue-600 hover:bg-blue-700 text-white font-black px-12 rounded-full h-12 shadow-2xl shadow-blue-600/30 active:scale-95 transition-all text-xs uppercase tracking-widest"
                     >
-                        {loading ? (subject?.id ? "Saving..." : "Publishing...") : (subject?.id ? "Save Changes" : "Create Subject")}
+                        {isSaving ? "Saving..." : (subject?.id ? "Save Changes" : "Create Subject")}
                     </Button>
                 </div>
             </DialogFooter>
           </Tabs>
-        </form>
+        )}
+      </form>
       </DialogContent>
     </Dialog>
   )

@@ -155,6 +155,14 @@ export const getDepartmentsService = async ({
       },
       include: {
         subjects: { include: { subject: true } },
+        _count: {
+          select: {
+            students: true,
+            classes: true,
+            exams: true,
+            quizzes: true,
+          }
+        }
       },
       orderBy: { createdAt: "desc" },
     });
@@ -182,6 +190,14 @@ export const getDepartmentsService = async ({
       where,
       include: {
         subjects: { include: { subject: true } },
+        _count: {
+          select: {
+            students: true,
+            classes: true,
+            exams: true,
+            quizzes: true,
+          }
+        }
       },
       orderBy: { createdAt: "desc" },
     });
@@ -213,6 +229,14 @@ export const getDepartmentsService = async ({
         },
         include: {
           subjects: { include: { subject: true } },
+          _count: {
+            select: {
+              students: true,
+              classes: true,
+              exams: true,
+              quizzes: true,
+            }
+          }
         },
         orderBy: { createdAt: "desc" },
       });
@@ -227,6 +251,14 @@ export const getDepartmentsService = async ({
       },
       include: {
         subjects: { include: { subject: true } },
+        _count: {
+          select: {
+            students: true,
+            classes: true,
+            exams: true,
+            quizzes: true,
+          }
+        }
       },
       orderBy: { createdAt: "desc" },
     });
@@ -241,22 +273,44 @@ export const getDepartmentsService = async ({
     },
     include: {
       subjects: { include: { subject: true } },
+      _count: {
+        select: {
+          students: true,
+          classes: true,
+          exams: true,
+          quizzes: true,
+        }
+      }
     },
     orderBy: { createdAt: "desc" },
   });
 };
 
 export const getSingleDepartmentService = async (departmentId: string) => {
-  const department = await prisma.department.findUnique({
-    where: { id: departmentId },
+  const department = await prisma.department.findFirst({
+    where: {
+      OR: [
+        { id: departmentId },
+        { code: departmentId },
+      ],
+      isArchived: false,
+    },
     include: {
       subjects: { include: { subject: true } },
       quizzes: true,
       exams: true,
+      _count: {
+        select: {
+          students: true,
+          classes: true,
+          exams: true,
+          quizzes: true,
+        }
+      }
     },
   });
 
-  if (!department || department.isArchived) {
+  if (!department) {
     throw new Error("Department not found");
   }
 
@@ -274,18 +328,24 @@ export const updateDepartmentService = async ({
   code?: string;
   description?: string;
 }) => {
-  const existing = await prisma.department.findUnique({
-    where: { id: departmentId },
+  const existing = await prisma.department.findFirst({
+    where: {
+      OR: [
+        { id: departmentId },
+        { code: departmentId },
+      ],
+      isArchived: false,
+    },
   });
 
-  if (!existing || existing.isArchived) {
+  if (!existing) {
     throw new Error("Department not found");
   }
 
   if (code && code !== existing.code) {
     const duplicate = await prisma.department.findFirst({
       where: {
-        id: { not: departmentId },
+        id: { not: existing.id },
         isArchived: false,
         scope: existing.scope,
         ...(existing.scope === AcademicOwnershipScope.SCHOOL
@@ -300,7 +360,7 @@ export const updateDepartmentService = async ({
   }
 
   return prisma.department.update({
-    where: { id: departmentId },
+    where: { id: existing.id },
     data: {
       name: name ?? undefined,
       code: code ?? undefined,
@@ -310,8 +370,22 @@ export const updateDepartmentService = async ({
 };
 
 export const archiveDepartmentService = async (departmentId: string) => {
+  const existing = await prisma.department.findFirst({
+    where: {
+      OR: [
+        { id: departmentId },
+        { code: departmentId },
+      ],
+      isArchived: false,
+    },
+  });
+
+  if (!existing) {
+    throw new Error("Department not found");
+  }
+
   return prisma.department.update({
-    where: { id: departmentId },
+    where: { id: existing.id },
     data: { isArchived: true },
   });
 };
@@ -325,11 +399,17 @@ export const attachSubjectsToDepartmentService = async ({
   subjectIds: string[];
   currentUserId: string;
 }) => {
-  const department = await prisma.department.findUnique({
-    where: { id: departmentId },
+  const department = await prisma.department.findFirst({
+    where: {
+      OR: [
+        { id: departmentId },
+        { code: departmentId },
+      ],
+      isArchived: false,
+    },
   });
 
-  if (!department || department.isArchived) {
+  if (!department) {
     throw new Error("Department not found");
   }
 
@@ -370,14 +450,14 @@ export const attachSubjectsToDepartmentService = async ({
 
   await prisma.departmentSubject.createMany({
     data: subjectIds.map((subjectId) => ({
-      departmentId,
+      departmentId: department.id,
       subjectId,
     })),
     skipDuplicates: true,
   });
 
   return prisma.department.findUnique({
-    where: { id: departmentId },
+    where: { id: department.id },
     include: {
       subjects: { include: { subject: true } },
     },
@@ -391,9 +471,23 @@ export const removeSubjectFromDepartmentService = async ({
   departmentId: string;
   subjectId: string;
 }) => {
+  const department = await prisma.department.findFirst({
+    where: {
+      OR: [
+        { id: departmentId },
+        { code: departmentId },
+      ],
+      isArchived: false,
+    },
+  });
+
+  if (!department) {
+    throw new Error("Department not found");
+  }
+
   await prisma.departmentSubject.deleteMany({
     where: {
-      departmentId,
+      departmentId: department.id,
       subjectId,
     },
   });

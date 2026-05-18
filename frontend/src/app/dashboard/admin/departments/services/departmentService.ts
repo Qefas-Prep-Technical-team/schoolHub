@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api/client";
 
 export interface Department {
   id: string;
+  departmentId?: string;
   name: string;
   code: string;
   description: string | null;
@@ -12,6 +13,12 @@ export interface Department {
   createdAt: string;
   updatedAt: string;
   subjects?: unknown[];
+  _count?: {
+    students: number;
+    classes: number;
+    exams: number;
+    quizzes: number;
+  };
 }
 
 export interface CreateDepartmentDTO {
@@ -33,26 +40,34 @@ export const departmentService = {
     const response = await apiClient.get('/academic/departments', {
       params: { schoolId }
     });
-    return response.data.data;
+    return (response.data.data || []).map((dept: any) => ({
+      ...dept,
+      departmentId: dept.id,
+      id: dept.code,
+    }));
   },
 
-  getSingleDepartment: async (id: string): Promise<Department> => {
-    const response = await apiClient.get(`/academic/departments/${id}`);
-    return response.data.data;
+  getSingleDepartment: async (code: string): Promise<Department> => {
+    const response = await apiClient.get(`/academic/departments/${code}`);
+    const dept = response.data.data;
+    return dept ? { ...dept, departmentId: dept.id, id: dept.code } : dept;
   },
 
   createDepartment: async (data: CreateDepartmentDTO): Promise<Department> => {
     const response = await apiClient.post('/academic/departments', data);
-    return response.data.data;
+    const dept = response.data.data;
+    return dept ? { ...dept, departmentId: dept.id, id: dept.code } : dept;
   },
 
-  updateDepartment: async (id: string, data: UpdateDepartmentDTO): Promise<Department> => {
-    const response = await apiClient.patch(`/academic/departments/${id}`, data);
-    return response.data.data;
+  updateDepartment: async (code: string, data: UpdateDepartmentDTO): Promise<Department> => {
+    const response = await apiClient.patch(`/academic/departments/${code}`, data);
+    const dept = response.data.data;
+    return dept ? { ...dept, departmentId: dept.id, id: dept.code } : dept;
   },
 
-  archiveDepartment: async (id: string): Promise<Department> => {
-    const response = await apiClient.patch(`/academic/departments/${id}/archive`);
-    return response.data.data;
+  archiveDepartment: async (code: string): Promise<Department> => {
+    const response = await apiClient.patch(`/academic/departments/${code}/archive`);
+    const dept = response.data.data;
+    return dept ? { ...dept, departmentId: dept.id, id: dept.code } : dept;
   }
 };

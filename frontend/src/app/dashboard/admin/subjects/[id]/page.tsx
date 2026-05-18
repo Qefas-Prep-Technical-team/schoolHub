@@ -39,7 +39,7 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
   onSuccess,
   subject,
 }) => {
-  const [loading, setLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [departments, setDepartments] = useState<Department[]>([])
   const [formData, setFormData] = useState<{
     name: string;
@@ -60,26 +60,13 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
   const [schemes, setSchemes] = useState<Partial<SchemeOfWork>[]>([])
 
   const { user } = useAuthStore()
-  const [schoolId, setSchoolId] = useState<string>("");
-  
-  useEffect(() => {
-    const checkStatus = async () => {
-      if (user?.email) {
-        try {
-            const res = await apiClient.get(`/admin/admin-status/${user.email}`);
-            setSchoolId(res.data.data.schoolAdmins?.[0]?.schoolId || "");
-        } catch (err) {
-            console.error("Auth check failed", err);
-        }
-      }
-    };
-    checkStatus();
-  }, [user?.email]);
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
 
   const { data: schoolTeachers = [] } = useSchoolTeachers(schoolId);
 
   useEffect(() => {
     if (isOpen) {
+      setIsSaving(false)
       fetchDepartments()
       if (subject?.id) {
         setFormData({
@@ -142,7 +129,7 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setIsSaving(true)
     try {
       if (!schoolId) {
         toast.error("School context not found. Please try logging in again.");
@@ -192,7 +179,7 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
       console.error("Failed to save subject", error)
       toast.error(error.response?.data?.message || "Failed to save subject");
     } finally {
-      setLoading(false)
+      setIsSaving(false)
     }
   }
 
@@ -208,21 +195,21 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
 
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
           <Tabs defaultValue="settings" className="w-full flex-1 flex flex-col min-h-0">
-            <div className="px-8 border-b dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
-                <TabsList className="bg-transparent border-none p-0 h-14 gap-8">
+            <div className="px-8 py-4 border-b dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-center flex-shrink-0">
+                <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl gap-1.5 h-12 flex items-center justify-center max-w-sm w-full border border-slate-200/55 dark:border-white/5 shadow-inner">
                     <TabsTrigger 
                         value="settings" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-blue-600 rounded-none h-full px-1 text-sm font-black uppercase tracking-widest gap-2.5 transition-all"
+                        className="flex-1 rounded-lg h-full text-[10px] font-black uppercase tracking-wider gap-2 transition-all duration-300 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:text-blue-600 data-[state=active]:text-blue-400 data-[state=active]:shadow-md text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
                     >
-                        <Settings className="h-4 w-4" />
-                        Base Settings
+                        <Settings className="h-3.5 w-3.5" />
+                        General Settings
                     </TabsTrigger>
                     <TabsTrigger 
                         value="curriculum" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-4 data-[state=active]:border-blue-600 rounded-none h-full px-1 text-sm font-black uppercase tracking-widest gap-2.5 transition-all"
+                        className="flex-1 rounded-lg h-full text-[10px] font-black uppercase tracking-wider gap-2 transition-all duration-300 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:text-blue-600 data-[state=active]:text-blue-400 data-[state=active]:shadow-md text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
                     >
-                        <Sparkles className="h-4 w-4" />
-                        Curriculum
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Curriculum Plan
                     </TabsTrigger>
                 </TabsList>
             </div>
@@ -446,10 +433,10 @@ const SubjectModal: React.FC<SubjectModalProps> = ({
                 <div className="flex gap-4">
                     <Button 
                         type="submit" 
-                        disabled={loading} 
+                        disabled={isSaving} 
                         className="bg-blue-600 hover:bg-blue-700 text-white font-black px-12 rounded-full h-12 shadow-2xl shadow-blue-600/30 active:scale-95 transition-all text-xs uppercase tracking-widest"
                     >
-                        {loading ? (subject?.id ? "Saving..." : "Publishing...") : (subject?.id ? "Save Changes" : "Create Subject")}
+                        {isSaving ? (subject?.id ? "Saving..." : "Publishing...") : (subject?.id ? "Save Changes" : "Create Subject")}
                     </Button>
                 </div>
             </DialogFooter>

@@ -11,6 +11,17 @@ import {
 } from "./department.service";
 import { canManageDepartment } from "./academic.permissions";
 
+const serializeDepartment = (dept: any): any => {
+  if (!dept) return dept;
+  
+  if (Array.isArray(dept)) {
+    return dept.map(serializeDepartment);
+  }
+  
+  const { id, ...rest } = dept;
+  return rest;
+};
+
 export const createDepartment = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
@@ -31,7 +42,7 @@ export const createDepartment = async (req: Request, res: Response) => {
 
     return res.status(201).json({
       success: true,
-      data: department,
+      data: serializeDepartment(department),
     });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -53,7 +64,7 @@ export const getDepartments = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      data: departments,
+      data: serializeDepartment(departments),
     });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -71,7 +82,7 @@ export const getSingleDepartment = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      data: department,
+      data: serializeDepartment(department),
     });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -106,7 +117,7 @@ export const updateDepartment = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      data: department,
+      data: serializeDepartment(department),
     });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -135,7 +146,7 @@ export const archiveDepartment = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      data: department,
+      data: serializeDepartment(department),
     });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -168,7 +179,7 @@ export const attachSubjectsToDepartment = async (req: Request, res: Response) =>
 
     return res.status(200).json({
       success: true,
-      data: department,
+      data: serializeDepartment(department),
     });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });

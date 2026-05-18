@@ -106,6 +106,25 @@
 
 ## Completed
 
+### Monday, May 18, 2026
+- **Admin Departments Tab Modernization**:
+    - [x] **Plain English Transition**: Replaced all cyberpunk/technical jargon (e.g., "Infrastructure Node", "Deploy New Node", "Active Clusters") with clear, natural language throughout the Departments tab.
+    - [x] **Dynamic Stats Integration**: Added `useSchoolStats` frontend integration and expanded backend services to return aggregate `_count` values for students, classes, exams, and quizzes.
+    - [x] **Modernized UI Cards**: Developed redesigned 2x2 grid stats blocks in the Grid view cards featuring subtle hover micro-animations.
+    - [x] **Optimized Table View**: Expanded the List view table with columns for Subjects, Classes, and Students, utilizing clear natural terminology.
+    - [x] **Flawless Compilation**: Verified 100% build type safety with zero type errors on both the frontend and backend.
+    - [x] **Client-Side Pagination**: Integrated the global `<Pagination>` component to support both Grid and List views with a limit of 6 items per page, automatically resetting on search updates.
+    - [x] **Secure ID Exclusion**: Hardened the backend API to omit the database UUID `id` from all department JSON payloads, mapping identifiers to the unique `code` field in both frontend and backend and removing ID labels from the table.
+    - [x] **High-Fidelity PDF Export**: Connected both the header and operational controls Export buttons to trigger a fully-styled, print-ready PDF export utilizing a non-blocking iframe mechanism. Added active state micro-animation loaders (`isExporting`) to provide premium user feedback.
+    - [x] **Persistent Pagination Controls**: Updated the rendering threshold so the pagination controls always display when departments exist, ensuring visibility.
+- **Admin Subjects Tab Modernization**:
+    - [x] **Natural Language Transformation**: Refactored technical/cyberpunk labels on the Subjects page, card list, and form modal (e.g. replacing "Faculty Nodes", "Active Channels", "Registry Depleted", "Curriculum Roadmap", "Base Settings", "Faculty Assignment" with "Teachers Assigned", "Active Classes", "No Subjects Found", "Curriculum Plan", "General Settings", "Assign Teachers").
+    - [x] **Pop-Up Proof PDF Export with Spinner Loader**: Integrated a custom, non-blocking iframe print compilation (`handleExportPDF`) that downloads a beautiful PDF curriculum report, connected to an "Export PDF" download button displaying an active `isExporting` micro-animation spinner.
+    - [x] **Singular/Plural Metric Normalization**: Configured the dashboard statistics and grid cards to handle singular/plural displays dynamically (e.g., showing "1 Subject" vs "2 Subjects", "1 Teacher Assigned" vs "2 Teachers Assigned", and "1 Active Class" vs "2 Active Classes").
+    - [x] **Modern Card Designs**: Refined subjects cards with side gradient accent lines, backdrop-blur properties, dynamically rotating icons, and premium shadow drop-offs.
+    - [x] **Form Lists with In-Line Search & Scroll boundaries**: Added in-line search boxes inside `SubjectModal` for filtering both Target Departments and Assign Teachers. Enforced `max-h-[300px]` scrolling limits when lists grow beyond 6 entries.
+    - [x] **Shimmering Skeleton Loader**: Integrated a premium, multi-row layout skeleton loader inside `SubjectModal` that displays while departmental metadata, teacher assignments, and course schemes are being fetched.
+
 ### Sunday, May 17, 2026
 - **Console Schools Details Type Mismatch Fix**:
     - [x] Added `maxParentsOverride?: number;` to the `PlatformSchoolDetails` interface in [usePlatformSchools.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/lib/api/hooks/usePlatformSchools.ts) to match the database model definition.
@@ -267,3 +286,20 @@
     - [x] Modernized the manual override and reset flows in `support.controller.ts` and `billing.controller.ts` to support the new `billingCycle` logic.
     - [x] Updated the Platform Console UI to allow manual overrides for `billingCycle` (Monthly/Yearly).
     - [x] Ensured that resetting a school subscription correctly reverts both the school and its admins to the default "Monthly FREE" tier.
+
+### Monday, May 18, 2026
+- **Admin Dashboard - Subject Management Hotfix & UI Polish**:
+    - [x] **Resolved Tab Form Submission gotcha**: Fixed a critical design issue in the shared `TabsTrigger` component ([tabs.tsx](file:///c:/Users/Student/Documents/GitHub/schoolHub/frontend/src/components/ui/tabs.tsx)) where clicking tabs within a `<form>` automatically submitted it (triggering persistent `"Saving..."` states). Injected explicit `type="button"` onto the rendered button. Added bulletproof `preventDefault()` and `stopPropagation()` to `onClick` event bubbling inside the button.
+    - [x] **Centralized Premium Segmented Control Tabs**: Overhauled tab bars in both the main [SubjectModal.tsx](file:///c:/Users/Student/Documents/GitHub/schoolHub/frontend/src/app/dashboard/admin/subjects/components/SubjectModal.tsx) and the duplicate details page [page.tsx](file:///c:/Users/Student/Documents/GitHub/schoolHub/frontend/src/app/dashboard/admin/subjects/[id]/page.tsx). Shifted triggers into a centralized glassmorphic segmented container with smooth active scaling animations.
+    - [x] **Strict School Bounds Enforcement**: Replaced asynchronous API resolution for `schoolId` with direct, synchronous client-side store lookup. This ensures that subjects are strictly bound, and only departments and faculty linked to the administrator's school are queried and rendered on the form.
+    - [x] **Renamed Stale State Variables**: Normalized all state occurrences of `loading` to `isSaving` to represent execution status accurately and prevent namespace clashes. Added initial state resets on form opens.
+    - [x] **Segmented View Mode Toggle**: Added a premium toggle switch to seamlessly shift between a Grid of visual cards and a highly functional List table, featuring gorgeous micro-transitions and icons.
+    - [x] **Checkbox Multi-Select & Single/Bulk Deletions**: Added individual checkboxes and a dedicated red delete action button to each subject card and list row. Engineered a red warning Bulk Actions Bar that slides in dynamically with a unified "Delete Selected" control.
+    - [x] **Department ID UUID Alignment**: Preserved the original database primary key UUID under `departmentId` in `departmentService.ts`, and updated `SubjectModal.tsx` and the main page's search filter select dropdown. This resolved the backend's `"Some departments were not found"` error perfectly.
+    - [x] **Simplified Metrics and High-Fidelity Labels**: Simplified metrics on the subject cards (e.g. from "1 Teacher Assigned" and "Active Class" to the much cleaner and simpler "1 Teacher" and "1 Class"), making it extremely clean and premium.
+    - [x] **100% Compiler Type Safety**: Verified build compilation with `tsc --noEmit` resolving to a clean zero errors exit.
+
+## Next Action
+- [ ] Translate Stitch-generated HTML design into Next.js Tailwind components.
+- [ ] Conduct mobile navigation redirects smoke test.
+- [ ] Audit authentication labels for 100% role-based consistency.
