@@ -1,56 +1,125 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+import { AttendanceSummary } from './types';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
+interface AttendanceSummaryCardProps {
+  summary: AttendanceSummary;
+  selectedMonth?: string;
+  onMonthChange?: (month: string) => void;
+  isLoading?: boolean;
 }
 
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
+const AttendanceSummaryCard: React.FC<AttendanceSummaryCardProps> = ({ 
+  summary, 
+  selectedMonth,
+  onMonthChange,
+  isLoading
+}) => {
+  const rateVal = summary.rate !== undefined ? summary.rate : (summary.attendanceRate !== undefined ? summary.attendanceRate : 0);
+  const presentVal = summary.present ?? 0;
+  const absentVal = summary.absent ?? 0;
+  const lateVal = summary.late ?? 0;
 
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
+  const stats = [
+    {
+      label: 'Overall Attendance',
+      value: `${typeof rateVal === 'number' ? rateVal.toFixed(1) : rateVal}%`,
+      color: 'blue',
+      icon: '📊'
+    },
+    {
+      label: 'Total Present',
+      value: presentVal.toLocaleString(),
+      color: 'green',
+      icon: '✅'
+    },
+    {
+      label: 'Total Absent',
+      value: absentVal.toLocaleString(),
+      color: 'red',
+      icon: '❌'
+    },
+    {
+      label: 'Total Late',
+      value: lateVal.toLocaleString(),
+      color: 'yellow',
+      icon: '⏰'
     }
+  ];
+
+  const colorClasses = {
+    blue: 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300',
+    green: 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-300',
+    red: 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300',
+    yellow: 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300'
   };
 
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
+  const valueClasses = {
+    blue: 'text-blue-800 dark:text-blue-200',
+    green: 'text-green-800 dark:text-green-200',
+    red: 'text-red-800 dark:text-red-200',
+    yellow: 'text-yellow-800 dark:text-yellow-200'
   };
+
+  const months = React.useMemo(() => {
+    const list = [];
+    const currentDate = new Date();
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      const value = `${year}-${String(month + 1).padStart(2, '0')}`;
+      const label = `${monthNames[month]} ${year}`;
+      list.push({ value, label });
+    }
+    return list;
+  }, []);
 
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
+    <div className="bg-white dark:bg-gray-900/50 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Monthly Summary</h2>
+        <select 
+          value={selectedMonth}
+          onChange={(e) => onMonthChange?.(e.target.value)}
+          className="form-select text-sm rounded-md border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-250"
+          disabled={isLoading}
         >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
+          {months.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        {stats.map((stat, index) => (
+          <div 
+            key={index}
+            className={`p-4 rounded-lg transition-all duration-355 ${colorClasses[stat.color as keyof typeof colorClasses]}`}
           >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
+            {isLoading ? (
+              <div className="animate-pulse flex flex-col gap-2">
+                <div className="h-4 bg-gray-300 dark:bg-gray-700/60 rounded w-4/5"></div>
+                <div className="h-7 bg-gray-400 dark:bg-gray-600/60 rounded w-3/5 mt-1"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm font-semibold">{stat.label}</p>
+                <p className={`text-2xl font-bold mt-1 ${valueClasses[stat.color as keyof typeof valueClasses]}`}>
+                  {stat.value}
+                </p>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
 
-export default SubjectInput;
-
+export default AttendanceSummaryCard;

@@ -1,56 +1,37 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+import { AlertTriangle, X } from 'lucide-react';
+import { Conflict } from './types';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
+interface ConflictAlertProps {
+  conflicts: Conflict[];
+  onDismiss?: () => void;
 }
 
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
-    }
-  };
-
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
-  };
+const ConflictAlert: React.FC<ConflictAlertProps> = ({ conflicts, onDismiss }) => {
+  if (!conflicts.length) return null;
 
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
+    <div className="flex items-start gap-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-6">
+      <AlertTriangle className="text-amber-500 mt-0.5 flex-shrink-0" size={20} />
+      <div className="flex-1">
+        <h3 className="font-bold text-amber-500">Scheduling Conflict Detected</h3>
+        <ul className="list-disc list-inside text-amber-600 dark:text-amber-400 text-sm mt-1 space-y-1">
+          {conflicts.map((conflict, index) => (
+            <li key={index}>{conflict.message}</li>
+          ))}
+        </ul>
+      </div>
+      {onDismiss && (
+        <button
+          onClick={onDismiss}
+          className="text-amber-500/70 hover:text-amber-500 flex-shrink-0"
+          aria-label="Dismiss alert"
         >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
-          >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
+          <X size={20} />
+        </button>
+      )}
     </div>
   );
 };
 
-export default SubjectInput;
-
+export default ConflictAlert;

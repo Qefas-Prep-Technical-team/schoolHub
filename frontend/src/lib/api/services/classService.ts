@@ -45,14 +45,18 @@ export const classService = {
     return response.data.data;
   },
 
-  getAttendanceSummary: async (classId: string) => {
-    const response = await apiClient.get(`/classes/${classId}/attendance/summary`);
+  getAttendanceSummary: async (classId: string, month?: string) => {
+    const response = await apiClient.get(`/classes/${classId}/attendance/summary`, {
+      params: { month }
+    });
     return response.data.data;
   },
 
   // Timetable
-  getTimetable: async (classId: string) => {
-    const response = await apiClient.get(`/classes/${classId}/timetable`);
+  getTimetable: async (classId: string, termPeriodId?: string) => {
+    const response = await apiClient.get(`/classes/${classId}/timetable`, {
+      params: { termPeriodId }
+    });
     return response.data.data;
   },
 
@@ -63,6 +67,19 @@ export const classService = {
 
   deleteTimetablePeriod: async (classId: string, periodId: string) => {
     const response = await apiClient.delete(`/classes/${classId}/timetable/${periodId}`);
+    return response.data.data;
+  },
+
+  autoGenerateTimetable: async (classId: string, termPeriodId: string) => {
+    const response = await apiClient.post(`/classes/${classId}/timetable/generate`, { termPeriodId });
+    return response.data.data;
+  },
+
+  replicateTimetable: async (classId: string, sourceTermPeriodId: string, targetTermPeriodId: string) => {
+    const response = await apiClient.post(`/classes/${classId}/timetable/replicate`, {
+      sourceTermPeriodId,
+      targetTermPeriodId,
+    });
     return response.data.data;
   },
 

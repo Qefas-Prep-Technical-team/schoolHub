@@ -1,56 +1,51 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+import { ChevronDown } from 'lucide-react';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
+interface FilterButtonProps {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
 }
 
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
-    }
-  };
-
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
-  };
+const FilterButton: React.FC<FilterButtonProps> = ({ 
+  label, 
+  value, 
+  options, 
+  onChange 
+}) => {
+  const [isOpen, setIsOpen] = React.useState(false);
 
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
-        >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
-          >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-gray-200 dark:bg-[#253046] pl-4 pr-3 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-[#364563] transition-colors"
+      >
+        <p className="text-sm font-medium leading-normal">
+          {label}: {value}
+        </p>
+        <ChevronDown size={20} className="text-lg" />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#253046] rounded-lg shadow-lg border border-gray-200 dark:border-[#364563] z-10">
+          {options.map((option) => (
+            <button
+              key={option}
+              onClick={() => {
+                onChange(option);
+                setIsOpen(false);
+              }}
+              className="w-full px-4 py-2 text-sm text-left text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-[#364563] first:rounded-t-lg last:rounded-b-lg"
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
-export default SubjectInput;
-
+export default FilterButton;

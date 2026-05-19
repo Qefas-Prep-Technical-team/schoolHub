@@ -131,7 +131,7 @@ export const classService = {
   
   getSchoolStudents: async (schoolId: string) => {
     const response = await apiClient.get("/admin/students", {
-      params: { schoolId },
+      params: { schoolId, limit: 1000 },
     });
     return response.data.data;
   },

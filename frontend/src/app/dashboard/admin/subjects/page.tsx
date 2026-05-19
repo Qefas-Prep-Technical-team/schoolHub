@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import SubjectCard from "./components/SubjectCard";
 import SubjectModal from "./components/SubjectModal";
+import DeleteSubjectModal from "./components/DeleteSubjectModal";
 import { subjectService, Subject } from "./services/subjectService";
 import { departmentService, Department } from "../departments/services/departmentService";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
@@ -55,6 +56,11 @@ const SubjectsPage = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([]);
+
+  // States for custom Delete Modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteTargetSubject, setDeleteTargetSubject] = useState<Subject | null>(null);
+  const [isBulkDeleteMode, setIsBulkDeleteMode] = useState(false);
 
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
@@ -98,30 +104,46 @@ const SubjectsPage = () => {
     }
   };
 
-  const handleDeleteSubject = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete/archive this subject?")) return;
+  const handleDeleteSubject = (id: string) => {
+    const sub = subjects.find(s => s.id === id);
+    if (!sub) return;
+    setDeleteTargetSubject(sub);
+    setIsBulkDeleteMode(false);
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDeleteSubject = async () => {
+    if (!deleteTargetSubject) return;
     try {
-      await subjectService.archiveSubject(id);
+      await subjectService.archiveSubject(deleteTargetSubject.id);
       toast.success("Subject successfully deleted/archived.");
-      setSelectedSubjectIds(prev => prev.filter(x => x !== id));
-      fetchData();
+      setSelectedSubjectIds(prev => prev.filter(x => x !== deleteTargetSubject.id));
+      await fetchData();
     } catch (error) {
       console.error("Failed to delete subject", error);
       toast.error("Failed to delete subject.");
+      throw error;
     }
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedSubjectIds.length === 0) return;
-    if (!window.confirm(`Are you sure you want to delete/archive the ${selectedSubjectIds.length} selected subjects?`)) return;
+    setIsBulkDeleteMode(true);
+    setDeleteTargetSubject(null);
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeBulkDelete = async () => {
+    if (selectedSubjectIds.length === 0) return;
     try {
       await Promise.all(selectedSubjectIds.map(id => subjectService.archiveSubject(id)));
       toast.success("Successfully deleted selected subjects.");
       setSelectedSubjectIds([]);
-      fetchData();
+      await fetchData();
     } catch (error) {
       console.error("Failed to delete subjects", error);
       toast.error("Failed to delete some subjects.");
+      throw error;
     }
   };
 
@@ -714,6 +736,18 @@ const SubjectsPage = () => {
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchData}
         subject={editingSubject}
+      />
+
+      <DeleteSubjectModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTargetSubject(null);
+          setIsBulkDeleteMode(false);
+        }}
+        onConfirm={isBulkDeleteMode ? executeBulkDelete : executeDeleteSubject}
+        subjectName={deleteTargetSubject?.name}
+        selectedCount={isBulkDeleteMode ? selectedSubjectIds.length : undefined}
       />
     </div>
   );

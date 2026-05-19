@@ -163,9 +163,10 @@ export const useSchoolBilling = (
     queryKey: schoolQueryKeys.billing(schoolId, params),
     queryFn: () => schoolService.getBilling(schoolId, params),
     enabled: !!schoolId,
-    staleTime: 0, // Always consider data stale — re-fetch on every mount
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Zero caching - remove from memory immediately when unmounted
+    refetchOnMount: "always", // Enforce real-time server fetch on every page visit
     refetchOnWindowFocus: true, // Re-fetch when user returns to tab/page after checkout
-    refetchInterval: 30000, // Refetch every 30 seconds
   });
 };
 
@@ -178,6 +179,8 @@ export const useUserBilling = (
     queryFn: () => paymentService.getBilling(params),
     enabled: !!userId,
     staleTime: 0,
+    gcTime: 0, // Zero caching - remove from memory immediately when unmounted
+    refetchOnMount: "always", // Enforce real-time server fetch on every page visit
     refetchOnWindowFocus: true,
   });
 };

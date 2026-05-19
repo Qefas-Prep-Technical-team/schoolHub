@@ -1,56 +1,70 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+import { AlertTriangle, AlertCircle } from 'lucide-react';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
+interface AlertItem {
+  id: string;
+  type: 'warning' | 'danger';
+  title: string;
+  description: string;
+  student: string;
+  reportedBy: string;
 }
 
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
+interface BehaviourAlertProps {
+  alerts: AlertItem[];
+}
 
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
+const BehaviourAlert: React.FC<BehaviourAlertProps> = ({ alerts }) => {
+  const getIcon = (type: 'warning' | 'danger') => {
+    if (type === 'warning') {
+      return <AlertTriangle className="text-yellow-500" size={20} />;
     }
+    return <AlertCircle className="text-red-500" size={20} />;
   };
 
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
-  };
+  if (!alerts || alerts.length === 0) {
+    return (
+      <div className="bg-white dark:bg-[#1f2937] p-6 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center py-10">
+        <div className="w-12 h-12 rounded-full bg-green-50 dark:bg-green-950/20 flex items-center justify-center text-green-500 mb-3 border border-green-200 dark:border-green-800">
+          <AlertCircle size={24} className="text-green-500" />
+        </div>
+        <p className="text-sm font-bold text-gray-800 dark:text-gray-200">No Alerts Recorded</p>
+        <p className="text-xs text-gray-550 dark:text-gray-400 mt-1 max-w-[260px] mx-auto">
+          All quiet! There are no behavior incidents reported for this class.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
-        >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
-          >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
+    <div className="bg-white dark:bg-[#1f2937] p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        Behaviour Alerts
+      </h3>
+      <div className="flex flex-col gap-4">
+        {alerts.map((alert, index) => (
+          <React.Fragment key={alert.id}>
+            {index > 0 && (
+              <div className="w-full h-px bg-gray-200 dark:bg-gray-700"></div>
+            )}
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 mt-1">
+                {getIcon(alert.type)}
+              </div>
+              <div>
+                <p className="font-medium text-gray-800 dark:text-gray-200">
+                  {alert.title}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Student: {alert.student} - Reported by: {alert.reportedBy}
+                </p>
+              </div>
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
     </div>
   );
 };
 
-export default SubjectInput;
-
+export default BehaviourAlert;

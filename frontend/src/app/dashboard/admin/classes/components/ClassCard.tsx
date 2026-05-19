@@ -21,6 +21,7 @@ import {
   Target
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -62,6 +63,7 @@ export default function ClassCard({
   onEdit,
   onDelete,
 }: ClassCardProps) {
+  const router = useRouter();
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const { data: settings } = useSchoolSettings(schoolId);
@@ -77,7 +79,7 @@ export default function ClassCard({
     >
       <div 
         className="h-full rounded-[3.5rem] bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col"
-        onClick={() => (window.location.href = `/dashboard/admin/classes/${classData.id}`)}
+        onClick={() => router.push(`/dashboard/admin/classes/${classData.id}`)}
       >
         {/* Dynamic Background Glow */}
         <div 

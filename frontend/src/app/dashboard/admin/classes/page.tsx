@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useClasses } from '@/lib/api/hooks/useClasses';
 import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ClassGrid from './components/ClassGrid';
 import ClassModal from './components/ClassModal';
+import Pagination from '@/components/ui/Pagination';
 import { ClassData } from './components/types';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +42,13 @@ export default function ClassesOverviewPage() {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingClass, setEditingClass] = useState<Class | null>(null);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const itemsPerPage = 6;
+
+    // Reset page to 1 when search query changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
 
     const { user } = useAuthStore();
     const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
@@ -83,6 +91,13 @@ export default function ClassesOverviewPage() {
                 (classItem.teacher?.name?.toLowerCase() || "").includes(query);
         });
     }, [searchQuery, mappedClassData]);
+
+    const paginatedClasses = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredClasses.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredClasses, currentPage]);
+
+    const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
 
     const stats = useMemo(() => {
         const totalClasses = classes.length;
@@ -264,7 +279,7 @@ export default function ClassesOverviewPage() {
                             exit={{ opacity: 0, y: -20 }}
                         >
                             <ClassGrid
-                                classes={filteredClasses}
+                                classes={paginatedClasses}
                                 isLoading={loading}
                                 onEditClass={handleEditClass}
                                 onDeleteClass={handleDeleteClass}
@@ -310,7 +325,7 @@ export default function ClassesOverviewPage() {
                                                 </td>
                                             </tr>
                                         ) : (
-                                            filteredClasses.map((cls, index) => (
+                                            paginatedClasses.map((cls, index) => (
                                                 <tr key={cls.id || index} className="group hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-all">
                                                     <td className="px-10 py-8">
                                                         <div className="flex items-center gap-6">
@@ -385,6 +400,17 @@ export default function ClassesOverviewPage() {
                     )}
                 </AnimatePresence>
 
+                {/* Dynamic Pagination */}
+                {filteredClasses.length > 0 && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages || 1}
+                        totalItems={filteredClasses.length}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                    />
+                )}
+
                 {/* Global Security Footer */}
                 <div className="flex justify-center pt-12">
                     <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
@@ -398,6 +424,7 @@ export default function ClassesOverviewPage() {
                 onClose={() => setIsModalOpen(false)}
                 onSuccess={fetchClasses}
                 classItem={editingClass}
+                schoolId={schoolId}
             />
         </div>
     );

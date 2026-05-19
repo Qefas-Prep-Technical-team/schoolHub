@@ -1,56 +1,26 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+import { CalendarCheck } from 'lucide-react';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
+interface TeacherAvailabilityButtonProps {
+  onClick: () => void;
+  disabled?: boolean;
 }
 
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
-    }
-  };
-
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
-  };
-
+const TeacherAvailabilityButton: React.FC<TeacherAvailabilityButtonProps> = ({ 
+  onClick, 
+  disabled = false 
+}) => {
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
-        >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
-          >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex min-w-[48px] h-12 flex-shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+      title="Check Teacher Availability"
+    >
+      <CalendarCheck size={20} />
+    </button>
   );
 };
 
-export default SubjectInput;
-
+export default TeacherAvailabilityButton;

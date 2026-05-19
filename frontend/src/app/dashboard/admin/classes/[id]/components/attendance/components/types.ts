@@ -26,6 +26,7 @@ export interface AttendanceSummary {
   late: number;
   excused: number;
   attendanceRate: number;
+  rate?: number;
 }
 
 export interface MonthlyAttendance {

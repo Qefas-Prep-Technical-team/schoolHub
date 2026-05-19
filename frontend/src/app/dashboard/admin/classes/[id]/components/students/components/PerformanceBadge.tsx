@@ -1,56 +1,43 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+import { PerformanceBadgeProps } from './types';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
-}
-
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
+const PerformanceBadge: React.FC<PerformanceBadgeProps> = ({ performance, size = 'md' }) => {
+  const config = {
+    excellent: {
+      bg: 'bg-green-100 dark:bg-green-900',
+      text: 'text-green-800 dark:text-green-300',
+      label: 'Excellent'
+    },
+    good: {
+      bg: 'bg-blue-100 dark:bg-blue-900',
+      text: 'text-blue-800 dark:text-blue-300',
+      label: 'Good'
+    },
+    average: {
+      bg: 'bg-yellow-100 dark:bg-yellow-900',
+      text: 'text-yellow-800 dark:text-yellow-300',
+      label: 'Average'
+    },
+    weak: {
+      bg: 'bg-red-100 dark:bg-red-900',
+      text: 'text-red-800 dark:text-red-300',
+      label: 'Weak'
     }
   };
 
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
+  const sizeClasses = {
+    sm: 'text-xs px-2 py-0.5',
+    md: 'text-xs px-2.5 py-1',
+    lg: 'text-sm px-3 py-1.5'
   };
 
+  const { bg, text, label } = config[performance];
+
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
-        >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
-          >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
-    </div>
+    <span className={`font-semibold rounded-full ${bg} ${text} ${sizeClasses[size]}`}>
+      {label}
+    </span>
   );
 };
 
-export default SubjectInput;
-
+export default PerformanceBadge;

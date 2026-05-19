@@ -1,56 +1,56 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
+interface ProgressBarProps {
+  value: number;
+  max?: number;
+  color?: string;
+  showLabel?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
-    }
+const ProgressBar: React.FC<ProgressBarProps> = ({ 
+  value, 
+  max = 100, 
+  color = 'primary',
+  showLabel = true,
+  size = 'md'
+}) => {
+  const percentage = Math.min(100, Math.max(0, (value / max) * 100));
+  
+  const sizeClasses = {
+    sm: 'h-1',
+    md: 'h-2',
+    lg: 'h-3'
   };
 
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
+  const colorClasses = {
+    primary: 'bg-primary',
+    green: 'bg-green-500',
+    blue: 'bg-blue-500',
+    red: 'bg-red-500',
+    yellow: 'bg-yellow-500'
   };
 
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
-        >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
-          >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
+    <div className="w-full">
+      {showLabel && (
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-gray-700 dark:text-gray-300 text-sm font-medium">
+            Class Performance
+          </span>
+          <span className="text-primary text-sm font-bold">
+            {value}%
+          </span>
+        </div>
+      )}
+      <div className={`rounded-full bg-primary/20 dark:bg-primary/30 ${sizeClasses[size]}`}>
+        <div 
+          className={`h-full rounded-full ${colorClasses[color as keyof typeof colorClasses] || colorClasses.primary}`}
+          style={{ width: `${percentage}%` }}
+        ></div>
+      </div>
     </div>
   );
 };
 
-export default SubjectInput;
-
+export default ProgressBar;

@@ -1,57 +1,55 @@
-"use client";
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+'use client';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
-}
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import PeriodForm from './components/PeriodForm';
+import { PeriodFormData } from './components/types';
 
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
+export default function AddPeriodPage() {
+  const router = useRouter();
 
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
+  const handleSubmit = async (data: PeriodFormData) => {
+    try {
+      // Simulate API call
+      console.log('Submitting period data:', data);
+      
+      // In real app, you would call an API
+      // await fetch('/api/timetable/periods', {
+      //   method: 'POST',
+      //   body: JSON.stringify(data),
+      // });
+
+      // Show success message
+      alert('Period added successfully!');
+      
+      // Redirect back to timetable
+      router.push('/timetable');
+    } catch (error) {
+      console.error('Failed to add period:', error);
+      alert('Failed to add period. Please try again.');
     }
   };
 
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
+  const handleCancel = () => {
+    if (confirm('Are you sure you want to cancel? Unsaved changes will be lost.')) {
+      router.push('/timetable');
+    }
+  };
+
+  const handleBack = () => {
+    router.push('/timetable');
   };
 
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
-        >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
-          >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
+    <div className="flex h-screen">    
+      <main className="flex-1 overflow-y-auto p-8">
+        <PeriodForm
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          onBack={handleBack}
+          mode="add"
+        />
+      </main>
     </div>
   );
-};
-
-export default SubjectInput;
-
+}

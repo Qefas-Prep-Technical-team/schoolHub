@@ -1,11 +1,10 @@
 'use client';
 
-import React from "react"
-import { Subject } from "../services/subjectService"
+import React from "react";
+import { Subject } from "../services/subjectService";
 import {
   Edit2,
   ArrowRight,
-  Layers,
   Users,
   Globe,
   Lock,
@@ -19,19 +18,20 @@ import {
   Workflow,
   Trash2
 } from "lucide-react";
-import { useSchoolSettings } from "@/lib/api/hooks/useSchool"
-import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface SubjectCardProps {
-  subject: Subject
-  onEdit?: (subject: Subject) => void
-  onView?: (subject: Subject) => void
-  onArchive?: (id: string) => void
-  selected?: boolean
-  onSelect?: (id: string) => void
-  onDelete?: (id: string) => void
+  subject: Subject;
+  onEdit?: (subject: Subject) => void;
+  onView?: (subject: Subject) => void;
+  onArchive?: (id: string) => void;
+  selected?: boolean;
+  onSelect?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 const SubjectCard: React.FC<SubjectCardProps> = ({ 
@@ -49,35 +49,40 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
 
   const getIcon = (code: string) => {
     const c = code.toUpperCase();
-    if (c.includes("BIO")) return <Atom className="size-full" />;
+    if (c.includes("BIO")) return <Atom className="size-full animate-spin-slow" />;
     if (c.includes("MAT")) return <Calculator className="size-full" />;
     if (c.includes("HIS")) return <HistoryIcon className="size-full" />;
     if (c.includes("PHY")) return <Rocket className="size-full" />;
     if (c.includes("ART")) return <Palette className="size-full" />;
     if (c.includes("LIT")) return <BookText className="size-full" />;
     return <BookOpen className="size-full" />;
-  }
+  };
 
   return (
-    <div
-      className="group relative bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3.5rem] p-10 hover:-translate-y-2 hover:shadow-[0_30px_70px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_30px_70px_rgba(0,0,0,0.4)] transition-all duration-500 cursor-pointer overflow-hidden flex flex-col"
-      style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
+    <motion.div
+      whileHover={{ y: -4, scale: 1.01 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="group relative bg-white dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-100 dark:border-white/5 rounded-3xl p-6 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_30px_60px_rgba(0,0,0,0.3)] transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[220px]"
+      style={{ 
+        boxShadow: `0 15px 30px -10px ${primaryColor}08`
+      }}
       onClick={() => onView?.(subject)}
     >
-      {/* Premium Side Accent Bar */}
+      {/* Side Color bar - subtle & clean */}
       <div 
-        className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-500 group-hover:w-2.5 rounded-l-[3.5rem]"
+        className="absolute left-0 top-0 bottom-0 w-1 group-hover:w-1.5 transition-all duration-300 rounded-l-3xl"
         style={{ backgroundColor: primaryColor }}
       />
 
-      {/* Dynamic Background Glow */}
+      {/* Modern Ambient Corner Glow */}
       <div
-        className="absolute -right-10 -top-10 w-48 h-48 rounded-full blur-[80px] opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-700 pointer-events-none"
+        className="absolute -right-16 -top-16 w-36 h-36 rounded-full blur-[50px] opacity-0 group-hover:opacity-[0.12] transition-opacity duration-500 pointer-events-none"
         style={{ backgroundColor: primaryColor }}
       />
 
-      <div className="flex justify-between items-start mb-10 relative z-10 pl-2">
-        <div className="flex items-center gap-5">
+      {/* Top Section */}
+      <div className="flex justify-between items-start mb-5 relative z-10 pl-1">
+        <div className="flex items-center gap-3">
           {onSelect && (
             <input
               type="checkbox"
@@ -87,23 +92,22 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
                 onSelect(subject.id);
               }}
               onClick={(e) => e.stopPropagation()}
-              className="size-5 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500/20 cursor-pointer transition-all"
+              className="size-4 rounded border-slate-300 dark:border-slate-800 text-blue-600 focus:ring-blue-500/20 cursor-pointer transition-all bg-white dark:bg-slate-900"
             />
           )}
           <div
-            className="size-16 rounded-[1.5rem] bg-slate-50 dark:bg-white/5 flex items-center justify-center p-4 text-slate-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 border border-slate-100 dark:border-white/5 shadow-inner"
+            className="size-11 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center p-2.5 text-slate-400 group-hover:scale-105 group-hover:rotate-3 transition-all duration-300 border border-slate-100/50 dark:border-white/5 shadow-inner"
             style={{ color: primaryColor }}
           >
             {getIcon(subject.code)}
           </div>
-          <div className="px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-              {subject.code}
-            </span>
-          </div>
+          <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 px-2 py-0.5 bg-slate-50 dark:bg-white/5 border border-slate-100/50 dark:border-white/5 rounded-md">
+            {subject.code}
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Dynamic Action Buttons: Fade in on hover */}
+        <div className="flex items-center gap-1.5 md:opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-20">
           <Button
             onClick={(e) => {
               e.stopPropagation();
@@ -111,9 +115,9 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
             }}
             variant="ghost"
             size="icon"
-            className="size-12 rounded-2xl bg-slate-50/50 dark:bg-white/5 border border-transparent hover:border-slate-100 dark:hover:border-white/10 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
+            className="size-8 rounded-lg bg-slate-50/50 dark:bg-white/5 border border-transparent hover:border-slate-100 dark:hover:border-white/10 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
           >
-            <Edit2 size={18} />
+            <Edit2 size={13} />
           </Button>
           {onDelete && (
             <Button
@@ -123,73 +127,67 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
               }}
               variant="ghost"
               size="icon"
-              className="size-12 rounded-2xl bg-red-50/50 hover:bg-red-50 dark:bg-red-500/5 hover:dark:bg-red-500/10 border border-transparent hover:border-red-100 dark:hover:border-red-500/20 flex items-center justify-center text-red-500 transition-all shadow-sm"
+              className="size-8 rounded-lg bg-red-50/50 hover:bg-red-50 dark:bg-red-500/5 hover:dark:bg-red-500/10 border border-transparent hover:border-red-100 dark:hover:border-red-500/20 flex items-center justify-center text-red-500 transition-all shadow-sm"
             >
-              <Trash2 size={18} />
+              <Trash2 size={13} />
             </Button>
           )}
         </div>
       </div>
 
-      <div className="flex-1 relative z-10 pl-2">
+      {/* Subject Information */}
+      <div className="flex-1 relative z-10 pl-1 mb-5">
         <h3
-          className="text-2xl font-black text-slate-900 dark:text-white mb-3 group-hover:text-primary transition-colors leading-[1.1] uppercase tracking-tighter"
+          className="text-base font-extrabold text-slate-800 dark:text-slate-100 mb-1 group-hover:text-primary transition-colors leading-tight uppercase tracking-tight"
           style={{ '--primary': primaryColor } as any}
         >
           {subject.name}
         </h3>
-        <p className="text-sm font-medium text-slate-500 line-clamp-2 mb-8 leading-relaxed italic">
-          "{subject.description || "No description provided for this subject."}"
+        <p className="text-xs text-slate-400 dark:text-slate-500 line-clamp-2 leading-relaxed font-normal">
+          {subject.description || "No description provided for this subject."}
         </p>
       </div>
 
-      <div className="pt-8 border-t border-slate-50 dark:border-white/5 flex flex-col gap-6 relative z-10 pl-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex -space-x-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="size-8 rounded-xl border-2 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
-                  <Users size={14} className="text-slate-400" />
-                </div>
-              ))}
-            </div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {subject.teachersCount || 0} {subject.teachersCount === 1 ? "Teacher" : "Teachers"}
-            </span>
-          </div>
+      {/* Dynamic Summary Section */}
+      <div className="pt-4 border-t border-slate-50 dark:border-white/5 flex items-center justify-between relative z-10 pl-1 mt-auto">
+        <div className="flex items-center gap-3 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+          <span className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+            <Users size={12} className="text-slate-400" />
+            {subject.teachersCount || 0}
+          </span>
+          <span className="text-slate-200 dark:text-slate-800">•</span>
+          <span className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+            <Workflow size={12} className="text-slate-400" />
+            {subject.classesCount || 0}
+          </span>
+        </div>
 
+        {/* Badges & Action Link */}
+        <div className="flex items-center gap-2">
           <div className={cn(
-            "flex items-center gap-2 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border",
+            "flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border",
             subject.scope === "SCHOOL"
               ? "bg-emerald-50/50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
               : "bg-amber-50/50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
           )}>
-            {subject.scope === "SCHOOL" ? <Globe size={10} /> : <Lock size={10} />}
-            <span>{subject.scope === "SCHOOL" ? "School-wide" : "Private"}</span>
+            {subject.scope === "SCHOOL" ? <Globe size={9} /> : <Lock size={9} />}
+            <span>{subject.scope === "SCHOOL" ? "School" : "Private"}</span>
           </div>
-        </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <Workflow size={14} strokeWidth={2.5} />
-            </div>
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-              {subject.classesCount || 0} {subject.classesCount === 1 ? "Class" : "Classes"}
-            </span>
-          </div>
-          <div
-            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all"
-            style={{ color: primaryColor }}
+          <motion.div
+            whileHover={{ scale: 1.1, x: 2 }}
+            className="flex items-center justify-center size-7 rounded-full bg-slate-50 dark:bg-white/5 text-slate-400 hover:text-white transition-all duration-300"
+            style={{ 
+              backgroundColor: `${primaryColor}10`,
+              color: primaryColor
+            }}
           >
-            <span>View Details</span>
-            <ArrowRight size={14} strokeWidth={3} />
-          </div>
+            <ArrowRight size={12} strokeWidth={2.5} />
+          </motion.div>
         </div>
       </div>
-    </div>
-  )
-}
+    </motion.div>
+  );
+};
 
-export default SubjectCard
-
+export default SubjectCard;

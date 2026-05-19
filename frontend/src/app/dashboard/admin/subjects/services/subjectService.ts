@@ -12,6 +12,7 @@ export interface Subject {
   departments?: Array<{ departmentId: string; department: { name: string } }>
   classes?: Array<{ classId: string; class: { name: string; gradeLevel: string } }>
   schemesOfWork?: SchemeOfWork[]
+  subjectExamPapers?: any[]
 }
 
 export interface SchemeOfWork {

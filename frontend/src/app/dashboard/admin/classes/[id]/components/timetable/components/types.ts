@@ -12,6 +12,8 @@ export interface Subject {
   teacher: string;
   room: string;
   color?: string;
+  isBreak?: boolean;
+  breakLabel?: string;
 }
 
 export interface Day {

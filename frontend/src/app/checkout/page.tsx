@@ -15,7 +15,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { schoolQueryKeys } from '@/lib/api/hooks/useSchool';
 import Link from 'next/link';
 
-type CheckoutState = 'EMAIL_ENTRY' | 'VERIFY_OTP' | 'PASSWORD_SETUP' | 'PAYMENT_READY' | 'POST_PAYMENT_SETUP' | 'SUCCESS';
+type CheckoutState = 'EMAIL_ENTRY' | 'VERIFY_OTP' | 'PASSWORD_SETUP' | 'PAYMENT_READY' | 'VERIFYING_PAYMENT' | 'POST_PAYMENT_SETUP' | 'SUCCESS';
 
 export default function CheckoutPage() {
     const searchParams = useSearchParams();
@@ -132,20 +132,15 @@ export default function CheckoutPage() {
                 queryClient.invalidateQueries({ queryKey: ['user-profile'] });
             }
             const timer = setTimeout(() => {
-                // Determine target URL: All users go to their respective dashboard
-                let targetUrl = `/dashboard/${role?.toLowerCase() || 'admin'}`;
-
-                // If redirectBackUrl was set (pre-checkout flow), use that instead
-                if (redirectBackUrl) {
-                    targetUrl = redirectBackUrl;
-                }
+                // Determine target URL: Go to their respective billing/subscription page
+                let targetUrl = `/dashboard/${role?.toLowerCase() || 'admin'}/billing`;
 
                 clearCheckout();
                 router.push(targetUrl);
-            }, 2000);
+            }, 3000);
             return () => clearTimeout(timer);
         }
-    }, [step, router, clearCheckout, queryClient, user, role, redirectBackUrl]);
+    }, [step, router, clearCheckout, queryClient, user, role]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -298,6 +293,7 @@ export default function CheckoutPage() {
         text: "Pay Now",
         onSuccess: async (reference: any) => {
             try {
+                setStep('VERIFYING_PAYMENT');
                 toast.loading("Verifying payment...", { toastId: "verify" });
                 await paymentService.verify({ reference: reference.reference, plan, billingType: billing as "monthly" | "yearly" });
 
@@ -326,6 +322,7 @@ export default function CheckoutPage() {
                 }
             } catch (error) {
                 setIsLoading(false);
+                setStep('PAYMENT_READY');
                 toast.update("verify", { render: "Verification failed.", type: "error", isLoading: false, autoClose: 3000 });
             }
         },
@@ -544,6 +541,24 @@ export default function CheckoutPage() {
                             </motion.div>
                         )}
 
+                        {step === 'VERIFYING_PAYMENT' && (
+                            <motion.div key="verifying" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-12 flex flex-col items-center justify-center">
+                                <div className="relative size-24 mb-8 flex items-center justify-center">
+                                    {/* Revolving Double-layered Gradient Border */}
+                                    <div className="absolute inset-0 rounded-full border-4 border-slate-100 dark:border-white/5 animate-spin" style={{ borderTopColor: '#2563eb', borderRightColor: '#3b82f6', animationDuration: '1s' }} />
+                                    <div className="absolute inset-2 rounded-full border-4 border-slate-100 dark:border-white/5 animate-spin" style={{ borderBottomColor: '#f97316', animationDuration: '1.5s', animationDirection: 'reverse' }} />
+                                    <ShieldCheck className="size-10 text-blue-600 animate-pulse" />
+                                </div>
+                                <h2 className="text-3xl font-black text-slate-900 dark:text-white font-lexend mb-4">Verifying Payment</h2>
+                                <p className="text-slate-500 max-w-md mx-auto text-sm leading-relaxed mb-4">
+                                    Securely confirming your transaction credentials with the payment network...
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest animate-pulse">
+                                    Please do not close this tab or refresh the page
+                                </p>
+                            </motion.div>
+                        )}
+
                         {step === 'POST_PAYMENT_SETUP' && (
                             <motion.div key="setup" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                                 <div className="text-center mb-8">
@@ -569,11 +584,11 @@ export default function CheckoutPage() {
                                 </div>
                                 <h2 className="text-4xl font-black text-slate-900 dark:text-white font-lexend mb-4">You're all set!</h2>
                                 <p className="text-slate-500 mb-10 text-lg">
-                                    Redirecting you to your dashboard...
+                                    Redirecting you to your billing dashboard...
                                 </p>
-                                <Link href={`/dashboard/${role?.toLowerCase() || 'admin'}`}>
+                                <Link href={`/dashboard/${role?.toLowerCase() || 'admin'}/billing`}>
                                     <Button className="px-10 py-6 text-lg rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black shadow-xl">
-                                        Go to Dashboard
+                                        Go to Billing page
                                     </Button>
                                 </Link>
                             </motion.div>

@@ -1,56 +1,55 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+import { Sparkles, Plus, Download, Copy } from 'lucide-react';
+import Link from 'next/link';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
+interface HeaderActionsProps {
+  onAutoGenerate: () => void;
+  onAddPeriod: () => void;
+  onDownload: () => void;
+  onReplicate: () => void;
 }
 
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
-    }
-  };
-
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
-  };
-
+const HeaderActions: React.FC<HeaderActionsProps> = ({
+  onAutoGenerate,
+  onAddPeriod,
+  onDownload,
+  onReplicate
+}) => {
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onAutoGenerate}
+          className="flex items-center gap-2 min-w-[84px] cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
         >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
-          >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
+          <Sparkles size={18} />
+          <span className="truncate">Auto-generate</span>
+        </button>
+        <button
+          onClick={onReplicate}
+          className="flex items-center gap-2 min-w-[84px] cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-4 bg-purple-600 text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-purple-700 transition-colors"
+        >
+          <Copy size={18} />
+          <span className="truncate">Replicate</span>
+        </button>
+        <button
+          onClick={onAddPeriod}
+          className="flex items-center gap-2 min-w-[84px] cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-200 dark:bg-[#253046] text-gray-800 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-gray-300 dark:hover:bg-[#364563] transition-colors"
+        >
+          <Plus size={18} />
+          <span className="truncate">Add Period</span>
+        </button>
+      </div>
+      
+      <button
+        onClick={onDownload}
+        className="flex items-center gap-2 min-w-[84px] cursor-pointer justify-center overflow-hidden rounded-lg h-10 px-4 bg-transparent text-gray-800 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] border border-gray-300 dark:border-[#364563] hover:bg-gray-100 dark:hover:bg-[#253046] transition-colors"
+      >
+        <Download size={18} />
+        <span className="truncate">Download</span>
+      </button>
     </div>
   );
 };
 
-export default SubjectInput;
-
+export default HeaderActions;

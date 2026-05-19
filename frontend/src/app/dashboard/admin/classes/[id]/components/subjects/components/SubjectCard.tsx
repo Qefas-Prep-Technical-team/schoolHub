@@ -1,56 +1,56 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+import { BookOpen } from 'lucide-react';
+import { Subject } from './types';
+import ProgressBar from './ProgressBar';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
+interface SubjectCardProps {
+  subject: Subject;
+  onClick?: (subject: Subject) => void;
 }
 
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
-    }
-  };
-
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
-  };
-
+const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) => {
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
-        >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
-          >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
+    <div 
+      className="flex flex-col gap-4 rounded-xl bg-white dark:bg-background-dark/50 border border-gray-200 dark:border-white/10 p-5 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+      onClick={() => onClick?.(subject)}
+    >
+      <div className="flex items-center gap-3">
+        {subject.icon ? (
+          <div 
+            className="w-12 h-12 rounded-lg bg-center bg-no-repeat aspect-square bg-cover flex-shrink-0"
+            style={{ backgroundImage: `url(${subject.icon})` }}
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0">
+            <BookOpen className="text-primary" size={24} />
+          </div>
+        )}
+        
+        <div className="flex-1 min-w-0">
+          <h3 className="text-gray-900 dark:text-white text-lg font-semibold leading-normal truncate">
+            {subject.name}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal">
+            {subject.assignments} Assignments, {subject.exams} Papers
+          </p>
+        </div>
+      </div>
+      
+      <div className="flex flex-col gap-2">
+        <ProgressBar value={subject.classPerformance} />
+      </div>
+      
+      <button 
+        className="w-full flex items-center justify-center rounded-lg h-10 px-4 bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300 text-sm font-bold leading-normal hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick?.(subject);
+        }}
+      >
+        Open Subject
+      </button>
     </div>
   );
 };
 
-export default SubjectInput;
-
+export default SubjectCard;

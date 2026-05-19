@@ -1,56 +1,64 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+import { User } from 'lucide-react';
+import { Student } from './types';
+import PerformanceBadge from './PerformanceBadge';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
+interface StudentCardProps {
+  student: Student;
+  onClick?: (student: Student) => void;
 }
 
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
-    }
-  };
-
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
-  };
-
+const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) => {
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
-        >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
-          >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
+    <div 
+      className="bg-white dark:bg-[#1C182F] rounded-xl shadow-sm p-4 flex flex-col items-center text-center transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+      onClick={() => onClick?.(student)}
+    >
+      {student.profileImage ? (
+        <img
+          alt={student.fullName}
+          src={student.profileImage}
+          className="w-20 h-20 rounded-full object-cover mb-4"
+        />
+      ) : (
+        <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mb-4">
+          <User size={32} className="text-gray-500 dark:text-gray-400" />
+        </div>
+      )}
+      
+      <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1">
+        {student.fullName}
+      </h3>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+        ID: {student.studentId}
+      </p>
+      
+      <div className="mb-4">
+        <PerformanceBadge performance={student.performance} />
+      </div>
+      
+      <div className="w-full flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-4">
+        <div className="text-center">
+          <div className="font-bold text-gray-800 dark:text-white">{student.attendance}%</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Attendance</div>
+        </div>
+        <div className="text-center">
+          <div className="font-bold text-gray-800 dark:text-white">{student.lastScore}%</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Last Score</div>
+        </div>
+      </div>
+      
+      <button 
+        className="w-full text-center text-primary font-bold py-2 rounded-lg hover:bg-primary/10 transition-colors text-sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick?.(student);
+        }}
+      >
+        View Profile
+      </button>
     </div>
   );
 };
 
-export default SubjectInput;
-
+export default StudentCard;

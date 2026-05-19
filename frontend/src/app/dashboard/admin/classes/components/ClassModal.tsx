@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import {
 import { classService, Class } from "../services/classService"
 import { subjectService, Subject } from "../../subjects/services/subjectService"
 import { departmentService, Department } from "../../departments/services/departmentService"
+import { schoolService } from "@/lib/api/services/schoolService"
 import { sessionService, Session } from "@/lib/api/services/sessionService"
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
 import { apiClient } from "@/lib/api/client"
@@ -33,6 +34,7 @@ interface ClassModalProps {
   onClose: () => void
   onSuccess: () => void
   classItem?: Class | null
+  schoolId?: string
 }
 
 interface Student {
@@ -54,6 +56,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
   onClose,
   onSuccess,
   classItem,
+  schoolId,
 }) => {
   const [loading, setLoading] = useState(false)
   const [fetchingData, setFetchingData] = useState(false)
@@ -80,6 +83,57 @@ const ClassModal: React.FC<ClassModalProps> = ({
   })
 
   const { user } = useAuthStore()
+  const activeSchoolId = schoolId || user?.schools?.[0]?.schoolId || user?.tenantId || '';
+
+  const fetchInitialData = useCallback(async () => {
+    setFetchingData(true)
+    try {
+      if (activeSchoolId) {
+        const results = await Promise.allSettled([
+          schoolService.getTeachers(activeSchoolId),
+          subjectService.getSubjects(activeSchoolId),
+          departmentService.getDepartments(activeSchoolId),
+          schoolService.getStudents(activeSchoolId, { limit: 1000 }),
+          sessionService.getSessions()
+        ])
+        
+        if (results[0].status === 'fulfilled') {
+          setTeachers(results[0].value || [])
+        } else {
+          console.error("Failed to fetch school teachers:", results[0].reason)
+        }
+
+        if (results[1].status === 'fulfilled') {
+          setSubjects(results[1].value || [])
+        } else {
+          console.error("Failed to fetch school subjects:", results[1].reason)
+        }
+
+        if (results[2].status === 'fulfilled') {
+          setDepartments(results[2].value || [])
+        } else {
+          console.error("Failed to fetch school departments:", results[2].reason)
+        }
+
+        if (results[3].status === 'fulfilled') {
+          setStudents(results[3].value || [])
+        } else {
+          console.error("Failed to fetch school students:", results[3].reason)
+        }
+
+        if (results[4].status === 'fulfilled') {
+          setSessions(results[4].value || [])
+        } else {
+          console.error("Failed to fetch academic sessions:", results[4].reason)
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch initial data", error)
+      toast.error("Failed to load school data")
+    } finally {
+      setFetchingData(false)
+    }
+  }, [activeSchoolId])
 
   useEffect(() => {
     if (isOpen) {
@@ -91,7 +145,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
           sessionId: (classItem as any).sessionId || "",
           selectedTeacherIds: classItem.teachers?.map(t => t.teacherId) || [],
           selectedSubjectIds: classItem.subjects?.map((s: any) => s.subject?.id || s.id) || [],
-          selectedDepartmentIds: classItem.departments?.map((d: any) => d.department?.id || d.id) || [],
+          selectedDepartmentIds: classItem.departments?.map((d: any) => d.department?.code || d.departmentId || d.id) || [],
           selectedStudentIds: classItem.enrollments?.map((e: any) => e.student?.id || e.id) || [],
         })
       } else {
@@ -106,47 +160,22 @@ const ClassModal: React.FC<ClassModalProps> = ({
         })
       }
     }
-  }, [isOpen, classItem])
-
-  const fetchInitialData = async () => {
-    setFetchingData(true)
-    try {
-      const statusRes = await apiClient.get(`/admin/admin-status/${user?.email}`);
-      const schoolId = statusRes.data.data.schoolAdmins?.[0]?.schoolId;
-      
-      if (schoolId) {
-        const [teachersData, subjectsData, departmentsData, studentsData, sessionsData] = await Promise.all([
-          classService.getSchoolTeachers(schoolId),
-          subjectService.getSubjects(schoolId),
-          departmentService.getDepartments(schoolId),
-          classService.getSchoolStudents(schoolId),
-          sessionService.getSessions()
-        ])
-        setTeachers(teachersData)
-        setSubjects(subjectsData)
-        setDepartments(departmentsData)
-        setStudents(studentsData)
-        setSessions(sessionsData)
-      }
-    } catch (error) {
-      console.error("Failed to fetch initial data", error)
-      toast.error("Failed to load school data")
-    } finally {
-      setFetchingData(false)
-    }
-  }
+  }, [isOpen, classItem, fetchInitialData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     try {
-      const statusRes = await apiClient.get(`/admin/admin-status/${user?.email}`);
-      const schoolId = statusRes.data.data.schoolAdmins?.[0]?.schoolId;
-
-      if (!schoolId) {
+      if (!activeSchoolId) {
         toast.error("School context not found");
         return;
       }
+
+      // Map department code selections back to real database UUIDs to satisfy foreign key constraints
+      const mappedDepartmentIds = formData.selectedDepartmentIds.map(code => {
+        const dept = departments.find(d => d.id === code || d.code === code);
+        return dept?.departmentId || code;
+      });
 
       if (classItem) {
         // Update class basic info
@@ -154,7 +183,7 @@ const ClassModal: React.FC<ClassModalProps> = ({
           name: formData.name,
           section: formData.section,
           teacherIds: formData.selectedTeacherIds,
-          departmentIds: formData.selectedDepartmentIds,
+          departmentIds: mappedDepartmentIds,
           studentIds: formData.selectedStudentIds,
           sessionId: formData.sessionId || undefined,
         } as any);
@@ -169,9 +198,9 @@ const ClassModal: React.FC<ClassModalProps> = ({
           name: formData.name,
           section: formData.section,
           scope: "SCHOOL",
-          schoolId,
+          schoolId: activeSchoolId,
           subjectIds: formData.selectedSubjectIds,
-          departmentIds: formData.selectedDepartmentIds,
+          departmentIds: mappedDepartmentIds,
           teacherIds: formData.selectedTeacherIds,
           studentIds: formData.selectedStudentIds,
           sessionId: formData.sessionId || undefined,
@@ -249,14 +278,20 @@ const ClassModal: React.FC<ClassModalProps> = ({
   );
 
   const FormSkeleton = () => (
-    <div className="p-8 space-y-6">
-      <div className="grid grid-cols-2 gap-6">
-        <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
-        <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
+    <div className="p-12 flex flex-col items-center justify-center gap-6 min-h-[380px]">
+      <div className="relative size-16 flex items-center justify-center">
+        {/* Rotating Premium Spinner */}
+        <div className="absolute inset-0 rounded-full border-4 border-slate-100 dark:border-white/5 animate-spin" style={{ borderTopColor: '#2563eb' }} />
+        <Users className="size-6 text-blue-600/60 animate-pulse" />
       </div>
-      <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-10 w-full" /></div>
-      <div className="space-y-2"><Skeleton className="h-4 w-40" /><Skeleton className="h-32 w-full" /></div>
-      <div className="space-y-2"><Skeleton className="h-4 w-40" /><Skeleton className="h-32 w-full" /></div>
+      <div className="space-y-2 text-center">
+        <h4 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
+          Syncing School Registry
+        </h4>
+        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest animate-pulse leading-normal">
+          Loading teachers, students and departments...
+        </p>
+      </div>
     </div>
   );
 
@@ -338,31 +373,38 @@ const ClassModal: React.FC<ClassModalProps> = ({
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                  {filteredTeachers.map((teacher) => (
-                    <div 
-                      key={teacher.id} 
-                      onClick={() => toggleTeacher(teacher.id)}
-                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2 ${
-                        formData.selectedTeacherIds.includes(teacher.id) 
-                          ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' 
-                          : 'bg-white dark:bg-slate-900 border-transparent hover:border-slate-200'
-                      }`}
-                    >
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                        formData.selectedTeacherIds.includes(teacher.id) 
-                          ? 'bg-emerald-600 border-emerald-600' 
-                          : 'border-slate-200 dark:border-slate-700'
-                      }`}>
-                        {formData.selectedTeacherIds.includes(teacher.id) && (
-                          <span className="material-symbols-outlined text-[14px] text-white font-bold">check</span>
-                        )}
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-bold truncate">{teacher.name}</span>
-                        <span className="text-[10px] opacity-60 truncate">{teacher.email}</span>
-                      </div>
+                  {filteredTeachers.length === 0 ? (
+                    <div className="col-span-2 flex flex-col items-center justify-center py-8 text-slate-400">
+                      <Users size={32} className="opacity-20 mb-2" />
+                      <p className="text-xs">No matching teachers found</p>
                     </div>
-                  ))}
+                  ) : (
+                    filteredTeachers.map((teacher) => (
+                      <div 
+                        key={teacher.id} 
+                        onClick={() => toggleTeacher(teacher.id)}
+                        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2 ${
+                          formData.selectedTeacherIds.includes(teacher.id) 
+                            ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' 
+                            : 'bg-white dark:bg-slate-900 border-transparent hover:border-slate-200'
+                        }`}
+                      >
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                          formData.selectedTeacherIds.includes(teacher.id) 
+                            ? 'bg-emerald-600 border-emerald-600' 
+                            : 'border-slate-200 dark:border-slate-700'
+                        }`}>
+                          {formData.selectedTeacherIds.includes(teacher.id) && (
+                            <span className="material-symbols-outlined text-[14px] text-white font-bold">check</span>
+                          )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-bold truncate">{teacher.name}</span>
+                          <span className="text-[10px] opacity-60 truncate">{teacher.email}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -382,28 +424,35 @@ const ClassModal: React.FC<ClassModalProps> = ({
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                  {filteredSubjects.map((subject) => (
-                    <div 
-                      key={subject.id} 
-                      onClick={() => toggleSubject(subject.id)}
-                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2 ${
-                        formData.selectedSubjectIds.includes(subject.id) 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500/30 text-blue-700 dark:text-blue-300' 
-                          : 'bg-white dark:bg-slate-900 border-transparent hover:border-slate-200'
-                      }`}
-                    >
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                        formData.selectedSubjectIds.includes(subject.id) 
-                          ? 'bg-blue-600 border-blue-600' 
-                          : 'border-slate-200 dark:border-slate-700'
-                      }`}>
-                        {formData.selectedSubjectIds.includes(subject.id) && (
-                          <span className="material-symbols-outlined text-[14px] text-white font-bold">check</span>
-                        )}
-                      </div>
-                      <span className="text-sm font-bold truncate">{subject.name}</span>
+                  {filteredSubjects.length === 0 ? (
+                    <div className="col-span-2 flex flex-col items-center justify-center py-8 text-slate-400">
+                      <BookOpen size={32} className="opacity-20 mb-2" />
+                      <p className="text-xs">No matching subjects found</p>
                     </div>
-                  ))}
+                  ) : (
+                    filteredSubjects.map((subject) => (
+                      <div 
+                        key={subject.id} 
+                        onClick={() => toggleSubject(subject.id)}
+                        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2 ${
+                          formData.selectedSubjectIds.includes(subject.id) 
+                            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500/30 text-blue-700 dark:text-blue-300' 
+                            : 'bg-white dark:bg-slate-900 border-transparent hover:border-slate-200'
+                        }`}
+                      >
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                          formData.selectedSubjectIds.includes(subject.id) 
+                            ? 'bg-blue-600 border-blue-600' 
+                            : 'border-slate-200 dark:border-slate-700'
+                        }`}>
+                          {formData.selectedSubjectIds.includes(subject.id) && (
+                            <span className="material-symbols-outlined text-[14px] text-white font-bold">check</span>
+                          )}
+                        </div>
+                        <span className="text-sm font-bold truncate">{subject.name}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -423,28 +472,35 @@ const ClassModal: React.FC<ClassModalProps> = ({
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                  {filteredDepartments.map((dept) => (
-                    <div 
-                      key={dept.id} 
-                      onClick={() => toggleDepartment(dept.id)}
-                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2 ${
-                        formData.selectedDepartmentIds.includes(dept.id) 
-                          ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500/30 text-indigo-700 dark:text-indigo-300 font-bold' 
-                          : 'bg-white dark:bg-slate-900 border-transparent hover:border-slate-200'
-                      }`}
-                    >
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                        formData.selectedDepartmentIds.includes(dept.id) 
-                          ? 'bg-indigo-600 border-indigo-600 shadow-sm' 
-                          : 'border-slate-200 dark:border-slate-700'
-                      }`}>
-                        {formData.selectedDepartmentIds.includes(dept.id) && (
-                          <span className="material-symbols-outlined text-[14px] text-white font-bold leading-none">check</span>
-                        )}
-                      </div>
-                      <span className="text-sm font-bold truncate">{dept.name}</span>
+                  {filteredDepartments.length === 0 ? (
+                    <div className="col-span-2 flex flex-col items-center justify-center py-8 text-slate-400">
+                      <Building2 size={32} className="opacity-20 mb-2" />
+                      <p className="text-xs">No matching departments found</p>
                     </div>
-                  ))}
+                  ) : (
+                    filteredDepartments.map((dept) => (
+                      <div 
+                        key={dept.id} 
+                        onClick={() => toggleDepartment(dept.id)}
+                        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2 ${
+                          formData.selectedDepartmentIds.includes(dept.id) 
+                            ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500/30 text-indigo-700 dark:text-indigo-300 font-bold' 
+                            : 'bg-white dark:bg-slate-900 border-transparent hover:border-slate-200'
+                        }`}
+                      >
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                          formData.selectedDepartmentIds.includes(dept.id) 
+                            ? 'bg-indigo-600 border-indigo-600 shadow-sm' 
+                            : 'border-slate-200 dark:border-slate-700'
+                        }`}>
+                          {formData.selectedDepartmentIds.includes(dept.id) && (
+                            <span className="material-symbols-outlined text-[14px] text-white font-bold leading-none">check</span>
+                          )}
+                        </div>
+                        <span className="text-sm font-bold truncate">{dept.name}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -521,9 +577,16 @@ const ClassModal: React.FC<ClassModalProps> = ({
               <Button
                 type="submit"
                 disabled={loading}
-                className="px-10 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg hover:shadow-blue-500/30 transition-all active:scale-95 py-6"
+                className="px-10 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg hover:shadow-blue-500/30 transition-all active:scale-95 py-6 gap-2"
               >
-                {loading ? "Processing..." : classItem ? "Update Class" : "Create Class"}
+                {loading ? (
+                  <>
+                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  classItem ? "Update Class" : "Create Class"
+                )}
               </Button>
             </DialogFooter>
           </form>

@@ -1,56 +1,32 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
 
-interface SubjectInputProps {
-  subjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
+interface StatsCardProps {
+  title: string;
+  value: string;
+  className?: string;
+  isLoading?: boolean;
 }
 
-const SubjectInput: React.FC<SubjectInputProps> = ({ subjects, onSubjectsChange }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleAddSubject = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!subjects.includes(inputValue.trim())) {
-        onSubjectsChange([...subjects, inputValue.trim()]);
-      }
-      setInputValue('');
-    }
-  };
-
-  const handleRemoveSubject = (subjectToRemove: string) => {
-    onSubjectsChange(subjects.filter((subject) => subject !== subjectToRemove));
-  };
-
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, className = '', isLoading }) => {
   return (
-    <div className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent p-2 min-h-11 flex flex-wrap items-center gap-2">
-      {subjects.map((subject) => (
-        <span
-          key={subject}
-          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
-        >
-          {subject}
-          <button
-            onClick={() => handleRemoveSubject(subject)}
-            className="hover:text-primary/70"
-            aria-label={`Remove ${subject}`}
-          >
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleAddSubject}
-        placeholder="Add subjects..."
-        className="flex-1 bg-transparent focus:outline-none min-w-[100px] text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
-      />
+    <div className={`flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-[#1f2937] border border-gray-200 dark:border-gray-700 ${className}`}>
+      {isLoading ? (
+        <div className="animate-pulse flex flex-col gap-2">
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+          <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mt-1"></div>
+        </div>
+      ) : (
+        <>
+          <p className="text-gray-600 dark:text-gray-300 text-base font-medium leading-normal">
+            {title}
+          </p>
+          <p className="text-gray-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
+            {value}
+          </p>
+        </>
+      )}
     </div>
   );
 };
 
-export default SubjectInput;
-
+export default StatsCard;

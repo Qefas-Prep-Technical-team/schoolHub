@@ -67,10 +67,10 @@ export const useClassAttendance = (classId: string, date?: string) => {
   });
 };
 
-export const useClassAttendanceSummary = (classId: string) => {
+export const useClassAttendanceSummary = (classId: string, month?: string) => {
   return useQuery({
-    queryKey: [...classQueryKeys.all, "attendance-summary", classId],
-    queryFn: () => classService.getAttendanceSummary(classId),
+    queryKey: [...classQueryKeys.all, "attendance-summary", classId, { month }],
+    queryFn: () => classService.getAttendanceSummary(classId, month),
     enabled: !!classId,
     refetchInterval: 5000,
     staleTime: 4000,
@@ -103,10 +103,10 @@ export const useSubmitAttendance = (classId: string) => {
 };
 
 // Timetable Hooks
-export const useClassTimetable = (classId: string) => {
+export const useClassTimetable = (classId: string, termPeriodId?: string) => {
   return useQuery({
-    queryKey: [...classQueryKeys.all, "timetable", classId],
-    queryFn: () => classService.getTimetable(classId),
+    queryKey: [...classQueryKeys.all, "timetable", classId, { termPeriodId }],
+    queryFn: () => classService.getTimetable(classId, termPeriodId),
     enabled: !!classId,
     refetchInterval: 5000,
     staleTime: 4000,
@@ -137,6 +137,35 @@ export const useDeleteTimetablePeriod = (classId: string) => {
     },
     onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to remove period");
+    },
+  });
+};
+
+export const useAutoGenerateTimetable = (classId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (termPeriodId: string) => classService.autoGenerateTimetable(classId, termPeriodId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...classQueryKeys.all, "timetable", classId] });
+      toast.success("Timetable auto-generated successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to auto-generate timetable");
+    },
+  });
+};
+
+export const useReplicateTimetable = (classId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sourceTermPeriodId, targetTermPeriodId }: { sourceTermPeriodId: string; targetTermPeriodId: string }) =>
+      classService.replicateTimetable(classId, sourceTermPeriodId, targetTermPeriodId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...classQueryKeys.all, "timetable", classId] });
+      toast.success("Timetable replicated successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to replicate timetable");
     },
   });
 };
