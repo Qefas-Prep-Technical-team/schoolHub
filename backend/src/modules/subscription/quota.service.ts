@@ -8,7 +8,7 @@ import { PLAN_LIMITS, DEFAULT_PLAN } from "./plan.constants";
 export const getSchoolUsageService = async (schoolId: string) => {
   // 1. Fetch the school base data
   const school = await prisma.school.findFirst({
-    where: { 
+    where: {
       OR: [
         { id: schoolId },
         { tenantId: schoolId }
@@ -23,7 +23,6 @@ export const getSchoolUsageService = async (schoolId: string) => {
   // 2. Resolve the full Subscription Plan details manually to bypass relation sync issues
   let subscriptionPlan = null;
   const activePlanId = (school as any).subscriptionPlanId || (school as any).planId;
-  
   if (activePlanId) {
     try {
       subscriptionPlan = await (prisma as any).subscriptionPlan.findUnique({
@@ -40,18 +39,17 @@ export const getSchoolUsageService = async (schoolId: string) => {
       console.warn("[QuotaService] Failed to fetch subscriptionPlan by ID:", activePlanId, e);
     }
   }
-
   // 3. Resolve limits and descriptive plan name
   const planName = subscriptionPlan?.name || (school.plan || DEFAULT_PLAN).toUpperCase();
-  const baseLimits = subscriptionPlan 
+  const baseLimits = subscriptionPlan
     ? {
-        maxStudents: subscriptionPlan.maxStudents,
-        maxExams: subscriptionPlan.maxExams,
-        maxClasses: subscriptionPlan.maxClasses,
-        maxTeachers: subscriptionPlan.maxTeachers,
-        maxStorageGb: subscriptionPlan.maxStorageGb,
-        maxAiUsage: subscriptionPlan.maxAiUsage,
-      }
+      maxStudents: subscriptionPlan.maxStudents,
+      maxExams: subscriptionPlan.maxExams,
+      maxClasses: subscriptionPlan.maxClasses,
+      maxTeachers: subscriptionPlan.maxTeachers,
+      maxStorageGb: subscriptionPlan.maxStorageGb,
+      maxAiUsage: subscriptionPlan.maxAiUsage,
+    }
     : (PLAN_LIMITS[planName.toUpperCase()] || PLAN_LIMITS[DEFAULT_PLAN]);
 
   const limits = {
@@ -176,7 +174,7 @@ export const getUserUsageService = async (userId: string, role: string) => {
   }
   const roleKey = role.toLowerCase();
   const prismaModel = (prisma as any)[roleKey];
-  
+
   if (prismaModel) {
     user = await prismaModel.findUnique({ where: { id: userId } });
   }
@@ -188,7 +186,7 @@ export const getUserUsageService = async (userId: string, role: string) => {
   // 2. Resolve Subscription Plan details manually
   let subscriptionPlan = null;
   const activePlanId = (user as any).subscriptionPlanId || (user as any).planId;
-  
+
   if (activePlanId) {
     try {
       subscriptionPlan = await (prisma as any).subscriptionPlan.findUnique({
@@ -208,15 +206,15 @@ export const getUserUsageService = async (userId: string, role: string) => {
 
   // 3. Resolve limits and descriptive plan name
   const planName = subscriptionPlan?.name || (user.plan || DEFAULT_PLAN).toUpperCase();
-  const baseLimits = subscriptionPlan 
+  const baseLimits = subscriptionPlan
     ? {
-        maxStudents: subscriptionPlan.maxStudents,
-        maxExams: subscriptionPlan.maxExams,
-        maxClasses: subscriptionPlan.maxClasses,
-        maxTeachers: subscriptionPlan.maxTeachers,
-        maxStorageGb: subscriptionPlan.maxStorageGb,
-        maxAiUsage: subscriptionPlan.maxAiUsage,
-      }
+      maxStudents: subscriptionPlan.maxStudents,
+      maxExams: subscriptionPlan.maxExams,
+      maxClasses: subscriptionPlan.maxClasses,
+      maxTeachers: subscriptionPlan.maxTeachers,
+      maxStorageGb: subscriptionPlan.maxStorageGb,
+      maxAiUsage: subscriptionPlan.maxAiUsage,
+    }
     : (PLAN_LIMITS[planName.toUpperCase()] || PLAN_LIMITS[DEFAULT_PLAN]);
 
   const limits = {
@@ -259,16 +257,16 @@ export const getUserUsageService = async (userId: string, role: string) => {
   }
 
   const [examCount, classCount, storageMetric, studentCount] = await Promise.all([
-    role === 'TEACHER' 
-      ? prisma.exam.count({ where: { teacherId: userId } }) 
-      : role === 'STUDENT' 
+    role === 'TEACHER'
+      ? prisma.exam.count({ where: { teacherId: userId } })
+      : role === 'STUDENT'
         ? prisma.examAttempt.count({ where: { studentId: userId } })
         : role === 'PARENT'
           ? prisma.examAttempt.count({ where: { studentId: { in: parentChildIds } } })
           : Promise.resolve(0),
-    role === 'TEACHER' 
-      ? prisma.classTeacher.count({ where: { teacherId: userId } }) 
-      : role === 'STUDENT' 
+    role === 'TEACHER'
+      ? prisma.classTeacher.count({ where: { teacherId: userId } })
+      : role === 'STUDENT'
         ? prisma.classEnrollment.count({ where: { studentId: userId } })
         : Promise.resolve(0),
     prisma.fileMetric.aggregate({

@@ -3,7 +3,7 @@ import { ClassScope, UserRole } from "@prisma/client";
 import prisma from "../../config/database";
 import { createNotification } from "../notification/notification.service";
 import { canManageClass } from "./class.permissions";
-import { getSchoolUsageService } from "../subscription/quota.service";
+import { getSchoolUsageService, getUserUsageService } from "../subscription/quota.service";
 import {
   addStudentToClassService,
   approveClassService,
@@ -54,32 +54,62 @@ export const createClass = async (req: Request, res: Response) => {
     }
 
     // --- Subscription Quota Check ---
-    if (schoolId) {
-      try {
-        const usageData = await getSchoolUsageService(schoolId);
-        if (!usageData) {
-          return res.status(500).json({
-            success: false,
-            message: "Error verifying subscription. Failed to create class.",
-          });
-        }
-
-        const { usage, limits } = usageData;
-        if (usage.classes >= limits.classes) {
-          return res.status(403).json({
-            success: false,
-            message: `Class limit exceeded for your current plan (${limits.classes} classes max). Please upgrade to create more classes.`,
-          });
-        }
-      } catch (quotaError: any) {
-        console.error("Quota check failed:", quotaError);
-        // If it's a "School not found" or similar, we might want to continue or fail.
-        // Given the requirement: "if you cant find their subuscrition tell them error creating class"
-        return res.status(500).json({
-          success: false,
-          message: "Error verifying subscription. Failed to create class.",
+    try {
+      if (schoolId) {
+        // A. Check School-wide subscription limits if schoolId is provided and enforcement is enabled
+        const schoolSetting = await prisma.platformSettings.findUnique({
+          where: { key: "sub_enforced_schools" }
         });
+        const isSchoolEnforced = schoolSetting?.value !== "false";
+
+        if (isSchoolEnforced) {
+          const usageData = await getSchoolUsageService(schoolId);
+          if (!usageData) {
+            return res.status(500).json({
+              success: false,
+              message: "Error verifying subscription. Failed to create class.",
+            });
+          }
+
+          const { usage, limits } = usageData;
+          if (usage.classes >= limits.classes) {
+            return res.status(403).json({
+              success: false,
+              message: `Class limit exceeded for your current school plan (${limits.classes} classes max). Please upgrade to create more classes.`,
+            });
+          }
+        }
+      } else if (req.user.userType === UserRole.TEACHER) {
+        // B. Check Teacher's Individual subscription limits for personal classes if enforcement is enabled
+        const teacherSetting = await prisma.platformSettings.findUnique({
+          where: { key: "sub_enforced_teachers" }
+        });
+        const isTeacherEnforced = teacherSetting?.value !== "false";
+
+        if (isTeacherEnforced) {
+          const usageData = await getUserUsageService(req.user.id, "TEACHER");
+          if (!usageData) {
+            return res.status(500).json({
+              success: false,
+              message: "Error verifying subscription. Failed to create class.",
+            });
+          }
+
+          const { usage, limits } = usageData;
+          if (usage.classes >= limits.classes) {
+            return res.status(403).json({
+              success: false,
+              message: `Class limit exceeded for your current teacher plan (${limits.classes} classes max). Please upgrade to manage more classes.`,
+            });
+          }
+        }
       }
+    } catch (quotaError: any) {
+      console.error("Quota check failed during class creation:", quotaError);
+      return res.status(500).json({
+        success: false,
+        message: "Error verifying subscription. Failed to create class.",
+      });
     }
     // --------------------------------
 
@@ -291,17 +321,17 @@ export const previewClassByCode = async (req: Request, res: Response) => {
         status: foundClass.status,
         school: foundClass.school
           ? {
-              id: foundClass.school.id,
-              name: foundClass.school.name,
-              schoolCode: foundClass.school.schoolCode,
-            }
+            id: foundClass.school.id,
+            name: foundClass.school.name,
+            schoolCode: foundClass.school.schoolCode,
+          }
           : null,
         teacher: foundClass.teachers[0]?.teacher
           ? {
-              id: foundClass.teachers[0].teacher.id,
-              name: foundClass.teachers[0].teacher.name,
-              teacherCode: foundClass.teachers[0].teacher.teacherCode,
-            }
+            id: foundClass.teachers[0].teacher.id,
+            name: foundClass.teachers[0].teacher.name,
+            teacherCode: foundClass.teachers[0].teacher.teacherCode,
+          }
           : null,
         subjects: foundClass.subjects.map((s: any) => ({
           id: s.subject.id,
@@ -346,17 +376,17 @@ export const previewClassById = async (req: Request, res: Response) => {
         status: foundClass.status,
         school: foundClass.school
           ? {
-              id: foundClass.school.id,
-              name: foundClass.school.name,
-              schoolCode: foundClass.school.schoolCode,
-            }
+            id: foundClass.school.id,
+            name: foundClass.school.name,
+            schoolCode: foundClass.school.schoolCode,
+          }
           : null,
         teacher: foundClass.teachers[0]?.teacher
           ? {
-              id: foundClass.teachers[0].teacher.id,
-              name: foundClass.teachers[0].teacher.name,
-              teacherCode: foundClass.teachers[0].teacher.teacherCode,
-            }
+            id: foundClass.teachers[0].teacher.id,
+            name: foundClass.teachers[0].teacher.name,
+            teacherCode: foundClass.teachers[0].teacher.teacherCode,
+          }
           : null,
         subjects: foundClass.subjects.map((s: any) => ({
           id: s.subject.id,
@@ -662,9 +692,9 @@ export const changeClassStatus = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-    
+
     if (req.user.userType !== UserRole.ADMIN) {
-        return res.status(403).json({ success: false, message: "Only admins can change class status" });
+      return res.status(403).json({ success: false, message: "Only admins can change class status" });
     }
 
     const updated = await changeClassStatusService({

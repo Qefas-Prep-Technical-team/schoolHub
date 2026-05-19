@@ -916,14 +916,15 @@ model Session {
 }
 
 model TermPeriod {
-  id        String   @id @default(uuid())
-  sessionId String
-  term      Term
-  startDate DateTime
-  endDate   DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id               String            @id @default(uuid())
+  sessionId        String
+  term             Term
+  startDate        DateTime
+  endDate          DateTime
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  session          Session           @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  timetablePeriods TimetablePeriod[]
 
   @@unique([sessionId, term])
   @@map("term_periods")
@@ -1021,21 +1022,25 @@ model Attendance {
 }
 
 model TimetablePeriod {
-  id        String   @id @default(uuid())
-  classId   String
-  day       String
-  startTime String
-  endTime   String
-  subjectId String
-  teacherId String
-  room      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  class     Class    @relation(fields: [classId], references: [id])
-  subject   Subject  @relation(fields: [subjectId], references: [id])
-  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  id           String      @id @default(uuid())
+  classId      String
+  day          String
+  startTime    String
+  endTime      String
+  subjectId    String?
+  teacherId    String?
+  room         String?
+  isBreak      Boolean     @default(false)
+  breakLabel   String?
+  termPeriodId String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  class        Class       @relation(fields: [classId], references: [id])
+  subject      Subject?    @relation(fields: [subjectId], references: [id])
+  teacher      Teacher?    @relation(fields: [teacherId], references: [id])
+  termPeriod   TermPeriod? @relation(fields: [termPeriodId], references: [id], onDelete: Cascade)
 
-  @@index([classId, day])
+  @@index([classId, day, termPeriodId])
   @@map("timetable_periods")
 }
 

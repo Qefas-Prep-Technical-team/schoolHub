@@ -12,8 +12,8 @@ export const getSubjectSchemesService = async (subjectId: string) => {
 
 export const createSchemeEntryService = async (data: {
   title: string;
-  tenantId: string;
-  classId: string;
+  tenantId?: string;
+  classId?: string;
   subjectId: string;
   term?: number;
   week: number;
@@ -23,18 +23,33 @@ export const createSchemeEntryService = async (data: {
 }) => {
   const subject = await prisma.subject.findUnique({
     where: { id: data.subjectId },
-    select: { schoolId: true }
+    include: {
+      school: {
+        select: {
+          tenantId: true
+        }
+      },
+      classes: {
+        select: {
+          classId: true
+        }
+      }
+    }
   });
 
   if (!subject || !subject.schoolId) throw new Error("Subject not found or not associated with a school");
 
+  const resolvedTenantId = data.tenantId || subject.school?.tenantId || "default-tenant-id";
+  const resolvedClassId = data.classId || subject.classes?.[0]?.classId || "default-class-id";
+
   return prisma.schemeOfWork.create({
     data: {
       ...data,
+      tenantId: resolvedTenantId,
+      classId: resolvedClassId,
       term: data.term ?? 1,
       schoolId: subject.schoolId
     }
-
   });
 };
 
@@ -64,21 +79,37 @@ export const deleteSchemeEntryService = async (id: string) => {
 export const bulkSyncSchemeService = async (subjectId: string, entries: any[]) => {
   const subject = await prisma.subject.findUnique({
     where: { id: subjectId },
-    select: { schoolId: true }
+    include: {
+      school: {
+        select: {
+          tenantId: true
+        }
+      },
+      classes: {
+        select: {
+          classId: true
+        }
+      }
+    }
   });
 
   if (!subject) throw new Error("Subject not found");
   const schoolId = subject.schoolId as string;
   if (!schoolId) throw new Error("Subject is not associated with a school");
+  const tenantId = subject.school?.tenantId || "default-tenant-id";
 
   await prisma.$transaction([
-    prisma.schemeOfWork.deleteMany({ where: { subjectId } }),
+    prisma.schemeOfWork.deleteMany({ 
+      where: { 
+        subjectId,
+        tenantId
+      } 
+    }),
     prisma.schemeOfWork.createMany({
-
       data: entries.map(e => ({
         title: e.title || `Week ${e.week} - ${e.topic}`,
-        tenantId: e.tenantId,
-        classId: e.classId,
+        tenantId: e.tenantId || tenantId,
+        classId: e.classId || subject.classes?.[0]?.classId || "default-class-id",
         subjectId,
         schoolId,
         term: e.term || 1,

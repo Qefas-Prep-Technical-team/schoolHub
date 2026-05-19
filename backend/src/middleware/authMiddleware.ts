@@ -48,13 +48,6 @@ export const authenticateToken = async (
       schoolId = student?.schoolId || undefined;
       tenantId = student?.tenantId;
     }
-
-    console.log("LOG: [authMiddleware] User verified", { 
-      userId: decoded.userId, 
-      userType: decoded.userType,
-      schoolId 
-    });
-
     req.user = {
       id: decoded.userId,
       userType: decoded.userType,
@@ -62,7 +55,6 @@ export const authenticateToken = async (
       tenantId: tenantId || undefined
     };
 
-    console.log("LOG: [authMiddleware] Proceeding to next handler for user:", req.user.id, "Context:", { schoolId, tenantId });
     next();
   } catch (error: any) {
     console.error("LOG ERROR: [authMiddleware] failure:", error);

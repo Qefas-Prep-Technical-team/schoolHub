@@ -458,19 +458,47 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
       },
     });
 
-    if (!schoolAdmin) {
+    const hasAccess = schoolAdmin || req.user?.schoolId === schoolId;
+
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         message: "You are not allowed to view teachers for this school",
       });
     }
 
+    // Find active school-teacher links from RelationshipLink
+    const links = await prisma.relationshipLink.findMany({
+      where: {
+        linkType: "SCHOOL_TEACHER",
+        status: "ACTIVE",
+        OR: [
+          {
+            leftEntityType: "SCHOOL",
+            leftEntityId: schoolId,
+            rightEntityType: "TEACHER",
+          },
+          {
+            rightEntityType: "SCHOOL",
+            rightEntityId: schoolId,
+            leftEntityType: "TEACHER",
+          },
+        ],
+      },
+    });
+
+    const linkedTeacherIds = links.map((link) => 
+      link.leftEntityType === "TEACHER" ? link.leftEntityId : link.rightEntityId
+    );
+
     // Get all teachers linked to this school
     const teachers = await prisma.teacher.findMany({
       where: {
         OR: [
+          { id: { in: linkedTeacherIds } },
           { activeSchoolId: schoolId },
           { primarySchoolId: schoolId },
+          { schoolId: schoolId },
         ],
       },
       select: {
@@ -526,7 +554,9 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
       },
     });
 
-    if (!schoolAdmin) {
+    const hasAccess = schoolAdmin || req.user?.schoolId === schoolId;
+
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         message: "You are not allowed to view students for this school",
@@ -626,7 +656,9 @@ export const getSchoolMembers = async (req: Request, res: Response) => {
       },
     });
 
-    if (!schoolAdmin) {
+    const hasAccess = schoolAdmin || req.user?.schoolId === schoolId;
+
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         message: "Unauthorized",

@@ -18,8 +18,7 @@ const serializeDepartment = (dept: any): any => {
     return dept.map(serializeDepartment);
   }
   
-  const { id, ...rest } = dept;
-  return rest;
+  return dept;
 };
 
 export const createDepartment = async (req: Request, res: Response) => {

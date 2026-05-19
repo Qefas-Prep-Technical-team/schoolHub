@@ -81,6 +81,9 @@ export const createClassService = async ({
         enrollments: {
           create: studentIds.filter(Boolean).map((studentId) => ({ studentId })),
         },
+        teachers: {
+          create: teacherIds.filter(Boolean).map((teacherId) => ({ teacherId })),
+        },
       },
       include: {
         school: true,
@@ -330,7 +333,19 @@ export const getSingleClassService = async (classId: string) => {
     include: {
       school: true,
       teachers: { include: { teacher: true } },
-      subjects: { include: { subject: true } },
+      subjects: {
+        include: {
+          subject: {
+            include: {
+              _count: {
+                select: {
+                  subjectExamPapers: true,
+                }
+              }
+            }
+          }
+        }
+      },
       departments: { include: { department: true } },
       enrollments: { include: { student: true } },
       exams: {
@@ -341,11 +356,30 @@ export const getSingleClassService = async (classId: string) => {
           status: true,
           totalMarks: true,
           durationMinutes: true,
+          startDate: true,
+          endDate: true,
           createdAt: true,
           updatedAt: true,
+          subject: {
+            select: {
+              name: true,
+            }
+          },
+          examAttempts: {
+            select: {
+              id: true,
+              isSubmitted: true,
+            }
+          }
         },
       },
       quizzes: true,
+      behaviourAlerts: {
+        include: {
+          student: true,
+          reporter: true,
+        },
+      },
     },
   });
 
@@ -801,27 +835,31 @@ export const removeSubjectFromClassService = async ({
 };
 
 export const getClassStatsService = async (classId: string) => {
-  // 1. Attendance Trend (Last 14 days)
-  const last14Days = Array.from({ length: 14 }).map((_, i) => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - i);
-    return d;
-  });
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13);
+  fourteenDaysAgo.setHours(0, 0, 0, 0);
 
   const attendances = await prisma.attendance.findMany({
     where: {
       classId,
       date: {
-        gte: last14Days[13],
-        lte: last14Days[0],
+        gte: fourteenDaysAgo,
+        lte: today,
       },
     },
   });
 
-  const attendanceTrend = last14Days.map((date) => {
+  const attendanceTrend = Array.from({ length: 14 }).map((_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split("T")[0];
-    const daily = attendances.filter((a) => a.date.toISOString().split("T")[0] === dateStr);
+    const daily = attendances.filter((a) => {
+      const aStr = new Date(a.date).toISOString().split("T")[0];
+      return aStr === dateStr;
+    });
     const total = daily.length;
     const present = daily.filter((a) => a.status === "present").length;
     return {

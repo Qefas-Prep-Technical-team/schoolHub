@@ -106,6 +106,16 @@
 
 ## Completed
 
+### Tuesday, May 19, 2026
+- **Class Detail Page - Exams Tab Calculations and Mappings**:
+    - [x] **Dynamic Student Submission Counts**: Updated `getSingleClassService` query selection to include `examAttempts` and their completed status (`isSubmitted`), computing `completedStudents` dynamically.
+    - [x] **Temporal Status Lifecycle Engine**: Developed dynamic status mapper based on `startDate` and `endDate` boundaries to accurately return `unpublished` (draft), `scheduled` (inactive), `expired` (deadline passed), and `active` (live).
+    - [x] **Status Badges & Filters expansion**: Styled additional badges for `unpublished` and `expired` and added filters for All, Active, Inactive, Unpublished, and Expired exams.
+- **Class Detail Page - Subjects Tab Connected Papers Count**:
+    - [x] **Prisma Relation Select Count**: Modified subject query selections in backend `getSingleClassService` to fetch `_count.subjectExamPapers`.
+    - [x] **Dynamic Papers Counting**: Mapped this count directly to the subject grid cards and details page list items, changing descriptions and header stats labels from "Exams" to "Papers" to represent connected subject exam papers correctly.
+- **Verification**: Verified 100% clean compilation build and strict type check safety with absolutely zero typescript, lint, or runtime errors across both backend and frontend workspaces.
+
 ### Monday, May 18, 2026
 - **Admin Departments Tab Modernization**:
     - [x] **Plain English Transition**: Replaced all cyberpunk/technical jargon (e.g., "Infrastructure Node", "Deploy New Node", "Active Clusters") with clear, natural language throughout the Departments tab.
@@ -303,3 +313,85 @@
 - [ ] Translate Stitch-generated HTML design into Next.js Tailwind components.
 - [ ] Conduct mobile navigation redirects smoke test.
 - [ ] Audit authentication labels for 100% role-based consistency.
+
+### Tuesday, May 19, 2026
+- **Admin Dashboard - Classes Pagination**:
+  - [x] **Imported & Configured Pagination Component**: Integrated `@/components/ui/Pagination` into the admin classes page.
+  - [x] **Calculated Paginated Classes**: Created `paginatedClasses` using `useMemo` based on `currentPage` and `itemsPerPage = 6` limits.
+  - [x] **Grid & Table View Synchronization**: Replaced the direct use of `filteredClasses` with `paginatedClasses` for both the Grid of cards and the Table/List of classes.
+  - [x] **State Resets**: Added `useEffect` hook to reset `currentPage` back to `1` when `searchQuery` changes.
+  - [x] **Resolved Frontend Typecheck Error**: Cast `records` from `AttendanceRecord[]` to `Record<string, unknown>[]` in `AttendanceTab.tsx` to fix TypeScript compilation error TS2345.
+- **Admin Dashboard - Timetable Revamp**:
+  - [x] **Database Schema Migration**: Added `breakLabel` field to the `TimetablePeriod` model and pushed the schema updates to the database.
+  - [x] **Auto-Generation System**: Created backend logic to automatically populate weekly schedule slots with available subjects while managing breaks. Updated algorithm to pull all active subjects configured in the school (rather than only the single class's subset).
+  - [x] **Replication Controls**: Implemented a backend replication pipeline and frontend Copy Modal to copy timetables between terms or sessions.
+  - [x] **12-Hour Time & Active Highlighting**: Added a 12-hour AM/PM format display, integrated a native time picker (`type="time"`), and implemented cell highlighting for the current system time.
+  - [x] **Custom Confirmation Modal**: Replaced standard browser `confirm` prompts with a custom, glassmorphic `ConfirmModal` dialog.
+  - [x] **Auto-Generate Loading Spinner**: Linked `ConfirmModal` button state to the timetable mutation's `isPending` state, showing a spinner, locking dialog interactions during loading, and closing only upon success.
+  - [x] **Breadcrumbs Integration**: Moved the class-level breadcrumbs to the top of the main class details page.
+  - [x] **Attendance Tab Layout & Data Binding**: Restructured the attendance component layout to eliminate double scrollbars and nested paddings, and bound real class student records dynamically.
+  - [x] **Interactive Slot Clicks & Action Buttons**:
+    - Cell/card clicks now open `SlotDetailsModal` with full read-only information, supporting navigation to editing, deletion, attendance, or scheduling.
+    - Edit action button inside card displays the pre-populated editing modal.
+    - Delete action button opens a custom `ConfirmModal` for deleting the timetable period, linked to `useDeleteTimetablePeriod` hook.
+    - Mark Attendance action button redirects the administrator to the Class Attendance tab.
+  - [x] **Assigned Teachers Overflow**: Limited displayed teachers list to 2 in header and added a clickable `...` that opens a custom modal showing all assigned teachers and details.
+  - [x] **Tab-Specific Loading Skeletons**: Removed fullscreen page loading spinner; replaced it with a dynamic tab content shimmer loader matching active tab (Overview, Students, Subjects, Teachers, Timetable, Exams, Attendance).
+  - [x] **Type Safety & Stability**: Verified 100% compile success on both backend and frontend workspaces.
+  - [x] **Single Table Timetable Layout**: Streamlined the timetable workspace to render a single, consolidated timetable grid for the target class/term instead of showing duplicate tables.
+  - [x] **High-Fidelity PDF Export**: Enabled a premium PDF export feature that compiles and prints/saves the weekly class timetable layout with proper styling, margins, page breaks, and layout orientations.
+  - [x] **Add Period Teacher Search Fix**: Overhauled `/admin/teachers` admin API endpoint to query `RelationshipLink` active school-teacher links and direct school fields (like `schoolId`), ensuring newly invited and registered teachers show up correctly in the Add Period and Manage Class search results and modals rather than defaulting to "Staff".
+  - [x] **Fixed Double Tab Component Rendering**: Refactored the `CustomTabs` component in [Tabs.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/%5Bid%5D/components/Tabs.tsx) to act as a native tab button layout rather than nesting another `react-tabs` instance with nested content panels. This eliminates double component rendering inside the Class details tab panel view.
+  - [x] **School Branding in Timetable PDF**: Successfully queried and retrieved school settings via the `useSchoolSettings` hook, and displayed the school name and logo picture in the PDF header with print-safe styling, complete with synchronization to trigger the print dialog only after the logo finishes loading.
+  - [x] **React Hook Order Fix**: Resolved a hook order sequence violation inside `ClassAttendancePage` (`AttendanceTab.tsx`) by reorganizing React hooks above the `isLoading` conditional early returns.
+  - [x] **Attendance Date Switching**: Enhanced calendar date switching usability by adding previous/next month controls and direct date picker input fields.
+  - [x] **Attendance PDF Export with School Branding**: Replaced the download placeholder with a high-fidelity A4 portrait report print layout, loading the school logo picture and name dynamically alongside detailed daily statistics and a student roster table.
+  - [x] **Attendance Summary Overall Rate Metric**: Resolved `undefined%` formatting inside `AttendanceSummaryCard.tsx` by correctly binding stats value calculation to the backend rate properties.
+  - [x] **Localized Table Loading State**: Extracted the loading state logic during attendance date switches out of the general page level and placed it directly inside the `AttendanceTable` component. This prevents full-tab re-render flashes, leaving the calendar and monthly summary card responsive and visible.
+  - [x] **Dynamic Monthly Summary Dropdown**: Upgraded the static dropdown options in `AttendanceSummaryCard` to build dynamic options list for the past 12 months starting from the current system month, and added API level support (optional `month` query parameter on both frontend/backend routes) to filter stats records by selected month.
+  - [x] **Calendar Current Date Highlight**: Added logic inside `AttendanceCalendar.tsx` to detect and visually highlight the current system date with a distinct outline ring (`ring-2 ring-primary`) and bold text style.
+  - [x] **Monthly Summary Card Loading Skeleton**: Configured `AttendanceSummaryCard.tsx` to accept the React Query loading state `isLoading` and display matching animated pulsing skeleton bars inside the stats blocks during fetches.
+  - [x] **Overview Tab Polish**:
+    - Overhauled `BehaviourAlert.tsx` and `UpcomingExams.tsx` to implement premium, visually centered empty states.
+    - Updated `PerformanceChart.tsx` to replace the nested `ResponsiveContainer`/`BarChart` mock elements in the empty state with a clean, vector SVG icon, eliminating layout warning logs.
+    - Upgraded `StatsCard.tsx` to handle `isLoading` states with animated pulsing shimmers.
+    - Structured query loading state destructuring in `Overview.tsx` to feed independent loading parameters directly into class average score and overall attendance metrics cards.
+  - [x] **Student Tab Popup & Pagination**:
+    - Created `StudentDetailsModal.tsx` showing comprehensive read-only student details (name, code, email, date of birth, joined date, attendance, scores).
+    - Integrated standard Next.js `<Link>` component for "View Full Profile" to enable fast client-side navigation without full-page reloads, showing the next-toploader correctly.
+    - Updated `StudentsTab.tsx` to handle student card clicks by opening the details popup.
+    - Configured client-side pagination with `itemsPerPage = 8` and integrated the reusable `@/components/ui/Pagination` component.
+    - Configured automated pagination page reset to `1` when search queries or gender filtering options are updated.
+  - [x] **Subject Tab Popup & Pagination**:
+    - Created `SubjectDetailsModal.tsx` displaying subject code, description, assigned teacher, and academic statistics.
+    - Integrated standard Next.js `<Link>` component for "View Full Subject Details" to support fast client-side navigation without full-page reloads.
+    - Updated `SubjectsTab.tsx` to handle subject card clicks by displaying the details popup.
+    - Configured client-side pagination with `itemsPerPage = 8` and integrated the reusable `@/components/ui/Pagination` component.
+  - [x] **Teacher Tab Popup & Pagination**:
+    - Created `TeacherDetailsModal.tsx` showing comprehensive read-only teacher details (name, code, email, telephone contact, lead teacher status).
+    - Integrated standard Next.js `<Link>` component for "View Full Teacher Profile" to support fast client-side navigation without full-page reloads.
+    - Updated `TeachersTab.tsx` to handle teacher card clicks by displaying the details popup.
+    - Configured client-side pagination with `itemsPerPage = 8` and integrated the reusable `@/components/ui/Pagination` component.
+  - [x] **Attendance Name and Edit Loader**:
+    - Aligned parsing fields inside `AttendanceTable` to support relational database values alongside local form layouts.
+    - Linked `onEdit` handler to prompt the sheet modal pre-filled with existing data.
+    - Added high-performance SVG loader spinner in the Modal saving action buttons.
+  - [x] **Overview Attendance Data Sync**:
+    - Expanded temporal boundary matching inside `getClassStatsService` to capture full current-day range (up to 23:59:59.999).
+    - Normalized timezone parses inside `submitAttendanceService` database insertion queries to perfectly match UTC zero hours.
+  - [x] **Action Buttons Optimization**:
+    - Removed redundant static header "Timetable" button next to the "QR Access" control to streamline navigation flow.
+  - [x] **Class loading skeleton fix**:
+    - Gated `!classData` with `!loading` in `page.tsx` to prevent premature rendering of the "Class Not Found" error page before API responses resolve.
+  - [x] **Subject Creation and Refetch Sync**:
+    - Wired "Create New" flow in `AddSubjectModal.tsx` to invoke `/academic/subjects` then `/classes/subjects/attach` to save the new subject to the database.
+    - Integrated parent detail refetch via `queryClient.invalidateQueries` to automatically reload the Subjects list without manual refreshes.
+    - Added an SVG loader spinner and "Saving..." text transition to the submit action button.
+
+## Next Action
+- [ ] Implement automatic report card generation for classes.
+- [ ] Conduct end-to-end integration tests for multi-term timetable replication.
+- [ ] Audit role-based access control (RBAC) labels across new dashboard modals.
+
+
+

@@ -32,7 +32,9 @@ import {
 import { 
   getClassTimetable, 
   upsertTimetablePeriod, 
-  deleteTimetablePeriod 
+  deleteTimetablePeriod,
+  autoGenerateTimetable,
+  replicateTimetable
 } from "./timetable.controller";
 
 const router = Router();
@@ -69,6 +71,8 @@ router.get("/:id/attendance/summary", authenticateToken, getClassAttendanceSumma
 router.get("/:id/timetable", authenticateToken, getClassTimetable);
 router.post("/:id/timetable", authenticateToken, upsertTimetablePeriod);
 router.delete("/:id/timetable/:periodId", authenticateToken, deleteTimetablePeriod);
+router.post("/:id/timetable/generate", authenticateToken, autoGenerateTimetable);
+router.post("/:id/timetable/replicate", authenticateToken, replicateTimetable);
 
 router.get("/preview/:id", authenticateToken, previewClassById);
 router.get("/:id/stats", authenticateToken, getClassStats);

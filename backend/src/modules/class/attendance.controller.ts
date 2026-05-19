@@ -30,7 +30,8 @@ export const submitAttendance = async (req: Request, res: Response) => {
 export const getClassAttendanceSummary = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const data = await getClassAttendanceSummaryService(id);
+    const { month } = req.query;
+    const data = await getClassAttendanceSummaryService(id, month as string);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });

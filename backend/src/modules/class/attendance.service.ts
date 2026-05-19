@@ -15,31 +15,43 @@ export const getClassAttendanceService = async (classId: string, date?: string) 
 
 export const submitAttendanceService = async (classId: string, records: any[]) => {
   return prisma.$transaction(
-    records.map((r) =>
-      prisma.attendance.upsert({
+    records.map((r) => {
+      const normalizedDate = new Date(r.date).toISOString().split('T')[0] + 'T00:00:00.000Z';
+      return prisma.attendance.upsert({
         where: {
           classId_studentId_date: {
             classId,
             studentId: r.studentId,
-            date: new Date(r.date).toISOString().split('T')[0] + 'T00:00:00.000Z',
+            date: normalizedDate,
           },
         },
         update: { status: r.status, note: r.note },
         create: {
           classId,
           studentId: r.studentId,
-          date: new Date(r.date),
+          date: normalizedDate,
           status: r.status,
           note: r.note,
         },
-      })
-    )
+      });
+    })
   );
 };
 
-export const getClassAttendanceSummaryService = async (classId: string) => {
+export const getClassAttendanceSummaryService = async (classId: string, month?: string) => {
+  const where: any = { classId };
+  if (month) {
+    const [year, m] = month.split('-').map(Number);
+    const startDate = new Date(Date.UTC(year, m - 1, 1));
+    const endDate = new Date(Date.UTC(year, m, 0, 23, 59, 59, 999));
+    where.date = {
+      gte: startDate,
+      lte: endDate,
+    };
+  }
+
   const attendances = await prisma.attendance.findMany({
-    where: { classId },
+    where,
   });
 
   const total = attendances.length;
