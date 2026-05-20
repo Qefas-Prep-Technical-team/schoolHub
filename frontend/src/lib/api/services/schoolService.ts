@@ -112,4 +112,19 @@ export const schoolService = {
     const response = await apiClient.get(`/schools/${schoolId}/billing`, { params });
     return response.data.data;
   },
+  
+  getLandingPage: async (schoolId: string) => {
+    const response = await apiClient.get(`/schools/${schoolId}/landing-page`);
+    return response.data.data;
+  },
+
+  getLandingPageBySubdomain: async (subdomain: string) => {
+    const response = await apiClient.get(`/schools/subdomain/${subdomain}/landing-page`);
+    return response.data.data;
+  },
+
+  updateLandingPage: async (schoolId: string, data: Record<string, unknown>) => {
+    const response = await apiClient.patch(`/schools/${schoolId}/landing-page`, data);
+    return response.data.data;
+  },
 };

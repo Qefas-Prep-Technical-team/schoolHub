@@ -45,7 +45,9 @@ import {
     ChevronRight,
     LucideIcon,
     LogOut,
-    Copy
+    Copy,
+    ExternalLink,
+    Check
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
@@ -55,6 +57,8 @@ import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures"
 import { linkService } from "@/lib/api/services/linkService"
 import { toast } from "react-toastify"
 import { useEffect, useMemo } from "react"
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store"
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool"
 
 
 // Define the menu item type
@@ -76,6 +80,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     { icon: CalendarDays, label: "Classes & Timetable", href: "/dashboard/admin/classes", featureKey: "classes", section: "core" },
     { icon: BrainCircuit, label: "Linking Hub", href: "/dashboard/admin/linking", featureKey: "linkingHub", section: "core" },
     { icon: CalendarDays, label: "Session Management", href: "/dashboard/admin/sessions", featureKey: "sessions", section: "core" },
+    { icon: Globe, label: "Sub Domain", href: "/dashboard/admin/subdomain", featureKey: "subdomain", section: "core" },
 
     // === ACADEMICS ===
     { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },
@@ -126,6 +131,27 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
     const [profile, setProfile] = useState<any>(null)
     const pathname = usePathname()
 
+    const { user } = useAuthStore()
+    const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ""
+    const { data: schoolProfile } = useSchoolProfile(schoolId)
+    const [copiedSubdomain, setCopiedSubdomain] = useState(false)
+
+    const subdomain = schoolProfile?.subdomain
+    const subdomainUrl = useMemo(() => {
+        if (!subdomain) return ""
+        const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000"
+        try {
+            const url = new URL(baseUrl)
+            if (url.hostname === "localhost") {
+                return `${url.protocol}//${subdomain}.localhost:${url.port || "3000"}`
+            } else {
+                return `${url.protocol}//${subdomain}.${url.hostname}`
+            }
+        } catch (e) {
+            return `http://${subdomain}.localhost:3000`
+        }
+    }, [subdomain])
+
     // Fetch dynamic feature toggles from platform config
     const { data: dynamicFeatures, isLoading: isFeaturesLoading } = useGlobalFeatures('admin')
 
@@ -141,7 +167,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
     // Get filtered menu items grouped by section based on dynamic or static flags
     const menuSections = useMemo(() => {
         if (isFeaturesLoading) return null;
-        const currentFeatures = dynamicFeatures || ADMIN_FEATURE_FLAGS;
+        const currentFeatures = { ...ADMIN_FEATURE_FLAGS, ...(dynamicFeatures || {}) };
 
         const filtered = adminMenuItems.filter(item => !!(currentFeatures as any)[item.featureKey]);
 
@@ -202,6 +228,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
 
             {/* Main Menu */}
             <SidebarContent className="mt-10 px-2 flex-1 outline-none">
+
                 <SidebarMenu>
                     {isFeaturesLoading ? (
                         <div className="flex flex-col gap-3 px-1 mt-2">
@@ -232,7 +259,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
 
                                 {items.map(({ icon: Icon, label, href, featureKey }) => {
                                     const isActive = pathname === href;
-                                    const features = (dynamicFeatures || ADMIN_FEATURE_FLAGS) as any;
+                                    const features = { ...ADMIN_FEATURE_FLAGS, ...(dynamicFeatures || {}) } as any;
                                     const isDisabled = !features[featureKey];
 
                                     return (
@@ -281,7 +308,7 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
             </SidebarContent>
 
             {/* Footer */}
-            <SidebarFooter className="p-4 bg-transparent">
+            <SidebarFooter className="p-4 bg-transparent border-t border-slate-100 dark:border-slate-900">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <DropdownMenu onOpenChange={setIsUserOpen}>

@@ -91,5 +91,35 @@ export const classService = {
   getAllTeachers: async () => {
     const response = await apiClient.get('/teachers');
     return response.data.data || [];
-  }
+  },
+
+  // Behaviour Alerts
+  getBehaviourAlerts: async (classId: string, studentId?: string) => {
+    const response = await apiClient.get(`/classes/${classId}/behaviour-alerts`, {
+      params: studentId ? { studentId } : {},
+    });
+    return response.data.data;
+  },
+
+  createBehaviourAlert: async (
+    classId: string,
+    data: { type: string; title: string; description?: string; studentId: string }
+  ) => {
+    const response = await apiClient.post(`/classes/${classId}/behaviour-alerts`, data);
+    return response.data.data;
+  },
+
+  updateBehaviourAlert: async (
+    classId: string,
+    alertId: string,
+    data: { type?: string; title?: string; description?: string }
+  ) => {
+    const response = await apiClient.patch(`/classes/${classId}/behaviour-alerts/${alertId}`, data);
+    return response.data.data;
+  },
+
+  deleteBehaviourAlert: async (classId: string, alertId: string) => {
+    const response = await apiClient.delete(`/classes/${classId}/behaviour-alerts/${alertId}`);
+    return response.data;
+  },
 };

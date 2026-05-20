@@ -29,7 +29,17 @@ export interface Student {
   bannerImage?: string;
 }
 
+export interface StudentBehaviourProfile {
+  id: string;
+  studentId: string;
+  conductScore: number;
+  strengths: { name: string; description: string; icon: string }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StudentProfile extends Student {
+  behaviourProfile?: StudentBehaviourProfile | null;
   school?: {
     id: string;
     name: string;
@@ -98,4 +108,15 @@ export const studentService = {
     const response = await apiClient.post("/students/profile/email/verify", { code });
     return response.data;
   },
+
+  getBehaviourProfile: async (studentId: string) => {
+    const response = await apiClient.get<{ data: StudentBehaviourProfile }>(`/students/${studentId}/behaviour-profile`);
+    return response.data.data;
+  },
+
+  updateBehaviourProfile: async (studentId: string, data: { conductScore?: number; strengths?: { name: string; description: string; icon: string }[] }) => {
+    const response = await apiClient.put<{ data: StudentBehaviourProfile }>(`/students/${studentId}/behaviour-profile`, data);
+    return response.data.data;
+  },
 };
+

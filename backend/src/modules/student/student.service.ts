@@ -155,6 +155,7 @@ export const getStudentProfileService = async (studentId: string) => {
     include: {
       department: true,
       school: true,
+      behaviourProfile: true,
       classes: {
         include: {
           class: true,

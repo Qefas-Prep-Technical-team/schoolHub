@@ -1,8 +1,25 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/authMiddleware";
-import { getSchoolTeachers, getSchoolStudents, getSchoolStats, getSchoolPerformanceAnalysis, getSchoolProfile, updateSchoolProfile, getSchoolSettings, updateSchoolSettings, getDashboardSummary, getSchoolBilling } from "./school.controller";
+import {
+  getSchoolTeachers,
+  getSchoolStudents,
+  getSchoolStats,
+  getSchoolPerformanceAnalysis,
+  getSchoolProfile,
+  updateSchoolProfile,
+  getSchoolSettings,
+  updateSchoolSettings,
+  getDashboardSummary,
+  getSchoolBilling,
+  getSchoolLandingPage,
+  getSchoolLandingPageBySubdomain,
+  updateSchoolLandingPage,
+} from "./school.controller";
 
 const router = Router();
+
+// Public route to fetch landing page settings by subdomain
+router.get("/subdomain/:subdomain/landing-page", getSchoolLandingPageBySubdomain);
 
 // All school member routes require authentication
 router.use(authenticateToken);
@@ -71,5 +88,19 @@ router.patch("/:schoolId/settings", updateSchoolSettings);
  * @access  Private-Admin
  */
 router.get("/:schoolId/billing", getSchoolBilling);
+
+/**
+ * @route   GET /api/v1/schools/:schoolId/landing-page
+ * @desc    Get landing page settings for a school
+ * @access  Private-Admin
+ */
+router.get("/:schoolId/landing-page", getSchoolLandingPage);
+
+/**
+ * @route   PATCH /api/v1/schools/:schoolId/landing-page
+ * @desc    Update landing page settings for a school
+ * @access  Private-Admin
+ */
+router.patch("/:schoolId/landing-page", updateSchoolLandingPage);
 
 export default router;

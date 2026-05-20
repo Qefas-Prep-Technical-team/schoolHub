@@ -19,13 +19,41 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://qefashub.flexitistudio.com",
-      "https://www.qefashub.flexitistudio.com",
-      "https://schoolhub.flexitistudio.com",
-      "https://www.schoolhub.flexitistudio.com",
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "https://qefashub.flexitistudio.com",
+        "https://www.qefashub.flexitistudio.com",
+        "https://schoolhub.flexitistudio.com",
+        "https://www.schoolhub.flexitistudio.com",
+        "https://qefas.com",
+        "https://www.qefas.com",
+      ];
+
+      try {
+        const parsedUrl = new URL(origin);
+        const hostname = parsedUrl.hostname;
+
+        const isAllowed =
+          allowedOrigins.includes(origin) ||
+          hostname === "localhost" ||
+          hostname.endsWith(".localhost") ||
+          hostname === "qefas.com" ||
+          hostname.endsWith(".qefas.com") ||
+          hostname.endsWith(".flexitistudio.com");
+
+        if (isAllowed) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      } catch (e) {
+        callback(null, false);
+      }
+    },
     credentials: true,
   }),
 );

@@ -10,6 +10,9 @@ import {
   getSchoolPerformanceAnalysisService,
   getDashboardRecentActivityService,
   getSchoolBillingService,
+  getSchoolLandingPageService,
+  getSchoolLandingPageBySubdomainService,
+  updateSchoolLandingPageService,
 } from "./school.service";
 
 /**
@@ -22,7 +25,7 @@ const validateSchoolAccess = (req: Request, schoolId: string): boolean => {
 
   // Direct match with authorized schoolId from session
   if (user.schoolId === schoolId) return true;
-  
+
   // Match with tenantId (in case the frontend uses tenantId as schoolId)
   if (user.tenantId === schoolId) return true;
 
@@ -45,7 +48,8 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
     if (!validateSchoolAccess(req, schoolId as string)) {
       return res.status(403).json({
         success: false,
-        message: "Access denied: You are not authorized to access this school's data.",
+        message:
+          "Access denied: You are not authorized to access this school's data.",
       });
     }
 
@@ -85,7 +89,8 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
     if (!validateSchoolAccess(req, schoolId as string)) {
       return res.status(403).json({
         success: false,
-        message: "Access denied: You are not authorized to access this school's data.",
+        message:
+          "Access denied: You are not authorized to access this school's data.",
       });
     }
 
@@ -120,7 +125,9 @@ export const getSchoolStats = async (req: Request, res: Response) => {
   try {
     const { schoolId } = req.params;
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "schoolId is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "schoolId is required" });
     }
 
     if (!validateSchoolAccess(req, schoolId as string)) {
@@ -141,18 +148,26 @@ export const getSchoolStats = async (req: Request, res: Response) => {
 /**
  * Handle fetching school performance analysis
  */
-export const getSchoolPerformanceAnalysis = async (req: Request, res: Response) => {
+export const getSchoolPerformanceAnalysis = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const { schoolId } = req.params;
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "schoolId is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "schoolId is required" });
     }
 
     if (!validateSchoolAccess(req, schoolId as string)) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 
-    const data = await getSchoolPerformanceAnalysisService(schoolId as string, (req as any).user.id);
+    const data = await getSchoolPerformanceAnalysisService(
+      schoolId as string,
+      (req as any).user.id,
+    );
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
     console.error(`[School Controller Error]`, error);
@@ -170,7 +185,9 @@ export const getSchoolProfile = async (req: Request, res: Response) => {
   try {
     const { schoolId } = req.params;
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "schoolId is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "schoolId is required" });
     }
 
     if (!validateSchoolAccess(req, schoolId as string)) {
@@ -197,14 +214,19 @@ export const updateSchoolProfile = async (req: Request, res: Response) => {
     const updateData = req.body;
 
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "schoolId is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "schoolId is required" });
     }
 
     if (!validateSchoolAccess(req, schoolId as string)) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 
-    const data = await updateSchoolProfileService(schoolId as string, updateData);
+    const data = await updateSchoolProfileService(
+      schoolId as string,
+      updateData,
+    );
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
     console.error(`[School Controller Error]`, error);
@@ -222,27 +244,34 @@ export const getSchoolSettings = async (req: Request, res: Response) => {
   const { schoolId } = req.params;
   try {
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "School ID is required in the request parameters." });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "School ID is required in the request parameters.",
+        });
     }
-    
+
     if (!validateSchoolAccess(req, schoolId as string)) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
-    
+
     console.log(`[SettingsController] GET request for schoolId: ${schoolId}`);
     const data = await getSchoolSettingsService(schoolId as string);
-    
+
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
     console.error(`[SettingsController] GET Error for ${schoolId}:`, error);
-    
+
     // Check if it's a "Not Found" error from service
     const isNotFound = error.message.includes("record not found");
-    
+
     return res.status(isNotFound ? 404 : 400).json({
       success: false,
-      message: error.message || "An unexpected error occurred while fetching school settings.",
-      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message:
+        error.message ||
+        "An unexpected error occurred while fetching school settings.",
+      error: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
@@ -256,24 +285,35 @@ export const updateSchoolSettings = async (req: Request, res: Response) => {
     const updateData = req.body;
 
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "School ID is required in the request parameters to perform an update." });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message:
+            "School ID is required in the request parameters to perform an update.",
+        });
     }
-    
+
     if (!validateSchoolAccess(req, schoolId as string)) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
-    
+
     console.log(`[SettingsController] PATCH request for schoolId: ${schoolId}`);
-    const data = await updateSchoolSettingsService(schoolId as string, updateData);
-    
+    const data = await updateSchoolSettingsService(
+      schoolId as string,
+      updateData,
+    );
+
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
     console.error(`[SettingsController] PATCH Error for ${schoolId}:`, error);
-    
+
     return res.status(400).json({
       success: false,
-      message: error.message || "An unexpected error occurred while updating school settings.",
-      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message:
+        error.message ||
+        "An unexpected error occurred while updating school settings.",
+      error: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
@@ -285,7 +325,9 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
   try {
     const { schoolId } = req.params;
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "schoolId is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "schoolId is required" });
     }
 
     if (!validateSchoolAccess(req, schoolId as string)) {
@@ -313,7 +355,9 @@ export const getSchoolBilling = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 5;
 
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "schoolId is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "schoolId is required" });
     }
 
     if (!validateSchoolAccess(req, schoolId as string)) {
@@ -327,6 +371,90 @@ export const getSchoolBilling = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to fetch billing data",
+    });
+  }
+};
+
+export const getSchoolLandingPage = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.params;
+    if (!schoolId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "schoolId is required" });
+    }
+
+    if (!validateSchoolAccess(req, schoolId as string)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const data = await getSchoolLandingPageService(schoolId as string);
+    return res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    console.error(`[School Controller Error]`, error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to fetch landing page settings",
+    });
+  }
+};
+
+export const getSchoolLandingPageBySubdomain = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const { subdomain } = req.params;
+    if (!subdomain) {
+      return res
+        .status(400)
+        .json({ success: false, message: "subdomain is required" });
+    }
+
+    const data = await getSchoolLandingPageBySubdomainService(subdomain);
+    console.log("Fetched landing page data:", data);
+    if (!data) {
+      return res
+        .status(404)
+        .json({ success: false, message: "School not found for subdomain" });
+    }
+
+    return res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    console.error(`[School Controller Error]`, error);
+    return res.status(400).json({
+      success: false,
+      message:
+        error.message || "Failed to fetch landing page settings by subdomain",
+    });
+  }
+};
+
+export const updateSchoolLandingPage = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.params;
+    const updateData = req.body;
+
+    if (!schoolId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "schoolId is required" });
+    }
+
+    if (!validateSchoolAccess(req, schoolId as string)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const data = await updateSchoolLandingPageService(
+      schoolId as string,
+      updateData,
+    );
+    return res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    console.error(`[School Controller Error]`, error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to update landing page settings",
     });
   }
 };

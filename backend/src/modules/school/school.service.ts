@@ -46,7 +46,7 @@ export const getSchoolTeachersService = async (schoolId: string) => {
     },
   });
 
-  const linkedTeacherIds = links.map((link) => 
+  const linkedTeacherIds = links.map((link) =>
     link.leftEntityType === LinkEntityType.TEACHER ? link.leftEntityId : link.rightEntityId
   );
 
@@ -100,7 +100,7 @@ export const getSchoolStudentsService = async (
     },
   });
 
-  const linkedStudentIds = links.map((link) => 
+  const linkedStudentIds = links.map((link) =>
     link.leftEntityType === LinkEntityType.STUDENT ? link.leftEntityId : link.rightEntityId
   );
 
@@ -225,7 +225,7 @@ export const getSchoolStatsService = async (schoolId: string) => {
   ]);
 
   // 2. Process Student IDs
-  const linkedStudentIds = studentLinks.map((link) => 
+  const linkedStudentIds = studentLinks.map((link) =>
     link.leftEntityType === LinkEntityType.STUDENT ? link.leftEntityId : link.rightEntityId
   );
   const enrolledStudentIds = enrollments.map(e => e.studentId);
@@ -240,7 +240,7 @@ export const getSchoolStatsService = async (schoolId: string) => {
   });
 
   // 3. Process Teacher IDs
-  const linkedTeacherIds = teacherLinks.map((link) => 
+  const linkedTeacherIds = teacherLinks.map((link) =>
     link.leftEntityType === LinkEntityType.TEACHER ? link.leftEntityId : link.rightEntityId
   );
   const teacherCount = await prisma.teacher.count({
@@ -303,7 +303,7 @@ export const updateSchoolProfileService = async (schoolId: string, data: any) =>
 
 export const getSchoolSettingsService = async (schoolId: string) => {
   console.log(`[SchoolService] getSchoolSettings: Starting for schoolId: ${schoolId}`);
-  
+
   // Resolve the school by either its UUID `id` or its `tenantId` string
   const school = await prisma.school.findFirst({
     where: {
@@ -348,7 +348,7 @@ export const getSchoolSettingsService = async (schoolId: string) => {
 
 export const updateSchoolSettingsService = async (schoolId: string, data: any) => {
   console.log(`[SchoolService] updateSchoolSettings: Received update request for schoolId: ${schoolId}`);
-  
+
   // Resolve the canonical school.id
   const school = await prisma.school.findFirst({
     where: {
@@ -465,14 +465,14 @@ export const getSchoolPerformanceAnalysisService = async (schoolId: string, user
   // Calculate weighted average
   let sumPercentage = 0;
   grades.forEach(g => {
-      const gMax = g.maxMarks || 100;
-      sumPercentage += ((g.score || 0) / gMax) * 100;
+    const gMax = g.maxMarks || 100;
+    sumPercentage += ((g.score || 0) / gMax) * 100;
   });
   examAttempts.forEach(e => {
-      const eMax = e.totalMarks || 100;
-      sumPercentage += ((e.totalScore || 0) / eMax) * 100;
+    const eMax = e.totalMarks || 100;
+    sumPercentage += ((e.totalScore || 0) / eMax) * 100;
   });
-  
+
   const averageScore = Math.round(sumPercentage / totalAssessments);
 
   // Group by subject (Grades usually have subject, attempts don't in the top level but we'll use grades for breakdown)
@@ -542,7 +542,7 @@ export const getDashboardRecentActivityService = async (schoolId: string) => {
         teacher: true,
       }
     }),
-    
+
     // 2. Find teachers not linked to any class (simplified logic)
     prisma.teacher.findMany({
       where: {
@@ -554,7 +554,7 @@ export const getDashboardRecentActivityService = async (schoolId: string) => {
       },
       select: { id: true, name: true }
     }),
-    
+
     // 3. Fetch all classes for context
     prisma.class.findMany({
       where: { schoolId: resolvedId },
@@ -633,26 +633,26 @@ export const getSchoolBillingService = async (schoolId: string, page = 1, limit 
     })
   ]);
 
-    const subscriptionPlan = school.subscriptionPlanId 
+  const subscriptionPlan = school.subscriptionPlanId
     ? await prisma.subscriptionPlan.findUnique({ where: { id: school.subscriptionPlanId } })
     : null;
 
-    return {
-        subscription: {
-            plan: (school.isTrialActive && subscriptionPlan) ? subscriptionPlan.type : school.plan,
-            planId: school.planId,
-            subscriptionStatus: school.isTrialActive ? 'TRIAL' : school.subscriptionStatus,
-            subscriptionEnd: school.subscriptionEnd,
-            isTrialActive: school.isTrialActive,
-            lastPaymentDate: school.lastPaymentDate,
-            paystackCustomerCode: school.paystackCustomerCode,
-            subscriptionPlanId: school.subscriptionPlanId,
-            billingCycle: school.billingCycle || absoluteLatestTransaction?.billingCycle || 'monthly',
-            amount: school.billingCycle === 'yearly' 
-              ? (subscriptionPlan?.yearlyPrice || 0) 
-              : (subscriptionPlan?.monthlyPrice || 0),
-            features: subscriptionPlan?.features || [],
-        },
+  return {
+    subscription: {
+      plan: (school.isTrialActive && subscriptionPlan) ? subscriptionPlan.type : school.plan,
+      planId: school.planId,
+      subscriptionStatus: school.isTrialActive ? 'TRIAL' : school.subscriptionStatus,
+      subscriptionEnd: school.subscriptionEnd,
+      isTrialActive: school.isTrialActive,
+      lastPaymentDate: school.lastPaymentDate,
+      paystackCustomerCode: school.paystackCustomerCode,
+      subscriptionPlanId: school.subscriptionPlanId,
+      billingCycle: school.billingCycle || absoluteLatestTransaction?.billingCycle || 'monthly',
+      amount: school.billingCycle === 'yearly'
+        ? (subscriptionPlan?.yearlyPrice || 0)
+        : (subscriptionPlan?.monthlyPrice || 0),
+      features: subscriptionPlan?.features || [],
+    },
     usage: {
       ...stats,
       storageBytes: storageMetric._sum.fileSize ? Number(storageMetric._sum.fileSize) : 0,
@@ -660,4 +660,74 @@ export const getSchoolBillingService = async (schoolId: string, page = 1, limit 
     transactions,
     totalTransactions,
   };
+};
+
+export const getSchoolLandingPageService = async (schoolId: string) => {
+  const resolvedId = await resolveSchoolId(schoolId);
+  if (!resolvedId) throw new Error("School not found");
+
+  let landingPage = await prisma.schoolLandingPage.findUnique({
+    where: { schoolId: resolvedId },
+  });
+
+  if (!landingPage) {
+    landingPage = await prisma.schoolLandingPage.create({
+      data: {
+        schoolId: resolvedId,
+      },
+    });
+  }
+
+  return landingPage;
+};
+
+export const getSchoolLandingPageBySubdomainService = async (subdomain: string) => {
+  const school = await prisma.school.findUnique({
+    where: { subdomain },
+  });
+  console.log("subdomain, school", subdomain, school)
+  if (!school) return null;
+
+  let landingPage = await prisma.schoolLandingPage.findUnique({
+    where: { schoolId: school.id },
+  });
+
+  if (!landingPage) {
+    landingPage = await prisma.schoolLandingPage.create({
+      data: {
+        schoolId: school.id,
+      },
+    });
+  }
+
+  return {
+    landingPage,
+    schoolName: school.name,
+    schoolLogo: school.logo,
+    schoolMotto: school.motto,
+  };
+};
+
+export const updateSchoolLandingPageService = async (schoolId: string, data: any) => {
+  const resolvedId = await resolveSchoolId(schoolId);
+  if (!resolvedId) throw new Error("School not found");
+
+  const updateData: any = {};
+  if (data.heroTitle !== undefined) updateData.heroTitle = data.heroTitle;
+  if (data.heroSubtitle !== undefined) updateData.heroSubtitle = data.heroSubtitle;
+  if (data.aboutTitle !== undefined) updateData.aboutTitle = data.aboutTitle;
+  if (data.aboutText !== undefined) updateData.aboutText = data.aboutText;
+  if (data.primaryColor !== undefined) updateData.primaryColor = data.primaryColor;
+  if (data.features !== undefined) updateData.features = data.features;
+  if (data.testimonials !== undefined) updateData.testimonials = data.testimonials;
+  if (data.gallery !== undefined) updateData.gallery = data.gallery;
+
+  return await prisma.schoolLandingPage.upsert({
+    where: { schoolId: resolvedId },
+    update: updateData,
+    create: {
+      schoolId: resolvedId,
+      ...updateData,
+    },
+  });
 };

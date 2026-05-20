@@ -6,11 +6,35 @@ import React, { FC } from 'react';
 
 const Footer: FC = () => {
     const pathname = usePathname()
+    const [isSubdomain, setIsSubdomain] = React.useState(false);
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+        if (typeof window !== "undefined") {
+            const host = window.location.hostname;
+            let hasSub = false;
+            if (host.includes("localhost")) {
+                const parts = host.split(".");
+                hasSub = parts.length > 1 && parts[0] !== "localhost" && parts[0] !== "www";
+            } else {
+                const parts = host.split(".");
+                hasSub = parts.length > 2 && parts[0] !== "www";
+            }
+            setIsSubdomain(hasSub);
+        }
+    }, []);
+
     const isDashboard = pathname.startsWith("/dashboard") || 
                         pathname.startsWith("/console") || 
                         pathname.startsWith("/platform");
+
+    const shouldShow = !isDashboard && !isSubdomain;
+
+    if (!mounted) return null;
+
     return (
-        !isDashboard && <Box
+        shouldShow && <Box
             className='bg-slate-900 text-white py-16'
             component="footer"
             sx={{

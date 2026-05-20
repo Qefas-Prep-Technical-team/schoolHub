@@ -107,6 +107,25 @@
 ## Completed
 
 ### Tuesday, May 19, 2026
+- **Student Details Page - Behaviour Tab Integration & Database Sync**:
+    - [x] **Database Schema Normalization & Sync**: Added the `StudentBehaviourProfile` model to the Prisma schema mapping to `student_behaviour_profiles` database table with a 1-to-1 relationship with the `Student` model, and successfully synchronized the schema using `npx prisma db push`.
+    - [x] **Zod-First Validation & Controller Patterns**: Created the `behaviourProfile.schema.ts` file enforcing Zod-first validations on incoming request body payloads. Implemented `behaviourProfile.controller.ts` and `behaviourProfile.service.ts` separating Express handlers, business logic, and Prisma persistence operations. Registered endpoints under the main student routes structure.
+    - [x] **Frontend Query & Mutation Hooks**: Built `getBehaviourProfile` and `updateBehaviourProfile` client service endpoints in `studentService.ts`. Integrated `useStudentBehaviourProfile` and `useUpdateStudentBehaviourProfile` hooks in `useStudent.ts` handling query caching and automatic detail refetch invalidations.
+    - [x] **80% Responsive Layout Constraints**: Replaced all `max-w-7xl` and `max-w-[1600px]` layout containers on the Admin Student Details page with `max-w-[80%] mx-auto` to strictly limit the layout width to 80% on desktop screens while keeping it perfectly fluid and responsive on smaller screens.
+    - [x] **Behavior Tab Navigation & Icons**: Added `'behaviour'` tab with dynamic label and navigation parameters to the profile's main TABS array, importing ThumbsUp, ThumbsDown, Heart, and CheckCircle2 from `lucide-react`.
+    - [x] **Exemplary Conduct Score & Strengths Widgets**: Designed premium layout cards showing Conduct Score (92/100) with a custom rotating circular SVG meter and qualitative evaluation, alongside a Core Strengths panel mapping Leadership, Peer Collaboration, and Task Completion attributes.
+    - [x] **Unified Real & Mock Behaviour Timeline**: Created an interactive timeline logging system that queries real class behaviour alerts (`useClassBehaviourAlerts`) from the database, displays them dynamically (with type tags like Warning, Danger, and Info, plus reporter metadata), and gracefully falls back to detailed default historical logs if database alerts are not configured.
+    - [x] **TypeScript Compilation Resolutions**: Fixed strict typescript type constraints in `behaviour.controller.ts` and `behaviourProfile.controller.ts` by casting query params to `string` and standardizing ZodError format using the `issues` property.
+    - [x] **100% Compilation Stability**: Confirmed a flawless compilation build checking with `npm run build` on both the frontend and backend directories, returning exit code 0.
+- **Admin Sidebar & Visual Subdomain Page Builder (Elementor-Style)**:
+    - [x] **Relocated Sidebar Menu Item**: Removed the custom banner widget from the sidebar footer. Integrated a clean, premium "Sub Domain" item within the Core Management menu list alongside other key entities (Overview, School Profile, Teachers, etc.).
+    - [x] **Visual Page Builder (Elementor-Style)**: Engineered a premium split-screen page builder screen at `/dashboard/admin/subdomain` allowing school administrators to configure the Hero section, Vision & Mission details, parent testimonials, and branding colors.
+    - [x] **Real-time Responsive Preview Frame**: Configured a dynamic real-time responsive browser frame inside the builder showing live CSS and text changes instantly with fully synchronized dark/light mode switches.
+    - [x] **One-Click Live Sync**: Wired the save actions to the backend mutation hooks to automatically publish edits directly to the tenant's public landing page.
+- **Tenant Landing Page - Modernization**:
+    - [x] **Dark & Light Mode Toggle**: Integrated a premium dynamic Dark & Light Mode theme toggle on the tenant's public landing page with fully synchronized adaptive Tailwind styling transitions.
+    - [x] **Smooth Scrolling**: Added `scroll-smooth` configuration to support native CSS smooth-scrolling for all anchor page links across the portal.
+    - [x] **Premium School Campus Background Image**: Displayed the high-fidelity school campus building background image (`/image/backgroundSchool.jpg`) from the public folder inside the vision card with rich gradient contrasting overlays.
 - **Class Detail Page - Exams Tab Calculations and Mappings**:
     - [x] **Dynamic Student Submission Counts**: Updated `getSingleClassService` query selection to include `examAttempts` and their completed status (`isSubmitted`), computing `completedStudents` dynamically.
     - [x] **Temporal Status Lifecycle Engine**: Developed dynamic status mapper based on `startDate` and `endDate` boundaries to accurately return `unpublished` (draft), `scheduled` (inactive), `expired` (deadline passed), and `active` (live).
@@ -387,6 +406,26 @@
     - Wired "Create New" flow in `AddSubjectModal.tsx` to invoke `/academic/subjects` then `/classes/subjects/attach` to save the new subject to the database.
     - Integrated parent detail refetch via `queryClient.invalidateQueries` to automatically reload the Subjects list without manual refreshes.
     - Added an SVG loader spinner and "Saving..." text transition to the submit action button.
+
+## Recent Accomplishments
+
+### May 19, 2026 — Tenant Subdomain Routing & Custom Landing Pages
+- **Tenant Subdomain Routing System**:
+  - [x] Implemented Next.js middleware in `middleware.ts` to rewrite requests for custom tenant subdomains to `/[tenant]/...` dynamically.
+  - [x] Excluded main domain (`flexiti`, `www`) and internal endpoints (`_next`, `api`, `favicon.ico`) to ensure standard public landing pages and internal assets are bypass-safe.
+  - [x] Added support for both local development (`tenant.localhost:3000`) and custom production hostname subdomains.
+- **Tenant Custom Landing Page**:
+  - [x] Built a beautiful, premium, and fully responsive landing page at `src/app/[tenant]/page.tsx` displaying the tenant's brand name, logo, custom slogan, vision/mission, highlight features, contact information, and parent/alumni testimonials.
+  - [x] Leveraged Framer Motion and Lucide icons for rich micro-interactions and smooth scroll animations.
+  - [x] Integrated public portal access login links directly redirecting stakeholders to standard Auth configurations.
+- **Admin Settings Customization**:
+  - [x] Extended the institutional Settings page (`src/app/dashboard/admin/settings/page.tsx`) with a high-fidelity **"Landing Page"** customization panel.
+  - [x] Allowed school administrators to dynamically edit their public brand properties (Hero Title, Subtitle, Vision, Mission, Features, Testimonial items, and custom primary colors) with full state management and automatic local storage fallback.
+  - [x] Added full backend React Query mutation hooks integration to persist the brand configuration directly in the database.
+- **Dynamic Site Branding**:
+  - [x] Updated standard layout elements like the main header navigation menu and public footer components to dynamically detect if they are running on a custom tenant subdomain, automatically hiding global marketing materials to present a native, white-labeled experience.
+- **Build Verification**:
+  - [x] Successfully verified a clean `npm run build` compilation state for all new routes, layout adjustments, and middleware configurations.
 
 ## Next Action
 - [ ] Implement automatic report card generation for classes.

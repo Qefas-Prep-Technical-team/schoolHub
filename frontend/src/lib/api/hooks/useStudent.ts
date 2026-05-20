@@ -70,3 +70,27 @@ export const useStudents = (schoolId: string, filters: Record<string, string | b
     enabled: !!schoolId,
   });
 };
+
+export const useStudentBehaviourProfile = (studentId: string) => {
+  return useQuery({
+    queryKey: [...studentKeys.all, studentId, "behaviour-profile"],
+    queryFn: () => studentService.getBehaviourProfile(studentId),
+    enabled: !!studentId,
+  });
+};
+
+export const useUpdateStudentBehaviourProfile = (studentId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { conductScore?: number; strengths?: { name: string; description: string; icon: string }[] }) =>
+      studentService.updateBehaviourProfile(studentId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-details', studentId] });
+      queryClient.invalidateQueries({ queryKey: [...studentKeys.all, studentId, "behaviour-profile"] });
+      toast.success("Behaviour profile updated successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to update behaviour profile");
+    },
+  });
+};

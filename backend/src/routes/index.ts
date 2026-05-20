@@ -34,7 +34,7 @@ router.use("/academic", authenticateToken, checkSubscription, academicRoutes);
 router.use("/admin", authenticateToken, adminRoutes);
 router.use("/sessions", authenticateToken, checkSubscription, sessionRoutes);
 router.use("/exams", authenticateToken, checkSubscription, examRoutes);
-router.use("/schools", authenticateToken, schoolRoutes);
+router.use("/schools", schoolRoutes);
 router.use("/students", authenticateToken, studentRoutes);
 router.use("/upload", authenticateToken, uploadRoutes);
 router.use("/grades", authenticateToken, checkSubscription, gradeRoutes);

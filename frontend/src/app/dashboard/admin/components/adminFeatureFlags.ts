@@ -7,6 +7,7 @@ export const ADMIN_FEATURE_FLAGS = {
   students: true,
   classes: true,
   sessions: true,
+  subdomain: true,
 
   // === ACADEMICS ===
   grades: true,

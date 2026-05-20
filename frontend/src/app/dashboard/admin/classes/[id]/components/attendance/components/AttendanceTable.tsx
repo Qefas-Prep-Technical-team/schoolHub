@@ -1,5 +1,6 @@
 import React from 'react';
 import { Edit2 } from 'lucide-react';
+import Link from 'next/link';
 import { AttendanceRecord } from './types';
 
 interface AttendanceTableProps {
@@ -101,7 +102,12 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
               return (
                 <tr key={record.id} className="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                   <td className="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                    {name}
+                    <Link
+                      href={`/dashboard/admin/students/${record.studentId || (record as any).student?.id}?date=${date.split('T')[0]}&tab=attendance`}
+                      className="hover:underline text-primary font-bold cursor-pointer"
+                    >
+                      {name}
+                    </Link>
                   </td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
                     {code}

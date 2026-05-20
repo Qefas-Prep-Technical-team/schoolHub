@@ -12,7 +12,8 @@ import {
     BookOpen, GraduationCap, Users, Briefcase, Star,
     ShieldCheck, Clock, ChevronRight, ChevronLeft, Award, UserCheck,
     Building2, Calendar, Hash, User, Activity, TrendingUp,
-    Target, BarChart3, PieChart, ShieldAlert
+    Target, BarChart3, PieChart, ShieldAlert, Heart, ThumbsUp, Smile,
+    Trash2, Plus
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -23,6 +24,16 @@ import {
 import { format, addWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns'
 import { TranscriptModal } from './components/TranscriptModal'
 import { toast } from 'react-toastify'
+import { 
+    useStudentBehaviourProfile, 
+    useUpdateStudentBehaviourProfile 
+} from '@/lib/api/hooks/useStudent'
+import {
+    useClassBehaviourAlerts,
+    useCreateBehaviourAlert,
+    useUpdateBehaviourAlert,
+    useDeleteBehaviourAlert
+} from '@/lib/api/hooks/useClasses'
 import {
     Dialog,
     DialogContent,
@@ -30,6 +41,17 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog"
+
+const STRENGTH_ICONS: Record<string, React.ElementType> = {
+    Star: Star,
+    Award: Award,
+    Heart: Heart,
+    ShieldCheck: ShieldCheck,
+    Users: Users,
+    ThumbsUp: ThumbsUp,
+    Smile: Smile,
+    Activity: Activity
+}
 
 // ─── Helper Components ───────────────────────────────────────────────────────
 
@@ -228,6 +250,7 @@ const TABS = [
     { id: 'academic', label: 'Academic' },
     { id: 'attendance', label: 'Attendance' },
     { id: 'timetable', label: 'Time Table' },
+    { id: 'behaviour', label: 'Behaviour' },
 ]
 
 export default function StudentProfilePage() {
@@ -259,10 +282,173 @@ export default function StudentProfilePage() {
     const [selectedScheduleCell, setSelectedScheduleCell] = useState<{ day: string; hour: string; type: 'attendance' | 'timetable' } | null>(null)
     const [scheduleDate, setScheduleDate] = useState(new Date())
 
+    // ── Behaviour Queries & Mutations ─────────────────────────────────────────
+    const behaviorStudentClass = student?.classes?.[0]?.class
+    const classId = behaviorStudentClass?.id || ''
+
+    const { data: behaviourProfile, isLoading: isBehaviourProfileLoading } = useStudentBehaviourProfile(studentId)
+    const { data: behaviourAlerts, isLoading: isAlertsLoading } = useClassBehaviourAlerts(classId, studentId)
+
+    const updateBehaviourProfileMutation = useUpdateStudentBehaviourProfile(studentId)
+    const createBehaviourAlertMutation = useCreateBehaviourAlert(classId)
+    const updateBehaviourAlertMutation = useUpdateBehaviourAlert(classId)
+    const deleteBehaviourAlertMutation = useDeleteBehaviourAlert(classId)
+
+    // ── Behaviour Dialog States ─────────────────────────────────────────────
+    const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
+    const [isLogAlertOpen, setIsLogAlertOpen] = useState(false)
+    const [isEditAlertOpen, setIsEditAlertOpen] = useState(false)
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false)
+    const [selectedAlert, setSelectedAlert] = useState<any>(null)
+
+    // Form states for profile edit
+    const [conductScore, setConductScore] = useState<number>(100)
+    const [strengths, setStrengths] = useState<{ name: string; description: string; icon: string }[]>([])
+    
+    // Form states for adding a new strength (inside edit profile modal)
+    const [newStrengthName, setNewStrengthName] = useState('')
+    const [newStrengthDesc, setNewStrengthDesc] = useState('')
+    const [newStrengthIcon, setNewStrengthIcon] = useState('Star')
+
+    // Form states for alert creation/editing
+    const [alertType, setAlertType] = useState<'WARNING' | 'DANGER'>('WARNING')
+    const [alertTitle, setAlertTitle] = useState('')
+    const [alertDesc, setAlertDesc] = useState('')
+
+    const handleOpenEditProfile = () => {
+        setConductScore(behaviourProfile?.conductScore ?? 100)
+        setStrengths(behaviourProfile?.strengths ?? [])
+        setIsEditProfileOpen(true)
+    }
+
+    const handleOpenEditAlert = (alert: any) => {
+        setSelectedAlert(alert)
+        setAlertType(alert.type)
+        setAlertTitle(alert.title)
+        setAlertDesc(alert.description || '')
+        setIsEditAlertOpen(true)
+    }
+
+    const handleSaveProfile = async (e: React.FormEvent) => {
+        e.preventDefault()
+        try {
+            let finalStrengths = [...strengths]
+            if (newStrengthName.trim() && newStrengthDesc.trim()) {
+                finalStrengths.push({
+                    name: newStrengthName.trim(),
+                    description: newStrengthDesc.trim(),
+                    icon: newStrengthIcon
+                })
+                setNewStrengthName('')
+                setNewStrengthDesc('')
+                setNewStrengthIcon('Star')
+            }
+            await updateBehaviourProfileMutation.mutateAsync({
+                conductScore,
+                strengths: finalStrengths
+            })
+            setIsEditProfileOpen(false)
+        } catch (error) {
+            // Error toast handled by hook
+        }
+    }
+
+    const handleAddStrength = () => {
+        if (!newStrengthName || !newStrengthDesc) {
+            toast.error('Strength name and description are required')
+            return
+        }
+        setStrengths([...strengths, { name: newStrengthName, description: newStrengthDesc, icon: newStrengthIcon }])
+        setNewStrengthName('')
+        setNewStrengthDesc('')
+        setNewStrengthIcon('Star')
+    }
+
+    const handleRemoveStrength = (index: number) => {
+        setStrengths(strengths.filter((_, i) => i !== index))
+    }
+
+    const handleCreateAlert = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!alertTitle) {
+            toast.error('Title is required')
+            return
+        }
+        try {
+            await createBehaviourAlertMutation.mutateAsync({
+                type: alertType,
+                title: alertTitle,
+                description: alertDesc,
+                studentId
+            })
+            setIsLogAlertOpen(false)
+            setAlertTitle('')
+            setAlertDesc('')
+            setAlertType('WARNING')
+        } catch (error) {
+            // Error toast handled by hook
+        }
+    }
+
+    const handleUpdateAlert = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!alertTitle) {
+            toast.error('Title is required')
+            return
+        }
+        try {
+            await updateBehaviourAlertMutation.mutateAsync({
+                alertId: selectedAlert.id,
+                data: {
+                    type: alertType,
+                    title: alertTitle,
+                    description: alertDesc
+                }
+            })
+            setIsEditAlertOpen(false)
+            setSelectedAlert(null)
+        } catch (error) {
+            // Error toast handled by hook
+        }
+    }
+
+    const handleDeleteAlert = async () => {
+        try {
+            await deleteBehaviourAlertMutation.mutateAsync(selectedAlert.id)
+            setIsDeleteAlertOpen(false)
+            setSelectedAlert(null)
+        } catch (error) {
+            // Error toast handled by hook
+        }
+    }
+
+    const isBehaviourLoading = isBehaviourProfileLoading || isAlertsLoading
+
     // ── Pagination State ─────────────────────────────────────────────────────
     const [examsPage, setExamsPage] = useState(1);
     const [papersPage, setPapersPage] = useState(1);
     const ITEMS_PER_PAGE = 5;
+
+    const [strengthsPage, setStrengthsPage] = useState(1);
+    const [behaviourPage, setBehaviourPage] = useState(1);
+    const STRENGTHS_PER_PAGE = 3;
+    const ALERTS_PER_PAGE = 3;
+
+    const totalStrengths = (behaviourProfile?.strengths as any[])?.length || 0;
+    const totalStrengthsPages = Math.ceil(totalStrengths / STRENGTHS_PER_PAGE);
+    const activeStrengthsPage = Math.min(strengthsPage, Math.max(1, totalStrengthsPages));
+    const paginatedStrengths = (behaviourProfile?.strengths as any[])?.slice(
+        (activeStrengthsPage - 1) * STRENGTHS_PER_PAGE,
+        activeStrengthsPage * STRENGTHS_PER_PAGE
+    ) || [];
+
+    const totalAlerts = behaviourAlerts?.length || 0;
+    const totalAlertsPages = Math.ceil(totalAlerts / ALERTS_PER_PAGE);
+    const activeAlertsPage = Math.min(behaviourPage, Math.max(1, totalAlertsPages));
+    const paginatedAlerts = behaviourAlerts?.slice(
+        (activeAlertsPage - 1) * ALERTS_PER_PAGE,
+        activeAlertsPage * ALERTS_PER_PAGE
+    ) || [];
 
     // ── Data Transformation ──────────────────────────────────────────────────
     const grades = gradesData?.grades || []
@@ -386,6 +572,36 @@ export default function StudentProfilePage() {
     const department = student.department?.name || 'General'
     const avatar = student.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`
     const isVerified = !!student.verified
+
+    const conductScoreVal = behaviourProfile?.conductScore ?? 100
+    let conductStrokeColor = '#10b981'
+    let conductGlowColor = 'rgba(16, 185, 129, 0.4)'
+    let conductStatusBg = 'bg-emerald-500/10 dark:bg-emerald-500/5'
+    let conductStatusText = 'text-emerald-500'
+    let conductStatusLabel = 'Exemplary standing'
+    let conductStatusDesc = 'Perfect behavioral record, showing positive engagement and peer collaboration.'
+    let conductGradientStart = '#10b981'
+    let conductGradientEnd = '#34d399'
+
+    if (conductScoreVal < 70) {
+        conductStrokeColor = '#ef4444'
+        conductGlowColor = 'rgba(239, 68, 68, 0.4)'
+        conductStatusBg = 'bg-rose-500/10 dark:bg-rose-500/5'
+        conductStatusText = 'text-rose-500'
+        conductStatusLabel = 'Critical standing'
+        conductStatusDesc = 'Urgent attention required. Behavioral record indicates serious recurring issues.'
+        conductGradientStart = '#ef4444'
+        conductGradientEnd = '#f87171'
+    } else if (conductScoreVal < 85) {
+        conductStrokeColor = '#f59e0b'
+        conductGlowColor = 'rgba(245, 158, 11, 0.4)'
+        conductStatusBg = 'bg-amber-500/10 dark:bg-amber-500/5'
+        conductStatusText = 'text-amber-500'
+        conductStatusLabel = 'Needs attention'
+        conductStatusDesc = 'Moderate behavioral alerts recorded. Subject to active monitoring.'
+        conductGradientStart = '#f59e0b'
+        conductGradientEnd = '#fbbf24'
+    }
 
     return (
         <div className="min-h-screen bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
@@ -535,7 +751,18 @@ export default function StudentProfilePage() {
                              <div className="space-y-3">
                                 {[
                                     { label: 'Issue Transcript', icon: Award, onClick: () => setIsTranscriptModalOpen(true) },
-                                    { label: 'Log Behaviour', icon: ShieldAlert, onClick: () => toast.info('Behaviour logging is coming soon.') },
+                                    { 
+                                        label: 'Log Behaviour', 
+                                        icon: ShieldAlert, 
+                                        onClick: () => { 
+                                            setActiveTab('behaviour'); 
+                                            if (classId) {
+                                                setIsLogAlertOpen(true); 
+                                            } else {
+                                                toast.error('Student is not enrolled in a class.'); 
+                                            }
+                                        } 
+                                    },
                                     { label: 'Attendance Entry', icon: Calendar, onClick: () => toast.info('Attendance entry is coming soon.') },
                                 ].map((act, i) => (
                                     <button 
@@ -577,6 +804,352 @@ export default function StudentProfilePage() {
                                 <div className="py-10 text-center space-y-3">
                                     <Users size={32} className="text-slate-200 mx-auto" />
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No Guardians Linked</p>
+                                </div>
+                            )}
+                        </SectionCard>
+                    </div>
+                </main>
+            )}
+
+            {/* ── Behaviour Tab ────────────────────────────────────────────── */}
+            {activeTab === 'behaviour' && isBehaviourLoading && (
+                <main className="max-w-7xl mx-auto px-4 md:px-12 mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
+                    <div className="space-y-6">
+                        {/* Conduct Standing Skeleton */}
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 space-y-6 animate-pulse">
+                            <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/2" />
+                            <div className="size-36 rounded-full bg-slate-200 dark:bg-slate-800 mx-auto" />
+                            <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl w-3/4 mx-auto" />
+                        </div>
+                        {/* Core Strengths Skeleton */}
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 space-y-6 animate-pulse">
+                            <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/2" />
+                            <div className="space-y-4">
+                                <div className="h-16 bg-slate-100 dark:bg-slate-800/50 rounded-2xl w-full" />
+                                <div className="h-16 bg-slate-100 dark:bg-slate-800/50 rounded-2xl w-full" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 space-y-6 animate-pulse">
+                            <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/3" />
+                            <div className="h-24 bg-slate-200 dark:bg-slate-800 rounded-xl w-full" />
+                            <div className="h-24 bg-slate-200 dark:bg-slate-800 rounded-xl w-full" />
+                        </div>
+                    </div>
+                </main>
+            )}
+
+            {activeTab === 'behaviour' && !isBehaviourLoading && (
+                <main className="max-w-7xl mx-auto px-4 md:px-12 mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
+                    {/* Left Panel: Score and Strengths */}
+                    <div className="space-y-6">
+                        <SectionCard 
+                            title="Conduct Standing"
+                            headerAction={
+                                <button
+                                    onClick={handleOpenEditProfile}
+                                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                                >
+                                    <Edit2 size={16} />
+                                </button>
+                            }
+                        >
+                            <div className="flex flex-col items-center justify-center py-6 relative">
+                                {/* SVG Circular Progress */}
+                                <div className="relative size-36">
+                                    <svg className="size-full -rotate-90" viewBox="0 0 144 144">
+                                        <defs>
+                                            <linearGradient id="conductGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stopColor={conductGradientStart} />
+                                                <stop offset="100%" stopColor={conductGradientEnd} />
+                                            </linearGradient>
+                                            <radialGradient id="conductInnerGlow" cx="50%" cy="50%" r="50%">
+                                                <stop offset="0%" stopColor={`${conductGradientStart}12`} />
+                                                <stop offset="100%" stopColor="transparent" />
+                                            </radialGradient>
+                                        </defs>
+
+                                        {/* Radial glow background */}
+                                        <circle
+                                            cx="72"
+                                            cy="72"
+                                            r="52"
+                                            fill="url(#conductInnerGlow)"
+                                        />
+
+                                        {/* Thin outer decorative track */}
+                                        <circle
+                                            cx="72"
+                                            cy="72"
+                                            r="64"
+                                            className="stroke-slate-100/50 dark:stroke-slate-800/20"
+                                            strokeWidth="1"
+                                            fill="transparent"
+                                        />
+
+                                        {/* Background track */}
+                                        <circle
+                                            cx="72"
+                                            cy="72"
+                                            r="58"
+                                            className="stroke-slate-100 dark:stroke-slate-800/80"
+                                            strokeWidth="7"
+                                            fill="transparent"
+                                        />
+
+                                        {/* Filled track glow */}
+                                        <circle
+                                            cx="72"
+                                            cy="72"
+                                            r="58"
+                                            className="transition-all duration-1000 ease-out blur-[4px] opacity-40"
+                                            strokeWidth="11"
+                                            fill="transparent"
+                                            strokeDasharray={2 * Math.PI * 58}
+                                            strokeDashoffset={2 * Math.PI * 58 - (conductScoreVal / 100) * (2 * Math.PI * 58)}
+                                            strokeLinecap="round"
+                                            stroke="url(#conductGrad)"
+                                        />
+
+                                        {/* Main filled track */}
+                                        <circle
+                                            cx="72"
+                                            cy="72"
+                                            r="58"
+                                            className="transition-all duration-1000 ease-out"
+                                            strokeWidth="7"
+                                            fill="transparent"
+                                            strokeDasharray={2 * Math.PI * 58}
+                                            strokeDashoffset={2 * Math.PI * 58 - (conductScoreVal / 100) * (2 * Math.PI * 58)}
+                                            strokeLinecap="round"
+                                            stroke="url(#conductGrad)"
+                                        />
+
+                                        {/* Inner technical boundary ring */}
+                                        <circle
+                                            cx="72"
+                                            cy="72"
+                                            r="52"
+                                            className="stroke-slate-100/50 dark:stroke-slate-800/30"
+                                            strokeWidth="1"
+                                            fill="transparent"
+                                        />
+                                    </svg>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        <div className="flex items-baseline gap-0.5 mt-2">
+                                            <span className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                                                {conductScoreVal}
+                                            </span>
+                                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                                                /100
+                                            </span>
+                                        </div>
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Conduct</span>
+                                    </div>
+                                </div>
+                                <div className="text-center mt-6 px-4">
+                                    <span className={cn(
+                                        "text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full",
+                                        conductStatusBg,
+                                        conductStatusText
+                                    )}>
+                                        {conductStatusLabel}
+                                    </span>
+                                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-3 leading-relaxed">
+                                        {conductStatusDesc}
+                                    </p>
+                                </div>
+                            </div>
+                        </SectionCard>
+
+                        <SectionCard 
+                            title="Core Strengths"
+                            headerAction={
+                                <button
+                                    onClick={handleOpenEditProfile}
+                                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            }
+                        >
+                            <div className="space-y-4">
+                                {paginatedStrengths.length > 0 ? (
+                                    <>
+                                        <div className="space-y-4">
+                                            {paginatedStrengths.map((str: any, index: number) => {
+                                                const Icon = STRENGTH_ICONS[str.icon] || Star
+                                                return (
+                                                    <div key={index} className="flex gap-4 p-5 rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 items-start">
+                                                        <div className="size-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
+                                                             style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
+                                                            <Icon size={16} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{str.name}</p>
+                                                            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{str.description}</p>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                        {/* Core Strengths Pagination */}
+                                        {totalStrengths > STRENGTHS_PER_PAGE && (
+                                            <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-white/5">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                    Page {activeStrengthsPage} of {totalStrengthsPages}
+                                                </p>
+                                                <div className="flex gap-1.5">
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setStrengthsPage(p => Math.max(1, p - 1))}
+                                                        disabled={activeStrengthsPage === 1}
+                                                        className="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-white/5 text-[9px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300"
+                                                    >
+                                                        Prev
+                                                    </button>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setStrengthsPage(p => Math.min(totalStrengthsPages, p + 1))}
+                                                        disabled={activeStrengthsPage === totalStrengthsPages}
+                                                        className="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-white/5 text-[9px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300"
+                                                    >
+                                                        Next
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="py-8 text-center space-y-3">
+                                        <Award size={32} className="text-slate-300 dark:text-slate-700 mx-auto animate-pulse" />
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No core strengths registered</p>
+                                        <button
+                                            onClick={handleOpenEditProfile}
+                                            className="mt-2 h-9 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest transition-all hover:scale-[1.01]"
+                                        >
+                                            Add First Strength
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </SectionCard>
+                    </div>
+
+                    {/* Right Panel: Timeline */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <SectionCard 
+                            title="Conduct Timeline"
+                            headerAction={
+                                <button
+                                    disabled={!classId}
+                                    onClick={() => setIsLogAlertOpen(true)}
+                                    className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black uppercase tracking-widest text-[9px] rounded-xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all shadow-md"
+                                >
+                                    Log Alert
+                                </button>
+                            }
+                        >
+                            {!classId ? (
+                                <div className="py-16 text-center space-y-4">
+                                    <ShieldAlert size={48} className="text-slate-200 mx-auto" />
+                                    <div className="max-w-xs mx-auto">
+                                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Class Not Enrolled</p>
+                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2 font-medium">
+                                            This student is not currently enrolled in any class. Conduct alerts can only be logged for enrolled students.
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : paginatedAlerts.length > 0 ? (
+                                <div className="space-y-6">
+                                    <div className="space-y-6">
+                                        {paginatedAlerts.map((alert: any) => (
+                                            <div key={alert.id} className="relative pl-8 group">
+                                                <div className="absolute left-[11px] top-7 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-800 group-last:hidden" />
+                                                <div className={cn(
+                                                    "absolute left-0 top-1.5 size-6 rounded-full border-4 flex items-center justify-center bg-white dark:bg-slate-950",
+                                                    alert.type === 'DANGER' 
+                                                        ? "border-rose-500 text-rose-500" 
+                                                        : "border-amber-400 text-amber-400"
+                                                )}>
+                                                    <div className={cn("size-1.5 rounded-full", alert.type === 'DANGER' ? "bg-rose-500" : "bg-amber-400")} />
+                                                </div>
+                                                <div className="p-6 rounded-3xl bg-slate-50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5 space-y-3 relative hover:border-slate-200 dark:hover:border-white/10 transition-all shadow-sm">
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div>
+                                                            <span className={cn(
+                                                                "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md",
+                                                                alert.type === 'DANGER' 
+                                                                    ? "bg-rose-500/10 text-rose-500" 
+                                                                    : "bg-amber-500/10 text-amber-500"
+                                                            )}>
+                                                                {alert.type}
+                                                            </span>
+                                                            <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight mt-2">{alert.title}</h4>
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <button 
+                                                                onClick={() => handleOpenEditAlert(alert)}
+                                                                className="size-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+                                                            >
+                                                                <Edit2 size={12} />
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => { setSelectedAlert(alert); setIsDeleteAlertOpen(true); }}
+                                                                className="size-8 rounded-lg hover:bg-slate-200 dark:hover:bg-rose-950/30 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors"
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    {alert.description && (
+                                                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 leading-relaxed">{alert.description}</p>
+                                                    )}
+                                                    <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold pt-2 border-t border-slate-100 dark:border-white/5">
+                                                        <span>By {alert.reporter?.fullName || alert.reporter?.name || 'Administrator'}</span>
+                                                        <span>{format(new Date(alert.createdAt), 'MMM dd, yyyy · hh:mm a')}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {/* Timeline Pagination */}
+                                    {totalAlerts > ALERTS_PER_PAGE && (
+                                        <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-white/5">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                Page {activeAlertsPage} of {totalAlertsPages}
+                                            </p>
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setBehaviourPage(p => Math.max(1, p - 1))}
+                                                    disabled={activeAlertsPage === 1}
+                                                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300"
+                                                >
+                                                    Prev
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setBehaviourPage(p => Math.min(totalAlertsPages, p + 1))}
+                                                    disabled={activeAlertsPage === totalAlertsPages}
+                                                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300"
+                                                >
+                                                    Next
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="py-16 text-center space-y-4">
+                                    <Award size={48} className="text-slate-200 mx-auto" />
+                                    <div className="max-w-xs mx-auto">
+                                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Exemplary Conduct Record</p>
+                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2 font-medium">
+                                            There are no behaviour alerts logged for this student.
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </SectionCard>
@@ -995,6 +1568,393 @@ export default function StudentProfilePage() {
                         >
                             Dismiss Record
                         </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Edit Behaviour Profile Modal ────────────────────────────── */}
+            <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
+                <DialogContent className="max-w-lg rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl overflow-y-auto max-h-[85vh] custom-scrollbar">
+                    <DialogHeader className="space-y-4">
+                        <div className="flex items-center gap-4">
+                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
+                                style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
+                                <Award size={28} />
+                            </div>
+                            <div className="text-left">
+                                <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                    Edit Behaviour Profile
+                                </DialogTitle>
+                                <DialogDescription className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                    Update conduct score and manage student strengths
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <form onSubmit={handleSaveProfile} className="mt-8 space-y-6">
+                        {/* Conduct Score */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Conduct Score (0-100)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={conductScore}
+                                onChange={(e) => setConductScore(parseInt(e.target.value) || 0)}
+                                className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-sm font-bold focus:outline-none focus:border-primary transition-colors"
+                                style={{ '--primary': primaryColor } as any}
+                            />
+                        </div>
+
+                        {/* Current Strengths */}
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Current Strengths</label>
+                            {strengths.length > 0 ? (
+                                <div className="space-y-3">
+                                    {strengths.map((str, index) => {
+                                        const Icon = STRENGTH_ICONS[str.icon] || Star
+                                        return (
+                                            <div key={index} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5">
+                                                <div className="flex gap-3 items-center">
+                                                    <div className="size-8 rounded-xl flex items-center justify-center shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-500">
+                                                        <Icon size={14} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{str.name}</p>
+                                                        <p className="text-[9px] font-medium text-slate-400 mt-0.5 line-clamp-1">{str.description}</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveStrength(index)}
+                                                    className="size-8 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 flex items-center justify-center transition-colors"
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            ) : (
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic py-2">No strengths added yet.</p>
+                            )}
+                        </div>
+
+                        {/* Add Strength Subform */}
+                        <div className="p-6 rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 space-y-4">
+                            <p className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Add New Strength</p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Leadership"
+                                        value={newStrengthName}
+                                        onChange={(e) => setNewStrengthName(e.target.value)}
+                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Icon</label>
+                                    <select
+                                        value={newStrengthIcon}
+                                        onChange={(e) => setNewStrengthIcon(e.target.value)}
+                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
+                                    >
+                                        <option value="Star">Star</option>
+                                        <option value="Award">Award</option>
+                                        <option value="Heart">Heart</option>
+                                        <option value="ShieldCheck">Shield</option>
+                                        <option value="Users">Users</option>
+                                        <option value="ThumbsUp">Thumbs Up</option>
+                                        <option value="Smile">Smile</option>
+                                        <option value="Activity">Activity</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Description</label>
+                                <textarea
+                                    rows={2}
+                                    placeholder="Describe this strength..."
+                                    value={newStrengthDesc}
+                                    onChange={(e) => setNewStrengthDesc(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-xs font-bold focus:outline-none resize-none"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleAddStrength}
+                                className="w-full h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-slate-300 text-slate-700 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all"
+                            >
+                                <Plus size={12} /> Add to Profile
+                            </button>
+                        </div>
+
+                        {/* Save Button */}
+                        <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                            <button 
+                                type="button"
+                                onClick={() => setIsEditProfileOpen(false)}
+                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit"
+                                disabled={updateBehaviourProfileMutation.isPending}
+                                className="flex-1 h-12 rounded-xl text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                                style={{ backgroundColor: primaryColor }}
+                            >
+                                {updateBehaviourProfileMutation.isPending ? 'Saving...' : 'Save Profile'}
+                            </button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Log Behaviour Alert Modal ─────────────────────────────── */}
+            <Dialog open={isLogAlertOpen} onOpenChange={setIsLogAlertOpen}>
+                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl">
+                    <DialogHeader className="space-y-4">
+                        <div className="flex items-center gap-4">
+                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
+                                style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
+                                <ShieldAlert size={28} />
+                            </div>
+                            <div className="text-left">
+                                <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                    Log Behaviour Alert
+                                </DialogTitle>
+                                <DialogDescription className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                    Record a new warning or danger alert
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <form onSubmit={handleCreateAlert} className="mt-8 space-y-6">
+                        {/* Alert Type */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alert Type</label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setAlertType('WARNING')}
+                                    className={cn(
+                                        "h-12 rounded-xl font-black uppercase tracking-widest text-[9px] border transition-all",
+                                        alertType === 'WARNING'
+                                            ? "bg-amber-500/10 text-amber-500 border-amber-500/30 shadow-sm"
+                                            : "bg-slate-50 dark:bg-white/[0.01] border-slate-100 dark:border-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    Warning
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAlertType('DANGER')}
+                                    className={cn(
+                                        "h-12 rounded-xl font-black uppercase tracking-widest text-[9px] border transition-all",
+                                        alertType === 'DANGER'
+                                            ? "bg-rose-500/10 text-rose-500 border-rose-500/30 shadow-sm"
+                                            : "bg-slate-50 dark:bg-white/[0.01] border-slate-100 dark:border-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    Danger
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Title */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Title</label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Talking in Lecture"
+                                value={alertTitle}
+                                onChange={(e) => setAlertTitle(e.target.value)}
+                                className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-sm font-bold focus:outline-none focus:border-primary transition-colors"
+                                style={{ '--primary': primaryColor } as any}
+                                required
+                            />
+                        </div>
+
+                        {/* Description */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</label>
+                            <textarea
+                                rows={3}
+                                placeholder="Provide context and details..."
+                                value={alertDesc}
+                                onChange={(e) => setAlertDesc(e.target.value)}
+                                className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-sm font-bold focus:outline-none focus:border-primary transition-colors resize-none"
+                                style={{ '--primary': primaryColor } as any}
+                            />
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                            <button 
+                                type="button"
+                                onClick={() => setIsLogAlertOpen(false)}
+                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit"
+                                disabled={createBehaviourAlertMutation.isPending}
+                                className="flex-1 h-12 rounded-xl text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                                style={{ backgroundColor: primaryColor }}
+                            >
+                                {createBehaviourAlertMutation.isPending ? 'Logging...' : 'Log Alert'}
+                            </button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Edit Behaviour Alert Modal ─────────────────────────────── */}
+            <Dialog open={isEditAlertOpen} onOpenChange={setIsEditAlertOpen}>
+                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl">
+                    <DialogHeader className="space-y-4">
+                        <div className="flex items-center gap-4">
+                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
+                                style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
+                                <Edit2 size={28} />
+                            </div>
+                            <div className="text-left">
+                                <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                    Edit Behaviour Alert
+                                </DialogTitle>
+                                <DialogDescription className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                    Modify alert information
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <form onSubmit={handleUpdateAlert} className="mt-8 space-y-6">
+                        {/* Alert Type */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alert Type</label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setAlertType('WARNING')}
+                                    className={cn(
+                                        "h-12 rounded-xl font-black uppercase tracking-widest text-[9px] border transition-all",
+                                        alertType === 'WARNING'
+                                            ? "bg-amber-500/10 text-amber-500 border-amber-500/30 shadow-sm"
+                                            : "bg-slate-50 dark:bg-white/[0.01] border-slate-100 dark:border-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    Warning
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAlertType('DANGER')}
+                                    className={cn(
+                                        "h-12 rounded-xl font-black uppercase tracking-widest text-[9px] border transition-all",
+                                        alertType === 'DANGER'
+                                            ? "bg-rose-500/10 text-rose-500 border-rose-500/30 shadow-sm"
+                                            : "bg-slate-50 dark:bg-white/[0.01] border-slate-100 dark:border-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    Danger
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Title */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Title</label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Talking in Lecture"
+                                value={alertTitle}
+                                onChange={(e) => setAlertTitle(e.target.value)}
+                                className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-sm font-bold focus:outline-none focus:border-primary transition-colors"
+                                style={{ '--primary': primaryColor } as any}
+                                required
+                            />
+                        </div>
+
+                        {/* Description */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</label>
+                            <textarea
+                                rows={3}
+                                placeholder="Provide context and details..."
+                                value={alertDesc}
+                                onChange={(e) => setAlertDesc(e.target.value)}
+                                className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-sm font-bold focus:outline-none focus:border-primary transition-colors resize-none"
+                                style={{ '--primary': primaryColor } as any}
+                            />
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                            <button 
+                                type="button"
+                                onClick={() => setIsEditAlertOpen(false)}
+                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit"
+                                disabled={updateBehaviourAlertMutation.isPending}
+                                className="flex-1 h-12 rounded-xl text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                                style={{ backgroundColor: primaryColor }}
+                            >
+                                {updateBehaviourAlertMutation.isPending ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Remove Behaviour Alert Modal ───────────────────────────── */}
+            <Dialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+                <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl">
+                    <DialogHeader className="space-y-4">
+                        <div className="flex items-center gap-4">
+                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0 bg-rose-500/10 text-rose-500">
+                                <Trash2 size={28} />
+                            </div>
+                            <div className="text-left">
+                                <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                    Remove Alert
+                                </DialogTitle>
+                                <DialogDescription className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                    Delete conduct timeline entry
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="mt-8 space-y-6">
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+                            Are you sure you want to remove the behavior alert <strong className="text-slate-800 dark:text-white">"{selectedAlert?.title}"</strong>? This action is permanent and cannot be undone.
+                        </p>
+
+                        <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                            <button 
+                                onClick={() => setIsDeleteAlertOpen(false)}
+                                className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleDeleteAlert}
+                                disabled={deleteBehaviourAlertMutation.isPending}
+                                className="flex-1 h-12 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                            >
+                                {deleteBehaviourAlertMutation.isPending ? 'Removing...' : 'Remove Alert'}
+                            </button>
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>

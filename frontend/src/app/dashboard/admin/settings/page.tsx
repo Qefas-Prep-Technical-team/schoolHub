@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
-import { useSchoolSettings, useUpdateSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { useSchoolSettings, useUpdateSchoolSettings, useSchoolLandingPage, useUpdateSchoolLandingPage } from '@/lib/api/hooks/useSchool';
 import { adminService } from '@/lib/api/services/adminService';
 import { 
   Settings, 
@@ -37,7 +37,11 @@ export default function SettingsPage() {
   const { data: settings, isLoading } = useSchoolSettings(schoolId);
   const updateMutation = useUpdateSchoolSettings();
 
+  const { data: landingPageSettings, isLoading: isLandingPageLoading } = useSchoolLandingPage(schoolId);
+  const updateLandingPageMutation = useUpdateSchoolLandingPage();
+
   const [localSettings, setLocalSettings] = useState<any>(null);
+  const [localLandingPage, setLocalLandingPage] = useState<any>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeTab, setActiveTab] = useState('General');
   const [personalProfile, setPersonalProfile] = useState<any>({
@@ -71,6 +75,31 @@ export default function SettingsPage() {
     }
   }, [settings]);
 
+  useEffect(() => {
+    if (landingPageSettings) {
+      setLocalLandingPage({
+        heroTitle: landingPageSettings.heroTitle || '',
+        heroSubtitle: landingPageSettings.heroSubtitle || '',
+        aboutTitle: landingPageSettings.aboutTitle || '',
+        aboutText: landingPageSettings.aboutText || '',
+        primaryColor: landingPageSettings.primaryColor || '#3b82f6',
+        features: Array.isArray(landingPageSettings.features) && landingPageSettings.features.length > 0
+          ? landingPageSettings.features
+          : [
+              { title: 'Expert Faculty', description: 'Learn from highly qualified educators who are passionate about teaching and mentoring.', icon: 'Users' },
+              { title: 'Modern Curriculum', description: 'An innovative, dynamic curriculum tailored to meet global standards.', icon: 'BookOpen' },
+              { title: 'Holistic Development', description: 'Strong focus on co-curricular activities and character building.', icon: 'Award' }
+            ],
+        testimonials: Array.isArray(landingPageSettings.testimonials) && landingPageSettings.testimonials.length > 0
+          ? landingPageSettings.testimonials
+          : [
+              { name: 'Sarah Jenkins', role: 'Parent', text: 'Choosing this school was the best decision for my son. The individual attention is exceptional.' },
+              { name: 'David Cole', role: 'Alumni', text: 'The skills and values I gained here laid the foundation for my career.' }
+            ]
+      });
+    }
+  }, [landingPageSettings]);
+
   const handleToggle = (field: string, checked: boolean) => {
     setLocalSettings((prev: any) => prev ? ({ ...prev, [field]: checked }) : null);
     setHasChanges(true);
@@ -81,14 +110,47 @@ export default function SettingsPage() {
     setHasChanges(true);
   };
 
+  const handleLandingPageChange = (field: string, value: any) => {
+    setLocalLandingPage((prev: any) => prev ? ({ ...prev, [field]: value }) : null);
+    setHasChanges(true);
+  };
+
+  const handleFeatureChange = (index: number, field: string, value: any) => {
+    setLocalLandingPage((prev: any) => {
+      if (!prev) return null;
+      const updatedFeatures = [...prev.features];
+      updatedFeatures[index] = { ...updatedFeatures[index], [field]: value };
+      return { ...prev, features: updatedFeatures };
+    });
+    setHasChanges(true);
+  };
+
+  const handleTestimonialChange = (index: number, field: string, value: any) => {
+    setLocalLandingPage((prev: any) => {
+      if (!prev) return null;
+      const updatedTestimonials = [...prev.testimonials];
+      updatedTestimonials[index] = { ...updatedTestimonials[index], [field]: value };
+      return { ...prev, testimonials: updatedTestimonials };
+    });
+    setHasChanges(true);
+  };
+
   const handleSave = async () => {
     try {
       if (activeTab === 'Profile') {
         await adminService.updateProfile(personalProfile);
         toast.success('Profile updated successfully');
         setHasChanges(false);
-        // Refresh page to update auth store/context if needed, 
-        // or just rely on local state if the change is reflected there
+        return;
+      }
+
+      if (activeTab === 'Landing Page') {
+        await updateLandingPageMutation.mutateAsync({
+          schoolId,
+          data: localLandingPage
+        });
+        toast.success('Landing page settings updated successfully');
+        setHasChanges(false);
         return;
       }
 
@@ -122,10 +184,32 @@ export default function SettingsPage() {
         lockSettings: settings.lockSettings ?? false,
       });
     }
+    if (landingPageSettings) {
+      setLocalLandingPage({
+        heroTitle: landingPageSettings.heroTitle || '',
+        heroSubtitle: landingPageSettings.heroSubtitle || '',
+        aboutTitle: landingPageSettings.aboutTitle || '',
+        aboutText: landingPageSettings.aboutText || '',
+        primaryColor: landingPageSettings.primaryColor || '#3b82f6',
+        features: Array.isArray(landingPageSettings.features) && landingPageSettings.features.length > 0
+          ? landingPageSettings.features
+          : [
+              { title: 'Expert Faculty', description: 'Learn from highly qualified educators who are passionate about teaching and mentoring.', icon: 'Users' },
+              { title: 'Modern Curriculum', description: 'An innovative, dynamic curriculum tailored to meet global standards.', icon: 'BookOpen' },
+              { title: 'Holistic Development', description: 'Strong focus on co-curricular activities and character building.', icon: 'Award' }
+            ],
+        testimonials: Array.isArray(landingPageSettings.testimonials) && landingPageSettings.testimonials.length > 0
+          ? landingPageSettings.testimonials
+          : [
+              { name: 'Sarah Jenkins', role: 'Parent', text: 'Choosing this school was the best decision for my son. The individual attention is exceptional.' },
+              { name: 'David Cole', role: 'Alumni', text: 'The skills and values I gained here laid the foundation for my career.' }
+            ]
+      });
+    }
     setHasChanges(false);
   };
 
-  if (isLoading || !localSettings) {
+  if (isLoading || isLandingPageLoading || !localSettings || !localLandingPage) {
     return (
         <div className="p-8 space-y-8">
             <Skeleton className="h-10 w-64" />
@@ -143,6 +227,7 @@ export default function SettingsPage() {
     { label: 'Notifications', icon: Bell },
     { label: 'Security', icon: Lock },
     { label: 'Profile', icon: UserCircle },
+    { label: 'Landing Page', icon: Rocket },
   ];
 
   return (
@@ -482,6 +567,141 @@ export default function SettingsPage() {
                                         <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
                                             To change your login email or password, please use the security verification flow available in the dropdown menu.
                                         </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {activeTab === 'Landing Page' && (
+                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
+                                <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                                    <Rocket size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-lg">Landing Page Settings</h3>
+                                    <p className="text-xs text-slate-500">Configure your public school landing page design and content.</p>
+                                </div>
+                            </div>
+                            <CardContent className="p-8 space-y-8">
+                                <div className="space-y-6">
+                                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">Hero Section</h4>
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hero Title</Label>
+                                            <Input 
+                                                value={localLandingPage?.heroTitle || ''}
+                                                onChange={(e) => handleLandingPageChange('heroTitle', e.target.value)}
+                                                placeholder="Welcome to Greenwood Academy"
+                                                className="h-12 rounded-2xl border-slate-200"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hero Subtitle</Label>
+                                            <Input 
+                                                value={localLandingPage?.heroSubtitle || ''}
+                                                onChange={(e) => handleLandingPageChange('heroSubtitle', e.target.value)}
+                                                placeholder="Nurturing Minds, Shaping the Future of Education."
+                                                className="h-12 rounded-2xl border-slate-200"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6 border-t border-slate-100 dark:border-white/5 pt-8">
+                                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">About Section</h4>
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">About Title</Label>
+                                            <Input 
+                                                value={localLandingPage?.aboutTitle || ''}
+                                                onChange={(e) => handleLandingPageChange('aboutTitle', e.target.value)}
+                                                placeholder="Our Vision & Mission"
+                                                className="h-12 rounded-2xl border-slate-200"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">About Text</Label>
+                                            <textarea
+                                                value={localLandingPage?.aboutText || ''}
+                                                onChange={(e) => handleLandingPageChange('aboutText', e.target.value)}
+                                                placeholder="Describe your school vision and mission..."
+                                                rows={4}
+                                                className="w-full bg-transparent border border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6 border-t border-slate-100 dark:border-white/5 pt-8">
+                                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">School Features / Highlights</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        {localLandingPage?.features?.map((feat: any, index: number) => (
+                                            <div key={index} className="p-5 border border-slate-100 dark:border-slate-850 rounded-3xl bg-slate-50/50 dark:bg-slate-800/10 space-y-4">
+                                                <h5 className="font-bold text-sm text-slate-700 dark:text-slate-300">Feature {index + 1}</h5>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Title</Label>
+                                                    <Input 
+                                                        value={feat.title || ''}
+                                                        onChange={(e) => handleFeatureChange(index, 'title', e.target.value)}
+                                                        placeholder="Feature Title"
+                                                        className="h-10 rounded-xl border-slate-200 text-xs"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Description</Label>
+                                                    <textarea
+                                                        value={feat.description || ''}
+                                                        onChange={(e) => handleFeatureChange(index, 'description', e.target.value)}
+                                                        placeholder="Feature description..."
+                                                        rows={3}
+                                                        className="w-full bg-transparent border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs font-medium focus:outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6 border-t border-slate-100 dark:border-white/5 pt-8">
+                                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-400">Parent / Alumni Testimonials</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {localLandingPage?.testimonials?.map((t: any, index: number) => (
+                                            <div key={index} className="p-5 border border-slate-100 dark:border-slate-850 rounded-3xl bg-slate-50/50 dark:bg-slate-800/10 space-y-4">
+                                                <h5 className="font-bold text-sm text-slate-700 dark:text-slate-300">Testimonial {index + 1}</h5>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Name</Label>
+                                                        <Input 
+                                                            value={t.name || ''}
+                                                            onChange={(e) => handleTestimonialChange(index, 'name', e.target.value)}
+                                                            placeholder="Name"
+                                                            className="h-10 rounded-xl border-slate-200 text-xs"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Role</Label>
+                                                        <Input 
+                                                            value={t.role || ''}
+                                                            onChange={(e) => handleTestimonialChange(index, 'role', e.target.value)}
+                                                            placeholder="Role (e.g., Parent)"
+                                                            className="h-10 rounded-xl border-slate-200 text-xs"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Testimonial Text</Label>
+                                                    <textarea
+                                                        value={t.text || ''}
+                                                        onChange={(e) => handleTestimonialChange(index, 'text', e.target.value)}
+                                                        placeholder="Testimonial text..."
+                                                        rows={3}
+                                                        className="w-full bg-transparent border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs font-medium focus:outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </CardContent>

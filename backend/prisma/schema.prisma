@@ -4,8 +4,6 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model School {
@@ -85,6 +83,7 @@ model School {
   teacherSubjects          TeacherSubject[]
   transactionHistory       TransactionHistory[]
   transactions             Transaction[]
+  landingPage              SchoolLandingPage?
 }
 
 model SchoolSetting {
@@ -287,6 +286,7 @@ model Student {
   subscriptionPlan        SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
   attendances             Attendance[]
   behaviourAlerts         BehaviourAlert[]
+  behaviourProfile        StudentBehaviourProfile?
   classes                 ClassEnrollment[]
   examAttempts            ExamAttempt[]
   grades                  Grade[]
@@ -1074,6 +1074,18 @@ model BehaviourAlert {
   @@map("behaviour_alerts")
 }
 
+model StudentBehaviourProfile {
+  id           String   @id @default(uuid())
+  studentId    String   @unique
+  conductScore Int      @default(100)
+  strengths    Json?    
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("student_behaviour_profiles")
+}
+
 model Transaction {
   id                 Int       @id @default(autoincrement())
   schoolId           String?
@@ -1625,4 +1637,23 @@ enum SupportPriority {
   MEDIUM
   HIGH
   URGENT
+}
+
+model SchoolLandingPage {
+  id           String   @id @default(uuid())
+  schoolId     String   @unique
+  heroTitle    String?  @default("Welcome to Our School")
+  heroSubtitle String?  @default("Empowering students to achieve their full potential.")
+  aboutTitle   String?  @default("About Us")
+  aboutText    String?  @default("We provide a supportive and challenging learning environment that fosters academic excellence, critical thinking, and character development.")
+  primaryColor String?  @default("#2563eb")
+  features     Json?    @default("[]") // Array of: { title, description, icon }
+  testimonials Json?    @default("[]") // Array of: { name, role, text }
+  gallery      Json?    @default("[]") // Array of image URLs
+  customPages  Json?    @default("[]") // Pro builder pages: { id, title, slug, blocks: [] }
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("school_landing_pages")
 }

@@ -192,14 +192,55 @@ export const useUpdateClass = (id: string) => {
   });
 };
 
-export const useClassBehaviourAlerts = (classId: string) => {
+export const useClassBehaviourAlerts = (classId: string, studentId?: string) => {
   return useQuery({
-    queryKey: [...classQueryKeys.detail(classId), "behaviour-alerts"],
-    queryFn: async () => {
-      const response = await apiClient.get(`/classes/${classId}/behaviour-alerts`);
-      return response.data.data;
-    },
+    queryKey: [...classQueryKeys.detail(classId), "behaviour-alerts", { studentId }],
+    queryFn: () => classService.getBehaviourAlerts(classId, studentId),
     enabled: !!classId,
+  });
+};
+
+export const useCreateBehaviourAlert = (classId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { type: string; title: string; description?: string; studentId: string }) =>
+      classService.createBehaviourAlert(classId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...classQueryKeys.detail(classId), "behaviour-alerts"] });
+      toast.success("Behaviour alert logged successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to log behaviour alert");
+    },
+  });
+};
+
+export const useUpdateBehaviourAlert = (classId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ alertId, data }: { alertId: string; data: { type?: string; title?: string; description?: string } }) =>
+      classService.updateBehaviourAlert(classId, alertId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...classQueryKeys.detail(classId), "behaviour-alerts"] });
+      toast.success("Behaviour alert updated successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to update behaviour alert");
+    },
+  });
+};
+
+export const useDeleteBehaviourAlert = (classId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (alertId: string) => classService.deleteBehaviourAlert(classId, alertId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...classQueryKeys.detail(classId), "behaviour-alerts"] });
+      toast.success("Behaviour alert removed");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to remove behaviour alert");
+    },
   });
 };
 

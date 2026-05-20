@@ -9,9 +9,31 @@ import { usePathname } from 'next/navigation';
 
 function NavBar() {
     const pathname = usePathname()
+    const [isSubdomain, setIsSubdomain] = React.useState(false);
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+        if (typeof window !== "undefined") {
+            const host = window.location.hostname;
+            let hasSub = false;
+            if (host.includes("localhost")) {
+                const parts = host.split(".");
+                hasSub = parts.length > 1 && parts[0] !== "localhost" && parts[0] !== "www";
+            } else {
+                const parts = host.split(".");
+                hasSub = parts.length > 2 && parts[0] !== "www";
+            }
+            setIsSubdomain(hasSub);
+        }
+    }, []);
+
     const isDashboard = pathname.startsWith("/dashboard") || 
                         pathname.startsWith("/console") || 
                         pathname.startsWith("/platform");
+
+    const shouldShow = !isDashboard && !isSubdomain;
+
     const pages = [
         {
             name: 'Features',
@@ -31,8 +53,10 @@ function NavBar() {
         }
     ]
 
+    if (!mounted) return null;
+
     return (
-        !isDashboard && (
+        shouldShow && (
             <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
                 <div className="max-w-[1440px] mx-auto">
                     <Toolbar className="justify-between flex min-h-[72px] px-4 md:px-8" disableGutters>

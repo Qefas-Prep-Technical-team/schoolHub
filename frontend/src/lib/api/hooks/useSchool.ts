@@ -184,3 +184,37 @@ export const useUserBilling = (
     refetchOnWindowFocus: true,
   });
 };
+
+export const useSchoolLandingPage = (schoolId: string) => {
+  return useQuery({
+    queryKey: [...schoolQueryKeys.all, "landing-page", schoolId],
+    queryFn: () => schoolService.getLandingPage(schoolId),
+    enabled: !!schoolId,
+  });
+};
+
+export const useSchoolLandingPageBySubdomain = (subdomain: string) => {
+  return useQuery({
+    queryKey: [...schoolQueryKeys.all, "landing-page-subdomain", subdomain],
+    queryFn: () => schoolService.getLandingPageBySubdomain(subdomain),
+    enabled: !!subdomain,
+  });
+};
+
+export const useUpdateSchoolLandingPage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      schoolId,
+      data,
+    }: {
+      schoolId: string;
+      data: Record<string, unknown>;
+    }) => schoolService.updateLandingPage(schoolId, data),
+    onSuccess: (_, { schoolId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...schoolQueryKeys.all, "landing-page", schoolId],
+      });
+    },
+  });
+};

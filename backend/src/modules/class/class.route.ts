@@ -23,6 +23,8 @@ import {
 import {
   getClassBehaviourAlerts,
   createBehaviourAlert,
+  updateBehaviourAlert,
+  deleteBehaviourAlert,
 } from "./behaviour.controller";
 import { 
   getClassAttendance, 
@@ -78,6 +80,8 @@ router.get("/preview/:id", authenticateToken, previewClassById);
 router.get("/:id/stats", authenticateToken, getClassStats);
 router.get("/:id/behaviour-alerts", authenticateToken, getClassBehaviourAlerts);
 router.post("/:id/behaviour-alerts", authenticateToken, createBehaviourAlert);
+router.patch("/:id/behaviour-alerts/:alertId", authenticateToken, updateBehaviourAlert);
+router.delete("/:id/behaviour-alerts/:alertId", authenticateToken, deleteBehaviourAlert);
 router.get("/:id", authenticateToken, getSingleClass);
 
 export default router;
