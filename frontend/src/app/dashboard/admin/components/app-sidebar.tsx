@@ -44,10 +44,11 @@ import {
     ChevronLeft,
     ChevronRight,
     LucideIcon,
-    LogOut,
     Copy,
     ExternalLink,
-    Check
+    Check,
+    MailPlus,
+    LogOut
 } from "lucide-react";
 import { Box, Typography } from "@mui/material"
 import { cn } from "@/lib/utils"
@@ -77,6 +78,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     { icon: Building2, label: "School Profile", href: "/dashboard/admin/school-profile", featureKey: "schoolProfile", section: "core" },
     { icon: Users, label: "Teachers", href: "/dashboard/admin/teachers", featureKey: "teachers", section: "core" },
     { icon: GraduationCap, label: "Students", href: "/dashboard/admin/students", featureKey: "students", section: "core" },
+    { icon: MailPlus, label: "Invitations", href: "/dashboard/admin/invitations", featureKey: "invitations", section: "core" },
     { icon: CalendarDays, label: "Classes & Timetable", href: "/dashboard/admin/classes", featureKey: "classes", section: "core" },
     { icon: BrainCircuit, label: "Linking Hub", href: "/dashboard/admin/linking", featureKey: "linkingHub", section: "core" },
     { icon: CalendarDays, label: "Session Management", href: "/dashboard/admin/sessions", featureKey: "sessions", section: "core" },

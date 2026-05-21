@@ -33,6 +33,19 @@ export const adminService = {
     return response.data;
   },
 
+  createStudent: async (data: { fullName: string; classId: string; schoolId: string; gender?: string }) => {
+    const response = await apiClient.post("/admin/students", data);
+    return response.data;
+  },
+
+  /**
+   * Invite a student via email
+   */
+  inviteStudent: async (studentId: string, email: string) => {
+    const response = await apiClient.post(`/admin/students/${studentId}/invite`, { email });
+    return response.data;
+  },
+
   /**
    * Get teacher by ID
    */
@@ -70,6 +83,28 @@ export const adminService = {
    */
   updateTeacher: async (teacherId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/admin/teachers/${teacherId}`, data);
+    return response.data;
+  },
+
+  /**
+   * Get school teachers
+   */
+  getSchoolTeachers: async (schoolId: string, params?: { page?: number; limit?: number; search?: string; isClaimed?: string }) => {
+    const response = await apiClient.get("/admin/teachers", {
+      params: { schoolId, ...params },
+    });
+    return response.data;
+  },
+
+  /**
+   * Resend teacher claim email (acts as invite)
+   */
+  resendTeacherClaimEmail: async (teacherId: string, email: string) => {
+    // Some APIs expect email in body if we want to override, 
+    // let's pass it just in case, or we use inviteTeacher endpoint.
+    // admin.route.ts has router.post("/teachers/invite", inviteTeacher);
+    // Let's use the invite route if we're creating/inviting, but for existing it's usually resend-claim-email
+    const response = await apiClient.post(`/admin/teachers/${teacherId}/resend-claim-email`, { email });
     return response.data;
   },
 };

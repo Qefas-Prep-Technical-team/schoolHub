@@ -283,7 +283,7 @@ export default function SchoolProfilePage() {
                 </div>
                 <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Custom academic levels configured for class assignments across this institution.</p>
                 <div className="flex flex-wrap gap-3">
-                  {school.levels.map((level, idx) => (
+                  {school.levels.map((level: string, idx: number) => (
                     <motion.div
                       key={idx}
                       initial={{ opacity: 0, scale: 0.9 }}

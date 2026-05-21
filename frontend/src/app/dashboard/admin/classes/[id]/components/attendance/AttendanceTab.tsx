@@ -524,10 +524,6 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
     setSelectedDate(date);
   };
 
-  const handleMonthChange = (month: string) => {
-    setSelectedMonth(month);
-  };
-
   const handleEditRecord = (record: AttendanceRecord) => {
     setShowListModal(true);
   };

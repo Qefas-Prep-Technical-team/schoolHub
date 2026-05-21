@@ -36,7 +36,7 @@ export const updateGradeScore = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { score, remarks, status } = req.body;
-    const grade = await gradeService.updateGradeScoreService(id, { score, remarks, status });
+    const grade = await gradeService.updateGradeScoreService(id as string, { score, remarks, status });
     res.json({ success: true, data: grade });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -46,7 +46,7 @@ export const updateGradeScore = async (req: Request, res: Response) => {
 export const publishGrade = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const grade = await gradeService.updateGradeScoreService(id, { status: 'PUBLISHED' });
+    const grade = await gradeService.updateGradeScoreService(id as string, { status: 'PUBLISHED' });
     res.json({ success: true, data: grade });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

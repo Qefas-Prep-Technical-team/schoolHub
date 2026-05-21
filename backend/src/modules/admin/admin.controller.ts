@@ -2,8 +2,11 @@ import prisma from "../../config/database";
 import { Request, Response } from "express";
 import { $Enums, AdminRole, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { updateAdminProfileService } from "./admin.service";
+import { updateAdminProfileService, createStudentService } from "./admin.service";
 import { getSingleString } from "../../utils/request-utils";
+import { createStudentSchema } from "./admin.schema";
+import crypto from "crypto";
+import { sendStudentInvitationEmail } from "../auth/auth.service";
 
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
 
@@ -531,6 +534,7 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
     const classId = getSingleString(req.query.classId as string | string[] | undefined);
     const gender = getSingleString(req.query.gender as string | string[] | undefined);
     const status = getSingleString(req.query.status as string | string[] | undefined);
+    const isClaimed = getSingleString(req.query.isClaimed as string | string[] | undefined);
     const schoolId = getSingleString(req.query.schoolId as string | string[] | undefined);
     const page = getSingleString(req.query.page as string | string[] | undefined) || "1";
     const limit = getSingleString(req.query.limit as string | string[] | undefined) || "10";
@@ -590,6 +594,10 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
 
     if (status) {
       where.verified = status === 'verified';
+    }
+
+    if (isClaimed !== undefined && isClaimed !== null && isClaimed !== '') {
+      where.isClaimed = isClaimed === 'true';
     }
 
     // Get count and students
@@ -791,7 +799,172 @@ export const verifyStudent = async (req: Request, res: Response) => {
     console.error("Verify student error:", error);
     return res.status(500).json({
       success: false,
-      message: error.message || "Server error"
+      message: error.message || "Server error",
+      error: error.message || "Server error"
+    });
+  }
+};
+
+export const createStudent = async (req: Request, res: Response) => {
+  try {
+    const adminId = req.user?.id;
+    if (!adminId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+        error: "Unauthorized"
+      });
+    }
+
+    const validation = createStudentSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        message: validation.error.issues[0]?.message || "Validation failed",
+        error: validation.error.issues[0]?.message || "Validation failed",
+        errors: validation.error.format()
+      });
+    }
+
+    const { fullName, classId, gender } = validation.data;
+    let { schoolId } = validation.data;
+
+    // Auto-resolve schoolId from the admin's SchoolAdmin record
+    // when the client didn't send it or sent a non-UUID value.
+    if (!schoolId) {
+      const schoolAdmin = await prisma.schoolAdmin.findFirst({
+        where: { adminId, active: true },
+        select: { schoolId: true },
+      });
+
+      if (!schoolAdmin?.schoolId) {
+        return res.status(403).json({
+          success: false,
+          message: "Admin is not linked to any active school. Please contact your platform administrator.",
+          error: "No school link found for this admin."
+        });
+      }
+
+      schoolId = schoolAdmin.schoolId;
+    }
+
+    const result = await createStudentService({
+      fullName,
+      classId,
+      schoolId,
+      gender,
+      adminId
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Student created successfully",
+      data: {
+        student: result.student,
+        email: result.email,
+        password: result.passwordPlaintext
+      }
+    });
+
+  } catch (error: any) {
+    console.error("Create student error:", error);
+    const message = error.message || "Server error";
+    
+    let statusCode = 400;
+    if (message.includes("Unauthorized")) {
+      statusCode = 403;
+    } else if (message.includes("not found")) {
+      statusCode = 404;
+    }
+
+    return res.status(statusCode).json({
+      success: false,
+      message,
+      error: message
+    });
+  }
+};
+
+/**
+ * @route   POST /api/v1/admin/students/:id/invite
+ * @desc    Invite a pre-registered student to claim their account
+ * @access  Private (Admin)
+ */
+export const inviteStudent = async (req: Request, res: Response) => {
+  try {
+    const adminId = (req as any).user?.id;
+    const studentId = req.params.id as string;
+    const email = req.body.email as string;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+      include: { schoolAdmins: { include: { school: true } } },
+    });
+
+    if (!admin || !admin.schoolAdmins[0]) {
+      return res.status(403).json({ success: false, message: "Unauthorized or not linked to a school" });
+    }
+
+    const school = admin.schoolAdmins[0].school;
+
+    // Check if student exists and belongs to this school
+    const student = await prisma.student.findFirst({
+      where: { id: studentId, schoolId: school.id },
+    });
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    // Admins can update the email and resend as long as it's not claimed
+    if (student.isClaimed) {
+      return res.status(400).json({ success: false, message: "Student account is already claimed" });
+    }
+
+    // Check if new email is already used by another student
+    const existingStudentEmail = await prisma.student.findFirst({
+      where: { email, id: { not: studentId } }
+    });
+
+    if (existingStudentEmail) {
+      return res.status(400).json({ success: false, message: "Email is already in use by another student" });
+    }
+
+    // Generate token
+    const invitationToken = crypto.randomBytes(32).toString("hex");
+
+    // Update student with new email and token
+    const updatedStudent = await prisma.student.update({
+      where: { id: studentId },
+      data: {
+        email,
+        invitationToken,
+        isClaimed: false, // Explicitly keep as false
+      },
+    });
+
+    // Send email
+    await sendStudentInvitationEmail(
+      updatedStudent.email,
+      invitationToken,
+      school.name,
+      updatedStudent.name
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Invitation sent successfully",
+    });
+  } catch (error: any) {
+    console.error("Invite student error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while inviting the student",
+      error: error.message,
     });
   }
 };

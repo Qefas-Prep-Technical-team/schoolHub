@@ -2936,3 +2936,95 @@ export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
       .json({ success: false, message: "Failed to finalize account setup" });
   }
 };
+
+/**
+ * @route   POST /api/v1/auth/claim-account
+ * @desc    Claim a pre-registered account (Teacher or Student)
+ * @access  Public
+ */
+export const claimAccount = async (req: Request, res: Response) => {
+  try {
+    const { token, type, password } = req.body;
+
+    if (!token || !type || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Token, type, and password are required",
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    if (type === "teacher") {
+      const teacher = await prisma.teacher.findFirst({
+        where: { invitationToken: token, isClaimed: false },
+      });
+
+      if (!teacher) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired claim token",
+        });
+      }
+
+      await prisma.teacher.update({
+        where: { id: teacher.id },
+        data: {
+          password: hashedPassword,
+          isClaimed: true,
+          invitationToken: null,
+          verified: true,
+        },
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Account claimed successfully",
+      });
+    } else if (type === "student") {
+      const student = await prisma.student.findFirst({
+        where: { invitationToken: token, isClaimed: false },
+      });
+
+      if (!student) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired claim token",
+        });
+      }
+
+      await prisma.student.update({
+        where: { id: student.id },
+        data: {
+          password: hashedPassword,
+          isClaimed: true,
+          invitationToken: null,
+          verified: true,
+        },
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Account claimed successfully",
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid account type",
+      });
+    }
+  } catch (error: any) {
+    console.error("Claim account error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error during account claim",
+    });
+  }
+};

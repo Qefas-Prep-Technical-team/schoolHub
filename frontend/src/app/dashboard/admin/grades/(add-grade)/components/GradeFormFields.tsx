@@ -9,6 +9,7 @@ interface GradeFormFieldsProps {
     formData: GradeFormData;
     currentGrade: string;
     onInputChange: (field: keyof GradeFormData, value: any) => void;
+    isEditing?: boolean;
 }
 
 // Mock data - in a real app, this would come from an API
@@ -42,64 +43,100 @@ const assessmentTypes = [
 export default function GradeFormFields({
     formData,
     currentGrade,
-    onInputChange
+    onInputChange,
+    isEditing = false
 }: GradeFormFieldsProps) {
     return (
         <div className="p-6 space-y-6">
             {/* Basic Information Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Select
-                    label="Student"
-                    value={formData.studentId}
-                    onChange={(value) => onInputChange('studentId', value)}
-                    options={[
-                        { value: '', label: 'Search for a student...' },
-                        ...mockStudents.map(student => ({
-                            value: student.id,
-                            label: `${student.name} (${student.studentId})`
-                        }))
-                    ]}
-                    required
-                />
+                {isEditing ? (
+                    <>
+                        <Input
+                            label="Student"
+                            value={formData.studentName || formData.studentId}
+                            onChange={() => {}}
+                            disabled
+                        />
 
-                <Select
-                    label="Class"
-                    value={formData.classId}
-                    onChange={(value) => onInputChange('classId', value)}
-                    options={[
-                        { value: '', label: 'Select a class' },
-                        ...mockClasses.map(cls => ({
-                            value: cls.id,
-                            label: cls.name
-                        }))
-                    ]}
-                    required
-                />
+                        <Input
+                            label="Class"
+                            value={formData.className || formData.classId}
+                            onChange={() => {}}
+                            disabled
+                        />
 
-                <Select
-                    label="Subject"
-                    value={formData.subjectId}
-                    onChange={(value) => onInputChange('subjectId', value)}
-                    options={[
-                        { value: '', label: 'Select a subject' },
-                        ...mockSubjects.map(subject => ({
-                            value: subject.id,
-                            label: subject.name
-                        }))
-                    ]}
-                    required
-                />
+                        <Input
+                            label="Subject"
+                            value={formData.subjectName || formData.subjectId}
+                            onChange={() => {}}
+                            disabled
+                        />
 
-                <Select
-                    label="Assessment Type"
-                    value={formData.assessmentType}
-                    onChange={(value) => onInputChange('assessmentType', value)}
-                    options={[
-                        { value: '', label: 'Select type (e.g., Quiz)' },
-                        ...assessmentTypes
-                    ]}
-                    required
-                />
+                        <Input
+                            label="Assessment Type"
+                            className="capitalize"
+                            value={formData.assessmentType}
+                            onChange={() => {}}
+                            disabled
+                        />
+                    </>
+                ) : (
+                    <>
+                        <Select
+                            label="Student"
+                            value={formData.studentId}
+                            onChange={(value) => onInputChange('studentId', value)}
+                            options={[
+                                { value: '', label: 'Search for a student...' },
+                                ...mockStudents.map(student => ({
+                                    value: student.id,
+                                    label: `${student.name} (${student.studentId})`
+                                }))
+                            ]}
+                            required
+                        />
+
+                        <Select
+                            label="Class"
+                            value={formData.classId}
+                            onChange={(value) => onInputChange('classId', value)}
+                            options={[
+                                { value: '', label: 'Select a class' },
+                                ...mockClasses.map(cls => ({
+                                    value: cls.id,
+                                    label: cls.name
+                                }))
+                            ]}
+                            required
+                        />
+
+                        <Select
+                            label="Subject"
+                            value={formData.subjectId}
+                            onChange={(value) => onInputChange('subjectId', value)}
+                            options={[
+                                { value: '', label: 'Select a subject' },
+                                ...mockSubjects.map(subject => ({
+                                    value: subject.id,
+                                    label: subject.name
+                                }))
+                            ]}
+                            required
+                        />
+
+                        <Select
+                            label="Assessment Type"
+                            value={formData.assessmentType}
+                            onChange={(value) => onInputChange('assessmentType', value)}
+                            options={[
+                                { value: '', label: 'Select type (e.g., Quiz)' },
+                                ...assessmentTypes
+                            ]}
+                            required
+                        />
+                    </>
+                )}
             </div>
 
             {/* Score Information Grid */}

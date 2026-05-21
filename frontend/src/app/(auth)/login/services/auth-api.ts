@@ -30,4 +30,9 @@ export const authAPI = {
   logout: async (): Promise<void> => {
     await apiClient.post("/auth/logout");
   },
+
+  claimAccount: async (data: any): Promise<any> => {
+    const response = await apiClient.post("/auth/claim-account", data);
+    return response.data;
+  },
 };

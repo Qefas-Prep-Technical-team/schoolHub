@@ -17,6 +17,7 @@ import {
   completePasswordReset,
   googleAuth,
   finalizeCheckoutSetup,
+  claimAccount,
 } from "./auth.controller";
 import { validateRequest } from "../../middleware/validateRequest";
 import {
@@ -94,5 +95,8 @@ router.post(
 );
 
 router.post("/finalize-checkout-setup", finalizeCheckoutSetup);
+
+// Account Claim
+router.post("/claim-account", claimAccount);
 
 export default router;

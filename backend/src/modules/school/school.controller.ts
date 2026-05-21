@@ -412,7 +412,7 @@ export const getSchoolLandingPageBySubdomain = async (
         .json({ success: false, message: "subdomain is required" });
     }
 
-    const data = await getSchoolLandingPageBySubdomainService(subdomain);
+    const data = await getSchoolLandingPageBySubdomainService(subdomain as string);
     console.log("Fetched landing page data:", data);
     if (!data) {
       return res

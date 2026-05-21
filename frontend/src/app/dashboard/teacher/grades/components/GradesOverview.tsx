@@ -79,7 +79,7 @@ const GradesOverview: React.FC = () => {
 
   const updateGradeMutation = useMutation({
     mutationFn: ({ id, score, remarks }: { id: string, score: number, remarks: string }) => 
-      gradeService.updateGradeScore(id, score, remarks),
+      gradeService.updateGradeScore(id, { score, remarks }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher-grades'] });
       setEditingGrade(null);

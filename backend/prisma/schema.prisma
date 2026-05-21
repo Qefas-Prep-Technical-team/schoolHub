@@ -241,6 +241,8 @@ model Student {
   name                    String
   email                   String                   @unique
   password                String?
+  isClaimed               Boolean                  @default(false)
+  invitationToken         String?                  @unique
   studentCode             String                   @unique
   googleId                String?                  @unique
   authProvider            String                   @default("EMAIL")

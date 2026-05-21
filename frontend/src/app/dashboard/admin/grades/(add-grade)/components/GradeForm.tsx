@@ -79,6 +79,7 @@ export default function GradeForm({
                         formData={formData}
                         currentGrade={currentGrade}
                         onInputChange={handleInputChange}
+                        isEditing={isEditing}
                     />
 
                     <GradeFormActions

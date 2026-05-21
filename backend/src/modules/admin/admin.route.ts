@@ -11,6 +11,8 @@ import {
   getSchoolMembers,
   updateAdminProfile,
   verifyStudent,
+  createStudent,
+  inviteStudent,
 } from "./admin.controller";
 import { 
   getTeacherById, 
@@ -57,6 +59,8 @@ router.use(authenticateToken);
 router.get("/pending", getPendingAdmins);
 router.get("/teachers", getSchoolTeachers);
 router.get("/students", getSchoolStudents);
+router.post("/students", createStudent);
+router.post("/students/:id/invite", inviteStudent);
 router.get("/members", getSchoolMembers);
 router.patch("/profile", updateAdminProfile);
 router.get("/teachers/:id", getTeacherById);

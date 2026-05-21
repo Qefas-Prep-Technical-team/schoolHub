@@ -5,6 +5,7 @@ export const ADMIN_FEATURE_FLAGS = {
   schoolProfile: true,
   teachers: true,
   students: true,
+  invitations: true,
   classes: true,
   sessions: true,
   subdomain: true,

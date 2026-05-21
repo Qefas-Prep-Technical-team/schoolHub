@@ -6,6 +6,9 @@ export interface GradeFormData {
   score: number | null;
   maxMarks: number;
   remarks: string;
+  studentName?: string;
+  className?: string;
+  subjectName?: string;
 }
 
 export interface Student {
