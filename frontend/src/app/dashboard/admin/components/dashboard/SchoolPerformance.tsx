@@ -1,11 +1,8 @@
 "use client";
 
-import { Award, TrendingUp, Sparkles, Activity, ShieldCheck, BarChart3, Gem } from "lucide-react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { Sparkles, Activity, ShieldCheck, BarChart3, Gem } from "lucide-react";
 import DonutChart from "./DonutChart";
 import { useMemo } from "react";
-import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 interface SchoolPerformanceProps {
     analysis?: {
@@ -21,7 +18,6 @@ interface SchoolPerformanceProps {
 
 export default function SchoolPerformance({ analysis, isLoading, primaryColor = '#2563eb' }: SchoolPerformanceProps) {
     const hasData = (analysis?.totalAssessments || 0) > 0;
-    const isPremiumRestricted = analysis?.isPremium === true;
 
     const chartData = useMemo(() => {
         if (!analysis || !analysis.subjectBreakdown) return [
@@ -67,14 +63,12 @@ export default function SchoolPerformance({ analysis, isLoading, primaryColor = 
                             <div className="absolute left-0 top-0 w-1.5 h-full" style={{ backgroundColor: primaryColor }} />
                             <div className="flex flex-col gap-2 relative z-10">
                                 <p className="text-slate-600 dark:text-slate-300 font-bold leading-relaxed text-sm">
-                                    "{analysis?.insight || "Analyzing school performance data to provide helpful insights..."}"
+                                    &ldquo;{analysis?.insight || "Analyzing school performance data to provide helpful insights..."}&rdquo;
                                 </p>
-                                {isPremiumRestricted && (
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <Gem size={14} className="text-amber-500 animate-pulse" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-500">Premium feature</span>
-                                    </div>
-                                )}
+                                <div className="flex items-center gap-2 mt-1">
+                                    <Gem size={14} className="animate-pulse" style={{ color: primaryColor }} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: primaryColor }}>AI-Powered Insight</span>
+                                </div>
                             </div>
                         </div>
  
@@ -141,4 +135,3 @@ export default function SchoolPerformance({ analysis, isLoading, primaryColor = 
         </section>
     );
 }
-

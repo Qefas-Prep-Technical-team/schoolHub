@@ -16,7 +16,17 @@ export default function GoogleLoginButton({ userType }: GoogleLoginButtonProps) 
 
     const googleAuthEnabledGlobal = settings?.google_auth_enabled !== "false";
     const googleLoginFeature = settings?.google_login_feature as Record<string, boolean> | undefined;
-    const googleAuthEnabledForRole = googleLoginFeature?.[userType.toLowerCase()] !== false;
+    
+    // Map URL role to backend feature role
+    const roleMap: Record<string, string> = {
+        'school-admin': 'admin',
+        'teacher': 'teacher',
+        'student': 'student',
+        'parent': 'parent'
+    };
+    const backendRole = roleMap[userType.toLowerCase()] || userType.toLowerCase();
+    
+    const googleAuthEnabledForRole = googleLoginFeature?.[backendRole] !== false;
     const isEnabled = googleAuthEnabledGlobal && googleAuthEnabledForRole;
 
     if (settingsLoading) return <div className="h-14 w-full bg-slate-50 dark:bg-slate-800 animate-pulse rounded-xl" />;

@@ -270,6 +270,36 @@ export default function SchoolProfilePage() {
                </div>
             </CardContent>
           </Card>
+
+          {/* Academic Levels */}
+          {school?.levels && school.levels.length > 0 && (
+            <Card className="rounded-none md:rounded-[2.5rem] border-x-0 md:border-x border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white dark:bg-slate-900">
+              <CardContent className="p-6 md:p-10 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Academic Levels</h2>
+                  <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest border-slate-200 dark:border-slate-800 text-slate-500">
+                    {school.levels.length} Configured
+                  </Badge>
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Custom academic levels configured for class assignments across this institution.</p>
+                <div className="flex flex-wrap gap-3">
+                  {school.levels.map((level, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-bold"
+                      style={{ backgroundColor: primaryColor + '18', borderColor: primaryColor + '40', color: primaryColor }}
+                    >
+                      <GraduationCap size={14} />
+                      {level}
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right/Sidebar Column */}

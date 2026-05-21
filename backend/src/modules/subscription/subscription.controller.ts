@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { getSchoolUsageService, getUserUsageService } from "./quota.service";
+import { hasFeatureAccess } from "../subscription-checkers";
 
 export const getSubscriptionUsage = async (req: Request, res: Response) => {
   try {
@@ -49,6 +50,38 @@ export const getSubscriptionUsage = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch subscription usage"
+    });
+  }
+};
+
+export const checkFeatureAccess = async (req: Request, res: Response) => {
+  try {
+    const featureKey = req.params.featureKey as string;
+    const user = (req as any).user;
+    const schoolId = req.query.schoolId as string;
+
+    if (!user || !featureKey) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing user context or feature key"
+      });
+    }
+
+    if (schoolId && !user.schoolId) {
+      user.schoolId = schoolId;
+    }
+
+    const hasAccess = await hasFeatureAccess(user, featureKey);
+
+    return res.status(200).json({
+      success: true,
+      hasAccess
+    });
+  } catch (error: any) {
+    console.error(`[SubscriptionController] Error checking feature access:`, error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while verifying feature access."
     });
   }
 };

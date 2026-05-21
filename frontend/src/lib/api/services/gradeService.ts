@@ -74,9 +74,19 @@ export const gradeService = {
     return data.data;
   },
 
-  updateGradeScore: async (id: string, score: number, remarks?: string) => {
-    const { data } = await apiClient.patch(`/grades/${id}`, { score, remarks });
-    return data.data;
+  updateGradeScore: async (id: string, data: { score?: number; remarks?: string; status?: string }) => {
+    const { data: res } = await apiClient.patch(`/grades/${id}`, data);
+    return res.data;
+  },
+
+  publishGrade: async (id: string) => {
+    const { data: res } = await apiClient.patch(`/grades/${id}/publish`, {});
+    return res.data;
+  },
+
+  deleteGrade: async (id: string) => {
+    const { data: res } = await apiClient.delete(`/grades/${id}`);
+    return res;
   },
 
   processOCR: async (imageUrl: string) => {

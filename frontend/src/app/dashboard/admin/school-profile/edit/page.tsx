@@ -21,7 +21,10 @@ import {
   ChevronLeft,
   Info,
   Camera,
-  MapPin
+  MapPin,
+  GraduationCap,
+  X,
+  Plus
 } from 'lucide-react';
 
 export default function EditSchoolProfilePage() {
@@ -57,7 +60,8 @@ export default function EditSchoolProfilePage() {
           ? JSON.parse(school.socialLinks) 
           : (school.socialLinks || { facebook: '', twitter: '', instagram: '', linkedin: '', youtube: '' }),
         operatingHours: school.operatingHours || 'Mon - Fri: 8:00 AM - 4:00 PM',
-        mapLocation: school.mapLocation || ''
+        mapLocation: school.mapLocation || '',
+        levels: school.levels || []
       });
     }
   }, [school]);
@@ -99,6 +103,7 @@ export default function EditSchoolProfilePage() {
     { id: 1, title: 'Identity', icon: Building2, desc: 'Logo, Banner & Motto' },
     { id: 2, title: 'Presence', icon: Globe, desc: 'Contact & Location' },
     { id: 3, title: 'Governance', icon: Share2, desc: 'Admin & Socials' },
+    { id: 4, title: 'Academic', icon: GraduationCap, desc: 'Levels Configuration' },
   ];
 
   if (isLoading || !schoolData) {
@@ -334,6 +339,70 @@ export default function EditSchoolProfilePage() {
                   </div>
                 )}
 
+                {activeStep === 4 && (
+                  <div className="space-y-12">
+                    <SectionHeader title="Academic Configuration" desc="Manage custom levels for your institution's classes." icon={GraduationCap} />
+                    
+                    <div className="space-y-6">
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Custom Levels</label>
+                        <p className="text-xs text-slate-500">Add the levels (e.g. Grade 1, Year 7, JSS 1) that are applicable in your school.</p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3">
+                        {schoolData.levels.map((lvl: string, idx: number) => (
+                          <div key={idx} className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700">
+                            <span className="text-sm font-medium text-slate-900 dark:text-white">{lvl}</span>
+                            <button
+                              onClick={() => {
+                                const newLevels = schoolData.levels.filter((_: any, i: number) => i !== idx);
+                                handleChange('levels', newLevels);
+                              }}
+                              className="text-slate-400 hover:text-red-500 transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <input
+                          id="new-level-input"
+                          type="text"
+                          placeholder="e.g. Primary 1"
+                          className="flex-1 max-w-sm h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const input = e.target as HTMLInputElement;
+                              const val = input.value.trim();
+                              if (val && !schoolData.levels.includes(val)) {
+                                handleChange('levels', [...schoolData.levels, val]);
+                                input.value = '';
+                              }
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const input = document.getElementById('new-level-input') as HTMLInputElement;
+                            const val = input.value.trim();
+                            if (val && !schoolData.levels.includes(val)) {
+                              handleChange('levels', [...schoolData.levels, val]);
+                              input.value = '';
+                            }
+                          }}
+                          className="h-11 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors flex items-center gap-2"
+                        >
+                          <Plus size={16} /> Add Level
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Step Navigation Button inside the main card */}
                 <div className="flex items-center justify-between pt-8 border-t border-slate-100 dark:border-slate-800">
                   <button 
@@ -346,9 +415,9 @@ export default function EditSchoolProfilePage() {
                     <ChevronLeft size={16} /> Previous Section
                   </button>
                   
-                  {activeStep < 3 ? (
+                  {activeStep < 4 ? (
                     <button 
-                      onClick={() => setActiveStep(prev => Math.min(3, prev + 1))}
+                      onClick={() => setActiveStep(prev => Math.min(4, prev + 1))}
                       className="group flex items-center gap-3 bg-slate-50 dark:bg-slate-800 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"
                     >
                       Next Section <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />

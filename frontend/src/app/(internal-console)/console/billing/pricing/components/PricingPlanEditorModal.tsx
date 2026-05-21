@@ -174,19 +174,26 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
             features, featureAccess, ...baseData 
         } = formData;
         
+        // Helper: convert field to number if set, otherwise keep as null to avoid wiping existing DB values
+        const toNum = (val: string | number | null | undefined): number | null => {
+            if (val === null || val === undefined || val === '') return null;
+            const parsed = Number(val);
+            return isNaN(parsed) ? null : parsed;
+        };
+
         const payload = {
             ...baseData,
             features: finalMarketingLabels,
             featureAccess: relationalAccess,
-            monthlyPrice: Number(formData.monthlyPrice || 0) || 0,
-            yearlyPrice: Number(formData.yearlyPrice || 0) || 0,
-            maxStudents: Number(formData.maxStudents || 0) || 0,
-            maxTeachers: Number(formData.maxTeachers || 0) || 0,
-            maxClasses: Number(formData.maxClasses || 0) || 0,
-            maxExams: Number(formData.maxExams || 0) || 0,
-            maxAiUsage: Number(formData.maxAiUsage || 0) || 0,
-            maxStorageGb: Number(formData.maxStorageGb || 0) || 0,
-            trialDays: Number(formData.trialDays || 0) || 0,
+            monthlyPrice: toNum(formData.monthlyPrice) ?? 0,
+            yearlyPrice: toNum(formData.yearlyPrice) ?? 0,
+            maxStudents: toNum(formData.maxStudents),
+            maxTeachers: toNum(formData.maxTeachers),
+            maxClasses: toNum(formData.maxClasses),
+            maxExams: toNum(formData.maxExams),
+            maxAiUsage: toNum(formData.maxAiUsage),
+            maxStorageGb: toNum(formData.maxStorageGb),
+            trialDays: toNum(formData.trialDays) ?? 0,
         }
 
         console.log("[PricingPlanEditorModal] Submitting payload:", payload);
@@ -197,7 +204,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-0 shadow-2xl overflow-hidden">
+            <DialogContent className="!max-w-7xl w-[95vw] md:w-[90vw] max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-0 shadow-2xl overflow-hidden">
                 <DialogHeader className="p-8 pb-0 shrink-0 flex flex-row items-center justify-between">
                     <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
                         <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">

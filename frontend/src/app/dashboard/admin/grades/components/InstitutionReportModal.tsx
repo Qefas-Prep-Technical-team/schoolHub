@@ -32,9 +32,10 @@ interface InstitutionReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   school: any;
+  primaryColor?: string;
 }
 
-export default function InstitutionReportModal({ isOpen, onClose, school }: InstitutionReportModalProps) {
+export default function InstitutionReportModal({ isOpen, onClose, school, primaryColor = '#2563eb' }: InstitutionReportModalProps) {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   
@@ -109,12 +110,12 @@ export default function InstitutionReportModal({ isOpen, onClose, school }: Inst
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-8 shadow-2xl">
         <DialogHeader>
-          <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6 shadow-inner">
-             <Filter size={28} />
+          <div className="h-16 w-16 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-inner" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
+             <Filter size={32} strokeWidth={2.5} />
           </div>
-          <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Export Institution Report</DialogTitle>
+          <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Export School Report</DialogTitle>
           <DialogDescription className="text-slate-500 font-medium">
-            Configure filters to generate a comprehensive academic performance report for your institution.
+            Configure filters to generate a comprehensive academic performance report for your school.
           </DialogDescription>
         </DialogHeader>
 
@@ -124,7 +125,7 @@ export default function InstitutionReportModal({ isOpen, onClose, school }: Inst
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Academic Session</Label>
               <Select value={filters.sessionId} onValueChange={(val) => setFilters({...filters, sessionId: val})}>
-                <SelectTrigger className="h-12 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 font-bold">
+                <SelectTrigger className="h-12 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 font-bold focus:ring-4 transition-all" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
                   <SelectValue placeholder="All Sessions" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
@@ -156,7 +157,7 @@ export default function InstitutionReportModal({ isOpen, onClose, school }: Inst
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Assessment Type</Label>
               <Select value={filters.category} onValueChange={(val) => setFilters({...filters, category: val})}>
-                <SelectTrigger className="h-12 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 font-bold">
+                <SelectTrigger className="h-12 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 font-bold focus:ring-4 transition-all" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
@@ -192,7 +193,8 @@ export default function InstitutionReportModal({ isOpen, onClose, school }: Inst
                   type="date" 
                   value={filters.startDate}
                   onChange={(e) => setFilters({...filters, startDate: e.target.value})}
-                  className="h-12 pl-10 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 font-bold" 
+                  className="h-12 pl-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 font-bold focus:ring-4 focus:outline-none transition-all" 
+                  style={{ '--tw-ring-color': `${primaryColor}20`, focusBorderColor: primaryColor } as any}
                 />
               </div>
             </div>
@@ -204,7 +206,8 @@ export default function InstitutionReportModal({ isOpen, onClose, school }: Inst
                   type="date" 
                   value={filters.endDate}
                   onChange={(e) => setFilters({...filters, endDate: e.target.value})}
-                  className="h-12 pl-10 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 font-bold" 
+                  className="h-12 pl-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 font-bold focus:ring-4 focus:outline-none transition-all" 
+                  style={{ '--tw-ring-color': `${primaryColor}20`, focusBorderColor: primaryColor } as any}
                 />
               </div>
             </div>
@@ -222,17 +225,19 @@ export default function InstitutionReportModal({ isOpen, onClose, school }: Inst
           <Button 
             onClick={handleExport}
             disabled={isGenerating}
-            className="flex-1 h-12 rounded-xl bg-primary text-white font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+            className="flex-1 h-12 rounded-xl text-white font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all border-0 relative overflow-hidden group"
+            style={{ backgroundColor: primaryColor, boxShadow: `0 10px 25px -5px ${primaryColor}60` }}
           >
+            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
             {isGenerating ? (
               <>
-                <Loader2 className="mr-2 animate-spin" size={18} />
-                Processing...
+                <Loader2 className="mr-2 animate-spin relative z-10" size={18} />
+                <span className="relative z-10">Processing...</span>
               </>
             ) : (
               <>
-                <Download className="mr-2" size={18} />
-                Export PDF
+                <Download className="mr-2 relative z-10" size={18} strokeWidth={3} />
+                <span className="relative z-10">Export PDF</span>
               </>
             )}
           </Button>

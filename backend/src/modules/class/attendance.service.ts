@@ -1,4 +1,5 @@
 import prisma from "../../config/database";
+import { createNotification } from "../notification/notification.service";
 
 export const getClassAttendanceService = async (classId: string, date?: string) => {
   return prisma.attendance.findMany({
@@ -14,7 +15,7 @@ export const getClassAttendanceService = async (classId: string, date?: string) 
 };
 
 export const submitAttendanceService = async (classId: string, records: any[]) => {
-  return prisma.$transaction(
+  const result = await prisma.$transaction(
     records.map((r) => {
       const normalizedDate = new Date(r.date).toISOString().split('T')[0] + 'T00:00:00.000Z';
       return prisma.attendance.upsert({
@@ -36,6 +37,34 @@ export const submitAttendanceService = async (classId: string, records: any[]) =
       });
     })
   );
+
+  // Fire and forget notifications to parents
+  for (const r of records) {
+    try {
+      const parentLinks = await prisma.parentChildLink.findMany({
+        where: { studentId: r.studentId },
+      });
+
+      if (parentLinks.length > 0) {
+        const student = await prisma.student.findUnique({ where: { id: r.studentId } });
+        const studentName = student?.name || "Your child";
+
+        for (const link of parentLinks) {
+          await createNotification({
+            recipientType: "PARENT",
+            recipientId: link.parentId,
+            type: "ACADEMIC",
+            title: "Attendance Update",
+            message: `${studentName} was marked ${r.status.toUpperCase()} for class on ${r.date}.`,
+          }).catch(console.error); // Catch individual notification errors
+        }
+      }
+    } catch (e) {
+      console.error("Error fetching parent links for notification:", e);
+    }
+  }
+
+  return result;
 };
 
 export const getClassAttendanceSummaryService = async (classId: string, month?: string) => {

@@ -1,5 +1,5 @@
-import React from 'react';
-import { AlertTriangle, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface AlertItem {
   id: string;
@@ -22,6 +22,19 @@ const BehaviourAlert: React.FC<BehaviourAlertProps> = ({ alerts }) => {
     return <AlertCircle className="text-red-500" size={20} />;
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil((alerts?.length || 0) / itemsPerPage);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [alerts]);
+
+  const paginatedAlerts = alerts?.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  ) || [];
+
   if (!alerts || alerts.length === 0) {
     return (
       <div className="bg-white dark:bg-[#1f2937] p-6 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center py-10">
@@ -42,7 +55,7 @@ const BehaviourAlert: React.FC<BehaviourAlertProps> = ({ alerts }) => {
         Behaviour Alerts
       </h3>
       <div className="flex flex-col gap-4">
-        {alerts.map((alert, index) => (
+        {paginatedAlerts.map((alert, index) => (
           <React.Fragment key={alert.id}>
             {index > 0 && (
               <div className="w-full h-px bg-gray-200 dark:bg-gray-700"></div>
@@ -63,6 +76,86 @@ const BehaviourAlert: React.FC<BehaviourAlertProps> = ({ alerts }) => {
           </React.Fragment>
         ))}
       </div>
+
+      {alerts.length > itemsPerPage && (
+        <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 pt-4 mt-4">
+          <div className="flex flex-1 justify-between sm:hidden">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="font-medium text-gray-900 dark:text-white">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-medium text-gray-900 dark:text-white">{Math.min(currentPage * itemsPerPage, alerts.length)}</span> of{' '}
+                <span className="font-medium text-gray-900 dark:text-white">{alerts.length}</span>
+              </p>
+            </div>
+            <div>
+              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center rounded-l-md px-2 py-1 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:z-20 focus:outline-offset-0 disabled:opacity-50 transition-colors"
+                >
+                  <span className="sr-only">Previous</span>
+                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                </button>
+                {(() => {
+                  const getVisiblePages = () => {
+                    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+                    if (currentPage <= 3) return [1, 2, 3, 4, '...', totalPages];
+                    if (currentPage >= totalPages - 2) return [1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+                  };
+
+                  return getVisiblePages().map((page, i) => {
+                    if (page === '...') {
+                      return (
+                        <span key={`ellipsis-${i}`} className="relative inline-flex items-center px-3 py-1 text-sm font-semibold text-gray-700 dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:outline-offset-0">
+                          ...
+                        </span>
+                      );
+                    }
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page as number)}
+                        className={`relative inline-flex items-center px-3 py-1 text-sm font-semibold focus:z-20 transition-colors ${
+                          currentPage === page 
+                            ? 'z-10 bg-primary text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
+                            : 'text-gray-900 dark:text-gray-100 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-offset-0'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  });
+                })()}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center rounded-r-md px-2 py-1 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:z-20 focus:outline-offset-0 disabled:opacity-50 transition-colors"
+                >
+                  <span className="sr-only">Next</span>
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

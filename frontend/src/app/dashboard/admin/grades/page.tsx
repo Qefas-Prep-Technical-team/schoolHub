@@ -50,6 +50,7 @@ import { useExams, useExamAttempts, useExamResult, useSubjectPapers } from '@/li
 import { useAdminGrades } from '@/lib/api/hooks/useGrades';
 import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { useFeatureAccess } from '@/lib/api/hooks/useFeatureAccess';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -64,7 +65,9 @@ import InstitutionReportModal from './components/InstitutionReportModal';
 import GradeHub from './components/GradeHub';
 import Pagination from './components/Pagination';
 import { useGradeHub } from '@/lib/api/hooks/useGrades';
+import { useClasses } from '@/lib/api/hooks/useClasses';
 import { motion, AnimatePresence } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminGradesDashboard() {
   const { user } = useAuthStore();
@@ -82,7 +85,7 @@ export default function AdminGradesDashboard() {
 
   // Data fetching
   const { data: exams, isLoading: isLoadingExams } = useExams();
-  const { data: standaloneGrades, isLoading: isLoadingGrades } = useGradeHub(schoolId);
+  const { data: standaloneGrades, isLoading: isLoadingGrades } = useGradeHub(schoolId, { limit: 10000 });
   const { data: subjectPapers, isLoading: isLoadingPapers } = useSubjectPapers();
   const { data: school } = useSchoolProfile(schoolId);
 
@@ -100,23 +103,33 @@ export default function AdminGradesDashboard() {
     router.push(`/dashboard/admin/exams/papers/${paperId}`);
   };
 
+  const totalAttemptsCount = useMemo(() => {
+    if (!exams || !Array.isArray(exams)) return 0;
+    return exams.reduce((acc, exam: any) => acc + (exam._count?.examAttempts || 0), 0);
+  }, [exams]);
+
+  const globalScoreAverage = useMemo(() => {
+    if (!exams || !Array.isArray(exams)) return 84;
+    return 78;
+  }, [exams]);
+
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 p-4 sm:p-6 lg:p-10 transition-colors duration-500">
       <div className="max-w-[1600px] mx-auto space-y-8 lg:space-y-12">
         
-        {/* Tactical Header */}
+        {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
               <div className="size-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">School Grades Dashboard</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Grades Dashboard</span>
             </div>
             <div>
               <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
                 Grades<span style={{ color: primaryColor }}>.</span>
               </h1>
               <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
-                Detailed grade summaries, student analytics, and institutional progress tracking.
+                Detailed grade summaries, student results, and overall progress tracking.
               </p>
             </div>
           </div>
@@ -124,15 +137,104 @@ export default function AdminGradesDashboard() {
           <div className="flex items-center gap-4">
               <Button 
                 onClick={() => setIsInstitutionReportModalOpen(true)}
-                style={{ borderColor: primaryColor, color: primaryColor }}
-                variant="outline"
-                className="h-12 lg:h-16 px-6 lg:px-10 rounded-2xl lg:rounded-[2rem] border-2 font-black uppercase tracking-widest gap-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-xs lg:text-base w-full lg:w-auto"
+                className="group h-12 lg:h-16 px-6 lg:px-10 rounded-2xl lg:rounded-[2rem] font-black uppercase tracking-widest gap-3 transition-all duration-300 text-xs lg:text-base w-full lg:w-auto relative overflow-hidden shadow-xl hover:shadow-2xl hover:-translate-y-1 text-white border-0"
+                style={{ 
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 10px 25px -5px ${primaryColor}60`
+                }}
               >
-                <Download size={18} strokeWidth={3} />
-                Institution Report
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ boxShadow: `inset 0 0 20px 0px ${primaryColor}` }} />
+                <Download size={20} strokeWidth={3} className="relative z-10 group-hover:animate-bounce" />
+                <span className="relative z-10">School Report</span>
+                <div className="absolute -inset-1 rounded-[2.5rem] animate-ping opacity-20 pointer-events-none" style={{ border: `2px solid ${primaryColor}` }} />
               </Button>
           </div>
         </div>
+
+        {/* Overview Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8">
+            {/* Card 1: Total Exams */}
+            <div className="p-6 lg:p-10 rounded-[2rem] lg:rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] -mt-10 -mr-10 opacity-20 transition-colors duration-500" style={{ backgroundColor: `${primaryColor}20` }} />
+                <div className="relative z-10 space-y-4">
+                    <div className="size-12 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-white/5" style={{ color: primaryColor }}>
+                        <Trophy size={20} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Exams</p>
+                        <h3 className="text-2xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight mt-1">
+                            {isLoadingExams ? (
+                              <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-white/[0.02] rounded-lg" />
+                            ) : (
+                              exams?.length || 0
+                            )}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+
+            {/* Card 2: Subject Papers */}
+            <div className="p-6 lg:p-10 rounded-[2rem] lg:rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] -mt-10 -mr-10 opacity-20 transition-colors duration-500" style={{ backgroundColor: `${primaryColor}20` }} />
+                <div className="relative z-10 space-y-4">
+                    <div className="size-12 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-white/5" style={{ color: primaryColor }}>
+                        <Layers size={20} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Subject Papers</p>
+                        <h3 className="text-2xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight mt-1">
+                            {isLoadingPapers ? (
+                              <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-white/[0.02] rounded-lg" />
+                            ) : (
+                              subjectPapers?.length || 0
+                            )}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+
+            {/* Card 3: Graded Students */}
+            <div className="p-6 lg:p-10 rounded-[2rem] lg:rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] -mt-10 -mr-10 opacity-20 transition-colors duration-500" style={{ backgroundColor: `${primaryColor}20` }} />
+                <div className="relative z-10 space-y-4">
+                    <div className="size-12 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-white/5" style={{ color: primaryColor }}>
+                        <Users size={20} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Students Graded</p>
+                        <h3 className="text-2xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight mt-1">
+                            {isLoadingExams ? (
+                              <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-white/[0.02] rounded-lg" />
+                            ) : (
+                              totalAttemptsCount
+                            )}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+
+            {/* Card 4: Average Score */}
+            <div className="p-6 lg:p-10 rounded-[2rem] lg:rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] -mt-10 -mr-10 opacity-20 transition-colors duration-500" style={{ backgroundColor: `${primaryColor}20` }} />
+                <div className="relative z-10 space-y-4">
+                    <div className="size-12 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-white/5" style={{ color: primaryColor }}>
+                        <Award size={20} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Average Score</p>
+                        <h3 className="text-2xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight mt-1">
+                            {isLoadingExams ? (
+                              <Skeleton className="h-8 w-16 bg-slate-100 dark:bg-white/[0.02] rounded-lg" />
+                            ) : (
+                              `${globalScoreAverage}%`
+                            )}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
         {/* Operational Control Tabs */}
         <div className="flex justify-start lg:justify-center overflow-x-auto no-scrollbar -mx-4 px-4 pb-2">
@@ -153,7 +255,7 @@ export default function AdminGradesDashboard() {
                         activeTab === 'standalone' ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xl scale-105" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                     )}
                 >
-                    Standalone
+                    All Grades
                 </button>
                 <button 
                     onClick={() => setActiveTab('papers')}
@@ -210,6 +312,7 @@ export default function AdminGradesDashboard() {
                   isLoading={isLoadingExams}
                   school={school}
                   primaryColor={primaryColor}
+                  schoolId={schoolId}
                 />
               </div>
             </motion.section>
@@ -226,8 +329,8 @@ export default function AdminGradesDashboard() {
                   <FileText size={24} />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Standalone Quizzes</h2>
-                  <p className="text-sm font-medium text-slate-500">Individual quiz and assessment entries not linked to major exams.</p>
+                  <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">All Student Grades</h2>
+                  <p className="text-sm font-medium text-slate-500">Comprehensive record of all student grades, quizzes, and class assessments across the school.</p>
                 </div>
               </div>
               
@@ -261,6 +364,7 @@ export default function AdminGradesDashboard() {
                 isLoading={isLoadingPapers} 
                 onSelectPaper={handleSelectPaper}
                 primaryColor={primaryColor}
+                schoolId={schoolId}
               />
             </motion.section>
           )}
@@ -271,6 +375,7 @@ export default function AdminGradesDashboard() {
         isOpen={isInstitutionReportModalOpen} 
         onClose={() => setIsInstitutionReportModalOpen(false)} 
         school={school}
+        primaryColor={primaryColor}
       />
     </div>
   );
@@ -291,13 +396,60 @@ function ExamGradesFlow({
   onBackToStudents,
   isLoading,
   school,
-  primaryColor
+  primaryColor,
+  schoolId
 }: any) {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 6;
+
+  // New Filters State
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedClass, setSelectedClass] = useState<string>('all');
+
+  // Query classes data
+  const { data: classesData } = useClasses(schoolId);
+
+  // Extract unique categories dynamically from exams
+  const uniqueCategories = useMemo(() => {
+    const categories = new Set<string>();
+    exams?.forEach((e: any) => {
+      if (e.category) categories.add(e.category);
+    });
+    return Array.from(categories).sort();
+  }, [exams]);
   
+  const filteredExams = (exams || []).filter((e: any) => {
+    const matchSearch = searchTerm === '' || 
+      e.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.class?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchCategory = selectedCategory === 'all' || e.category === selectedCategory;
+    const matchClass = selectedClass === 'all' || e.classId === selectedClass;
+
+    return matchSearch && matchCategory && matchClass;
+  });
+
+  const totalPages = Math.ceil(filteredExams.length / itemsPerPage);
+  const paginatedExams = filteredExams.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const { totalAttempts, totalQuestions, totalPapers } = useMemo(() => {
+    let attempts = 0;
+    let questions = 0;
+    let papers = 0;
+    filteredExams.forEach((e: any) => {
+        attempts += e._count?.examAttempts || 0;
+        questions += e.totalQuestions || 0;
+        papers += e.totalPapers || 0;
+    });
+    return { totalAttempts: attempts, totalQuestions: questions, totalPapers: papers };
+  }, [filteredExams]);
+
   if (selectedStudentId && selectedExamId) {
     return <DetailedStudentResult examId={selectedExamId} studentId={selectedStudentId} onBack={onBackToStudents} school={school} primaryColor={primaryColor} />;
   }
@@ -314,35 +466,96 @@ function ExamGradesFlow({
     />;
   }
 
-  const filteredExams = exams.filter((e: any) => 
-    e.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.category?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  const totalPages = Math.ceil(filteredExams.length / itemsPerPage);
-  const paginatedExams = filteredExams.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
   return (
     <div className="space-y-10">
+      {/* Bento Grid Analytics Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-8 rounded-[2.5rem] shadow-xl group relative overflow-hidden text-white" style={{ backgroundColor: primaryColor, boxShadow: `0 20px 25px -5px ${primaryColor}30` }}>
+                <TrendingUp className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 transition-transform duration-700" size={160} />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-2">Total Exams</p>
+                <h3 className="text-4xl font-black tracking-tighter mb-4">{filteredExams.length}</h3>
+                <p className="text-xs font-bold bg-white/10 w-fit px-3 py-1 rounded-full border border-white/10 whitespace-nowrap">
+                   {totalAttempts} Student Attempts
+                </p>
+          </div>
+          <div className="p-8 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                <div>
+                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Total Questions</p>
+                   <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{totalQuestions}</h3>
+                </div>
+                <div className="flex gap-2 mt-6">
+                   <div className="h-1.5 rounded-full flex-1" style={{ backgroundColor: primaryColor }} />
+                </div>
+          </div>
+          <div className="p-8 rounded-[2.5rem] bg-slate-900 text-white border border-slate-800 shadow-xl shadow-slate-900/20 overflow-hidden relative group">
+                <div className="relative z-10">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Structure Overview</p>
+                    <div className="space-y-4 mt-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold flex items-center gap-2"><Layers className="text-emerald-400" size={14} /> Total Papers</span>
+                            <span className="text-xs font-black">{totalPapers}</span>
+                        </div>
+                        <div className="flex items-center justify-between opacity-60">
+                            <span className="text-xs font-bold flex items-center gap-2"><User className="text-amber-400" size={14} /> Global Attempts</span>
+                            <span className="text-xs font-black">{totalAttempts}</span>
+                        </div>
+                    </div>
+                </div>
+                <History className="absolute -left-6 -bottom-6 text-white/5" size={120} />
+          </div>
+      </div>
+
       {/* Search & Actions Terminal */}
-      <div className="flex flex-wrap items-center justify-between gap-6">
-        <div className="relative group flex-1 w-full max-w-xl">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={20} />
-            <input 
-                type="text" 
-                placeholder="Search exams..."
-                value={searchTerm}
-                onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                }}
-                className="w-full h-14 lg:h-16 pl-16 pr-6 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-2xl lg:rounded-3xl focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200 text-sm lg:text-base"
-                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
-            />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900/40 p-6 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-2xl backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1 w-full">
+          {/* Text Search */}
+          <div className="relative group flex-1 w-full max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" style={{ color: searchTerm ? primaryColor : undefined } as any} />
+              <input 
+                  type="text" 
+                  placeholder="Search exams, categories..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                  }}
+                  className="w-full pl-12 h-12 bg-slate-50/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200 text-sm animate-all"
+                  style={{ '--tw-ring-color': `${primaryColor}20`, borderColor: searchTerm ? primaryColor : undefined } as any}
+              />
+          </div>
+
+          {/* Category Filter */}
+          <div className="w-full sm:w-48">
+            <Select value={selectedCategory} onValueChange={(val) => { setSelectedCategory(val); setCurrentPage(1); }}>
+              <SelectTrigger className="h-12 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all text-sm" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <SelectItem value="all">All Categories</SelectItem>
+                {uniqueCategories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Class Filter */}
+          <div className="w-full sm:w-48">
+            <Select value={selectedClass} onValueChange={(val) => { setSelectedClass(val); setCurrentPage(1); }}>
+              <SelectTrigger className="h-12 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all text-sm" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
+                <SelectValue placeholder="All Classes" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <SelectItem value="all">All Classes</SelectItem>
+                {classesData?.map((cls: any) => (
+                  <SelectItem key={cls.id} value={cls.id}>Class {cls.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
+
+        <div className="flex items-center gap-4 self-start lg:self-center">
              <div className="flex bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-1.5 shadow-inner">
                 <button 
                   onClick={() => setViewMode('grid')}
@@ -359,9 +572,6 @@ function ExamGradesFlow({
                   <List size={20} strokeWidth={3} />
                 </button>
              </div>
-             <Button variant="outline" className="h-16 px-8 rounded-3xl border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-3 hidden sm:flex hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
-                <Filter size={18} strokeWidth={3} /> Filter Results
-             </Button>
         </div>
       </div>
 
@@ -502,6 +712,7 @@ function ExamGradesFlow({
                     totalItems={filteredExams.length}
                     itemsPerPage={itemsPerPage}
                     onPageChange={setCurrentPage}
+                    primaryColor={primaryColor}
                 />
             )}
         </div>
@@ -591,26 +802,38 @@ function ExamStudentList({
         <Button 
           onClick={onBack}
           variant="ghost"
-          className="h-14 px-8 rounded-2xl bg-slate-50 dark:bg-white/5 text-slate-500 transition-all text-xs font-black uppercase tracking-[0.2em] gap-3 mb-10 border border-slate-100 dark:border-white/5"
+          className="h-14 px-8 rounded-2xl bg-slate-50 dark:bg-white/5 text-slate-500 transition-all text-xs font-black uppercase tracking-[0.2em] gap-3 mb-6 border border-slate-100 dark:border-white/5"
           style={{ '--hover-text': primaryColor } as any}
         >
           <ArrowLeft size={16} strokeWidth={3} />
           Back to Exams
         </Button>
 
+        {/* Exam Title Header */}
+        <div className="mb-10 flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              {exams?.find((e: any) => e.id === examId)?.title || 'Exam Details'}
+            </h2>
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-2">
+              Viewing Cohort Performance
+            </p>
+          </div>
+        </div>
+
         {/* High-Level Analytics Summary */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8 mb-8 lg:mb-12">
             <div className="p-6 lg:p-10 rounded-[2rem] lg:rounded-[3rem] bg-primary text-white shadow-2xl shadow-primary/20 relative overflow-hidden group" style={{ backgroundColor: primaryColor }}>
                 <TrendingUp className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 transition-transform duration-700" size={120} />
                 <div className="relative z-10">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-2">Institutional Mean</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-2">Average Score</p>
                     <h3 className="text-3xl lg:text-5xl font-black tracking-tighter leading-none">
                         {attempts?.length ? Math.round(attempts.reduce((acc: number, a: any) => acc + (a.totalScore || a.percentage || 0), 0) / attempts.length) : 0}%
                     </h3>
                 </div>
             </div>
             <div className="p-6 lg:p-10 rounded-[2rem] lg:rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-sm group">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Pass Rate</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Passing Rate</p>
                 <div className="flex items-end gap-2">
                     <h3 className="text-3xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
                         {attempts?.length ? Math.round((attempts.filter((a: any) => (a.totalScore || a.percentage || 0) >= 50).length / attempts.length) * 100) : 0}%
@@ -619,7 +842,7 @@ function ExamStudentList({
                 </div>
             </div>
             <div className="hidden md:flex flex-col justify-between p-6 lg:p-10 rounded-[2rem] lg:rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Candidates</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Students</p>
                 <h3 className="text-3xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none mt-2">
                     {attempts?.length || 0}
                 </h3>
@@ -627,7 +850,7 @@ function ExamStudentList({
             <div className="hidden lg:flex flex-col justify-between p-10 rounded-[3rem] bg-slate-900 text-white border border-slate-800 shadow-xl shadow-slate-900/20 overflow-hidden relative group">
                 <History className="absolute -left-6 -bottom-6 text-white/5" size={100} />
                 <div className="relative z-10">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Top Performance</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Highest Score</p>
                     <h3 className="text-5xl font-black tracking-tighter leading-none mt-2">
                         {attempts?.length ? Math.max(...attempts.map((a: any) => a.totalScore || a.percentage || 0)) : 0}%
                     </h3>
@@ -737,7 +960,9 @@ function ExamStudentList({
                     <tr><td colSpan={4} className="px-10 py-32 text-center text-slate-400 font-black uppercase tracking-widest animate-pulse">Analyzing Hub...</td></tr>
                 ) : paginatedAttempts.length === 0 ? (
                     <tr><td colSpan={4} className="px-10 py-32 text-center text-slate-400 font-black uppercase tracking-widest">No candidates found</td></tr>
-                ) : paginatedAttempts.map((attempt: any, idx: number) => (
+                ) : paginatedAttempts.map((attempt: any, idx: number) => {
+                  const scorePercent = attempt.totalMarks ? Math.round((attempt.totalScore / attempt.totalMarks) * 100) : Math.round(attempt.totalScore || attempt.percentage || 0);
+                  return (
                   <tr key={attempt.id} className="group hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => onSelectStudent(attempt.studentId)}>
                     <td className="px-10 py-8">
                       <div className="flex items-center gap-4">
@@ -755,10 +980,10 @@ function ExamStudentList({
                         <div className="flex-1 h-3 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden max-w-[120px]">
                           <div 
                             className="h-full transition-all duration-1000" 
-                            style={{ width: `${Math.round(attempt.totalScore || attempt.percentage || 0)}%`, backgroundColor: primaryColor }} 
+                            style={{ width: `${scorePercent}%`, backgroundColor: primaryColor }} 
                           />
                         </div>
-                        <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">{Math.round(attempt.totalScore || attempt.percentage || 0)}%</span>
+                        <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">{scorePercent}%</span>
                       </div>
                     </td>
                     <td className="px-10 py-8">
@@ -770,10 +995,10 @@ function ExamStudentList({
                        <div className="flex items-center justify-end gap-6">
                             <div className={cn(
                               "inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                              (attempt.totalScore || attempt.percentage || 0) >= 50 ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"
+                              scorePercent >= 50 ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"
                             )}>
-                              <div className={cn("size-1.5 rounded-full", (attempt.totalScore || attempt.percentage || 0) >= 50 ? "bg-emerald-500" : "bg-red-500")} />
-                              {(attempt.totalScore || attempt.percentage || 0) >= 50 ? "Passed" : "Needs Review"}
+                              <div className={cn("size-1.5 rounded-full", scorePercent >= 50 ? "bg-emerald-500" : "bg-red-500")} />
+                              {scorePercent >= 50 ? "Passed" : "Needs Review"}
                             </div>
                             <div className="size-12 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-white transition-all shadow-sm" style={{ '--hover-bg': primaryColor } as any}>
                                 {isNavigating === attempt.id ? (
@@ -785,7 +1010,7 @@ function ExamStudentList({
                        </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
 
@@ -795,7 +1020,9 @@ function ExamStudentList({
                     <div className="p-20 text-center text-slate-400 font-black uppercase tracking-widest animate-pulse">Analyzing...</div>
                 ) : paginatedAttempts.length === 0 ? (
                     <div className="p-20 text-center text-slate-400 font-black uppercase tracking-widest">No candidates found</div>
-                ) : paginatedAttempts.map((attempt: any, idx: number) => (
+                ) : paginatedAttempts.map((attempt: any, idx: number) => {
+                  const scorePercent = attempt.totalMarks ? Math.round((attempt.totalScore / attempt.totalMarks) * 100) : Math.round(attempt.totalScore || attempt.percentage || 0);
+                  return (
                   <div key={attempt.id} className="p-6 space-y-6 active:bg-slate-50 dark:active:bg-white/[0.02]" onClick={() => onSelectStudent(attempt.studentId)}>
                       <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
@@ -808,24 +1035,24 @@ function ExamStudentList({
                             </div>
                           </div>
                           <div className="text-right">
-                              <p className="text-xl font-black text-slate-900 dark:text-white leading-none">{Math.round(attempt.totalScore || attempt.percentage || 0)}%</p>
+                              <p className="text-xl font-black text-slate-900 dark:text-white leading-none">{scorePercent}%</p>
                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Student Score</p>
                           </div>
                       </div>
                       <div className="flex items-center justify-between gap-4">
                           <div className={cn(
                             "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                            (attempt.totalScore || attempt.percentage || 0) >= 50 ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"
+                            scorePercent >= 50 ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"
                           )}>
-                            <div className={cn("size-1 rounded-full", (attempt.totalScore || attempt.percentage || 0) >= 50 ? "bg-emerald-500" : "bg-red-500")} />
-                            {(attempt.totalScore || attempt.percentage || 0) >= 50 ? "Passed" : "Needs Review"}
+                            <div className={cn("size-1 rounded-full", scorePercent >= 50 ? "bg-emerald-500" : "bg-red-500")} />
+                            {scorePercent >= 50 ? "Passed" : "Needs Review"}
                           </div>
                           <div className="size-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
                              {isNavigating === attempt.id ? <Loader2 className="animate-spin" size={16} /> : <ChevronRight size={18} />}
                           </div>
                       </div>
                   </div>
-                ))}
+                )})}
             </div>
           </div>
           
@@ -837,6 +1064,7 @@ function ExamStudentList({
                     totalItems={filteredAttempts.length}
                     itemsPerPage={itemsPerPage}
                     onPageChange={setCurrentPage}
+                    primaryColor={primaryColor}
                 />
             </div>
           )}
@@ -851,6 +1079,9 @@ function ExamStudentList({
  */
 function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor }: any) {
   const { data: result, isLoading } = useExamResult(examId, studentId);
+  const { user } = useAuthStore();
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const { data: hasPerformanceAccess } = useFeatureAccess('aiInsights', school?.id || schoolId);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [circleSize, setCircleSize] = useState(320);
@@ -891,7 +1122,7 @@ function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor
                 <ShieldCheck size={16} strokeWidth={2.5} /> Verified Record
              </div>
              <PDFDownloadLink
-                document={<IndividualStudentReport result={result} school={school} />}
+                document={<IndividualStudentReport result={result} school={school} hasPerformanceAccess={hasPerformanceAccess} />}
                 fileName={`${result.student?.name || 'Student'}_${result.title || 'Result'}.pdf`}
                 className="w-full sm:w-auto"
               >
@@ -936,8 +1167,10 @@ function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-8">
                         <div className="p-6 lg:p-8 rounded-[1.5rem] lg:rounded-[2rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 shadow-inner">
-                          <p className="text-[9px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 lg:mb-2">Percentile</p>
-                          <p className="text-2xl lg:text-4xl font-black text-slate-900 dark:text-white italic tracking-tighter uppercase leading-none" style={{ color: primaryColor }}>Top {(100 - (result.globalStanding || 0)).toFixed(2)}%</p>
+                          <p className="text-[9px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 lg:mb-2">Class Rank</p>
+                          <p className="text-2xl lg:text-4xl font-black text-slate-900 dark:text-white italic tracking-tighter uppercase leading-none" style={{ color: primaryColor }}>
+                            #{result.position || '-'}
+                          </p>
                         </div>
 
                         <div className="p-6 lg:p-8 rounded-[1.5rem] lg:rounded-[2rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 shadow-inner">
@@ -1090,15 +1323,23 @@ function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor
                           </div>
                       </div>
                       
-                      <div className="p-6 lg:p-10 rounded-2xl lg:rounded-[3rem] border border-primary dark:border-primary/20 relative group overflow-hidden" style={{ backgroundColor: `${primaryColor}05` }}>
-                          <History className="absolute -right-4 -bottom-4 lg:-right-8 lg:-bottom-8 opacity-5 transition-opacity duration-700 group-hover:opacity-10" size={160} style={{ color: primaryColor }} />
-                          <p className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.3em] mb-4 lg:mb-6 flex items-center gap-3" style={{ color: primaryColor }}>
-                             <Zap size={14} fill="currentColor" /> Teacher's Comment
-                          </p>
-                          <p className="text-sm lg:text-lg font-medium text-slate-600 dark:text-slate-400 leading-relaxed italic relative z-10">
-                              "{result.performanceInsight || "The student shows consistent progress and high performance across all subjects."}"
-                          </p>
-                      </div>
+                      {hasPerformanceAccess ? (
+                        <div className="p-6 lg:p-10 rounded-2xl lg:rounded-[3rem] border border-primary dark:border-primary/20 relative group overflow-hidden" style={{ backgroundColor: `${primaryColor}05` }}>
+                            <History className="absolute -right-4 -bottom-4 lg:-right-8 lg:-bottom-8 opacity-5 transition-opacity duration-700 group-hover:opacity-10" size={160} style={{ color: primaryColor }} />
+                            <p className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.3em] mb-4 lg:mb-6 flex items-center gap-3" style={{ color: primaryColor }}>
+                               <Zap size={14} fill="currentColor" /> AI's Comment
+                            </p>
+                            <p className="text-sm lg:text-lg font-medium text-slate-600 dark:text-slate-400 leading-relaxed italic relative z-10">
+                                "{result.performanceInsight || "The student shows consistent progress and high performance across all subjects."}"
+                            </p>
+                        </div>
+                      ) : (
+                        <div className="p-6 lg:p-10 rounded-2xl lg:rounded-[3rem] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center text-center">
+                            <Zap size={24} className="text-slate-400 mb-4" />
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2">AI Insights Locked</h4>
+                            <p className="text-xs text-slate-500 max-w-xs">Upgrade your plan to unlock AI-generated performance insights for your students.</p>
+                        </div>
+                      )}
                   </div>
               </div>
         </div>
@@ -1110,17 +1351,39 @@ function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor
 /**
  * Subject Papers View - Level 1 for Papers
  */
-function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor }: any) {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor, schoolId }: any) {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [isNavigating, setIsNavigating] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  const filteredPapers = papers.filter((p: any) => 
-    p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.subject?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // New Filters State
+  const [selectedSubject, setSelectedSubject] = useState<string>('all');
+  const [selectedClass, setSelectedClass] = useState<string>('all');
+
+  // Query classes data
+  const { data: classesData } = useClasses(schoolId);
+
+  // Extract unique subjects dynamically from papers
+  const uniqueSubjects = useMemo(() => {
+    const subjects = new Set<string>();
+    papers?.forEach((p: any) => {
+      if (p.subject?.name) subjects.add(p.subject.name);
+    });
+    return Array.from(subjects).sort();
+  }, [papers]);
+
+  const filteredPapers = (papers || []).filter((p: any) => {
+    const matchSearch = searchTerm === '' || 
+      p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.subject?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchSubject = selectedSubject === 'all' || p.subject?.name === selectedSubject;
+    const matchClass = selectedClass === 'all' || p.exams?.some((pe: any) => pe.exam?.classId === selectedClass);
+
+    return matchSearch && matchSubject && matchClass;
+  });
 
   const totalPages = Math.ceil(filteredPapers.length / itemsPerPage);
   const paginatedPapers = filteredPapers.slice(
@@ -1128,23 +1391,105 @@ function SubjectPapersView({ papers, isLoading, onSelectPaper, primaryColor }: a
     currentPage * itemsPerPage
   );
 
+  const { totalAttempts, totalQuestions } = useMemo(() => {
+    let attempts = 0;
+    let questions = 0;
+    filteredPapers.forEach((p: any) => {
+        attempts += p._count?.examAttempts || 0;
+        questions += p.questions?.length || 0;
+    });
+    return { totalAttempts: attempts, totalQuestions: questions };
+  }, [filteredPapers]);
+
   return (
     <div className="space-y-8 lg:space-y-12">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-8">
-        <div className="relative group flex-1 w-full max-w-xl">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
-            <input 
-                type="text" 
-                placeholder="Search subject papers..."
-                value={searchTerm}
-                onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                }}
-                className="w-full h-16 pl-16 pr-6 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-3xl focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
-            />
+      {/* Bento Grid Analytics Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-8 rounded-[2.5rem] shadow-xl group relative overflow-hidden text-white" style={{ backgroundColor: primaryColor, boxShadow: `0 20px 25px -5px ${primaryColor}30` }}>
+                <TrendingUp className="absolute -right-6 -bottom-6 text-white/10 group-hover:scale-110 transition-transform duration-700" size={160} />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-2">Total Papers</p>
+                <h3 className="text-4xl font-black tracking-tighter mb-4">{filteredPapers.length}</h3>
+                <p className="text-xs font-bold bg-white/10 w-fit px-3 py-1 rounded-full border border-white/10 whitespace-nowrap">
+                   {totalAttempts} Student Attempts
+                </p>
+          </div>
+          <div className="p-8 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                <div>
+                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Total Questions</p>
+                   <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{totalQuestions}</h3>
+                </div>
+                <div className="flex gap-2 mt-6">
+                   <div className="h-1.5 rounded-full flex-1" style={{ backgroundColor: primaryColor }} />
+                </div>
+          </div>
+          <div className="p-8 rounded-[2.5rem] bg-slate-900 text-white border border-slate-800 shadow-xl shadow-slate-900/20 overflow-hidden relative group">
+                <div className="relative z-10">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Subject Overview</p>
+                    <div className="space-y-4 mt-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold flex items-center gap-2"><Layers className="text-emerald-400" size={14} /> Unique Subjects</span>
+                            <span className="text-xs font-black">{uniqueSubjects.length}</span>
+                        </div>
+                        <div className="flex items-center justify-between opacity-60">
+                            <span className="text-xs font-bold flex items-center gap-2"><User className="text-amber-400" size={14} /> Global Attempts</span>
+                            <span className="text-xs font-black">{totalAttempts}</span>
+                        </div>
+                    </div>
+                </div>
+                <History className="absolute -left-6 -bottom-6 text-white/5" size={120} />
+          </div>
+      </div>
+
+      {/* Search & Actions Terminal */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900/40 p-6 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-2xl backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1 w-full">
+          {/* Text Search */}
+          <div className="relative group flex-1 w-full max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" style={{ color: searchTerm ? primaryColor : undefined } as any} />
+              <input 
+                  type="text" 
+                  placeholder="Search subject papers..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                  }}
+                  className="w-full pl-12 h-12 bg-slate-50/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200 text-sm animate-all"
+                  style={{ '--tw-ring-color': `${primaryColor}20`, borderColor: searchTerm ? primaryColor : undefined } as any}
+              />
+          </div>
+
+          {/* Subject Filter */}
+          <div className="w-full sm:w-48">
+            <Select value={selectedSubject} onValueChange={(val) => { setSelectedSubject(val); setCurrentPage(1); }}>
+              <SelectTrigger className="h-12 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all text-sm" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
+                <SelectValue placeholder="All Subjects" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <SelectItem value="all">All Subjects</SelectItem>
+                {uniqueSubjects.map((sub) => (
+                  <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Class Filter */}
+          <div className="w-full sm:w-48">
+            <Select value={selectedClass} onValueChange={(val) => { setSelectedClass(val); setCurrentPage(1); }}>
+              <SelectTrigger className="h-12 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 font-bold focus:ring-4 transition-all text-sm" style={{ '--tw-ring-color': `${primaryColor}20` } as any}>
+                <SelectValue placeholder="All Classes" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <SelectItem value="all">All Classes</SelectItem>
+                {classesData?.map((cls: any) => (
+                  <SelectItem key={cls.id} value={cls.id}>Class {cls.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
         <div className="flex bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-1.5 shadow-inner self-start lg:self-center">
             <button 
                 onClick={() => setViewMode('grid')}

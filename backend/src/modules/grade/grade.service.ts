@@ -90,14 +90,15 @@ export const createGradeEntryService = async (data: any) => {
   });
 };
 
-export const updateGradeScoreService = async (id: string, score: number, remarks?: string) => {
+export const updateGradeScoreService = async (id: string, data: { score?: number; remarks?: string; status?: string }) => {
+  const updateData: any = { updatedAt: new Date() };
+  if (data.score !== undefined) updateData.score = Number(data.score);
+  if (data.remarks !== undefined) updateData.remarks = data.remarks;
+  if (data.status !== undefined) updateData.status = data.status as any;
+
   return prisma.grade.update({
     where: { id },
-    data: { 
-      score: Number(score),
-      remarks: remarks || undefined,
-      updatedAt: new Date()
-    }
+    data: updateData
   });
 };
 

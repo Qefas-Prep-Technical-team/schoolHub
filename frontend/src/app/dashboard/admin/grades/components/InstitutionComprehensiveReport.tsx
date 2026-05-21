@@ -13,7 +13,7 @@ import {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 50,
     backgroundColor: '#FFFFFF',
     fontFamily: 'Helvetica',
   },
@@ -30,10 +30,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   schoolName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 4,
+    fontSize: 28,
+    fontWeight: 'black',
+    color: '#0F172A',
+    marginBottom: 6,
+    letterSpacing: -0.5,
   },
   reportTitle: {
     fontSize: 16,
@@ -49,11 +50,13 @@ const styles = StyleSheet.create({
   },
   summaryGrid: {
     flexDirection: 'row',
-    marginBottom: 30,
+    marginBottom: 40,
     backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 16,
+    padding: 24,
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   summaryItem: {
     alignItems: 'center',
@@ -67,20 +70,20 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   summaryValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1E293B',
+    fontSize: 24,
+    fontWeight: 'black',
+    color: '#0F172A',
   },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 15,
+    fontSize: 14,
+    fontWeight: 'black',
+    color: '#0F172A',
+    marginBottom: 16,
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    borderBottom: 1,
+    letterSpacing: 1.5,
+    borderBottomWidth: 2,
     borderBottomColor: '#E2E8F0',
-    paddingBottom: 5,
+    paddingBottom: 8,
   },
   table: {
     width: 'auto',
@@ -97,10 +100,11 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   headerText: {
-    fontSize: 8,
-    fontWeight: 'bold',
+    fontSize: 9,
+    fontWeight: 'black',
     color: '#FFFFFF',
     textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   tableRow: {
     flexDirection: 'row',
@@ -113,14 +117,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   rowText: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#334155',
+    fontWeight: 'medium',
   },
-  colExam: { width: '40%' },
-  colCategory: { width: '15%', textAlign: 'center' },
-  colStudents: { width: '15%', textAlign: 'center' },
-  colAvg: { width: '15%', textAlign: 'center' },
-  colPass: { width: '15%', textAlign: 'center' },
+  colExam: { width: '30%' },
+  colCategory: { width: '15%', textAlign: 'left' },
+  colDate: { width: '15%', textAlign: 'center' },
+  colStudents: { width: '12%', textAlign: 'center' },
+  colAvg: { width: '14%', textAlign: 'center' },
+  colPass: { width: '14%', textAlign: 'center' },
   
   footer: {
     position: 'absolute',
@@ -152,10 +158,10 @@ const styles = StyleSheet.create({
     borderLeftColor: '#3B82F6',
   },
   performerName: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 2,
+    fontSize: 12,
+    fontWeight: 'black',
+    color: '#0F172A',
+    marginBottom: 4,
   },
   performerDetail: {
     fontSize: 8,
@@ -180,7 +186,7 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
 }) => {
   // Aggregate statistics
   const totalExams = exams.length;
-  const allAttempts = exams.flatMap(e => e.attempts || []);
+  const allAttempts = exams.flatMap(e => (e.attempts || []).map((a: any) => ({ ...a, examClassId: e.classId })));
   const totalAttempts = allAttempts.length;
   
   const avgScore = totalAttempts > 0
@@ -191,13 +197,19 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
     ? ((allAttempts.filter(a => (a.totalScore / a.totalMarks) >= 0.4).length / totalAttempts) * 100).toFixed(0)
     : '0';
 
-  // Get top 3 performers across all exams
   const topStudents = Array.from(
     allAttempts.reduce((acc, attempt) => {
         const studentId = attempt.studentId;
         const score = (attempt.totalScore / attempt.totalMarks) * 100;
         if (!acc.has(studentId) || acc.get(studentId).score < score) {
-            acc.set(studentId, { name: attempt.student?.name, score, class: attempt.student?.gradeLevel });
+            const studentClass = classes?.find((c: any) => c.id === attempt.examClassId);
+            const classNameStr = studentClass 
+              ? `${studentClass.name} ${studentClass.section || ''}`.trim() 
+              : attempt.student?.gradeLevel 
+                ? `Level ${attempt.student.gradeLevel}` 
+                : 'Unknown Class';
+            
+            acc.set(studentId, { name: attempt.student?.name, score, class: classNameStr });
         }
         return acc;
     }, new Map()).values()
@@ -254,6 +266,7 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
           <View style={styles.tableHeader}>
             <Text style={[styles.headerText, styles.colExam]}>Examination Title</Text>
             <Text style={[styles.headerText, styles.colCategory]}>Type</Text>
+            <Text style={[styles.headerText, styles.colDate]}>Date</Text>
             <Text style={[styles.headerText, styles.colStudents]}>Students</Text>
             <Text style={[styles.headerText, styles.colAvg]}>Mean %</Text>
             <Text style={[styles.headerText, styles.colPass]}>Pass %</Text>
@@ -279,6 +292,7 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
               >
                 <Text style={[styles.rowText, styles.colExam]}>{exam.title}</Text>
                 <Text style={[styles.rowText, styles.colCategory]}>{exam.category}</Text>
+                <Text style={[styles.rowText, styles.colDate]}>{new Date(exam.startDate || exam.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
                 <Text style={[styles.rowText, styles.colStudents]}>{eAttempts.length}</Text>
                 <Text style={[styles.rowText, styles.colAvg]}>{eAvg}%</Text>
                 <Text style={[styles.rowText, styles.colPass]}>{ePass}%</Text>
@@ -287,7 +301,6 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
           })}
         </View>
 
-        {/* Top Performers */}
         {topStudents.length > 0 && (
           <View>
             <Text style={styles.sectionTitle}>High Performing Candidates (Across Filtered Range)</Text>
@@ -295,7 +308,7 @@ const InstitutionComprehensiveReport: React.FC<InstitutionComprehensiveReportPro
               {topStudents.map((student: any, i: number) => (
                 <View key={i} style={styles.performerCard}>
                   <Text style={styles.performerName}>{student.name}</Text>
-                  <Text style={styles.performerDetail}>{student.score.toFixed(1)}% Score</Text>
+                  <Text style={[styles.performerDetail, { fontWeight: 'black', color: '#0F172A' }]}>{student.score.toFixed(1)}% Score</Text>
                   <Text style={styles.performerDetail}>{student.class || 'Unknown Class'}</Text>
                 </View>
               ))}

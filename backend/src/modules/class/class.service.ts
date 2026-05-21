@@ -20,6 +20,7 @@ type CreateClassInput = {
   section?: string;
   scope: ClassScope;
   schoolId?: string;
+  level?: string;
   subjectIds?: string[];
   departmentIds?: string[];
   teacherIds?: string[];
@@ -33,6 +34,7 @@ export const createClassService = async ({
   section,
   scope,
   schoolId,
+  level,
   subjectIds = [],
   departmentIds = [],
   teacherIds = [],
@@ -68,6 +70,7 @@ export const createClassService = async ({
         section: section || null,
         schoolId,
         classCode,
+        level: level || null,
         scope,
         status: ClassStatus.ACTIVE,
         createdById: currentUserId,
@@ -113,6 +116,7 @@ export const createClassService = async ({
         name,
         section: section || null,
         schoolId: null,
+        level: level || null,
         teachers: {
           create: { teacherId: teacher.id, isLead: true }
         },
@@ -164,6 +168,7 @@ export const createClassService = async ({
       name,
       section: section || null,
       schoolId: schoolId || teacher.activeSchoolId || teacher.primarySchoolId,
+      level: level || null,
       teachers: {
         create: { teacherId: teacher.id, isLead: true }
       },
@@ -578,7 +583,7 @@ export const addStudentToClassService = async ({
     }
   }
 
-  return prisma.classEnrollment.upsert({
+  const enrollment = await prisma.classEnrollment.upsert({
     where: {
       classId_studentId: {
         classId,
@@ -591,6 +596,15 @@ export const addStudentToClassService = async ({
       studentId,
     },
   });
+
+  if (foundClass.level && student.level !== foundClass.level) {
+    await prisma.student.update({
+      where: { id: studentId },
+      data: { level: foundClass.level }
+    });
+  }
+
+  return enrollment;
 };
 
 export const removeStudentFromClassService = async ({
@@ -682,6 +696,9 @@ export const updateClassService = async ({
   classId,
   name,
   section,
+  term,
+  session,
+  level,
   teacherIds,
   departmentIds,
   studentIds,
@@ -689,6 +706,9 @@ export const updateClassService = async ({
   classId: string;
   name?: string;
   section?: string;
+  term?: string;
+  session?: string;
+  level?: string;
   teacherIds?: string[];
   departmentIds?: string[];
   studentIds?: string[];
@@ -701,11 +721,14 @@ export const updateClassService = async ({
     throw new Error("Class not found");
   }
 
-  return prisma.class.update({
+  const updatedClass = await prisma.class.update({
     where: { id: classId },
     data: {
       name: name ?? undefined,
       section: section ?? undefined,
+      term: term ?? undefined,
+      session: session ?? undefined,
+      level: level ?? undefined,
       teachers: teacherIds ? {
         deleteMany: {},
         create: teacherIds.filter(Boolean).map(id => ({ teacherId: id }))
@@ -727,6 +750,21 @@ export const updateClassService = async ({
       enrollments: { include: { student: true } },
     },
   });
+
+  if (level && foundClass.level !== level) {
+    await prisma.student.updateMany({
+      where: {
+        classes: {
+          some: { classId }
+        }
+      },
+      data: {
+        level
+      }
+    });
+  }
+
+  return updatedClass;
 };
 
 export const changeClassStatusService = async ({

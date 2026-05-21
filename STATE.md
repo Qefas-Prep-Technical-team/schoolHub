@@ -106,6 +106,13 @@
 
 ## Completed
 
+### Wednesday, May 20, 2026
+- **AI Insights Access & Exam Setup Redesign**:
+    - [x] **AI Insights Feature Key Fix**: Resolved subscription lock gating on single student exam results by correcting the feature key passed to `useFeatureAccess` in `grades/page.tsx` from `'ai_performance_insights'` to `'aiInsights'`.
+    - [x] **Plain English Copywriting Modernization**: Upgraded the Exam Setup form terminology, removing complex, cyberpunk-like jargon (e.g. *Institutional Node*, *Temporal Registry*, *Operational Scope*) in favor of simple, professional everyday English (e.g. *Select School*, *Academic Session*, *Exam Scope*).
+    - [x] **Premium Interactive Redesign**: Restructured `CreateExamForm.tsx` into a state-of-the-art 3-step configuration flow using an interactive visual progress stepper. Built gorgeous, custom hoverable card selectors for exam categories (Exam vs Quiz), operational scopes (School, Class, or Department), and results release schedules.
+    - [x] **Framer Motion Micro-animations**: Integrated smooth, clean sliding/fade transitions and reactive accent highlights driven by the school's theme color (`primaryColor`).
+
 ### Tuesday, May 19, 2026
 - **Student Details Page - Behaviour Tab Integration & Database Sync**:
     - [x] **Database Schema Normalization & Sync**: Added the `StudentBehaviourProfile` model to the Prisma schema mapping to `student_behaviour_profiles` database table with a 1-to-1 relationship with the `Student` model, and successfully synchronized the schema using `npx prisma db push`.
@@ -431,6 +438,64 @@
 - [ ] Implement automatic report card generation for classes.
 - [ ] Conduct end-to-end integration tests for multi-term timetable replication.
 - [ ] Audit role-based access control (RBAC) labels across new dashboard modals.
+
+### Tuesday, May 20, 2026
+- **Revenue Architecture - Pricing Editor Pre-Population Bug Fix**:
+    - [x] **Root Cause Identified**: `resolveAllPlans()` in `pricing.service.ts` was not including `maxTeachers`, `maxClasses`, `maxExams`, `maxAiUsage`, `maxParents`, `monthlyPrice`, `yearlyPrice`, `planScope` in the tab data returned by the API. The modal only received `maxStudents` and `maxStorageGb`, causing all other quota fields to appear blank when the editor opened.
+    - [x] **Backend Fix**: Added all missing quota fields (`maxTeachers`, `maxClasses`, `maxExams`, `maxAiUsage`, `maxParents`, `monthlyPrice`, `yearlyPrice`, `planScope`) to the `resolveAllPlans()` tab mapping in `pricing.service.ts`.
+    - [x] **Frontend Fix**: Replaced the aggressive `Number(val || 0) || 0` conversion pattern in `handleSubmit` with a `toNum()` helper that returns `null` for empty/unset fields instead of `0`. This prevents overwriting existing DB quota values with zero when only some fields are edited. `monthlyPrice` and `yearlyPrice` still default to `0` as they are required financial fields.
+
+### Wednesday, May 20, 2026
+- **AI Insights Access Lock Gating Fix**:
+    - [x] Resolved a bug where single student detailed exam results falsely blocked premium AI-generated performance insights and displayed a "Please upgrade your plan..." gating prompt.
+    - [x] Corrected the key mismatch in the client detailed student results page from `ai_performance_insights` to the canonical platform feature registry key `aiInsights`.
+- **Create Exam Form Redesign (`CreateExamForm.tsx`)**:
+    - [x] Re-engineered the "Create Exam" setup form into a stunning 3-step progressive stepper (1. Basic Info -> 2. Scope & Target -> 3. Results Release).
+    - [x] Replaced all cyber-technical space jargon with clear everyday English.
+    - [x] Created interactive card selectors for Categories, Scopes, and Results schedules with smooth Framer Motion animations.
+- **Exam Listing Dashboard & Terminology Redesign**:
+    - [x] **Main Layout Tab Redesign (`page.tsx`)**: Renamed tabs from "Institutional Exams" and "Subject Nodes" to "School Exams" and "Subject Papers". Modernized empty states and error notices to clear Everyday English.
+    - [x] **Stats Overview Card Redesign (`StatsCards.tsx`)**: Updated labels and description subtext to clear and professional terminology (Total Exams, Published Exams, Scheduled Exams, Draft Exams).
+    - [x] **Exam Card (`AssessmentCard.tsx`)**: Modernized all action dropdown labels (Edit Exam, Delete), meta indicators (Category, Date Created, Status), and redesigned withdraw and delete modal dialog instructions.
+    - [x] **Subject Paper Card (`SubjectPaperCard.tsx`)**: Updated header tags (SUBJECT PAPER), metadata (Teacher, Connected Exams, Duration, Total Marks), and confirmation modals.
+- **Tab-Specific Filters & Pagination Implementation**:
+    - [x] **Tab-Specific Filters**:
+        - **School Exams Tab**: Moved `<SearchFilters>` inside `<TabsContent value="exams">` and bound the search input to the reactive `filters.searchQuery` state, running smooth client-side filtering on top of live backend responses.
+        - **Subject Papers Tab (`PaperFilters.tsx` [NEW])**: Created a new glassmorphic filtering panel dedicated to papers. Unique subjects and teachers are dynamically extracted from live papers to populate dropdown selects, combined with text matching.
+    - [x] **High-Fidelity Sliding Pagination Bars**:
+        - Added sliding page-number bars (with active state highlighting and previous/next navigation buttons) to **both tabs** independently.
+        - Configured a neat grid size of `6` cards per page, automatically resetting the page pointer to `0` whenever filters are updated to maintain clean navigation boundaries.
+    - [x] **Layout Polish & Core Bug Fixes**:
+        - Added explicit `key` attributes to the direct children inside the `<AnimatePresence>` container in `page.tsx` (`key="exams"` and `key="papers"`), resolving a Turbopack console error warning about duplicate empty keys.
+        - Included a unified page-level hydration skeleton loader that displays beautiful custom pulsing skeleton shimmers when the school metadata or exam collections are loading, eliminating layout flashes.
+        - Added defensive validations inside the unique subjects and teachers mapping logic to prevent unset keys from leaking into the filter options.
+- **Grades Dashboard Redesign & Everyday English Copy Polish**:
+    - [x] **Dynamic Metric Stats Cards [NEW]**:
+        - Implemented four premium overview cards at the top of the Grades dashboard (`grades/page.tsx`) showing: **Total Exams**, **Subject Papers**, **Students Graded**, and **Average Score**.
+        - Connected metric tallies to live data counts using highly optimized `useMemo` hooks.
+        - Added Next.js `Skeleton` components perfectly aligned with React Query loading flags, ensuring dynamic loading feedback without visual flickering.
+    - [x] **Everyday English Audit**:
+        - Successfully scanned the entire grades sub-folder to replace remaining space or jargon expressions with standard, everyday English.
+        - Simplified headings and buttons: *Tactical Header* -> *Header*, *Institutional Mean* -> *Average Score*, *Pass Rate* -> *Passing Rate*, *Total Candidates* -> *Total Students*, *Top Performance* -> *Highest Score*, *Institution Report* -> *School Report*.
+        - Cleaned dialogs: Modernized titles and text in `InstitutionReportModal.tsx` from "Institution" to "School" to ensure a native, warm aesthetic.
+    - [x] **"All Grades" Tab Data Sync & Pagination Fix**:
+        - Identified that the backend `/grades/hub` API endpoint implements server-side pagination that defaults to `limit = 10` when no limit is explicitly provided in the request query parameters.
+        - Fixed a bug where student exam results beyond the first 10 entries were missing from the "All Grades" tab dashboard layout due to the default limit constraint.
+        - Updated the frontend hook `useGradeHub` invocation in `grades/page.tsx` to pass `{ limit: 10000 }` to retrieve all grade records for the school, allowing dynamic client-side filtering, text search, and pagination grids to operate over the entire dataset with 100% precision.
+    - [x] **Premium Paginator & Ellipses Sliding Window**:
+        - Rebuilt the `Pagination` component to implement a smart pagination window, solving layout clutter caused by high data volume (e.g. 64 pages for 380 records).
+        - Programmed an elegant sliding-window sequence that displays page 1, active page with surrounding sibling indices, custom `...` ellipsis breaks, and the last page cleanly.
+        - Handled full responsive designs by rendering touch-friendly navigation arrows (`Prev`/`Next`) for mobile screen boundaries.
+        - Connected the paginator to the school's dynamic `primaryColor` style hook to customize selected page numbers, button highlights, and shadow elevations instantly.
+    - [x] **Subject Dropdown Paper-Only Filter**:
+        - Filtered `uniqueSubjects` set in `GradeHub.tsx` to exclude cumulative integrated exam totals (checking for valid `subjectPaperId` and omitting strings containing `"(Total)"`).
+        - Restructured the dropdown list to focus purely on subject papers, maintaining standard navigation rules.
+
+
+
+
+
+
 
 
 

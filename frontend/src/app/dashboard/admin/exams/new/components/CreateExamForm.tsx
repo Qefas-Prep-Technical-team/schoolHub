@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -8,9 +8,25 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { apiClient } from "@/lib/api/client";
-import { Loader2, LayoutGrid, FileText, Settings2, School, Calendar, ArrowRight, AlertCircle, Check, CheckCircle2, Zap, ShieldCheck, Cpu, Globe, Target, Layers } from "lucide-react";
+import { 
+  Loader2, 
+  School, 
+  Calendar, 
+  ArrowRight, 
+  ArrowLeft, 
+  Check, 
+  CheckCircle2, 
+  Zap, 
+  ShieldCheck, 
+  Layers, 
+  Trophy, 
+  Sparkles, 
+  BookOpen,
+  Info,
+  Clock
+} from "lucide-react";
 
-import { examService, CreateExamDTO, SubjectPaper } from "@/lib/api/services/examService";
+import { examService, CreateExamDTO } from "@/lib/api/services/examService";
 import { useExamStore } from "@/store/examStore";
 import { useSessions } from "@/lib/api/hooks/useSessions";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
@@ -21,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 const examSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -49,12 +66,14 @@ export default function CreateExamForm() {
 
   const { setExamContext } = useExamStore();
   const { user } = useAuthStore();
+  const [activeStep, setActiveStep] = useState(1);
   
   const {
     register,
     handleSubmit,
     setValue,
     watch,
+    trigger,
     formState: { errors },
   } = useForm<ExamFormValues>({
     resolver: zodResolver(examSchema),
@@ -78,11 +97,13 @@ export default function CreateExamForm() {
 
   const watchedSchoolId = watch("schoolId");
   const watchedScope = watch("scope");
+  const watchedCategory = watch("category");
+  const watchedAllowImmediateResult = watch("allowImmediateResult");
   const { data: settings } = useSchoolSettings(watchedSchoolId);
   const primaryColor = settings?.themeColor || '#2563eb';
 
-  // sessions now represents the Array [{id, name...}]
-  const { data: sessions, isLoading: loadingSessions, isError } = useSessions(watchedSchoolId);
+  // Fetch academic sessions for the selected school
+  const { data: sessions, isLoading: loadingSessions } = useSessions(watchedSchoolId);
 
   // Fetch Classes
   const { data: classesData } = useQuery({
@@ -140,10 +161,10 @@ export default function CreateExamForm() {
     }
   }, [watchedSchoolId, setValue]);
 
-  // TRIGGER 3: Auto-select if exactly 1 session is found
+  // TRIGGER 4: Auto-select if exactly 1 session is found
   useEffect(() => {
-    if (sessions && sessions.length === 1) {
-      setValue("sessionId", sessions[0].id);
+    if (sessions?.data && sessions.data.length === 1) {
+      setValue("sessionId", sessions.data[0].id);
     }
   }, [sessions, setValue]);
 
@@ -168,295 +189,708 @@ export default function CreateExamForm() {
     resultReleaseAt: data.resultReleaseAt || undefined,
   });
 
+  const handleNextStep = async () => {
+    if (activeStep === 1) {
+      const isValid = await trigger(["schoolId", "title", "category"]);
+      if (isValid) {
+        setActiveStep(2);
+      } else {
+        toast.error("Please fill in all required fields before proceeding.");
+      }
+    } else if (activeStep === 2) {
+      if (watchedScope === "CLASS") {
+        const isValid = await trigger(["classId"]);
+        if (!isValid) {
+          toast.error("Please select a target class.");
+          return;
+        }
+      } else if (watchedScope === "DEPARTMENT") {
+        const selectedDeps = watch("departmentIds") || [];
+        if (selectedDeps.length === 0) {
+          toast.error("Please select at least one department.");
+          return;
+        }
+      }
+      setActiveStep(3);
+    }
+  };
+
+  const handleBackStep = () => {
+    if (activeStep > 1) {
+      setActiveStep(activeStep - 1);
+    }
+  };
+
+  const steps = [
+    { id: 1, label: "Basic Info", desc: "Exam Name & Category" },
+    { id: 2, label: "Scope & Target", desc: "Who is taking this?" },
+    { id: 3, label: "Results Release", desc: "Sharing Settings" }
+  ];
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-12 pb-20">
-      <div className="bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[4rem] p-12 lg:p-16 shadow-2xl space-y-12 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-[100px] opacity-[0.03] pointer-events-none" style={{ backgroundColor: primaryColor }} />
-        
-        <div className="space-y-10">
-          <div className="flex items-center gap-4">
-              <div className="size-14 rounded-2xl flex items-center justify-center border border-slate-100 dark:border-white/10 shadow-inner" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
-                  <Cpu size={24} strokeWidth={2.5} />
-              </div>
-              <div>
-                  <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Core Configuration</h2>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Ingress Parameters</p>
-              </div>
-          </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 pb-20">
+      
+      {/* Premium Visual Stepper */}
+      <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-white/5 rounded-3xl p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 relative">
+          
+          {/* Connector Line behind steps (hidden on mobile) */}
+          <div className="absolute top-[26px] left-[10%] right-[10%] h-0.5 bg-slate-100 dark:bg-white/5 hidden md:block z-0" />
+          <div 
+            className="absolute top-[26px] left-[10%] h-0.5 transition-all duration-500 hidden md:block z-0" 
+            style={{ 
+              backgroundColor: primaryColor,
+              width: `${(activeStep - 1) * 40}%`
+            }} 
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-end">
-            <div className="space-y-3">
-              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
-                <span>Institutional Node</span>
-                <School size={14} className="text-slate-300" />
-              </Label>
-              <select
-                {...register("schoolId")}
-                className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
+          {steps.map((step, idx) => {
+            const isCompleted = activeStep > step.id;
+            const isActive = activeStep === step.id;
+            return (
+              <div 
+                key={step.id} 
+                className="flex items-center gap-4 z-10 w-full md:w-auto cursor-pointer"
+                onClick={async () => {
+                  if (step.id < activeStep) {
+                    setActiveStep(step.id);
+                  } else if (step.id > activeStep) {
+                    // Let the user skip forward only if valid
+                    if (activeStep === 1) {
+                      const val = await trigger(["schoolId", "title", "category"]);
+                      if (val) {
+                        if (step.id === 3) {
+                          if (watchedScope === "CLASS") {
+                            const valClass = await trigger(["classId"]);
+                            if (valClass) setActiveStep(3);
+                          } else if (watchedScope === "DEPARTMENT") {
+                            const selectedDeps = watch("departmentIds") || [];
+                            if (selectedDeps.length > 0) setActiveStep(3);
+                          } else {
+                            setActiveStep(3);
+                          }
+                        } else {
+                          setActiveStep(2);
+                        }
+                      }
+                    } else if (activeStep === 2) {
+                      if (watchedScope === "CLASS") {
+                        const valClass = await trigger(["classId"]);
+                        if (valClass) setActiveStep(3);
+                      } else if (watchedScope === "DEPARTMENT") {
+                        const selectedDeps = watch("departmentIds") || [];
+                        if (selectedDeps.length > 0) setActiveStep(3);
+                      } else {
+                        setActiveStep(3);
+                      }
+                    }
+                  }
+                }}
               >
-                <option value="">Choose a school...</option>
-                {(user as { schools?: { schoolId: string, schoolName: string }[] })?.schools?.map((s) => (
-                  <option key={s.schoolId} value={s.schoolId}>{s.schoolName}</option>
-                ))}
-              </select>
-              {errors.schoolId && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.schoolId.message}</p>}
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
-                <span>Temporal Registry</span>
-                <Calendar size={14} className="text-slate-300" />
-              </Label>
-              {sessions && sessions.data?.length > 0 ? (
-                <select
-                  {...register("sessionId")}
-                  className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                  style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
-                >
-                  <option value="">No Session (Select to link)</option>
-                  {sessions.data?.map((session: { id: string, name: string }) => (
-                    <option key={session.id} value={session.id}>{session.name}</option>
-                  ))}
-                </select>
-              ) : (
-                <div className="h-16 flex items-center px-6 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-400 text-xs italic border-2 border-dashed border-slate-100 dark:border-white/5 font-bold uppercase tracking-widest">
-                  {loadingSessions ? (
-                    <span className="flex items-center gap-3">
-                      <Loader2 size={16} className="animate-spin" /> Fetching...
-                    </span>
-                  ) : !watchedSchoolId ? (
-                    "Awaiting School Node..."
-                  ) : (
-                    "No sessions discovered"
+                <div 
+                  className={cn(
+                    "size-12 rounded-2xl flex items-center justify-center font-bold text-sm transition-all duration-300 border shadow-inner",
+                    isCompleted 
+                      ? "text-white" 
+                      : isActive 
+                        ? "text-white border-transparent scale-110 shadow-lg" 
+                        : "bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-white/5"
                   )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-12 border-t border-slate-100 dark:border-white/5 space-y-10">
-          <div className="flex items-center gap-4">
-              <div className="size-14 rounded-2xl flex items-center justify-center border border-slate-100 dark:border-white/10 shadow-inner" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
-                  <FileText size={24} strokeWidth={2.5} />
-              </div>
-              <div>
-                  <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Identity & Scope</h2>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operational Targeting</p>
-              </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div className="space-y-3">
-              <Label htmlFor="title" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Node Designation (Title)</Label>
-              <Input
-                id="title"
-                placeholder="e.g. 2026 FIRST TERM PERFORMANCE SYNC"
-                {...register("title")}
-                className="h-16 px-6 rounded-2xl bg-slate-50/50 dark:bg-white/5 border-2 border-slate-50 dark:border-white/5 focus:border-primary transition-all font-bold text-slate-700 dark:text-slate-200"
-                style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
-              />
-              {errors.title && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.title.message}</p>}
-            </div>
-
-            <div className="space-y-3">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Assessment Category</Label>
-                <div className="grid grid-cols-2 gap-4">
-                    <button 
-                        type="button"
-                        onClick={() => setValue("category", "EXAM")}
-                        className={cn(
-                            "h-16 rounded-2xl border-2 font-black uppercase tracking-widest text-[10px] transition-all",
-                            watch("category") === "EXAM" ? "bg-slate-900 text-white border-slate-900 shadow-xl" : "bg-slate-50 dark:bg-white/5 border-slate-50 dark:border-white/5 text-slate-400"
-                        )}
-                        style={{ backgroundColor: watch("category") === "EXAM" ? primaryColor : undefined, borderColor: watch("category") === "EXAM" ? primaryColor : undefined }}
-                    >
-                        Formal Exam
-                    </button>
-                    <button 
-                        type="button"
-                        onClick={() => setValue("category", "QUIZ")}
-                        className={cn(
-                            "h-16 rounded-2xl border-2 font-black uppercase tracking-widest text-[10px] transition-all",
-                            watch("category") === "QUIZ" ? "bg-slate-900 text-white border-slate-900 shadow-xl" : "bg-slate-50 dark:bg-white/5 border-slate-50 dark:border-white/5 text-slate-400"
-                        )}
-                        style={{ backgroundColor: watch("category") === "QUIZ" ? primaryColor : undefined, borderColor: watch("category") === "QUIZ" ? primaryColor : undefined }}
-                    >
-                        Tactical Quiz
-                    </button>
-                </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Label htmlFor="description" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Instructions</Label>
-            <Textarea
-              id="description"
-              placeholder="Provide tactical guidelines for participants..."
-              {...register("description")}
-              className="rounded-3xl bg-slate-50/50 dark:bg-white/5 border-2 border-slate-50 dark:border-white/5 focus:border-primary transition-all font-bold text-slate-700 dark:text-slate-200 min-h-[120px] p-6"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Target size={14} className="text-slate-300" /> Operational Scope
-                </Label>
-                <select 
-                    {...register("scope")} 
-                    className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                    style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
+                  style={{
+                    backgroundColor: isCompleted || isActive ? primaryColor : undefined,
+                    borderColor: isActive ? primaryColor : undefined,
+                    boxShadow: isActive ? `0 8px 24px -6px ${primaryColor}40` : undefined
+                  }}
                 >
-                  <option value="SCHOOL">Whole Institutional Network</option>
-                  <option value="CLASS">Specific Class Cluster</option>
-                  <option value="DEPARTMENT">Departmental Segment</option>
-                </select>
+                  {isCompleted ? <Check size={18} strokeWidth={3} /> : step.id}
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className={cn(
+                    "text-xs font-black uppercase tracking-wider",
+                    isActive ? "text-slate-900 dark:text-white" : "text-slate-400"
+                  )}>
+                    {step.label}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium hidden sm:inline">
+                    {step.desc}
+                  </span>
+                </div>
               </div>
-
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Layers size={14} className="text-slate-300" /> Target Class (Optional)
-                </Label>
-                <select
-                  {...register("classId")}
-                  className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                  style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
-                >
-                  <option value="">Select Class Module...</option>
-                  {classesData?.map((c: { id: string, name: string, section?: string }) => (
-                    <option key={c.id} value={c.id}>{c.name} {c.section}</option>
-                  ))}
-                </select>
-              </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                Departmental Targeting
-              </Label>
-              <div className="px-3 py-1 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[9px] font-black uppercase tracking-widest text-slate-500">
-                {watch("departmentIds")?.length || 0} Nodes Selected
-              </div>
-            </div>
-            
-            {departmentsData && departmentsData.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {departmentsData.map((d: { id: string, name: string, code?: string }) => {
-                  const isSelected = watch("departmentIds")?.includes(d.id);
-                  return (
-                    <div 
-                      key={d.id}
-                      onClick={() => {
-                        const current = watch("departmentIds") || [];
-                        const next = current.includes(d.id) 
-                          ? current.filter(id => id !== d.id)
-                          : [...current, d.id];
-                        setValue("departmentIds", next);
-                      }}
-                      className={cn(
-                          "cursor-pointer group flex items-center gap-5 p-5 rounded-3xl border-2 transition-all duration-300",
-                          isSelected 
-                            ? "bg-primary/5 border-primary shadow-xl shadow-primary/10" 
-                            : "bg-slate-50/50 dark:bg-white/5 border-slate-50 dark:border-white/5 hover:border-primary/30"
-                      )}
-                      style={{ 
-                        borderColor: isSelected ? primaryColor : undefined,
-                        backgroundColor: isSelected ? `${primaryColor}10` : undefined,
-                        boxShadow: isSelected ? `0 20px 40px -10px ${primaryColor}20` : undefined
-                      } as React.CSSProperties}
-                    >
-                      <div className={cn(
-                          "size-8 rounded-xl flex items-center justify-center transition-all duration-500",
-                          isSelected ? "bg-primary text-white scale-110" : "bg-slate-200 dark:bg-white/10 text-transparent"
-                      )}
-                      style={{ backgroundColor: isSelected ? primaryColor : undefined }}
-                      >
-                        <Check size={14} strokeWidth={4} />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className={cn("text-xs font-black uppercase tracking-tight truncate", isSelected ? "text-slate-900 dark:text-white" : "text-slate-500")}>{d.name}</span>
-                        <span className="text-[9px] uppercase font-black opacity-40 tracking-widest">{d.code}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="h-20 flex items-center justify-center rounded-3xl bg-slate-50 dark:bg-white/5 border-2 border-dashed border-slate-100 dark:border-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] italic">
-                {watchedSchoolId ? "No departmental nodes discovered" : "Initialize school node selection"}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="pt-12 border-t border-slate-100 dark:border-white/5 space-y-10">
-          <div className="flex items-center gap-4">
-              <div className="size-14 rounded-2xl flex items-center justify-center border border-slate-100 dark:border-white/10 shadow-inner" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
-                  <ShieldCheck size={24} strokeWidth={2.5} />
-              </div>
-              <div>
-                  <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Result Protocols</h2>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Visibility & Authorization</p>
-              </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <div className="space-y-4">
-              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Synchronization Mode</Label>
-              <select
-                {...register("allowImmediateResult", {
-                  setValueAs: (v) => v === "true",
-                })}
-                className="w-full h-16 rounded-2xl border-2 border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                style={{ '--tw-ring-color': `${primaryColor}20` } as React.CSSProperties}
-              >
-                <option value="true">Immediate Sync (Visible On Completion)</option>
-                <option value="false">Temporal Delay (Released on Date)</option>
-              </select>
-            </div>
-
-            <div className="space-y-4">
-              <Label htmlFor="resultReleaseAt" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registry Release (Optional)</Label>
-              <Input
-                id="resultReleaseAt"
-                type="datetime-local"
-                disabled={watch("allowImmediateResult") === true}
-                {...register("resultReleaseAt")}
-                className="h-16 px-6 rounded-2xl bg-slate-50/50 dark:bg-white/5 border-2 border-slate-50 dark:border-white/5 focus:border-primary transition-all font-bold text-slate-700 dark:text-slate-200"
-              />
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-8 p-10 bg-white dark:bg-slate-900/60 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3.5rem] shadow-2xl">
-        <div className="text-center sm:text-left space-y-1">
-          <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">PHASE 01 COMPLETED</p>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Phase: Performance Node Infrastructure (Papers)</p>
-        </div>
-        <Button
-          type="submit"
-          disabled={isPending || !watchedSchoolId}
-          style={{ backgroundColor: primaryColor }}
-          className="w-full sm:w-auto px-12 h-16 rounded-[2rem] text-white font-black uppercase tracking-widest transition-all flex gap-4 shadow-2xl hover:scale-105 active:scale-95 border-none"
-        >
-          {isPending ? (
-              <span className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  INITIALIZING...
-              </span>
-          ) : (
-              <span className="flex items-center gap-3">
-                  INITIALIZE NODE
-                  <ArrowRight size={20} strokeWidth={3} />
-              </span>
+      <div className="bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+        
+        {/* Ambient background glow matching primaryColor */}
+        <div 
+          className="absolute top-0 right-0 w-80 h-80 rounded-full blur-[120px] opacity-[0.03] pointer-events-none transition-all duration-500" 
+          style={{ backgroundColor: primaryColor }} 
+        />
+        
+        <AnimatePresence mode="wait">
+          {activeStep === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-10"
+            >
+              <div className="flex items-center gap-4">
+                <div 
+                  className="size-12 rounded-2xl flex items-center justify-center border shadow-inner" 
+                  style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}20`, color: primaryColor }}
+                >
+                  <BookOpen size={20} strokeWidth={2} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Exam Details</h2>
+                  <p className="text-xs text-slate-500">Provide the basic context and category of your assessment.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                {/* Select School */}
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                    <span>Select School</span>
+                    <School size={12} className="text-slate-400" />
+                  </Label>
+                  <select
+                    {...register("schoolId")}
+                    className="w-full h-14 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/40 px-5 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-semibold text-sm text-slate-700 dark:text-slate-200"
+                    style={{ borderColor: watchedSchoolId ? `${primaryColor}30` : undefined } as React.CSSProperties}
+                  >
+                    <option value="">Select a school...</option>
+                    {(user as { schools?: { schoolId: string, schoolName: string }[] })?.schools?.map((s) => (
+                      <option key={s.schoolId} value={s.schoolId}>{s.schoolName}</option>
+                    ))}
+                  </select>
+                  {errors.schoolId && <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider">{errors.schoolId.message}</p>}
+                </div>
+
+                {/* Academic Session */}
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                    <span>Academic Session</span>
+                    <Calendar size={12} className="text-slate-400" />
+                  </Label>
+                  
+                  {sessions?.data && sessions.data.length > 0 ? (
+                    <select
+                      {...register("sessionId")}
+                      className="w-full h-14 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/40 px-5 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-semibold text-sm text-slate-700 dark:text-slate-200"
+                    >
+                      <option value="">No Session Link (Optional)</option>
+                      {sessions.data.map((session: { id: string, name: string }) => (
+                        <option key={session.id} value={session.id}>{session.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="h-14 flex items-center px-5 rounded-2xl bg-slate-50 dark:bg-slate-800/20 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-white/5 font-semibold">
+                      {loadingSessions ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 size={14} className="animate-spin text-slate-400" /> Fetching academic sessions...
+                        </span>
+                      ) : !watchedSchoolId ? (
+                        "Select a school first..."
+                      ) : (
+                        "No academic sessions found"
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Title input */}
+              <div className="space-y-3">
+                <Label htmlFor="title" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Exam Title</Label>
+                <Input
+                  id="title"
+                  placeholder="e.g. First Term Mathematics Final Exam"
+                  {...register("title")}
+                  className="h-14 px-5 rounded-2xl bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-primary/20 transition-all font-semibold text-slate-800 dark:text-slate-100"
+                />
+                {errors.title && <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider">{errors.title.message}</p>}
+              </div>
+
+              {/* Category card selections */}
+              <div className="space-y-4">
+                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Select Category</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  
+                  {/* Exam Card */}
+                  <div
+                    onClick={() => setValue("category", "EXAM")}
+                    className={cn(
+                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex items-start gap-4 hover:shadow-md",
+                      watchedCategory === "EXAM" 
+                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
+                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
+                    )}
+                    style={{ borderColor: watchedCategory === "EXAM" ? primaryColor : undefined }}
+                  >
+                    <div 
+                      className="size-10 rounded-xl flex items-center justify-center"
+                      style={{ 
+                        backgroundColor: watchedCategory === "EXAM" ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
+                        color: watchedCategory === "EXAM" ? primaryColor : "#94a3b8"
+                      }}
+                    >
+                      <Trophy size={18} />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                        Formal Exam
+                        {watchedCategory === "EXAM" && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
+                      </span>
+                      <p className="text-xs text-slate-400 font-medium">Standard school-wide examinations with formal weight.</p>
+                    </div>
+                  </div>
+
+                  {/* Quiz Card */}
+                  <div
+                    onClick={() => setValue("category", "QUIZ")}
+                    className={cn(
+                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex items-start gap-4 hover:shadow-md",
+                      watchedCategory === "QUIZ" 
+                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
+                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
+                    )}
+                    style={{ borderColor: watchedCategory === "QUIZ" ? primaryColor : undefined }}
+                  >
+                    <div 
+                      className="size-10 rounded-xl flex items-center justify-center"
+                      style={{ 
+                        backgroundColor: watchedCategory === "QUIZ" ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
+                        color: watchedCategory === "QUIZ" ? primaryColor : "#94a3b8"
+                      }}
+                    >
+                      <Zap size={18} />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                        Short Quiz / Test
+                        {watchedCategory === "QUIZ" && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
+                      </span>
+                      <p className="text-xs text-slate-400 font-medium">Informal class tests, weekly quizzes, or diagnostic checkpoints.</p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Instructions / Description */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="description" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions & Guidelines</Label>
+                  <span className="text-[9px] text-slate-400 flex items-center gap-1">
+                    <Info size={10} /> Optional
+                  </span>
+                </div>
+                <Textarea
+                  id="description"
+                  placeholder="e.g. Ensure all students bring their scientific calculators. The test starts promptly at 8:00 AM."
+                  {...register("description")}
+                  className="rounded-2xl bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm text-slate-700 dark:text-slate-200 min-h-[100px] p-4"
+                />
+              </div>
+
+            </motion.div>
           )}
-        </Button>
+
+          {activeStep === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-10"
+            >
+              <div className="flex items-center gap-4">
+                <div 
+                  className="size-12 rounded-2xl flex items-center justify-center border shadow-inner" 
+                  style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}20`, color: primaryColor }}
+                >
+                  <Layers size={20} strokeWidth={2} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Scope & Target Audience</h2>
+                  <p className="text-xs text-slate-500">Determine who will participate in this examination.</p>
+                </div>
+              </div>
+
+              {/* Scope selectors */}
+              <div className="space-y-4">
+                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Exam Scope</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  
+                  {/* Whole School Card */}
+                  <div
+                    onClick={() => setValue("scope", "SCHOOL")}
+                    className={cn(
+                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex flex-col gap-3 hover:shadow-md",
+                      watchedScope === "SCHOOL" 
+                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
+                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
+                    )}
+                    style={{ borderColor: watchedScope === "SCHOOL" ? primaryColor : undefined }}
+                  >
+                    <div 
+                      className="size-10 rounded-xl flex items-center justify-center"
+                      style={{ 
+                        backgroundColor: watchedScope === "SCHOOL" ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
+                        color: watchedScope === "SCHOOL" ? primaryColor : "#94a3b8"
+                      }}
+                    >
+                      <School size={18} />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                        Whole School
+                        {watchedScope === "SCHOOL" && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
+                      </span>
+                      <p className="text-[11px] text-slate-400 font-medium">Available to all classes and student segments across the school.</p>
+                    </div>
+                  </div>
+
+                  {/* Class Card */}
+                  <div
+                    onClick={() => setValue("scope", "CLASS")}
+                    className={cn(
+                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex flex-col gap-3 hover:shadow-md",
+                      watchedScope === "CLASS" 
+                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
+                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
+                    )}
+                    style={{ borderColor: watchedScope === "CLASS" ? primaryColor : undefined }}
+                  >
+                    <div 
+                      className="size-10 rounded-xl flex items-center justify-center"
+                      style={{ 
+                        backgroundColor: watchedScope === "CLASS" ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
+                        color: watchedScope === "CLASS" ? primaryColor : "#94a3b8"
+                      }}
+                    >
+                      <BookOpen size={18} />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                        Specific Class
+                        {watchedScope === "CLASS" && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
+                      </span>
+                      <p className="text-[11px] text-slate-400 font-medium">Target a specific class group or grade level (e.g. Senior Class 1).</p>
+                    </div>
+                  </div>
+
+                  {/* Department Card */}
+                  <div
+                    onClick={() => setValue("scope", "DEPARTMENT")}
+                    className={cn(
+                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex flex-col gap-3 hover:shadow-md",
+                      watchedScope === "DEPARTMENT" 
+                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
+                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
+                    )}
+                    style={{ borderColor: watchedScope === "DEPARTMENT" ? primaryColor : undefined }}
+                  >
+                    <div 
+                      className="size-10 rounded-xl flex items-center justify-center"
+                      style={{ 
+                        backgroundColor: watchedScope === "DEPARTMENT" ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
+                        color: watchedScope === "DEPARTMENT" ? primaryColor : "#94a3b8"
+                      }}
+                    >
+                      <Layers size={18} />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                        Specific Department
+                        {watchedScope === "DEPARTMENT" && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
+                      </span>
+                      <p className="text-[11px] text-slate-400 font-medium">Target one or more specialized departments or faculties (e.g. Science).</p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Contextual Options */}
+              <AnimatePresence mode="popLayout">
+                
+                {/* Specific Class Selector */}
+                {watchedScope === "CLASS" && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3"
+                  >
+                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                      Target Class <span className="text-red-500">*</span>
+                    </Label>
+                    <select
+                      {...register("classId")}
+                      className="w-full h-14 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/40 px-5 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-semibold text-sm text-slate-700 dark:text-slate-200"
+                    >
+                      <option value="">Select Target Class...</option>
+                      {classesData?.map((c: { id: string, name: string, section?: string }) => (
+                        <option key={c.id} value={c.id}>{c.name} {c.section ? `(${c.section})` : ''}</option>
+                      ))}
+                    </select>
+                    {errors.classId && <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider">{errors.classId.message}</p>}
+                  </motion.div>
+                )}
+
+                {/* Specific Department Selection */}
+                {watchedScope === "DEPARTMENT" && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex justify-between items-center">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Select Departments <span className="text-red-500">*</span>
+                      </Label>
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 font-bold">
+                        {watch("departmentIds")?.length || 0} Selected
+                      </span>
+                    </div>
+
+                    {departmentsData && departmentsData.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {departmentsData.map((d: { id: string, name: string, code?: string }) => {
+                          const isSelected = watch("departmentIds")?.includes(d.id);
+                          return (
+                            <div 
+                              key={d.id}
+                              onClick={() => {
+                                const current = watch("departmentIds") || [];
+                                const next = current.includes(d.id) 
+                                  ? current.filter(id => id !== d.id)
+                                  : [...current, d.id];
+                                setValue("departmentIds", next);
+                              }}
+                              className={cn(
+                                "cursor-pointer group flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200",
+                                isSelected 
+                                  ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
+                                  : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
+                              )}
+                              style={{ 
+                                borderColor: isSelected ? primaryColor : undefined,
+                              }}
+                            >
+                              <div 
+                                className={cn(
+                                  "size-6 rounded-lg flex items-center justify-center transition-all border",
+                                  isSelected ? "text-white scale-105" : "bg-transparent text-transparent border-slate-200 dark:border-white/10"
+                                )}
+                                style={{ 
+                                  backgroundColor: isSelected ? primaryColor : undefined,
+                                  borderColor: isSelected ? primaryColor : undefined
+                                }}
+                              >
+                                <Check size={12} strokeWidth={4} />
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{d.name}</span>
+                                {d.code && <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">{d.code}</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200 dark:border-white/5 text-slate-400 text-xs italic font-semibold">
+                        {watchedSchoolId ? "No departments found for this school." : "Select a school first."}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+              </AnimatePresence>
+            </motion.div>
+          )}
+
+          {activeStep === 3 && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-10"
+            >
+              <div className="flex items-center gap-4">
+                <div 
+                  className="size-12 rounded-2xl flex items-center justify-center border shadow-inner" 
+                  style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}20`, color: primaryColor }}
+                >
+                  <ShieldCheck size={20} strokeWidth={2} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Results Release</h2>
+                  <p className="text-xs text-slate-500">Decide when students can view their grades and AI insights.</p>
+                </div>
+              </div>
+
+              {/* Release mode options */}
+              <div className="space-y-4">
+                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">How should results be shared?</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  
+                  {/* Immediate Sync */}
+                  <div
+                    onClick={() => {
+                      setValue("allowImmediateResult", true);
+                      setValue("resultReleaseAt", "");
+                    }}
+                    className={cn(
+                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex items-start gap-4 hover:shadow-md",
+                      watchedAllowImmediateResult === true 
+                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
+                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
+                    )}
+                    style={{ borderColor: watchedAllowImmediateResult === true ? primaryColor : undefined }}
+                  >
+                    <div 
+                      className="size-10 rounded-xl flex items-center justify-center"
+                      style={{ 
+                        backgroundColor: watchedAllowImmediateResult === true ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
+                        color: watchedAllowImmediateResult === true ? primaryColor : "#94a3b8"
+                      }}
+                    >
+                      <CheckCircle2 size={18} />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                        Release Immediately
+                        {watchedAllowImmediateResult === true && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
+                      </span>
+                      <p className="text-xs text-slate-400 font-medium">Students see their marks and performance insights immediately after submitting.</p>
+                    </div>
+                  </div>
+
+                  {/* Scheduled release */}
+                  <div
+                    onClick={() => setValue("allowImmediateResult", false)}
+                    className={cn(
+                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex items-start gap-4 hover:shadow-md",
+                      watchedAllowImmediateResult === false 
+                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
+                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
+                    )}
+                    style={{ borderColor: watchedAllowImmediateResult === false ? primaryColor : undefined }}
+                  >
+                    <div 
+                      className="size-10 rounded-xl flex items-center justify-center"
+                      style={{ 
+                        backgroundColor: watchedAllowImmediateResult === false ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
+                        color: watchedAllowImmediateResult === false ? primaryColor : "#94a3b8"
+                      }}
+                    >
+                      <Clock size={18} />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                        Schedule Release Date
+                        {watchedAllowImmediateResult === false && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
+                      </span>
+                      <p className="text-xs text-slate-400 font-medium">Lock grades and release them all at once at a specific date and time.</p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Conditional Scheduled Date Picker */}
+              <AnimatePresence mode="popLayout">
+                {watchedAllowImmediateResult === false && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3"
+                  >
+                    <Label htmlFor="resultReleaseAt" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Scheduled Release Date & Time</Label>
+                    <Input
+                      id="resultReleaseAt"
+                      type="datetime-local"
+                      {...register("resultReleaseAt")}
+                      className="h-14 px-5 rounded-2xl bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-primary/20 transition-all font-semibold text-slate-800 dark:text-slate-100"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Controller Buttons / Navigation Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white dark:bg-slate-900/60 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-3xl shadow-lg">
+        <div className="text-center sm:text-left space-y-0.5">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+            Step {activeStep} of 3
+          </p>
+          <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
+            {activeStep === 1 ? "Provide core parameters" : activeStep === 2 ? "Select exam participants" : "Finalize grading settings"}
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {activeStep > 1 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleBackStep}
+              className="flex-1 sm:flex-none px-6 h-12 rounded-xl text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 border-slate-200 dark:border-white/10 transition-transform active:scale-95"
+            >
+              <ArrowLeft size={16} />
+              Back
+            </Button>
+          )}
+
+          {activeStep < 3 ? (
+            <Button
+              type="button"
+              onClick={handleNextStep}
+              style={{ backgroundColor: primaryColor }}
+              className="flex-1 sm:flex-none px-8 h-12 rounded-xl text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all hover:opacity-95 shadow-md active:scale-95 border-none"
+            >
+              Continue
+              <ArrowRight size={16} />
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              disabled={isPending || !watchedSchoolId}
+              style={{ backgroundColor: primaryColor }}
+              className="flex-1 sm:flex-none px-8 h-12 rounded-xl text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all hover:opacity-95 shadow-lg active:scale-95 border-none"
+            >
+              {isPending ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Creating...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  Create Exam & Add Papers
+                  <Check size={16} strokeWidth={3} />
+                </span>
+              )}
+            </Button>
+          )}
+        </div>
       </div>
     </form>
   );
 }
-

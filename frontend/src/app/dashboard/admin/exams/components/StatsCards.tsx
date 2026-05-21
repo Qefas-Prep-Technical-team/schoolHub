@@ -19,32 +19,32 @@ export default function StatsCards({ exams = [] }: StatsCardsProps) {
     
     const stats = [
         { 
-            label: 'Institutional Registry', 
+            label: 'Total Exams', 
             value: exams.length.toString(),
             icon: Trophy,
             color: primaryColor,
-            desc: 'Total Assessment Nodes'
+            desc: 'All configured exams'
         },
         { 
-            label: 'Operational Sync', 
+            label: 'Published Exams', 
             value: exams.filter(e => e.status === 'PUBLISHED').length.toString(),
             icon: Activity,
             color: '#10b981', // Emerald
-            desc: 'Active Protocols'
+            desc: 'Active assessments'
         },
         { 
-            label: 'Temporal Schedule', 
+            label: 'Scheduled Exams', 
             value: exams.filter(e => e.status === 'PUBLISHED' && e.startDate && new Date(e.startDate) > now).length.toString(),
             icon: Calendar,
             color: '#2563eb', // Indigo
-            desc: 'Pending Deployments'
+            desc: 'Upcoming exams'
         },
         { 
-            label: 'Development Hub', 
+            label: 'Draft Exams', 
             value: exams.filter(e => e.status === 'DRAFT').length.toString(),
             icon: FileEdit,
             color: '#f59e0b', // Amber
-            desc: 'Draft Architectures'
+            desc: 'Unpublished drafts'
         },
     ];
 

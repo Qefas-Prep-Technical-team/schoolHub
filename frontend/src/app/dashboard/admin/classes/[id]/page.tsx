@@ -331,6 +331,30 @@ export default function ClassDetailsPage() {
                       <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                        Code: <span className="text-gray-900 dark:text-white font-bold">{classData?.classCode}</span>
                     </span>
+                    {classData?.level && (
+                      <>
+                        <span>|</span>
+                        <span>
+                          Level: <span className="text-gray-900 dark:text-white font-bold">{classData.level}</span>
+                        </span>
+                      </>
+                    )}
+                    {classData?.session && (
+                      <>
+                        <span>|</span>
+                        <span>
+                          Session: <span className="text-gray-900 dark:text-white font-bold">{classData.session}</span>
+                        </span>
+                      </>
+                    )}
+                    {classData?.term && (
+                      <>
+                        <span>|</span>
+                        <span>
+                          Term: <span className="text-gray-900 dark:text-white font-bold">{classData.term}</span>
+                        </span>
+                      </>
+                    )}
                     <span>|</span>
                     <span>
                       Teachers:{" "}
@@ -366,7 +390,7 @@ export default function ClassDetailsPage() {
             <div className="flex flex-wrap gap-3">
               <button 
                 onClick={() => setIsQRModalOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm font-bold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all active:scale-95"
+                className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-sm font-bold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all active:scale-95 shadow-sm"
               >
                 <QrCode size={18} />
                 <span>QR Access</span>
@@ -383,7 +407,7 @@ export default function ClassDetailsPage() {
           </div>
 
           {/* Tabs */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-2 overflow-hidden mb-8">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-2 overflow-hidden mb-8">
             <CustomTabs
               tabs={tabs}
               activeTab={activeTab}

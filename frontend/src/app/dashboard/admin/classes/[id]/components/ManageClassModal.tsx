@@ -6,6 +6,8 @@ import { useUpdateClass, useAllTeachers } from '@/lib/api/hooks/useClasses';
 import { classService } from '../../services/classService';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { apiClient } from '@/lib/api/client';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useSessions } from '@/lib/api/hooks/useSessions';
 
 interface ManageClassModalProps {
   isOpen: boolean;
@@ -20,6 +22,9 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
 }) => {
   const [name, setName] = useState(classData?.name || '');
   const [section, setSection] = useState(classData?.section || '');
+  const [term, setTerm] = useState(classData?.term || '');
+  const [session, setSession] = useState(classData?.session || '');
+  const [level, setLevel] = useState(classData?.level || '');
   const [selectedTeacherIds, setSelectedTeacherIds] = useState<string[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -30,12 +35,20 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
 
   const { user } = useAuthStore();
   const updateClassMutation = useUpdateClass(classData?.id);
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const { data: sessionsResponse } = useSessions(schoolId);
+  const availableLevels = schoolProfile?.levels || [];
+  const schoolSessions = sessionsResponse?.data || [];
 
   // Initialize from classData
   useEffect(() => {
     if (classData) {
       setName(classData.name || '');
       setSection(classData.section || '');
+      setTerm(classData.term || '');
+      setSession(classData.session || '');
+      setLevel(classData.level || '');
       if (classData.teachers) {
         setSelectedTeacherIds((classData.teachers || []).map((t: any) => t.teacherId).filter(Boolean));
       }
@@ -78,6 +91,9 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
     await updateClassMutation.mutateAsync({
       name,
       section,
+      term,
+      session,
+      level: level || undefined,
       teacherIds: selectedTeacherIds.filter(Boolean),
       studentIds: selectedStudentIds.filter(Boolean),
     });
@@ -156,6 +172,24 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Class Level
+                </label>
+                <select
+                  value={level}
+                  onChange={(e) => setLevel(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                >
+                  <option value="">No Level Assigned</option>
+                  {availableLevels.map((lvl: string, idx: number) => (
+                    <option key={idx} value={lvl}>{lvl}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Section / Room
                 </label>
                 <input
@@ -165,6 +199,38 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
                   placeholder="e.g., Room 101"
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Term
+                </label>
+                <select
+                  value={term}
+                  onChange={(e) => setTerm(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                >
+                  <option value="">Select Term</option>
+                  <option value="First Term">First Term</option>
+                  <option value="Second Term">Second Term</option>
+                  <option value="Third Term">Third Term</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Session (Academic Year)
+                </label>
+                <select
+                  value={session}
+                  onChange={(e) => setSession(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                >
+                  <option value="">Select Session</option>
+                  {schoolSessions.map((s: any) => (
+                    <option key={s.id} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
             

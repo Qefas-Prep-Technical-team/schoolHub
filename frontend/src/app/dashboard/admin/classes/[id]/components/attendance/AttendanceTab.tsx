@@ -8,6 +8,8 @@ import AttendanceSummaryCard from './components/AttendanceSummaryCard';
 import AttendanceCalendar from './components/AttendanceCalendar';
 import AttendanceTable from './components/AttendanceTable';
 import AttendanceModal from './components/AttendanceModal';
+import AttendanceModeModal from './components/AttendanceModeModal';
+import AttendanceSwipeModal from './components/AttendanceSwipeModal';
 import { 
   AttendanceRecord, 
   AttendanceSummary, 
@@ -122,16 +124,13 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
   const schoolId = classData?.schoolId || "";
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
-  const [showModal, setShowModal] = useState(false);
+  const [showModeModal, setShowModeModal] = useState(false);
+  const [showListModal, setShowListModal] = useState(false);
+  const [showSwipeModal, setShowSwipeModal] = useState(false);
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
   
   // Real Data Hooks
-  const { data: attendanceRecords = [], isLoading } = useClassAttendance(classId, selectedDate.toISOString().split('T')[0]);
-  const { data: attendanceSummary, isLoading: isSummaryLoading } = useClassAttendanceSummary(classId, selectedMonth);
+  const { data: attendanceRecords = [], isLoading, isFetching } = useClassAttendance(classId, selectedDate.toLocaleDateString('en-CA'));
   const { data: settings } = useSchoolSettings(schoolId);
   const submitMutation = useSubmitAttendance(classId);
 
@@ -179,12 +178,30 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
     setCalendarDays(generateCalendarDays());
   }, [selectedDate]);
 
+  const dailySummary = useMemo(() => {
+    const total = attendanceRecords.length;
+    const present = attendanceRecords.filter((r: any) => r.status === 'present').length;
+    const absent = attendanceRecords.filter((r: any) => r.status === 'absent').length;
+    const late = attendanceRecords.filter((r: any) => r.status === 'late').length;
+    const excused = attendanceRecords.filter((r: any) => r.status === 'excused').length;
+    
+    return {
+      date: selectedDate.toLocaleDateString('en-CA'),
+      totalStudents: total,
+      present,
+      absent,
+      late,
+      excused,
+      attendanceRate: total > 0 ? (present / total) * 100 : (attendanceRecords.length > 0 ? 100 : 0)
+    };
+  }, [attendanceRecords, selectedDate]);
+
 
 
   // Removed breadcrumbItems
 
   const handleStartAttendance = () => {
-    setShowModal(true);
+    setShowModeModal(true);
   };
 
   const handleDownloadReport = () => {
@@ -221,7 +238,7 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
     const htmlContent = `
       <html>
         <head>
-          <title>${classNameVal} - Attendance Report (${selectedDate.toISOString().split('T')[0]})</title>
+          <title>${classNameVal} - Attendance Report (${selectedDate.toLocaleDateString('en-CA')})</title>
           <style>
             @page {
               size: A4 portrait;
@@ -512,7 +529,7 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
   };
 
   const handleEditRecord = (record: AttendanceRecord) => {
-    setShowModal(true);
+    setShowListModal(true);
   };
 
   const handleSaveAttendance = (records: AttendanceRecord[]) => {
@@ -521,12 +538,13 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
       studentId: r.studentId,
       status: r.status,
       note: r.comment || (r as any).note || '',
-      date: selectedDate.toISOString().split('T')[0]
+      date: selectedDate.toLocaleDateString('en-CA')
     }));
 
     submitMutation.mutate(formattedRecords as unknown as Record<string, unknown>[], {
       onSuccess: () => {
-        setShowModal(false);
+        setShowListModal(false);
+        setShowSwipeModal(false);
       }
     });
   };
@@ -573,10 +591,9 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
         {/* Left Column */}
         <div className="lg:col-span-1 flex flex-col gap-6">
           <AttendanceSummaryCard 
-            summary={attendanceSummary || mockMonthlySummary}
-            selectedMonth={selectedMonth}
-            onMonthChange={handleMonthChange}
-            isLoading={isSummaryLoading}
+            summary={dailySummary}
+            selectedDate={selectedDate.toISOString()}
+            isLoading={isLoading || isFetching}
           />
           
           <AttendanceCalendar 
@@ -591,13 +608,36 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
           records={attendanceRecords}
           date={selectedDate.toISOString()}
           onEdit={handleEditRecord}
-          isLoading={isLoading}
+          isLoading={isLoading || isFetching}
         />
       </div>
 
+      <AttendanceModeModal 
+        isOpen={showModeModal}
+        onClose={() => setShowModeModal(false)}
+        onSelectList={() => {
+          setShowModeModal(false);
+          setShowListModal(true);
+        }}
+        onSelectSwipe={() => {
+          setShowModeModal(false);
+          setShowSwipeModal(true);
+        }}
+      />
+
       <AttendanceModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        isOpen={showListModal}
+        onClose={() => setShowListModal(false)}
+        onSave={handleSaveAttendance}
+        students={students.length > 0 ? students : mockStudents}
+        date={selectedDate.toLocaleDateString('en-CA')}
+        initialRecords={attendanceRecords}
+        isSaving={submitMutation.isPending}
+      />
+
+      <AttendanceSwipeModal
+        isOpen={showSwipeModal}
+        onClose={() => setShowSwipeModal(false)}
         onSave={handleSaveAttendance}
         students={students.length > 0 ? students : mockStudents}
         date={selectedDate.toISOString().split('T')[0]}

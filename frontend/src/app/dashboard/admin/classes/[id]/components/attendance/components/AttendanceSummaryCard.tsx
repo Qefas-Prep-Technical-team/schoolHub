@@ -3,15 +3,13 @@ import { AttendanceSummary } from './types';
 
 interface AttendanceSummaryCardProps {
   summary: AttendanceSummary;
-  selectedMonth?: string;
-  onMonthChange?: (month: string) => void;
+  selectedDate?: string;
   isLoading?: boolean;
 }
 
 const AttendanceSummaryCard: React.FC<AttendanceSummaryCardProps> = ({ 
   summary, 
-  selectedMonth,
-  onMonthChange,
+  selectedDate,
   isLoading
 }) => {
   const rateVal = summary.rate !== undefined ? summary.rate : (summary.attendanceRate !== undefined ? summary.attendanceRate : 0);
@@ -81,19 +79,10 @@ const AttendanceSummaryCard: React.FC<AttendanceSummaryCardProps> = ({
   return (
     <div className="bg-white dark:bg-gray-900/50 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Monthly Summary</h2>
-        <select 
-          value={selectedMonth}
-          onChange={(e) => onMonthChange?.(e.target.value)}
-          className="form-select text-sm rounded-md border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-250"
-          disabled={isLoading}
-        >
-          {months.map((m) => (
-            <option key={m.value} value={m.value}>
-              {m.label}
-            </option>
-          ))}
-        </select>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Daily Summary</h2>
+        <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+          {selectedDate ? new Date(selectedDate).toLocaleDateString() : 'Today'}
+        </span>
       </div>
       
       <div className="grid grid-cols-2 gap-4">

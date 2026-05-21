@@ -6,6 +6,7 @@ interface PaginationProps {
     totalItems: number;
     itemsPerPage: number;
     onPageChange: (page: number) => void;
+    primaryColor?: string;
 }
 
 export default function Pagination({
@@ -13,72 +14,136 @@ export default function Pagination({
     totalPages,
     totalItems,
     itemsPerPage,
-    onPageChange
+    onPageChange,
+    primaryColor = '#2563eb'
 }: PaginationProps) {
     const startItem = (currentPage - 1) * itemsPerPage + 1;
     const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
+    const getPageNumbers = () => {
+        const pages: (number | string)[] = [];
+        const range = 1; // Show current page +/- 1 sibling page
+
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) {
+                pages.push(i);
+            }
+            return pages;
+        }
+
+        // Always show page 1
+        pages.push(1);
+
+        const leftSiblingIndex = Math.max(currentPage - range, 2);
+        const rightSiblingIndex = Math.min(currentPage + range, totalPages - 1);
+
+        const showLeftEllipsis = leftSiblingIndex > 2;
+        const showRightEllipsis = rightSiblingIndex < totalPages - 1;
+
+        if (showLeftEllipsis) {
+            pages.push('...');
+        }
+
+        for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) {
+            pages.push(i);
+        }
+
+        if (showRightEllipsis) {
+            pages.push('...');
+        }
+
+        // Always show last page
+        pages.push(totalPages);
+
+        return pages;
+    };
+
     return (
-        <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-0">
-            {/* Mobile */}
+        <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 pt-6">
+            {/* Mobile View */}
             <div className="flex flex-1 justify-between sm:hidden">
                 <button
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="relative inline-flex items-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
-                    Previous
+                    Prev
                 </button>
+                <span className="text-xs font-black text-slate-500 flex items-center">
+                    Page {currentPage} of {totalPages}
+                </span>
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="relative ml-3 inline-flex items-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                 >
                     Next
                 </button>
             </div>
 
-            {/* Desktop */}
+            {/* Desktop View */}
             <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
-                    <p className="text-sm text-gray-700 dark:text-gray-400">
-                        Showing <span className="font-medium">{startItem}</span> to{' '}
-                        <span className="font-medium">{endItem}</span> of{' '}
-                        <span className="font-medium">{totalItems}</span> results
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                        Showing <span className="font-bold text-slate-850 dark:text-white">{totalItems === 0 ? 0 : startItem}</span> to{' '}
+                        <span className="font-bold text-slate-850 dark:text-white">{endItem}</span> of{' '}
+                        <span className="font-bold text-slate-850 dark:text-white">{totalItems}</span> entries
                     </p>
                 </div>
                 <div>
-                    <nav aria-label="Pagination" className="isolate inline-flex -space-x-px rounded-md shadow-sm">
+                    <nav aria-label="Pagination" className="isolate inline-flex items-center -space-x-px gap-1.5 p-1 bg-slate-50 dark:bg-slate-950/40 rounded-2xl border border-slate-100 dark:border-slate-900">
+                        {/* Prev Button */}
                         <button
                             onClick={() => onPageChange(currentPage - 1)}
                             disabled={currentPage === 1}
-                            className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="relative size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-900 border border-transparent disabled:opacity-30 disabled:pointer-events-none transition-all shadow-sm hover:shadow-md"
                         >
-                            <ChevronLeft size={20} />
+                            <ChevronLeft size={16} strokeWidth={2.5} />
                         </button>
 
-                        {[...Array(totalPages)].map((_, index) => {
-                            const page = index + 1;
+                        {/* Page Numbers with Smart Ellipsis Window */}
+                        {getPageNumbers().map((page, index) => {
+                            if (page === '...') {
+                                return (
+                                    <span
+                                        key={`ellipsis-${index}`}
+                                        className="relative size-10 flex items-center justify-center text-sm font-black text-slate-400 dark:text-slate-500 select-none"
+                                    >
+                                        ...
+                                    </span>
+                                );
+                            }
+
+                            const isActive = currentPage === page;
+
                             return (
                                 <button
                                     key={page}
-                                    onClick={() => onPageChange(page)}
-                                    className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${currentPage === page
-                                            ? 'bg-primary/20 dark:bg-primary/30 text-primary dark:text-white'
-                                            : 'text-gray-900 dark:text-gray-200 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
-                                        }`}
+                                    onClick={() => onPageChange(page as number)}
+                                    className="relative size-10 rounded-xl text-sm font-black flex items-center justify-center transition-all border shadow-sm hover:shadow-md"
+                                    style={isActive ? {
+                                        backgroundColor: primaryColor,
+                                        color: '#ffffff',
+                                        borderColor: primaryColor,
+                                        boxShadow: `0 8px 12px -3px ${primaryColor}40`
+                                    } : {
+                                        backgroundColor: 'transparent',
+                                        borderColor: 'transparent',
+                                        color: 'inherit'
+                                    }}
                                 >
                                     {page}
                                 </button>
                             );
                         })}
 
+                        {/* Next Button */}
                         <button
                             onClick={() => onPageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
-                            className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="relative size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-900 border border-transparent disabled:opacity-30 disabled:pointer-events-none transition-all shadow-sm hover:shadow-md"
                         >
-                            <ChevronRight size={20} />
+                            <ChevronRight size={16} strokeWidth={2.5} />
                         </button>
                     </nav>
                 </div>
@@ -86,4 +151,3 @@ export default function Pagination({
         </div>
     );
 }
-

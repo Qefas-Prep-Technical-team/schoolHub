@@ -79,7 +79,7 @@ export default function QuickActions({ primaryColor = '#2563eb' }: { primaryColo
       color: 'border-teal-500/20',
       iconColor: 'text-teal-500',
       bgColor: 'bg-teal-500/10',
-      href: '/dashboard/admin/grades',
+      href: '/dashboard/admin/attendance',
     },
     {
       id: 'settings',

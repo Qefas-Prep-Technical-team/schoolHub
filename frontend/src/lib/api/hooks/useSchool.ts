@@ -39,6 +39,7 @@ export const useSchoolTeachers = (schoolId: string) => {
 export const useSchoolPerformanceAnalysis = (
   schoolId: string,
   stats?: SchoolStats,
+  options?: { enabled?: boolean }
 ) => {
   return useQuery({
     queryKey: [
@@ -53,7 +54,12 @@ export const useSchoolPerformanceAnalysis = (
       if (cached && stats) {
         try {
           const parsedCache = JSON.parse(cached);
-          if (JSON.stringify(parsedCache.stats) === JSON.stringify(stats)) {
+          // Auto-bust the cache if it contains a locked/premium result —
+          // this handles plan upgrades where stats haven't changed yet
+          if (parsedCache.data?.isPremium === true) {
+            console.log("Cached analysis is premium-locked, busting cache for fresh fetch");
+            localStorage.removeItem(cacheKey);
+          } else if (JSON.stringify(parsedCache.stats) === JSON.stringify(stats)) {
             console.log("Using cached AI analysis report");
             return parsedCache.data;
           }
@@ -72,7 +78,7 @@ export const useSchoolPerformanceAnalysis = (
 
       return data;
     },
-    enabled: !!schoolId && !!stats,
+    enabled: !!schoolId && !!stats && (options?.enabled !== false),
     staleTime: Infinity,
     gcTime: 1000 * 60 * 60 * 24, // 24 hours
   });
@@ -216,5 +222,14 @@ export const useUpdateSchoolLandingPage = () => {
         queryKey: [...schoolQueryKeys.all, "landing-page", schoolId],
       });
     },
+  });
+};
+
+export const useSchoolTodayAttendance = (schoolId: string, date?: string) => {
+  return useQuery({
+    queryKey: [...schoolQueryKeys.all, 'today-attendance', schoolId, date || 'today'],
+    queryFn: () => schoolService.getTodayAttendance(schoolId, date),
+    enabled: !!schoolId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

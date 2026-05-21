@@ -13,6 +13,7 @@ import {
   getSchoolLandingPageService,
   getSchoolLandingPageBySubdomainService,
   updateSchoolLandingPageService,
+  getSchoolTodayAttendanceService,
 } from "./school.service";
 
 /**
@@ -455,6 +456,30 @@ export const updateSchoolLandingPage = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to update landing page settings",
+    });
+  }
+};
+
+/**
+ * Handle fetching today's attendance across all classes
+ */
+export const getSchoolTodayAttendance = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.params;
+    const { date } = req.query;
+    if (!schoolId) {
+      return res.status(400).json({ success: false, message: "schoolId is required" });
+    }
+    if (!validateSchoolAccess(req, schoolId as string)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+    const data = await getSchoolTodayAttendanceService(schoolId as string, date as string | undefined);
+    return res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    console.error(`[School Controller Error]`, error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to fetch today's attendance",
     });
   }
 };

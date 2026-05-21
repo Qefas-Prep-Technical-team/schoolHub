@@ -49,9 +49,9 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
 
     const menuItems = [
         { label: 'View Papers', onClick: () => router.push(`/dashboard/admin/exams/${assessment.id}/papers`), icon: <FileText size={14} /> },
-        { label: 'Edit Node', onClick: () => router.push(`/dashboard/admin/exams/${assessment.id}/edit`), icon: <Edit2 size={14} /> },
+        { label: 'Edit Exam', onClick: () => router.push(`/dashboard/admin/exams/${assessment.id}/edit`), icon: <Edit2 size={14} /> },
     ];
-
+ 
     if (assessment.status === 'PUBLISHED') {
         menuItems.push({ 
             label: 'Withdraw', 
@@ -59,9 +59,9 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
             icon: <Undo2 size={14} />
         });
     }
-
+ 
     menuItems.push({ 
-        label: 'Terminate', 
+        label: 'Delete', 
         onClick: () => setIsDeleteDialogOpen(true),
         icon: <Trash2 size={14} className="text-rose-500" />
     });
@@ -93,7 +93,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                             {assessment.status}
                         </div>
                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                             {assessment.scope} REGISTRY
+                             {assessment.scope} EXAM
                         </div>
                     </div>
                 </div>
@@ -120,14 +120,14 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
             <div className="space-y-6 pt-8 border-t border-slate-50 dark:border-white/5 relative z-10">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Protocol</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Category</span>
                         <div className="flex items-center gap-2">
                              <Target size={12} className="text-primary" />
                              <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase">{assessment.mode}</span>
                         </div>
                     </div>
                     <div className="space-y-1">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Registry Date</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Date Created</span>
                         <div className="flex items-center gap-2">
                              <Calendar size={12} className="text-emerald-500" />
                              <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase">
@@ -136,7 +136,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                         </div>
                     </div>
                 </div>
-
+ 
                 {assessment.departments && assessment.departments.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                         {assessment.departments.map((d: { department?: { id: string, name: string } }) => (
@@ -146,21 +146,21 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                         ))}
                     </div>
                 )}
-
+ 
                 <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center gap-3">
                         <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
                             <Activity size={14} strokeWidth={2.5} />
                         </div>
                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                            Operational Status: Active
+                            Status: Active
                         </span>
                     </div>
                     <div 
                         className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all"
                         style={{ color: primaryColor }}
                     >
-                        <span>Access Nodes</span>
+                        <span>View Exam</span>
                         <ArrowRight size={14} strokeWidth={3} />
                     </div>
                 </div>
@@ -180,13 +180,13 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                         }
                     });
                 }}
-                title="Withdraw Protocol"
-                description={`Confirm withdrawal of assessment "${assessment.title}". Institutional access will be restricted immediately.`}
-                confirmText="Withdraw Access"
+                title="Withdraw Exam"
+                description={`Confirm withdrawal of exam "${assessment.title}". Students will no longer be able to access it.`}
+                confirmText="Withdraw Exam"
                 variant="warning"
                 isLoading={unpublishExamMutation.isPending}
             />
-
+ 
             <ConfirmationModal
                 isOpen={isDeleteDialogOpen}
                 onClose={() => setIsDeleteDialogOpen(false)}
@@ -201,9 +201,9 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                         }
                     });
                 }}
-                title="Terminate Registry"
-                description={`This action will permanently purge "${assessment.title}" and all associated subject nodes. Purge is irreversible.`}
-                confirmText="Terminate Now"
+                title="Delete Exam"
+                description={`This action will permanently delete "${assessment.title}" and all its subject papers. This action cannot be undone.`}
+                confirmText="Delete Exam"
                 variant="danger"
                 isLoading={deleteExamMutation.isPending}
             />

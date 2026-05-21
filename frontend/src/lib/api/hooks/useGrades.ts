@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { gradeService } from "../services/gradeService";
 
 export const gradeKeys = {
@@ -40,5 +40,25 @@ export const useGradeHub = (schoolId: string, filters?: Record<string, unknown>)
     queryKey: gradeKeys.hub({ schoolId, ...filters }),
     queryFn: () => gradeService.getGradeHub(schoolId, filters),
     enabled: !!schoolId,
+  });
+};
+
+export const usePublishGrade = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => gradeService.publishGrade(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gradeKeys.all });
+    },
+  });
+};
+
+export const useDeleteGrade = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => gradeService.deleteGrade(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gradeKeys.all });
+    },
   });
 };

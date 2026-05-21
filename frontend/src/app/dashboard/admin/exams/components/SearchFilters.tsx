@@ -10,6 +10,7 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
 interface SearchFiltersProps {
     filters: {
+        searchQuery: string;
         sessionId: string;
         term: string;
         classId: string;
@@ -108,6 +109,8 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
                                 startIcon={<Search size={18} className="text-slate-400 group-focus-within:text-primary transition-colors" />}
                                 placeholder="Search by Assessment Title, Subject, Teacher..."
                                 className="h-12 rounded-2xl border-slate-200 focus:ring-primary/20"
+                                value={filters.searchQuery}
+                                onChange={(val) => onFilterChange({ searchQuery: val })}
                             />
                         </div>
                     </label>
@@ -204,6 +207,7 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
                         variant="secondary"
                         className="w-full h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-slate-200 hover:bg-slate-50"
                         onClick={() => onFilterChange({
+                            searchQuery: '',
                             sessionId: 'all',
                             term: 'all',
                             classId: 'all',

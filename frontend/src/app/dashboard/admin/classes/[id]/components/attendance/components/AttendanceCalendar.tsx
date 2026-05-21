@@ -63,10 +63,12 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         <div className="flex items-center gap-2">
           <input
             type="date"
-            value={selectedDate.toISOString().split('T')[0]}
+            value={selectedDate.toLocaleDateString('en-CA')}
             onChange={(e) => {
               if (e.target.value) {
-                onDateSelect?.(new Date(e.target.value));
+                // Ensure the date is parsed in local time, not UTC
+                const [year, month, day] = e.target.value.split('-');
+                onDateSelect?.(new Date(parseInt(year), parseInt(month) - 1, parseInt(day)));
               }
             }}
             className="w-8 h-8 p-1 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-md cursor-pointer text-xs focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-200"

@@ -781,7 +781,9 @@ export const getExamResultService = async ({
   }
 
   // Attempt to generate AI insight if OpenAI key is present, otherwise fallback to heuristic
-  if (process.env.OPENAI_API_KEY) {
+  if (attempt.performanceInsight) {
+      performanceInsight = attempt.performanceInsight;
+  } else if (process.env.OPENAI_API_KEY) {
      try {
         performanceInsight = await generateStudentPerformanceInsight({
             studentName: attempt.student.name,
@@ -790,6 +792,12 @@ export const getExamResultService = async ({
             grade,
             proficiency,
             subjects: subjectBreakdown
+        });
+        
+        // Cache the insight
+        await prisma.examAttempt.update({
+            where: { id: attempt.id },
+            data: { performanceInsight }
         });
      } catch (err) {
         console.error("Failed to generate AI insight, using heuristic.");

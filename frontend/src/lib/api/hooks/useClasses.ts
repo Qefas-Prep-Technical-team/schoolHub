@@ -62,8 +62,7 @@ export const useClassAttendance = (classId: string, date?: string) => {
     queryKey: [...classQueryKeys.all, "attendance", classId, { date }],
     queryFn: () => classService.getAttendance(classId, date),
     enabled: !!classId,
-    refetchInterval: 5000,
-    staleTime: 4000,
+    staleTime: 60000,
   });
 };
 
@@ -72,8 +71,7 @@ export const useClassAttendanceSummary = (classId: string, month?: string) => {
     queryKey: [...classQueryKeys.all, "attendance-summary", classId, { month }],
     queryFn: () => classService.getAttendanceSummary(classId, month),
     enabled: !!classId,
-    refetchInterval: 5000,
-    staleTime: 4000,
+    staleTime: 60000,
   });
 };
 
@@ -176,6 +174,9 @@ export const useUpdateClass = (id: string) => {
     mutationFn: (data: { 
       name?: string; 
       section?: string; 
+      term?: string;
+      session?: string;
+      level?: string;
       teacherIds?: string[]; 
       departmentIds?: string[];
       studentIds?: string[];

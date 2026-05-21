@@ -44,7 +44,7 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
           className: existing?.className || 'Biology 101',
           date: date,
           status: (existing?.status as AttendanceStatus) || 'present',
-          comment: existing?.comment || (existing as any).note || '',
+          comment: existing?.comment || (existing as any)?.note || '',
           submittedBy: existing?.submittedBy || 'Dr. Eleanor Vance',
           submittedAt: existing?.submittedAt || new Date().toISOString()
         };

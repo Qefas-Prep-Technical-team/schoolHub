@@ -133,22 +133,23 @@ export default function RecentActivity({ primaryColor = '#2563eb' }: { primaryCo
                </p>
             </motion.div>
           ) : (
-            <motion.div key="list" className="space-y-2">
-              {paginatedNotifications.map((notification: any) => {
+            <div key="list" className="space-y-2">
+              {paginatedNotifications.map((notification: any, index: number) => {
                 const config = typeConfig[notification.type] || typeConfig.ANNOUNCEMENT;
                 const Icon = config.icon;
                 
                 return (
                   <motion.div 
                     key={notification.id}
-                    variants={itemVariants}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
                     whileHover={{ x: 5 }}
                     className="group/item relative flex items-start gap-4 p-4 rounded-[2.5rem] border border-white/10 dark:border-slate-800/30 bg-white/30 dark:bg-slate-800/20 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all cursor-pointer"
-                    style={{ '--hover-border': `${primaryColor}20` } as any}
                   >
                     <div 
                         className={cn(
-                            "flex-shrink-0 h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-500 scale-95 group-hover/item:scale-100",
+                            "flex-shrink-0 h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300",
                             !config.customColor && config.bg,
                             !config.customColor && config.color
                         )}
@@ -177,18 +178,18 @@ export default function RecentActivity({ primaryColor = '#2563eb' }: { primaryCo
                       <p className="text-sm font-bold text-slate-900 dark:text-white truncate leading-snug">
                         {notification.title}
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-bold truncate line-clamp-1 mt-0.5 opacity-80 group-hover/item:opacity-100 transition-opacity">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-bold truncate line-clamp-1 mt-0.5">
                         {notification.message}
                       </p>
                     </div>
 
                     <div className="absolute right-4 bottom-4 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                        <ExternalLink size={14} className="text-slate-300 hover:text-white transition-colors" style={{ '--hover-color': primaryColor } as any} />
+                        <ExternalLink size={14} className="text-slate-300 hover:text-white transition-colors" />
                     </div>
                   </motion.div>
                 );
               })}
-            </motion.div>
+            </div>
           )}
         </AnimatePresence>
       </div>

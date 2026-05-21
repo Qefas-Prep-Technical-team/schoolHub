@@ -56,7 +56,9 @@ const LaTeXRenderer = memo(({ content, className = "", onZoom }: LaTeXRendererPr
           </figcaption>
         )}
       </figure>
-    )
+    ),
+    // Suppress React's warning about <script> tags injected by rehype-katex
+    script: () => null,
   }), [onZoom]);
 
   if (!content) return null;

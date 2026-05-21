@@ -4,6 +4,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model School {
@@ -56,6 +58,7 @@ model School {
   subscriptionPlanId       String?
   profileCompleted         Boolean              @default(false)
   registrationSource       String?              @default("STANDARD")
+  levels                   String[]             @default([])
   subscriptionPlan         SubscriptionPlan?    @relation(fields: [subscriptionPlanId], references: [id])
   settings                 SchoolSetting?
   originalStudents         Student[]            @relation("OriginalSchool")
@@ -234,21 +237,22 @@ model Teacher {
 }
 
 model Student {
-  id                      String            @id @default(uuid())
+  id                      String                   @id @default(uuid())
   name                    String
-  email                   String            @unique
+  email                   String                   @unique
   password                String?
-  studentCode             String            @unique
-  googleId                String?           @unique
-  authProvider            String            @default("EMAIL")
+  studentCode             String                   @unique
+  googleId                String?                  @unique
+  authProvider            String                   @default("EMAIL")
   gradeLevel              String?
+  level                   String?
   dateOfBirth             DateTime?
   role                    UserRole
   schoolId                String?
   originalSchoolId        String?
-  verified                Boolean           @default(false)
-  createdAt               DateTime          @default(now())
-  updatedAt               DateTime          @updatedAt
+  verified                Boolean                  @default(false)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
   gender                  Gender?
   departmentId            String?
   termAverage             Float?
@@ -257,21 +261,25 @@ model Student {
   pendingEmail            String?
   bannerImage             String?
   profileImage            String?
-  isTrialActive           Boolean           @default(false)
+  height                  Float?
+  weight                  Float?
+  club                    String?
+  favouriteColour         String?
+  isTrialActive           Boolean                  @default(false)
   lastPaymentDate         DateTime?
-  plan                    String            @default("FREE")
+  plan                    String                   @default("FREE")
   subscriptionEnd         DateTime?
-  subscriptionStatus      String            @default("INACTIVE")
-  tenantId                String            @default("default-tenant-id")
+  subscriptionStatus      String                   @default("INACTIVE")
+  tenantId                String                   @default("default-tenant-id")
   trialEndsAt             DateTime?
   trialPlan               String?
-  trialUsed               Boolean           @default(false)
-  billingCycle            String            @default("monthly")
+  trialUsed               Boolean                  @default(false)
+  billingCycle            String                   @default("monthly")
   paystackCustomerCode    String?
   paystackSubaccountCode  String?
   planId                  String?
   subscriptionPlanId      String?
-  acceptedTerms           Boolean           @default(false)
+  acceptedTerms           Boolean                  @default(false)
   termsAcceptedAt         DateTime?
   maxStudentsOverride     Int?
   maxExamsOverride        Int?
@@ -280,20 +288,21 @@ model Student {
   maxParentsOverride      Int?
   maxStorageGbOverride    Float?
   maxAiUsageOverride      Int?
-  department              Department?       @relation(fields: [departmentId], references: [id])
-  originalSchool          School?           @relation("OriginalSchool", fields: [originalSchoolId], references: [id])
-  school                  School?           @relation(fields: [schoolId], references: [id])
-  subscriptionPlan        SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  department              Department?              @relation(fields: [departmentId], references: [id])
+  originalSchool          School?                  @relation("OriginalSchool", fields: [originalSchoolId], references: [id])
+  school                  School?                  @relation(fields: [schoolId], references: [id])
+  subscriptionPlan        SubscriptionPlan?        @relation(fields: [subscriptionPlanId], references: [id])
   attendances             Attendance[]
   behaviourAlerts         BehaviourAlert[]
   behaviourProfile        StudentBehaviourProfile?
   classes                 ClassEnrollment[]
   examAttempts            ExamAttempt[]
   grades                  Grade[]
-  requestedLinkRequests   LinkRequest[]     @relation("RequesterStudent")
-  targetLinkRequests      LinkRequest[]     @relation("TargetStudent")
+  requestedLinkRequests   LinkRequest[]            @relation("RequesterStudent")
+  targetLinkRequests      LinkRequest[]            @relation("TargetStudent")
   parentLinks             ParentChildLink[]
   payments                Payment[]
+  termlyEvaluations       TermlyEvaluation[]
 }
 
 model Parent {
@@ -369,6 +378,9 @@ model Class {
   section           String?
   schoolId          String?
   classCode         String             @unique
+  term              String?
+  session           String?
+  level             String?
   scope             ClassScope
   status            ClassStatus        @default(PENDING)
   createdById       String?
@@ -388,6 +400,7 @@ model Class {
   quizzes           Quiz[]
   relationshipLinks RelationshipLink[]
   timetablePeriods  TimetablePeriod[]
+  termlyEvaluations TermlyEvaluation[]
 
   @@unique([schoolId, name, section])
   @@map("classes")
@@ -910,6 +923,7 @@ model Session {
   grades      Grade[]
   school      School?      @relation(fields: [schoolId], references: [id])
   termPeriods TermPeriod[]
+  termlyEvaluations TermlyEvaluation[]
 
   @@unique([schoolId, name])
   @@map("sessions")
@@ -941,6 +955,7 @@ model ExamAttempt {
   totalScore          Float                @default(0)
   totalMarks          Float                @default(0)
   isSubmitted         Boolean              @default(false)
+  performanceInsight  String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   exam                Exam                 @relation(fields: [examId], references: [id])
@@ -1078,7 +1093,7 @@ model StudentBehaviourProfile {
   id           String   @id @default(uuid())
   studentId    String   @unique
   conductScore Int      @default(100)
-  strengths    Json?    
+  strengths    Json?
   student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -1435,6 +1450,47 @@ model SchemeOfWork {
   @@map("scheme_of_works")
 }
 
+model TermlyEvaluation {
+  id              String   @id @default(uuid())
+  studentId       String
+  classId         String
+  sessionId       String
+  term            Term
+  
+  // Affective Domain
+  attentiveness   Int?
+  honesty         Int?
+  neatness        Int?
+  politeness      Int?
+  punctuality     Int?
+  selfControl     Int?
+  obedience       Int?
+  reliability     Int?
+  responsibility  Int?
+  relationship    Int?
+
+  // Psychomotor Domain
+  handlingTools   Int?
+  drawingPainting Int?
+  handwriting     Int?
+  publicSpeaking  Int?
+  speechFluency   Int?
+  sportsGames     Int?
+  
+  teacherRemark   String?
+  principalRemark String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  student         Student  @relation(fields: [studentId], references: [id])
+  class           Class    @relation(fields: [classId], references: [id])
+  session         Session  @relation(fields: [sessionId], references: [id])
+
+  @@unique([studentId, classId, sessionId, term])
+  @@map("termly_evaluations")
+}
+
 enum UserRole {
   ADMIN
   TEACHER
@@ -1526,6 +1582,7 @@ enum SubjectPaperStatus {
 enum ExamCategory {
   EXAM
   QUIZ
+  CA
 }
 
 enum AdminRole {
@@ -1597,6 +1654,7 @@ enum GradeCategory {
   MIDTERM
   ASSIGNMENT
   QUIZ
+  CA
 }
 
 enum GradeStatus {
@@ -1651,6 +1709,7 @@ model SchoolLandingPage {
   testimonials Json?    @default("[]") // Array of: { name, role, text }
   gallery      Json?    @default("[]") // Array of image URLs
   customPages  Json?    @default("[]") // Pro builder pages: { id, title, slug, blocks: [] }
+  draftData    Json? // Unsaved changes for auto-save functionality
   school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

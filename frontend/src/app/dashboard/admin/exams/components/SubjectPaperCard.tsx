@@ -92,11 +92,11 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
                 {paper.status}
               </div>
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                MODULE NODE
+                SUBJECT PAPER
               </div>
             </div>
           </div>
-
+ 
           <Button
             onClick={handleDeleteClick}
             variant="ghost"
@@ -106,7 +106,7 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
             <Trash2 size={18} />
           </Button>
         </div>
-
+ 
         <div className="flex-1 relative z-10">
           <h3
             className="text-2xl font-black text-slate-900 dark:text-white mb-3 group-hover:text-primary transition-colors leading-[1.1] uppercase tracking-tighter"
@@ -123,11 +123,11 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
             </span>
           </div>
         </div>
-
+ 
         <div className="space-y-6 pt-8 border-t border-slate-50 dark:border-white/5 relative z-10">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Faculty lead</span>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Teacher</span>
               <div className="flex items-center gap-2">
                 <User size={12} className="text-primary" />
                 <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase truncate max-w-[100px]">
@@ -136,25 +136,25 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
               </div>
             </div>
             <div className="space-y-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Registry Sync</span>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Connected Exams</span>
               <div className="flex items-center gap-2">
                 <Workflow size={12} className="text-emerald-500" />
                 <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase">
-                  {paper.exams?.length || 0} Nodes
+                  {paper.exams?.length || 0} Exams
                 </span>
               </div>
             </div>
           </div>
-
+ 
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center gap-4">
               <div className="flex flex-col">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Temporal</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Duration</span>
                 <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tighter">{paper.durationMinutes || 0} MINS</span>
               </div>
               <div className="w-px h-8 bg-slate-100 dark:bg-white/5" />
               <div className="flex flex-col">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Efficiency</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Marks</span>
                 <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tighter">{paper.totalMarks || 0} MARKS</span>
               </div>
             </div>
@@ -162,21 +162,21 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
               className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all"
               style={{ color: primaryColor }}
             >
-              <span>Enter</span>
+              <span>Open Paper</span>
               <ArrowRight size={14} strokeWidth={3} />
             </div>
           </div>
         </div>
       </div>
-
+ 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={() => deleteMutation.mutate()}
-        title="Terminate Subject Node"
-        description={`Confirm termination of subject node "${paper.title}". Associated questions will be purged from the registry.`}
+        title="Delete Subject Paper"
+        description={`Are you sure you want to delete the subject paper "${paper.title}"? This will also delete all associated questions.`}
         variant="danger"
-        confirmText="Terminate Now"
+        confirmText="Delete Paper"
         isLoading={deleteMutation.isPending}
       />
     </>

@@ -62,6 +62,16 @@ export interface SchoolBilling {
   totalTransactions: number;
 }
 
+export interface ClassTodayAttendance {
+  classId: string;
+  className: string;
+  present: number;
+  absent: number;
+  late: number;
+  total: number;
+  rate: number;
+}
+
 export const schoolService = {
   getStats: async (schoolId: string): Promise<SchoolStats> => {
     const response = await apiClient.get(`/schools/${schoolId}/stats`);
@@ -125,6 +135,12 @@ export const schoolService = {
 
   updateLandingPage: async (schoolId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/schools/${schoolId}/landing-page`, data);
+    return response.data.data;
+  },
+
+  getTodayAttendance: async (schoolId: string, date?: string): Promise<ClassTodayAttendance[]> => {
+    const params = date ? { date } : undefined;
+    const response = await apiClient.get(`/schools/${schoolId}/today-attendance`, { params });
     return response.data.data;
   },
 };

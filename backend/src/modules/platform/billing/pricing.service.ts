@@ -45,6 +45,8 @@ export class PricingService {
                             monthly: p.monthlyPrice,
                             yearly: p.yearlyPrice
                         },
+                        monthlyPrice: p.monthlyPrice,
+                        yearlyPrice: p.yearlyPrice,
                         description: p.description || '',
                         features: p.features,
                         hasTrial: p.hasTrial,
@@ -52,7 +54,13 @@ export class PricingService {
                         isPopular: p.isPopular,
                         storage: p.maxStorageGb ? `${p.maxStorageGb}GB` : undefined,
                         maxStudents: p.maxStudents,
+                        maxTeachers: p.maxTeachers,
+                        maxClasses: p.maxClasses,
+                        maxExams: p.maxExams,
+                        maxAiUsage: p.maxAiUsage,
+                        maxParents: p.maxParents,
                         maxStorageGb: p.maxStorageGb,
+                        planScope: p.planScope,
                         featureAccess: p.featureAccess.map(fa => ({
                             featureId: fa.featureId,
                             tag: fa.feature.featureKey,

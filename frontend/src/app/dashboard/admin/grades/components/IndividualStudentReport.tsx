@@ -12,7 +12,7 @@ import {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 50,
+    padding: 30,
     backgroundColor: '#FFFFFF',
     fontFamily: 'Helvetica',
   },
@@ -20,378 +20,511 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 40,
-    borderBottomWidth: 2,
-    borderBottomColor: '#1E293B',
-    paddingBottom: 20,
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    paddingBottom: 10,
   },
   schoolInfo: {
     flex: 1,
+    alignItems: 'center',
   },
   schoolName: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#1E293B',
+    fontFamily: 'Times-Bold',
+    textTransform: 'uppercase',
     marginBottom: 4,
   },
-  reportType: {
-    fontSize: 12,
-    color: '#64748B',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    fontWeight: 'bold',
+  schoolAddress: {
+    fontSize: 10,
+    marginBottom: 2,
+  },
+  schoolContact: {
+    fontSize: 10,
   },
   logo: {
-    width: 70,
-    height: 70,
-    borderRadius: 12,
+    width: 60,
+    height: 60,
   },
-  studentProfile: {
-    flexDirection: 'row',
-    marginBottom: 40,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 15,
-    padding: 25,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  profileMain: {
-    flex: 1,
-  },
-  studentName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  studentCode: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  scoreRing: {
-    width: 100,
+  photoBox: {
+    width: 80,
     height: 100,
-    borderRadius: 50,
-    borderWidth: 8,
-    borderColor: '#1E293B',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 30,
+    borderWidth: 1,
+    borderColor: '#000',
   },
-  scoreValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1E293B',
-  },
-  scoreLabel: {
-    fontSize: 8,
-    color: '#64748B',
-    textTransform: 'uppercase',
-  },
-  sectionTitle: {
+  reportTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 15,
-    textTransform: 'uppercase',
-    borderBottomWidth: 1,
-    borderBottomColor: '#CBD5E1',
-    paddingBottom: 5,
-  },
-  subjectsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 15,
-    marginBottom: 40,
-  },
-  subjectCard: {
-    width: '48%',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-  },
-  subjectName: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 10,
-  },
-  subjectStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  subjectScore: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  subjectPercent: {
-    fontSize: 10,
-    color: '#64748B',
-  },
-  summaryBox: {
-    backgroundColor: '#1E293B',
-    borderRadius: 15,
-    padding: 25,
-    color: '#FFFFFF',
-    marginTop: 'auto',
-  },
-  summaryHeader: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#94A3B8',
-    textTransform: 'uppercase',
-    marginBottom: 10,
-  },
-  summaryText: {
-    fontSize: 11,
-    lineHeight: 1.6,
-  },
-  footer: {
-    marginTop: 30,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    paddingTop: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  footerText: {
-    fontSize: 8,
-    color: '#94A3B8',
-  },
-  signatureSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 40,
-    paddingHorizontal: 10,
-  },
-  signatureBox: {
-    width: 150,
-    borderTopWidth: 1,
-    borderTopColor: '#1E293B',
-    paddingTop: 5,
-    alignItems: 'center',
-  },
-  signatureLabel: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: '#475569',
-    textTransform: 'uppercase',
-  },
-  stampBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: -20,
-  },
-  stampLabel: {
-    fontSize: 7,
-    color: '#94A3B8',
+    fontFamily: 'Times-Bold',
+    textDecoration: 'underline',
     textAlign: 'center',
-    fontWeight: 'bold',
+    marginBottom: 15,
   },
-  gradingScale: {
-    marginTop: 30,
-    padding: 10,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-    borderWidth: 0.5,
-    borderColor: '#E2E8F0',
-  },
-  gradingTitle: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: '#475569',
-    marginBottom: 5,
-    textTransform: 'uppercase',
-  },
-  gradingRow: {
+  bioSection: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginBottom: 15,
+    fontSize: 9,
+  },
+  bioRow: {
+    width: '50%',
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  bioLabel: {
+    width: 80,
+    fontWeight: 'bold',
+  },
+  bioValue: {
+    flex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    paddingBottom: 2,
+    marginRight: 10,
+  },
+  mainContent: {
+    flexDirection: 'row',
     gap: 10,
   },
-  gradingItem: {
-    fontSize: 7,
-    color: '#64748B',
-  }
+  leftColumn: {
+    flex: 1.5,
+  },
+  rightColumn: {
+    flex: 1,
+  },
+  table: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#000',
+    marginBottom: 10,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+  },
+  tableHeader: {
+    backgroundColor: '#E5E7EB',
+    fontWeight: 'bold',
+    fontSize: 8,
+    textAlign: 'center',
+    padding: 4,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+  },
+  tableCell: {
+    fontSize: 8,
+    padding: 4,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    textAlign: 'center',
+    justifyContent: 'center',
+  },
+  tableCellSubject: {
+    fontSize: 8,
+    padding: 4,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    textAlign: 'left',
+    flex: 3,
+  },
+  flex1: { flex: 1 },
+  flex2: { flex: 2 },
+  sectionTitle: {
+    backgroundColor: '#E5E7EB',
+    fontSize: 9,
+    fontWeight: 'bold',
+    padding: 4,
+    textAlign: 'center',
+    borderWidth: 1,
+    borderColor: '#000',
+    marginBottom: 0,
+  },
+  remarksSection: {
+    marginTop: 15,
+    fontSize: 9,
+  },
+  remarkBox: {
+    borderWidth: 1,
+    borderColor: '#000',
+    padding: 8,
+    marginTop: 4,
+    minHeight: 30,
+    marginBottom: 10,
+  },
+  signatureRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  signatureLine: {
+    width: 150,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    marginTop: 15,
+  },
 });
 
 interface IndividualStudentReportProps {
   result: any;
   school: any;
+  isComprehensive?: boolean;
+  hasPerformanceAccess?: boolean;
 }
 
-export const ReportPageContent: React.FC<{ result: any; school: any }> = ({ result, school }) => {
+export const ReportPageContent: React.FC<{ result: any; school: any; isComprehensive?: boolean; hasPerformanceAccess?: boolean }> = ({ 
+  result, 
+  school, 
+  isComprehensive = false,
+  hasPerformanceAccess = false
+}) => {
   const percent = Math.round((result.totalScore / result.totalMarks) * 100);
-  const statusColor = percent >= 70 ? '#10B981' : percent >= 40 ? '#F59E0B' : '#EF4444';
+  const gradeLabel = percent >= 75 ? 'A' : percent >= 60 ? 'B' : percent >= 50 ? 'C' : percent >= 40 ? 'D' : 'F';
+  const remark = percent >= 75 ? 'EXCELLENT' : percent >= 60 ? 'VERY GOOD' : percent >= 50 ? 'GOOD' : percent >= 40 ? 'PASS' : 'FAIL';
 
   return (
-      <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.schoolInfo}>
-            <Text style={styles.schoolName}>{school?.name || 'Academic Institution'}</Text>
-            <Text style={styles.reportType}>Official Performance Certificate</Text>
+    <Page size="A4" style={styles.page}>
+      {/* Header */}
+      <View style={styles.header}>
+        {school?.logo ? (
+          <Image src={school.logo} style={styles.logo} />
+        ) : (
+          <View style={styles.logo} />
+        )}
+        <View style={styles.schoolInfo}>
+          <Text style={styles.schoolName}>{school?.name || 'Academic Institution'}</Text>
+          <Text style={styles.schoolAddress}>{school?.settings?.address || 'School Address'}</Text>
+          <Text style={styles.schoolContact}>TEL: {school?.settings?.phone || 'N/A'}; Email: {school?.settings?.email || 'N/A'}</Text>
+        </View>
+        <View style={styles.photoBox}>
+            {result.student?.profileImage ? <Image src={result.student.profileImage} style={{width: '100%', height: '100%'}} /> : null}
+        </View>
+      </View>
+
+      <Text style={styles.reportTitle}>STUDENT'S PERFORMANCE REPORT</Text>
+
+      {/* Bio Section */}
+      <View style={styles.bioSection}>
+        <View style={styles.bioRow}>
+          <Text style={styles.bioLabel}>NAME:</Text>
+          <Text style={styles.bioValue}>{result.student?.name}</Text>
+        </View>
+        <View style={styles.bioRow}>
+          <Text style={styles.bioLabel}>GENDER:</Text>
+          <Text style={styles.bioValue}>{result.student?.gender || 'N/A'}</Text>
+        </View>
+        <View style={styles.bioRow}>
+          <Text style={styles.bioLabel}>CLASS:</Text>
+          <Text style={styles.bioValue}>{result.className}</Text>
+        </View>
+        <View style={styles.bioRow}>
+          <Text style={styles.bioLabel}>SESSION:</Text>
+          <Text style={styles.bioValue}>{result.session?.name || 'N/A'}</Text>
+        </View>
+        <View style={styles.bioRow}>
+          <Text style={styles.bioLabel}>ADMISSION NO:</Text>
+          <Text style={styles.bioValue}>{result.student?.studentCode || 'N/A'}</Text>
+        </View>
+        <View style={styles.bioRow}>
+          <Text style={styles.bioLabel}>D.O.B:</Text>
+          <Text style={styles.bioValue}>{result.student?.dateOfBirth ? new Date(result.student.dateOfBirth).toLocaleDateString() : 'N/A'}</Text>
+        </View>
+        {isComprehensive && (
+          <>
+            <View style={styles.bioRow}>
+              <Text style={styles.bioLabel}>HT (cm):</Text>
+              <Text style={styles.bioValue}>{result.student?.height || 'N/A'}</Text>
+            </View>
+            <View style={styles.bioRow}>
+              <Text style={styles.bioLabel}>WT (kg):</Text>
+              <Text style={styles.bioValue}>{result.student?.weight || 'N/A'}</Text>
+            </View>
+            <View style={styles.bioRow}>
+              <Text style={styles.bioLabel}>CLUB/SOCIETY:</Text>
+              <Text style={styles.bioValue}>{result.student?.club || 'N/A'}</Text>
+            </View>
+            <View style={styles.bioRow}>
+              <Text style={styles.bioLabel}>FAV. COL:</Text>
+              <Text style={styles.bioValue}>{result.student?.favouriteColour || 'N/A'}</Text>
+            </View>
+          </>
+        )}
+      </View>
+
+      {/* Main Layout */}
+      <View style={styles.mainContent}>
+        {/* Left Column - Cognitive Domain */}
+        <View style={[styles.leftColumn, !isComprehensive ? { flex: 1 } : {}]}>
+          <Text style={styles.sectionTitle}>COGNITIVE DOMAIN</Text>
+          <View style={[styles.table, { borderTopWidth: 0 }]}>
+            {/* Table Header */}
+            {isComprehensive ? (
+                <View style={styles.tableRow}>
+                  <Text style={[styles.tableHeader, styles.flex2]}>SUBJECTS</Text>
+                  <Text style={[styles.tableHeader, styles.flex1]}>C.A</Text>
+                  <Text style={[styles.tableHeader, styles.flex1]}>EXAM</Text>
+                  <Text style={[styles.tableHeader, styles.flex1]}>TOTAL</Text>
+                  <Text style={[styles.tableHeader, styles.flex1]}>GRADE</Text>
+                  <Text style={[styles.tableHeader, styles.flex1]}>POS.</Text>
+                  <Text style={[styles.tableHeader, styles.flex2]}>REMARKS</Text>
+                  <Text style={[styles.tableHeader, styles.flex1, { borderRightWidth: 0 }]}>CLASS AVG</Text>
+                </View>
+            ) : (
+                <View style={styles.tableRow}>
+                  <Text style={[styles.tableHeader, styles.flex2]}>SUBJECTS</Text>
+                  <Text style={[styles.tableHeader, styles.flex1]}>SCORE</Text>
+                  <Text style={[styles.tableHeader, styles.flex1]}>MAX</Text>
+                  <Text style={[styles.tableHeader, styles.flex1]}>PERCENT</Text>
+                  <Text style={[styles.tableHeader, styles.flex1]}>GRADE</Text>
+                  <Text style={[styles.tableHeader, styles.flex2, { borderRightWidth: 0 }]}>REMARKS</Text>
+                </View>
+            )}
+
+            {/* Table Body */}
+            {result.subjects?.map((sub: any, i: number) => {
+              const subPercent = Math.round((sub.score / sub.totalMarks) * 100);
+              const subGrade = subPercent >= 75 ? 'A' : subPercent >= 60 ? 'B' : subPercent >= 50 ? 'C' : subPercent >= 40 ? 'D' : 'F';
+              const subRemark = subPercent >= 75 ? 'EXCELLENT' : subPercent >= 60 ? 'VERY GOOD' : subPercent >= 50 ? 'GOOD' : subPercent >= 40 ? 'PASS' : 'FAIL';
+              
+              if (isComprehensive) {
+                  // Mocking CA/Exam split until fully integrated
+                  const mockedCA = Math.round(sub.score * 0.3);
+                  const mockedExam = sub.score - mockedCA;
+
+                  return (
+                    <View key={i} style={styles.tableRow}>
+                      <Text style={[styles.tableCellSubject, styles.flex2]}>{sub.subjectName}</Text>
+                      <Text style={[styles.tableCell, styles.flex1]}>{sub.caScore ?? mockedCA}</Text>
+                      <Text style={[styles.tableCell, styles.flex1]}>{sub.examScore ?? mockedExam}</Text>
+                      <Text style={[styles.tableCell, styles.flex1]}>{sub.score}</Text>
+                      <Text style={[styles.tableCell, styles.flex1]}>{subGrade}</Text>
+                      <Text style={[styles.tableCell, styles.flex1]}>{sub.position || 'N/A'}</Text>
+                      <Text style={[styles.tableCell, styles.flex2]}>{subRemark}</Text>
+                      <Text style={[styles.tableCell, styles.flex1, { borderRightWidth: 0 }]}>{sub.classAverage || 'N/A'}</Text>
+                    </View>
+                  );
+              } else {
+                  return (
+                    <View key={i} style={styles.tableRow}>
+                      <Text style={[styles.tableCellSubject, styles.flex2]}>{sub.subjectName}</Text>
+                      <Text style={[styles.tableCell, styles.flex1]}>{sub.score}</Text>
+                      <Text style={[styles.tableCell, styles.flex1]}>{sub.totalMarks}</Text>
+                      <Text style={[styles.tableCell, styles.flex1]}>{subPercent}%</Text>
+                      <Text style={[styles.tableCell, styles.flex1]}>{subGrade}</Text>
+                      <Text style={[styles.tableCell, styles.flex2, { borderRightWidth: 0 }]}>{subRemark}</Text>
+                    </View>
+                  );
+              }
+            })}
           </View>
-          {school?.logo && <Image src={school.logo} style={styles.logo} />}
+
+          {/* Performance Summary */}
+          <Text style={styles.sectionTitle}>PERFORMANCE SUMMARY</Text>
+          <View style={[styles.table, { borderTopWidth: 0, flexDirection: 'row' }]}>
+            <View style={{ flex: 1 }}>
+               <View style={styles.tableRow}>
+                 <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>Total Obtained:</Text>
+                 <Text style={[styles.tableCell, { flex: 1 }]}>{result.totalScore}</Text>
+               </View>
+               <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
+                 <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>Total Obtainable:</Text>
+                 <Text style={[styles.tableCell, { flex: 1 }]}>{result.totalMarks}</Text>
+               </View>
+            </View>
+            <View style={{ flex: 1 }}>
+               <View style={styles.tableRow}>
+                 <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>%AGE:</Text>
+                 <Text style={[styles.tableCell, { flex: 1 }]}>{percent}%</Text>
+               </View>
+               <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
+                 <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>GRADE:</Text>
+                 <Text style={[styles.tableCell, { flex: 1 }]}>{gradeLabel}</Text>
+               </View>
+            </View>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', borderLeftWidth: 1, borderColor: '#000' }}>
+               <Text style={{ fontWeight: 'bold', fontSize: 10 }}>{remark}</Text>
+            </View>
+          </View>
+
+          {/* Visual Performance Chart */}
+          <Text style={[styles.sectionTitle, { marginTop: 10 }]}>PERFORMANCE CHART</Text>
+          <View style={[styles.table, { borderTopWidth: 0, padding: 10, flexDirection: 'column' }]}>
+            {result.subjects?.map((sub: any, i: number) => {
+              const subPercent = Math.round((sub.score / sub.totalMarks) * 100);
+              const barColor = subPercent >= 75 ? '#10B981' : subPercent >= 60 ? '#3B82F6' : subPercent >= 50 ? '#F59E0B' : '#EF4444';
+              
+              return (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                  <Text style={{ width: 80, fontSize: 8, fontWeight: 'bold' }} {...({ numberOfLines: 1 } as any)}>{sub.subjectName}</Text>
+                  <View style={{ flex: 1, height: 10, backgroundColor: '#E5E7EB', borderRadius: 5, overflow: 'hidden', flexDirection: 'row', marginLeft: 5, marginRight: 5 }}>
+                     <View style={{ width: `${subPercent}%`, height: '100%', backgroundColor: barColor }} />
+                  </View>
+                  <Text style={{ width: 25, fontSize: 8, textAlign: 'right', fontWeight: 'bold', color: barColor }}>{subPercent}%</Text>
+                </View>
+              );
+            })}
+          </View>
         </View>
 
-        {/* Student Profile & Overall Score */}
-        <View style={styles.studentProfile}>
-          <View style={styles.profileMain}>
-            <Text style={styles.studentName}>{result.student?.name}</Text>
-            <Text style={styles.studentCode}>Registration Number: {result.student?.studentCode || 'N/A'}</Text>
-            
-            <View style={{ marginBottom: 15 }}>
-              <View style={{ flexDirection: 'row', marginBottom: 4 }}>
-                <Text style={[styles.scoreLabel, { width: 80 }]}>Class/Grade</Text>
-                <Text style={{ fontSize: 10, color: '#1E293B', fontWeight: 'bold' }}>{result.className}</Text>
-              </View>
-              <View style={{ flexDirection: 'row', marginBottom: 4 }}>
-                <Text style={[styles.scoreLabel, { width: 80 }]}>Academic Session</Text>
-                <Text style={{ fontSize: 10, color: '#1E293B', fontWeight: 'bold' }}>{result.session?.name || new Date().getFullYear() + '/' + (new Date().getFullYear() + 1)}</Text>
-              </View>
-              <View style={{ flexDirection: 'row' }}>
-                <Text style={[styles.scoreLabel, { width: 80 }]}>Student Email</Text>
-                <Text style={{ fontSize: 10, color: '#1E293B', fontWeight: 'bold' }}>{result.student?.email || 'N/A'}</Text>
-              </View>
+        {/* Right Column - Domains & Attendance */}
+        {isComprehensive && (
+            <View style={styles.rightColumn}>
+            {/* Attendance */}
+            <Text style={styles.sectionTitle}>ATTENDANCE SUMMARY</Text>
+            <View style={[styles.table, { borderTopWidth: 0 }]}>
+                <View style={styles.tableRow}>
+                <Text style={[styles.tableCell, { flex: 3, textAlign: 'left' }]}>No of Times School Opened</Text>
+                <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>{result.attendance?.total || 0}</Text>
+                </View>
+                <View style={styles.tableRow}>
+                <Text style={[styles.tableCell, { flex: 3, textAlign: 'left' }]}>No of Times Present</Text>
+                <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>{result.attendance?.present || 0}</Text>
+                </View>
+                <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
+                <Text style={[styles.tableCell, { flex: 3, textAlign: 'left' }]}>No of Times Absent</Text>
+                <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>{result.attendance?.absent || 0}</Text>
+                </View>
             </View>
 
-            <View style={{ flexDirection: 'row', gap: 15, marginTop: 5 }}>
-              <View>
-                <Text style={styles.scoreLabel}>Weighted Score</Text>
-                <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#1E293B' }}>
-                  {result.totalScore} <Text style={{ fontSize: 9, color: '#94A3B8' }}>/ {result.totalMarks}</Text>
-                </Text>
-              </View>
-              <View>
-                <Text style={styles.scoreLabel}>Percentage</Text>
-                <Text style={{ fontSize: 13, fontWeight: 'bold', color: statusColor }}>{percent}%</Text>
-              </View>
-              <View>
-                <Text style={styles.scoreLabel}>Grade</Text>
-                <Text style={{ fontSize: 13, fontWeight: 'bold', color: statusColor }}>
-                  {percent >= 75 ? 'A1' : percent >= 70 ? 'B2' : percent >= 65 ? 'B3' : percent >= 60 ? 'C4' : percent >= 55 ? 'C5' : percent >= 50 ? 'C6' : percent >= 45 ? 'D7' : percent >= 40 ? 'E8' : 'F9'}
-                </Text>
-              </View>
+            {/* Affective Domain */}
+            <Text style={styles.sectionTitle}>AFFECTIVE DOMAIN</Text>
+            <View style={[styles.table, { borderTopWidth: 0 }]}>
+                <View style={[styles.tableRow, { backgroundColor: '#E5E7EB' }]}>
+                <Text style={[styles.tableCell, { flex: 4, textAlign: 'left' }]}></Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>5</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>4</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>3</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>2</Text>
+                <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>1</Text>
+                </View>
+                {['Attentiveness', 'Honesty', 'Neatness', 'Politeness', 'Punctuality', 'Self Control', 'Obedience'].map((trait, idx) => (
+                <View key={idx} style={[styles.tableRow, idx === 6 ? { borderBottomWidth: 0 } : {}]}>
+                    <Text style={[styles.tableCell, { flex: 4, textAlign: 'left' }]}>{trait}</Text>
+                    {[5,4,3,2,1].map(val => (
+                    <Text key={val} style={[styles.tableCell, { flex: 1, borderRightWidth: val === 1 ? 0 : 1 }]}>
+                        {result.termlyEvaluation?.affective?.[trait.toLowerCase()] === val ? '✓' : ''}
+                    </Text>
+                    ))}
+                </View>
+                ))}
             </View>
 
-            <View style={{ flexDirection: 'row', gap: 20, marginTop: 15 }}>
-              <View>
-                <Text style={styles.scoreLabel}>Assessment Title</Text>
-                <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#475569' }}>{result.title}</Text>
-              </View>
-              <View>
-                <Text style={styles.scoreLabel}>Proficiency Status</Text>
-                <Text style={{ fontSize: 11, fontWeight: 'bold', color: statusColor }}>
-                  {percent >= 75 ? 'DISTINCTION' : percent >= 50 ? 'CREDIT' : percent >= 40 ? 'PASS' : 'FAIL'}
-                </Text>
-              </View>
+            {/* Psychomotor Domain */}
+            <Text style={styles.sectionTitle}>PSYCHOMOTOR DOMAIN</Text>
+            <View style={[styles.table, { borderTopWidth: 0 }]}>
+                <View style={[styles.tableRow, { backgroundColor: '#E5E7EB' }]}>
+                <Text style={[styles.tableCell, { flex: 4, textAlign: 'left' }]}></Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>5</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>4</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>3</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>2</Text>
+                <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>1</Text>
+                </View>
+                {['Handling Tools', 'Drawing/Painting', 'Handwriting', 'Public Speaking', 'Sports & Games'].map((trait, idx) => (
+                <View key={idx} style={[styles.tableRow, idx === 4 ? { borderBottomWidth: 0 } : {}]}>
+                    <Text style={[styles.tableCell, { flex: 4, textAlign: 'left' }]}>{trait}</Text>
+                    {[5,4,3,2,1].map(val => (
+                    <Text key={val} style={[styles.tableCell, { flex: 1, borderRightWidth: val === 1 ? 0 : 1 }]}>
+                        {result.termlyEvaluation?.psychomotor?.[trait.toLowerCase().replace('/', '')] === val ? '✓' : ''}
+                    </Text>
+                    ))}
+                </View>
+                ))}
             </View>
-          </View>
-          <View style={[styles.scoreRing, { borderColor: statusColor }]}>
-            <Text style={styles.scoreValue}>{percent}%</Text>
-            <Text style={styles.scoreLabel}>Success</Text>
-          </View>
-        </View>
 
-        {/* Subjects Breakdown */}
-        <Text style={styles.sectionTitle}>SUBJECT PROFICIENCY BREAKDOWN</Text>
-        <View style={styles.subjectsGrid}>
-          {result.subjects?.map((sub: any, i: number) => {
-            const subPercent = Math.round((sub.score / sub.totalMarks) * 100);
-            const subColor = subPercent >= 70 ? '#10B981' : subPercent >= 40 ? '#F59E0B' : '#EF4444';
-            const subGrade = subPercent >= 75 ? 'A1' : subPercent >= 70 ? 'B2' : subPercent >= 65 ? 'B3' : subPercent >= 60 ? 'C4' : subPercent >= 55 ? 'C5' : subPercent >= 50 ? 'C6' : subPercent >= 45 ? 'D7' : subPercent >= 40 ? 'E8' : 'F9';
-            
-            return (
-              <View key={i} style={styles.subjectCard}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                  <Text style={styles.subjectName}>{sub.subjectName}</Text>
-                  <Text style={{ fontSize: 9, fontWeight: 'bold', color: subColor }}>{subGrade}</Text>
+            {/* Rating Indices */}
+            <Text style={styles.sectionTitle}>Rating Indices</Text>
+            <View style={[styles.table, { borderTopWidth: 0, padding: 4 }]}>
+                <Text style={{ fontSize: 7, marginBottom: 2 }}>5 - Maintains an Excellent degree of traits.</Text>
+                <Text style={{ fontSize: 7, marginBottom: 2 }}>4 - Maintains a High level of traits.</Text>
+                <Text style={{ fontSize: 7, marginBottom: 2 }}>3 - Acceptable level of traits.</Text>
+                <Text style={{ fontSize: 7, marginBottom: 2 }}>2 - Shows Minimal regard for traits.</Text>
+                <Text style={{ fontSize: 7 }}>1 - Has No regard for traits.</Text>
+            </View>
+            </View>
+        )}
+      </View>
+
+      {/* Grading Scale */}
+      {isComprehensive && (
+        <View style={[styles.table, { flexDirection: 'row' }]}>
+            <View style={{ flex: 1.5, borderRightWidth: 1, borderColor: '#000' }}>
+                <Text style={styles.sectionTitle}>GRADE SCALE</Text>
+                <View style={{ padding: 6 }}>
+                <Text style={{ fontSize: 8 }}>70-100% = A (EXCELLENT)   60-69.9% = B (VERY GOOD)</Text>
+                <Text style={{ fontSize: 8 }}>50-59.9% = C (GOOD)   40-49.9% = D (PASS)</Text>
+                <Text style={{ fontSize: 8 }}>0-39.9% = F (FAIL)</Text>
                 </View>
-                <View style={styles.subjectStats}>
-                  <Text style={[styles.subjectScore, { color: subColor }]}>
-                    {sub.score}<Text style={{ fontSize: 10, color: '#94A3B8' }}> / {sub.totalMarks}</Text>
-                  </Text>
-                  <Text style={styles.subjectPercent}>{subPercent}%</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+                <Text style={styles.sectionTitle}>GRADE ANALYSIS</Text>
+                <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#000' }}>
+                {['GRADE','A','B','C','D','F'].map((g, i) => (
+                    <Text key={i} style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB', borderRightWidth: i===5?0:1 }]}>{g}</Text>
+                ))}
                 </View>
-                <View style={{ height: 3, backgroundColor: '#F1F5F9', borderRadius: 2, marginTop: 10 }}>
-                  <View style={{ height: 3, backgroundColor: subColor, width: `${subPercent}%`, borderRadius: 2 }} />
+                <View style={{ flexDirection: 'row' }}>
+                <Text style={[styles.tableCell, { flex: 1, backgroundColor: '#E5E7EB' }]}>NO</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s:any) => (s.score/s.totalMarks)*100 >= 75).length || '-'}</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s:any) => (s.score/s.totalMarks)*100 >= 60 && (s.score/s.totalMarks)*100 < 75).length || '-'}</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s:any) => (s.score/s.totalMarks)*100 >= 50 && (s.score/s.totalMarks)*100 < 60).length || '-'}</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{result.subjects?.filter((s:any) => (s.score/s.totalMarks)*100 >= 40 && (s.score/s.totalMarks)*100 < 50).length || '-'}</Text>
+                <Text style={[styles.tableCell, { flex: 1, borderRightWidth: 0 }]}>{result.subjects?.filter((s:any) => (s.score/s.totalMarks)*100 < 40).length || '-'}</Text>
                 </View>
-              </View>
-            );
-          })}
+            </View>
+        </View>
+      )}
+
+      {/* Remarks Section */}
+      <View style={styles.remarksSection}>
+        <Text style={{ fontStyle: 'italic', fontSize: 9 }}>Teacher's Remark:</Text>
+        <View style={styles.remarkBox}>
+          <Text style={{ fontStyle: 'italic' }}>{result.termlyEvaluation?.teacherRemark || (hasPerformanceAccess ? result.performanceInsight : null) || 'An excellent performance. Keep it up!'}</Text>
+        </View>
+        <View style={styles.signatureRow}>
+          <Text style={{ fontWeight: 'bold' }}>Teacher's Name: ..............................................................</Text>
+          <Text>Sign: ..............................</Text>
         </View>
 
-        {/* Grading Scale Summary */}
-        <View style={styles.gradingScale}>
-          <Text style={styles.gradingTitle}>Official Grading Key (Nigerian Standard)</Text>
-          <View style={styles.gradingRow}>
-            <Text style={styles.gradingItem}>A1: 75-100 (Distinction)</Text>
-            <Text style={styles.gradingItem}>B2: 70-74 (Very Good)</Text>
-            <Text style={styles.gradingItem}>B3: 65-69 (Good)</Text>
-            <Text style={styles.gradingItem}>C4-C6: 50-64 (Credit)</Text>
-            <Text style={styles.gradingItem}>D7-E8: 40-49 (Pass)</Text>
-            <Text style={styles.gradingItem}>F9: 0-39 (Fail)</Text>
-          </View>
-        </View>
+        {isComprehensive && (
+            <>
+                <Text style={{ fontStyle: 'italic', fontSize: 9, marginTop: 10 }}>Principal's Remark:</Text>
+                <View style={styles.remarkBox}>
+                <Text style={{ fontStyle: 'italic', textAlign: 'center', fontWeight: 'bold' }}>{result.termlyEvaluation?.principalRemark || 'An outstanding result!! You should keep it up'}</Text>
+                </View>
+                <View style={styles.signatureRow}>
+                <Text style={{ fontWeight: 'bold' }}>Principal's Name: ..............................................................</Text>
+                <Text>Sign: ..............................</Text>
+                </View>
 
-        {/* Descriptive Summary */}
-        <View style={[styles.summaryBox, { marginTop: 20 }]}>
-          <Text style={styles.summaryHeader}>REGISTRAR'S ACADEMIC INSIGHT</Text>
-          <Text style={styles.summaryText}>
-            {result.performanceInsight || `The student ${result.student?.name} has achieved a weighted aggregate of ${result.totalScore} with a proficiency level of ${percent >= 75 ? 'Distinction' : percent >= 50 ? 'Credit' : percent >= 40 ? 'Pass' : 'Fail'}.`}
-          </Text>
-        </View>
-
-        {/* Verification & Signatures */}
-        <View style={styles.signatureSection}>
-           <View style={styles.signatureBox}>
-              <Text style={styles.signatureLabel}>Class Teacher's Sign</Text>
-           </View>
-           <View style={styles.stampBox}>
-              <Text style={styles.stampLabel}>OFFICIAL{"\n"}SCHOOL STAMP</Text>
-           </View>
-           <View style={styles.signatureBox}>
-              <Text style={styles.signatureLabel}>Principal's Signature</Text>
-           </View>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View>
-            <Text style={styles.footerText}>Certified Academic Transcript</Text>
-            <Text style={styles.footerText}>Date Generated: {new Date().toLocaleDateString()}</Text>
-          </View>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={styles.footerText}>Powered by Qefas Hub Nigeria</Text>
-            <Text style={styles.footerText}>Doc ID: {result.id?.slice(0,12).toUpperCase()}</Text>
-          </View>
-        </View>
-      </Page>
+                <View style={[styles.signatureRow, { marginTop: 15 }]}>
+                <Text style={{ fontWeight: 'bold' }}>Next Term Begins: .....................................................</Text>
+                <Text style={{ fontWeight: 'bold' }}>Date: {new Date().toLocaleDateString()}</Text>
+                </View>
+            </>
+        )}
+      </View>
+    </Page>
   );
 };
 
 const IndividualStudentReport: React.FC<IndividualStudentReportProps> = ({
   result,
   school,
+  isComprehensive = false,
+  hasPerformanceAccess = false
 }) => {
   return (
     <Document>
-      <ReportPageContent result={result} school={school} />
+      <ReportPageContent 
+        result={result} 
+        school={school} 
+        isComprehensive={isComprehensive} 
+        hasPerformanceAccess={hasPerformanceAccess} 
+      />
     </Document>
   );
 };
 
 export default IndividualStudentReport;
-

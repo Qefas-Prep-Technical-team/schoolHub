@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/authMiddleware";
+import { requireFeatureAccess } from "../subscription-checkers";
 import {
   getSchoolTeachers,
   getSchoolStudents,
@@ -14,6 +15,7 @@ import {
   getSchoolLandingPage,
   getSchoolLandingPageBySubdomain,
   updateSchoolLandingPage,
+  getSchoolTodayAttendance,
 } from "./school.controller";
 
 const router = Router();
@@ -45,7 +47,8 @@ router.get("/:schoolId/students", getSchoolStudents);
  */
 router.get("/:schoolId/stats", getSchoolStats);
 
-router.get("/:schoolId/performance-analysis", getSchoolPerformanceAnalysis);
+const aiInsightsFeatureKey = process.env.FEATURE_KEY_AI_INSIGHTS || "aiInsights";
+router.get("/:schoolId/performance-analysis", requireFeatureAccess(aiInsightsFeatureKey), getSchoolPerformanceAnalysis);
 
 /**
  * @route   GET /api/v1/schools/:schoolId/dashboard-summary
@@ -102,5 +105,12 @@ router.get("/:schoolId/landing-page", getSchoolLandingPage);
  * @access  Private-Admin
  */
 router.patch("/:schoolId/landing-page", updateSchoolLandingPage);
+
+/**
+ * @route   GET /api/v1/schools/:schoolId/today-attendance
+ * @desc    Get today's attendance summary per class
+ * @access  Private-Admin
+ */
+router.get("/:schoolId/today-attendance", getSchoolTodayAttendance);
 
 export default router;
