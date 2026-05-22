@@ -127,4 +127,3 @@ export default function QuestionCard({ question, onEdit, showAnswers = false }: 
         </div>
     );
 }
-

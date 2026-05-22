@@ -1,100 +1,83 @@
-'use client';
-
-import { Exam } from "@/lib/api/services/examService";
-import { Trophy, Activity, Calendar, FileEdit, Zap, TrendingUp } from "lucide-react";
-import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
-import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { Exam, SubjectPaper } from "@/lib/api/services/examService";
+import { BookOpen, FileText, LayoutDashboard, PenTool } from "lucide-react";
 
 interface StatsCardsProps {
-    exams: Exam[];
+    examsCount?: number;
+    quizzesCount?: number;
+    casCount?: number;
+    papersCount?: number;
 }
 
-export default function StatsCards({ exams = [] }: StatsCardsProps) {
-    const { user } = useAuthStore();
-    const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
-    const { data: settings } = useSchoolSettings(schoolId);
-    const primaryColor = settings?.themeColor || '#2563eb';
+export default function StatsCards({ examsCount = 0, quizzesCount = 0, casCount = 0, papersCount = 0 }: StatsCardsProps) {
+    const totalExams = examsCount;
+    const totalQuizzes = quizzesCount;
+    const totalCAs = casCount;
+    const totalPapers = papersCount;
 
-    const now = new Date();
-    
     const stats = [
         { 
             label: 'Total Exams', 
-            value: exams.length.toString(),
-            icon: Trophy,
-            color: primaryColor,
-            desc: 'All configured exams'
+            value: totalExams.toString(),
+            icon: LayoutDashboard,
+            gradient: "from-blue-500/20 to-indigo-500/5",
+            textColor: "text-blue-600 dark:text-blue-400",
+            iconBg: "bg-blue-100 dark:bg-blue-900/40"
         },
         { 
-            label: 'Published Exams', 
-            value: exams.filter(e => e.status === 'PUBLISHED').length.toString(),
-            icon: Activity,
-            color: '#10b981', // Emerald
-            desc: 'Active assessments'
+            label: 'Total Quizzes', 
+            value: totalQuizzes.toString(),
+            icon: PenTool,
+            gradient: "from-amber-500/20 to-orange-500/5",
+            textColor: "text-amber-600 dark:text-amber-400",
+            iconBg: "bg-amber-100 dark:bg-amber-900/40"
         },
         { 
-            label: 'Scheduled Exams', 
-            value: exams.filter(e => e.status === 'PUBLISHED' && e.startDate && new Date(e.startDate) > now).length.toString(),
-            icon: Calendar,
-            color: '#2563eb', // Indigo
-            desc: 'Upcoming exams'
+            label: 'Continuous Assessments', 
+            value: totalCAs.toString(),
+            icon: BookOpen,
+            gradient: "from-green-500/20 to-emerald-500/5",
+            textColor: "text-green-600 dark:text-green-400",
+            iconBg: "bg-green-100 dark:bg-green-900/40"
         },
         { 
-            label: 'Draft Exams', 
-            value: exams.filter(e => e.status === 'DRAFT').length.toString(),
-            icon: FileEdit,
-            color: '#f59e0b', // Amber
-            desc: 'Unpublished drafts'
+            label: 'Subject Papers', 
+            value: totalPapers.toString(),
+            icon: FileText,
+            gradient: "from-purple-500/20 to-pink-500/5",
+            textColor: "text-purple-600 dark:text-purple-400",
+            iconBg: "bg-purple-100 dark:bg-purple-900/40"
         },
     ];
 
     return (
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-                <div
-                    key={index}
-                    className="relative group overflow-hidden rounded-[3rem] p-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-1 transition-all duration-500"
-                >
-                    {/* Ambient Background Glow */}
-                    <div 
-                        className="absolute -right-6 -bottom-6 size-40 rounded-full blur-3xl opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none" 
-                        style={{ backgroundColor: stat.color }}
-                    />
-
-                    <div className="relative z-10 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <div 
-                                className="size-14 rounded-2xl flex items-center justify-center border shadow-inner transition-transform duration-500 group-hover:scale-110"
-                                style={{ 
-                                    backgroundColor: `${stat.color}10`,
-                                    borderColor: `${stat.color}20`,
-                                    color: stat.color
-                                }}
-                            >
-                                <stat.icon size={24} strokeWidth={2.5} />
-                            </div>
-                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                <TrendingUp size={10} /> Live
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {stats.map((stat, index) => {
+                const Icon = stat.icon;
+                return (
+                    <div
+                        key={index}
+                        className={`relative overflow-hidden flex flex-col gap-3 rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group`}
+                    >
+                        {/* Background gradient blob */}
+                        <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full bg-gradient-to-br ${stat.gradient} blur-2xl group-hover:scale-150 transition-transform duration-500`} />
+                        
+                        <div className="flex justify-between items-start relative z-10">
+                            <div className={`p-3 rounded-xl ${stat.iconBg} ${stat.textColor} transition-colors`}>
+                                <Icon className="w-5 h-5" strokeWidth={2.5} />
                             </div>
                         </div>
 
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">
-                                {stat.label}
+                        <div className="relative z-10 mt-2">
+                            <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                                {stat.value}
                             </p>
-                            <div className="flex items-baseline gap-2">
-                                <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-none">
-                                    {stat.value}
-                                </h3>
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-500 mt-4 uppercase tracking-widest flex items-center gap-2">
-                                <Zap size={12} className="text-slate-300" /> {stat.desc}
+                            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">
+                                {stat.label}
                             </p>
                         </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
         </section>
     );
 }
-

@@ -35,7 +35,7 @@ import { canTeacherManageSubject } from "../academic/teacher-subject.permissions
 export const getExams = async (req: Request, res: Response) => {
   console.log("LOG: [getExams] Controller Reached", { query: req.query, user: req.user });
   try {
-    const { schoolId, sessionId, classId, departmentId, departmentIds, status, term, category } = req.query;
+    const { schoolId, sessionId, classId, departmentId, departmentIds, status, term, category, page, limit } = req.query;
 
     const isPersonal = (schoolId as string) === req.user?.id;
     const effectiveSchoolId = isPersonal ? undefined : ((schoolId as string) || req.user?.schoolId);
@@ -54,6 +54,9 @@ export const getExams = async (req: Request, res: Response) => {
     if (status) filters.status = status as any;
     if (term) filters.term = term as any;
     if (category) filters.category = category as any;
+    
+    if (page) filters.page = Number(page);
+    if (limit) filters.limit = Number(limit);
 
     if (req.user?.userType === UserRole.STUDENT) {
       filters.availableForStudentId = req.user.id;
@@ -62,12 +65,13 @@ export const getExams = async (req: Request, res: Response) => {
     }
 
     console.log("LOG: [getExams] Calling getExamsService with filters:", filters);
-    const data = await getExamsService(filters);
-    console.log("LOG: [getExams] Success, exams found:", data.length);
+    const result = await getExamsService(filters);
+    console.log("LOG: [getExams] Success");
 
     return res.status(200).json({
       success: true,
-      data,
+      data: result.data || result, // Handle both paginated and non-paginated return formats safely
+      pagination: result.pagination,
     });
   } catch (error: any) {
     console.error("LOG ERROR: [getExams] controller failed:", error);
@@ -172,7 +176,7 @@ export const createExam = async (req: Request, res: Response) => {
 
 export const createSubjectPaper = async (req: Request, res: Response) => {
   try {
-    const { subjectId, teacherId: bodyTeacherId, title, instructions, durationMinutes, readingContent, schoolId: bodySchoolId } = req.body;
+    const { subjectId, teacherId: bodyTeacherId, title, instructions, durationMinutes, readingContent, schoolId: bodySchoolId, creationMode } = req.body;
     
     const isPersonal = (bodySchoolId as string) === req.user?.id;
     const schoolId = isPersonal ? null : (bodySchoolId || req.user?.schoolId);
@@ -232,6 +236,7 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
       instructions,
       durationMinutes,
       readingContent,
+      creationMode,
     });
 
     return res.status(201).json({
@@ -679,7 +684,7 @@ export const deleteExam = async (req: Request, res: Response) => {
 
 export const getSubjectPapers = async (req: Request, res: Response) => {
   try {
-    const { unlinkedOnly, schoolId } = req.query;
+    const { unlinkedOnly, schoolId, sessionId, term, classId, departmentId, departmentIds, status, page, limit } = req.query;
     
     const isPersonal = schoolId === req.user?.id;
     const filters: any = {
@@ -688,13 +693,29 @@ export const getSubjectPapers = async (req: Request, res: Response) => {
       isPersonal,
     };
 
+    if (sessionId) filters.sessionId = sessionId as string;
+    if (term) filters.term = term as any;
+    if (classId) filters.classId = classId as string;
+    if (departmentIds) {
+      filters.departmentIds = Array.isArray(departmentIds) ? departmentIds : [departmentIds as string];
+    } else if (departmentId) {
+      filters.departmentIds = [departmentId as string];
+    }
+    if (status) filters.status = status as string;
+    if (page) filters.page = Number(page);
+    if (limit) filters.limit = Number(limit);
+
     if (req.user?.userType === UserRole.TEACHER) {
       filters.teacherId = req.user.id;
     }
 
     console.log("LOG: [getSubjectPapers] Fetching with filters:", filters);
-    const data = await getSubjectPapersService(filters);
-    res.status(200).json({ success: true, data });
+    const result = await getSubjectPapersService(filters);
+    res.status(200).json({ 
+      success: true, 
+      data: result.data || result, 
+      pagination: result.pagination 
+    });
   } catch (error: any) {
     console.error("LOG ERROR: [getSubjectPapers]", error);
     res.status(500).json({ success: false, message: error.message });

@@ -836,6 +836,7 @@ model SubjectExamPaper {
   durationMinutes Int?
   totalMarks      Float                 @default(0)
   status          SubjectPaperStatus    @default(DRAFT)
+  creationMode    AssessmentCreationMode @default(MANUAL)
   validatedAt     DateTime?
   validatedById   String?
   publishedAt     DateTime?

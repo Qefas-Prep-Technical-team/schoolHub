@@ -49,4 +49,3 @@ const AnswerOptions: React.FC<AnswerOptionsProps> = ({
 };
 
 export default AnswerOptions;
-

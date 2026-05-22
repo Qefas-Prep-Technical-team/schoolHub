@@ -5,12 +5,12 @@ import Input from './ui/Input';
 import Select from './ui/Select';
 import Button from './ui/Button';
 import { useQuery } from '@tanstack/react-query';
+import { sessionService } from '@/lib/api/services/sessionService';
 import { apiClient } from '@/lib/api/client';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
 interface SearchFiltersProps {
     filters: {
-        searchQuery: string;
         sessionId: string;
         term: string;
         classId: string;
@@ -19,9 +19,10 @@ interface SearchFiltersProps {
         category: string;
     };
     onFilterChange: (newFilters: Partial<SearchFiltersProps['filters']>) => void;
+    hideCategoryFilter?: boolean;
 }
 
-export default function SearchFilters({ filters, onFilterChange }: SearchFiltersProps) {
+export default function SearchFilters({ filters, onFilterChange, hideCategoryFilter }: SearchFiltersProps) {
     const { user } = useAuthStore();
     const schoolId = user?.schools?.[0]?.schoolId;
 
@@ -74,7 +75,7 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
 
     const sessionOptions = [
         { value: 'all', label: 'All Sessions' },
-        ...(Array.isArray(sessions) ? sessions : []).map((s: { id: string, name: string }) => ({ value: s.id, label: s.name })),
+        ...(Array.isArray(sessions) ? sessions : []).map((s: any) => ({ value: s.id, label: s.name })),
     ];
 
     const termOptions = [
@@ -86,12 +87,12 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
 
     const classOptions = [
         { value: 'all', label: 'All Classes' },
-        ...(Array.isArray(classes) ? classes : []).map((c: { id: string, name: string, section?: string }) => ({ value: c.id, label: `${c.name} ${c.section || ''}`.trim() })),
+        ...(Array.isArray(classes) ? classes : []).map((c: any) => ({ value: c.id, label: `${c.name} ${c.section || ''}`.trim() })),
     ];
 
     const departmentOptions = [
         { value: 'all', label: 'All Depts' },
-        ...(Array.isArray(departments) ? departments : []).map((d: { id: string, name: string }) => ({ value: d.id, label: d.name })),
+        ...(Array.isArray(departments) ? departments : []).map((d: any) => ({ value: d.id, label: d.name })),
     ];
 
     const isLoadingAny = isLoadingSessions || isLoadingClasses || isLoadingDepts;
@@ -109,8 +110,6 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
                                 startIcon={<Search size={18} className="text-slate-400 group-focus-within:text-primary transition-colors" />}
                                 placeholder="Search by Assessment Title, Subject, Teacher..."
                                 className="h-12 rounded-2xl border-slate-200 focus:ring-primary/20"
-                                value={filters.searchQuery}
-                                onChange={(val) => onFilterChange({ searchQuery: val })}
                             />
                         </div>
                     </label>
@@ -168,22 +167,25 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
                     />
                 </div>
 
-                <div className="xl:col-span-1">
-                    <label htmlFor="assessment-type" className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">
-                        Type
-                    </label>
-                    <Select
-                        id="assessment-type"
-                        value={filters.category}
-                        onChange={(val) => onFilterChange({ category: val })}
-                        options={[
-                            { value: 'all', label: 'All' },
-                            { value: 'EXAM', label: 'Exam' },
-                            { value: 'QUIZ', label: 'Quiz' },
-                        ]}
-                        className="h-12 rounded-2xl border-slate-200 font-bold text-sm bg-slate-50/50"
-                    />
-                </div>
+                {!hideCategoryFilter && (
+                    <div className="xl:col-span-1">
+                        <label htmlFor="assessment-type" className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">
+                            Type
+                        </label>
+                        <Select
+                            id="assessment-type"
+                            value={filters.category}
+                            onChange={(val) => onFilterChange({ category: val })}
+                            options={[
+                                { value: 'all', label: 'All' },
+                                { value: 'EXAM', label: 'Exam' },
+                                { value: 'QUIZ', label: 'Quiz' },
+                                { value: 'CA', label: 'CA' },
+                            ]}
+                            className="h-12 rounded-2xl border-slate-200 font-bold text-sm bg-slate-50/50"
+                        />
+                    </div>
+                )}
 
                 <div className="xl:col-span-1">
                     <label htmlFor="status" className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">
@@ -207,7 +209,6 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
                         variant="secondary"
                         className="w-full h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-slate-200 hover:bg-slate-50"
                         onClick={() => onFilterChange({
-                            searchQuery: '',
                             sessionId: 'all',
                             term: 'all',
                             classId: 'all',
@@ -230,4 +231,3 @@ export default function SearchFilters({ filters, onFilterChange }: SearchFilters
         </div>
     );
 }
-

@@ -65,4 +65,3 @@ const QuestionListItem: React.FC<QuestionListItemProps> = ({ question }) => {
 };
 
 export default QuestionListItem;
-

@@ -17,4 +17,3 @@ const HeaderInfo: React.FC<HeaderInfoProps> = ({ title, subtitle }) => {
 };
 
 export default HeaderInfo;
-

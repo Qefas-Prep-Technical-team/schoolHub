@@ -1,7 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
-import { Search, Bell, Settings, LayoutGrid, ChevronLeft, ChevronRight, User, School, QrCode } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Bell, Settings, LayoutGrid, ChevronLeft, User, School, QrCode } from "lucide-react";
 import { UserQRModal } from "@/components/reusable/UserQRModal";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/app/theme-toggle";
@@ -20,6 +21,7 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed, primaryColor = '#2563eb' }: {
     const [profile, setProfile] = useState<any>(null);
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const { userType, user } = useAuthStore();
+    const router = useRouter();
 
     useEffect(() => {
         linkService.getProfile().then(setProfile).catch(() => {});
@@ -47,15 +49,15 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed, primaryColor = '#2563eb' }: {
                     <span className="hidden sm:inline-block text-[10px] font-bold text-primary uppercase tracking-widest mt-0.5">Admin Hub</span>
                 </Link>
 
-                {/* Desktop collapse */}
+                {/* Desktop collapse / Back button */}
                 <div className="hidden md:block">
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={onToggleSidebar}
+                    onClick={() => router.back()}
                     className="rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
                   >
-                    {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                    <ChevronLeft className="h-5 w-5" />
                   </Button>
                 </div>
             </div>

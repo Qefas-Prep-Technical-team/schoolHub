@@ -1,5 +1,17 @@
 import { apiClient } from "../client";
 
+export interface PaginationMetadata {
+  total: number;
+  pages: number;
+  page: number;
+  limit: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMetadata;
+}
+
 export interface Exam {
   id: string;
   title: string;
@@ -78,6 +90,7 @@ export interface SubjectPaper {
   images: string[];
   imageLabels: string[];
   status: "DRAFT" | "REVIEW" | "APPROVED" | "REJECTED" | "PUBLISHED";
+  creationMode?: "MANUAL" | "AI" | "OMR";
   createdAt: string;
   subject?: { name: string; schoolId: string };
   questions?: SubjectExamQuestion[];
@@ -132,6 +145,7 @@ export interface CreatePaperDTO {
   readingContent?: string;
   images?: string[];
   imageLabels?: string[];
+  creationMode?: string;
 }
 
 export const examService = {
@@ -149,6 +163,24 @@ export const examService = {
       params,
     });
     return response.data.data || [];
+  },
+
+  getExamsPaginated: async (params?: {
+    schoolId?: string;
+    sessionId?: string;
+    classId?: string;
+    departmentIds?: string[];
+    term?: string;
+    teacherId?: string;
+    category?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const response = await apiClient.get<{ data: Exam[], pagination: PaginationMetadata }>("/exams", {
+      params,
+    });
+    return { data: response.data.data || [], pagination: response.data.pagination };
   },
 
   getExamById: async (id: string) => {
@@ -329,6 +361,26 @@ export const examService = {
       { params },
     );
     return response.data.data || [];
+  },
+
+  getSubjectPapersPaginated: async (
+    params?: {
+      unlinkedOnly?: boolean;
+      schoolId?: string;
+      sessionId?: string;
+      term?: string;
+      classId?: string;
+      departmentIds?: string[];
+      status?: string;
+      page?: number;
+      limit?: number;
+    },
+  ) => {
+    const response = await apiClient.get<{ data: SubjectPaper[], pagination: PaginationMetadata }>(
+      "/exams/papers/all",
+      { params },
+    );
+    return { data: response.data.data || [], pagination: response.data.pagination };
   },
 
   linkSubjectPaperToExam: async (paperId: string, examId: string) => {

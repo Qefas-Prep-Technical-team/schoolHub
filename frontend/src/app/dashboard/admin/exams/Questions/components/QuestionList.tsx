@@ -26,4 +26,3 @@ const QuestionList: React.FC = () => {
 };
 
 export default QuestionList;
-

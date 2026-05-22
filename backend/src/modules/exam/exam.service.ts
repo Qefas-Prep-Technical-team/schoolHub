@@ -102,6 +102,8 @@ export const getExamsService = async (filters: {
   availableForStudentId?: string;
   teacherId?: string;
   isPersonal?: boolean;
+  page?: number;
+  limit?: number;
 }) => {
   const where: any = {};
   const studentId = filters.availableForStudentId;
@@ -219,7 +221,13 @@ export const getExamsService = async (filters: {
     orderBy: {
       createdAt: "desc",
     },
+    ...(filters.page && filters.limit ? {
+      skip: (filters.page - 1) * filters.limit,
+      take: filters.limit,
+    } : {}),
   });
+
+  const total = filters.page && filters.limit ? await prisma.exam.count({ where }) : exams.length;
 
   const formattedExams = (exams as any[]).map(exam => {
     const papers = exam.subjectExamPapers.map((link: any) => ({
@@ -237,7 +245,7 @@ export const getExamsService = async (filters: {
 
   // If filtered for a student, enforce result visibility logic
   if (studentId) {
-    return formattedExams.map(exam => {
+    const studentExams = formattedExams.map(exam => {
       const attempt = exam.examAttempts?.[0];
       if (attempt && !exam.allowImmediateResult) {
         const released = exam.resultReleaseAt && new Date() >= new Date(exam.resultReleaseAt);
@@ -255,9 +263,27 @@ export const getExamsService = async (filters: {
       }
       return exam;
     });
+    
+    return filters.page && filters.limit ? {
+      data: studentExams,
+      pagination: {
+        total,
+        pages: Math.ceil(total / filters.limit),
+        page: filters.page,
+        limit: filters.limit
+      }
+    } : studentExams;
   }
 
-  return formattedExams;
+  return filters.page && filters.limit ? {
+    data: formattedExams,
+    pagination: {
+      total,
+      pages: Math.ceil(total / filters.limit),
+      page: filters.page,
+      limit: filters.limit
+    }
+  } : formattedExams;
 };
 
 export const getExamByIdService = async (id: string, excludeCorrectAnswers: boolean = false) => {
@@ -338,7 +364,14 @@ export const getSubjectPapersService = async (filters: {
   teacherId?: string, 
   unlinkedOnly?: boolean,
   schoolId?: string,
-  isPersonal?: boolean
+  isPersonal?: boolean,
+  sessionId?: string,
+  term?: any,
+  classId?: string,
+  departmentIds?: string[],
+  status?: string,
+  page?: number,
+  limit?: number,
 }) => {
   const where: any = {};
   
@@ -371,6 +404,26 @@ export const getSubjectPapersService = async (filters: {
 
   if (filters.unlinkedOnly) {
     where.exams = { none: {} };
+  } else if (filters.sessionId || filters.term || filters.classId || (filters.departmentIds && filters.departmentIds.length > 0)) {
+    // Advanced filtering via linked exams
+    where.exams = {
+      some: {
+        exam: {
+          ...(filters.sessionId && { sessionId: filters.sessionId }),
+          ...(filters.term && { term: filters.term }),
+          ...(filters.classId && { classId: filters.classId }),
+          ...(filters.departmentIds && filters.departmentIds.length > 0 && {
+            departments: {
+              some: { departmentId: { in: filters.departmentIds } }
+            }
+          })
+        }
+      }
+    };
+  }
+
+  if (filters.status) {
+    where.status = filters.status;
   }
 
   return prisma.subjectExamPaper.findMany({
@@ -388,8 +441,24 @@ export const getSubjectPapersService = async (filters: {
         select: { examAttempts: true }
       }
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    ...(filters.page && filters.limit ? {
+      skip: (filters.page - 1) * filters.limit,
+      take: filters.limit,
+    } : {}),
   });
+
+  const total = filters.page && filters.limit ? await prisma.subjectExamPaper.count({ where }) : papers.length;
+
+  return filters.page && filters.limit ? {
+    data: papers,
+    pagination: {
+      total,
+      pages: Math.ceil(total / filters.limit),
+      page: filters.page,
+      limit: filters.limit
+    }
+  } : papers;
 };
 
 export const linkSubjectPaperToExamService = async (subjectPaperId: string, examId: string) => {
@@ -472,6 +541,7 @@ export const createSubjectPaperService = async ({
   readingContent,
   images,
   imageLabels,
+  creationMode,
 }: {
   examId?: string;
   subjectId?: string;
@@ -483,6 +553,7 @@ export const createSubjectPaperService = async ({
   readingContent?: string;
   images?: string[];
   imageLabels?: string[];
+  creationMode?: "MANUAL" | "AI" | "OMR";
 }) => {
   return prisma.subjectExamPaper.create({
     data: {
@@ -495,6 +566,7 @@ export const createSubjectPaperService = async ({
       readingContent: readingContent || null,
       images: images || [],
       imageLabels: imageLabels || [],
+      creationMode: creationMode || "MANUAL",
       exams: examId && examId !== 'none' ? {
         create: {
           examId

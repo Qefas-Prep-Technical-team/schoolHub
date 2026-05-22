@@ -21,4 +21,3 @@ const MarksInput: React.FC<MarksInputProps> = ({ marks, onMarksChange }) => {
 };
 
 export default MarksInput;
-

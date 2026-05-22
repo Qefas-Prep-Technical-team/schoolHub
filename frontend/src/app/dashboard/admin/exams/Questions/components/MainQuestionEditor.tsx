@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState } from 'react';
@@ -8,9 +9,9 @@ import Header from './Header';
 import Footer from './Footer';
 
 const MainQuestionEditor: React.FC = () => {
-    const [questions, setQuestions] = useState<unknown[]>([]);
+    const [questions, setQuestions] = useState<any[]>([]);
 
-    const handleEditQuestion = (question: unknown) => {
+    const handleEditQuestion = (question: any) => {
         // TODO: implement edit behavior (e.g. open editor, navigate, or set state)
         console.log("Edit question:", question);
     };
@@ -44,4 +45,3 @@ const MainQuestionEditor: React.FC = () => {
 };
 
 export default MainQuestionEditor;
-

@@ -20,6 +20,14 @@ export const useExams = (filters?: Record<string, unknown>) => {
   });
 };
 
+export const useExamsPaginated = (filters?: Record<string, unknown>) => {
+  return useQuery({
+    queryKey: [...examKeys.list(filters || {}), "paginated"],
+    queryFn: () => examService.getExamsPaginated(filters),
+    refetchOnWindowFocus: true,
+  });
+};
+
 export const useExam = (id: string) => {
   return useQuery({
     queryKey: examKeys.detail(id),
@@ -229,10 +237,17 @@ export const useStudentStats = () => {
   });
 };
 
-export const useSubjectPapers = (params?: { unlinkedOnly?: boolean }) => {
+export const useSubjectPapers = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: ["subject-papers", params],
     queryFn: () => examService.getSubjectPapers(params),
+  });
+};
+
+export const useSubjectPapersPaginated = (filters?: Record<string, unknown>) => {
+  return useQuery({
+    queryKey: ["subject-papers", "paginated", filters],
+    queryFn: () => examService.getSubjectPapersPaginated(filters),
   });
 };
 

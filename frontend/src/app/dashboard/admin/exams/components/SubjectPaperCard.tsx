@@ -1,44 +1,26 @@
 'use client';
 
 import { SubjectPaper, examService } from '@/lib/api/services/examService';
-import {
-  FileText,
-  User,
-  Trash2,
-  ArrowRight,
-  Workflow,
-  BookOpen
-} from 'lucide-react';
+import { FileText, User, Calendar, BookOpen, Trash2, ArrowRight, Layers } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
-import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
 interface SubjectPaperCardProps {
-  paper: SubjectPaper;
+  paper: SubjectPaper & { 
+    subject?: { name: string }, 
+    teacher?: { name: string },
+    exam?: { title: string },
+    _count?: { questions: number }
+  };
   examId?: string;
 }
-
-const statusStyles = {
-  DRAFT: 'bg-slate-50 text-slate-500 border-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
-  REVIEW: 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
-  APPROVED: 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
-  REJECTED: 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',
-  PUBLISHED: 'bg-primary/5 text-primary border-indigo-100 dark:bg-primary/50/10 dark:text-indigo-400 dark:border-primary/20',
-};
 
 export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectPaperCardProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
-  const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#2563eb';
-
   const effectiveExamId = propExamId || paper.examId || 'none';
 
   const deleteMutation = useMutation({
@@ -49,7 +31,7 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
       toast.success('Subject paper deleted successfully');
       setIsDeleteModalOpen(false);
     },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
+    onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to delete paper');
     }
   });
@@ -60,121 +42,124 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
     setIsDeleteModalOpen(true);
   };
 
+  const getStatusStyles = (status: string) => {
+    switch (status) {
+      case 'DRAFT': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+      case 'REVIEW': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300';
+      case 'APPROVED': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
+      case 'REJECTED': return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+      case 'PUBLISHED': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+    }
+  };
+
+  const statusStyle = getStatusStyles(paper.status);
+
   const detailUrl = effectiveExamId !== 'none'
     ? `/dashboard/admin/exams/${effectiveExamId}/papers/${paper.id}`
     : `/dashboard/admin/exams/papers/${paper.id}`;
 
   return (
     <>
-      <div
-        className="group relative bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3.5rem] p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full"
-        onClick={() => (window.location.href = detailUrl)}
-      >
-        {/* Ambient Glow */}
-        <div
-          className="absolute -right-10 -top-10 w-48 h-48 rounded-full blur-[80px] opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none"
-          style={{ backgroundColor: primaryColor }}
-        />
+      <div className="relative rounded-3xl border border-purple-500/20 bg-gradient-to-br from-white to-purple-50 dark:from-slate-900 dark:to-purple-950/20 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-purple-500/50 hover:-translate-y-1.5 group">
+        <Link href={detailUrl} className="absolute inset-0 z-0" />
+        
+        {/* Top decorative bar */}
+        <div className="h-1.5 w-full bg-purple-500 absolute top-0 left-0" />
 
-        <div className="flex justify-between items-start mb-10 relative z-10">
-          <div className="flex items-center gap-5">
-            <div
-              className="size-16 rounded-[1.5rem] bg-slate-50 dark:bg-white/5 flex items-center justify-center p-4 text-slate-400 group-hover:scale-110 transition-all duration-500 border border-slate-100 dark:border-white/5 shadow-inner"
-              style={{ color: primaryColor }}
-            >
-              <FileText className="size-full" strokeWidth={2.5} />
+        <div className="p-7 relative z-10 pointer-events-none">
+            <div className="flex justify-between items-start mb-6">
+                <div className="p-3.5 rounded-2xl shadow-lg bg-purple-600 text-white shadow-purple-600/30 transition-transform duration-500 group-hover:-rotate-6">
+                    <Layers className="h-6 w-6" strokeWidth={2.5} />
+                </div>
+                
+                <div className="flex items-center gap-3 pointer-events-auto">
+                    <span className={`px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded-full ${statusStyle}`}>
+                        {paper.status}
+                    </span>
+                    <button 
+                        onClick={handleDeleteClick}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10"
+                        aria-label="Delete paper"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </button>
+                </div>
             </div>
-            <div className="space-y-1">
-              <div className={cn(
-                "inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                statusStyles[paper.status as keyof typeof statusStyles] || statusStyles.DRAFT
-              )}>
-                {paper.status}
-              </div>
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                SUBJECT PAPER
-              </div>
+
+            <div className="pointer-events-auto">
+                <h3 className="font-black text-2xl mb-2 text-slate-900 dark:text-white line-clamp-1 transition-colors group-hover:text-purple-600 dark:group-hover:text-purple-400">
+                    {paper.title || `${paper.subject?.name} Paper`}
+                </h3>
             </div>
-          </div>
- 
-          <Button
-            onClick={handleDeleteClick}
-            variant="ghost"
-            size="icon"
-            className="size-12 rounded-2xl bg-slate-50/50 dark:bg-white/5 border border-transparent hover:border-rose-100 hover:text-rose-600 dark:hover:border-rose-500/20 transition-all shadow-sm"
-          >
-            <Trash2 size={18} />
-          </Button>
-        </div>
- 
-        <div className="flex-1 relative z-10">
-          <h3
-            className="text-2xl font-black text-slate-900 dark:text-white mb-3 group-hover:text-primary transition-colors leading-[1.1] uppercase tracking-tighter"
-            style={{ '--primary': primaryColor } as React.CSSProperties}
-          >
-            {paper.title || `${paper.subject?.name} Assessment`}
-          </h3>
-          <div className="flex items-center gap-3 mb-8">
-            <div className="size-6 rounded-lg bg-primary/50/10 text-primary flex items-center justify-center">
-              <BookOpen size={12} strokeWidth={2.5} />
+
+            <div className="grid grid-cols-2 gap-y-4 mt-6">
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Subject</span>
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                        <BookOpen className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        <span className="truncate">{paper.subject?.name || 'Unknown'}</span>
+                    </div>
+                </div>
+
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Teacher</span>
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                        <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        <span className="truncate">{paper.teacher?.name || 'Unassigned'}</span>
+                    </div>
+                </div>
+
+                <div className="flex flex-col col-span-2 border-t border-slate-200 dark:border-white/10 pt-4 mt-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Linked Exams</span>
+                    {paper.exams && paper.exams.length > 0 ? (
+                        <div className="flex items-center text-sm font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-3 py-2 rounded-xl">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            <span className="truncate">
+                                {paper.exams.length === 1 
+                                ? paper.exams[0].exam?.title
+                                : `${paper.exams[0].exam?.title} (+${paper.exams.length - 1} more)`
+                                }
+                            </span>
+                        </div>
+                    ) : (
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-1 rounded-md font-bold uppercase tracking-widest inline-block">
+                            Standalone Paper
+                        </span>
+                    )}
+                </div>
             </div>
-            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
-              {paper.subject?.name || 'Institutional Core'}
-            </span>
-          </div>
-        </div>
- 
-        <div className="space-y-6 pt-8 border-t border-slate-50 dark:border-white/5 relative z-10">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Teacher</span>
-              <div className="flex items-center gap-2">
-                <User size={12} className="text-primary" />
-                <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase truncate max-w-[100px]">
-                  {paper.teacher?.name || 'Unassigned'}
-                </span>
-              </div>
+
+            <div className="flex justify-between items-end mt-8 pt-5 border-t border-slate-200 dark:border-white/10 pointer-events-none">
+                <div className="flex gap-6">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Time</span>
+                        <div className="flex items-center gap-1.5 text-lg font-black text-slate-700 dark:text-slate-300">
+                            {paper.durationMinutes || 0}<span className="text-sm font-medium text-slate-400">m</span>
+                        </div>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 my-auto" />
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</span>
+                        <div className="flex items-center gap-1.5 text-lg font-black text-slate-700 dark:text-slate-300">
+                            {paper.totalMarks || 0}<span className="text-sm font-medium text-slate-400">pts</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-slate-400 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                    <ArrowRight className="h-5 w-5" />
+                </div>
             </div>
-            <div className="space-y-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Connected Exams</span>
-              <div className="flex items-center gap-2">
-                <Workflow size={12} className="text-emerald-500" />
-                <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase">
-                  {paper.exams?.length || 0} Exams
-                </span>
-              </div>
-            </div>
-          </div>
- 
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Duration</span>
-                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tighter">{paper.durationMinutes || 0} MINS</span>
-              </div>
-              <div className="w-px h-8 bg-slate-100 dark:bg-white/5" />
-              <div className="flex flex-col">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Marks</span>
-                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tighter">{paper.totalMarks || 0} MARKS</span>
-              </div>
-            </div>
-            <div
-              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all"
-              style={{ color: primaryColor }}
-            >
-              <span>Open Paper</span>
-              <ArrowRight size={14} strokeWidth={3} />
-            </div>
-          </div>
         </div>
       </div>
- 
+
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={() => deleteMutation.mutate()}
         title="Delete Subject Paper"
-        description={`Are you sure you want to delete the subject paper "${paper.title}"? This will also delete all associated questions.`}
+        description={`Are you sure you want to delete "${paper.title}"? This will also permanently delete all associated questions.`}
         variant="danger"
         confirmText="Delete Paper"
         isLoading={deleteMutation.isPending}
@@ -182,4 +167,3 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
     </>
   );
 }
-

@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -8,43 +9,32 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { apiClient } from "@/lib/api/client";
-import { 
-  Loader2, 
-  School, 
-  Calendar, 
-  ArrowRight, 
-  ArrowLeft, 
-  Check, 
-  CheckCircle2, 
-  Zap, 
-  ShieldCheck, 
-  Layers, 
-  Trophy, 
-  Sparkles, 
-  BookOpen,
-  Info,
-  Clock
-} from "lucide-react";
+import { Loader2, LayoutGrid, FileText, Settings2, School, Calendar, ArrowRight, AlertCircle, Check, CheckCircle2, Users, Building2, Wand2, Settings, Eye, EyeOff, BookOpen, User } from "lucide-react";
 
 import { examService, CreateExamDTO } from "@/lib/api/services/examService";
 import { useExamStore } from "@/store/examStore";
+import { SearchableSelect } from "./SearchableSelect";
 import { useSessions } from "@/lib/api/hooks/useSessions";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
-import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
+
+
+import Box from '@mui/material/Box';
+import Stepper from '@mui/material/Stepper';
+import Step from '@mui/material/Step';
+import StepButton from '@mui/material/StepButton';
+import Typography from '@mui/material/Typography';
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
 
 const examSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().optional(),
   scope: z.enum(["SCHOOL", "CLASS", "DEPARTMENT"]),
   creationMode: z.enum(["MANUAL", "AI", "OMR"]),
-  category: z.enum(["EXAM", "QUIZ"]),
+  category: z.enum(["EXAM", "QUIZ", "CA"]),
   mode: z.enum(["SINGLE_SUBJECT", "COMBINED"]),
   schoolId: z.string().min(1, "Please select a school"),
   sessionId: z.string().optional(),
@@ -54,6 +44,10 @@ const examSchema = z.object({
   departmentIds: z.array(z.string()),
   allowImmediateResult: z.boolean(),
   resultReleaseAt: z.string().optional(),
+  subjectId: z.string().optional(),
+  teacherId: z.string().optional(),
+  durationMinutes: z.coerce.number().optional(),
+  passMark: z.coerce.number().optional(),
 });
 
 type ExamFormValues = z.infer<typeof examSchema>;
@@ -62,28 +56,54 @@ export default function CreateExamForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categoryParam = searchParams?.get("category");
-  const defaultCategory = (categoryParam === "QUIZ" ? "QUIZ" : "EXAM") as "EXAM" | "QUIZ";
+  const defaultCategory = (categoryParam === "QUIZ" ? "QUIZ" : categoryParam === "CA" ? "CA" : "EXAM") as "EXAM" | "QUIZ" | "CA";
+  const typeLabel = defaultCategory === "CA" ? "CA" : defaultCategory === "QUIZ" ? "Quiz" : "Exam";
+
+  const modeParam = searchParams?.get("mode");
+  const defaultMode = (modeParam === "COMBINED" ? "COMBINED" : "SINGLE_SUBJECT") as "SINGLE_SUBJECT" | "COMBINED";
+
+  const steps = [`${typeLabel} Details`, 'Scheduling & Targets', 'Result Settings'];
+  const [activeStep, setActiveStep] = React.useState(0);
+  const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>({});
+
+  const totalSteps = () => steps.length;
+  const completedSteps = () => Object.keys(completed).length;
+  const isLastStep = () => activeStep === totalSteps() - 1;
+  const allStepsCompleted = () => completedSteps() === totalSteps();
+
+  const handleNext = () => {
+    const newActiveStep =
+      isLastStep() && !allStepsCompleted()
+        ? steps.findIndex((step, i) => !(i in completed))
+        : activeStep + 1;
+    setActiveStep(newActiveStep);
+  };
+
+  const handleBack = () => setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  const handleStep = (step: number) => () => setActiveStep(step);
+  const handleComplete = () => {
+    setCompleted({ ...completed, [activeStep]: true });
+    handleNext();
+  };
 
   const { setExamContext } = useExamStore();
   const { user } = useAuthStore();
-  const [activeStep, setActiveStep] = useState(1);
-  
+
   const {
     register,
     handleSubmit,
     setValue,
     watch,
-    trigger,
     formState: { errors },
   } = useForm<ExamFormValues>({
-    resolver: zodResolver(examSchema),
+    resolver: zodResolver(examSchema) as any,
     defaultValues: {
       title: "",
       description: "",
       scope: "SCHOOL",
       creationMode: "MANUAL",
       category: defaultCategory,
-      mode: "SINGLE_SUBJECT",
+      mode: defaultMode,
       schoolId: "",
       sessionId: "",
       startDate: "",
@@ -92,21 +112,41 @@ export default function CreateExamForm() {
       departmentIds: [],
       allowImmediateResult: true,
       resultReleaseAt: "",
+      subjectId: "",
+      teacherId: "",
+      durationMinutes: 60,
+      passMark: 50,
     },
   });
 
   const watchedSchoolId = watch("schoolId");
   const watchedScope = watch("scope");
-  const watchedCategory = watch("category");
-  const watchedAllowImmediateResult = watch("allowImmediateResult");
-  const { data: settings } = useSchoolSettings(watchedSchoolId);
-  const primaryColor = settings?.themeColor || '#2563eb';
 
-  // Fetch academic sessions for the selected school
-  const { data: sessions, isLoading: loadingSessions } = useSessions(watchedSchoolId);
+  // sessions now represents the Array [{id, name...}]
+  const { data: sessions, isLoading: loadingSessions, isError } = useSessions(watchedSchoolId);
+
+  // Fetch Subjects for SINGLE_SUBJECT
+  const { data: subjectsData, isLoading: isLoadingSubjects } = useQuery({
+    queryKey: ["school-subjects", watchedSchoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/academic/subjects?schoolId=${watchedSchoolId}`);
+      return data.data || [];
+    },
+    enabled: !!watchedSchoolId && defaultMode === "SINGLE_SUBJECT",
+  });
+
+  // Fetch Teachers for SINGLE_SUBJECT
+  const { data: teachersData, isLoading: isLoadingTeachers } = useQuery({
+    queryKey: ["school-teachers", watchedSchoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/schools/${watchedSchoolId}/teachers`);
+      return data.data || [];
+    },
+    enabled: !!watchedSchoolId && defaultMode === "SINGLE_SUBJECT",
+  });
 
   // Fetch Classes
-  const { data: classesData } = useQuery({
+  const { data: classesData, isLoading: isLoadingClasses } = useQuery({
     queryKey: ["school-classes", watchedSchoolId],
     queryFn: async () => {
       const { data } = await apiClient.get(`/classes?schoolId=${watchedSchoolId}`);
@@ -117,7 +157,7 @@ export default function CreateExamForm() {
 
   // Fetch Departments - Now dependent on classId
   const watchedClassId = watch("classId");
-  const { data: departmentsData } = useQuery({
+  const { data: departmentsData, isLoading: isLoadingDepartments } = useQuery({
     queryKey: ["school-departments", watchedSchoolId, watchedClassId],
     queryFn: async () => {
       const { data } = await apiClient.get(
@@ -128,13 +168,16 @@ export default function CreateExamForm() {
     enabled: !!watchedSchoolId,
   });
 
-  // TRIGGER 1: Auto-select school if exactly 1 school is available
+
+
+
+  // Set school automatically and securely from auth context
+  const activeSchoolId = (user as any)?.schools?.[0]?.schoolId;
   useEffect(() => {
-    const schools = (user as { schools?: { schoolId: string }[] })?.schools;
-    if (user && schools?.length === 1 && !watchedSchoolId) {
-      setValue("schoolId", schools[0].schoolId);
+    if (activeSchoolId && !watchedSchoolId) {
+      setValue("schoolId", activeSchoolId);
     }
-  }, [user, setValue, watchedSchoolId]);
+  }, [activeSchoolId, watchedSchoolId, setValue]);
 
   // TRIGGER 2: Sync target fields based on scope
   useEffect(() => {
@@ -161,736 +204,401 @@ export default function CreateExamForm() {
     }
   }, [watchedSchoolId, setValue]);
 
-  // TRIGGER 4: Auto-select if exactly 1 session is found
+  // TRIGGER 3: Auto-select if exactly 1 session is found
   useEffect(() => {
-    if (sessions?.data && sessions.data.length === 1) {
-      setValue("sessionId", sessions.data[0].id);
+    if (sessions && sessions.length === 1) {
+      setValue("sessionId", sessions[0].id);
     }
   }, [sessions, setValue]);
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: (data: CreateExamDTO) => examService.createExam(data),
-    onSuccess: (data) => {
-      toast.success("Exam created successfully!");
-      setExamContext(data.id, data.schoolId, data.sessionId || "");
-      router.push(`/dashboard/admin/exams/${data.id}/papers`);
+  const { mutate: createFullExam, isPending } = useMutation({
+    mutationFn: async (data: ExamFormValues) => {
+      const payload = {
+        ...data,
+        description: data.description || "",
+        startDate: data.startDate || undefined,
+        endDate: data.endDate || undefined,
+        resultReleaseAt: !data.allowImmediateResult && data.resultReleaseAt ? data.resultReleaseAt : undefined,
+      };
+
+      // 1. Create Exam
+      const createdExam = await examService.createExam(payload as CreateExamDTO);
+
+      // 2. If SINGLE_SUBJECT, create Subject Paper and link it
+      if (defaultMode === "SINGLE_SUBJECT") {
+        const paperPayload = {
+          subjectId: data.subjectId || null,
+          teacherId: data.teacherId || null,
+          title: data.title,
+          instructions: data.description || "",
+          durationMinutes: data.durationMinutes || 60,
+          passMark: data.passMark || 50,
+          schoolId: data.schoolId,
+          creationMode: data.creationMode,
+        };
+        const createdPaper = await examService.createSubjectPaper(createdExam.id, paperPayload);
+        return { createdExam, createdPaper, isSingle: true };
+      }
+      
+      return { createdExam, isSingle: false };
     },
-    onError: (error: { response?: { data?: { message?: string } }, message?: string }) => {
-      const message = error.response?.data?.message || error.message || "Failed to create exam";
+    onSuccess: (result) => {
+      if (result.isSingle && result.createdPaper) {
+        toast.success(`${typeLabel} and Subject Paper created successfully!`);
+        setExamContext(result.createdExam.id, result.createdExam.schoolId, result.createdExam.sessionId || "");
+        router.push(`/dashboard/admin/exams/papers/${result.createdPaper.id}`);
+      } else {
+        toast.success(`${typeLabel} created successfully!`);
+        setExamContext(result.createdExam.id, result.createdExam.schoolId, result.createdExam.sessionId || "");
+        router.push(`/dashboard/admin/exams/${result.createdExam.id}/papers`);
+      }
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || error.message || `Failed to create ${typeLabel.toLowerCase()}`;
       toast.error(typeof message === 'string' ? message : "An error occurred");
     },
   });
 
-  const onSubmit = (data: ExamFormValues) => mutate({
-    ...data,
-    description: data.description || "",
-    startDate: data.startDate || undefined,
-    endDate: data.endDate || undefined,
-    resultReleaseAt: data.resultReleaseAt || undefined,
-  });
+  const onSubmit = (data: ExamFormValues) => createFullExam(data);
 
-  const handleNextStep = async () => {
-    if (activeStep === 1) {
-      const isValid = await trigger(["schoolId", "title", "category"]);
-      if (isValid) {
-        setActiveStep(2);
-      } else {
-        toast.error("Please fill in all required fields before proceeding.");
-      }
-    } else if (activeStep === 2) {
-      if (watchedScope === "CLASS") {
-        const isValid = await trigger(["classId"]);
-        if (!isValid) {
-          toast.error("Please select a target class.");
-          return;
-        }
-      } else if (watchedScope === "DEPARTMENT") {
-        const selectedDeps = watch("departmentIds") || [];
-        if (selectedDeps.length === 0) {
-          toast.error("Please select at least one department.");
-          return;
-        }
-      }
-      setActiveStep(3);
-    }
-  };
-
-  const handleBackStep = () => {
-    if (activeStep > 1) {
-      setActiveStep(activeStep - 1);
-    }
-  };
-
-  const steps = [
-    { id: 1, label: "Basic Info", desc: "Exam Name & Category" },
-    { id: 2, label: "Scope & Target", desc: "Who is taking this?" },
-    { id: 3, label: "Results Release", desc: "Sharing Settings" }
-  ];
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 pb-20">
-      
-      {/* Premium Visual Stepper */}
-      <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-white/5 rounded-3xl p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 relative">
-          
-          {/* Connector Line behind steps (hidden on mobile) */}
-          <div className="absolute top-[26px] left-[10%] right-[10%] h-0.5 bg-slate-100 dark:bg-white/5 hidden md:block z-0" />
-          <div 
-            className="absolute top-[26px] left-[10%] h-0.5 transition-all duration-500 hidden md:block z-0" 
-            style={{ 
-              backgroundColor: primaryColor,
-              width: `${(activeStep - 1) * 40}%`
-            }} 
-          />
+    <Box sx={{ width: '100%' }} className="max-w-4xl mx-auto space-y-8 pb-20">
+      <Stepper nonLinear activeStep={activeStep} className="mb-8">
+        {steps.map((label, index) => (
+          <Step key={label} completed={completed[index]}>
+            <StepButton color="inherit" onClick={handleStep(index)}>
+              {label}
+            </StepButton>
+          </Step>
+        ))}
+      </Stepper>
 
-          {steps.map((step, idx) => {
-            const isCompleted = activeStep > step.id;
-            const isActive = activeStep === step.id;
-            return (
-              <div 
-                key={step.id} 
-                className="flex items-center gap-4 z-10 w-full md:w-auto cursor-pointer"
-                onClick={async () => {
-                  if (step.id < activeStep) {
-                    setActiveStep(step.id);
-                  } else if (step.id > activeStep) {
-                    // Let the user skip forward only if valid
-                    if (activeStep === 1) {
-                      const val = await trigger(["schoolId", "title", "category"]);
-                      if (val) {
-                        if (step.id === 3) {
-                          if (watchedScope === "CLASS") {
-                            const valClass = await trigger(["classId"]);
-                            if (valClass) setActiveStep(3);
-                          } else if (watchedScope === "DEPARTMENT") {
-                            const selectedDeps = watch("departmentIds") || [];
-                            if (selectedDeps.length > 0) setActiveStep(3);
-                          } else {
-                            setActiveStep(3);
-                          }
-                        } else {
-                          setActiveStep(2);
-                        }
-                      }
-                    } else if (activeStep === 2) {
-                      if (watchedScope === "CLASS") {
-                        const valClass = await trigger(["classId"]);
-                        if (valClass) setActiveStep(3);
-                      } else if (watchedScope === "DEPARTMENT") {
-                        const selectedDeps = watch("departmentIds") || [];
-                        if (selectedDeps.length > 0) setActiveStep(3);
-                      } else {
-                        setActiveStep(3);
-                      }
-                    }
-                  }
-                }}
-              >
-                <div 
-                  className={cn(
-                    "size-12 rounded-2xl flex items-center justify-center font-bold text-sm transition-all duration-300 border shadow-inner",
-                    isCompleted 
-                      ? "text-white" 
-                      : isActive 
-                        ? "text-white border-transparent scale-110 shadow-lg" 
-                        : "bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-white/5"
-                  )}
-                  style={{
-                    backgroundColor: isCompleted || isActive ? primaryColor : undefined,
-                    borderColor: isActive ? primaryColor : undefined,
-                    boxShadow: isActive ? `0 8px 24px -6px ${primaryColor}40` : undefined
-                  }}
-                >
-                  {isCompleted ? <Check size={18} strokeWidth={3} /> : step.id}
+      <form 
+        onSubmit={handleSubmit(onSubmit)} 
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && e.target instanceof HTMLElement && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
+            e.preventDefault();
+          }
+        }}
+        className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm space-y-8"
+      >
+        
+        
+        {/* Hidden internal configuration fields */}
+        <input type="hidden" {...register("schoolId")} />
+        <input type="hidden" {...register("category")} />
+        <input type="hidden" {...register("mode")} />
+        <input type="hidden" {...register("scope")} />
+        <input type="hidden" {...register("creationMode")} />
+
+        {activeStep === 0 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+            <div className="space-y-3">
+              <Label htmlFor="title" className="text-sm font-bold text-slate-700 dark:text-slate-300">{typeLabel} Title</Label>
+              <Input
+                id="title"
+                placeholder={`e.g. 2026 First Term Mock ${typeLabel}`}
+                {...register("title")}
+                className="h-14 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 px-4 focus:ring-2 focus:ring-primary/20 transition-all text-lg font-medium"
+              />
+              {errors.title && <p className="text-red-500 text-xs font-bold">{errors.title.message}</p>}
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="description" className="text-sm font-bold text-slate-700 dark:text-slate-300">Instructions</Label>
+              <Textarea
+                id="description"
+                placeholder={`Describe the ${typeLabel.toLowerCase()} guidelines...`}
+                {...register("description")}
+                className="rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-4 focus:ring-2 focus:ring-primary/20 transition-all min-h-[160px] text-base resize-none"
+              />
+            </div>
+
+            {defaultMode === "SINGLE_SUBJECT" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-100 dark:border-slate-800/50">
+                <div className="space-y-3">
+                  <Label className="text-sm font-bold flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <BookOpen size={16} className="text-blue-500" /> Subject
+                  </Label>
+                  <SearchableSelect
+                    options={(subjectsData || []).map((sub: any) => ({ value: sub.id, label: sub.name }))}
+                    value={watch("subjectId") || ""}
+                    onChange={(val) => setValue("subjectId", val)}
+                    placeholder="Select Subject"
+                    isLoading={isLoadingSubjects}
+                  />
                 </div>
-                <div className="flex flex-col text-left">
-                  <span className={cn(
-                    "text-xs font-black uppercase tracking-wider",
-                    isActive ? "text-slate-900 dark:text-white" : "text-slate-400"
-                  )}>
-                    {step.label}
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-medium hidden sm:inline">
-                    {step.desc}
-                  </span>
+                <div className="space-y-3">
+                  <Label className="text-sm font-bold flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <User size={16} className="text-indigo-500" /> Assign Teacher
+                  </Label>
+                  <SearchableSelect
+                    options={(teachersData || []).map((t: any) => ({ value: t.id, label: `${t.user?.name || t.name || "Unknown"} ${t.user?.email ? `(${t.user.email})` : ""}` }))}
+                    value={watch("teacherId") || ""}
+                    onChange={(val) => setValue("teacherId", val)}
+                    placeholder="Select Teacher (Optional)"
+                    isLoading={isLoadingTeachers}
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Duration (Mins)</Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 60"
+                    {...register("durationMinutes")}
+                    className="h-14 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 px-4 font-medium"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Pass Mark (%)</Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 50"
+                    {...register("passMark")}
+                    className="h-14 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 px-4 font-medium"
+                  />
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
+            )}
+          </div>
+        )}
 
-      <div className="bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
-        
-        {/* Ambient background glow matching primaryColor */}
-        <div 
-          className="absolute top-0 right-0 w-80 h-80 rounded-full blur-[120px] opacity-[0.03] pointer-events-none transition-all duration-500" 
-          style={{ backgroundColor: primaryColor }} 
-        />
-        
-        <AnimatePresence mode="wait">
-          {activeStep === 1 && (
-            <motion.div
-              key="step1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-10"
-            >
-              <div className="flex items-center gap-4">
-                <div 
-                  className="size-12 rounded-2xl flex items-center justify-center border shadow-inner" 
-                  style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}20`, color: primaryColor }}
-                >
-                  <BookOpen size={20} strokeWidth={2} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Exam Details</h2>
-                  <p className="text-xs text-slate-500">Provide the basic context and category of your assessment.</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                
-                {/* Select School */}
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                    <span>Select School</span>
-                    <School size={12} className="text-slate-400" />
-                  </Label>
-                  <select
-                    {...register("schoolId")}
-                    className="w-full h-14 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/40 px-5 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-semibold text-sm text-slate-700 dark:text-slate-200"
-                    style={{ borderColor: watchedSchoolId ? `${primaryColor}30` : undefined } as React.CSSProperties}
-                  >
-                    <option value="">Select a school...</option>
-                    {(user as { schools?: { schoolId: string, schoolName: string }[] })?.schools?.map((s) => (
-                      <option key={s.schoolId} value={s.schoolId}>{s.schoolName}</option>
-                    ))}
-                  </select>
-                  {errors.schoolId && <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider">{errors.schoolId.message}</p>}
-                </div>
-
-                {/* Academic Session */}
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                    <span>Academic Session</span>
-                    <Calendar size={12} className="text-slate-400" />
-                  </Label>
-                  
-                  {sessions?.data && sessions.data.length > 0 ? (
-                    <select
-                      {...register("sessionId")}
-                      className="w-full h-14 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/40 px-5 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-semibold text-sm text-slate-700 dark:text-slate-200"
-                    >
-                      <option value="">No Session Link (Optional)</option>
-                      {sessions.data.map((session: { id: string, name: string }) => (
-                        <option key={session.id} value={session.id}>{session.name}</option>
-                      ))}
-                    </select>
+        {activeStep === 1 && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+            {/* Session Selector */}
+            {(() => {
+              const sessionList = Array.isArray(sessions) ? sessions : (sessions?.data || []);
+              return (
+                <div className="space-y-3 p-5 rounded-2xl border border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/20">
+                  {sessionList.length > 0 ? (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-primary">
+                        <Calendar size={14} /> Academic Session
+                      </Label>
+                      <SearchableSelect
+                        options={[
+                          { value: "", label: "No Session (Select to link)" },
+                          ...sessionList.map((session: any) => ({ value: session.id, label: session.name }))
+                        ]}
+                        value={watch("sessionId") || ""}
+                        onChange={(val) => setValue("sessionId", val)}
+                        placeholder="Select Academic Session"
+                        isLoading={loadingSessions}
+                      />
+                    </div>
                   ) : (
-                    <div className="h-14 flex items-center px-5 rounded-2xl bg-slate-50 dark:bg-slate-800/20 text-slate-400 text-xs border border-dashed border-slate-200 dark:border-white/5 font-semibold">
+                    <div className="h-12 flex items-center px-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 text-sm font-medium border border-dashed border-slate-200 dark:border-slate-700">
                       {loadingSessions ? (
                         <span className="flex items-center gap-2">
-                          <Loader2 size={14} className="animate-spin text-slate-400" /> Fetching academic sessions...
+                          <Loader2 size={16} className="animate-spin" /> Fetching active sessions...
                         </span>
-                      ) : !watchedSchoolId ? (
-                        "Select a school first..."
+                      ) : isError ? (
+                        <span className="flex items-center gap-2 text-red-400">
+                          <AlertCircle size={16} /> Error loading session data
+                        </span>
                       ) : (
-                        "No academic sessions found"
+                        "No active sessions found. Proceed without session."
                       )}
                     </div>
                   )}
+                  {errors.sessionId && <p className="text-red-500 text-xs font-bold">{errors.sessionId.message}</p>}
                 </div>
-              </div>
+              );
+            })()}
 
-              {/* Title input */}
-              <div className="space-y-3">
-                <Label htmlFor="title" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Exam Title</Label>
-                <Input
-                  id="title"
-                  placeholder="e.g. First Term Mathematics Final Exam"
-                  {...register("title")}
-                  className="h-14 px-5 rounded-2xl bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-primary/20 transition-all font-semibold text-slate-800 dark:text-slate-100"
-                />
-                {errors.title && <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider">{errors.title.message}</p>}
-              </div>
-
-              {/* Category card selections */}
-              <div className="space-y-4">
-                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Select Category</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  
-                  {/* Exam Card */}
+            <div className="space-y-4 pt-4">
+              <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Assessment Scope</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { value: "SCHOOL", label: "Whole School", desc: "For everyone", icon: School },
+                  { value: "CLASS", label: "Specific Class", desc: "Target a class", icon: Users },
+                  { value: "DEPARTMENT", label: "Specific Dept", desc: "Target a dept", icon: Building2 },
+                ].map((opt) => (
                   <div
-                    onClick={() => setValue("category", "EXAM")}
-                    className={cn(
-                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex items-start gap-4 hover:shadow-md",
-                      watchedCategory === "EXAM" 
-                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
-                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
-                    )}
-                    style={{ borderColor: watchedCategory === "EXAM" ? primaryColor : undefined }}
+                    key={opt.value}
+                    onClick={() => setValue("scope", opt.value as any)}
+                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-start gap-2 ${watch("scope") === opt.value ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 shadow-md shadow-blue-500/10 scale-[1.02]" : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300"}`}
                   >
-                    <div 
-                      className="size-10 rounded-xl flex items-center justify-center"
-                      style={{ 
-                        backgroundColor: watchedCategory === "EXAM" ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
-                        color: watchedCategory === "EXAM" ? primaryColor : "#94a3b8"
-                      }}
-                    >
-                      <Trophy size={18} />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
-                        Formal Exam
-                        {watchedCategory === "EXAM" && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
-                      </span>
-                      <p className="text-xs text-slate-400 font-medium">Standard school-wide examinations with formal weight.</p>
+                    <opt.icon size={20} className={watch("scope") === opt.value ? "text-blue-500" : "text-slate-400"} />
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-700 dark:text-slate-300 leading-none mb-1">{opt.label}</h4>
+                      <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{opt.desc}</p>
                     </div>
                   </div>
-
-                  {/* Quiz Card */}
-                  <div
-                    onClick={() => setValue("category", "QUIZ")}
-                    className={cn(
-                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex items-start gap-4 hover:shadow-md",
-                      watchedCategory === "QUIZ" 
-                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
-                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
-                    )}
-                    style={{ borderColor: watchedCategory === "QUIZ" ? primaryColor : undefined }}
-                  >
-                    <div 
-                      className="size-10 rounded-xl flex items-center justify-center"
-                      style={{ 
-                        backgroundColor: watchedCategory === "QUIZ" ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
-                        color: watchedCategory === "QUIZ" ? primaryColor : "#94a3b8"
-                      }}
-                    >
-                      <Zap size={18} />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
-                        Short Quiz / Test
-                        {watchedCategory === "QUIZ" && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
-                      </span>
-                      <p className="text-xs text-slate-400 font-medium">Informal class tests, weekly quizzes, or diagnostic checkpoints.</p>
-                    </div>
-                  </div>
-
-                </div>
+                ))}
               </div>
+            </div>
 
-              {/* Instructions / Description */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="description" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions & Guidelines</Label>
-                  <span className="text-[9px] text-slate-400 flex items-center gap-1">
-                    <Info size={10} /> Optional
-                  </span>
+            <div className={`space-y-2 transition-all duration-300 ${watchedScope === "CLASS" ? "opacity-100 h-auto" : "opacity-50 pointer-events-none"}`}>
+              <Label className="text-xs font-black uppercase tracking-widest text-blue-500">Target Class</Label>
+              <SearchableSelect
+                options={[
+                  { value: "", label: "Select a class..." },
+                  ...(classesData || []).map((c: any) => ({ value: c.id, label: `${c.name} ${c.section || ""}`.trim() }))
+                ]}
+                value={watch("classId") || ""}
+                onChange={(val) => setValue("classId", val)}
+                disabled={watchedScope !== "CLASS"}
+                isLoading={isLoadingClasses}
+              />
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <Label className={`text-xs font-black uppercase tracking-widest ${watchedScope === "DEPARTMENT" ? "text-purple-500" : "text-slate-400"}`}>Target Departments</Label>
+              {isLoadingDepartments ? (
+                <div className={`grid grid-cols-2 sm:grid-cols-3 gap-3 ${watchedScope !== "DEPARTMENT" ? "opacity-50 pointer-events-none" : ""}`}>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-[76px] rounded-xl border-2 border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 animate-pulse"></div>
+                  ))}
                 </div>
-                <Textarea
-                  id="description"
-                  placeholder="e.g. Ensure all students bring their scientific calculators. The test starts promptly at 8:00 AM."
-                  {...register("description")}
-                  className="rounded-2xl bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm text-slate-700 dark:text-slate-200 min-h-[100px] p-4"
-                />
-              </div>
-
-            </motion.div>
-          )}
-
-          {activeStep === 2 && (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-10"
-            >
-              <div className="flex items-center gap-4">
-                <div 
-                  className="size-12 rounded-2xl flex items-center justify-center border shadow-inner" 
-                  style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}20`, color: primaryColor }}
-                >
-                  <Layers size={20} strokeWidth={2} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Scope & Target Audience</h2>
-                  <p className="text-xs text-slate-500">Determine who will participate in this examination.</p>
-                </div>
-              </div>
-
-              {/* Scope selectors */}
-              <div className="space-y-4">
-                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Exam Scope</Label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  
-                  {/* Whole School Card */}
-                  <div
-                    onClick={() => setValue("scope", "SCHOOL")}
-                    className={cn(
-                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex flex-col gap-3 hover:shadow-md",
-                      watchedScope === "SCHOOL" 
-                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
-                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
-                    )}
-                    style={{ borderColor: watchedScope === "SCHOOL" ? primaryColor : undefined }}
-                  >
-                    <div 
-                      className="size-10 rounded-xl flex items-center justify-center"
-                      style={{ 
-                        backgroundColor: watchedScope === "SCHOOL" ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
-                        color: watchedScope === "SCHOOL" ? primaryColor : "#94a3b8"
-                      }}
-                    >
-                      <School size={18} />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
-                        Whole School
-                        {watchedScope === "SCHOOL" && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
-                      </span>
-                      <p className="text-[11px] text-slate-400 font-medium">Available to all classes and student segments across the school.</p>
-                    </div>
-                  </div>
-
-                  {/* Class Card */}
-                  <div
-                    onClick={() => setValue("scope", "CLASS")}
-                    className={cn(
-                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex flex-col gap-3 hover:shadow-md",
-                      watchedScope === "CLASS" 
-                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
-                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
-                    )}
-                    style={{ borderColor: watchedScope === "CLASS" ? primaryColor : undefined }}
-                  >
-                    <div 
-                      className="size-10 rounded-xl flex items-center justify-center"
-                      style={{ 
-                        backgroundColor: watchedScope === "CLASS" ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
-                        color: watchedScope === "CLASS" ? primaryColor : "#94a3b8"
-                      }}
-                    >
-                      <BookOpen size={18} />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
-                        Specific Class
-                        {watchedScope === "CLASS" && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
-                      </span>
-                      <p className="text-[11px] text-slate-400 font-medium">Target a specific class group or grade level (e.g. Senior Class 1).</p>
-                    </div>
-                  </div>
-
-                  {/* Department Card */}
-                  <div
-                    onClick={() => setValue("scope", "DEPARTMENT")}
-                    className={cn(
-                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex flex-col gap-3 hover:shadow-md",
-                      watchedScope === "DEPARTMENT" 
-                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
-                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
-                    )}
-                    style={{ borderColor: watchedScope === "DEPARTMENT" ? primaryColor : undefined }}
-                  >
-                    <div 
-                      className="size-10 rounded-xl flex items-center justify-center"
-                      style={{ 
-                        backgroundColor: watchedScope === "DEPARTMENT" ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
-                        color: watchedScope === "DEPARTMENT" ? primaryColor : "#94a3b8"
-                      }}
-                    >
-                      <Layers size={18} />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
-                        Specific Department
-                        {watchedScope === "DEPARTMENT" && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
-                      </span>
-                      <p className="text-[11px] text-slate-400 font-medium">Target one or more specialized departments or faculties (e.g. Science).</p>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-
-              {/* Contextual Options */}
-              <AnimatePresence mode="popLayout">
-                
-                {/* Specific Class Selector */}
-                {watchedScope === "CLASS" && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-3"
-                  >
-                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                      Target Class <span className="text-red-500">*</span>
-                    </Label>
-                    <select
-                      {...register("classId")}
-                      className="w-full h-14 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/40 px-5 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-semibold text-sm text-slate-700 dark:text-slate-200"
-                    >
-                      <option value="">Select Target Class...</option>
-                      {classesData?.map((c: { id: string, name: string, section?: string }) => (
-                        <option key={c.id} value={c.id}>{c.name} {c.section ? `(${c.section})` : ''}</option>
-                      ))}
-                    </select>
-                    {errors.classId && <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider">{errors.classId.message}</p>}
-                  </motion.div>
-                )}
-
-                {/* Specific Department Selection */}
-                {watchedScope === "DEPARTMENT" && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-4"
-                  >
-                    <div className="flex justify-between items-center">
-                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        Select Departments <span className="text-red-500">*</span>
-                      </Label>
-                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 font-bold">
-                        {watch("departmentIds")?.length || 0} Selected
-                      </span>
-                    </div>
-
-                    {departmentsData && departmentsData.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {departmentsData.map((d: { id: string, name: string, code?: string }) => {
-                          const isSelected = watch("departmentIds")?.includes(d.id);
-                          return (
-                            <div 
-                              key={d.id}
-                              onClick={() => {
-                                const current = watch("departmentIds") || [];
-                                const next = current.includes(d.id) 
-                                  ? current.filter(id => id !== d.id)
-                                  : [...current, d.id];
-                                setValue("departmentIds", next);
-                              }}
-                              className={cn(
-                                "cursor-pointer group flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200",
-                                isSelected 
-                                  ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
-                                  : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
-                              )}
-                              style={{ 
-                                borderColor: isSelected ? primaryColor : undefined,
-                              }}
-                            >
-                              <div 
-                                className={cn(
-                                  "size-6 rounded-lg flex items-center justify-center transition-all border",
-                                  isSelected ? "text-white scale-105" : "bg-transparent text-transparent border-slate-200 dark:border-white/10"
-                                )}
-                                style={{ 
-                                  backgroundColor: isSelected ? primaryColor : undefined,
-                                  borderColor: isSelected ? primaryColor : undefined
-                                }}
-                              >
-                                <Check size={12} strokeWidth={4} />
-                              </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{d.name}</span>
-                                {d.code && <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">{d.code}</span>}
-                              </div>
-                            </div>
-                          );
-                        })}
+              ) : departmentsData && departmentsData.length > 0 ? (
+                <div className={`grid grid-cols-2 sm:grid-cols-3 gap-3 ${watchedScope !== "DEPARTMENT" ? "opacity-50 pointer-events-none" : ""}`}>
+                  {departmentsData.map((d: any) => {
+                    const isSelected = watch("departmentIds")?.includes(d.id);
+                    return (
+                      <div key={d.id} onClick={() => {
+                          const current = watch("departmentIds") || [];
+                          setValue("departmentIds", current.includes(d.id) ? current.filter(id => id !== d.id) : [...current, d.id]);
+                        }}
+                        className={`cursor-pointer group flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-300 ${isSelected ? "bg-purple-50 dark:bg-purple-900/20 border-purple-500 text-purple-700 dark:text-purple-300 shadow-md shadow-purple-500/10 scale-[1.02]" : "bg-white dark:bg-slate-900 shadow-sm border-slate-100 hover:border-slate-300 dark:border-slate-800"}`}
+                      >
+                        <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${isSelected ? "bg-purple-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-transparent"}`}>
+                          <Check size={12} strokeWidth={4} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-bold truncate leading-tight">{d.name}</span>
+                          <span className="text-[10px] uppercase font-black opacity-50 tracking-widest mt-0.5">{d.code}</span>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200 dark:border-white/5 text-slate-400 text-xs italic font-semibold">
-                        {watchedSchoolId ? "No departments found for this school." : "Select a school first."}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-
-              </AnimatePresence>
-            </motion.div>
-          )}
-
-          {activeStep === 3 && (
-            <motion.div
-              key="step3"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-10"
-            >
-              <div className="flex items-center gap-4">
-                <div 
-                  className="size-12 rounded-2xl flex items-center justify-center border shadow-inner" 
-                  style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}20`, color: primaryColor }}
-                >
-                  <ShieldCheck size={20} strokeWidth={2} />
+                    );
+                  })}
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Results Release</h2>
-                  <p className="text-xs text-slate-500">Decide when students can view their grades and AI insights.</p>
+              ) : (
+                <div className="h-14 flex items-center px-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 text-slate-400 text-xs font-medium border border-dashed border-slate-200 dark:border-slate-800">
+                  No departments found.
                 </div>
+              )}
+            </div>
+
+            <div className="pt-6 border-t border-slate-100 dark:border-slate-800/50 space-y-4">
+              <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Creation Mode</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { value: "MANUAL", label: "Manual Configuration", desc: "Build it yourself", icon: Settings },
+                  { value: "AI", label: "AI Generation Assistant", desc: "Let AI build it", icon: Wand2, isAi: true },
+                ].map((opt) => (
+                  <div
+                    key={opt.value}
+                    onClick={() => setValue("creationMode", opt.value as any)}
+                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 flex items-center gap-4 ${watch("creationMode") === opt.value ? (opt.isAi ? "border-purple-500 bg-purple-50/50 dark:bg-purple-900/20 shadow-md shadow-purple-500/10 scale-[1.02]" : "border-slate-500 bg-slate-50 dark:bg-slate-800 shadow-md scale-[1.02]") : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300"}`}
+                  >
+                    <div className={`p-2 rounded-lg ${watch("creationMode") === opt.value ? (opt.isAi ? "bg-purple-500 text-white" : "bg-slate-700 text-white") : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
+                      <opt.icon size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-700 dark:text-slate-300 leading-none mb-1">{opt.label}</h4>
+                      <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{opt.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Release mode options */}
+        {activeStep === 2 && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-3xl border border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/20">
+              <div className="space-y-2">
+                <Label htmlFor="startDate" className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <Calendar size={14} className="text-blue-500/70" /> Start Date & Time
+                </Label>
+                <Input id="startDate" type="datetime-local" {...register("startDate")} className="h-14 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate" className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <Calendar size={14} className="text-rose-500/70" /> Concludes At
+                </Label>
+                <Input id="endDate" type="datetime-local" {...register("endDate")} className="h-14 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
-                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">How should results be shared?</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  
-                  {/* Immediate Sync */}
-                  <div
-                    onClick={() => {
-                      setValue("allowImmediateResult", true);
-                      setValue("resultReleaseAt", "");
-                    }}
-                    className={cn(
-                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex items-start gap-4 hover:shadow-md",
-                      watchedAllowImmediateResult === true 
-                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
-                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
-                    )}
-                    style={{ borderColor: watchedAllowImmediateResult === true ? primaryColor : undefined }}
-                  >
-                    <div 
-                      className="size-10 rounded-xl flex items-center justify-center"
-                      style={{ 
-                        backgroundColor: watchedAllowImmediateResult === true ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
-                        color: watchedAllowImmediateResult === true ? primaryColor : "#94a3b8"
-                      }}
+                <Label className="text-sm font-bold flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <FileText size={16} className="text-blue-500" /> Result Visibility
+                </Label>
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    { value: true, label: "Immediate Visibility", desc: "Students see results instantly", icon: Eye },
+                    { value: false, label: "Hidden Results", desc: "Delay till release date", icon: EyeOff },
+                  ].map((opt) => (
+                    <div
+                      key={opt.value.toString()}
+                      onClick={() => setValue("allowImmediateResult", opt.value)}
+                      className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 flex items-center gap-4 ${watch("allowImmediateResult") === opt.value ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 shadow-md shadow-emerald-500/10 scale-[1.02]" : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300"}`}
                     >
-                      <CheckCircle2 size={18} />
+                      <div className={`p-2 rounded-lg ${watch("allowImmediateResult") === opt.value ? "bg-emerald-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
+                        <opt.icon size={20} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-700 dark:text-slate-300 leading-none mb-1">{opt.label}</h4>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{opt.desc}</p>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
-                        Release Immediately
-                        {watchedAllowImmediateResult === true && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
-                      </span>
-                      <p className="text-xs text-slate-400 font-medium">Students see their marks and performance insights immediately after submitting.</p>
-                    </div>
-                  </div>
-
-                  {/* Scheduled release */}
-                  <div
-                    onClick={() => setValue("allowImmediateResult", false)}
-                    className={cn(
-                      "cursor-pointer p-6 rounded-3xl border-2 transition-all flex items-start gap-4 hover:shadow-md",
-                      watchedAllowImmediateResult === false 
-                        ? "bg-slate-50/80 dark:bg-slate-900/50 shadow-sm" 
-                        : "bg-white dark:bg-slate-900/10 border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10"
-                    )}
-                    style={{ borderColor: watchedAllowImmediateResult === false ? primaryColor : undefined }}
-                  >
-                    <div 
-                      className="size-10 rounded-xl flex items-center justify-center"
-                      style={{ 
-                        backgroundColor: watchedAllowImmediateResult === false ? `${primaryColor}15` : "rgba(148, 163, 184, 0.1)",
-                        color: watchedAllowImmediateResult === false ? primaryColor : "#94a3b8"
-                      }}
-                    >
-                      <Clock size={18} />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
-                        Schedule Release Date
-                        {watchedAllowImmediateResult === false && <CheckCircle2 size={14} className="text-primary" style={{ color: primaryColor }} />}
-                      </span>
-                      <p className="text-xs text-slate-400 font-medium">Lock grades and release them all at once at a specific date and time.</p>
-                    </div>
-                  </div>
-
+                  ))}
                 </div>
               </div>
 
-              {/* Conditional Scheduled Date Picker */}
-              <AnimatePresence mode="popLayout">
-                {watchedAllowImmediateResult === false && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-3"
-                  >
-                    <Label htmlFor="resultReleaseAt" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Scheduled Release Date & Time</Label>
-                    <Input
-                      id="resultReleaseAt"
-                      type="datetime-local"
-                      {...register("resultReleaseAt")}
-                      className="h-14 px-5 rounded-2xl bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-primary/20 transition-all font-semibold text-slate-800 dark:text-slate-100"
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              {watch("allowImmediateResult") === false && (
+                <div className="space-y-3 animate-in fade-in slide-in-from-left-4 duration-500">
+                  <Label htmlFor="resultReleaseAt" className="text-sm font-bold flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <Calendar size={16} className="text-emerald-500" /> Result Release Date
+                  </Label>
+                  <Input
+                    id="resultReleaseAt"
+                    type="datetime-local"
+                    {...register("resultReleaseAt")}
+                    className="h-14 rounded-2xl border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-900/10 font-medium focus:ring-emerald-500/30 shadow-sm"
+                  />
+                  <p className="text-xs text-slate-500 leading-relaxed pl-1">
+                    Results will remain hidden from students until this exact date and time.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-      {/* Controller Buttons / Navigation Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white dark:bg-slate-900/60 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-3xl shadow-lg">
-        <div className="text-center sm:text-left space-y-0.5">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            Step {activeStep} of 3
-          </p>
-          <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
-            {activeStep === 1 ? "Provide core parameters" : activeStep === 2 ? "Select exam participants" : "Finalize grading settings"}
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          {activeStep > 1 && (
+
+        <div className="flex flex-row pt-2">
             <Button
-              type="button"
+              disabled={activeStep === 0}
+              onClick={handleBack}
+              className="mr-2"
               variant="outline"
-              onClick={handleBackStep}
-              className="flex-1 sm:flex-none px-6 h-12 rounded-xl text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 border-slate-200 dark:border-white/10 transition-transform active:scale-95"
-            >
-              <ArrowLeft size={16} />
-              Back
-            </Button>
-          )}
-
-          {activeStep < 3 ? (
-            <Button
               type="button"
-              onClick={handleNextStep}
-              style={{ backgroundColor: primaryColor }}
-              className="flex-1 sm:flex-none px-8 h-12 rounded-xl text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all hover:opacity-95 shadow-md active:scale-95 border-none"
             >
-              Continue
-              <ArrowRight size={16} />
+            Back
+          </Button>
+          <div className="flex-1" />
+          
+          {activeStep !== steps.length - 1 ? (
+            <Button onClick={handleNext} className="mr-2" type="button">
+              Next
             </Button>
           ) : (
             <Button
               type="submit"
               disabled={isPending || !watchedSchoolId}
-              style={{ backgroundColor: primaryColor }}
-              className="flex-1 sm:flex-none px-8 h-12 rounded-xl text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all hover:opacity-95 shadow-lg active:scale-95 border-none"
+              className="w-full sm:w-auto px-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-200 dark:shadow-none"
             >
-              {isPending ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Create Exam & Add Papers
-                  <Check size={16} strokeWidth={3} />
-                </span>
-              )}
+              {isPending ? "Creating..." : "Create Exam"}
             </Button>
           )}
         </div>
-      </div>
-    </form>
+      </form>
+    </Box>
   );
 }

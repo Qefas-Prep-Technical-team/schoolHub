@@ -20,4 +20,3 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
 };
 
 export default Header;
-
