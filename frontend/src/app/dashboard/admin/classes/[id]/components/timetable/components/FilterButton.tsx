@@ -29,7 +29,7 @@ const FilterButton: React.FC<FilterButtonProps> = ({
       </button>
       
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#253046] rounded-lg shadow-lg border border-gray-200 dark:border-[#364563] z-10">
+        <div className="absolute top-full left-0 mt-1 min-w-[160px] max-h-60 overflow-y-auto bg-white dark:bg-[#253046] rounded-lg shadow-xl border border-gray-200 dark:border-[#364563] z-[100]">
           {options.map((option) => (
             <button
               key={option}

@@ -38,10 +38,11 @@ import { subjectService, Subject } from "./services/subjectService";
 import { departmentService, Department } from "../departments/services/departmentService";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { apiClient } from "@/lib/api/client";
-import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
+import { useSchoolSettings, useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const SubjectsPage = () => {
   const router = useRouter();
@@ -61,10 +62,13 @@ const SubjectsPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTargetSubject, setDeleteTargetSubject] = useState<Subject | null>(null);
   const [isBulkDeleteMode, setIsBulkDeleteMode] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
 
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const { data: settings } = useSchoolSettings(schoolId);
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
   const primaryColor = settings?.themeColor || '#2563eb';
 
   useEffect(() => {
@@ -161,6 +165,17 @@ const SubjectsPage = () => {
     });
   }, [subjects, searchQuery, selectedDepartment, selectedScope]);
 
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedDepartment, selectedScope]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSubjects.length / itemsPerPage));
+  const paginatedSubjects = filteredSubjects.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const handleEdit = (subject: Subject) => {
     setEditingSubject(subject);
     setIsModalOpen(true);
@@ -218,11 +233,24 @@ const SubjectsPage = () => {
               letter-spacing: -0.5px;
               margin: 0;
             }
-            .subtitle {
+            .motto {
               font-size: 14px;
+              font-style: italic;
+              color: #475569;
+              margin: 8px 0;
+            }
+            .subtitle {
+              font-size: 12px;
               color: #64748b;
-              margin-top: 5px;
+              margin-top: 15px;
               font-weight: 600;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            .school-logo {
+              max-height: 80px;
+              margin-bottom: 15px;
+              border-radius: 8px;
             }
             table {
               width: 100%;
@@ -291,8 +319,10 @@ const SubjectsPage = () => {
         </head>
         <body>
           <div class="header">
-            <h1 class="title">School Subjects Report</h1>
-            <p class="subtitle">Generated on ${new Date().toLocaleDateString()} | Verified School Curriculum</p>
+            ${schoolProfile?.logo ? `<img src="${schoolProfile.logo}" alt="School Logo" class="school-logo" />` : ''}
+            <h1 class="title">${schoolProfile?.name || 'School Subjects Report'}</h1>
+            ${schoolProfile?.motto ? `<p class="motto">"${schoolProfile.motto}"</p>` : ''}
+            <h2 class="subtitle">Curriculum Report | Generated on ${new Date().toLocaleDateString()}</h2>
           </div>
           <table>
             <thead>
@@ -568,7 +598,7 @@ const SubjectsPage = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
               >
-                {filteredSubjects.map((subject) => (
+                {paginatedSubjects.map((subject) => (
                   <SubjectCard 
                     key={subject.id} 
                     subject={subject} 
@@ -608,7 +638,7 @@ const SubjectsPage = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                    {filteredSubjects.map((subject) => {
+                    {paginatedSubjects.map((subject) => {
                       const isSelected = selectedSubjectIds.includes(subject.id);
                       return (
                         <tr 
@@ -723,8 +753,68 @@ const SubjectsPage = () => {
           )}
         </AnimatePresence>
 
+        {/* Pagination Controls */}
+        {!loading && filteredSubjects.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-6 rounded-3xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-white/5 mt-8">
+              <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredSubjects.length)} of {filteredSubjects.length} Entries
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="size-10 rounded-xl border-2 border-slate-200 dark:border-white/10"
+                >
+                  <ChevronLeft size={16} />
+                </Button>
+                
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={cn(
+                        "size-10 rounded-xl font-bold",
+                        currentPage === pageNum 
+                          ? "" 
+                          : "border-2 border-slate-200 dark:border-white/10 text-slate-500"
+                      )}
+                      style={currentPage === pageNum ? { backgroundColor: primaryColor, color: "white" } : {}}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="size-10 rounded-xl border-2 border-slate-200 dark:border-white/10"
+                >
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+            </div>
+        )}
+
         {/* Verification Footer */}
-        <div className="flex justify-center pt-12">
+        <div className="flex justify-center pt-8">
             <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
                 <ShieldCheck size={16} className="text-emerald-500" strokeWidth={3} /> Verified Subjects List
             </div>

@@ -25,7 +25,10 @@ import {
   Send,
   Edit,
   ShieldAlert,
-  Loader2
+  Loader2,
+  Lock,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,9 +56,11 @@ import {
 } from "@/components/ui/select";
 import { useClasses } from '@/lib/api/hooks/useClasses';
 import { usePublishGrade, useDeleteGrade } from '@/lib/api/hooks/useGrades';
+import { useFeatureAccess } from '@/lib/api/hooks/useFeatureAccess';
 import { toast } from 'sonner';
 import GradeEntryModal from './GradeEntryModal';
 import GradeUploadModal from './GradeUploadModal';
+import GradeUploadInstructionsModal from './GradeUploadInstructionsModal';
 import GradeOCRModal from './GradeOCRModal';
 import GradeEditModal from './GradeEditModal';
 import Pagination from './Pagination';
@@ -83,7 +88,21 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
   
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isUploadInstructionsModalOpen, setIsUploadInstructionsModalOpen] = useState(false);
   const [isOCRModalOpen, setIsOCRModalOpen] = useState(false);
+  const [isUpgradePopupOpen, setIsUpgradePopupOpen] = useState(false);
+
+  // Feature gate: AI Vision OCR — use env key
+  const aiFeatureKey = process.env.NEXT_PUBLIC_FEATURE_KEY_AI_INSIGHTS || 'aiInsights';
+  const { data: hasOCRAccess, isLoading: isCheckingOCR } = useFeatureAccess(aiFeatureKey, schoolId);
+
+  const handleOpenOCR = () => {
+    if (!hasOCRAccess) {
+      setIsUpgradePopupOpen(true);
+      return;
+    }
+    setIsOCRModalOpen(true);
+  };
 
   // Mutations
   const publishMutation = usePublishGrade();
@@ -113,6 +132,24 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
       },
       onError: () => toast.error('Failed to delete grade record'),
     });
+  };
+
+  const handleOpenUploadModal = () => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const hideInstructions = localStorage.getItem('hideGradeUploadInstructions') === 'true';
+      if (hideInstructions) {
+        setIsUploadModalOpen(true);
+      } else {
+        setIsUploadInstructionsModalOpen(true);
+      }
+    } else {
+      setIsUploadInstructionsModalOpen(true);
+    }
+  };
+
+  const proceedToUpload = () => {
+    setIsUploadInstructionsModalOpen(false);
+    setIsUploadModalOpen(true);
   };
 
   // Fetch school classes dynamically
@@ -276,16 +313,25 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
 
           <div className="flex items-center gap-2">
             <Button 
-              onClick={() => setIsOCRModalOpen(true)}
+              onClick={handleOpenOCR}
               variant="outline" 
-              className="rounded-xl h-12 w-12 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 transition-all flex items-center justify-center"
-              style={{ color: primaryColor, borderColor: `${primaryColor}40`, backgroundColor: `${primaryColor}10` }}
-              title="AI Vision OCR"
+              className="relative rounded-xl h-12 w-12 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 transition-all flex items-center justify-center group cursor-pointer"
+              style={hasOCRAccess ? { color: primaryColor, borderColor: `${primaryColor}40`, backgroundColor: `${primaryColor}10` } : {}}
+              title={hasOCRAccess ? 'AI Vision Grade Scanner' : 'Upgrade to unlock AI Vision Scanner'}
             >
-              <Camera size={18} />
+              {hasOCRAccess ? (
+                <Camera size={18} />
+              ) : (
+                <>
+                  <Camera size={18} className="text-slate-400" />
+                  <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-amber-400 border-2 border-white dark:border-slate-900 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="white"><path d="M12 1C8.676 1 6 3.676 6 7v2H4v14h16V9h-2V7c0-3.324-2.676-6-6-6zm0 2c2.276 0 4 1.724 4 4v2H8V7c0-2.276 1.724-4 4-4zm0 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>
+                  </span>
+                </>
+              )}
             </Button>
             <Button 
-              onClick={() => setIsUploadModalOpen(true)}
+              onClick={handleOpenUploadModal}
               variant="outline" 
               className="rounded-xl h-12 w-12 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 transition-all flex items-center justify-center"
               title="Batch Upload"
@@ -604,6 +650,11 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
         onClose={() => setIsUploadModalOpen(false)} 
         schoolId={schoolId}
       />
+      <GradeUploadInstructionsModal
+        isOpen={isUploadInstructionsModalOpen}
+        onClose={() => setIsUploadInstructionsModalOpen(false)}
+        onProceed={proceedToUpload}
+      />
       <GradeOCRModal 
         isOpen={isOCRModalOpen} 
         onClose={() => setIsOCRModalOpen(false)} 
@@ -654,6 +705,67 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
         onClose={() => setIsEditModalOpen(false)}
         grade={selectedGrade}
       />
+
+      {/* Premium Upgrade Popup */}
+      <Dialog open={isUpgradePopupOpen} onOpenChange={setIsUpgradePopupOpen}>
+        <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-0 shadow-2xl">
+          {/* Header with gradient */}
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-10 text-white overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-purple-500/10" />
+            <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-amber-400/5 blur-3xl" />
+            <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-purple-500/5 blur-3xl" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-14 w-14 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center">
+                  <Lock size={24} className="text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">Premium Feature</p>
+                  <h2 className="text-xl font-black tracking-tight text-white">AI Vision Scanner</h2>
+                </div>
+              </div>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Snap a photo of any physical mark sheet and let AI automatically extract all student names and scores for you.
+              </p>
+            </div>
+          </div>
+
+          {/* Feature list */}
+          <div className="p-8 bg-white dark:bg-slate-950 space-y-6">
+            <div className="space-y-3">
+              {[
+                'Scan handwritten or printed mark sheets',
+                'AI extracts names & scores automatically',
+                'Review & edit before saving',
+                'Works with any image format',
+              ].map((feat) => (
+                <div key={feat} className="flex items-center gap-3">
+                  <div className="h-5 w-5 rounded-full bg-amber-50 dark:bg-amber-400/10 border border-amber-200 dark:border-amber-400/20 flex items-center justify-center shrink-0">
+                    <Sparkles size={10} className="text-amber-500" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{feat}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-3 pt-2">
+              <Button
+                onClick={() => { setIsUpgradePopupOpen(false); window.location.href = '/dashboard/admin/billing'; }}
+                className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-sm bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-white shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <Sparkles size={16} /> Upgrade Your Plan <ArrowRight size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setIsUpgradePopupOpen(false)}
+                className="w-full h-10 rounded-xl font-bold text-slate-500 hover:text-slate-700 text-sm"
+              >
+                Maybe later
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

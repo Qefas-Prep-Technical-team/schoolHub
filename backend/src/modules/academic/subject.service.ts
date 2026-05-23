@@ -250,7 +250,15 @@ export const getSingleSubjectService = async (subjectId: string) => {
       teacherSubjects: { include: { teacher: true } },
       quizzes: true,
       exams: true,
-      subjectExamPapers: true,
+      subjectExamPapers: {
+        include: {
+          exams: {
+            include: {
+              exam: true
+            }
+          }
+        }
+      },
     },
   });
 

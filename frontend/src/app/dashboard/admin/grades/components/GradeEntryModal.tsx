@@ -14,7 +14,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, User, Save, AlertCircle, BookOpen, CheckCircle2, ChevronRight, UserPlus, FileText } from 'lucide-react';
+import { Loader2, User, Save, AlertCircle, BookOpen, CheckCircle2, ChevronRight, UserPlus, FileText, Search } from 'lucide-react';
 import { gradeService } from '@/lib/api/services/gradeService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { gradeKeys } from '@/lib/api/hooks/useGrades';
@@ -41,6 +41,9 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
   // Scoring metadata
   const [maxMarks, setMaxMarks] = useState('100');
   const [scores, setScores] = useState<Record<string, string>>({});
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
 
   // 1. Fetch all exams for this school (includes papers in subjectExamPapers)
   const { data: examsData, isLoading: isLoadingExams } = useQuery({
@@ -69,12 +72,17 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
   const departmentId = selectedExam?.departments?.[0]?.departmentId || 
                        selectedExam?.departments?.[0]?.id || '';
 
-  const { data: studentsData, isLoading: isLoadingStudents, refetch: refetchStudents } = useStudents(schoolId, {
+  const { data: studentsData, isLoading: isLoadingStudents, isFetching: isFetchingStudents, refetch: refetchStudents } = useStudents(schoolId, {
     classId: classId || undefined,
     departmentId: departmentId || undefined,
   });
   
   const students = (studentsData || []) as any[];
+
+  const filteredStudents = students.filter(s => 
+    s.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    s.studentCode?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Refetch students explicitly when returning from Add Student Dialog
   useEffect(() => {
@@ -86,7 +94,7 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
   }, [isAddStudentOpen, selectedExamId, selectedPaperId, queryClient, refetchStudents]);
 
   // 4. Fetch existing grades for this combination
-  const { data: existingGradesMap, isLoading: isLoadingGrades } = useQuery({
+  const { data: existingGradesMap, isLoading: isLoadingGrades, isFetching: isFetchingGrades } = useQuery({
     queryKey: ['existing-grades-lookup', selectedExamId, selectedPaperId],
     queryFn: async () => {
       const res = await apiClient.get('/grades/hub', {
@@ -309,17 +317,28 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-                      <User size={14} className="text-primary" />
-                      Score Candidates
-                      {scoredCount > 0 && (
-                        <span className="ml-auto text-[10px] font-black text-primary bg-primary/5 dark:bg-primary/10 px-3 py-1 rounded-full">
-                          {scoredCount} filled
-                        </span>
-                      )}
-                    </h4>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-2">
+                        <User size={14} className="text-primary" />
+                        Score Candidates
+                        {scoredCount > 0 && (
+                          <span className="text-[10px] font-black text-primary bg-primary/5 dark:bg-primary/10 px-3 py-1 rounded-full">
+                            {scoredCount} filled
+                          </span>
+                        )}
+                      </h4>
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 size-4" />
+                        <Input
+                          placeholder="Search students..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-9 h-10 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-primary/20"
+                        />
+                      </div>
+                    </div>
 
-                    {isLoadingStudents || isLoadingGrades ? (
+                    {isLoadingStudents || isLoadingGrades || isFetchingStudents || isFetchingGrades ? (
                       <div className="space-y-3">
                         {[1, 2, 3, 4, 5].map((i) => (
                           <Skeleton key={i} className="h-16 w-full rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800" />
@@ -337,9 +356,14 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                           Create Student Now
                         </Button>
                       </div>
+                    ) : filteredStudents.length === 0 ? (
+                      <div className="py-16 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800">
+                        <User size={40} className="mx-auto mb-4 opacity-20" />
+                        <p className="text-sm font-black uppercase tracking-widest mb-4">No candidates match your search</p>
+                      </div>
                     ) : (
                       <div className="grid gap-3">
-                        {students.map((student: any) => {
+                        {filteredStudents.map((student: any, index: number) => {
                           const existing = existingGradesMap?.[student.id];
                           const hasExisting = !!existing;
                           const isOnline = !!(existing?.examAttemptId || existing?.subjectExamAttemptId);
@@ -351,6 +375,9 @@ export default function GradeEntryModal({ isOpen, onClose, schoolId }: GradeEntr
                               'bg-white dark:bg-slate-900 hover:shadow-md border border-slate-100 dark:border-slate-800'
                             }`}>
                               <div className="flex items-center gap-4">
+                                <span className="text-xs font-black text-slate-400 w-5 text-right opacity-50">
+                                  {index + 1}.
+                                </span>
                                 <div className={`h-12 w-12 rounded-full flex items-center justify-center shadow-sm ${
                                   isOnline ? 'bg-primary text-primary' :
                                   hasExisting ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 

@@ -511,6 +511,16 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
         teacherCode: true,
         authProvider: true,
         verified: true,
+        teacherSubjects: {
+          include: {
+            subject: true
+          }
+        },
+        classTeachers: {
+          include: {
+            class: true
+          }
+        }
       },
     });
 

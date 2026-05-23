@@ -14,6 +14,7 @@ import {
     Building2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // ─── Helper Components ───────────────────────────────────────────────────────
 
@@ -68,9 +69,52 @@ export default function TeacherProfilePage() {
     // ── Loading ──────────────────────────────────────────────────────────────
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
-                <div className="size-14 rounded-full border-4 border-slate-100 dark:border-white/10 animate-spin" style={{ borderTopColor: primaryColor }} />
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading Profile...</p>
+            <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
+                {/* Banner Skeleton */}
+                <Skeleton className="h-40 md:h-64 w-full rounded-none" />
+                
+                {/* Header Skeleton */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 relative">
+                    <div className="flex flex-col md:flex-row gap-4 md:gap-8 -mt-12 md:-mt-20 relative z-20">
+                        {/* Avatar Skeleton */}
+                        <Skeleton className="size-28 md:size-44 rounded-3xl md:rounded-[2rem] border-[4px] border-slate-100 dark:border-slate-950 shrink-0" />
+                        
+                        {/* Info Skeleton */}
+                        <div className="flex-1 pt-2 md:pt-20 space-y-4">
+                            <div className="space-y-3">
+                                <Skeleton className="h-10 md:h-12 w-48 md:w-72 rounded-xl" />
+                                <Skeleton className="h-5 md:h-6 w-32 md:w-56 rounded-lg" />
+                                <div className="flex gap-2 md:gap-4 pt-2">
+                                    <Skeleton className="h-6 w-24 md:w-32 rounded-full" />
+                                    <Skeleton className="h-6 w-20 md:w-28 rounded-full" />
+                                    <Skeleton className="h-6 w-20 md:w-28 rounded-full" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Tabs Skeleton */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-6 md:mt-8">
+                    <Skeleton className="h-12 md:h-14 w-full md:w-[400px] rounded-xl md:rounded-2xl" />
+                </div>
+
+                {/* Content Skeleton */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-6 md:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 pb-16">
+                    <div className="lg:col-span-2 space-y-4 md:space-y-6">
+                        <Skeleton className="h-40 md:h-48 w-full rounded-[2rem]" />
+                        <Skeleton className="h-56 md:h-64 w-full rounded-[2rem]" />
+                    </div>
+                    <div className="space-y-4 md:space-y-6">
+                        <div className="grid grid-cols-2 gap-3 md:gap-4">
+                            <Skeleton className="h-28 md:h-32 w-full rounded-2xl" />
+                            <Skeleton className="h-28 md:h-32 w-full rounded-2xl" />
+                            <Skeleton className="h-28 md:h-32 w-full rounded-2xl" />
+                            <Skeleton className="h-28 md:h-32 w-full rounded-2xl" />
+                        </div>
+                        <Skeleton className="h-40 md:h-48 w-full rounded-[2rem]" />
+                    </div>
+                </div>
             </div>
         )
     }
@@ -97,8 +141,8 @@ export default function TeacherProfilePage() {
     const qualification = teacher.highestQualification || 'Not specified'
     const experience = teacher.yearsOfExperience ? `${teacher.yearsOfExperience} Years` : 'Not specified'
     const teacherCode = teacher.teacherCode || 'UNASSIGNED'
-    const subjects: string[] = teacher.teacherSubjects?.map((ts: any) => ts.subject.name) || []
-    const classes: string[] = teacher.classTeachers?.map((ct: any) => ct.class.name) || []
+    const subjects: string[] = teacher.professionalInfo?.subjects || []
+    const classes: string[] = teacher.professionalInfo?.assignedClasses || []
     const avatar = teacher.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`
 
     return (
@@ -122,7 +166,7 @@ export default function TeacherProfilePage() {
             </section>
 
             {/* ── Profile Header ───────────────────────────────────────────── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 relative">
+            <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative">
                 <div className="flex flex-col md:flex-row gap-4 md:gap-8 -mt-12 md:-mt-20 relative z-20 px-0 sm:px-0">
 
                     {/* Avatar */}
@@ -144,6 +188,14 @@ export default function TeacherProfilePage() {
                                     <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
                                         <MapPin size={12} style={{ color: primaryColor }} />
                                         {address !== 'Not provided' ? address : 'Location not set'}
+                                    </span>
+                                    <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                        <BookOpen size={12} style={{ color: primaryColor }} />
+                                        {subjects.length} Subjects
+                                    </span>
+                                    <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                        <Users size={12} style={{ color: primaryColor }} />
+                                        {classes.length} Classes
                                     </span>
                                     <span className={cn(
                                         "flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border",
@@ -194,14 +246,14 @@ export default function TeacherProfilePage() {
             </div>
 
             {/* ── Tabs ────────────────────────────────────────────────────── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-6 md:mt-8">
-                <div className="flex gap-1 overflow-x-auto scrollbar-hide bg-white dark:bg-slate-900 rounded-none md:rounded-2xl border-y md:border border-slate-200 dark:border-slate-800 p-1.5">
+            <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 mt-6 md:mt-8">
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide bg-white dark:bg-slate-900 rounded-none md:rounded-2xl border-y md:border border-slate-200 dark:border-slate-800 p-2">
                     {TABS.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                "flex-shrink-0 px-5 md:px-8 py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                                "flex-1 min-w-[140px] px-6 md:px-10 py-3 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest transition-all whitespace-nowrap",
                                 activeTab === tab.id
                                     ? "text-white shadow-md"
                                     : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -216,7 +268,7 @@ export default function TeacherProfilePage() {
 
             {/* ── Overview Tab ─────────────────────────────────────────────── */}
             {activeTab === 'overview' && (
-                <main className="max-w-7xl mx-auto px-0 md:px-12 mt-6 md:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 pb-16">
+                <main className="w-full max-w-[1600px] mx-auto px-4 md:px-8 mt-6 md:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 pb-16">
 
                     {/* ── Left Main Column ────────────────────────────────── */}
                     <div className="lg:col-span-2 space-y-4 md:space-y-6">
@@ -367,15 +419,20 @@ export default function TeacherProfilePage() {
 
             {/* ── Schedule Tab ─────────────────────────────────────────────── */}
             {activeTab === 'schedule' && (
-                <div className="max-w-7xl mx-auto px-4 md:px-12 mt-6 pb-16">
-                    <SchedulePage teacher={teacher} teacherId={teacherId} primaryColor={primaryColor} />
+                <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 mt-6 pb-16">
+                    <SchedulePage 
+                        teacher={teacher} 
+                        teacherId={teacherId} 
+                        primaryColor={primaryColor} 
+                        schoolId={teacher?.resolvedSchoolId || schoolId}
+                    />
                 </div>
             )}
 
             {/* ── Performance Tab ──────────────────────────────────────────── */}
             {activeTab === 'performance' && (
-                <div className="max-w-7xl mx-auto px-4 md:px-12 mt-6 pb-16">
-                    <PerformancePage />
+                <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 mt-6 pb-16">
+                    <PerformancePage teacher={teacher} />
                 </div>
             )}
 

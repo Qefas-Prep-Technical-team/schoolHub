@@ -20,9 +20,14 @@ import {
   updateTeacher,
   getTeacherTimetable,
   createTimetablePeriod,
+  deleteTimetablePeriod,
   inviteTeacher,
   resendClaimEmail,
-  deleteTimetablePeriod
+  getTeacherAttendance,
+  markTeacherAttendance,
+  markBulkTeacherAttendance,
+  getSchoolTeacherAttendanceByDate,
+  getSchoolTeacherAttendanceTrend
 } from "./teacher-management.controller";
 import { authenticateToken } from "@middleware/authMiddleware";
 import rateLimit from "express-rate-limit";
@@ -71,6 +76,11 @@ router.patch("/teachers/:id", updateTeacher);
 router.post("/teachers/:id/assign-class", assignTeacherToClass);
 router.post("/teachers/invite", inviteTeacher);
 router.post("/teachers/:id/resend-claim-email", resendClaimEmailLimiter, resendClaimEmail);
+router.get("/teachers/attendance/by-date", getSchoolTeacherAttendanceByDate);
+router.get("/teachers/attendance/trend", getSchoolTeacherAttendanceTrend);
+router.post("/teachers/attendance/bulk", markBulkTeacherAttendance);
+router.get("/teachers/:id/attendance", getTeacherAttendance);
+router.post("/teachers/:id/attendance", markTeacherAttendance);
 router.patch("/students/:id/verify", verifyStudent);
 router.put("/:adminId/approve", approveAdmin);
 router.put("/:adminId/reject", rejectAdmin);

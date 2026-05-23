@@ -40,6 +40,12 @@ const SingleSubjectPage = () => {
   const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  const [quizzesPage, setQuizzesPage] = useState(1);
+  const [termExamsPage, setTermExamsPage] = useState(1);
+  const [casPage, setCasPage] = useState(1);
+  const [papersPage, setPapersPage] = useState(1);
+  const itemsPerPage = 6;
+
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
   const { data: settings } = useSchoolSettings(schoolId);
@@ -109,8 +115,27 @@ const SingleSubjectPage = () => {
   const assignedTeachers = (subject as any).teacherSubjects || [];
   const assignedClasses = subject.classes || [];
   const quizzes = (subject as any).quizzes || [];
-  const exams = (subject as any).exams || [];
   const subjectExamPapers = (subject as any).subjectExamPapers || [];
+  
+  // Extract exams linked through subjectExamPapers
+  const linkedExams = subjectExamPapers.flatMap((paper: any) => 
+    paper.exams?.map((e: any) => e.exam) || []
+  );
+
+  // Combine directly linked exams and indirectly linked exams
+  const allExamsRaw = [...((subject as any).exams || []), ...linkedExams];
+  
+  // Deduplicate by ID
+  const allExamsMap = new Map();
+  allExamsRaw.forEach((e: any) => {
+    if (e && e.id && !allExamsMap.has(e.id)) {
+      allExamsMap.set(e.id, e);
+    }
+  });
+  const allExams = Array.from(allExamsMap.values());
+
+  const termExams = allExams.filter((e: any) => e.category !== 'CA');
+  const cas = allExams.filter((e: any) => e.category === 'CA');
 
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950/20 p-6 md:p-10 flex flex-col gap-8">
@@ -210,7 +235,7 @@ const SingleSubjectPage = () => {
                 Assessments
               </span>
               <span className="text-xl font-black text-slate-800 dark:text-white">
-                {quizzes.length + exams.length + subjectExamPapers.length} Active
+                {quizzes.length + allExams.length + subjectExamPapers.length} Active
               </span>
             </div>
           </div>
@@ -532,7 +557,7 @@ const SingleSubjectPage = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {quizzes.length > 0 ? (
-                      quizzes.map((quiz: any) => (
+                      quizzes.slice((quizzesPage - 1) * itemsPerPage, quizzesPage * itemsPerPage).map((quiz: any) => (
                         <div
                           key={quiz.id}
                           className="bg-white dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-100 dark:border-white/5 rounded-3xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow relative shadow-sm min-h-[170px]"
@@ -577,19 +602,28 @@ const SingleSubjectPage = () => {
                       </div>
                     )}
                   </div>
+                  {quizzes.length > itemsPerPage && (
+                    <div className="flex justify-center gap-4 mt-6">
+                      <Button variant="outline" size="sm" onClick={() => setQuizzesPage(p => Math.max(1, p - 1))} disabled={quizzesPage === 1} className="rounded-xl h-10 px-4 text-xs font-black uppercase tracking-widest text-slate-500 border-2 border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">Previous</Button>
+                      <div className="flex items-center px-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900 text-[10px] font-black text-slate-500 tracking-widest uppercase">
+                        Page {quizzesPage} of {Math.ceil(quizzes.length / itemsPerPage)}
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => setQuizzesPage(p => p + 1)} disabled={quizzesPage * itemsPerPage >= quizzes.length} className="rounded-xl h-10 px-4 text-xs font-black uppercase tracking-widest text-slate-500 border-2 border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">Next</Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Exams Grid */}
-                <div className="space-y-4">
+                <div className="space-y-4 mt-8">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">
-                      Subject Term Exams ({exams.length})
+                      Subject Term Exams ({termExams.length})
                     </h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {exams.length > 0 ? (
-                      exams.map((exam: any) => (
+                    {termExams.length > 0 ? (
+                      termExams.slice((termExamsPage - 1) * itemsPerPage, termExamsPage * itemsPerPage).map((exam: any) => (
                         <div
                           key={exam.id}
                           className="bg-white dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-100 dark:border-white/5 rounded-3xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow relative shadow-sm min-h-[170px]"
@@ -634,10 +668,85 @@ const SingleSubjectPage = () => {
                       </div>
                     )}
                   </div>
+                  {termExams.length > itemsPerPage && (
+                    <div className="flex justify-center gap-4 mt-6">
+                      <Button variant="outline" size="sm" onClick={() => setTermExamsPage(p => Math.max(1, p - 1))} disabled={termExamsPage === 1} className="rounded-xl h-10 px-4 text-xs font-black uppercase tracking-widest text-slate-500 border-2 border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">Previous</Button>
+                      <div className="flex items-center px-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900 text-[10px] font-black text-slate-500 tracking-widest uppercase">
+                        Page {termExamsPage} of {Math.ceil(termExams.length / itemsPerPage)}
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => setTermExamsPage(p => p + 1)} disabled={termExamsPage * itemsPerPage >= termExams.length} className="rounded-xl h-10 px-4 text-xs font-black uppercase tracking-widest text-slate-500 border-2 border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">Next</Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* CAs Grid */}
+                <div className="space-y-4 mt-8">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">
+                      Continuous Assessments ({cas.length})
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {cas.length > 0 ? (
+                      cas.slice((casPage - 1) * itemsPerPage, casPage * itemsPerPage).map((ca: any) => (
+                        <div
+                          key={ca.id}
+                          className="bg-white dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-100 dark:border-white/5 rounded-3xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow relative shadow-sm min-h-[170px]"
+                        >
+                          <div className="text-left">
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20">
+                                CA
+                              </span>
+                              <span className={cn(
+                                "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
+                                ca.status === "PUBLISHED"
+                                  ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
+                                  : "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
+                              )}>
+                                {ca.status}
+                              </span>
+                            </div>
+                            <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight line-clamp-1">
+                              {ca.title}
+                            </h4>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium line-clamp-2 mt-1 leading-normal">
+                              {ca.instructions || "Continuous Assessment session."}
+                            </p>
+                          </div>
+
+                          <div className="pt-4 border-t border-slate-50 dark:border-white/5 flex items-center justify-between mt-4">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                              <Clock size={11} /> {ca.durationMinutes || 0} Min
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                              Marks: {ca.totalMarks || 0}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="col-span-full py-12 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-[2.5rem] flex flex-col items-center justify-center text-center space-y-3 shadow-sm">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                          No continuous assessments scheduled.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {cas.length > itemsPerPage && (
+                    <div className="flex justify-center gap-4 mt-6">
+                      <Button variant="outline" size="sm" onClick={() => setCasPage(p => Math.max(1, p - 1))} disabled={casPage === 1} className="rounded-xl h-10 px-4 text-xs font-black uppercase tracking-widest text-slate-500 border-2 border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">Previous</Button>
+                      <div className="flex items-center px-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900 text-[10px] font-black text-slate-500 tracking-widest uppercase">
+                        Page {casPage} of {Math.ceil(cas.length / itemsPerPage)}
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => setCasPage(p => p + 1)} disabled={casPage * itemsPerPage >= cas.length} className="rounded-xl h-10 px-4 text-xs font-black uppercase tracking-widest text-slate-500 border-2 border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">Next</Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Subject Papers Grid */}
-                <div className="space-y-4">
+                <div className="space-y-4 mt-8">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">
                       Subject Exam Papers ({subjectExamPapers.length})
@@ -646,7 +755,7 @@ const SingleSubjectPage = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {subjectExamPapers.length > 0 ? (
-                      subjectExamPapers.map((paper: any) => (
+                      subjectExamPapers.slice((papersPage - 1) * itemsPerPage, papersPage * itemsPerPage).map((paper: any) => (
                         <div
                           key={paper.id}
                           className="bg-white dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-100 dark:border-white/5 rounded-3xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow relative shadow-sm min-h-[170px]"
@@ -691,6 +800,15 @@ const SingleSubjectPage = () => {
                       </div>
                     )}
                   </div>
+                  {subjectExamPapers.length > itemsPerPage && (
+                    <div className="flex justify-center gap-4 mt-6">
+                      <Button variant="outline" size="sm" onClick={() => setPapersPage(p => Math.max(1, p - 1))} disabled={papersPage === 1} className="rounded-xl h-10 px-4 text-xs font-black uppercase tracking-widest text-slate-500 border-2 border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">Previous</Button>
+                      <div className="flex items-center px-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900 text-[10px] font-black text-slate-500 tracking-widest uppercase">
+                        Page {papersPage} of {Math.ceil(subjectExamPapers.length / itemsPerPage)}
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => setPapersPage(p => p + 1)} disabled={papersPage * itemsPerPage >= subjectExamPapers.length} className="rounded-xl h-10 px-4 text-xs font-black uppercase tracking-widest text-slate-500 border-2 border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">Next</Button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

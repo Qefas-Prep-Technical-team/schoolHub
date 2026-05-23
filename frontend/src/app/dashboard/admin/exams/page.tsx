@@ -11,6 +11,7 @@ import StatsCards from "./components/StatsCards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SubjectPaperGrid from "./components/SubjectPaperGrid";
+import Pagination from "./components/Pagination";
 import { useSubjectPapersPaginated, useExamsPaginated } from "@/lib/api/hooks/useExams";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { AlertCircle } from "lucide-react";
@@ -35,7 +36,7 @@ export default function Dashboard() {
         papers: 1
     });
 
-    const LIMIT = 12;
+    const LIMIT = 6;
 
     const commonParams = {
         schoolId,
@@ -85,6 +86,7 @@ export default function Dashboard() {
 
     const handlePageChange = (tab: 'exams' | 'quiz' | 'ca' | 'papers', newPage: number) => {
         setPageStates(prev => ({ ...prev, [tab]: newPage }));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const renderLoading = () => (
@@ -132,7 +134,12 @@ export default function Dashboard() {
 
                     <TabsContent value="exams" className="space-y-6">
                         <SearchFilters filters={filters} onFilterChange={handleFilterChange} hideCategoryFilter />
-                        {isLoadingExams ? renderLoading() : isErrorExams ? renderError("Unable to load exams") : examsData?.data?.length === 0 ? renderEmpty("No exams found", "Start by creating your first exam to manage assessments for your school.") : (
+                        {isLoadingExams ? renderLoading() : isErrorExams ? renderError("Unable to load exams") : examsData?.data?.length === 0 ? (
+                            <>
+                                {renderEmpty("No exams found", "Start by creating your first exam to manage assessments for your school.")}
+                                <Pagination pagination={{ page: 1, pages: 1, total: 0, limit: LIMIT }} onPageChange={(p) => handlePageChange('exams', p)} />
+                            </>
+                        ) : (
                             <AssessmentGrid 
                                 assessments={examsData?.data || []} 
                                 pagination={examsData?.pagination} 
@@ -143,7 +150,12 @@ export default function Dashboard() {
 
                     <TabsContent value="quiz" className="space-y-6">
                         <SearchFilters filters={filters} onFilterChange={handleFilterChange} hideCategoryFilter />
-                        {isLoadingQuizzes ? renderLoading() : isErrorQuizzes ? renderError("Unable to load quizzes") : quizzesData?.data?.length === 0 ? renderEmpty("No quizzes found", "Create a new quiz assessment.") : (
+                        {isLoadingQuizzes ? renderLoading() : isErrorQuizzes ? renderError("Unable to load quizzes") : quizzesData?.data?.length === 0 ? (
+                            <>
+                                {renderEmpty("No quizzes found", "Create a new quiz assessment.")}
+                                <Pagination pagination={{ page: 1, pages: 1, total: 0, limit: LIMIT }} onPageChange={(p) => handlePageChange('quiz', p)} />
+                            </>
+                        ) : (
                             <AssessmentGrid 
                                 assessments={quizzesData?.data || []} 
                                 pagination={quizzesData?.pagination} 
@@ -154,7 +166,12 @@ export default function Dashboard() {
 
                     <TabsContent value="ca" className="space-y-6">
                         <SearchFilters filters={filters} onFilterChange={handleFilterChange} hideCategoryFilter />
-                        {isLoadingCAs ? renderLoading() : isErrorCAs ? renderError("Unable to load CAs") : casData?.data?.length === 0 ? renderEmpty("No Continuous Assessments found", "Create a new CA.") : (
+                        {isLoadingCAs ? renderLoading() : isErrorCAs ? renderError("Unable to load CAs") : casData?.data?.length === 0 ? (
+                            <>
+                                {renderEmpty("No Continuous Assessments found", "Create a new CA.")}
+                                <Pagination pagination={{ page: 1, pages: 1, total: 0, limit: LIMIT }} onPageChange={(p) => handlePageChange('ca', p)} />
+                            </>
+                        ) : (
                             <AssessmentGrid 
                                 assessments={casData?.data || []} 
                                 pagination={casData?.pagination} 
@@ -165,7 +182,12 @@ export default function Dashboard() {
 
                     <TabsContent value="papers" className="space-y-6">
                         <SearchFilters filters={filters} onFilterChange={handleFilterChange} hideCategoryFilter />
-                        {isLoadingPapers ? renderLoading() : isErrorPapers ? renderError("Unable to load subject papers") : papersData?.data?.length === 0 ? renderEmpty("No papers found", "Create or add existing subject papers to manage your assessments.") : (
+                        {isLoadingPapers ? renderLoading() : isErrorPapers ? renderError("Unable to load subject papers") : papersData?.data?.length === 0 ? (
+                            <>
+                                {renderEmpty("No papers found", "Create or add existing subject papers to manage your assessments.")}
+                                <Pagination pagination={{ page: 1, pages: 1, total: 0, limit: LIMIT }} onPageChange={(p) => handlePageChange('papers', p)} />
+                            </>
+                        ) : (
                             <SubjectPaperGrid 
                                 papers={papersData?.data || []} 
                                 pagination={papersData?.pagination} 

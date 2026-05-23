@@ -124,6 +124,38 @@ export default function AddScheduleModal({
           <DialogTitle>{initialData ? 'Edit Timetable Period' : 'Add Timetable Period'}</DialogTitle>
         </DialogHeader>
 
+        {isLoadingClasses ? (
+          <div className="space-y-6 py-4 animate-pulse">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-md"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-md"></div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded"></div>
+              <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-md"></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-md"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-md"></div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <div className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-md"></div>
+              <div className="h-10 w-32 bg-slate-200 dark:bg-slate-800 rounded-md"></div>
+            </div>
+          </div>
+        ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
@@ -270,6 +302,7 @@ export default function AddScheduleModal({
             </DialogFooter>
           </form>
         </Form>
+        )}
       </DialogContent>
     </Dialog>
   )

@@ -8,9 +8,9 @@ interface PaginationProps {
 }
 
 export default function Pagination({ pagination, onPageChange }: PaginationProps) {
-  const { page, pages, total } = pagination;
+  const { page, pages, total } = pagination || { page: 1, pages: 1, total: 0 };
 
-  if (pages <= 1) return null;
+  // Always render to maintain consistent layout, buttons will just be disabled if pages <= 1
 
   const handlePrevious = () => {
     if (page > 1) onPageChange(page - 1);
@@ -41,12 +41,12 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-white/10">
+    <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-white/10 w-full">
       <div className="text-sm font-medium text-slate-500 dark:text-slate-400">
         Showing <span className="font-bold text-slate-900 dark:text-white">{(page - 1) * pagination.limit + 1}</span> to <span className="font-bold text-slate-900 dark:text-white">{Math.min(page * pagination.limit, total)}</span> of <span className="font-bold text-slate-900 dark:text-white">{total}</span> results
       </div>
       
-      <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
+      <div className="flex flex-wrap items-center justify-center gap-1.5 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm w-full md:w-auto">
         <button
           onClick={handlePrevious}
           disabled={page === 1}
@@ -56,7 +56,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
           <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
         </button>
 
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-center gap-1">
           {generatePageNumbers().map((num, i) => (
             <React.Fragment key={i}>
               {num === '...' ? (

@@ -4,6 +4,8 @@ import { ProtectedAdminRoute } from '../../../components/ProtectedAdminRoute'
 import AttendanceCalendar from './AttendanceCalendar'
 import MarkAttendanceForm from './MarkAttendanceForm'
 import AttendanceStats from './AttendanceStats'
+import { useTeacherAttendance, useMarkTeacherAttendance } from '@/lib/api/hooks/useAdmin'
+import { format, subMonths, addMonths } from 'date-fns'
 
 const mockTeacherData = {
     id: '1',
@@ -34,37 +36,7 @@ const mockTeacherData = {
     }
 }
 
-// Mock attendance data
-const mockAttendanceData: { date: string; status: 'present' | 'absent' | 'late' | null }[] = [
-    { date: '2024-10-02', status: 'present' },
-    { date: '2024-10-03', status: 'present' },
-    { date: '2024-10-04', status: 'present' },
-    { date: '2024-10-07', status: 'present' },
-    { date: '2024-10-08', status: 'absent' },
-    { date: '2024-10-09', status: 'present' },
-    { date: '2024-10-10', status: 'late' },
-    { date: '2024-10-11', status: 'present' },
-    { date: '2024-10-14', status: 'present' },
-    { date: '2024-10-15', status: 'present' },
-    { date: '2024-10-16', status: 'present' },
-    { date: '2024-10-17', status: 'present' },
-    { date: '2024-10-18', status: 'present' },
-    { date: '2024-10-21', status: 'absent' },
-    { date: '2024-10-22', status: 'present' },
-    { date: '2024-10-23', status: 'late' },
-    { date: '2024-10-24', status: 'late' },
-    { date: '2024-10-25', status: 'present' },
-    { date: '2024-10-28', status: 'present' },
-    { date: '2024-10-29', status: 'present' },
-    { date: '2024-10-30', status: 'present' }
-]
 
-const attendanceStats = {
-    present: 15,
-    absent: 2,
-    late: 3,
-    percentage: '90%'
-}
 
 const timetableClasses = [
     // ... existing timetable classes
@@ -78,35 +50,93 @@ const tabs = [
     { id: 'leave', label: 'Leave Requests' }
 ]
 
-export default function PerformancePage() {
+interface PerformancePageProps {
+    teacher: any
+}
+
+export default function PerformancePage({ teacher }: PerformancePageProps) {
     const [activeTab, setActiveTab] = useState('attendance')
-    const [currentMonth, setCurrentMonth] = useState('October 2024')
-    const [selectedDate, setSelectedDate] = useState('2024-10-30')
+    const [currentDate, setCurrentDate] = useState(new Date())
+    const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+
+    const currentMonthStr = format(currentDate, 'yyyy-MM')
+    
+    // Fallback to activeSchoolId or resolvedSchoolId depending on what page.tsx passed, or tenant
+    const schoolId = teacher?.resolvedSchoolId || teacher?.schoolId;
+
+    const { data: attendanceData = [], isLoading } = useTeacherAttendance(teacher?.id, schoolId, currentMonthStr)
+    const { mutate: markAttendance, isPending } = useMarkTeacherAttendance(teacher?.id, schoolId, currentMonthStr)
+
+    // Calculate dynamic stats based on real data
+    const presentCount = attendanceData.filter((a: any) => a.status === 'present').length
+    const absentCount = attendanceData.filter((a: any) => a.status === 'absent').length
+    const lateCount = attendanceData.filter((a: any) => a.status === 'late').length
+    const totalCount = presentCount + absentCount + lateCount
+    const percentage = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0
+
+    const dynamicStats = {
+        present: presentCount,
+        absent: absentCount,
+        late: lateCount,
+        percentage: `${percentage}%`
+    }
+
+    // Format for the calendar component
+    const formattedAttendance = attendanceData.map((a: any) => ({
+        date: format(new Date(a.date), 'yyyy-MM-dd'),
+        status: a.status,
+        note: a.note
+    }))
+
+    const existingRecord = formattedAttendance.find((a: any) => a.date === selectedDate)
 
     const breadcrumbItems = [
         { label: 'Teachers', href: '/dashboard/admin/teachers' },
-        { label: mockTeacherData.name, href: '#' },
+        { label: teacher?.name || 'Teacher', href: '#' },
         { label: 'Attendance', active: true }
     ]
 
     const handleMonthChange = (direction: 'prev' | 'next') => {
-        // Implement month navigation logic
-        console.log('Month change:', direction)
+        if (direction === 'prev') {
+            setCurrentDate(subMonths(currentDate, 1))
+        } else {
+            setCurrentDate(addMonths(currentDate, 1))
+        }
     }
 
     const handleDateClick = (date: string) => {
         setSelectedDate(date)
-        console.log('Date clicked:', date)
     }
 
-    const handleAttendanceSubmit = (data: { date: string; status: string }) => {
-        // Implement attendance submission logic
-        console.log('Attendance submitted:', data)
+    const handleAttendanceSubmit = (data: { date: string; status: string; note?: string }) => {
+        markAttendance({
+            schoolId,
+            date: data.date,
+            status: data.status,
+            note: data.note
+        })
     }
 
     const handleExportReport = () => {
-        // Implement export logic
-        console.log('Export report')
+        const headers = ["Date", "Status", "Note"];
+        const csvContent = [
+            headers.join(","),
+            ...attendanceData.map((a: any) => [
+                `="${format(new Date(a.date), 'yyyy-MM-dd')}"`,
+                `"${a.status}"`,
+                `"${(a.note || '').replace(/"/g, '""')}"`
+            ].join(","))
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `attendance_report_${teacher?.name?.replace(/\s+/g, '_') || 'teacher'}_${currentMonthStr}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     return (
@@ -119,7 +149,7 @@ export default function PerformancePage() {
                     <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                         <div className="flex flex-col gap-1">
                             <h1 className="text-slate-900 dark:text-slate-200 text-3xl font-bold leading-tight tracking-tight">
-                                Attendance Record for {mockTeacherData.name}
+                                Attendance Record for {teacher?.name || 'Teacher'}
                             </h1>
                             <p className="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">
                                 View and manage attendance records for the selected month.
@@ -133,18 +163,21 @@ export default function PerformancePage() {
                             <span className="truncate">Export Report</span>
                         </button>
                     </div>
-                    <AttendanceStats stats={attendanceStats} />
+                    <AttendanceStats stats={dynamicStats} />
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <AttendanceCalendar
-                            attendance={mockAttendanceData}
-                            currentMonth={currentMonth}
+                            attendance={formattedAttendance}
+                            currentMonth={currentMonthStr}
                             onMonthChange={handleMonthChange}
                             onDateClick={handleDateClick}
                         />
 
                         <MarkAttendanceForm
                             selectedDate={selectedDate}
+                            existingStatus={existingRecord?.status?.toLowerCase()}
+                            existingNote={existingRecord?.note}
+                            isSubmitting={isPending}
                             onAttendanceSubmit={handleAttendanceSubmit}
                         />
                     </div>

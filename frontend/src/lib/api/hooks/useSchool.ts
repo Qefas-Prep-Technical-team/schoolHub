@@ -18,6 +18,8 @@ export const schoolQueryKeys = {
     [...schoolQueryKeys.all, "billing", schoolId, params] as const,
   userBilling: (userId: string, params?: Record<string, unknown>) =>
     ["user", "billing", userId, params] as const,
+  subjects: (schoolId: string) =>
+    [...schoolQueryKeys.all, "subjects", schoolId] as const,
 };
 
 export const useSchoolStats = (schoolId: string) => {
@@ -32,6 +34,14 @@ export const useSchoolTeachers = (schoolId: string) => {
   return useQuery({
     queryKey: schoolQueryKeys.teachers(schoolId),
     queryFn: () => schoolService.getTeachers(schoolId),
+    enabled: !!schoolId,
+  });
+};
+
+export const useSchoolSubjects = (schoolId: string) => {
+  return useQuery({
+    queryKey: schoolQueryKeys.subjects(schoolId),
+    queryFn: () => schoolService.getSubjects(schoolId),
     enabled: !!schoolId,
   });
 };

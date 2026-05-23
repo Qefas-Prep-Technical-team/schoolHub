@@ -61,12 +61,59 @@ export const deleteTimetablePeriodService = async (id: string) => {
   });
 };
 
-export const getTeacherTimetableService = async (teacherId: string) => {
+export const getTeacherTimetableService = async (teacherId: string, termPeriodId?: string, schoolIdOverride?: string) => {
+  const teacher = await prisma.teacher.findUnique({
+    where: { id: teacherId },
+    include: { teacherSubjects: true }
+  });
+
+  if (!teacher) {
+    throw new Error("Teacher not found");
+  }
+
+  const subjectIds = teacher.teacherSubjects.map(ts => ts.subjectId);
+  let schoolId = teacher.activeSchoolId || teacher.primarySchoolId || teacher.schoolId;
+
+  if (!schoolId && subjectIds.length > 0) {
+    const subject = await prisma.subject.findUnique({
+      where: { id: subjectIds[0] },
+      select: { schoolId: true }
+    });
+    if (subject) {
+      schoolId = subject.schoolId;
+    }
+  }
+
+  // If still not found, try the override as a last resort
+  if (!schoolId && schoolIdOverride) {
+    schoolId = schoolIdOverride;
+  }
+
+  const whereClause: any = {
+    OR: [
+      { teacherId },
+      {
+        teacherId: null,
+        subjectId: { in: subjectIds },
+        class: { schoolId }
+      },
+      {
+        isBreak: true,
+        class: { schoolId }
+      }
+    ]
+  };
+
+  if (termPeriodId) {
+    whereClause.termPeriodId = termPeriodId;
+  }
+
   return prisma.timetablePeriod.findMany({
-    where: { teacherId },
+    where: whereClause,
     include: {
       subject: true,
       class: true,
+      teacher: true,
     },
     orderBy: [
       { day: "asc" },

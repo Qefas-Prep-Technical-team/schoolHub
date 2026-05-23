@@ -1,19 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface MarkAttendanceFormProps {
     selectedDate: string
-    onAttendanceSubmit: (data: { date: string; status: string }) => void
+    isSubmitting?: boolean
+    existingStatus?: string
+    existingNote?: string
+    onAttendanceSubmit: (data: { date: string; status: string; note: string }) => void
 }
 
-export default function MarkAttendanceForm({ selectedDate, onAttendanceSubmit }: MarkAttendanceFormProps) {
-    const [attendanceStatus, setAttendanceStatus] = useState('present')
+export default function MarkAttendanceForm({ selectedDate, isSubmitting, existingStatus, existingNote, onAttendanceSubmit }: MarkAttendanceFormProps) {
+    const [attendanceStatus, setAttendanceStatus] = useState(existingStatus || 'present')
+    const [note, setNote] = useState(existingNote || '')
+
+    useEffect(() => {
+        setAttendanceStatus(existingStatus || 'present')
+        setNote(existingNote || '')
+    }, [selectedDate, existingStatus, existingNote])
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         onAttendanceSubmit({
             date: selectedDate,
-            status: attendanceStatus
+            status: attendanceStatus,
+            note
         })
+        setNote('') // Clear note after submit
     }
 
     return (
@@ -34,8 +45,9 @@ export default function MarkAttendanceForm({ selectedDate, onAttendanceSubmit }:
                         id="attendance-date"
                         type="date"
                         value={selectedDate}
-                        onChange={(e) => {/* Handle date change if needed */ }}
-                        className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 focus:ring-primary focus:border-primary"
+                        onChange={(e) => {}}
+                        readOnly
+                        className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-500 cursor-not-allowed focus:ring-0 focus:border-slate-300"
                     />
                 </div>
 
@@ -98,11 +110,33 @@ export default function MarkAttendanceForm({ selectedDate, onAttendanceSubmit }:
                     </div>
                 </div>
 
+                <div>
+                    <label
+                        htmlFor="attendance-note"
+                        className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+                    >
+                        Note (Optional)
+                    </label>
+                    <textarea
+                        id="attendance-note"
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="Add reason for absence or lateness..."
+                        className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 focus:ring-primary focus:border-primary p-2 text-sm"
+                        rows={3}
+                    />
+                </div>
+
                 <button
                     type="submit"
-                    className="w-full flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-primary text-white text-sm font-semibold leading-normal shadow-sm hover:bg-primary/90 mt-2"
+                    disabled={isSubmitting}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-primary text-white text-sm font-semibold leading-normal shadow-sm hover:bg-primary/90 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Submit Attendance
+                    {isSubmitting ? (
+                        <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                        'Submit Attendance'
+                    )}
                 </button>
             </form>
         </div>

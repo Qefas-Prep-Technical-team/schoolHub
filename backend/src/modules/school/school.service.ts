@@ -71,6 +71,12 @@ export const getSchoolTeachersService = async (schoolId: string) => {
       gender: true,
       primarySchoolId: true,
       isClaimed: true,
+      teacherSubjects: {
+        include: { subject: true }
+      },
+      classTeachers: {
+        include: { class: true }
+      }
     },
     orderBy: {
       name: "asc",

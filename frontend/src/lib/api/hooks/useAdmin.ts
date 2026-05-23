@@ -7,7 +7,8 @@ export const adminKeys = {
   all: ["admin"] as const,
   teachers: () => [...adminKeys.all, "teachers"] as const,
   teacher: (id: string) => [...adminKeys.teachers(), id] as const,
-  timetable: (teacherId: string) => [...adminKeys.teacher(teacherId), "timetable"] as const,
+  timetable: (teacherId: string, termPeriodId?: string, schoolId?: string) => [...adminKeys.teacher(teacherId), "timetable", termPeriodId, schoolId].filter(Boolean) as string[],
+  teacherAttendance: (teacherId: string, schoolId: string, month?: string) => [...adminKeys.teacher(teacherId), "attendance", schoolId, month].filter(Boolean) as string[],
 };
 
 export const useTeacherDetails = (teacherId: string) => {
@@ -18,11 +19,71 @@ export const useTeacherDetails = (teacherId: string) => {
   });
 };
 
-export const useTeacherTimetable = (teacherId: string) => {
+export const useTeacherTimetable = (teacherId: string, termPeriodId?: string, schoolId?: string) => {
   return useQuery({
-    queryKey: adminKeys.timetable(teacherId),
-    queryFn: () => adminService.getTeacherTimetable(teacherId),
+    queryKey: adminKeys.timetable(teacherId, termPeriodId, schoolId),
+    queryFn: () => adminService.getTeacherTimetable(teacherId, termPeriodId, schoolId),
     enabled: !!teacherId,
+  });
+};
+
+export const useTeacherAttendance = (teacherId: string, schoolId: string, month?: string) => {
+  return useQuery({
+    queryKey: adminKeys.teacherAttendance(teacherId, schoolId, month),
+    queryFn: () => adminService.getTeacherAttendance(teacherId, schoolId, month),
+    enabled: !!teacherId && !!schoolId,
+  });
+};
+
+export const useSchoolTeacherAttendanceByDate = (schoolId: string, date: string) => {
+  return useQuery({
+    queryKey: adminKeys.teacherAttendance(schoolId, 'date', date),
+    queryFn: () => adminService.getSchoolTeacherAttendanceByDate(schoolId, date),
+    enabled: !!schoolId && !!date,
+  });
+};
+
+export const useSchoolTeacherAttendanceTrend = (schoolId: string, days?: number) => {
+  return useQuery({
+    queryKey: ['admin', 'teachers', 'attendance-trend', schoolId, days],
+    queryFn: () => adminService.getSchoolTeacherAttendanceTrend(schoolId, days),
+    enabled: !!schoolId,
+  });
+};
+
+export const useMarkTeacherAttendance = (teacherId: string, schoolId: string, month?: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { schoolId: string; date: string; status: string; note?: string }) => 
+      adminService.markTeacherAttendance(teacherId, data),
+    onSuccess: () => {
+      // Invalidate both specific month and all attendance for this teacher/school
+      queryClient.invalidateQueries({ queryKey: adminKeys.teacherAttendance(teacherId, schoolId, month) });
+      queryClient.invalidateQueries({ queryKey: adminKeys.teacherAttendance(teacherId, schoolId) });
+      toast.success("Attendance marked successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to mark attendance");
+    },
+  });
+};
+
+export const useMarkBulkTeacherAttendance = (schoolId: string, month?: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { schoolId: string; records: { teacherId: string; date: string; status: string; note?: string }[] }) => 
+      adminService.markBulkTeacherAttendance(data),
+    onSuccess: (data, variables) => {
+      // Invalidate attendance queries for all affected teachers
+      variables.records.forEach(record => {
+        queryClient.invalidateQueries({ queryKey: adminKeys.teacherAttendance(record.teacherId, schoolId, month) });
+        queryClient.invalidateQueries({ queryKey: adminKeys.teacherAttendance(record.teacherId, schoolId) });
+      });
+      toast.success("Attendance saved successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to save attendance");
+    },
   });
 };
 

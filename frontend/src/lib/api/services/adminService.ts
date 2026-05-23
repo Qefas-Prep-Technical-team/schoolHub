@@ -57,8 +57,10 @@ export const adminService = {
   /**
    * Get teacher timetable
    */
-  getTeacherTimetable: async (teacherId: string) => {
-    const response = await apiClient.get(`/admin/teachers/${teacherId}/timetable`);
+  getTeacherTimetable: async (teacherId: string, termPeriodId?: string, schoolId?: string) => {
+    const response = await apiClient.get(`/admin/teachers/${teacherId}/timetable`, {
+      params: { termPeriodId, schoolId }
+    });
     return response.data.data;
   },
 
@@ -94,6 +96,52 @@ export const adminService = {
       params: { schoolId, ...params },
     });
     return response.data;
+  },
+
+  /**
+   * Get teacher attendance
+   */
+  getTeacherAttendance: async (teacherId: string, schoolId: string, month?: string) => {
+    const response = await apiClient.get(`/admin/teachers/${teacherId}/attendance`, {
+      params: { schoolId, month },
+    });
+    return response.data.data;
+  },
+
+  /**
+   * Mark teacher attendance
+   */
+  markTeacherAttendance: async (teacherId: string, data: { schoolId: string; date: string; status: string; note?: string }) => {
+    const response = await apiClient.post(`/admin/teachers/${teacherId}/attendance`, data);
+    return response.data;
+  },
+
+  /**
+   * Bulk mark teacher attendance
+   */
+  markBulkTeacherAttendance: async (data: { schoolId: string; records: { teacherId: string; date: string; status: string; note?: string }[] }) => {
+    const response = await apiClient.post(`/admin/teachers/attendance/bulk`, data);
+    return response.data;
+  },
+
+  /**
+   * Get school teacher attendance by date
+   */
+  getSchoolTeacherAttendanceByDate: async (schoolId: string, date: string) => {
+    const response = await apiClient.get(`/admin/teachers/attendance/by-date`, {
+      params: { schoolId, date }
+    });
+    return response.data.data;
+  },
+
+  /**
+   * Get school teacher attendance trend
+   */
+  getSchoolTeacherAttendanceTrend: async (schoolId: string, days?: number) => {
+    const response = await apiClient.get(`/admin/teachers/attendance/trend`, {
+      params: { schoolId, days: days || 5 }
+    });
+    return response.data.data;
   },
 
   /**

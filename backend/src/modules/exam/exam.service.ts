@@ -426,7 +426,7 @@ export const getSubjectPapersService = async (filters: {
     where.status = filters.status;
   }
 
-  return prisma.subjectExamPaper.findMany({
+  const papers = await prisma.subjectExamPaper.findMany({
     where,
     include: {
       subject: true,

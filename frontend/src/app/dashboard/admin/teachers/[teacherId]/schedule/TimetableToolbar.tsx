@@ -1,4 +1,5 @@
 import Button from '../components/ui/Button'
+import { Loader2 } from 'lucide-react'
 
 interface TimetableToolbarProps {
   currentWeek: string
@@ -6,6 +7,7 @@ interface TimetableToolbarProps {
   onNextWeek: () => void
   onAddClass: () => void
   onPrint: () => void
+  isExporting?: boolean
 }
 
 export default function TimetableToolbar({ 
@@ -13,7 +15,8 @@ export default function TimetableToolbar({
   onPreviousWeek, 
   onNextWeek, 
   onAddClass,
-  onPrint 
+  onPrint,
+  isExporting
 }: TimetableToolbarProps) {
   return (
     <div className="flex justify-between items-center gap-2 mb-4 p-4 bg-white dark:bg-[#191e2a] rounded-lg border border-gray-200 dark:border-gray-700">
@@ -38,17 +41,25 @@ export default function TimetableToolbar({
       <div className="flex gap-2">
         <Button 
           variant="secondary" 
-          icon="print"
+          icon={isExporting ? undefined : "print"}
           onClick={onPrint}
+          disabled={isExporting}
         >
-          Print
+          {isExporting ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="animate-spin" size={16} />
+              Generating PDF...
+            </span>
+          ) : (
+            "Download Timetable"
+          )}
         </Button>
         <Button 
           variant="primary" 
           icon="add"
           onClick={onAddClass}
         >
-          Add Class
+          Add Period
         </Button>
       </div>
     </div>
