@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { getSchoolUsageService, getUserUsageService } from "./quota.service";
 import { hasFeatureAccess } from "../subscription-checkers";
+import { handleError } from "../../utils/error-handler";
 
 export const getSubscriptionUsage = async (req: Request, res: Response) => {
   try {
@@ -18,17 +19,7 @@ export const getSubscriptionUsage = async (req: Request, res: Response) => {
       try {
         data = await getUserUsageService(userId, role);
       } catch (e) {
-        console.warn("[SubscriptionController] User-specific usage fetch failed, falling back to school usage:", e);
-        if (schoolId) {
-          data = await getSchoolUsageService(schoolId);
-        } else {
-          // If no schoolId fallback, return null data instead of throwing to avoid 500/400 errors
-          return res.status(200).json({
-            success: true,
-            data: null,
-            message: "User context resolved but no usage data or institutional fallback found."
-          });
-        }
+        return handleError(res, e, "subscription.getSubscriptionUsage");
       }
     } else if (schoolId) {
       data = await getSchoolUsageService(schoolId);
@@ -46,11 +37,7 @@ export const getSubscriptionUsage = async (req: Request, res: Response) => {
       data
     });
   } catch (error: any) {
-    console.error("[SubscriptionController] Error fetching usage:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch subscription usage"
-    });
+    return handleError(res, error, "subscription.getSubscriptionUsage");
   }
 };
 
@@ -78,10 +65,6 @@ export const checkFeatureAccess = async (req: Request, res: Response) => {
       hasAccess
     });
   } catch (error: any) {
-    console.error(`[SubscriptionController] Error checking feature access:`, error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error while verifying feature access."
-    });
+    return handleError(res, error, "subscription.checkFeatureAccess");
   }
 };

@@ -18,6 +18,7 @@ import {
   getSubjectsService,
 } from "./academic.service";
 import { hasActiveSchoolAccess } from "../../utils/school-access";
+import { handleError } from "../../utils/error-handler";
 
 const ensureAdminForSchool = async (adminId: string, schoolId?: string) => {
   if (!schoolId) return true;
@@ -77,11 +78,7 @@ export const createDepartment = async (req: Request, res: Response) => {
       data: department,
     });
   } catch (error: any) {
-    console.error("createDepartment error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to create department",
-    });
+    return handleError(res, error, "academic.createDepartment");
   }
 };
 
@@ -115,11 +112,7 @@ export const createSubject = async (req: Request, res: Response) => {
       data: subject,
     });
   } catch (error: any) {
-    console.error("createSubject error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to create subject",
-    });
+    return handleError(res, error, "academic.createSubject");
   }
 };
 
@@ -152,11 +145,7 @@ export const attachSubjectsToDepartment = async (
       data: item,
     });
   } catch (error: any) {
-    console.error("attachSubjectsToDepartment error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to attach subjects to department",
-    });
+    return handleError(res, error, "academic.attachSubjectsToDepartment");
   }
 };
 
@@ -250,11 +239,7 @@ export const createQuiz = async (req: Request, res: Response) => {
       data: quiz,
     });
   } catch (error: any) {
-    console.error("createQuiz error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to create quiz",
-    });
+    return handleError(res, error, "academic.createQuiz");
   }
 };
 
@@ -346,11 +331,7 @@ export const createExam = async (req: Request, res: Response) => {
       data: exam,
     });
   } catch (error: any) {
-    console.error("createExam error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to create exam",
-    });
+    return handleError(res, error, "academic.createExam");
   }
 };
 
@@ -372,11 +353,7 @@ export const getDepartments = async (req: Request, res: Response) => {
       data: items,
     });
   } catch (error: any) {
-    console.error("getDepartments error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch departments",
-    });
+    return handleError(res, error, "academic.getDepartments");
   }
 };
 
@@ -397,11 +374,7 @@ export const getSubjects = async (req: Request, res: Response) => {
       data: items,
     });
   } catch (error: any) {
-    console.error("getSubjects error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch subjects",
-    });
+    return handleError(res, error, "academic.getSubjects");
   }
 };
 
@@ -421,11 +394,7 @@ export const getQuizzes = async (req: Request, res: Response) => {
       data: items,
     });
   } catch (error: any) {
-    console.error("getQuizzes error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch quizzes",
-    });
+    return handleError(res, error, "academic.getQuizzes");
   }
 };
 
@@ -468,10 +437,6 @@ export const getExams = async (req: Request, res: Response) => {
       data: items,
     });
   } catch (error: any) {
-    console.error("getExams error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch exams",
-    });
+    return handleError(res, error, "academic.getExams");
   }
 };

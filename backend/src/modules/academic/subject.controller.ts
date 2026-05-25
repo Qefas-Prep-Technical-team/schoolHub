@@ -10,6 +10,7 @@ import {
   attachTeachersToSubjectService,
 } from "./subject.service";
 import { canManageSubject } from "./academic.permissions";
+import { handleError } from "../../utils/error-handler";
 
 export const createSubject = async (req: Request, res: Response) => {
   try {
@@ -34,7 +35,7 @@ export const createSubject = async (req: Request, res: Response) => {
       data: subject,
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.createSubject");
   }
 };
 
@@ -56,7 +57,7 @@ export const getSubjects = async (req: Request, res: Response) => {
       data: subjects,
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.getSubjects");
   }
 };
 
@@ -74,7 +75,7 @@ export const getSingleSubject = async (req: Request, res: Response) => {
       data: subject,
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.getSingleSubject");
   }
 };
 
@@ -109,7 +110,7 @@ export const updateSubject = async (req: Request, res: Response) => {
       data: subject,
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.updateSubject");
   }
 };
 
@@ -138,7 +139,7 @@ export const archiveSubject = async (req: Request, res: Response) => {
       data: subject,
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.archiveSubject");
   }
 };
 
@@ -171,7 +172,7 @@ export const attachDepartmentsToSubject = async (req: Request, res: Response) =>
       data: subject,
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.attachDepartmentsToSubject");
   }
 };
 
@@ -205,6 +206,6 @@ export const attachTeachersToSubject = async (req: Request, res: Response) => {
       data: subject,
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.attachTeachersToSubject");
   }
 };

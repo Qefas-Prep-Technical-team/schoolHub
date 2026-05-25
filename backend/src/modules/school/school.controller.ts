@@ -15,6 +15,7 @@ import {
   updateSchoolLandingPageService,
   getSchoolTodayAttendanceService,
 } from "./school.service";
+import { handleError } from "../../utils/error-handler";
 
 /**
  * Helper to verify if the authenticated user has access to a specific school.
@@ -64,11 +65,7 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch school teachers",
-    });
+    return handleError(res, error, "school.getSchoolTeachers");
   }
 };
 
@@ -111,11 +108,7 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
       data: result.data,
     });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch school students",
-    });
+    return handleError(res, error, "school.getSchoolStudents");
   }
 };
 
@@ -138,11 +131,7 @@ export const getSchoolStats = async (req: Request, res: Response) => {
     const data = await getSchoolStatsService(schoolId as string);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch school stats",
-    });
+    return handleError(res, error, "school.getSchoolStats");
   }
 };
 
@@ -171,11 +160,7 @@ export const getSchoolPerformanceAnalysis = async (
     );
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch performance analysis",
-    });
+    return handleError(res, error, "school.getSchoolPerformanceAnalysis");
   }
 };
 
@@ -198,11 +183,7 @@ export const getSchoolProfile = async (req: Request, res: Response) => {
     const data = await getSchoolProfileService(schoolId as string);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch school profile",
-    });
+    return handleError(res, error, "school.getSchoolProfile");
   }
 };
 
@@ -230,11 +211,7 @@ export const updateSchoolProfile = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update school profile",
-    });
+    return handleError(res, error, "school.updateSchoolProfile");
   }
 };
 
@@ -262,18 +239,7 @@ export const getSchoolSettings = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[SettingsController] GET Error for ${schoolId}:`, error);
-
-    // Check if it's a "Not Found" error from service
-    const isNotFound = error.message.includes("record not found");
-
-    return res.status(isNotFound ? 404 : 400).json({
-      success: false,
-      message:
-        error.message ||
-        "An unexpected error occurred while fetching school settings.",
-      error: process.env.NODE_ENV === "development" ? error.stack : undefined,
-    });
+    return handleError(res, error, "school.getSchoolSettings");
   }
 };
 
@@ -307,15 +273,7 @@ export const updateSchoolSettings = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[SettingsController] PATCH Error for ${schoolId}:`, error);
-
-    return res.status(400).json({
-      success: false,
-      message:
-        error.message ||
-        "An unexpected error occurred while updating school settings.",
-      error: process.env.NODE_ENV === "development" ? error.stack : undefined,
-    });
+    return handleError(res, error, "school.updateSchoolSettings");
   }
 };
 
@@ -338,11 +296,7 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
     const data = await getDashboardRecentActivityService(schoolId as string);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch dashboard summary",
-    });
+    return handleError(res, error, "school.getDashboardSummary");
   }
 };
 
@@ -368,11 +322,7 @@ export const getSchoolBilling = async (req: Request, res: Response) => {
     const data = await getSchoolBillingService(schoolId as string, page, limit);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch billing data",
-    });
+    return handleError(res, error, "school.getSchoolBilling");
   }
 };
 
@@ -392,11 +342,7 @@ export const getSchoolLandingPage = async (req: Request, res: Response) => {
     const data = await getSchoolLandingPageService(schoolId as string);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch landing page settings",
-    });
+    return handleError(res, error, "school.getSchoolLandingPage");
   }
 };
 
@@ -422,12 +368,7 @@ export const getSchoolLandingPageBySubdomain = async (
 
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message:
-        error.message || "Failed to fetch landing page settings by subdomain",
-    });
+    return handleError(res, error, "school.getSchoolLandingPageBySubdomain");
   }
 };
 
@@ -452,11 +393,7 @@ export const updateSchoolLandingPage = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update landing page settings",
-    });
+    return handleError(res, error, "school.updateSchoolLandingPage");
   }
 };
 
@@ -476,10 +413,6 @@ export const getSchoolTodayAttendance = async (req: Request, res: Response) => {
     const data = await getSchoolTodayAttendanceService(schoolId as string, date as string | undefined);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error(`[School Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch today's attendance",
-    });
+    return handleError(res, error, "school.getSchoolTodayAttendance");
   }
 };

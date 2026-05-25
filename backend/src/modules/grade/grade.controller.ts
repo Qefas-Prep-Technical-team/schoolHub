@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as gradeService from "./grade.service";
+import { handleError } from "../../utils/error-handler";
 
 export const getGradeHub = async (req: Request, res: Response) => {
   try {
@@ -19,7 +20,7 @@ export const getGradeHub = async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return handleError(res, error, "grade.getGradeHub");
   }
 };
 
@@ -28,7 +29,7 @@ export const createGradeEntry = async (req: Request, res: Response) => {
     const grade = await gradeService.createGradeEntryService(req.body);
     res.json({ success: true, data: grade });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return handleError(res, error, "grade.createGradeEntry");
   }
 };
 
@@ -39,7 +40,7 @@ export const updateGradeScore = async (req: Request, res: Response) => {
     const grade = await gradeService.updateGradeScoreService(id as string, { score, remarks, status });
     res.json({ success: true, data: grade });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return handleError(res, error, "grade.updateGradeScore");
   }
 };
 
@@ -49,7 +50,7 @@ export const publishGrade = async (req: Request, res: Response) => {
     const grade = await gradeService.updateGradeScoreService(id as string, { status: 'PUBLISHED' });
     res.json({ success: true, data: grade });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return handleError(res, error, "grade.publishGrade");
   }
 };
 
@@ -59,7 +60,7 @@ export const processOCR = async (req: Request, res: Response) => {
     const extractedData = await gradeService.processGradeOCRService(imageUrl);
     res.json({ success: true, data: extractedData });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return handleError(res, error, "grade.processOCR");
   }
 };
 
@@ -69,7 +70,7 @@ export const bulkCreateGrades = async (req: Request, res: Response) => {
     const result = await gradeService.bulkCreateGradesService(schoolId, grades);
     res.json({ success: true, data: result });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return handleError(res, error, "grade.bulkCreateGrades");
   }
 };
 
@@ -79,6 +80,6 @@ export const deleteGrade = async (req: Request, res: Response) => {
     const result = await gradeService.deleteGradeService(id as string);
     res.json({ success: true, data: result });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return handleError(res, error, "grade.deleteGrade");
   }
 };

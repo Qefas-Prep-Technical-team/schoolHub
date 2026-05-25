@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../../../config/database";
 import { comparePassword, generateStaffToken } from "./auth.service";
+import { handleError } from "../../../utils/error-handler";
 
 /**
  * Isolated login for Platform Staff
@@ -70,11 +71,7 @@ export const platformLogin = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error(`[Platform Auth Error]`, error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error during platform login",
-    });
+    return handleError(res, error, "auth.platformLogin");
   }
 };
 
@@ -116,6 +113,6 @@ export const getStaffProfile = async (req: Request, res: Response) => {
       data: staff
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to fetch profile" });
+    return handleError(res, error, "auth.getStaffProfile");
   }
 };

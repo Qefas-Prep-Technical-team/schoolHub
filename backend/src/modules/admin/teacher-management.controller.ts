@@ -6,6 +6,7 @@ import { generateUniqueCode } from "../../utils/code-generator";
 import { sendTeacherInvitationEmail } from "../auth/auth.service";
 import crypto from "crypto";
 import { enforceTeacherLimit } from "../subscription/quota.helpers";
+import { handleError } from "../../utils/error-handler";
 
 /**
  * Get detailed teacher information by ID
@@ -374,7 +375,7 @@ export const inviteTeacher = async (req: Request, res: Response) => {
       const schoolDomain = school.name.toLowerCase().trim().replace(/[^a-z0-9]/g, "") || "school";
       const normalizedTeacher = name.toLowerCase().trim().replace(/[^a-z0-9]/g, "") || "teacher";
       
-      let loginEmail = email;
+      let loginEmail = email ? email.toLowerCase().trim() : undefined;
       let tempPassword = "";
 
       if (!loginEmail) {
@@ -466,7 +467,7 @@ export const inviteTeacher = async (req: Request, res: Response) => {
           data: {
             classId,
             teacherId: teacher.id,
-            isPrimary: true,
+            isLead: true,
           }
         });
       }
@@ -478,7 +479,6 @@ export const inviteTeacher = async (req: Request, res: Response) => {
             teacherId: teacher.id,
             subjectId,
             schoolId: school.id,
-            status: "ACTIVE",
           }
         });
       }
@@ -495,7 +495,7 @@ export const inviteTeacher = async (req: Request, res: Response) => {
           teacherId: teacher.id, 
           teacherCode: teacher.teacherCode,
           email: loginEmail,
-          password: tempPassword
+          password: email ? undefined : tempPassword
         }
       });
     }
@@ -503,11 +503,7 @@ export const inviteTeacher = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, message: "Invalid action" });
 
   } catch (error: any) {
-    console.error("inviteTeacher error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
-    });
+    return handleError(res, error, "admin.inviteTeacher");
   }
 };
 

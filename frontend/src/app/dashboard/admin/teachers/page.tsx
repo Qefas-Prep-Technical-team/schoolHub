@@ -451,7 +451,7 @@ export default function ManageTeachersPage() {
                                     </div>
 
                                     <div className="flex-1 relative z-10">
-                                        <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mb-1.5 md:mb-2 leading-tight md:leading-[0.9] uppercase tracking-tighter">
+                                        <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mb-1.5 md:mb-2 leading-tight md:leading-[0.9] capitalize tracking-tighter">
                                             {teacher.name}
                                         </h3>
                                         <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 md:mb-8">{teacher.email}</p>
@@ -547,7 +547,7 @@ export default function ManageTeachersPage() {
                                                             <img src={teacher.profileImage} alt={teacher.name} className="size-full object-cover" />
                                                         </div>
                                                         <div>
-                                                            <div className="text-base md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                                                            <div className="text-base md:text-xl font-black text-slate-900 dark:text-white capitalize tracking-tighter">
                                                                 {teacher.name}
                                                             </div>
                                                             <div className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5 md:mt-1">{teacher.email}</div>

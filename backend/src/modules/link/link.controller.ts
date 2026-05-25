@@ -22,6 +22,7 @@ import {
 } from "./link.manage.service";
 import { getSchoolStatsService } from "../school/school.service";
 import { getIO } from "../../socket";
+import { handleError } from "../../utils/error-handler";
 
 const isClassLinkType = (type: string) =>
   ["TEACHER_CLASS", "STUDENT_CLASS"].includes(type);
@@ -157,11 +158,7 @@ export const createLinkRequest = async (req: Request, res: Response) => {
       data: result.request,
     });
   } catch (error: any) {
-    console.error("createLinkRequest error:", error);
-    return res.status(error.status || 400).json({
-      success: false,
-      message: error.message || "Failed to create link request",
-    });
+    return handleError(res, error, "link.createLinkRequest");
   }
 };
 
@@ -242,16 +239,7 @@ export const respondToLinkRequest = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("respondToLinkRequest error:", {
-      requestId: req.params.id,
-      body: req.body,
-      error: error.message,
-      stack: error.stack
-    });
-    return res.status(error.status || 400).json({
-      success: false,
-      message: error.message || "Failed to respond to link request",
-    });
+    return handleError(res, error, "link.respondToLinkRequest");
   }
 };
 
@@ -289,11 +277,7 @@ export const getMySentLinkRequests = async (req: Request, res: Response) => {
       pagination: result.pagination,
     });
   } catch (error: any) {
-    console.error("getMySentLinkRequests error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch sent requests",
-    });
+    return handleError(res, error, "link.getMySentLinkRequests");
   }
 };
 
@@ -330,11 +314,7 @@ export const getMyPendingLinkRequests = async (req: Request, res: Response) => {
       pagination: result.pagination,
     });
   } catch (error: any) {
-    console.error("getMyPendingLinkRequests error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch pending requests",
-    });
+    return handleError(res, error, "link.getMyPendingLinkRequests");
   }
 };
 
@@ -372,11 +352,7 @@ export const getAllLinkRequests = async (req: Request, res: Response) => {
       pagination: result.pagination,
     });
   } catch (error: any) {
-    console.error("getAllLinkRequests error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch link requests",
-    });
+    return handleError(res, error, "link.getAllLinkRequests");
   }
 };
 
@@ -413,11 +389,7 @@ export const getMyActiveLinks = async (req: Request, res: Response) => {
       pagination: result.pagination,
     });
   } catch (error: any) {
-    console.error("getMyActiveLinks error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch active links",
-    });
+    return handleError(res, error, "link.getMyActiveLinks");
   }
 };
 
@@ -447,11 +419,7 @@ export const getSingleLinkRequest = async (req: Request, res: Response) => {
       data: request,
     });
   } catch (error: any) {
-    console.error("getSingleLinkRequest error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch request",
-    });
+    return handleError(res, error, "link.getSingleLinkRequest");
   }
 };
 
@@ -488,11 +456,7 @@ export const cancelLinkRequest = async (req: Request, res: Response) => {
       data: cancelled,
     });
   } catch (error: any) {
-    console.error("cancelLinkRequest error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to cancel request",
-    });
+    return handleError(res, error, "link.cancelLinkRequest");
   }
 };
 
@@ -534,11 +498,7 @@ export const revokeActiveLink = async (req: Request, res: Response) => {
       data: revoked,
     });
   } catch (error: any) {
-    console.error("revokeActiveLink error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to revoke active link",
-    });
+    return handleError(res, error, "link.revokeActiveLink");
   }
 };
 
@@ -596,11 +556,7 @@ export const batchRequestAction = async (req: Request, res: Response) => {
       data: result,
     });
   } catch (error: any) {
-    console.error("batchRequestAction error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Batch request action failed",
-    });
+    return handleError(res, error, "link.batchRequestAction");
   }
 };
 
@@ -697,11 +653,7 @@ export const acceptAllRequestsByCategory = async (req: Request, res: Response) =
     });
 
   } catch (error: any) {
-    console.error("acceptAllRequestsByCategory error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Batch accept failed",
-    });
+    return handleError(res, error, "link.acceptAllRequestsByCategory");
   }
 };
 
@@ -744,11 +696,7 @@ export const batchRevokeActiveLinks = async (req: Request, res: Response) => {
       data: result,
     });
   } catch (error: any) {
-    console.error("batchRevokeActiveLinks error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Batch revoke failed",
-    });
+    return handleError(res, error, "link.batchRevokeActiveLinks");
   }
 };
 
@@ -902,10 +850,6 @@ export const getMyProfile = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("getMyProfile error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch profile",
-    });
+    return handleError(res, error, "link.getMyProfile");
   }
 };

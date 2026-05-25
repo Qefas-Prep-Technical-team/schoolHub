@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { UserRole } from "@prisma/client";
 import { checkSchoolFeatureAccess } from "./schoolChecker";
 import { checkUserFeatureAccess } from "./userChecker";
+import { handleError } from "../../utils/error-handler";
 
 /**
  * Interface representing the structure of the authenticated user in the request.
@@ -78,11 +79,7 @@ export const requireFeatureAccess = (featureKey: string) => {
       // User has access, proceed to the route controller
       next();
     } catch (error) {
-      console.error(`[requireFeatureAccess] Middleware error checking ${featureKey}:`, error);
-      return res.status(500).json({
-        success: false,
-        message: "Internal server error while verifying feature access."
-      });
+      return handleError(res, error, "subscription-checkers.requireFeatureAccess");
     }
   };
 };

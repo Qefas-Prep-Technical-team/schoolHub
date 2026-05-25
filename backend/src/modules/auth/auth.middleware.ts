@@ -1,6 +1,7 @@
 // src/middleware/auth.middleware.ts
 import { Request, Response, NextFunction } from "express";
 import jwt, { TokenExpiredError } from "jsonwebtoken";
+import { handleError } from "../../utils/error-handler";
 
 export const requireAuth = (
   req: Request,
@@ -19,15 +20,6 @@ export const requireAuth = (
     req.user = payload;
     next();
   } catch (error) {
-    // Check if the error is specifically due to expiration
-    if (error instanceof TokenExpiredError) {
-      return res.status(401).json({
-        message: "jwt expired",
-        code: "TOKEN_EXPIRED", // Adding a code makes frontend checks even more reliable
-      });
-    }
-
-    // Otherwise, it's a truly invalid/tampered token
-    return res.status(401).json({ message: "Invalid token" });
+    return handleError(res, error, "auth.requireAuth");
   }
 };

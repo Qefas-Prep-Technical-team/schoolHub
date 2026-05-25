@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../../config/database";
+import { handleError } from "../../../utils/error-handler";
 
 /**
  * Get global platform-wide analytics
@@ -71,11 +72,7 @@ export const getGlobalStats = async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error("[Platform Analytics Error]:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to aggregate global stats"
-    });
+    return handleError(res, error, "analytics.getGlobalStats");
   }
 };
 
@@ -128,7 +125,7 @@ export const getGrowthStats = async (req: Request, res: Response) => {
       data: last6Months
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to fetch growth stats" });
+    return handleError(res, error, "analytics.getGrowthStats");
   }
 };
 
@@ -228,7 +225,6 @@ export const getSubscriptionAnalytics = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error("[Subscription Analytics Error]:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch subscription analytics" });
+    return handleError(res, error, "analytics.getSubscriptionAnalytics");
   }
 };

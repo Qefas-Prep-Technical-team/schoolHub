@@ -9,12 +9,14 @@ import StudentsPage from './student/page';
 import AssignmentsPage from './assignments/page';
 import ExamsPage from './exams&quizzes/page';
 import GradesPage from './grades/page';
+import TimetablePage from './timetable/page';
+import AttendancePage from './attendance/page';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { ClassDetailSkeleton } from './ClassDetailSkeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
 
-type TabId = 'overview' | 'students' | 'assignments' | 'grades' | 'exams&quizzes';
+type TabId = 'overview' | 'students' | 'assignments' | 'grades' | 'exams&quizzes' | 'timetable' | 'attendance';
 
 const ClassDetails: FC = () => {
     const params = useParams();
@@ -81,6 +83,10 @@ const ClassDetails: FC = () => {
                 return <ExamsPage />;
             case 'grades':
                 return <GradesPage />;
+            case 'timetable':
+                return <TimetablePage classData={classInfo} />;
+            case 'attendance':
+                return <AttendancePage />;
             default:
                 return null;
         }
@@ -89,26 +95,32 @@ const ClassDetails: FC = () => {
     return (
         <div className="min-h-screen bg-transparent">
             <div className="p-4 md:p-8 lg:p-12">
-                <div className="max-w-7xl mx-auto">
+                <div className={`mx-auto transition-all duration-500 ${activeTab === 'timetable' ? 'max-w-full 2xl:max-w-[1600px]' : 'max-w-7xl'}`}>
                     <PageHeader 
-                        classData={classInfo}
-                        onAddAnnouncement={handleAddAnnouncement}
+                        classData={classInfo} 
+                        onAddAnnouncement={handleAddAnnouncement} 
                     />
-        
-                    <TabNavigation activeTab={activeTab} onTabChange={setActiveTab}>
+                    
+                    <div className="mt-8">
+                        <TabNavigation 
+                            activeTab={activeTab} 
+                            onTabChange={setActiveTab} 
+                        />
+                    </div>
+
+                    <div className="mt-8">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeTab}
-                                initial={{ opacity: 0, y: 10, scale: 0.99 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: -10, scale: 0.99 }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                                className="w-full"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
                             >
                                 {renderTabContent()}
                             </motion.div>
                         </AnimatePresence>
-                    </TabNavigation>
+                    </div>
                 </div>
             </div>
         </div>

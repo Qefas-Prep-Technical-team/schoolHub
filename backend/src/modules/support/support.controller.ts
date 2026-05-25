@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import prisma from "../../config/database";
 import { getIO } from "../../socket";
 import { getSingleString } from "../../utils/request-utils";
+import { handleError } from "../../utils/error-handler";
 
 export const getMyTickets = async (req: Request, res: Response) => {
   try {
@@ -15,7 +16,7 @@ export const getMyTickets = async (req: Request, res: Response) => {
     });
     res.status(200).json({ success: true, data: tickets });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to fetch tickets" });
+    return handleError(res, error, "support.getMyTickets");
   }
 };
 
@@ -61,8 +62,7 @@ export const createTicket = async (req: Request, res: Response) => {
 
     res.status(201).json({ success: true, data: ticket });
   } catch (error) {
-    console.error("Create ticket error:", error);
-    res.status(500).json({ success: false, message: "Failed to create ticket" });
+    return handleError(res, error, "support.createTicket");
   }
 };
 
@@ -83,7 +83,7 @@ export const getTicketMessages = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, data: ticket });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to load messages" });
+    return handleError(res, error, "support.getTicketMessages");
   }
 };
 
@@ -121,6 +121,6 @@ export const sendTicketMessage = async (req: Request, res: Response) => {
 
     res.status(201).json({ success: true, data: message });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to send message" });
+    return handleError(res, error, "support.sendTicketMessage");
   }
 };

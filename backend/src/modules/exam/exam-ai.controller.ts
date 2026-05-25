@@ -4,6 +4,7 @@ import {
   generateStructuredExamQuestionsFromPrompt,
   parseRawExamTextToStructuredQuestions,
 } from "./exam-ai.service";
+import { handleError } from "../../utils/error-handler";
 
 export const parseRawExamText = async (req: Request, res: Response) => {
   try {
@@ -35,10 +36,7 @@ export const parseRawExamText = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to parse exam text",
-    });
+    return handleError(res, error, "exam.parseRawExamText");
   }
 };
 
@@ -73,9 +71,6 @@ export const generateExamQuestions = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to generate exam questions",
-    });
+    return handleError(res, error, "exam.generateExamQuestions");
   }
 };

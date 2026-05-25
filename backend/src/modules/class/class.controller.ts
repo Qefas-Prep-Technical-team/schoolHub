@@ -23,6 +23,7 @@ import {
   replaceClassSubjectsService,
   removeSubjectFromClassService,
 } from "./class.service";
+import { handleError } from "../../utils/error-handler";
 
 export const createClass = async (req: Request, res: Response) => {
   try {
@@ -105,11 +106,7 @@ export const createClass = async (req: Request, res: Response) => {
         }
       }
     } catch (quotaError: any) {
-      console.error("Quota check failed during class creation:", quotaError);
-      return res.status(500).json({
-        success: false,
-        message: "Error verifying subscription. Failed to create class.",
-      });
+      return handleError(res, quotaError, "class.createClass");
     }
     // --------------------------------
 
@@ -135,11 +132,7 @@ export const createClass = async (req: Request, res: Response) => {
       data: newClass,
     });
   } catch (error: any) {
-    console.error("createClass error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to create class",
-    });
+    return handleError(res, error, "class.createClass");
   }
 };
 
@@ -163,11 +156,7 @@ export const approveClass = async (req: Request, res: Response) => {
       data: updatedClass,
     });
   } catch (error: any) {
-    console.error("approveClass error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to approve class",
-    });
+    return handleError(res, error, "class.approveClass");
   }
 };
 
@@ -191,11 +180,7 @@ export const rejectClass = async (req: Request, res: Response) => {
       data: updatedClass,
     });
   } catch (error: any) {
-    console.error("rejectClass error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to reject class",
-    });
+    return handleError(res, error, "class.rejectClass");
   }
 };
 
@@ -218,11 +203,7 @@ export const getClasses = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error("getClasses error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch classes",
-    });
+    return handleError(res, error, "class.getClasses");
   }
 };
 
@@ -292,11 +273,7 @@ export const getSingleClass = async (req: Request, res: Response) => {
       data: foundClass,
     });
   } catch (error: any) {
-    console.error("getSingleClass error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch class",
-    });
+    return handleError(res, error, "class.getSingleClass");
   }
 };
 
@@ -347,11 +324,7 @@ export const previewClassByCode = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("previewClassByCode error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to preview class",
-    });
+    return handleError(res, error, "class.previewClassByCode");
   }
 };
 
@@ -402,11 +375,7 @@ export const previewClassById = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("previewClassById error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to preview class",
-    });
+    return handleError(res, error, "class.previewClassById");
   }
 };
 
@@ -514,11 +483,7 @@ export const requestToJoinClass = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("requestToJoinClass error:", error);
-    return res.status(error.status || 400).json({
-      success: false,
-      message: error.message || "Failed to request to join class",
-    });
+    return handleError(res, error, "class.requestToJoinClass");
   }
 };
 
@@ -551,11 +516,7 @@ export const addStudentToClass = async (req: Request, res: Response) => {
       data: enrollment,
     });
   } catch (error: any) {
-    console.error("addStudentToClass error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to add student to class",
-    });
+    return handleError(res, error, "class.addStudentToClass");
   }
 };
 
@@ -590,11 +551,7 @@ export const removeStudentFromClass = async (req: Request, res: Response) => {
       message: "Student removed from class successfully",
     });
   } catch (error: any) {
-    console.error("removeStudentFromClass error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to remove student from class",
-    });
+    return handleError(res, error, "class.removeStudentFromClass");
   }
 };
 
@@ -631,11 +588,7 @@ export const attachSubjectsToClass = async (req: Request, res: Response) => {
       data: updated,
     });
   } catch (error: any) {
-    console.error("attachSubjectsToClass error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to attach subjects to class",
-    });
+    return handleError(res, error, "class.attachSubjectsToClass");
   }
 };
 
@@ -680,11 +633,7 @@ export const updateClass = async (req: Request, res: Response) => {
       data: updated,
     });
   } catch (error: any) {
-    console.error("updateClass error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update class",
-    });
+    return handleError(res, error, "class.updateClass");
   }
 };
 
@@ -712,11 +661,7 @@ export const changeClassStatus = async (req: Request, res: Response) => {
       data: updated,
     });
   } catch (error: any) {
-    console.error("changeClassStatus error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to change class status",
-    });
+    return handleError(res, error, "class.changeClassStatus");
   }
 };
 
@@ -749,11 +694,7 @@ export const archiveClass = async (req: Request, res: Response) => {
       data: archived,
     });
   } catch (error: any) {
-    console.error("archiveClass error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to archive class",
-    });
+    return handleError(res, error, "class.archiveClass");
   }
 };
 
@@ -790,11 +731,7 @@ export const editClassSubjects = async (req: Request, res: Response) => {
       data: updated,
     });
   } catch (error: any) {
-    console.error("editClassSubjects error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to edit class subjects",
-    });
+    return handleError(res, error, "class.editClassSubjects");
   }
 };
 
@@ -829,11 +766,7 @@ export const removeSubjectFromClass = async (req: Request, res: Response) => {
       message: "Subject removed from class successfully",
     });
   } catch (error: any) {
-    console.error("removeSubjectFromClass error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to remove subject from class",
-    });
+    return handleError(res, error, "class.removeSubjectFromClass");
   }
 };
 
@@ -850,10 +783,6 @@ export const getClassStats = async (req: Request, res: Response) => {
       data: stats,
     });
   } catch (error: any) {
-    console.error("getClassStats error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch class stats",
-    });
+    return handleError(res, error, "class.getClassStats");
   }
 };

@@ -27,6 +27,7 @@ import {
   enforceStudentLimit,
   enforceTeacherLimit,
 } from "../subscription/quota.helpers";
+import { handleError } from "../../utils/error-handler";
 
 // Simple slugify helper (no extra package)
 const slugify = (value: string) =>
@@ -216,25 +217,7 @@ export const registerSchool = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    if (error?.code === "P2002" && error?.meta?.target?.includes("subdomain")) {
-      return res.status(409).json({
-        success: false,
-        message: "Subdomain already taken. Please choose another.",
-      });
-    }
-
-    if (error?.code === "P2002" && error?.meta?.target?.includes("email")) {
-      return res.status(409).json({
-        success: false,
-        message: "Email already exists",
-      });
-    }
-
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "auth.registerSchool");
   }
 };
 
@@ -500,11 +483,7 @@ export const registerTeacher = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("Register Teacher Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "auth.registerTeacher");
   }
 };
 
@@ -876,12 +855,7 @@ export const registerStudent = async (
       },
     });
   } catch (error: any) {
-    console.error("Register Student Error:", error.message);
-    console.error("Stack:", error.stack);
-    return res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    return handleError(res, error, "auth.registerStudent");
   }
 };
 
@@ -1045,11 +1019,7 @@ export const registerParent = async (
 
     return res.status(201).json(response);
   } catch (error: any) {
-    console.error("Parent registration error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Internal server error. Please try again.",
-    });
+    return handleError(res, error, "auth.registerParent");
   }
 };
 
@@ -1144,8 +1114,7 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
       message: "Verification code sent to email",
     });
   } catch (error) {
-    console.error("Error requesting verification code:", error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return handleError(res, error, "auth.requestVerificationCode");
   }
 };
 
@@ -1641,6 +1610,17 @@ export const login = async (req: Request, res: Response) => {
         .json({ success: false, message: "Invalid email or password" });
     }
 
+    // Check if it's a student or teacher and if isClaimed is false
+    if ((actualRole === UserRole.STUDENT || actualRole === UserRole.TEACHER) && user.isClaimed === false) {
+      console.log(`Setting isClaimed to true for ${actualRole} user ${user.id}`);
+      if (actualRole === UserRole.STUDENT) {
+        await prisma.student.update({ where: { id: user.id }, data: { isClaimed: true } });
+      } else if (actualRole === UserRole.TEACHER) {
+        await prisma.teacher.update({ where: { id: user.id }, data: { isClaimed: true } });
+      }
+      user.isClaimed = true;
+    }
+
     // ===== Set defaultTenantId if missing =====
     // Removed obsolete multi-tenant array fixing logic
 
@@ -1767,8 +1747,7 @@ export const login = async (req: Request, res: Response) => {
     console.log("DEBUG: Login successful, sending response");
     return res.status(200).json({ success: true, message, data: responseData });
   } catch (error) {
-    console.error("DEBUG: LOGIN ERROR CAUGHT:", error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return handleError(res, error, "auth.login");
   }
 };
 
@@ -1978,8 +1957,7 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
       trialUsed: user?.trialUsed,
     });
   } catch (error) {
-    console.error("Error verifying checkout code:", error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return handleError(res, error, "auth.verifyCheckoutCode");
   }
 };
 
@@ -2046,8 +2024,7 @@ export const checkEmail = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, exists: false });
   } catch (error) {
-    console.error("Error checking email:", error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return handleError(res, error, "auth.checkEmail");
   }
 };
 
@@ -2222,8 +2199,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
           .json({ success: false, message: "Invalid user type" });
     }
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return handleError(res, error, "auth.verifyEmailCode");
   }
 };
 
@@ -2271,11 +2247,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       accessToken: newAccessToken,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized",
-    });
+    return handleError(res, error, "auth.refreshToken");
   }
 };
 
@@ -2291,11 +2263,7 @@ export const logout = async (req: Request, res: Response) => {
       message: "Logged out",
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "auth.logout");
   }
 };
 
@@ -2395,11 +2363,7 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
       message: `If an account with the email ${email} exists, a reset link has been sent.`,
     });
   } catch (error: any) {
-    console.error("Password reset request error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error. Please try again.",
-    });
+    return handleError(res, error, "auth.requestPasswordReset");
   }
 };
 
@@ -2453,11 +2417,7 @@ export const verifyResetToken = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("Reset token verification error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "auth.verifyResetToken");
   }
 };
 
@@ -2562,11 +2522,7 @@ export const resetPassword = async (req: Request, res: Response) => {
         "Password reset successfully. You can now login with your new password.",
     });
   } catch (error: any) {
-    console.error("Password reset error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "auth.resetPassword");
   }
 };
 
@@ -2671,11 +2627,7 @@ export const completePasswordReset = async (req: Request, res: Response) => {
         "Password reset successfully. You can now login with your new password.",
     });
   } catch (error: any) {
-    console.error("Complete password reset error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error. Please try again.",
-    });
+    return handleError(res, error, "auth.completePasswordReset");
   }
 };
 
@@ -2722,11 +2674,7 @@ export const validateResetToken = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("Reset token validation error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "auth.validateResetToken");
   }
 };
 
@@ -2765,11 +2713,7 @@ export const googleAuth = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("Google Auth Error:", error);
-    return res.status(error.message.includes("Token") ? 401 : 500).json({
-      success: false,
-      message: error.message || "Google Authentication failed",
-    });
+    return handleError(res, error, "auth.googleAuth");
   }
 };
 
@@ -2930,10 +2874,7 @@ export const finalizeCheckoutSetup = async (req: Request, res: Response) => {
       message: "Account setup finalized and confirmation email sent.",
     });
   } catch (error: any) {
-    console.error("Finalize Setup Error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Failed to finalize account setup" });
+    return handleError(res, error, "auth.finalizeCheckoutSetup");
   }
 };
 
@@ -2984,6 +2925,24 @@ export const claimAccount = async (req: Request, res: Response) => {
         },
       });
 
+      // Send notification to school
+      const schoolId = teacher.primarySchoolId || teacher.activeSchoolId || teacher.schoolId;
+      if (schoolId) {
+        try {
+          await createNotification({
+            recipientType: "SCHOOL",
+            recipientId: schoolId,
+            senderType: "TEACHER",
+            senderId: teacher.id,
+            type: "GENERAL",
+            title: "Account Claimed",
+            message: `Teacher ${teacher.name} has successfully claimed their account.`,
+          });
+        } catch (e) {
+          console.error("Failed to send notification:", e);
+        }
+      }
+
       return res.status(200).json({
         success: true,
         message: "Account claimed successfully",
@@ -3010,6 +2969,23 @@ export const claimAccount = async (req: Request, res: Response) => {
         },
       });
 
+      // Send notification to school
+      if (student.schoolId) {
+        try {
+          await createNotification({
+            recipientType: "SCHOOL",
+            recipientId: student.schoolId,
+            senderType: "STUDENT",
+            senderId: student.id,
+            type: "GENERAL",
+            title: "Account Claimed",
+            message: `Student ${student.name} has successfully claimed their account.`,
+          });
+        } catch (e) {
+          console.error("Failed to send notification:", e);
+        }
+      }
+
       return res.status(200).json({
         success: true,
         message: "Account claimed successfully",
@@ -3021,10 +2997,6 @@ export const claimAccount = async (req: Request, res: Response) => {
       });
     }
   } catch (error: any) {
-    console.error("Claim account error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error during account claim",
-    });
+    return handleError(res, error, "auth.claimAccount");
   }
 };

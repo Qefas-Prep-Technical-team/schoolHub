@@ -7,6 +7,7 @@ import {
   getSessionExamAnalyticsService,
   getStudentGlobalStatsService,
 } from "./exam-analytics.service";
+import { handleError } from "../../utils/error-handler";
 
 export const getExamRanking = async (req: Request, res: Response) => {
   try {
@@ -27,10 +28,7 @@ export const getExamRanking = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch rankings",
-    });
+    return handleError(res, error, "exam.getExamRanking");
   }
 };
 
@@ -46,10 +44,7 @@ export const getClassExamAnalytics = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch class analytics",
-    });
+    return handleError(res, error, "exam.getClassExamAnalytics");
   }
 };
 
@@ -65,10 +60,7 @@ export const getDepartmentExamAnalytics = async (req: Request, res: Response) =>
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch department analytics",
-    });
+    return handleError(res, error, "exam.getDepartmentExamAnalytics");
   }
 };
 
@@ -84,10 +76,7 @@ export const getSessionExamAnalytics = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch session analytics",
-    });
+    return handleError(res, error, "exam.getSessionExamAnalytics");
   }
 };
 
@@ -109,9 +98,6 @@ export const getMyGlobalStats = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch student stats",
-    });
+    return handleError(res, error, "exam.getMyGlobalStats");
   }
 };

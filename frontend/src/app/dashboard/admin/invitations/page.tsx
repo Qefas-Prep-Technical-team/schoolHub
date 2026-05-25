@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
-import { MailPlus, Search, Send, CheckCircle2, Users, GraduationCap } from "lucide-react";
+import { MailPlus, Search, Send, CheckCircle2, Users, GraduationCap, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InvitationsTable from "./components/InvitationsTable";
 import TeacherInvitationsTable from "./components/TeacherInvitationsTable";
+import AddStudentDialog from "../students/components/AddStudentDialog";
+import { AddTeacherModal } from "../teachers/components/AddTeacherModal";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function InvitationsPage() {
   const { user } = useAuthStore();
@@ -15,15 +18,23 @@ export default function InvitationsPage() {
   
   const { data: settings } = useSchoolSettings(schoolId);
   const primaryColor = settings?.themeColor || "#2563eb";
+  const queryClient = useQueryClient();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [studentPage, setStudentPage] = useState(1);
   const [teacherPage, setTeacherPage] = useState(1);
+  const [activeTab, setActiveTab] = useState("students");
+  const [isStudentDialogOpen, setIsStudentDialogOpen] = useState(false);
+  const [isTeacherDialogOpen, setIsTeacherDialogOpen] = useState(false);
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     setStudentPage(1);
     setTeacherPage(1);
+  };
+
+  const handleTeacherSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["school-teachers-invitations"] });
   };
 
   return (
@@ -48,7 +59,7 @@ export default function InvitationsPage() {
           </div>
         </div>
 
-        {/* Search */}
+        {/* Search & Action */}
         <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
           <div className="relative group flex-1 max-w-xl">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
@@ -61,10 +72,19 @@ export default function InvitationsPage() {
               style={{ '--tw-ring-color': `${primaryColor}20` } as any}
             />
           </div>
+
+          <Button 
+            onClick={() => activeTab === "students" ? setIsStudentDialogOpen(true) : setIsTeacherDialogOpen(true)}
+            style={{ backgroundColor: primaryColor }}
+            className="h-16 px-8 rounded-[2rem] text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-1 transition-all flex items-center gap-3 border-none shrink-0"
+          >
+            <UserPlus size={20} />
+            {activeTab === "students" ? "Create Student" : "Create Teacher"}
+          </Button>
         </div>
 
         {/* Tabs & Table */}
-        <Tabs defaultValue="students" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="mb-6">
             <TabsList className="bg-slate-50 dark:bg-slate-900 p-1.5 rounded-2xl">
               <TabsTrigger 
@@ -102,6 +122,20 @@ export default function InvitationsPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        <AddStudentDialog 
+          open={isStudentDialogOpen}
+          onOpenChange={setIsStudentDialogOpen}
+        />
+        
+        <AddTeacherModal 
+          isOpen={isTeacherDialogOpen}
+          onClose={() => setIsTeacherDialogOpen(false)}
+          primaryColor={primaryColor}
+          onSuccess={handleTeacherSuccess}
+          schoolId={schoolId}
+        />
+
       </div>
     </div>
   );

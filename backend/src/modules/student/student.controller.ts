@@ -8,6 +8,7 @@ import {
   verifyEmailUpdateService
 } from "./student.service";
 import { sendEmailUpdateVerification } from "../auth/auth.service";
+import { handleError } from "../../utils/error-handler";
 
 export const requestEmailUpdate = async (req: Request, res: Response) => {
   try {
@@ -26,10 +27,7 @@ export const requestEmailUpdate = async (req: Request, res: Response) => {
       message: "Verification code sent to your new email",
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to request email update",
-    });
+    return handleError(res, error, "student.requestEmailUpdate");
   }
 };
 
@@ -49,10 +47,7 @@ export const confirmEmailUpdate = async (req: Request, res: Response) => {
       message: "Email updated successfully",
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to verify email update",
-    });
+    return handleError(res, error, "student.confirmEmailUpdate");
   }
 };
 
@@ -76,11 +71,7 @@ export const updateStudentProfile = async (req: Request, res: Response) => {
       data: updatedProfile,
     });
   } catch (error: any) {
-    console.error("updateStudentProfile error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update profile",
-    });
+    return handleError(res, error, "student.updateStudentProfile");
   }
 };
 
@@ -109,11 +100,7 @@ export const pickDepartment = async (req: Request, res: Response) => {
       data: updatedStudent,
     });
   } catch (error: any) {
-    console.error("pickDepartment error:", error);
-    return res.status(error.status || 400).json({
-      success: false,
-      message: error.message || "Failed to update department",
-    });
+    return handleError(res, error, "student.pickDepartment");
   }
 };
 
@@ -150,11 +137,7 @@ export const updateStudentDepartmentByAdmin = async (req: Request, res: Response
       data: updatedStudent,
     });
   } catch (error: any) {
-    console.error("updateStudentDepartmentByAdmin error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update student department",
-    });
+    return handleError(res, error, "student.updateStudentDepartmentByAdmin");
   }
 };
 
@@ -175,11 +158,7 @@ export const getStudentProfile = async (req: Request, res: Response) => {
       data: profile,
     });
   } catch (error: any) {
-    console.error("getStudentProfile error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "student.getStudentProfile");
   }
 };
 
@@ -209,10 +188,6 @@ export const getStudentById = async (req: Request, res: Response) => {
       data: profile,
     });
   } catch (error: any) {
-    console.error("getStudentById error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "student.getStudentById");
   }
 };

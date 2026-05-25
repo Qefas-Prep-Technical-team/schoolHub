@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { uploadBufferToBunnyService } from "./upload.service";
+import { handleError } from "../../utils/error-handler";
 
 /**
  * Legacy - No longer supported. Use /upload/proxy instead.
@@ -50,14 +51,6 @@ export const proxyUpload = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[Proxy Upload Controller Error]`, {
-      message: error.message,
-      stack: error.stack,
-      details: error.response?.data
-    });
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to proxy upload",
-    });
+    return handleError(res, error, "upload.proxyUpload");
   }
 };

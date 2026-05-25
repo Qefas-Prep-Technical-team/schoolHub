@@ -9,6 +9,7 @@ import crypto from "crypto";
 import { sendStudentInvitationEmail } from "../auth/auth.service";
 
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
+import { handleError } from "../../utils/error-handler";
 
 // Step 1: Verify tenant ID and get school info
 export const verifyTenantId = async (req: Request, res: Response) => {
@@ -52,11 +53,7 @@ export const verifyTenantId = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("Verify tenant ID error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "admin.verifyTenantId");
   }
 };
 
@@ -196,19 +193,7 @@ export const registerAdminSelf = async (
       },
     });
   } catch (error: any) {
-    console.error("Admin self-registration error:", error);
-
-    if (error.code === "P2002") {
-      return res.status(400).json({
-        success: false,
-        message: "Email already exists",
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "admin.registerAdminSelf");
   }
 };
 
@@ -252,11 +237,7 @@ export const checkAdminStatus = async (req: Request, res: Response) => {
       data: admin,
     });
   } catch (error: any) {
-    console.error("Check admin status error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "admin.checkAdminStatus");
   }
 };
 
@@ -323,11 +304,7 @@ export const getPendingAdmins = async (req: Request, res: Response) => {
       data: pendingAdmins,
     });
   } catch (error: any) {
-    console.error("Get pending admins error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "admin.getPendingAdmins");
   }
 };
 
@@ -359,19 +336,7 @@ export const approveAdmin = async (req: Request, res: Response) => {
       data: updatedAdmin,
     });
   } catch (error: any) {
-    console.error("Approve admin error:", error);
-
-    if (error.code === "P2025") {
-      return res.status(404).json({
-        success: false,
-        message: "Admin not found",
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "admin.approveAdmin");
   }
 };
 
@@ -406,19 +371,7 @@ export const rejectAdmin = async (req: Request, res: Response) => {
       data: updatedAdmin,
     });
   } catch (error: any) {
-    console.error("Reject admin error:", error);
-
-    if (error.code === "P2025") {
-      return res.status(404).json({
-        success: false,
-        message: "Admin not found",
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "admin.rejectAdmin");
   }
 };
 
@@ -451,6 +404,14 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
         message: "schoolId is required",
       });
     }
+
+    const search = getSingleString(req.query.search as string | string[] | undefined);
+    const isClaimed = getSingleString(req.query.isClaimed as string | string[] | undefined);
+    const page = getSingleString(req.query.page as string | string[] | undefined) || "1";
+    const limit = getSingleString(req.query.limit as string | string[] | undefined) || "10";
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const take = Number(limit);
 
     // Verify requesting admin belongs to this school
     const schoolAdmin = await prisma.schoolAdmin.findFirst({
@@ -494,47 +455,70 @@ export const getSchoolTeachers = async (req: Request, res: Response) => {
       link.leftEntityType === "TEACHER" ? link.leftEntityId : link.rightEntityId
     );
 
-    // Get all teachers linked to this school
-    const teachers = await prisma.teacher.findMany({
-      where: {
-        OR: [
-          { id: { in: linkedTeacherIds } },
-          { activeSchoolId: schoolId },
-          { primarySchoolId: schoolId },
-          { schoolId: schoolId },
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        teacherCode: true,
-        authProvider: true,
-        verified: true,
-        teacherSubjects: {
-          include: {
-            subject: true
+    const where: any = {
+      OR: [
+        { id: { in: linkedTeacherIds } },
+        { activeSchoolId: schoolId },
+        { primarySchoolId: schoolId },
+        { schoolId: schoolId },
+      ],
+    };
+
+    if (search) {
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+            { teacherCode: { contains: search, mode: 'insensitive' } },
+          ]
+        }
+      ];
+    }
+
+    if (isClaimed !== undefined && isClaimed !== null && isClaimed !== '') {
+      where.isClaimed = isClaimed === 'true';
+    }
+
+    // Get count and teachers
+    const [total, teachers] = await Promise.all([
+      prisma.teacher.count({ where }),
+      prisma.teacher.findMany({
+        where,
+        skip,
+        take,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          teacherCode: true,
+          authProvider: true,
+          verified: true,
+          teacherSubjects: {
+            include: {
+              subject: true
+            }
+          },
+          classTeachers: {
+            include: {
+              class: true
+            }
           }
         },
-        classTeachers: {
-          include: {
-            class: true
-          }
-        }
-      },
-    });
+        orderBy: { name: 'asc' }
+      })
+    ]);
 
     return res.status(200).json({
       success: true,
       count: teachers.length,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / take),
       data: teachers,
     });
   } catch (error: any) {
-    console.error("getSchoolTeachers error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
-    });
+    return handleError(res, error, "admin.getSchoolTeachers");
   }
 };
 
@@ -646,11 +630,7 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
       data: students,
     });
   } catch (error: any) {
-    console.error("getSchoolStudents error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
-    });
+    return handleError(res, error, "admin.getSchoolStudents");
   }
 };
 
@@ -719,11 +699,7 @@ export const getSchoolMembers = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("getSchoolMembers error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
-    });
+    return handleError(res, error, "admin.getSchoolMembers");
   }
 };
 
@@ -752,11 +728,7 @@ export const updateAdminProfile = async (req: Request, res: Response) => {
       data: updated,
     });
   } catch (error: any) {
-    console.error("Update admin profile error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
-    });
+    return handleError(res, error, "admin.updateAdminProfile");
   }
 };
 
@@ -806,12 +778,7 @@ export const verifyStudent = async (req: Request, res: Response) => {
     });
 
   } catch (error: any) {
-    console.error("Verify student error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
-      error: error.message || "Server error"
-    });
+    return handleError(res, error, "admin.verifyStudent");
   }
 };
 
@@ -877,21 +844,7 @@ export const createStudent = async (req: Request, res: Response) => {
     });
 
   } catch (error: any) {
-    console.error("Create student error:", error);
-    const message = error.message || "Server error";
-    
-    let statusCode = 400;
-    if (message.includes("Unauthorized")) {
-      statusCode = 403;
-    } else if (message.includes("not found")) {
-      statusCode = 404;
-    }
-
-    return res.status(statusCode).json({
-      success: false,
-      message,
-      error: message
-    });
+    return handleError(res, error, "admin.createStudent");
   }
 };
 
@@ -904,7 +857,7 @@ export const inviteStudent = async (req: Request, res: Response) => {
   try {
     const adminId = (req as any).user?.id;
     const studentId = req.params.id as string;
-    const email = req.body.email as string;
+    const email = (req.body.email as string)?.toLowerCase().trim();
 
     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
@@ -935,13 +888,16 @@ export const inviteStudent = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Student account is already claimed" });
     }
 
-    // Check if new email is already used by another student
-    const existingStudentEmail = await prisma.student.findFirst({
-      where: { email, id: { not: studentId } }
-    });
+    // Check if new email is already used by anyone
+    const [existingStudentEmail, existingTeacher, existingAdmin, existingParent] = await Promise.all([
+      prisma.student.findFirst({ where: { email, id: { not: studentId } } }),
+      prisma.teacher.findUnique({ where: { email } }),
+      prisma.admin.findUnique({ where: { email } }),
+      prisma.parent.findUnique({ where: { email } })
+    ]);
 
-    if (existingStudentEmail) {
-      return res.status(400).json({ success: false, message: "Email is already in use by another student" });
+    if (existingStudentEmail || existingTeacher || existingAdmin || existingParent) {
+      return res.status(400).json({ success: false, message: "Email is already taken" });
     }
 
     // Generate token
@@ -970,11 +926,6 @@ export const inviteStudent = async (req: Request, res: Response) => {
       message: "Invitation sent successfully",
     });
   } catch (error: any) {
-    console.error("Invite student error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "An error occurred while inviting the student",
-      error: error.message,
-    });
+    return handleError(res, error, "admin.inviteStudent");
   }
 };

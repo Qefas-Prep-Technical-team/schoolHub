@@ -10,6 +10,7 @@ import {
   removeSubjectFromDepartmentService,
 } from "./department.service";
 import { canManageDepartment } from "./academic.permissions";
+import { handleError } from "../../utils/error-handler";
 
 const serializeDepartment = (dept: any): any => {
   if (!dept) return dept;
@@ -44,7 +45,7 @@ export const createDepartment = async (req: Request, res: Response) => {
       data: serializeDepartment(department),
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.createDepartment");
   }
 };
 
@@ -66,7 +67,7 @@ export const getDepartments = async (req: Request, res: Response) => {
       data: serializeDepartment(departments),
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.getDepartments");
   }
 };
 
@@ -84,7 +85,7 @@ export const getSingleDepartment = async (req: Request, res: Response) => {
       data: serializeDepartment(department),
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.getSingleDepartment");
   }
 };
 
@@ -119,7 +120,7 @@ export const updateDepartment = async (req: Request, res: Response) => {
       data: serializeDepartment(department),
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.updateDepartment");
   }
 };
 
@@ -148,7 +149,7 @@ export const archiveDepartment = async (req: Request, res: Response) => {
       data: serializeDepartment(department),
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.archiveDepartment");
   }
 };
 
@@ -181,7 +182,7 @@ export const attachSubjectsToDepartment = async (req: Request, res: Response) =>
       data: serializeDepartment(department),
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.attachSubjectsToDepartment");
   }
 };
 
@@ -214,6 +215,6 @@ export const removeSubjectFromDepartment = async (req: Request, res: Response) =
       message: "Subject removed from department successfully",
     });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.removeSubjectFromDepartment");
   }
 };
