@@ -161,7 +161,7 @@ const [isModalOpen, setIsModalOpen] = useState(false);
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 500));
         // In real app, fetch data based on assignmentId
-        console.log('Fetching assignment:', assignmentId);
+        // console.log('Fetching assignment:', assignmentId);
       } catch (error) {
         console.error('Error fetching assignment:', error);
       } finally {
@@ -198,12 +198,12 @@ const [isModalOpen, setIsModalOpen] = useState(false);
   }, []);
 
   const handleSubmit = () => {
-    console.log('Submitting assignment');
+    // console.log('Submitting assignment');
     // Handle submission logic
   };
 
   const handleDownload = (attachment: Attachment) => {
-    console.log('Downloading:', attachment.name);
+    // console.log('Downloading:', attachment.name);
     // Handle download logic
   };
 
@@ -212,7 +212,7 @@ const [isModalOpen, setIsModalOpen] = useState(false);
 
 // Update submit handler
 const handleSubmission = async (files: File[], text: string) => {
-  console.log('Submitting:', { files, text });
+  // console.log('Submitting:', { files, text });
   // Handle actual submission logic
   await new Promise(resolve => setTimeout(resolve, 1000));
   setIsModalOpen(false);

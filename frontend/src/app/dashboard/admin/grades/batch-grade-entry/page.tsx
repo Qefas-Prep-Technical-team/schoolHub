@@ -114,7 +114,7 @@ export default function BatchGradeEntry() {
     };
 
     const handleFilterChange = (filter: any, value: string) => {
-        console.log(`Filter changed: ${filter.label} = ${value}`);
+        // console.log(`Filter changed: ${filter.label} = ${value}`);
         // In a real app, this would fetch new data based on the filter
     };
 
@@ -131,7 +131,7 @@ export default function BatchGradeEntry() {
                 lastSaved: new Date()
             });
 
-            console.log('Grades saved:', batchData);
+            // console.log('Grades saved:', batchData);
         } catch (error) {
             setSaveStatus({
                 isSaved: false,
@@ -143,17 +143,17 @@ export default function BatchGradeEntry() {
     };
 
     const handleExport = () => {
-        console.log('Exporting grades...');
+        // console.log('Exporting grades...');
         // Implement export functionality
     };
 
     const handleHelp = () => {
-        console.log('Opening help...');
+        // console.log('Opening help...');
         // Implement help functionality
     };
 
     const handleNotifications = () => {
-        console.log('Opening notifications...');
+        // console.log('Opening notifications...');
         // Implement notifications functionality
     };
 

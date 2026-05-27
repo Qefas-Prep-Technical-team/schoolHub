@@ -28,7 +28,7 @@ export default function StrengthsWeaknesses() {
   ]
 
   const handleResourcesClick = (topic: string) => {
-    console.log(`Resources for ${topic} clicked`)
+    // console.log(`Resources for ${topic} clicked`)
   }
 
   return (

@@ -139,7 +139,7 @@ export default function UnifiedExamPage() {
       return;
     }
 
-    console.log("Saving answer:", {
+    // console.log("Saving answer:", {
       examId,
       subjectPaperId: activeSubjectId,
       questionId: activeQuestion.id,
@@ -161,7 +161,7 @@ export default function UnifiedExamPage() {
           answer: optionId
         }
       });
-      console.log("Answer saved successfully");
+      // console.log("Answer saved successfully");
     } catch (error: unknown) {
       const axiosError = error as AxiosError<{ message?: string }>;
       console.error("Failed to auto-save answer:", axiosError.response?.data || axiosError.message);
@@ -245,7 +245,7 @@ export default function UnifiedExamPage() {
       });
       
       if (hasAnswers) {
-        console.log("Restored saved answers:", Object.keys(restoredAnswers).length);
+        // console.log("Restored saved answers:", Object.keys(restoredAnswers).length);
         setLocalAnswers(restoredAnswers);
       }
       initialAnswersRestoredRef.current = true;
@@ -302,7 +302,7 @@ export default function UnifiedExamPage() {
     
     if (!attempt || attempt.status !== "IN_PROGRESS") {
       if (!showDetails) {
-        console.log("Blocking taker view: No active session found.");
+        // console.log("Blocking taker view: No active session found.");
         setShowDetails(true);
       }
     }

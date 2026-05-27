@@ -13,7 +13,7 @@ const MainQuestionEditor: React.FC = () => {
 
     const handleEditQuestion = (question: any) => {
         // TODO: implement edit behavior (e.g. open editor, navigate, or set state)
-        console.log("Edit question:", question);
+        // console.log("Edit question:", question);
     };
 
     return (

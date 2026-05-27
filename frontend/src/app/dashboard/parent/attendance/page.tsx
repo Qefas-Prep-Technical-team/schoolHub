@@ -60,12 +60,12 @@ export default function ParentAttendancePage() {
     ];
 
     const handleViewDetails = () => {
-        console.log('View detailed breakdown');
+        // console.log('View detailed breakdown');
         // Navigate to detailed view
     };
 
     const handleReportAbsence = () => {
-        console.log('Report absence');
+        // console.log('Report absence');
         // Open absence reporting modal
     };
 

@@ -176,7 +176,7 @@ export default function AssignmentDetailsPage() {
     const handleExportSubmissions = async () => {
         try {
             // Export logic here
-            console.log('Exporting submissions...');
+            // console.log('Exporting submissions...');
             // In a real app, you would generate and download a file
         } catch (error) {
             console.error('Error exporting submissions:', error);

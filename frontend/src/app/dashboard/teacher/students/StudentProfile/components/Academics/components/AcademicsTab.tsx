@@ -21,7 +21,7 @@ const AcademicsTab: React.FC = () => {
   ];
 
   const handleAddNote = () => {
-    console.log('Add academic note clicked');
+    // console.log('Add academic note clicked');
     // Implement your add note logic here
   };
 

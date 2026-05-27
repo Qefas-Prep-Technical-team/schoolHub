@@ -34,7 +34,7 @@ export default function TenantLandingPage({ params }: PageProps) {
   const tenant = resolvedParams.tenant;
 
   const { data: schoolData, isLoading, error } = useSchoolLandingPageBySubdomain(tenant);
-  console.log("Fetched landing page data for tenant:", tenant, schoolData);
+  // console.log("Fetched landing page data for tenant:", tenant, schoolData);
   
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [darkMode, setDarkMode] = React.useState(true);

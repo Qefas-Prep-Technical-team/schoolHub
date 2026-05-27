@@ -67,7 +67,7 @@ export default function SubmissionConfirmationPage() {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 800));
         // In real app, fetch data based on submissionId
-        console.log('Fetching submission:', submissionId);
+        // console.log('Fetching submission:', submissionId);
       } catch (error) {
         console.error('Error fetching submission:', error);
       } finally {

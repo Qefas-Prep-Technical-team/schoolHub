@@ -82,13 +82,13 @@ export default function DocumentsPage() {
 
   // Handle view action
   const handleView = (id: string) => {
-    console.log('View document:', id);
+    // console.log('View document:', id);
     // Implement view logic
   };
 
   // Handle download action
   const handleDownload = (id: string) => {
-    console.log('Download document:', id);
+    // console.log('Download document:', id);
     // Implement download logic
   };
 

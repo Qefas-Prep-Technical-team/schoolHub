@@ -38,15 +38,15 @@ const GradesOverviewStandalone: React.FC = () => {
   ];
 
   const handleAddGrade = () => {
-    console.log('Add new grade');
+    // console.log('Add new grade');
   };
 
   const handleExport = () => {
-    console.log('Export to CSV');
+    // console.log('Export to CSV');
   };
 
   const handleEditGrade = (gradeId: number) => {
-    console.log('Edit grade:', gradeId);
+    // console.log('Edit grade:', gradeId);
   };
 
   return (

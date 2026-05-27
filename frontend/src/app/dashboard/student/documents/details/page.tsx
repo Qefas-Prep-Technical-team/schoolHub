@@ -30,38 +30,38 @@ export default function DocumentDetailsPage() {
   ];
 
   const handleView = () => {
-    console.log('View document:', documentDetails.id);
+    // console.log('View document:', documentDetails.id);
     // Navigate to view page or open modal
   };
 
   const handleDownload = () => {
-    console.log('Download document:', documentDetails.id);
+    // console.log('Download document:', documentDetails.id);
     // Implement download logic
   };
 
   const handleShare = () => {
-    console.log('Share document:', documentDetails.id);
+    // console.log('Share document:', documentDetails.id);
     // Implement share logic
   };
 
   const handlePrint = () => {
-    console.log('Print document:', documentDetails.id);
+    // console.log('Print document:', documentDetails.id);
     // Implement print logic
   };
 
   const handleSave = () => {
     setIsSaved(!isSaved);
-    console.log('Toggle save:', documentDetails.id, !isSaved);
+    // console.log('Toggle save:', documentDetails.id, !isSaved);
     // Implement save logic
   };
 
   const handleTagClick = (tagId: string) => {
-    console.log('Tag clicked:', tagId);
+    // console.log('Tag clicked:', tagId);
     // Filter documents by tag
   };
 
   const handleDownloadVersion = (versionId: string) => {
-    console.log('Download version:', versionId);
+    // console.log('Download version:', versionId);
     // Implement version download
   };
 

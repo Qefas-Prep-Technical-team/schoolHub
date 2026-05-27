@@ -65,7 +65,7 @@ export default function TeacherProfilePage() {
 
     useEffect(() => {
         if (profile) {
-            console.log("DEBUG: Teacher Profile Loaded:", profile);
+            // console.log("DEBUG: Teacher Profile Loaded:", profile);
             setFormData({
                 name: profile.name || '',
                 email: profile.email || '',

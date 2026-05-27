@@ -11,7 +11,7 @@ export default function AddPeriodPage() {
   const handleSubmit = async (data: PeriodFormData) => {
     try {
       // Simulate API call
-      console.log('Submitting period data:', data);
+      // console.log('Submitting period data:', data);
       
       // In real app, you would call an API
       // await fetch('/api/timetable/periods', {

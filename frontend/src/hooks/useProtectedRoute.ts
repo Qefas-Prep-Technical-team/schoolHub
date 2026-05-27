@@ -16,7 +16,7 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
   const pathname = usePathname();
   const { isAuthenticated, user } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
-  console.log("🔐 useProtectedRoute: isAuthenticated =", isAuthenticated);
+  // console.log("🔐 useProtectedRoute: isAuthenticated =", isAuthenticated);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -24,14 +24,14 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
 
       // If authentication is required but user is not authenticated
       if (requireAuth && !isAuthenticated) {
-        console.log("🔐 Redirecting to login: Not authenticated");
+        // console.log("🔐 Redirecting to login: Not authenticated");
         router.push(`${redirectTo}?redirect=${encodeURIComponent(pathname)}`);
         return;
       }
 
       // If user is authenticated but shouldn't be on auth pages (like login)
       if (!requireAuth && isAuthenticated) {
-        console.log("🔐 Redirecting to dashboard: Already authenticated");
+        // console.log("🔐 Redirecting to dashboard: Already authenticated");
         router.push("/dashboard");
         return;
       }
@@ -44,7 +44,7 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
         );
 
         if (!hasAccess) {
-          console.log("🔐 Redirecting: User type not allowed");
+          // console.log("🔐 Redirecting: User type not allowed");
           router.push("/unauthorized");
           return;
         }

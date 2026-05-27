@@ -7,7 +7,7 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, description }: PageHeaderProps) {
     const handleCreateNewClass = () => {
-        console.log('Create new class');
+        // console.log('Create new class');
         // Open create class modal or navigate
     };
 

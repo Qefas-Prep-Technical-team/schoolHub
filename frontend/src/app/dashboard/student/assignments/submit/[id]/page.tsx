@@ -181,7 +181,7 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
       
       localStorage.setItem(`assignment_draft_${assignmentId}`, JSON.stringify(draftData));
       
-      console.log('Draft saved:', draftData);
+      // console.log('Draft saved:', draftData);
       alert('Draft saved successfully!');
     } catch (error: unknown) {
       console.error('Error saving draft:', error);
@@ -227,7 +227,7 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
         submittedAt: new Date().toISOString(),
       };
       
-      console.log('Submission successful:', submissionData);
+      // console.log('Submission successful:', submissionData);
       
       // Clear draft
       localStorage.removeItem(`assignment_draft_${assignmentId}`);

@@ -130,7 +130,7 @@ export default function SubjectGrid({ searchQuery = '', filters }: SubjectGridPr
 
     const handleSubjectClick = (subjectId: string) => {
         // Navigate to subject detail page or open modal
-        console.log('Clicked subject:', subjectId);
+        // console.log('Clicked subject:', subjectId);
     };
 
     return (

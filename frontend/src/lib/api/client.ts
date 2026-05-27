@@ -17,7 +17,7 @@ const processQueue = (error: any, token: string | null = null) => {
 
   failedQueue = [];
 };
-console.log("API Client initialized with base URL:", process.env.NEXT_PUBLIC_API_URL);
+// console.log("API Client initialized with base URL:", process.env.NEXT_PUBLIC_API_URL);
 // Create axios instance with base configuration
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,

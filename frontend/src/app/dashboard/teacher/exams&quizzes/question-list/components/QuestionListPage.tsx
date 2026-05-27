@@ -128,12 +128,12 @@ export default function QuestionListPage() {
   };
 
   const handleEditQuestion = (questionId: string) => {
-    console.log('Edit question:', questionId);
+    // console.log('Edit question:', questionId);
     // Navigate to edit page or open modal
   };
 
   const handleAddQuestion = () => {
-    console.log('Add new question');
+    // console.log('Add new question');
     // Navigate to create question page or open modal
   };
 

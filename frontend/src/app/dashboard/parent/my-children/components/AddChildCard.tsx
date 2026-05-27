@@ -52,7 +52,7 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
   const limit = planLimits[plan] || 1
   const isLimitReached = childrenCount >= limit
 
-  console.log('AddChildCard Debug:', { plan, isTrial, limit, childrenCount, isLimitReached });
+  // console.log('AddChildCard Debug:', { plan, isTrial, limit, childrenCount, isLimitReached });
 
   const handleLinkChild = async () => {
     if (isLimitReached) {

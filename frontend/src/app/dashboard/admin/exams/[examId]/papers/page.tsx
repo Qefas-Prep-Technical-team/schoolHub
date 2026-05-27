@@ -266,7 +266,7 @@ export default function ExamPapersPage() {
   const { data: teacherResponse, isLoading: isLoadingTeachers } = useQuery({
     queryKey: ["all-teachers", activeSchoolId],
     queryFn: async () => {
-      console.log("Fetching teachers for school ID:", activeSchoolId); // Debug log
+      // console.log("Fetching teachers for school ID:", activeSchoolId); // Debug log
       // Adjust this URL to match your actual backend route
       const { data } = await apiClient.get(`/schools/${activeSchoolId}/teachers`);
       return data.data || data;

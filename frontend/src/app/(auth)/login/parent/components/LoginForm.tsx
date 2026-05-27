@@ -64,7 +64,7 @@ export default function LoginForm() {
     const isSubmitDisabled = isPending
 
     // Add this to debug
-    console.log("Form state:", { isValid, isDirty, isSubmitDisabled, errors });
+    // console.log("Form state:", { isValid, isDirty, isSubmitDisabled, errors });
 
     return (
         <div className="flex w-full max-w-md mx-auto flex-col justify-center gap-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">

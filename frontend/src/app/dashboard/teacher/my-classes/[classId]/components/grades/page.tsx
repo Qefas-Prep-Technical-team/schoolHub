@@ -86,19 +86,19 @@ export default function GradesPage() {
   }
 
   const handleSaveGrade = (updatedGrade: StudentGrade) => {
-    console.log('Save grade:', updatedGrade)
+    // console.log('Save grade:', updatedGrade)
     // TODO: Implement update mutation
     setIsEditDialogOpen(false)
     setEditingGrade(null)
   }
 
   const handleViewDetails = (grade: StudentGrade) => {
-    console.log('View grade details:', grade)
+    // console.log('View grade details:', grade)
     // Navigate to student grade details
   }
 
   const handleFilterClick = () => {
-    console.log('Open filter dialog')
+    // console.log('Open filter dialog')
     // Implement filter dialog
   }
 

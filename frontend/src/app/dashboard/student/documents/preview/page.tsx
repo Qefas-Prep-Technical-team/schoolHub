@@ -19,22 +19,22 @@ export default function DocumentPreviewPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleDownload = () => {
-    console.log('Downloading document:', currentDocument.id);
+    // console.log('Downloading document:', currentDocument.id);
     // Implement download logic
   };
 
   const handlePrint = () => {
-    console.log('Printing document:', currentDocument.id);
+    // console.log('Printing document:', currentDocument.id);
     // Implement print logic
   };
 
   const handleShare = () => {
-    console.log('Sharing document:', currentDocument.id);
+    // console.log('Sharing document:', currentDocument.id);
     // Implement share logic
   };
 
   const handleMore = () => {
-    console.log('More options for document:', currentDocument.id);
+    // console.log('More options for document:', currentDocument.id);
     // Implement more options
   };
 

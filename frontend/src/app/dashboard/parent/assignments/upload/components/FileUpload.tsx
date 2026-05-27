@@ -32,7 +32,7 @@ export default function FileUpload() {
 
   const handleFiles = (files: FileList) => {
     // Handle file upload logic here
-    console.log('Files to upload:', files)
+    // console.log('Files to upload:', files)
     // You would typically upload to your backend here
   }
 

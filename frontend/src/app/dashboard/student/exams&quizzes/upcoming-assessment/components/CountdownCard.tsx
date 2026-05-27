@@ -35,12 +35,12 @@ export default function CountdownCard({
     });
 
     const handleCountdownComplete = () => {
-        console.log('Countdown complete!');
+        // console.log('Countdown complete!');
         // You could trigger a notification or update UI here
     };
 
     const handleViewDetails = () => {
-        console.log('View details clicked for:', title);
+        // console.log('View details clicked for:', title);
         // Navigate to assessment details page
     };
 

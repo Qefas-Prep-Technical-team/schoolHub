@@ -50,7 +50,7 @@ const BehaviourTabStandalone: React.FC = () => {
   ]);
 
   const handleAddReport = () => {
-    console.log('Add behaviour report clicked');
+    // console.log('Add behaviour report clicked');
   };
 
   const getScoreColor = (score: number) => {

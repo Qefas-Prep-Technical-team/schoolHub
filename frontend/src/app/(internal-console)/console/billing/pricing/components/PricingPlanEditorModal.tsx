@@ -196,7 +196,7 @@ export default function PricingPlanEditorModal({ plan, isOpen, onClose }: Pricin
             trialDays: toNum(formData.trialDays) ?? 0,
         }
 
-        console.log("[PricingPlanEditorModal] Submitting payload:", payload);
+        // console.log("[PricingPlanEditorModal] Submitting payload:", payload);
         
         await savePlan.mutateAsync(payload)
         onClose()

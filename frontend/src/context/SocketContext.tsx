@@ -71,7 +71,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     });
 
     newSocket.on("connect", () => {
-      console.log("✅ Socket connected:", newSocket.id);
+      // console.log("✅ Socket connected:", newSocket.id);
       setIsConnected(true);
       
       // Join user-specific room
@@ -79,7 +79,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     });
 
     newSocket.on("disconnect", () => {
-      console.log("❌ Socket disconnected");
+      // console.log("❌ Socket disconnected");
       setIsConnected(false);
     });
 

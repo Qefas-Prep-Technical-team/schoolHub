@@ -130,7 +130,7 @@ const {
 
   const handleCheckTeacherAvailability = () => {
     const currentValues = watch();
-    console.log('Checking availability for:', currentValues);
+    // console.log('Checking availability for:', currentValues);
     // Implement API call to check teacher availability
   };
 

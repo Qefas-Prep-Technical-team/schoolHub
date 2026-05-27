@@ -76,15 +76,15 @@ export default function ClassStudentsTab({ enrollments = [] }: ClassStudentsTabP
   }, [filters, enrollments, students]);
 
   const handleExport = () => {
-    console.log('Exporting class list for:', classId);
+    // console.log('Exporting class list for:', classId);
   };
 
   const handleSendAnnouncement = () => {
-    console.log('Sending announcement to class:', classId);
+    // console.log('Sending announcement to class:', classId);
   };
 
   const handlePrintAttendance = () => {
-    console.log('Printing attendance sheet for:', classId);
+    // console.log('Printing attendance sheet for:', classId);
   };
 
   const handleStudentClick = (student: Student) => {

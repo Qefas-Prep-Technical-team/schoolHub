@@ -34,14 +34,14 @@ export default function JoinClassPage() {
       }
       
       setHasStarted(true);
-      console.log(`JoinClassPage: Initiating join request for class ${classData.classCode}`);
+      // console.log(`JoinClassPage: Initiating join request for class ${classData.classCode}`);
       
       joinClass({
         classCode: classData.classCode,
         note: `Requested to join class ${classData.name} via QR code`,
       }, {
         onSuccess: () => {
-          console.log("JoinClassPage: Join request success");
+          // console.log("JoinClassPage: Join request success");
           setTimeout(() => {
             router.push("/dashboard");
           }, 3000);

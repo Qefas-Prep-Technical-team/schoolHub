@@ -16,7 +16,7 @@ const AbsenceDetailsComponent: React.FC = () => {
     };
 
     const handleSubmit = () => {
-        console.log('Submitting excuse note:', { details, file });
+        // console.log('Submitting excuse note:', { details, file });
         // Add API call here
     };
 

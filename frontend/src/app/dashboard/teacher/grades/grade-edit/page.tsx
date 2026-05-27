@@ -119,7 +119,7 @@ export default function EditStudentGradePage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log('Saving grade data:', {
+      // console.log('Saving grade data:', {
         scores,
         comment,
         notifyParent,

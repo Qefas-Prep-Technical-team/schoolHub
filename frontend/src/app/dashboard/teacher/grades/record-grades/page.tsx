@@ -92,12 +92,12 @@ export default function RecordGradesPage() {
     class: string;
     subject: string;
   }) => {
-    console.log('Filters changed:', filters);
+    // console.log('Filters changed:', filters);
     // Implement filter logic here
   };
 
   const handleSaveDraft = () => {
-    console.log('Saving draft...', students);
+    // console.log('Saving draft...', students);
     // Implement save draft logic
   };
 
@@ -116,7 +116,7 @@ export default function RecordGradesPage() {
         return;
       }
 
-      console.log('Submitting final grades...', students);
+      // console.log('Submitting final grades...', students);
       // Implement submission logic
       
       // Simulate API call

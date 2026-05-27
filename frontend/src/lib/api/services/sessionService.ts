@@ -45,7 +45,7 @@ export const sessionService = {
   },
 
   createSession: async (data: CreateSessionDTO) => {
-    console.log("Creating session with data:", data);
+    // console.log("Creating session with data:", data);
     const response = await apiClient.post<{ data: Session }>("/sessions", data);
     return response.data.data;
   },

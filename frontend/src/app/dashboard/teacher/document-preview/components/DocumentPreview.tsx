@@ -33,7 +33,7 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({
         try {
             // Simulate download
             await new Promise(resolve => setTimeout(resolve, 1500));
-            console.log(`Downloading: ${document.title}`);
+            // console.log(`Downloading: ${document.title}`);
             // In a real app, you would trigger the actual download
             // window.location.href = document.downloadUrl;
         } catch (error) {
@@ -45,7 +45,7 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({
 
     const handleShareToggle = (isShared: boolean) => {
         setDocument(prev => ({ ...prev, isSharedWithParents: isShared }));
-        console.log(`Document sharing ${isShared ? 'enabled' : 'disabled'}`);
+        // console.log(`Document sharing ${isShared ? 'enabled' : 'disabled'}`);
         // In a real app, you would make an API call to update sharing status
     };
 

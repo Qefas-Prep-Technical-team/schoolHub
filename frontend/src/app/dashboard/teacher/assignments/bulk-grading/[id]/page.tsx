@@ -216,7 +216,7 @@ export default function BulkGradingPage() {
   const handleDownloadFile = (submissionId: string) => {
     const submission = submissions.find(sub => sub.id === submissionId);
     if (submission?.fileUrl) {
-      console.log('Downloading file:', submission.fileUrl);
+      // console.log('Downloading file:', submission.fileUrl);
       // Implement actual file download
     }
   };

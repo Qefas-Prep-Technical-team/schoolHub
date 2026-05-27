@@ -79,22 +79,22 @@ export default function ExamPreview() {
   };
 
   const handleDownload = () => {
-    console.log('Download exam');
+    // console.log('Download exam');
     // Implement download logic
   };
 
   const handleShare = () => {
-    console.log('Share exam');
+    // console.log('Share exam');
     // Implement share logic
   };
 
   const handlePublish = () => {
-    console.log('Publish exam');
+    // console.log('Publish exam');
     // Implement publish logic
   };
 
   const handleEditQuestion = (questionId: number) => {
-    console.log('Edit question:', questionId);
+    // console.log('Edit question:', questionId);
     // Navigate to question editor
   };
 

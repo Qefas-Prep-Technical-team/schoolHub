@@ -30,7 +30,7 @@ const ClassDetails: FC = () => {
     });
 
     const handleAddAnnouncement = () => {
-        console.log('Add new announcement');
+        // console.log('Add new announcement');
     };
 
     if (isLoading) {

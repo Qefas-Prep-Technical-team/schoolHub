@@ -43,7 +43,7 @@ export default function QuizPreviewPage() {
 
     const handleSubmit = () => {
         // Handle quiz submission
-        console.log('Quiz submitted');
+        // console.log('Quiz submitted');
     };
 
     const handleTimeUp = () => {

@@ -18,7 +18,7 @@ export default function StudentList({
   showReminderButton = false,
 }: StudentListProps) {
   const handleSendReminder = (studentId: string) => {
-    console.log(`Sending reminder to student ${studentId}`);
+    // console.log(`Sending reminder to student ${studentId}`);
     // Implement reminder logic here
   };
 

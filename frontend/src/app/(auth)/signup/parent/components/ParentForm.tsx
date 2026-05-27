@@ -88,7 +88,7 @@ export default function ParentRegistrationForm() {
 
       await registerParent(backendData, {
         onSuccess: (response: any) => {
-          console.log('✅ Parent registration successful:', response.data);
+          // console.log('✅ Parent registration successful:', response.data);
 
           // Redirect to login after delay
           const email = response.data.data.parent.email

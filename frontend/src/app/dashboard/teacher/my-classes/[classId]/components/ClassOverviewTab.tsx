@@ -64,12 +64,12 @@ export default function ClassOverviewTab({
 
 
   const handleGradeSubmission = (submissionId: string) => {
-    console.log('Grade submission:', submissionId);
+    // console.log('Grade submission:', submissionId);
     // Open grading interface
   };
 
   const handleViewAll = (section: string) => {
-    console.log(`View all ${section}`);
+    // console.log(`View all ${section}`);
     // Navigate to appropriate tab
   };
 

@@ -24,7 +24,7 @@ const DocumentPreviewStandalone: React.FC = () => {
     const handleDownload = async () => {
         setIsDownloading(true);
         await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log('Downloaded:', document.title);
+        // console.log('Downloaded:', document.title);
         setIsDownloading(false);
     };
 

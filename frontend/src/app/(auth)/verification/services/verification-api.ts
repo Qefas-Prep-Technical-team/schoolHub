@@ -29,7 +29,7 @@ interface VerifyCodeResponse {
 export const verificationAPI = {
   // Request verification code
   requestCode: async (email: string, userType: string) => {
-    console.log(userType);
+    // console.log(userType);
     const response = await apiClient.post<ApiResponse<RequestCodeResponse>>(
       "/auth/request-code",
       { email, userType }
@@ -39,7 +39,7 @@ export const verificationAPI = {
 
   // Verify code
   verifyCode: async (email: string, code: string, userType: string) => {
-    console.log("main userType ", userType);
+    // console.log("main userType ", userType);
     const response = await apiClient.post<ApiResponse<VerifyCodeResponse>>(
       "/auth/verify-code",
       { email, code, userType }

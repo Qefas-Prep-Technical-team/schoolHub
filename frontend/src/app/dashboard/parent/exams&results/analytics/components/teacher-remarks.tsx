@@ -2,7 +2,7 @@
 
 export default function TeacherRemarks() {
   const handleMessageTeacher = () => {
-    console.log('Message teacher clicked')
+    // console.log('Message teacher clicked')
   }
 
   return (

@@ -70,7 +70,7 @@ const DocumentsPage: React.FC = () => {
   ]);
 
   const handleUpload = () => {
-    console.log('Upload document clicked');
+    // console.log('Upload document clicked');
     // Implement upload logic
   };
 

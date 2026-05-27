@@ -49,8 +49,8 @@ export default function AddQuestionPage() {
       explanation: addExplanation ? explanation : undefined,
     };
 
-    console.log('Saving question:', questionData);
-    console.log('Action:', action);
+    // console.log('Saving question:', questionData);
+    // console.log('Action:', action);
 
     if (action === 'save-and-another') {
       // Reset form for next question

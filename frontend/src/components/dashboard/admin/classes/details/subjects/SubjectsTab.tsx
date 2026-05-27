@@ -47,7 +47,7 @@ export default function ClassSubjectsTab({ classSubjects = [] }: ClassSubjectsTa
   };
 
   const handleAddSubject = (subjectData: Partial<Subject>) => {
-    console.log('Adding subject to class:', subjectData);
+    // console.log('Adding subject to class:', subjectData);
   };
 
   return (

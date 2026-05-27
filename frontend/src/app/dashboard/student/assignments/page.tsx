@@ -127,7 +127,7 @@ export default function AssignmentsPage() {
 
   const handleNewSubmission = () => {
     // Handle new submission logic
-    console.log('New submission clicked');
+    // console.log('New submission clicked');
   };
 
   return (

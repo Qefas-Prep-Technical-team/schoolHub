@@ -13,12 +13,12 @@ const UploadPopup: React.FC<UploadPopupProps> = ({ backgroundImage }) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const handleUpload = async (formData: UploadFormData) => {
-    console.log('Uploading document:', formData);
+    // console.log('Uploading document:', formData);
     // Implement your upload logic here
     // Example: API call to upload document
     return new Promise((resolve) => {
       setTimeout(() => {
-        console.log('Document uploaded successfully');
+        // console.log('Document uploaded successfully');
         resolve(true);
       }, 2000);
     });

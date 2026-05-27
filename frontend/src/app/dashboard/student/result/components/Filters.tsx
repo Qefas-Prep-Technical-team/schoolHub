@@ -42,7 +42,7 @@ export default function Filters({
   const handleSearch = (value: string) => {
     setSearchValue(value);
     // You can add debouncing here if needed
-    console.log('Searching for:', value);
+    // console.log('Searching for:', value);
   };
 
   // Update URL when filters change

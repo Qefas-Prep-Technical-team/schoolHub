@@ -71,7 +71,7 @@ export default function LoginForm() {
     };
 
     // Debug log to see form state
-    console.log("Form state:", { isValid, isDirty, errors });
+    // console.log("Form state:", { isValid, isDirty, errors });
 
     // Disable button when form is invalid or during submission
     const isSubmitDisabled = isPending || !isValid || !isDirty;

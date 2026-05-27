@@ -105,7 +105,7 @@ export default function TeacherRegisterForm() {
 
       await registerTeacher(backendData, {
         onSuccess: (response: any) => {
-          console.log('✅ Teacher registration successful:', response.data);
+          // console.log('✅ Teacher registration successful:', response.data);
 
 
           const email = response.data.data?.teacher?.email || data.email;

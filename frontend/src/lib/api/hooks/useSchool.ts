@@ -67,10 +67,10 @@ export const useSchoolPerformanceAnalysis = (
           // Auto-bust the cache if it contains a locked/premium result —
           // this handles plan upgrades where stats haven't changed yet
           if (parsedCache.data?.isPremium === true) {
-            console.log("Cached analysis is premium-locked, busting cache for fresh fetch");
+            // console.log("Cached analysis is premium-locked, busting cache for fresh fetch");
             localStorage.removeItem(cacheKey);
           } else if (JSON.stringify(parsedCache.stats) === JSON.stringify(stats)) {
-            console.log("Using cached AI analysis report");
+            // console.log("Using cached AI analysis report");
             return parsedCache.data;
           }
         } catch (e) {

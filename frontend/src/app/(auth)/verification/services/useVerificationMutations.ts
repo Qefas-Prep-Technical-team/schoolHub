@@ -13,7 +13,7 @@ export const useRequestCode = () => {
       auth.success(
         response.data?.message || "Verification code sent successfully!"
       );
-      console.log("Verification code requested:", response.data);
+      // console.log("Verification code requested:", response.data);
     },
     onError: (error: any) => {
       const errorMessage =
@@ -42,7 +42,7 @@ export const useVerifyCode = () => {
     onSuccess: (response) => {
       auth.success(response.data?.message || "Email verified successfully!");
       queryClient.invalidateQueries({ queryKey: ["auth"] });
-      console.log("Verification successful:", response.data);
+      // console.log("Verification successful:", response.data);
     },
     onError: (error: any) => {
       const errorMessage =
@@ -62,7 +62,7 @@ export const useResendCode = () => {
       verificationAPI.resendCode(data.email, data.userType),
     onSuccess: (response) => {
       auth.success(response.data?.message || "New code sent successfully!");
-      console.log("Code resent:", response.data);
+      // console.log("Code resent:", response.data);
     },
     onError: (error: any) => {
       const errorMessage =

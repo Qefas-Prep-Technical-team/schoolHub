@@ -91,7 +91,7 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
   };
 
   const handleImportQuestions = () => {
-    console.log('Import questions');
+    // console.log('Import questions');
   };
 
   const handleEditExam = (exam: Exam) => {

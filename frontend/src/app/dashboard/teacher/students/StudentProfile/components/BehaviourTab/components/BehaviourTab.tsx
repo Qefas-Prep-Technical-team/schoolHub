@@ -71,7 +71,7 @@ const BehaviourTab: React.FC = () => {
   ]);
 
   const handleAddReport = () => {
-    console.log('Add behaviour report clicked');
+    // console.log('Add behaviour report clicked');
     // Implement add report logic
   };
 

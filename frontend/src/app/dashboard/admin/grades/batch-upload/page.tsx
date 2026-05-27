@@ -61,7 +61,7 @@ export default function BatchUploadGrades() {
     const [showPreview, setShowPreview] = useState(true);
 
     const handleFileSelect = (file: File) => {
-        console.log('File selected:', file.name);
+        // console.log('File selected:', file.name);
 
         // Simulate file processing and validation
         setUploadState(prev => ({
@@ -77,7 +77,7 @@ export default function BatchUploadGrades() {
     };
 
     const handleDownloadTemplate = () => {
-        console.log('Downloading template...');
+        // console.log('Downloading template...');
         // Implement template download logic
         // This would typically generate and download a CSV/Excel file
     };
@@ -97,7 +97,7 @@ export default function BatchUploadGrades() {
 
         // Simulate API call
         setTimeout(() => {
-            console.log('Grades processed successfully');
+            // console.log('Grades processed successfully');
             setUploadState(initialUploadState);
             setShowPreview(false);
             alert('Grades uploaded successfully!');
@@ -105,7 +105,7 @@ export default function BatchUploadGrades() {
     };
 
     const handleRowHover = (record: GradeRecord) => {
-        console.log('Hovered record:', record);
+        // console.log('Hovered record:', record);
     };
 
     return (

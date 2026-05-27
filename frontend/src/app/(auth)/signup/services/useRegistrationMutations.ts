@@ -13,7 +13,7 @@ export const useParentRegistration = () => {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       authToast.registrationSuccess("Parent");
-      console.log("Parent registration successful:", response.data);
+      // console.log("Parent registration successful:", response.data);
     },
     onError: (error: any) => {
       const errorMessage =
@@ -35,7 +35,7 @@ export const useTeacherRegistration = () => {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       authToast.registrationSuccess("Teacher");
-      console.log("Teacher registration successful:", response.data);
+      // console.log("Teacher registration successful:", response.data);
     },
     onError: (error: any) => {
       const errorMessage =
@@ -57,7 +57,7 @@ export const useStudentRegistration = () => {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       authToast.registrationSuccess("Student");
-      console.log("Student registration successful:", response.data);
+      // console.log("Student registration successful:", response.data);
       // Redirect logic can be handled in the component if needed
     },
     onError: (error: any) => {
@@ -80,7 +80,7 @@ export const useSchoolRegistration = () => {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       authToast.registrationSuccess("School");
-      console.log("School registration successful:", response.data);
+      // console.log("School registration successful:", response.data);
     },
     onError: (error: any) => {
       const errorMessage =

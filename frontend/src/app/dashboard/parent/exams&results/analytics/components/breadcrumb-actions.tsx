@@ -16,11 +16,11 @@ export default function BreadcrumbActions() {
   ]
 
   const handleFilterTerm = () => {
-    console.log('Filter Term 2 clicked')
+    // console.log('Filter Term 2 clicked')
   }
 
   const handleDownloadReport = () => {
-    console.log('Download Report clicked')
+    // console.log('Download Report clicked')
   }
 
   return (

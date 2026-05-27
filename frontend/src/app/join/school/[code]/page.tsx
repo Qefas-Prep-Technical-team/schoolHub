@@ -31,7 +31,7 @@ export default function JoinSchoolPage() {
       }
 
       setHasStarted(true);
-      console.log(`JoinSchoolPage: Initiating join request for school ${code}`);
+      // console.log(`JoinSchoolPage: Initiating join request for school ${code}`);
       
       // Determine link type based on user role
       let linkType: "SCHOOL_STUDENT" | "SCHOOL_TEACHER" = "SCHOOL_STUDENT";
@@ -43,7 +43,7 @@ export default function JoinSchoolPage() {
         note: `Requested to join school via QR code`,
       }, {
         onSuccess: () => {
-          console.log("JoinSchoolPage: Join request success");
+          // console.log("JoinSchoolPage: Join request success");
           setTimeout(() => {
             router.push("/dashboard");
           }, 3000);

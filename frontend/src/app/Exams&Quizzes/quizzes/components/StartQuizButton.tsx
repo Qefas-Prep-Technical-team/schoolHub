@@ -18,7 +18,7 @@ const StartQuizButton: React.FC = () => {
   };
 
   const handleConfirmStart = () => {
-    console.log('Starting quiz...');
+    // console.log('Starting quiz...');
     setIsModalOpen(false);
     // Add navigation to quiz page here
   };

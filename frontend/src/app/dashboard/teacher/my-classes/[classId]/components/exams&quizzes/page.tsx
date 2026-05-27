@@ -74,34 +74,34 @@ export default function ExamsPage() {
   }, [searchQuery, exams, filters])
 
   const handleViewExam = (exam: Exam) => {
-    console.log('View exam:', exam)
+    // console.log('View exam:', exam)
     // Navigate to exam details
   }
 
   const handleEditExam = (exam: Exam) => {
-    console.log('Edit exam:', exam)
+    // console.log('Edit exam:', exam)
     // Navigate to exam editor
   }
 
   const handleDeleteExam = (exam: Exam) => {
     if (confirm(`Are you sure you want to delete "${exam.title}"?`)) {
-      console.log('Delete exam:', exam.id)
+      // console.log('Delete exam:', exam.id)
       // TODO: Implement deletion mutation
     }
   }
 
   const handleDuplicateExam = (exam: Exam) => {
-    console.log('Duplicate exam:', exam.id)
+    // console.log('Duplicate exam:', exam.id)
     // TODO: Implement duplication mutation
   }
 
   const handleExportExam = (exam: Exam) => {
-    console.log('Export exam:', exam)
+    // console.log('Export exam:', exam)
     // Implement export logic
   }
 
   const handleFilterClick = () => {
-    console.log('Open filter dialog')
+    // console.log('Open filter dialog')
     // Implement filter dialog
   }
 

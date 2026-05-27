@@ -81,7 +81,7 @@ export default function Home() {
     };
 
     const handleAssessmentClick = (assessment: Assessment) => {
-        console.log('Viewing breakdown for:', assessment.title);
+        // console.log('Viewing breakdown for:', assessment.title);
         // In a real app, navigate to assessment details page
         // or show a modal with breakdown
     };

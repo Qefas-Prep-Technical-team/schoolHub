@@ -15,7 +15,7 @@ const FileDownloadButton: React.FC<FileDownloadButtonProps> = ({
   const handleClick = () => {
     onClick?.(fileName);
     // In real app, this would trigger file download
-    console.log('Downloading:', fileUrl);
+    // console.log('Downloading:', fileUrl);
   };
 
   return (

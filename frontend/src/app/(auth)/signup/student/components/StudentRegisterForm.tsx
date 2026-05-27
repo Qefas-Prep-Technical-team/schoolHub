@@ -71,7 +71,7 @@ export default function StudentRegisterForm() {
   // Handle successful registration
   useEffect(() => {
     if (isSuccess && data) {
-      console.log('✅ Student registration successful:', data.data);
+      // console.log('✅ Student registration successful:', data.data);
 
       const email = data.data.data?.student?.email || watch('email');
 

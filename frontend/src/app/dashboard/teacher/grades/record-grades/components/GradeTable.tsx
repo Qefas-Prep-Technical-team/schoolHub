@@ -61,7 +61,7 @@ const GradeTable: React.FC<GradeTableProps> = ({ students, onStudentsUpdate }) =
 
   const handleApplySameScore = () => {
     // Implement apply same score logic
-    console.log('Apply same score to selected');
+    // console.log('Apply same score to selected');
   };
 
   const handleClearSelected = () => {

@@ -28,12 +28,12 @@ export default function BreadcrumbActions() {
   ]
 
   const handlePrint = () => {
-    console.log('Print clicked')
+    // console.log('Print clicked')
     // Implement print functionality
   }
 
   const handleDownloadPDF = () => {
-    console.log('Download PDF clicked')
+    // console.log('Download PDF clicked')
     // Implement PDF download
   }
 

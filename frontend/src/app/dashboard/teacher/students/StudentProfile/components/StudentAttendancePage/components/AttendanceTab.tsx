@@ -77,16 +77,16 @@ const AttendanceTab: React.FC = () => {
 
   const handleMonthChange = (direction: 'prev' | 'next') => {
     // Implement month navigation logic
-    console.log(`Change month: ${direction}`);
+    // console.log(`Change month: ${direction}`);
   };
 
   const handleDownloadReport = () => {
-    console.log('Download attendance report');
+    // console.log('Download attendance report');
     // Implement download logic
   };
 
   const handleSaveAttendance = (status: AttendanceStatus, comment: string) => {
-    console.log('Save attendance:', { status, comment });
+    // console.log('Save attendance:', { status, comment });
     // Update the day's status in the state
     if (selectedDate !== null) {
       setDays(days.map(day => 

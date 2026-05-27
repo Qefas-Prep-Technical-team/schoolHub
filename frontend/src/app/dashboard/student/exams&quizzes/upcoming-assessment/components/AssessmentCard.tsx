@@ -22,7 +22,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
     };
 
     const handleViewDetails = () => {
-        console.log('View details for:', assessment.title);
+        // console.log('View details for:', assessment.title);
         // Navigate to assessment details
     };
 

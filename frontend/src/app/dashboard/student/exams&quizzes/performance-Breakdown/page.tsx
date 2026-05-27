@@ -18,7 +18,7 @@ import {
 
 export default function Home() {
     const handleReviewQuestions = () => {
-        console.log('Reviewing questions...');
+        // console.log('Reviewing questions...');
         // Navigate to questions review page or open modal
     };
 

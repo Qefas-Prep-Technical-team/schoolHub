@@ -65,7 +65,7 @@ export default function ClassExamsTab({ exams = [] }: ClassExamsTabProps) {
   };
 
   const handleImportQuestions = () => {
-    console.log('Import questions');
+    // console.log('Import questions');
   };
 
   const handleEditExam = (exam: Exam) => {

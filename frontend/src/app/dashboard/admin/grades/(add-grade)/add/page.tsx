@@ -10,7 +10,7 @@ export default function AddGradePage() {
     const handleSubmit = async (formData: GradeFormData) => {
         try {
             // Simulate API call
-            console.log('Submitting grade:', formData);
+            // console.log('Submitting grade:', formData);
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Redirect back to grades page or show success message

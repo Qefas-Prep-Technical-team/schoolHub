@@ -65,7 +65,7 @@ export default function CreatePaperForm({ onSuccess }: CreatePaperFormProps) {
         teacherId: user?.id 
       }),
     onSuccess: (response: any) => {
-      console.log("DEBUG: [CreatePaperForm] Response received:", response);
+      // console.log("DEBUG: [CreatePaperForm] Response received:", response);
       toast.success("Subject paper created successfully!");
       queryClient.invalidateQueries({ queryKey: ["teacher-exams"] });
       if (response?.id) {

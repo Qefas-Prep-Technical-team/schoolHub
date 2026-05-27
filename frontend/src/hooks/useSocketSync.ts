@@ -14,7 +14,7 @@ export const useSocketSync = () => {
 
     // Handle new notifications (generic)
     socket.on("notification:new", (notification) => {
-      console.log("🔔 New notification received via socket:", notification);
+      // console.log("🔔 New notification received via socket:", notification);
       
       // Auto-invalidate links if the notification is a link request or acceptance
       if (
@@ -22,7 +22,7 @@ export const useSocketSync = () => {
         notification.type === "LINK_ACCEPTED" ||
         notification.type === "LINK_REJECTED"
       ) {
-        console.log("♻️ Invalidating links query due to notification...");
+        // console.log("♻️ Invalidating links query due to notification...");
         queryClient.invalidateQueries({ queryKey: ["links"] });
       }
 
@@ -43,7 +43,7 @@ export const useSocketSync = () => {
 
     // Handle specific link update event (focused synchronization)
     socket.on("link:updated", (data) => {
-      console.log("🔗 Link update event received:", data);
+      // console.log("🔗 Link update event received:", data);
       queryClient.invalidateQueries({ queryKey: ["links"] });
       
       if (data.message) {

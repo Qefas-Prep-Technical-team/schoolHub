@@ -18,7 +18,7 @@ export default function DashboardPage() {
     if (isRedirecting) return;
 
     if (!isAuthenticated) {
-      console.log("🚫 Not authenticated, redirecting to login");
+      // console.log("🚫 Not authenticated, redirecting to login");
       router.push("/login");
       return;
     }
@@ -35,7 +35,7 @@ export default function DashboardPage() {
       // Fallback: use user.role if userType is not set
       setIsRedirecting(true);
       const fallbackUserType = user.role || "PARENT";
-      console.log(`🔄 Redirecting with fallback: /dashboard/${fallbackUserType.toLowerCase()}`);
+      // console.log(`🔄 Redirecting with fallback: /dashboard/${fallbackUserType.toLowerCase()}`);
       router.replace(`/dashboard/${fallbackUserType.toLowerCase()}`);
     }
   }, [user, isAuthenticated, userType, router, isInitialized, isRedirecting]);

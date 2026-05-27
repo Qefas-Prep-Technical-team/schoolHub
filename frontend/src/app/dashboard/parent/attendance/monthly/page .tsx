@@ -40,19 +40,19 @@ export default function MonthlyAttendancePage() {
 
     const handleExport = useCallback(async () => {
         // Simulate export
-        console.log('Exporting attendance report...');
+        // console.log('Exporting attendance report...');
         await new Promise(resolve => setTimeout(resolve, 1000));
         alert('Attendance report exported successfully!');
     }, []);
 
     const handleRequestLeave = useCallback(() => {
-        console.log('Requesting leave...');
+        // console.log('Requesting leave...');
         // Open leave request modal
     }, []);
 
     const handleDayClick = useCallback((day: CalendarDay) => {
         setSelectedDate(day.date);
-        console.log('Selected day:', day);
+        // console.log('Selected day:', day);
         // Open day details modal
     }, []);
 

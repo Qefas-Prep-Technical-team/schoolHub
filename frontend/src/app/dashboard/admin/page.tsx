@@ -48,7 +48,7 @@ export default function AdminDashboard() {
   // Subscription Feature Check
   const aiInsightsFeatureKey = process.env.NEXT_PUBLIC_FEATURE_KEY_AI_INSIGHTS || 'aiInsights';
   const { data: hasPerformanceAccess, isLoading: checkingAccess } = useFeatureAccess(aiInsightsFeatureKey, schoolId);
-  console.log("has performance access", hasPerformanceAccess)
+  // console.log("has performance access", hasPerformanceAccess)
 
   const { data: analysis, isLoading: analysisLoading } = useSchoolPerformanceAnalysis(schoolId, stats, { enabled: !!hasPerformanceAccess });
 

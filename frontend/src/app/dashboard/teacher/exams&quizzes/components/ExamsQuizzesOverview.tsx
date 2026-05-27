@@ -56,7 +56,7 @@ export default function ExamsQuizzesOverview() {
   });
 
   const handleCreateNew = () => {
-    console.log('Create new exam/quiz');
+    // console.log('Create new exam/quiz');
   };
 
   const handleFilterChange = (filterType: keyof typeof filters, value: string) => {
@@ -168,7 +168,7 @@ export default function ExamsQuizzesOverview() {
           <div className="p-8">
             <CreatePaperForm 
               onSuccess={(paperId) => {
-                console.log("DEBUG: [ExamsQuizzesOverview] Redirecting to add-question:", paperId);
+                // console.log("DEBUG: [ExamsQuizzesOverview] Redirecting to add-question:", paperId);
                 router.push(`/dashboard/teacher/exams&quizzes/add-question?paperId=${paperId}`);
                 setIsAddPaperModalOpen(false);
               }} 

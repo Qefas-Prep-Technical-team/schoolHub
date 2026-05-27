@@ -3,17 +3,17 @@
 export default function ParentTools() {
   const handleMessageTeacher = () => {
     // Implement message teacher functionality
-    console.log('Message teacher clicked')
+    // console.log('Message teacher clicked')
   }
 
   const handleDownloadReport = () => {
     // Implement download report functionality
-    console.log('Download report clicked')
+    // console.log('Download report clicked')
   }
 
   const handleViewSubjectHistory = () => {
     // Implement view subject history functionality
-    console.log('View subject history clicked')
+    // console.log('View subject history clicked')
   }
 
   return (

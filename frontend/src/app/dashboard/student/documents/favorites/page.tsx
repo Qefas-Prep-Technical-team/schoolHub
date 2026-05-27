@@ -23,17 +23,17 @@ export default function ImportantDocumentsPage() {
   };
 
   const handleView = (id: string) => {
-    console.log('View document:', id);
+    // console.log('View document:', id);
     // Implement view logic
   };
 
   const handleDownload = (id: string) => {
-    console.log('Download document:', id);
+    // console.log('Download document:', id);
     // Implement download logic
   };
 
   const handleMore = (id: string) => {
-    console.log('More options for document:', id);
+    // console.log('More options for document:', id);
     // Implement more options logic
   };
 

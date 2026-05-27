@@ -57,17 +57,17 @@ export default function AssignmentsPage() {
   }, [searchQuery, assignments])
 
   const handleViewAssignment = (assignment: Assignment) => {
-    console.log('View assignment:', assignment)
+    // console.log('View assignment:', assignment)
     // Implement view logic
   }
 
   const handleEditAssignment = (assignment: Assignment) => {
-    console.log('Edit assignment:', assignment)
+    // console.log('Edit assignment:', assignment)
     // Implement edit logic
   }
 
   const handleGradeAssignment = (assignment: Assignment) => {
-    console.log('Grade assignment:', assignment)
+    // console.log('Grade assignment:', assignment)
     // Implement grade logic
   }
 

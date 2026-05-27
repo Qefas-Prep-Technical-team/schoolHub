@@ -24,7 +24,7 @@ export default function Home() {
   const handleTermChange = (term: { id: string; label: string }) => {
     setSelectedTerm(term);
     // Here you would fetch data for the selected term
-    console.log('Selected term:', term);
+    // console.log('Selected term:', term);
   };
 
   return (

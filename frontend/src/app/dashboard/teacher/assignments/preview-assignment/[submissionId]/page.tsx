@@ -113,7 +113,7 @@ export default function GradingPage() {
 
   const handleDownloadFile = () => {
     // Implement file download logic
-    console.log('Downloading file:', submission?.fileUrl);
+    // console.log('Downloading file:', submission?.fileUrl);
     // In a real app, trigger file download
   };
 

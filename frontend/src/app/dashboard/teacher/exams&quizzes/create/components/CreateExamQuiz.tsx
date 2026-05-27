@@ -76,8 +76,8 @@ export default function CreateExamQuiz() {
       return;
     }
 
-    console.log('Form submitted:', formData);
-    console.log('Action:', action);
+    // console.log('Form submitted:', formData);
+    // console.log('Action:', action);
     
     // Handle form submission here
     if (action === 'saveAndAddQuestions') {

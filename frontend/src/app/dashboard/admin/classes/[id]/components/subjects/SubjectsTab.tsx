@@ -73,7 +73,7 @@ export default function ClassSubjectsPage({
 
   const handleAddSubject = (subjectData: Partial<Subject>) => {
     // In real app, this would refresh the parent class data or call an API
-    console.log('Adding subject to class:', subjectData);
+    // console.log('Adding subject to class:', subjectData);
   };
 
   return (

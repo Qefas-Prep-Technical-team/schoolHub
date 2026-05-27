@@ -119,7 +119,7 @@ export const useAuthStore = create<AuthState>()(
         const state = get();
 
         if (token && !state.isAuthenticated) {
-          console.log("🔄 Re-initializing auth state from token");
+          // console.log("🔄 Re-initializing auth state from token");
         }
 
         set({ isInitialized: true });
