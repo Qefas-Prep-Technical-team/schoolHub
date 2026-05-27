@@ -37,7 +37,7 @@ export default function TeacherLoginForm() {
     });
 
     const emailValue = watch("email");
-    console.log("Email value:", emailValue);
+
     const passwordValue = watch("password");
 
     const onSubmit = (data: LoginFormData) => {

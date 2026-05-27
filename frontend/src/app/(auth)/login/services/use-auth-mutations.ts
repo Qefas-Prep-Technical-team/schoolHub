@@ -25,7 +25,7 @@ export const useLoginMutation = () => {
       localStorage.clear();
       queryClient.clear();
       
-      console.log("Login API response:", response);
+
       const userWithType = {
         ...response.data.user,
         // Ensure 'name' is populated. Fallback to 'fullName' if that's what backend sends

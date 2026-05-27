@@ -20,44 +20,16 @@ app.use(helmet());
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, etc.)
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
 
-      const allowedOrigins = [
-        "http://localhost:3000",
-        "https://qefashub.flexitistudio.com",
-        "https://www.qefashub.flexitistudio.com",
-        "https://schoolhub.flexitistudio.com",
-        "https://www.schoolhub.flexitistudio.com",
-        "https://qefas.com",
-        "https://www.qefas.com",
-        "https://qefashub.com",
-        "https://www.qefashub.com",
-        "https://api.qefashub.com",
-        "https://www.api.qefashub.com",
-      ];
+      const allowedPattern = /^(https?:\/\/)?(localhost(:\d+)?|([a-zA-Z0-9-]+\.)*qefashub\.com|([a-zA-Z0-9-]+\.)*qefas\.com|([a-zA-Z0-9-]+\.)*flexitistudio\.com)$/i;
 
-      try {
-        const parsedUrl = new URL(origin);
-        const hostname = parsedUrl.hostname;
-
-        const isAllowed =
-          allowedOrigins.includes(origin) ||
-          hostname === "localhost" ||
-          hostname.endsWith(".localhost") ||
-          hostname === "qefas.com" ||
-          hostname.endsWith(".qefas.com") ||
-          hostname === "qefashub.com" ||
-          hostname.endsWith(".qefashub.com") ||
-          hostname.endsWith(".flexitistudio.com");
-
-        if (isAllowed) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
-      } catch (e) {
-        callback(null, false);
+      if (allowedPattern.test(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`[CORS BLOCKED] Origin: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,

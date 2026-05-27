@@ -68,7 +68,7 @@ export default function LoginForm({
         setIsPending(true);
 
         try {
-            console.log("Form submitted with:", data);
+
             const result = await onLogin({
                 email: data.email,
                 password: data.password,

@@ -13,7 +13,7 @@ export const authRateLimiter = rateLimit({
 
 export const loginRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // Limit each IP to 5 failed login attempts per hour
+  max: 10, // Limit each IP to 5 failed login attempts per hour
   skipSuccessfulRequests: true, // Don't count successful logins
   message: {
     success: false,
