@@ -9,6 +9,7 @@ import PageHeader from './PageHeader';
 import FilterChips from './FilterChips';
 import ClassGrid from './ClassGrid';
 import EmptyState from './EmptyState';
+import { useMemo } from 'react';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
@@ -61,6 +62,32 @@ export default function MyClassesPage() {
             subject: '',
         });
     };
+
+    const filterOptions = useMemo(() => {
+        const options = {
+            academicYear: new Set<string>(),
+            term: new Set<string>(),
+            level: new Set<string>(),
+            class: new Set<string>(),
+            subject: new Set<string>(),
+        };
+
+        classes.forEach(cls => {
+            if (cls.academicYear) options.academicYear.add(cls.academicYear);
+            if (cls.term) options.term.add(cls.term);
+            if (cls.level) options.level.add(cls.level);
+            if (cls.name) options.class.add(cls.name);
+            if (cls.subject) options.subject.add(cls.subject);
+        });
+
+        return {
+            academicYear: Array.from(options.academicYear).sort(),
+            term: Array.from(options.term).sort(),
+            level: Array.from(options.level).sort(),
+            class: Array.from(options.class).sort(),
+            subject: Array.from(options.subject).sort(),
+        };
+    }, [classes]);
 
     const handleClassClick = (classId: string) => {
         router.push(`/dashboard/teacher/my-classes/${classId}`);
@@ -138,6 +165,7 @@ export default function MyClassesPage() {
 
                     <FilterChips
                         filters={filters}
+                        options={filterOptions}
                         onFilterChange={handleFilterChange}
                         onClearFilters={handleClearFilters}
                     />

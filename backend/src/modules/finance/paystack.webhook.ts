@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import crypto from "crypto";
 import { FinanceService } from "./finance.service";
+import { handleError } from "../../utils/error-handler";
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "";
 
@@ -41,7 +42,6 @@ export const paystackWebhookHandler = async (req: Request, res: Response) => {
     // Always respond with 200 to Paystack
     res.sendStatus(200);
   } catch (error: any) {
-    console.error("[Paystack Webhook] Error:", error.message);
-    res.status(500).send("Internal Webhook Error");
+    return handleError(res, error, "finance.paystackWebhookHandler");
   }
 };

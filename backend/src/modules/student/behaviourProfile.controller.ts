@@ -5,6 +5,7 @@ import {
   getStudentBehaviourProfileService,
   upsertStudentBehaviourProfileService,
 } from "./behaviourProfile.service";
+import { handleError } from "../../utils/error-handler";
 
 export const getStudentBehaviourProfile = async (req: Request, res: Response) => {
   try {
@@ -17,11 +18,7 @@ export const getStudentBehaviourProfile = async (req: Request, res: Response) =>
       data: profile,
     });
   } catch (error: any) {
-    console.error("getStudentBehaviourProfile error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch student behaviour profile",
-    });
+    return handleError(res, error, "student.getStudentBehaviourProfile");
   }
 };
 
@@ -56,11 +53,7 @@ export const upsertStudentBehaviourProfile = async (req: Request, res: Response)
       data: updatedProfile,
     });
   } catch (error: any) {
-    console.error("upsertStudentBehaviourProfile error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update student behaviour profile",
-    });
+    return handleError(res, error, "student.upsertStudentBehaviourProfile");
   }
 };
 

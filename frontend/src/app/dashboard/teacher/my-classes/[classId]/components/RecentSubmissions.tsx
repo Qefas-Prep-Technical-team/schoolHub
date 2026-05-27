@@ -1,3 +1,7 @@
+import { FileText, ArrowRight, CheckCircle2, AlertCircle, FileBox } from 'lucide-react';
+import { motion } from 'framer-motion';
+import Image from 'next/image';
+
 interface Submission {
   id: string;
   studentName: string;
@@ -14,104 +18,109 @@ interface RecentSubmissionsProps {
   onViewAll: () => void;
 }
 
-import Image from 'next/image';
-
 export default function RecentSubmissions({ submissions, onGradeSubmission, onViewAll }: RecentSubmissionsProps) {
-  const getStatusColor = (status: Submission['status']) => {
+  const getStatusStyles = (status: Submission['status']) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
       case 'graded':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
       case 'late':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400';
       default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
+        return 'bg-slate-100 text-slate-500 dark:bg-slate-800';
     }
   };
 
-  const getStatusText = (status: Submission['status']) => {
+  const getStatusIcon = (status: Submission['status']) => {
     switch (status) {
       case 'pending':
-        return 'Pending';
+        return <AlertCircle size={10} />;
       case 'graded':
-        return 'Graded';
+        return <CheckCircle2 size={10} />;
       case 'late':
-        return 'Late';
-      default:
-        return 'Unknown';
+        return <AlertCircle size={10} />;
     }
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/40 dark:shadow-none">
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+          <FileText className="text-primary" size={20} />
           Recent Submissions
         </h2>
         <button
           onClick={onViewAll}
-          className="text-sm text-primary hover:text-primary/80 transition-colors"
+          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-dark transition-all"
         >
           View All
+          <ArrowRight size={14} />
         </button>
       </div>
 
-      <div className="space-y-4">
-        {submissions.map((submission) => (
-          <div
+      <div className="space-y-3">
+        {submissions.map((submission, idx) => (
+          <motion.div
             key={submission.id}
-            className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800/80 rounded-lg transition-colors"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: idx * 0.05 }}
+            className="group flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
           >
             <div className="flex items-center gap-4">
-              <Image
-                src={submission.avatar}
-                alt={submission.studentName}
-                width={48}
-                height={48}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white">
+              <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm transition-transform group-hover:scale-105 border border-slate-200 dark:border-slate-700">
+                <Image
+                  src={submission.avatar || `/users/user ${(idx % 6) + 1}.jpeg`}
+                  alt={submission.studentName}
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-primary transition-colors">
                   {submission.studentName}
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {submission.assignment}
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                    {submission.assignment}
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-600">•</span>
+                  <span className="text-[9px] font-bold tracking-widest text-slate-400">
                     {submission.submittedDate}
                   </span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(submission.status)}`}>
-                    {getStatusText(submission.status)}
-                  </span>
-                  {submission.grade && (
-                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                      {submission.grade}%
-                    </span>
-                  )}
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                   <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest ${getStatusStyles(submission.status)}`}>
+                      {getStatusIcon(submission.status)}
+                      {submission.status}
+                   </span>
+                   {submission.grade && (
+                     <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                       Grade: {submission.grade}%
+                     </span>
+                   )}
                 </div>
               </div>
             </div>
 
             <button
               onClick={() => onGradeSubmission(submission.id)}
-              className="flex items-center justify-center h-9 px-3 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors text-sm font-bold whitespace-nowrap"
+              className="flex items-center justify-center h-10 px-4 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl hover:bg-primary hover:text-white hover:border-transparent transition-all border border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest shadow-sm active:scale-95"
             >
-              {submission.status === 'graded' ? 'Review Grade' : 'Grade Now'}
+              {submission.status === 'graded' ? 'Review' : 'Grade'}
             </button>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       {submissions.length === 0 && (
-        <div className="text-center py-8">
-          <div className="text-gray-400 dark:text-gray-600 mb-3">
-            <span className="material-symbols-outlined text-4xl">
-              assignment
-            </span>
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-700">
+             <FileBox className="text-slate-300" size={24} />
           </div>
-          <p className="text-gray-500 dark:text-gray-400">No recent submissions</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No recent submissions</p>
         </div>
       )}
     </div>

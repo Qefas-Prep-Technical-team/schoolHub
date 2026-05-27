@@ -2,6 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AdminRole, UserRole } from "@prisma/client";
 import prisma from "../../config/database";
+import { handleError } from "../../utils/error-handler";
 
 // Extend Express Request type to include admin and school
 declare global {
@@ -88,11 +89,7 @@ export const requireAdmin = async (
 
     next();
   } catch (error) {
-    console.error("Admin middleware error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "admin.requireAdmin");
   }
 };
 
@@ -124,11 +121,7 @@ export const requireAdminRole = (requiredRoles: AdminRole | AdminRole[]) => {
 
       next();
     } catch (error) {
-      console.error("Admin role middleware error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Server error",
-      });
+      return handleError(res, error, "admin.requireAdminRole");
     }
   };
 };
@@ -180,11 +173,7 @@ export const requireSuperAdmin = async (
 
     next();
   } catch (error) {
-    console.error("Super admin middleware error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return handleError(res, error, "admin.requireSuperAdmin");
   }
 };
 
@@ -231,11 +220,7 @@ export const requireSchoolAccess = (schoolId?: string) => {
 
       next();
     } catch (error) {
-      console.error("School access middleware error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Server error",
-      });
+      return handleError(res, error, "admin.requireSchoolAccess");
     }
   };
 };

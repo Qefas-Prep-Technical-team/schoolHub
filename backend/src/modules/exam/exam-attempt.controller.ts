@@ -11,6 +11,7 @@ import {
   startExamAttemptService,
   submitExamAttemptService,
 } from "./exam-attempt.service";
+import { handleError } from "../../utils/error-handler";
 
 export const startExamAttempt = async (req: Request, res: Response) => {
   try {
@@ -32,10 +33,7 @@ export const startExamAttempt = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to start exam attempt",
-    });
+    return handleError(res, error, "exam.startExamAttempt");
   }
 };
 
@@ -58,10 +56,7 @@ export const getExamAttempt = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch exam attempt",
-    });
+    return handleError(res, error, "exam.getExamAttempt");
   }
 };
 
@@ -90,10 +85,7 @@ export const saveExamAnswer = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to save answer",
-    });
+    return handleError(res, error, "exam.saveExamAnswer");
   }
 };
 
@@ -117,10 +109,7 @@ export const submitExamAttempt = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to submit exam",
-    });
+    return handleError(res, error, "exam.submitExamAttempt");
   }
 };
 
@@ -156,10 +145,7 @@ export const getExamResult = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch result",
-    });
+    return handleError(res, error, "exam.getExamResult");
   }
 };
 
@@ -194,10 +180,7 @@ export const getExamReviewData = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch review data",
-    });
+    return handleError(res, error, "exam.getExamReviewData");
   }
 };
 
@@ -220,10 +203,7 @@ export const getMyExamAttempts = async (req: Request, res: Response) => {
       ...data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch my exam attempts",
-    });
+    return handleError(res, error, "exam.getMyExamAttempts");
   }
 };
 export const getExamAttempts = async (req: Request, res: Response) => {
@@ -238,10 +218,7 @@ export const getExamAttempts = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch exam attempts",
-    });
+    return handleError(res, error, "exam.getExamAttempts");
   }
 };
 
@@ -267,9 +244,6 @@ export const deleteExamAttempt = async (req: Request, res: Response) => {
       message: "Exam attempt deleted successfully",
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to delete exam attempt",
-    });
+    return handleError(res, error, "exam.deleteExamAttempt");
   }
 };

@@ -13,10 +13,7 @@ export const getTeacherSettings = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch settings",
-    });
+    return handleError(res, error, "teacher.getTeacherSettings");
   }
 };
 
@@ -33,13 +30,11 @@ export const updateTeacherSettings = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update settings",
-    });
+    return handleError(res, error, "teacher.updateTeacherSettings");
   }
 };
 import { sendEmailUpdateVerification } from "../auth/auth.service";
+import { handleError } from "../../utils/error-handler";
 
 /**
  * Handle fetching teacher dashboard stats
@@ -56,11 +51,7 @@ export const getTeacherDashboardStats = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[Teacher Dashboard Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch teacher dashboard stats",
-    });
+    return handleError(res, error, "teacher.getTeacherDashboardStats");
   }
 };
 
@@ -78,11 +69,7 @@ export const getTeacherLinkedSchools = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[Teacher Dashboard Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch linked schools",
-    });
+    return handleError(res, error, "teacher.getTeacherLinkedSchools");
   }
 };
 
@@ -105,11 +92,7 @@ export const getTeacherPerformanceTrends = async (req: Request, res: Response) =
       data,
     });
   } catch (error: any) {
-    console.error(`[Teacher Dashboard Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch performance trends",
-    });
+    return handleError(res, error, "teacher.getTeacherPerformanceTrends");
   }
 };
 
@@ -135,11 +118,7 @@ export const getTeacherStudents = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[Teacher Dashboard Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch students",
-    });
+    return handleError(res, error, "teacher.getTeacherStudents");
   }
 };
 /**
@@ -157,11 +136,7 @@ export const getTeacherClasses = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[Teacher Dashboard Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch teacher classes",
-    });
+    return handleError(res, error, "teacher.getTeacherClasses");
   }
 };
 /**
@@ -179,11 +154,7 @@ export const getTeacherClassDetail = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[Teacher Dashboard Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch class details",
-    });
+    return handleError(res, error, "teacher.getTeacherClassDetail");
   }
 };
 
@@ -203,11 +174,7 @@ export const getTeacherClassAssignments = async (req: Request, res: Response) =>
       data,
     });
   } catch (error: any) {
-    console.error(`[Teacher Dashboard Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch class assignments",
-    });
+    return handleError(res, error, "teacher.getTeacherClassAssignments");
   }
 };
 
@@ -226,11 +193,7 @@ export const getTeacherClassGrades = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[Teacher Dashboard Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch grades",
-    });
+    return handleError(res, error, "teacher.getTeacherClassGrades");
   }
 };
 
@@ -256,12 +219,8 @@ export const getTeacherSubjects = async (req: Request, res: Response) => {
             data,
         });
     } catch (error: any) {
-        console.error(`[Teacher Dashboard Controller Error]`, error);
-        return res.status(400).json({
-            success: false,
-            message: error.message || "Failed to fetch teacher subjects",
-        });
-    }
+    return handleError(res, error, "teacher.getTeacherSubjects");
+  }
 };
 
 /**
@@ -284,12 +243,8 @@ export const getTeacherProfile = async (req: Request, res: Response) => {
             data: profile,
         });
     } catch (error: any) {
-        console.error(`[Teacher Profile Controller Error]`, error);
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
-    }
+    return handleError(res, error, "teacher.getTeacherProfile");
+  }
 };
 
 /**
@@ -314,12 +269,8 @@ export const updateTeacherProfile = async (req: Request, res: Response) => {
             data: updatedProfile,
         });
     } catch (error: any) {
-        console.error(`[Teacher Profile Controller Error]`, error);
-        return res.status(400).json({
-            success: false,
-            message: error.message || "Failed to update profile",
-        });
-    }
+    return handleError(res, error, "teacher.updateTeacherProfile");
+  }
 };
 
 /**
@@ -342,12 +293,8 @@ export const requestTeacherEmailUpdate = async (req: Request, res: Response) => 
             message: "Verification code sent to your new email",
         });
     } catch (error: any) {
-        console.error(`[Teacher Profile Controller Error]`, error);
-        return res.status(400).json({
-            success: false,
-            message: error.message || "Failed to request email update",
-        });
-    }
+    return handleError(res, error, "teacher.requestTeacherEmailUpdate");
+  }
 };
 
 /**
@@ -369,10 +316,6 @@ export const confirmTeacherEmailUpdate = async (req: Request, res: Response) => 
             message: "Email updated successfully",
         });
     } catch (error: any) {
-        console.error(`[Teacher Profile Controller Error]`, error);
-        return res.status(400).json({
-            success: false,
-            message: error.message || "Failed to verify email update",
-        });
-    }
+    return handleError(res, error, "teacher.confirmTeacherEmailUpdate");
+  }
 };

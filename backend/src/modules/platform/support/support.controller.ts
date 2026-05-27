@@ -7,6 +7,7 @@ import { getSingleString } from "../../../utils/request-utils";
 import { getSchoolUsageService } from "../../subscription/quota.service";
 import { PricingService } from "../billing/pricing.service";
 import { getIO } from "../../../socket";
+import { handleError } from "../../../utils/error-handler";
 
 /**
  * Search schools for support purposes
@@ -115,8 +116,7 @@ export const searchSchools = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error("Search schools failed:", error);
-    return res.status(500).json({ success: false, message: "Search failed" });
+    return handleError(res, error, "support.searchSchools");
   }
 };
 
@@ -151,7 +151,7 @@ export const toggleSchoolStatus = async (req: Request, res: Response) => {
       data: school
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to update school status" });
+    return handleError(res, error, "support.toggleSchoolStatus");
   }
 };
 
@@ -208,7 +208,7 @@ export const impersonateAdmin = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Impersonation failed" });
+    return handleError(res, error, "support.impersonateAdmin");
   }
 };
 
@@ -225,8 +225,7 @@ export const listTickets = async (req: Request, res: Response) => {
       });
       return res.status(200).json({ success: true, data: tickets });
   } catch (error) {
-      console.error("List tickets error:", error);
-      return res.status(500).json({ success: false, message: 'Failed to fetch tickets' });
+    return handleError(res, error, "support.listTickets");
   }
 };
 
@@ -247,7 +246,7 @@ export const getTicketSupportDetails = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, data: ticket });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to load ticket" });
+    return handleError(res, error, "support.getTicketSupportDetails");
   }
 };
 
@@ -274,7 +273,7 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
     
     return res.status(200).json({ success: true, data: ticket });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to update ticket" });
+    return handleError(res, error, "support.updateTicketStatus");
   }
 };
 
@@ -320,7 +319,7 @@ export const replyToTicket = async (req: Request, res: Response) => {
 
     return res.status(201).json({ success: true, data: message });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to reply to ticket" });
+    return handleError(res, error, "support.replyToTicket");
   }
 };
 
@@ -363,8 +362,7 @@ export const updateSchoolLimits = async (req: Request, res: Response) => {
       data: school
     });
   } catch (error) {
-    console.error("Failed to update school limits:", error);
-    return res.status(500).json({ success: false, message: "Failed to update school limits" });
+    return handleError(res, error, "support.updateSchoolLimits");
   }
 };
 
@@ -431,8 +429,7 @@ export const getSchoolDetails = async (req: Request, res: Response) => {
       } 
     });
   } catch (error) {
-    console.error("Failed to get school details:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch school details" });
+    return handleError(res, error, "support.getSchoolDetails");
   }
 };
 
@@ -525,8 +522,7 @@ export const updateSchoolPlan = async (req: Request, res: Response) => {
       data: school 
     });
   } catch (error) {
-    console.error("Failed to update school plan:", error);
-    return res.status(500).json({ success: false, message: "Failed to update school plan" });
+    return handleError(res, error, "support.updateSchoolPlan");
   }
 };
 
@@ -538,8 +534,7 @@ export const listAllSubscriptionPlans = async (req: Request, res: Response) => {
     const plans = await PricingService.resolveAllPlans();
     return res.status(200).json({ success: true, data: plans });
   } catch (error) {
-    console.error("Failed to list plans:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch plans" });
+    return handleError(res, error, "support.listAllSubscriptionPlans");
   }
 };
 
@@ -631,8 +626,7 @@ export const searchStudents = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error("Search students failed:", error);
-    return res.status(500).json({ success: false, message: "Search failed" });
+    return handleError(res, error, "support.searchStudents");
   }
 };
 
@@ -732,8 +726,7 @@ export const searchTeachers = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error("Search teachers failed:", error);
-    return res.status(500).json({ success: false, message: "Search failed" });
+    return handleError(res, error, "support.searchTeachers");
   }
 };
 
@@ -834,8 +827,7 @@ export const searchParents = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error("Search parents failed:", error);
-    return res.status(500).json({ success: false, message: "Search failed" });
+    return handleError(res, error, "support.searchParents");
   }
 };
 
@@ -864,8 +856,7 @@ export const getPlatformFeatures = async (req: Request, res: Response) => {
     
     return res.status(200).json({ success: true, data: features });
   } catch (error) {
-    console.error("Get platform features failed:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch features" });
+    return handleError(res, error, "support.getPlatformFeatures");
   }
 };
 
@@ -888,8 +879,7 @@ export const updatePlatformFeature = async (req: Request, res: Response) => {
       data: feature 
     });
   } catch (error) {
-    console.error("Update platform feature failed:", error);
-    return res.status(500).json({ success: false, message: "Update failed" });
+    return handleError(res, error, "support.updatePlatformFeature");
   }
 };
 
@@ -934,9 +924,8 @@ export const getPublicRoleFeatures = async (req: Request, res: Response) => {
             data: featureMap
         });
     } catch (error) {
-        console.error("Error fetching public features:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
+    return handleError(res, error, "support.getPublicRoleFeatures");
+  }
 };
 
 /**
@@ -986,8 +975,7 @@ export const getStudentDetails = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, data: student });
   } catch (error) {
-    console.error("Failed to get student details:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch student details" });
+    return handleError(res, error, "support.getStudentDetails");
   }
 };
 
@@ -1073,8 +1061,7 @@ export const updateStudentPlan = async (req: Request, res: Response) => {
       data: student 
     });
   } catch (error) {
-    console.error("Failed to update student plan:", error);
-    return res.status(500).json({ success: false, message: "Failed to update student plan" });
+    return handleError(res, error, "support.updateStudentPlan");
   }
 };
 
@@ -1128,8 +1115,7 @@ export const getTeacherDetails = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, data: teacher });
   } catch (error) {
-    console.error("Failed to get teacher details:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch teacher details" });
+    return handleError(res, error, "support.getTeacherDetails");
   }
 };
 
@@ -1215,8 +1201,7 @@ export const updateTeacherPlan = async (req: Request, res: Response) => {
       data: teacher 
     });
   } catch (error) {
-    console.error("Failed to update teacher plan:", error);
-    return res.status(500).json({ success: false, message: "Failed to update teacher plan" });
+    return handleError(res, error, "support.updateTeacherPlan");
   }
 };
 
@@ -1269,8 +1254,7 @@ export const getParentDetails = async (req: Request, res: Response) => {
       data: parent
     });
   } catch (error) {
-    console.error("Failed to fetch parent details:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch parent details" });
+    return handleError(res, error, "support.getParentDetails");
   }
 };
 
@@ -1329,7 +1313,6 @@ export const updateParentPlan = async (req: Request, res: Response) => {
       data: parent 
     });
   } catch (error) {
-    console.error("Failed to update parent plan:", error);
-    return res.status(500).json({ success: false, message: "Failed to update parent plan" });
+    return handleError(res, error, "support.updateParentPlan");
   }
 };

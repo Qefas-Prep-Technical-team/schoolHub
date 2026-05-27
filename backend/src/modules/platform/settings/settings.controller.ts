@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../../../config/database";
 import { createActivityLog } from "../logs/logs.controller";
+import { handleError } from "../../../utils/error-handler";
 
 /**
  * Get all platform settings
@@ -16,7 +17,7 @@ export const getPlatformSettings = async (req: Request, res: Response) => {
     
     return res.status(200).json({ success: true, data: settingsMap });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to fetch settings" });
+    return handleError(res, error, "settings.getPlatformSettings");
   }
 };
 
@@ -71,7 +72,7 @@ export const getPublicPlatformSettings = async (req: Request, res: Response) => 
     
     return res.status(200).json({ success: true, data: settingsMap });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to fetch public settings" });
+    return handleError(res, error, "settings.getPublicPlatformSettings");
   }
 };
 
@@ -108,7 +109,7 @@ export const updateSetting = async (req: Request, res: Response) => {
       data: setting
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to update setting" });
+    return handleError(res, error, "settings.updateSetting");
   }
 };
 
@@ -147,6 +148,6 @@ export const batchUpdateSettings = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, message: "Settings batch updated" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to batch update settings" });
+    return handleError(res, error, "settings.batchUpdateSettings");
   }
 };

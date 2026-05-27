@@ -5,11 +5,15 @@ export interface Student {
   id: string
   name: string
   studentId: string
+  studentCode?: string
+  email?: string
   gender: Gender
   status: StudentStatus
   avatar: string
   performance?: string
-  attendance?: string
+  attendance?: string | number
+  grade?: string
+  lastExam?: string
 }
 
 export interface ClassInfo {

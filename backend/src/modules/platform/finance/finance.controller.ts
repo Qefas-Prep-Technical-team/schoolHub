@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../../config/database";
+import { handleError } from "../../../utils/error-handler";
 
 /**
  * List all platform transactions across all schools
@@ -28,7 +29,7 @@ export const listAllTransactions = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, data: transactions });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to fetch global transactions" });
+    return handleError(res, error, "finance.listAllTransactions");
   }
 };
 
@@ -60,7 +61,7 @@ export const getPlatformRevenue = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to aggregate revenue data" });
+    return handleError(res, error, "finance.getPlatformRevenue");
   }
 };
 
@@ -82,6 +83,6 @@ export const getSettlementStatus = async (req: Request, res: Response) => {
 
      return res.status(200).json({ success: true, data: schoolsWithSubaccounts });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to fetch settlement statuses" });
+    return handleError(res, error, "finance.getSettlementStatus");
   }
 };

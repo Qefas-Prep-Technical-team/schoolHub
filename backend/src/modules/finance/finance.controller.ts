@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { FinanceService } from "./finance.service";
 import prisma from "../../config/database";
 import { getSingleString } from "../../utils/request-utils";
+import { handleError } from "../../utils/error-handler";
 
 export class FinanceController {
   /**
@@ -18,8 +19,7 @@ export class FinanceController {
         data: account
       });
     } catch (error: any) {
-      console.error("[FinanceController] Setup Bank Error:", error);
-      res.status(400).json({ success: false, message: error.message });
+      return handleError(res, error, "finance.setupBank");
     }
   }
 
@@ -46,7 +46,7 @@ export class FinanceController {
         data: initializationData
       });
     } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message });
+      return handleError(res, error, "finance.initializePayment");
     }
   }
 
@@ -59,7 +59,7 @@ export class FinanceController {
       const result = await FinanceService.verifyPayment(reference);
       res.status(200).json(result);
     } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message });
+      return handleError(res, error, "finance.verifyPayment");
     }
   }
 
@@ -73,8 +73,7 @@ export class FinanceController {
       const analytics = await FinanceService.getSchoolAnalytics(schoolId);
       res.status(200).json({ success: true, data: analytics });
     } catch (error: any) {
-      console.error("[FinanceController] Analytics Error:", error);
-      res.status(400).json({ success: false, message: error.message });
+      return handleError(res, error, "finance.getSchoolAnalytics");
     }
   }
 
@@ -94,7 +93,7 @@ export class FinanceController {
       });
       res.status(200).json({ success: true, data: history });
     } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message });
+      return handleError(res, error, "finance.getParentHistory");
     }
   }
 
@@ -106,7 +105,7 @@ export class FinanceController {
       const banks = await FinanceService.listBanks();
       res.json({ success: true, data: banks });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+      return handleError(res, error, "finance.Unknown");
     }
   };
 
@@ -118,7 +117,7 @@ export class FinanceController {
       const transactions = await FinanceService.getGlobalTransactions();
       res.status(200).json({ success: true, data: transactions });
     } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message });
+      return handleError(res, error, "finance.getGlobalTransactions");
     }
   }
 
@@ -131,7 +130,7 @@ export class FinanceController {
       const result = await FinanceService.removeSubaccount(accountId);
       res.status(200).json(result);
     } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message });
+      return handleError(res, error, "finance.removeSubaccount");
     }
   }
 
@@ -145,8 +144,7 @@ export class FinanceController {
       const result = await FinanceService.syncSubaccountStatus(schoolId, accountId);
       res.status(200).json(result);
     } catch (error: any) {
-      console.error("[FinanceController] Sync Subaccount Error:", error);
-      res.status(400).json({ success: false, message: error.message });
+      return handleError(res, error, "finance.syncSubaccountStatus");
     }
   }
 }

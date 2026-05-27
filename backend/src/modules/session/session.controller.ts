@@ -8,6 +8,7 @@ import {
   archiveSessionService,
   deleteSessionService,
 } from "./session.service";
+import { handleError } from "../../utils/error-handler";
 
 export const createSession = async (req: Request, res: Response) => {
   try {
@@ -36,10 +37,7 @@ export const createSession = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to create session",
-    });
+    return handleError(res, error, "session.createSession");
   }
 };
 
@@ -53,10 +51,7 @@ export const getSessions = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch sessions",
-    });
+    return handleError(res, error, "session.getSessions");
   }
 };
 
@@ -77,10 +72,7 @@ export const getActiveSession = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch active session",
-    });
+    return handleError(res, error, "session.getActiveSession");
   }
 };
 
@@ -110,10 +102,7 @@ export const updateSession = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update session",
-    });
+    return handleError(res, error, "session.updateSession");
   }
 };
 
@@ -136,10 +125,7 @@ export const archiveSession = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to archive session",
-    });
+    return handleError(res, error, "session.archiveSession");
   }
 };
 
@@ -161,9 +147,6 @@ export const deleteSession = async (req: Request, res: Response) => {
       message: "Session deleted successfully",
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to delete session",
-    });
+    return handleError(res, error, "session.deleteSession");
   }
 };

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../../config/database";
+import { handleError } from "../../../utils/error-handler";
 
 /**
  * List all platform activity logs
@@ -40,7 +41,7 @@ export const listLogs = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to fetch activity logs" });
+    return handleError(res, error, "logs.listLogs");
   }
 };
 

@@ -4,6 +4,7 @@ import { hashPassword } from "../auth/auth.service";
 import crypto from "crypto";
 import { Resend } from "resend";
 import { getSingleString } from "../../../utils/request-utils";
+import { handleError } from "../../../utils/error-handler";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -97,7 +98,7 @@ export const createStaff = async (req: Request, res: Response) => {
       data: { id: staff.id, fullName: staff.fullName, email: staff.email, role: staff.role }
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to create staff" });
+    return handleError(res, error, "staff.createStaff");
   }
 };
 
@@ -139,7 +140,7 @@ export const listStaff = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to list staff" });
+    return handleError(res, error, "staff.listStaff");
   }
 };
 
@@ -176,7 +177,7 @@ export const toggleStaffStatus = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, message: `Staff account ${isActive ? 'activated' : 'deactivated'}` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to update status" });
+    return handleError(res, error, "staff.toggleStaffStatus");
   }
 };
 
@@ -210,7 +211,7 @@ export const deleteStaff = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, message: "Staff account deleted" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to delete staff" });
+    return handleError(res, error, "staff.deleteStaff");
   }
 };
 
@@ -237,7 +238,7 @@ export const verifyStaffInvite = async (req: Request, res: Response) => {
       data: { email: staff.email, fullName: staff.fullName }
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Server error" });
+    return handleError(res, error, "staff.verifyStaffInvite");
   }
 };
 
@@ -286,7 +287,7 @@ export const completeStaffSetup = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, message: "Account setup successfully. You can now login." });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to setup account" });
+    return handleError(res, error, "staff.completeStaffSetup");
   }
 };
 
@@ -313,7 +314,7 @@ export const updateStaffRole = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, message: "Role updated successfully", data: updatedStaff });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to update role" });
+    return handleError(res, error, "staff.updateStaffRole");
   }
 };
 
@@ -368,6 +369,6 @@ export const requestCredentialReset = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, message: "Credential reset email dispatched securely." });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to dispatch reset email" });
+    return handleError(res, error, "staff.requestCredentialReset");
   }
 };

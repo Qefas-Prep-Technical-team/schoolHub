@@ -13,81 +13,74 @@ interface ClassStatsProps {
 
 export default function ClassStats({ stats }: ClassStatsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
-      <StatCard 
-        label="Average Grade"
-        value={`${stats.averageGrade}%`}
-        subValue="+5% from last month"
-        icon={Award}
-        color="text-emerald-500"
-        bgColor="bg-emerald-500/10"
-      />
-      <StatCard 
-        label="Assignments"
-        value={stats.assignmentsCompleted}
-        subValue="Completed this term"
-        icon={ClipboardList}
-        color="text-blue-500"
-        bgColor="bg-blue-500/10"
-      />
-      <StatCard 
-        label="Quizzes"
-        value={stats.quizzesCompleted}
-        subValue="Completed this term"
-        icon={PenTool}
-        color="text-purple-500"
-        bgColor="bg-purple-500/10"
-      />
-      <StatCard 
-        label="Upcoming"
-        value={stats.upcomingDeadlines}
-        subValue="Active deadlines"
-        icon={Calendar}
-        color="text-amber-500"
-        bgColor="bg-amber-500/10"
-      />
-      <StatCard 
-        label="Participation"
-        value={`${stats.participationRate}%`}
-        subValue="Engagement score"
-        icon={ShieldCheck}
-        color="text-primary"
-        bgColor="bg-primary/10"
-      />
-    </div>
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden"
+    >
+      <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-y md:divide-y-0 divide-slate-100 dark:divide-slate-800/50">
+        <StatBlock 
+          label="Class Average"
+          value={`${stats.averageGrade}%`}
+          trend="+5%"
+          icon={Award}
+          color="text-emerald-500"
+          bg="bg-emerald-500/10"
+        />
+        <StatBlock 
+          label="Assignments"
+          value={stats.assignmentsCompleted}
+          trend="+12 this term"
+          icon={ClipboardList}
+          color="text-blue-500"
+          bg="bg-blue-500/10"
+        />
+        <StatBlock 
+          label="Quizzes"
+          value={stats.quizzesCompleted}
+          trend="+3 this term"
+          icon={PenTool}
+          color="text-purple-500"
+          bg="bg-purple-500/10"
+        />
+        <StatBlock 
+          label="Deadlines"
+          value={stats.upcomingDeadlines}
+          trend="Urgent"
+          icon={Calendar}
+          color="text-amber-500"
+          bg="bg-amber-500/10"
+        />
+        <StatBlock 
+          label="Engagement"
+          value={`${stats.participationRate}%`}
+          trend="High"
+          icon={ShieldCheck}
+          color="text-primary"
+          bg="bg-primary/10"
+        />
+      </div>
+    </motion.div>
   );
 }
 
-interface StatCardProps {
-    label: string;
-    value: string | number;
-    subValue: string;
-    icon: React.ElementType;
-    color: string;
-    bgColor: string;
-}
-
-function StatCard({ label, value, subValue, icon: Icon, color, bgColor }: StatCardProps) {
+function StatBlock({ label, value, trend, icon: Icon, color, bg }: any) {
     return (
-        <motion.div
-            whileHover={{ y: -5 }}
-            className="p-6 rounded-[2rem] bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-xl hover:shadow-2xl hover:shadow-primary/5 transition-all"
-        >
-            <div className="flex items-center gap-4 mb-4">
-                <div className={`p-4 rounded-2xl ${bgColor} ${color}`}>
-                    <Icon size={24} strokeWidth={2.5} />
+        <div className="p-6 md:p-8 flex flex-col justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+            <div className="flex items-center justify-between mb-6">
+                <div className={`p-3 rounded-2xl ${bg} ${color} transition-transform group-hover:scale-110`}>
+                    <Icon size={20} strokeWidth={2.5} />
                 </div>
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</span>
-                    <span className={`text-2xl font-black text-slate-900 dark:text-white`}>
-                        {value}
-                    </span>
+                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 ${trend.includes('+') ? 'text-emerald-500' : 'text-slate-400'}`}>
+                    {trend}
+                </span>
+            </div>
+            <div>
+                <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</h4>
+                <div className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
+                    {value}
                 </div>
             </div>
-            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                <TrendingUp size={12} className={subValue.includes('+') ? 'text-emerald-500' : 'text-slate-400'} />
-                {subValue}
-            </div>
-        </motion.div>
+        </div>
     );
 }

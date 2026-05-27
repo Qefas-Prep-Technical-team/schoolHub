@@ -5,15 +5,31 @@ export const ClassDetailSkeleton: React.FC = () => {
     return (
         <div className="space-y-10">
             {/* Header Hero Skeleton */}
-            <div className="relative h-64 md:h-80 w-full rounded-[3rem] overflow-hidden bg-slate-100 dark:bg-slate-900 flex flex-col justify-end p-10">
-                <div className="space-y-4 max-w-2xl">
-                    <Skeleton className="h-4 w-24 rounded-full" />
-                    <Skeleton className="h-12 w-3/4 rounded-2xl" />
-                    <div className="flex gap-3">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-4 w-32" />
+            <div className="relative w-full rounded-[2.5rem] overflow-hidden bg-slate-100 dark:bg-slate-900 flex flex-col border border-slate-200 dark:border-slate-800">
+                <div className="p-8 md:p-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                    <div className="space-y-6 flex-1 max-w-2xl">
+                        <div className="flex gap-3">
+                            <Skeleton className="h-8 w-40 rounded-xl" />
+                            <Skeleton className="h-8 w-24 rounded-xl" />
+                        </div>
+                        <div className="space-y-3">
+                            <Skeleton className="h-12 md:h-16 w-3/4 rounded-2xl" />
+                            <Skeleton className="h-6 w-1/2 rounded-xl" />
+                        </div>
                     </div>
+                    <Skeleton className="h-14 w-48 rounded-2xl shrink-0" />
+                </div>
+                {/* Meta Bar Skeleton */}
+                <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-slate-200 dark:divide-slate-800 border-t border-slate-200 dark:border-slate-800">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="flex items-center gap-3 p-5 md:p-6">
+                            <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
+                            <div className="space-y-2 w-full">
+                                <Skeleton className="h-3 w-16" />
+                                <Skeleton className="h-4 w-24" />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
 

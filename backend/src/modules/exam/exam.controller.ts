@@ -31,6 +31,7 @@ import {
   canManageSubjectPaper,
 } from "./exam.permissions";
 import { canTeacherManageSubject } from "../academic/teacher-subject.permissions";
+import { handleError } from "../../utils/error-handler";
 
 export const getExams = async (req: Request, res: Response) => {
   console.log("LOG: [getExams] Controller Reached", { query: req.query, user: req.user });
@@ -74,11 +75,7 @@ export const getExams = async (req: Request, res: Response) => {
       pagination: (result as any).pagination,
     });
   } catch (error: any) {
-    console.error("LOG ERROR: [getExams] controller failed:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch exams",
-    });
+    return handleError(res, error, "exam.getExams");
   }
 };
 
@@ -101,10 +98,7 @@ export const getExamById = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch exam details",
-    });
+    return handleError(res, error, "exam.getExamById");
   }
 };
 
@@ -120,10 +114,7 @@ export const getExamPapers = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch exam papers",
-    });
+    return handleError(res, error, "exam.getExamPapers");
   }
 };
 
@@ -143,10 +134,7 @@ export const getSubjectPaperById = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch subject paper details",
-    });
+    return handleError(res, error, "exam.getSubjectPaperById");
   }
 };
 
@@ -167,10 +155,7 @@ export const createExam = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to create exam",
-    });
+    return handleError(res, error, "exam.createExam");
   }
 };
 
@@ -245,10 +230,7 @@ export const createSubjectPaper = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to create subject paper",
-    });
+    return handleError(res, error, "exam.createSubjectPaper");
   }
 };
 
@@ -289,10 +271,7 @@ export const updateSubjectPaper = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update subject paper",
-    });
+    return handleError(res, error, "exam.updateSubjectPaper");
   }
 };
 
@@ -326,10 +305,7 @@ export const addManualQuestionsToPaper = async (req: Request, res: Response) => 
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to add manual questions",
-    });
+    return handleError(res, error, "exam.addManualQuestionsToPaper");
   }
 };
 
@@ -363,10 +339,7 @@ export const addAIQuestionsToPaper = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to add AI questions",
-    });
+    return handleError(res, error, "exam.addAIQuestionsToPaper");
   }
 };
 
@@ -403,11 +376,7 @@ export const validateSubjectPaper = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error("LOG ERROR: [validateSubjectPaper] controller failed:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Validation failed",
-    });
+    return handleError(res, error, "exam.validateSubjectPaper");
   }
 };
 
@@ -440,11 +409,7 @@ export const publishSubjectPaper = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error("LOG ERROR: [publishSubjectPaper] controller failed:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Publish failed",
-    });
+    return handleError(res, error, "exam.publishSubjectPaper");
   }
 };
 
@@ -457,10 +422,7 @@ export const validateExam = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Exam validation failed",
-    });
+    return handleError(res, error, "exam.validateExam");
   }
 };
 
@@ -473,10 +435,7 @@ export const publishExam = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Exam publish failed",
-    });
+    return handleError(res, error, "exam.publishExam");
   }
 };
 
@@ -494,10 +453,7 @@ export const updateQuestion = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update question",
-    });
+    return handleError(res, error, "exam.updateQuestion");
   }
 };
 
@@ -514,10 +470,7 @@ export const deleteQuestion = async (req: Request, res: Response) => {
       message: "Question deleted successfully",
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to delete question",
-    });
+    return handleError(res, error, "exam.deleteQuestion");
   }
 };
 
@@ -548,10 +501,7 @@ export const updateExam = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update exam",
-    });
+    return handleError(res, error, "exam.updateExam");
   }
 };
 
@@ -575,11 +525,7 @@ export const reorderQuestions = async (req: Request, res: Response) => {
       message: "Questions reordered successfully",
     });
   } catch (error: any) {
-    console.error("Reorder error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to reorder questions",
-    });
+    return handleError(res, error, "exam.reorderQuestions");
   }
 };
 export const unpublishExam = async (req: Request, res: Response) => {
@@ -595,10 +541,7 @@ export const unpublishExam = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to unpublish exam",
-    });
+    return handleError(res, error, "exam.unpublishExam");
   }
 };
 
@@ -626,10 +569,7 @@ export const unpublishSubjectPaper = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to unpublish subject paper",
-    });
+    return handleError(res, error, "exam.unpublishSubjectPaper");
   }
 };
 
@@ -656,10 +596,7 @@ export const deleteSubjectPaper = async (req: Request, res: Response) => {
       message: "Subject paper deleted successfully",
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to delete subject paper",
-    });
+    return handleError(res, error, "exam.deleteSubjectPaper");
   }
 };
 
@@ -675,10 +612,7 @@ export const deleteExam = async (req: Request, res: Response) => {
       message: "Exam deleted successfully",
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to delete exam",
-    });
+    return handleError(res, error, "exam.deleteExam");
   }
 };
 
@@ -717,8 +651,7 @@ export const getSubjectPapers = async (req: Request, res: Response) => {
       pagination: (result as any).pagination 
     });
   } catch (error: any) {
-    console.error("LOG ERROR: [getSubjectPapers]", error);
-    res.status(500).json({ success: false, message: error.message });
+    return handleError(res, error, "exam.getSubjectPapers");
   }
 };
 
@@ -734,7 +667,7 @@ export const linkSubjectPaperToExam = async (req: Request, res: Response) => {
     const data = await linkSubjectPaperToExamService(paperId as string, examId as string);
     res.status(200).json({ success: true, data });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    return handleError(res, error, "exam.linkSubjectPaperToExam");
   }
 };
 
@@ -746,7 +679,6 @@ export const unlinkSubjectPaper = async (req: Request, res: Response) => {
     const data = await unlinkSubjectPaperService(paperId as string, examId as string);
     res.status(200).json({ success: true, data });
   } catch (error: any) {
-    console.error("ERROR: [unlinkSubjectPaper]", error);
-    res.status(500).json({ message: error.message });
+    return handleError(res, error, "exam.unlinkSubjectPaper");
   }
 };

@@ -4,6 +4,7 @@ import { LinkStatus, SubscriptionStatus, SubscriptionType } from "@prisma/client
 import { createActivityLog } from "../logs/logs.controller";
 import { getSingleString } from "../../../utils/request-utils";
 import { PricingService } from "./pricing.service";
+import { handleError } from "../../../utils/error-handler";
 
 /**
  * List all subscription plans
@@ -16,7 +17,7 @@ export const listPlans = async (req: Request, res: Response) => {
     });
     return res.status(200).json({ success: true, data: plans });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to list plans" });
+    return handleError(res, error, "billing.listPlans");
   }
 };
 
@@ -91,7 +92,7 @@ export const updatePlan = async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true, message: "Plan updated", data: plan });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to save plan" });
+    return handleError(res, error, "billing.updatePlan");
   }
 };
 
@@ -147,7 +148,7 @@ export const assignSchoolToPlan = async (req: Request, res: Response) => {
       data: school
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to assign plan" });
+    return handleError(res, error, "billing.assignSchoolToPlan");
   }
 };
 
@@ -169,7 +170,7 @@ export const listSchoolSubscriptions = async (req: Request, res: Response) => {
     });
     return res.status(200).json({ success: true, data: schools });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to list subscriptions" });
+    return handleError(res, error, "billing.listSchoolSubscriptions");
   }
 };
 
@@ -257,11 +258,7 @@ export const resetSchoolSubscription = async (req: Request, res: Response) => {
       data: school
     });
   } catch (error: any) {
-    console.error("resetSchoolSubscription error:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: error.message || "Failed to reset subscription" 
-    });
+    return handleError(res, error, "billing.resetSchoolSubscription");
   }
 };
 
@@ -335,11 +332,7 @@ export const resetStudentSubscription = async (req: Request, res: Response) => {
       data: student
     });
   } catch (error: any) {
-    console.error("resetStudentSubscription error:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: error.message || "Failed to reset subscription" 
-    });
+    return handleError(res, error, "billing.resetStudentSubscription");
   }
 };
 
@@ -413,11 +406,7 @@ export const resetTeacherSubscription = async (req: Request, res: Response) => {
       data: teacher
     });
   } catch (error: any) {
-    console.error("resetTeacherSubscription error:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: error.message || "Failed to reset subscription" 
-    });
+    return handleError(res, error, "billing.resetTeacherSubscription");
   }
 };
 /**
@@ -481,10 +470,6 @@ export const resetParentSubscription = async (req: Request, res: Response) => {
       message: `Subscription for ${parent.fullName} has been reset to FREE tier.`
     });
   } catch (error: any) {
-    console.error("resetParentSubscription error:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: error.message || "Failed to reset subscription" 
-    });
+    return handleError(res, error, "billing.resetParentSubscription");
   }
 };

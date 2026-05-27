@@ -36,16 +36,47 @@ export default function TimetablePage({ classData, onNavigateToAttendance }: Tim
 
   React.useEffect(() => {
     if (sessions && sessions.length > 0 && !selectedSessionName) {
-      const activeSession = sessions.find((s: any) => s.isActive);
-      if (activeSession) {
-        setSelectedSessionName(activeSession.name);
+      const now = new Date();
+      let foundSession = null;
+      let foundTerm = null;
+
+      // Try to find the session and term that contains the current date
+      for (const session of sessions) {
+        if (session.termPeriods && session.termPeriods.length > 0) {
+          const currentTermPeriod = session.termPeriods.find((tp: any) => {
+            if (!tp.startDate || !tp.endDate) return false;
+            const start = new Date(tp.startDate);
+            const end = new Date(tp.endDate);
+            return now >= start && now <= end;
+          });
+          
+          if (currentTermPeriod) {
+            foundSession = session;
+            foundTerm = currentTermPeriod.term;
+            break;
+          }
+        }
+      }
+
+      if (foundSession && foundTerm) {
+        setSelectedSessionName(foundSession.name);
         setSelectedTermName(
-          activeSession.currentTerm === 'FIRST' ? 'First Term' :
-          activeSession.currentTerm === 'SECOND' ? 'Second Term' : 'Third Term'
+          foundTerm === 'FIRST' ? 'First Term' :
+          foundTerm === 'SECOND' ? 'Second Term' : 'Third Term'
         );
       } else {
-        setSelectedSessionName(sessions[0].name);
-        setSelectedTermName('First Term');
+        // Fallback to the active session and its currentTerm
+        const activeSession = sessions.find((s: any) => s.isActive);
+        if (activeSession) {
+          setSelectedSessionName(activeSession.name);
+          setSelectedTermName(
+            activeSession.currentTerm === 'FIRST' ? 'First Term' :
+            activeSession.currentTerm === 'SECOND' ? 'Second Term' : 'Third Term'
+          );
+        } else {
+          setSelectedSessionName(sessions[0].name);
+          setSelectedTermName('First Term');
+        }
       }
     }
   }, [sessions, selectedSessionName]);

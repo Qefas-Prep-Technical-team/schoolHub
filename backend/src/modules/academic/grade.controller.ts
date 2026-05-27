@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserRole } from "@prisma/client";
 import { getStudentGradesService, getGradeByIdService, getAllGradesService } from "./grade.service";
+import { handleError } from "../../utils/error-handler";
 
 export const getStudentGrades = async (req: Request, res: Response) => {
   try {
@@ -15,7 +16,7 @@ export const getStudentGrades = async (req: Request, res: Response) => {
     const data = await getStudentGradesService(studentId, page, limit);
     return res.status(200).json({ success: true, ...data });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.getStudentGrades");
   }
 };
 
@@ -27,7 +28,7 @@ export const getGradeById = async (req: Request, res: Response) => {
     }
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.getGradeById");
   }
 };
 
@@ -47,6 +48,6 @@ export const getAllGrades = async (req: Request, res: Response) => {
     });
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    return handleError(res, error, "academic.getAllGrades");
   }
 };

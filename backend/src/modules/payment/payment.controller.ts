@@ -30,11 +30,7 @@ export const initializePayment = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[Payment Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to initialize payment",
-    });
+    return handleError(res, error, "payment.initializePayment");
   }
 };
 
@@ -76,11 +72,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[Payment Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to verify payment",
-    });
+    return handleError(res, error, "payment.verifyPayment");
   }
 };
 
@@ -107,11 +99,7 @@ export const getUserBilling = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    console.error(`[Payment Controller Error]`, error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch user billing data",
-    });
+    return handleError(res, error, "payment.getUserBilling");
   }
 };
 
@@ -128,14 +116,12 @@ export const getPaymentHistory = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch payment history",
-    });
+    return handleError(res, error, "payment.getPaymentHistory");
   }
 };
 
 import { PricingService } from "../platform/billing/pricing.service";
+import { handleError } from "../../utils/error-handler";
 
 /**
  * Get all pricing plans (Dynamic Resolver)
@@ -145,9 +131,8 @@ export const getPricingPlans = async (req: Request, res: Response) => {
         const plans = await PricingService.resolveAllPlans();
         return res.status(200).json(plans);
     } catch (error) {
-        console.error("Pricing Resolution Error:", error);
-        return res.status(500).json({ success: false, message: "Error fetching pricing plans" });
-    }
+    return handleError(res, error, "payment.getPricingPlans");
+  }
 };
 
 /**

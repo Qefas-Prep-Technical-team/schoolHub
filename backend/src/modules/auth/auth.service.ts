@@ -11,6 +11,7 @@ import { enforceStudentLimit } from "../subscription/quota.helpers";
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
 import { SubscriptionComplianceService } from "../subscription/subscription-compliance.service";
 import { getSingleString } from "../../utils/request-utils";
+import { handleError } from "../../utils/error-handler";
 
 // Get student by code (for parent to verify before linking)
 export const getStudentByCode = async (req: Request, res: Response) => {
@@ -41,10 +42,7 @@ export const getStudentByCode = async (req: Request, res: Response) => {
       data: student,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch student",
-    });
+    return handleError(res, error, "auth.getStudentByCode");
   }
 };
 
@@ -98,10 +96,7 @@ export const linkChildToParent = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to link child",
-    });
+    return handleError(res, error, "auth.linkChildToParent");
   }
 };
 
@@ -226,7 +221,7 @@ export const sendSetupCompleteEmail = async (email: string) => {
         </div>
         
         <div style="text-align: center; margin-bottom: 32px;">
-          <a href="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/auth/login" style="display: inline-block; background: #2563eb; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Access Your Dashboard</a>
+          <a href="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '').startsWith('http') ? '' : 'https://'}${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/auth/login" style="display: inline-block; background: #2563eb; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Access Your Dashboard</a>
         </div>
         
         <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center;">
@@ -318,7 +313,7 @@ export const sendPaymentReceiptEmail = async (params: {
         </div>
         
         <div style="text-align: center; margin-bottom: 32px;">
-          <a href="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard" style="display: inline-block; background: #0f172a; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Go to Dashboard</a>
+          <a href="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '').startsWith('http') ? '' : 'https://'}${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard" style="display: inline-block; background: #0f172a; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; transition: all 0.3s ease;">Go to Dashboard</a>
         </div>
         
         <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; text-align: center;">
@@ -403,7 +398,10 @@ export const loginUser = async (email: string, password: string) => {
 };
 
 export const sendPasswordResetEmail = async (email: string, code: string) => {
-  const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  let baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+    baseUrl = baseUrl.includes('localhost') ? `http://${baseUrl}` : `https://${baseUrl}`;
+  }
   const resetLink = `${baseUrl}/auth/forgot-password/ResetPassword?token=${code}`;
   
   if (!email) {
@@ -459,7 +457,10 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
 };
 
 export const sendTeacherInvitationEmail = async (email: string, token: string, schoolName: string, teacherName: string) => {
-  const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  let baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+    baseUrl = baseUrl.includes('localhost') ? `http://${baseUrl}` : `https://${baseUrl}`;
+  }
   const claimLink = `${baseUrl}/auth/claim-account?token=${token}&type=teacher`;
   
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
@@ -509,7 +510,10 @@ export const sendTeacherInvitationEmail = async (email: string, token: string, s
 
 
 export const sendStudentInvitationEmail = async (email: string, token: string, schoolName: string, studentName: string) => {
-  const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  let baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+    baseUrl = baseUrl.includes('localhost') ? `http://${baseUrl}` : `https://${baseUrl}`;
+  }
   const claimLink = `${baseUrl}/auth/claim-account?token=${token}&type=student`;
   
   const isTest = process.env.RESEND_TEST?.trim() === 'true';

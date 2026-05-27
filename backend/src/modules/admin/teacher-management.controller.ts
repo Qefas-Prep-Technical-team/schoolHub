@@ -1,11 +1,16 @@
 import prisma from "../../config/database";
 import { Request, Response } from "express";
-import { getTeacherTimetableService, upsertTimetablePeriodService, deleteTimetablePeriodService } from "../class/timetable.service";
+import {
+  getTeacherTimetableService,
+  upsertTimetablePeriodService,
+  deleteTimetablePeriodService,
+} from "../class/timetable.service";
 import { getSingleString } from "../../utils/request-utils";
 import { generateUniqueCode } from "../../utils/code-generator";
 import { sendTeacherInvitationEmail } from "../auth/auth.service";
 import crypto from "crypto";
 import { enforceTeacherLimit } from "../subscription/quota.helpers";
+import { handleError } from "../../utils/error-handler";
 
 /**
  * Get detailed teacher information by ID
@@ -16,10 +21,7 @@ export const getTeacherById = async (req: Request, res: Response) => {
 
     const teacher = await prisma.teacher.findFirst({
       where: {
-        OR: [
-          { id },
-          { teacherCode: id }
-        ]
+        OR: [{ id }, { teacherCode: id }],
       },
       include: {
         school: true,
@@ -44,7 +46,8 @@ export const getTeacherById = async (req: Request, res: Response) => {
       });
     }
 
-    let resolvedSchoolId = teacher.activeSchoolId || teacher.primarySchoolId || teacher.schoolId;
+    let resolvedSchoolId =
+      teacher.activeSchoolId || teacher.primarySchoolId || teacher.schoolId;
     if (!resolvedSchoolId && teacher.teacherSubjects.length > 0) {
       resolvedSchoolId = teacher.teacherSubjects[0].subject.schoolId;
     }
@@ -60,7 +63,7 @@ export const getTeacherById = async (req: Request, res: Response) => {
       email: teacher.email,
       teacherCode: teacher.teacherCode,
       avatar: teacher.profileImage,
-      status: teacher.verified ? 'active' : 'inactive',
+      status: teacher.verified ? "active" : "inactive",
       verified: teacher.verified,
       isClaimed: teacher.isClaimed,
       personalInfo: {
@@ -70,19 +73,19 @@ export const getTeacherById = async (req: Request, res: Response) => {
         phone: "Not provided",
         address: "Not provided",
         highestQualification: "Not provided",
-        yearsOfExperience: "Not provided"
+        yearsOfExperience: "Not provided",
       },
       professionalInfo: {
         department: teacher.department || "General",
         subjects: teacher.teacherSubjects.map((ts: any) => ts.subject.name),
-        assignedClasses: teacher.classTeachers.map((ct: any) => ct.class.name)
+        assignedClasses: teacher.classTeachers.map((ct: any) => ct.class.name),
       },
       statistics: {
-        classPerformance: '85%', // Placeholder
-        attendanceRate: '95%',    // Placeholder
+        classPerformance: "85%", // Placeholder
+        attendanceRate: "95%", // Placeholder
         upcomingClasses: teacher.classTeachers.length.toString(),
-        studentsTaught: '0'       // Placeholder
-      }
+        studentsTaught: "0", // Placeholder
+      },
     };
 
     return res.status(200).json({
@@ -103,7 +106,9 @@ export const getTeacherById = async (req: Request, res: Response) => {
  */
 export const assignTeacherToClass = async (req: Request, res: Response) => {
   try {
-    const inputId = getSingleString(req.params.id as string | string[] | undefined);
+    const inputId = getSingleString(
+      req.params.id as string | string[] | undefined,
+    );
     const { classId, isLead = false } = req.body;
 
     if (!classId) {
@@ -117,9 +122,9 @@ export const assignTeacherToClass = async (req: Request, res: Response) => {
     let teacherId = inputId;
     const teacher = await prisma.teacher.findFirst({
       where: {
-        OR: [{ id: inputId }, { teacherCode: inputId }]
+        OR: [{ id: inputId }, { teacherCode: inputId }],
       },
-      select: { id: true }
+      select: { id: true },
     });
 
     if (!teacher) {
@@ -137,14 +142,14 @@ export const assignTeacherToClass = async (req: Request, res: Response) => {
         classId_teacherId: {
           classId,
           teacherId,
-        }
+        },
       },
       update: { isLead },
       create: {
         classId,
         teacherId,
         isLead,
-      }
+      },
     });
 
     return res.status(200).json({
@@ -166,15 +171,17 @@ export const assignTeacherToClass = async (req: Request, res: Response) => {
  */
 export const updateTeacher = async (req: Request, res: Response) => {
   try {
-    const inputId = getSingleString(req.params.id as string | string[] | undefined);
+    const inputId = getSingleString(
+      req.params.id as string | string[] | undefined,
+    );
     const { department, name, gender } = req.body;
 
     // Resolve real teacher ID if inputId is a teacherCode
     const teacher = await prisma.teacher.findFirst({
       where: {
-        OR: [{ id: inputId }, { teacherCode: inputId }]
+        OR: [{ id: inputId }, { teacherCode: inputId }],
       },
-      select: { id: true }
+      select: { id: true },
     });
 
     if (!teacher) {
@@ -191,7 +198,7 @@ export const updateTeacher = async (req: Request, res: Response) => {
         ...(department && { department }),
         ...(name && { name }),
         ...(gender && { gender }),
-      }
+      },
     });
 
     return res.status(200).json({
@@ -213,14 +220,16 @@ export const updateTeacher = async (req: Request, res: Response) => {
  */
 export const getTeacherTimetable = async (req: Request, res: Response) => {
   try {
-    const inputId = getSingleString(req.params.id as string | string[] | undefined);
+    const inputId = getSingleString(
+      req.params.id as string | string[] | undefined,
+    );
 
     // Resolve real teacher ID if inputId is a teacherCode
     const teacher = await prisma.teacher.findFirst({
       where: {
-        OR: [{ id: inputId }, { teacherCode: inputId }]
+        OR: [{ id: inputId }, { teacherCode: inputId }],
       },
-      select: { id: true }
+      select: { id: true },
     });
 
     if (!teacher) {
@@ -232,7 +241,11 @@ export const getTeacherTimetable = async (req: Request, res: Response) => {
 
     const termPeriodId = req.query.termPeriodId as string | undefined;
     const schoolId = req.query.schoolId as string | undefined;
-    const timetable = await getTeacherTimetableService(teacher.id, termPeriodId, schoolId);
+    const timetable = await getTeacherTimetableService(
+      teacher.id,
+      termPeriodId,
+      schoolId,
+    );
 
     return res.status(200).json({
       success: true,
@@ -252,15 +265,17 @@ export const getTeacherTimetable = async (req: Request, res: Response) => {
  */
 export const createTimetablePeriod = async (req: Request, res: Response) => {
   try {
-    const inputId = getSingleString(req.params.id as string | string[] | undefined);
+    const inputId = getSingleString(
+      req.params.id as string | string[] | undefined,
+    );
     const { classId, day, startTime, endTime, subjectId, room } = req.body;
 
     // Resolve real teacher ID if inputId is a teacherCode
     const teacher = await prisma.teacher.findFirst({
       where: {
-        OR: [{ id: inputId }, { teacherCode: inputId }]
+        OR: [{ id: inputId }, { teacherCode: inputId }],
       },
-      select: { id: true }
+      select: { id: true },
     });
 
     if (!teacher) {
@@ -274,7 +289,7 @@ export const createTimetablePeriod = async (req: Request, res: Response) => {
     const data = await upsertTimetablePeriodService({
       ...req.body,
       teacherId: teacher.id,
-      classId // classId must be provided in body
+      classId, // classId must be provided in body
     });
 
     return res.status(200).json({
@@ -306,12 +321,14 @@ export const inviteTeacher = async (req: Request, res: Response) => {
     // Get the school for the admin
     const adminRecord = await prisma.admin.findUnique({
       where: { id: adminId },
-      include: { schoolAdmins: { include: { school: true } } }
+      include: { schoolAdmins: { include: { school: true } } },
     });
 
     const school = adminRecord?.schoolAdmins[0]?.school;
     if (!school) {
-      return res.status(404).json({ success: false, message: "School not found for this admin" });
+      return res
+        .status(404)
+        .json({ success: false, message: "School not found for this admin" });
     }
 
     // Check quota
@@ -319,15 +336,22 @@ export const inviteTeacher = async (req: Request, res: Response) => {
 
     if (action === "code") {
       if (!teacherCode) {
-        return res.status(400).json({ success: false, message: "teacherCode is required for action 'code'" });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "teacherCode is required for action 'code'",
+          });
       }
 
       const teacher = await prisma.teacher.findUnique({
-        where: { teacherCode }
+        where: { teacherCode },
       });
 
       if (!teacher) {
-        return res.status(404).json({ success: false, message: "Teacher not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Teacher not found" });
       }
 
       // Check if relationship already exists
@@ -335,12 +359,17 @@ export const inviteTeacher = async (req: Request, res: Response) => {
         where: {
           leftEntityId: school.id,
           rightEntityId: teacher.id,
-          status: "ACTIVE"
-        }
+          status: "ACTIVE",
+        },
       });
 
       if (existingLink) {
-        return res.status(400).json({ success: false, message: "Teacher is already connected to this school" });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Teacher is already connected to this school",
+          });
       }
 
       // Create LinkRequest
@@ -357,24 +386,36 @@ export const inviteTeacher = async (req: Request, res: Response) => {
           requestedByAdminId: adminId,
           targetTeacherId: teacher.id,
           requesterSchoolId: school.id,
-        }
+        },
       });
 
       return res.status(200).json({
         success: true,
         message: "Invitation request sent to teacher successfully",
       });
-
     } else if (action === "create") {
       if (!name) {
-        return res.status(400).json({ success: false, message: "Name is required for action 'create'" });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Name is required for action 'create'",
+          });
       }
 
       const { classId, subjectId } = req.body;
-      const schoolDomain = school.name.toLowerCase().trim().replace(/[^a-z0-9]/g, "") || "school";
-      const normalizedTeacher = name.toLowerCase().trim().replace(/[^a-z0-9]/g, "") || "teacher";
-      
-      let loginEmail = email;
+      const schoolDomain =
+        school.name
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]/g, "") || "school";
+      const normalizedTeacher =
+        name
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]/g, "") || "teacher";
+
+      let loginEmail = email ? email.toLowerCase().trim() : undefined;
       let tempPassword = "";
 
       if (!loginEmail) {
@@ -390,7 +431,10 @@ export const inviteTeacher = async (req: Request, res: Response) => {
         });
 
         let maxNumber = 0;
-        const emailRegex = new RegExp(`^teacher(\\d+)@${schoolDomain}\\.com$`, "i");
+        const emailRegex = new RegExp(
+          `^teacher(\\d+)@${schoolDomain}\\.com$`,
+          "i",
+        );
 
         for (const t of existingTeachers) {
           const match = t.email?.match(emailRegex);
@@ -409,21 +453,29 @@ export const inviteTeacher = async (req: Request, res: Response) => {
         tempPassword = `Teach${Math.random().toString(36).slice(-4)}${Math.floor(Math.random() * 100)}`;
       }
 
-      const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
-        prisma.student.findUnique({ where: { email: loginEmail } }),
-        prisma.teacher.findUnique({ where: { email: loginEmail } }),
-        prisma.admin.findUnique({ where: { email: loginEmail } }),
-        prisma.parent.findUnique({ where: { email: loginEmail } })
-      ]);
+      const [existingStudent, existingTeacher, existingAdmin, existingParent] =
+        await Promise.all([
+          prisma.student.findUnique({ where: { email: loginEmail } }),
+          prisma.teacher.findUnique({ where: { email: loginEmail } }),
+          prisma.admin.findUnique({ where: { email: loginEmail } }),
+          prisma.parent.findUnique({ where: { email: loginEmail } }),
+        ]);
 
-      if (existingStudent || existingTeacher || existingAdmin || existingParent) {
-        return res.status(400).json({ success: false, message: "Email is already in use" });
+      if (
+        existingStudent ||
+        existingTeacher ||
+        existingAdmin ||
+        existingParent
+      ) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Email is already in use" });
       }
 
       const newTeacherCode = await generateUniqueCode(prisma, "teacher", name);
       const bcrypt = require("bcryptjs");
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
-      const invitationToken = crypto.randomBytes(32).toString('hex');
+      const invitationToken = crypto.randomBytes(32).toString("hex");
 
       const teacher = await prisma.teacher.create({
         data: {
@@ -438,7 +490,7 @@ export const inviteTeacher = async (req: Request, res: Response) => {
           primarySchoolId: school.id,
           activeSchoolId: school.id,
           schoolId: school.id,
-        }
+        },
       });
 
       // Automatically create relationship link
@@ -453,20 +505,21 @@ export const inviteTeacher = async (req: Request, res: Response) => {
           rightCode: teacher.teacherCode,
           schoolId: school.id,
           status: "ACTIVE",
-        }
+        },
       });
 
       // Optionally attach to class
       if (classId) {
         // Unassign any existing class teacher for this class to avoid duplicates
         await prisma.classTeacher.deleteMany({
-          where: { classId }
+          where: { classId },
         });
         await prisma.classTeacher.create({
           data: {
             classId,
             teacherId: teacher.id,
-          }
+            isLead: true,
+          },
         });
       }
 
@@ -477,35 +530,35 @@ export const inviteTeacher = async (req: Request, res: Response) => {
             teacherId: teacher.id,
             subjectId,
             schoolId: school.id,
-          }
+          },
         });
       }
 
       // Only send the email if the user explicitly provided one (so it's real)
       if (email) {
-        await sendTeacherInvitationEmail(loginEmail, invitationToken, school.name, teacher.name);
+        await sendTeacherInvitationEmail(
+          loginEmail,
+          invitationToken,
+          school.name,
+          teacher.name,
+        );
       }
 
       return res.status(200).json({
         success: true,
         message: "Teacher registered successfully",
-        data: { 
-          teacherId: teacher.id, 
+        data: {
+          teacherId: teacher.id,
           teacherCode: teacher.teacherCode,
           email: loginEmail,
-          password: tempPassword
-        }
+          password: email ? undefined : tempPassword,
+        },
       });
     }
 
     return res.status(400).json({ success: false, message: "Invalid action" });
-
   } catch (error: any) {
-    console.error("inviteTeacher error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
-    });
+    return handleError(res, error, "admin.inviteTeacher");
   }
 };
 
@@ -514,7 +567,9 @@ export const inviteTeacher = async (req: Request, res: Response) => {
  */
 export const resendClaimEmail = async (req: Request, res: Response) => {
   try {
-    const teacherId = getSingleString(req.params.id as string | string[] | undefined);
+    const teacherId = getSingleString(
+      req.params.id as string | string[] | undefined,
+    );
     const adminId = (req as any).user?.id;
 
     if (!adminId) {
@@ -523,44 +578,60 @@ export const resendClaimEmail = async (req: Request, res: Response) => {
 
     const adminRecord = await prisma.admin.findUnique({
       where: { id: adminId },
-      include: { schoolAdmins: { include: { school: true } } }
+      include: { schoolAdmins: { include: { school: true } } },
     });
 
     const school = adminRecord?.schoolAdmins[0]?.school;
     if (!school) {
-      return res.status(404).json({ success: false, message: "School not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "School not found" });
     }
 
     const teacher = await prisma.teacher.findFirst({
       where: {
         OR: [{ id: teacherId }, { teacherCode: teacherId }],
-        primarySchoolId: school.id
-      }
+        primarySchoolId: school.id,
+      },
     });
 
     if (!teacher) {
-      return res.status(404).json({ success: false, message: "Teacher not found or not connected to your school" });
+      return res
+        .status(404)
+        .json({
+          success: false,
+          message: "Teacher not found or not connected to your school",
+        });
     }
 
     if (teacher.isClaimed || !teacher.email) {
-      return res.status(400).json({ success: false, message: "Teacher account is already claimed or has no email" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Teacher account is already claimed or has no email",
+        });
     }
 
     // Generate new token
-    const invitationToken = crypto.randomBytes(32).toString('hex');
+    const invitationToken = crypto.randomBytes(32).toString("hex");
 
     await prisma.teacher.update({
       where: { id: teacher.id },
-      data: { invitationToken }
+      data: { invitationToken },
     });
 
-    await sendTeacherInvitationEmail(teacher.email, invitationToken, school.name, teacher.name);
+    await sendTeacherInvitationEmail(
+      teacher.email,
+      invitationToken,
+      school.name,
+      teacher.name,
+    );
 
     return res.status(200).json({
       success: true,
       message: "Claim email resent successfully",
     });
-
   } catch (error: any) {
     console.error("resendClaimEmail error:", error);
     return res.status(500).json({
@@ -569,7 +640,6 @@ export const resendClaimEmail = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 /**
  * Delete a timetable period
@@ -605,18 +675,33 @@ export const deleteTimetablePeriod = async (req: Request, res: Response) => {
  */
 export const getTeacherAttendance = async (req: Request, res: Response) => {
   try {
-    const teacherId = getSingleString(req.params.id as string | string[] | undefined);
+    const teacherId = getSingleString(
+      req.params.id as string | string[] | undefined,
+    );
     const month = req.query.month as string; // YYYY-MM
     const schoolId = req.query.schoolId as string;
 
     if (!teacherId || !schoolId) {
-      return res.status(400).json({ success: false, message: "Teacher ID and School ID are required" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Teacher ID and School ID are required",
+        });
     }
 
     let startDate, endDate;
     if (month) {
       startDate = new Date(`${month}-01T00:00:00.000Z`);
-      endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0, 23, 59, 59, 999);
+      endDate = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
     }
 
     const whereClause: any = { teacherId, schoolId };
@@ -626,12 +711,14 @@ export const getTeacherAttendance = async (req: Request, res: Response) => {
 
     const attendance = await prisma.teacherAttendance.findMany({
       where: whereClause,
-      orderBy: { date: 'asc' }
+      orderBy: { date: "asc" },
     });
 
     return res.status(200).json({ success: true, data: attendance });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message || "Server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: error.message || "Server error" });
   }
 };
 
@@ -640,99 +727,126 @@ export const getTeacherAttendance = async (req: Request, res: Response) => {
  */
 export const markTeacherAttendance = async (req: Request, res: Response) => {
   try {
-    const teacherId = getSingleString(req.params.id as string | string[] | undefined);
+    const teacherId = getSingleString(
+      req.params.id as string | string[] | undefined,
+    );
     const { schoolId, date, status, note } = req.body;
 
     if (!teacherId || !schoolId || !date || !status) {
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
     }
 
     const parsedDate = new Date(date);
-    
+
     // Check if record exists for this date
     // Create start and end of the specific date to ensure uniqueness check works regardless of time
     const startOfDay = new Date(parsedDate);
     startOfDay.setUTCHours(0, 0, 0, 0);
-    
+
     const record = await prisma.teacherAttendance.upsert({
       where: {
         teacherId_date: {
           teacherId,
-          date: startOfDay
-        }
+          date: startOfDay,
+        },
       },
       update: {
         status,
-        note
+        note,
       },
       create: {
         teacherId,
         schoolId,
         date: startOfDay,
         status,
-        note
-      }
+        note,
+      },
     });
 
     return res.status(200).json({ success: true, data: record });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message || "Server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: error.message || "Server error" });
   }
 };
 
 /**
  * Bulk mark teacher attendance
  */
-export const markBulkTeacherAttendance = async (req: Request, res: Response) => {
+export const markBulkTeacherAttendance = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const { schoolId, records } = req.body;
-    
+
     if (!schoolId || !Array.isArray(records)) {
-      return res.status(400).json({ success: false, message: "Missing required fields or invalid records format" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Missing required fields or invalid records format",
+        });
     }
-    
-    const results = await Promise.all(records.map(async (record: any) => {
-      const parsedDate = new Date(record.date);
-      const startOfDay = new Date(parsedDate);
-      startOfDay.setUTCHours(0, 0, 0, 0);
-      
-      return prisma.teacherAttendance.upsert({
-        where: {
-          teacherId_date: {
+
+    const results = await Promise.all(
+      records.map(async (record: any) => {
+        const parsedDate = new Date(record.date);
+        const startOfDay = new Date(parsedDate);
+        startOfDay.setUTCHours(0, 0, 0, 0);
+
+        return prisma.teacherAttendance.upsert({
+          where: {
+            teacherId_date: {
+              teacherId: record.teacherId,
+              date: startOfDay,
+            },
+          },
+          update: {
+            status: record.status,
+            note: record.note || "",
+          },
+          create: {
             teacherId: record.teacherId,
-            date: startOfDay
-          }
-        },
-        update: {
-          status: record.status,
-          note: record.note || ""
-        },
-        create: {
-          teacherId: record.teacherId,
-          schoolId,
-          date: startOfDay,
-          status: record.status,
-          note: record.note || ""
-        }
-      });
-    }));
-    
+            schoolId,
+            date: startOfDay,
+            status: record.status,
+            note: record.note || "",
+          },
+        });
+      }),
+    );
+
     return res.status(200).json({ success: true, data: results });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message || "Server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: error.message || "Server error" });
   }
 };
 
 /**
  * Get all teacher attendance for a school on a specific date
  */
-export const getSchoolTeacherAttendanceByDate = async (req: Request, res: Response) => {
+export const getSchoolTeacherAttendanceByDate = async (
+  req: Request,
+  res: Response,
+) => {
   try {
-    const schoolId = getSingleString(req.query.schoolId as string | string[] | undefined);
-    const date = getSingleString(req.query.date as string | string[] | undefined);
+    const schoolId = getSingleString(
+      req.query.schoolId as string | string[] | undefined,
+    );
+    const date = getSingleString(
+      req.query.date as string | string[] | undefined,
+    );
 
     if (!schoolId || !date) {
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
     }
 
     const parsedDate = new Date(date);
@@ -742,31 +856,43 @@ export const getSchoolTeacherAttendanceByDate = async (req: Request, res: Respon
     const attendance = await prisma.teacherAttendance.findMany({
       where: {
         schoolId,
-        date: startOfDay
-      }
+        date: startOfDay,
+      },
     });
 
     return res.status(200).json({ success: true, data: attendance });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message || "Server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: error.message || "Server error" });
   }
 };
 
 /**
  * Get aggregated teacher attendance trend for a school over the last N days
  */
-export const getSchoolTeacherAttendanceTrend = async (req: Request, res: Response) => {
+export const getSchoolTeacherAttendanceTrend = async (
+  req: Request,
+  res: Response,
+) => {
   try {
-    const schoolId = getSingleString(req.query.schoolId as string | string[] | undefined);
-    const days = parseInt(getSingleString(req.query.days as string | string[] | undefined) || "5", 10);
+    const schoolId = getSingleString(
+      req.query.schoolId as string | string[] | undefined,
+    );
+    const days = parseInt(
+      getSingleString(req.query.days as string | string[] | undefined) || "5",
+      10,
+    );
 
     if (!schoolId) {
-      return res.status(400).json({ success: false, message: "Missing schoolId" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing schoolId" });
     }
 
     const endDate = new Date();
     endDate.setUTCHours(0, 0, 0, 0);
-    
+
     const startDate = new Date(endDate);
     startDate.setDate(startDate.getDate() - (days - 1));
 
@@ -775,29 +901,37 @@ export const getSchoolTeacherAttendanceTrend = async (req: Request, res: Respons
         schoolId,
         date: {
           gte: startDate,
-          lte: endDate
-        }
-      }
+          lte: endDate,
+        },
+      },
     });
 
-    const trendMap = new Map<string, { day: string; present: number; absent: number; late: number }>();
-    
+    const trendMap = new Map<
+      string,
+      { day: string; present: number; absent: number; late: number }
+    >();
+
     for (let i = 0; i < days; i++) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
-      const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
-      trendMap.set(d.toISOString().split('T')[0], { day: dayStr, present: 0, absent: 0, late: 0 });
+      const dayStr = d.toLocaleDateString("en-US", { weekday: "short" });
+      trendMap.set(d.toISOString().split("T")[0], {
+        day: dayStr,
+        present: 0,
+        absent: 0,
+        late: 0,
+      });
     }
 
     for (const record of records) {
-      const dateStr = record.date.toISOString().split('T')[0];
+      const dateStr = record.date.toISOString().split("T")[0];
       if (trendMap.has(dateStr)) {
         const stats = trendMap.get(dateStr)!;
-        if (record.status.toLowerCase() === 'present') {
+        if (record.status.toLowerCase() === "present") {
           stats.present += 1;
-        } else if (record.status.toLowerCase() === 'absent') {
+        } else if (record.status.toLowerCase() === "absent") {
           stats.absent += 1;
-        } else if (record.status.toLowerCase() === 'late') {
+        } else if (record.status.toLowerCase() === "late") {
           stats.late += 1;
         }
       }
@@ -807,6 +941,8 @@ export const getSchoolTeacherAttendanceTrend = async (req: Request, res: Respons
 
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message || "Server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: error.message || "Server error" });
   }
 };

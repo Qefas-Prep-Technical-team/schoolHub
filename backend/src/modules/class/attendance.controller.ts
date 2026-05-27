@@ -4,6 +4,7 @@ import {
   submitAttendanceService, 
   getClassAttendanceSummaryService 
 } from "./attendance.service";
+import { handleError } from "../../utils/error-handler";
 
 export const getClassAttendance = async (req: Request, res: Response) => {
   try {
@@ -12,7 +13,7 @@ export const getClassAttendance = async (req: Request, res: Response) => {
     const data = await getClassAttendanceService(id, date as string);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "class.getClassAttendance");
   }
 };
 
@@ -23,7 +24,7 @@ export const submitAttendance = async (req: Request, res: Response) => {
     const data = await submitAttendanceService(id, records);
     return res.status(200).json({ success: true, message: "Attendance submitted", data });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "class.submitAttendance");
   }
 };
 
@@ -34,6 +35,6 @@ export const getClassAttendanceSummary = async (req: Request, res: Response) => 
     const data = await getClassAttendanceSummaryService(id, month as string);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message });
+    return handleError(res, error, "class.getClassAttendanceSummary");
   }
 };

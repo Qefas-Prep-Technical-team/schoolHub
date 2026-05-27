@@ -22,51 +22,54 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ classData, onAddAnnouncement }: PageHeaderProps) {
+  const isSessionLoading = classData.academicYear === "Current Session";
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative mb-12 overflow-hidden rounded-[3rem] bg-slate-900 shadow-2xl"
+      className="relative mb-8 overflow-hidden rounded-[2.5rem] bg-slate-900 shadow-xl border border-slate-800 flex flex-col"
     >
-      {/* Abstract Background Elements */}
+      {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[120%] bg-primary/20 blur-[100px] rounded-full"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[100%] bg-blue-500/10 blur-[120px] rounded-full"></div>
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+        <div className="absolute top-[-50%] right-[-10%] w-[60%] h-[150%] bg-primary/20 blur-[120px] rounded-full mix-blend-screen"></div>
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay"></div>
       </div>
 
-      <div className="relative z-10 p-8 md:p-12 lg:p-14 flex flex-col md:flex-row justify-between items-end gap-10">
-        <div className="space-y-6 flex-1 min-w-0">
+      <div className="relative z-10 p-8 md:p-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        <div className="space-y-5 flex-1 min-w-0">
+          
+          {/* Top Badges */}
           <div className="flex flex-wrap items-center gap-3">
-             <div className="px-4 py-1.5 bg-primary/20 backdrop-blur-xl border border-primary/30 rounded-xl flex items-center gap-2">
-                <Sparkles size={14} className="text-primary animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-light whitespace-nowrap">
-                   Active Academic Session
-                </span>
-             </div>
-             <div className="px-4 py-1.5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl flex items-center gap-2">
+             {isSessionLoading ? (
+               <div className="h-8 w-40 bg-slate-800 rounded-xl animate-pulse"></div>
+             ) : (
+               <div className="px-4 py-1.5 bg-primary/20 backdrop-blur-md border border-primary/30 rounded-xl flex items-center gap-2">
+                  <Sparkles size={14} className="text-primary-light animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white whitespace-nowrap">
+                     {classData.academicYear} • {classData.term}
+                  </span>
+               </div>
+             )}
+             
+             <div className="px-4 py-1.5 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl flex items-center gap-2">
                 <Hash size={14} className="text-slate-400" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">
+                <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-300">
                    {classData.subjectCode}
                 </span>
              </div>
           </div>
 
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none drop-shadow-2xl">
+          {/* Title & Subtitle */}
+          <div className="space-y-1">
+            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight drop-shadow-md">
               {classData.name}
             </h1>
-            <p className="text-xl md:text-2xl font-bold text-slate-400 max-w-2xl flex items-center gap-3 italic">
-              <GraduationCap className="text-primary" />
-              {classData.subject} <span className="text-slate-700">|</span> {classData.teacher}
+            <p className="text-lg md:text-xl font-bold text-slate-400 flex items-center gap-2">
+              <span className="text-primary-light">{classData.subject}</span>
+              <span className="text-slate-600 px-1">•</span> 
+              <span>Teacher: {classData.teacher}</span>
             </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-6 pt-2">
-            <HeroMetaItem icon={Calendar} label="Cycle" value={`${classData.academicYear} • ${classData.term}`} />
-            <HeroMetaItem icon={Users} label="Enrollment" value={`${classData.studentCount} Students`} />
-            {classData.room && <HeroMetaItem icon={MapPin} label="Location" value={classData.room} />}
-            {classData.schedule && <HeroMetaItem icon={Clock} label="Timing" value={classData.schedule} />}
           </div>
         </div>
 
@@ -74,24 +77,34 @@ export default function PageHeader({ classData, onAddAnnouncement }: PageHeaderP
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={onAddAnnouncement}
-          className="flex items-center justify-center gap-3 h-16 px-8 bg-white text-slate-900 rounded-2xl hover:bg-slate-100 transition-all shadow-2xl shadow-white/5 text-sm font-black uppercase tracking-widest whitespace-nowrap mb-2"
+          className="shrink-0 flex items-center justify-center gap-2 h-14 px-8 bg-white text-slate-900 rounded-2xl hover:bg-slate-100 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] text-xs font-black uppercase tracking-widest"
         >
-          <Megaphone className="w-5 h-5 text-primary" />
-          <span>New Announcement</span>
+          <Megaphone className="w-4 h-4 text-primary" />
+          <span>Announcement</span>
         </motion.button>
+      </div>
+
+      {/* Meta Bar at bottom */}
+      <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-slate-800 border-t border-slate-800 bg-slate-900/50 backdrop-blur-md">
+        <HeroMetaCard icon={Calendar} label="Session" value={isSessionLoading ? "Loading..." : classData.academicYear} />
+        <HeroMetaCard icon={Users} label="Students" value={`${classData.studentCount} Enrolled`} />
+        <HeroMetaCard icon={MapPin} label="Location" value={classData.room || "TBD"} />
+        <HeroMetaCard icon={Clock} label="Schedule" value={classData.schedule || "Not Set"} />
       </div>
     </motion.div>
   );
 }
 
-function HeroMetaItem({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) {
+function HeroMetaCard({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) {
     return (
-        <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-slate-500">
-                <Icon size={14} strokeWidth={2.5} />
-                <span className="text-[9px] font-black uppercase tracking-[0.15em] leading-none">{label}</span>
+        <div className="flex items-center gap-3 p-5 md:p-6 hover:bg-white/5 transition-colors group">
+            <div className="p-2.5 bg-slate-800 rounded-xl text-slate-400 group-hover:text-primary-light transition-colors">
+                <Icon size={18} strokeWidth={2.5} />
             </div>
-            <span className="text-sm font-bold text-slate-100 tracking-wide">{value}</span>
+            <div className="flex flex-col overflow-hidden">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{label}</span>
+                <span className="text-sm font-bold text-slate-200 truncate">{value}</span>
+            </div>
         </div>
     );
 }

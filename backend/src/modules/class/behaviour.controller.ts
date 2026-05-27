@@ -6,6 +6,7 @@ import {
   updateBehaviourAlertService,
   deleteBehaviourAlertService,
 } from "./behaviour.service";
+import { handleError } from "../../utils/error-handler";
 
 export const getClassBehaviourAlerts = async (req: Request, res: Response) => {
   try {
@@ -20,10 +21,7 @@ export const getClassBehaviourAlerts = async (req: Request, res: Response) => {
       data: alerts,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch behavior alerts",
-    });
+    return handleError(res, error, "class.getClassBehaviourAlerts");
   }
 };
 
@@ -54,10 +52,7 @@ export const createBehaviourAlert = async (req: Request, res: Response) => {
       data: alert,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to create behavior alert",
-    });
+    return handleError(res, error, "class.createBehaviourAlert");
   }
 };
 
@@ -81,10 +76,7 @@ export const updateBehaviourAlert = async (req: Request, res: Response) => {
       data: alert,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to update behavior alert",
-    });
+    return handleError(res, error, "class.updateBehaviourAlert");
   }
 };
 
@@ -103,10 +95,7 @@ export const deleteBehaviourAlert = async (req: Request, res: Response) => {
       message: "Behaviour alert deleted successfully",
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to delete behavior alert",
-    });
+    return handleError(res, error, "class.deleteBehaviourAlert");
   }
 };
 

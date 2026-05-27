@@ -4,6 +4,7 @@ import {
   getManualReviewQueueService,
   markSubjectiveAnswerService,
 } from "./exam-review.service";
+import { handleError } from "../../utils/error-handler";
 
 export const getManualReviewQueue = async (req: Request, res: Response) => {
   try {
@@ -24,10 +25,7 @@ export const getManualReviewQueue = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch review queue",
-    });
+    return handleError(res, error, "exam.getManualReviewQueue");
   }
 };
 
@@ -55,9 +53,6 @@ export const markSubjectiveAnswer = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to mark subjective answer",
-    });
+    return handleError(res, error, "exam.markSubjectiveAnswer");
   }
 };

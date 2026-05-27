@@ -4,6 +4,7 @@ import {
   assignTeacherToSubjectService,
   getTeacherSubjectsService,
 } from "./teacher-subject.service";
+import { handleError } from "../../utils/error-handler";
 
 export const assignTeacherToSubject = async (req: Request, res: Response) => {
   try {
@@ -29,10 +30,7 @@ export const assignTeacherToSubject = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to assign teacher to subject",
-    });
+    return handleError(res, error, "academic.assignTeacherToSubject");
   }
 };
 
@@ -59,9 +57,6 @@ export const getTeacherSubjects = async (req: Request, res: Response) => {
       data,
     });
   } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to fetch teacher subjects",
-    });
+    return handleError(res, error, "academic.getTeacherSubjects");
   }
 };

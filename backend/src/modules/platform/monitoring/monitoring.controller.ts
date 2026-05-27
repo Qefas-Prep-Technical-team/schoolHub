@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../../config/database";
+import { handleError } from "../../../utils/error-handler";
 
 /**
  * Get internal error logs
@@ -20,7 +21,7 @@ export const getErrorLogs = async (req: Request, res: Response) => {
       data: logs
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to fetch logs" });
+    return handleError(res, error, "monitoring.getErrorLogs");
   }
 };
 
@@ -47,7 +48,7 @@ export const getSystemHealth = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Failed to fetch health stats" });
+    return handleError(res, error, "monitoring.getSystemHealth");
   }
 };
 

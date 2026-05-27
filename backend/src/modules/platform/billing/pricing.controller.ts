@@ -3,6 +3,7 @@ import { PricingService } from "./pricing.service";
 import { FeatureService } from "../../subscription/feature.service";
 import { createActivityLog } from "../logs/logs.controller";
 import prisma from "../../../config/database";
+import { handleError } from "../../../utils/error-handler";
 
 /**
  * Console: Get hardcoded defaults
@@ -12,8 +13,8 @@ export const getDefaults = async (req: Request, res: Response) => {
         const plans = await PricingService.getDefaults();
         return res.status(200).json({ success: true, data: plans });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Failed to get defaults" });
-    }
+    return handleError(res, error, "billing.getDefaults");
+  }
 };
 
 /**
@@ -24,8 +25,8 @@ export const getDynamicPlans = async (req: Request, res: Response) => {
         const plans = await PricingService.resolveAllPlans();
         return res.status(200).json(plans);
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Failed to resolve pricing plans" });
-    }
+    return handleError(res, error, "billing.getDynamicPlans");
+  }
 };
 
 /**
@@ -38,8 +39,8 @@ export const listAllPlans = async (req: Request, res: Response) => {
         // but resolveAllPlans returns the grouped structure needed by UI.
         return res.status(200).json({ success: true, data: plans });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Failed to list plans" });
-    }
+    return handleError(res, error, "billing.listAllPlans");
+  }
 };
 
 /**
@@ -62,9 +63,8 @@ export const savePlan = async (req: Request, res: Response) => {
 
         return res.status(200).json({ success: true, data: plan });
     } catch (error) {
-        console.error("[PricingController] savePlan error:", error);
-        return res.status(500).json({ success: false, message: "Failed to save pricing plan" });
-    }
+    return handleError(res, error, "billing.savePlan");
+  }
 };
 
 /**
@@ -76,8 +76,8 @@ export const seedPlans = async (req: Request, res: Response) => {
         const result = await PricingService.seedFromConstants(plans);
         return res.status(200).json({ success: true, ...result });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Seeding failed" });
-    }
+    return handleError(res, error, "billing.seedPlans");
+  }
 };
 
 /**
@@ -95,8 +95,8 @@ export const getFeatures = async (req: Request, res: Response) => {
         
         return res.status(200).json({ success: true, data: mappedFeatures });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Failed to get features" });
-    }
+    return handleError(res, error, "billing.getFeatures");
+  }
 };
 
 /**
@@ -107,8 +107,8 @@ export const saveFeature = async (req: Request, res: Response) => {
         const feature = await FeatureService.saveFeature(req.body);
         return res.status(200).json({ success: true, data: feature });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Failed to save feature" });
-    }
+    return handleError(res, error, "billing.saveFeature");
+  }
 };
 
 /**
@@ -119,8 +119,8 @@ export const harvestFeatures = async (req: Request, res: Response) => {
         const result = await PricingService.harvestLegacyFeatures();
         return res.status(200).json({ success: true, ...result });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Harvesting failed" });
-    }
+    return handleError(res, error, "billing.harvestFeatures");
+  }
 };
 
 /**
@@ -131,8 +131,8 @@ export const deleteFeature = async (req: Request, res: Response) => {
         await FeatureService.deleteFeature(req.params.id as string);
         return res.status(200).json({ success: true, message: "Feature deleted" });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Failed to delete feature" });
-    }
+    return handleError(res, error, "billing.deleteFeature");
+  }
 };
 /**
  * Console: Get dashboard stats
@@ -142,6 +142,6 @@ export const getStats = async (req: Request, res: Response) => {
         const stats = await PricingService.getBillingStats();
         return res.status(200).json({ success: true, data: stats });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Failed to get stats" });
-    }
+    return handleError(res, error, "billing.getStats");
+  }
 };

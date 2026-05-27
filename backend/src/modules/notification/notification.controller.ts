@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../config/database";
+import { handleError } from "../../utils/error-handler";
 
 export const getMyNotifications = async (req: Request, res: Response) => {
   try {
@@ -16,11 +17,7 @@ export const getMyNotifications = async (req: Request, res: Response) => {
       data: notifications,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch notifications",
-    });
+    return handleError(res, error, "notification.getMyNotifications");
   }
 };
 
@@ -45,11 +42,7 @@ export const markNotificationAsRead = async (req: Request, res: Response) => {
       message: "Notification marked as read",
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update notification",
-    });
+    return handleError(res, error, "notification.markNotificationAsRead");
   }
 };
 
@@ -73,11 +66,7 @@ export const markAllNotificationsAsRead = async (req: Request, res: Response) =>
       message: "All notifications marked as read",
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update notifications",
-    });
+    return handleError(res, error, "notification.markAllNotificationsAsRead");
   }
 };
 
@@ -97,10 +86,6 @@ export const getUnreadCount = async (req: Request, res: Response) => {
       count,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch unread count",
-    });
+    return handleError(res, error, "notification.getUnreadCount");
   }
 };

@@ -441,6 +441,10 @@ export const getTeacherStudentsService = async (options: {
       return {
           id: s.id,
           name: s.name,
+          studentCode: s.studentCode,
+          email: s.email,
+          gender: s.gender?.toLowerCase() || 'male',
+          status: (s as any).status?.toLowerCase() || 'active',
           grade: e.class.name,
           avatarUrl: s.profileImage,
           performance,
@@ -604,12 +608,49 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
 
     const c = classTeacher.class;
 
+    // Fetch active session dynamically
+    const activeSession = await prisma.session.findFirst({
+        where: { schoolId: c.schoolId, isActive: true },
+        select: { id: true, name: true, currentTerm: true }
+    });
+
+    const termMapping: Record<string, string> = {
+        'FIRST': 'First Term',
+        'SECOND': 'Second Term',
+        'THIRD': 'Third Term'
+    };
+    
+    const academicYear = activeSession?.name || "Current Session";
+    const term = activeSession?.currentTerm ? (termMapping[activeSession.currentTerm] || activeSession.currentTerm) : "Current Term";
+
+    // Determine the specific subjects this teacher teaches in this class
+    const teacherSubjects = await prisma.teacherSubject.findMany({
+        where: { teacherId },
+        select: { subjectId: true }
+    });
+    const teacherSubjectIds = new Set(teacherSubjects.map(ts => ts.subjectId));
+    
+    // Filter class subjects to only those the teacher teaches
+    const classSubjects = c.subjects.map(cs => cs.subject);
+    const teacherSubjectsInClass = classSubjects.filter(sub => teacherSubjectIds.has(sub.id));
+    
+    // If the teacher has specific subjects, filter exams and grades by those subjects
+    const hasSpecificSubjects = teacherSubjectsInClass.length > 0;
+    
+    // Filter exams
+    const relevantExams = hasSpecificSubjects 
+        ? c.exams.filter(e => e.subjectId && teacherSubjectIds.has(e.subjectId))
+        : c.exams;
+
+    // For grades, we need to filter if grades have a subjectId, but Grade schema might not have it directly on the Class. 
+    // Wait, let's just use relevantExams if possible, otherwise use all grades (as filtering grades might require complex joins if Grade is tied to SubjectPaper or Exam Attempt).
+    const grades = c.grades;
+
     // 2. Aggregate Stats
     const totalAttendance = c.attendances.length;
     const presentCount = c.attendances.filter(a => a.status === 'present').length;
     const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 100;
 
-    const grades = c.grades;
     let averageGrade = 0;
     if (grades.length > 0) {
         const totalPercentage = grades.reduce((acc, g) => acc + (g.score / g.maxMarks) * 100, 0);
@@ -641,8 +682,8 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
         .slice(0, 5)
         .map((s, idx) => ({ ...s, rank: idx + 1 }));
 
-    // 4. Upcoming Activities (Exams/Quizzes)
-    const upcomingActivities = c.exams
+    // 4. Upcoming Activities (Exams/Quizzes) based on relevant exams
+    const upcomingActivities = relevantExams
         .filter(e => new Date(e.startDate || e.createdAt) > new Date())
         .map(e => ({
             id: e.id,
@@ -668,19 +709,54 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
             status: 'graded'
         }));
 
+    // 6. Dynamic Schedule String
+    let scheduleStr = "Schedule Not Set";
+    if (activeSession && activeSession.currentTerm) {
+        const termPeriod = await prisma.termPeriod.findFirst({
+            where: {
+                sessionId: activeSession.id,
+                term: activeSession.currentTerm as any
+            }
+        });
+        
+        if (termPeriod) {
+            const periods = await prisma.timetablePeriod.findMany({
+                where: {
+                    classId: c.id,
+                    termPeriodId: termPeriod.id,
+                    subjectId: { in: Array.from(teacherSubjectIds) },
+                    isBreak: false
+                }
+            });
+
+            if (periods.length > 0) {
+                const dayMap = new Map<string, number>();
+                periods.forEach(p => {
+                    dayMap.set(p.day.substring(0, 3), (dayMap.get(p.day.substring(0, 3)) || 0) + 1);
+                });
+                const daysStr = Array.from(dayMap.keys()).join(', ');
+                scheduleStr = `${daysStr} (${periods.length} slots)`;
+            }
+        }
+    }
+
     return {
         classInfo: {
             id: c.id,
             name: c.name,
-            subject: c.subjects[0]?.subject.name || "Multiple Subjects",
+            subject: hasSpecificSubjects 
+                ? teacherSubjectsInClass.map(s => s.name).join(', ') 
+                : (c.subjects[0]?.subject.name || "Multiple Subjects"),
             subjectCode: c.classCode,
             level: c.name.split(' ')[0] || "N/A",
-            teacher: "You", // TODO: Fetch teacher name if needed
+            teacher: "You",
+            teacherId: teacherId,
+            teacherSubjectIds: Array.from(teacherSubjectIds),
             studentCount: c._count.enrollments,
-            academicYear: "2024-2025",
-            term: "Term 1",
+            academicYear: academicYear,
+            term: term,
             room: "TBD",
-            schedule: "Mon/Wed 10:00 AM"
+            schedule: scheduleStr
         },
         stats: {
             averageGrade: averageGrade,

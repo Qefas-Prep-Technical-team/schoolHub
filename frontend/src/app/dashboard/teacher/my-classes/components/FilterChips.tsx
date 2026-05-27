@@ -12,19 +12,18 @@ interface FilterChipsProps {
         class: string;
         subject: string;
     };
+    options: {
+        academicYear: string[];
+        term: string[];
+        level: string[];
+        class: string[];
+        subject: string[];
+    };
     onFilterChange: (filterType: keyof FilterChipsProps['filters'], value: string) => void;
     onClearFilters: () => void;
 }
 
-const filterOptions = {
-    academicYear: ['2023-2024', '2024-2025', '2025-2026'],
-    term: ['Term 1', 'Term 2', 'Term 3'],
-    level: ['JSS 1', 'JSS 2', 'JSS 3', 'SSS 1', 'SSS 2', 'SSS 3'],
-    class: ['JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'SSS 1A', 'SSS 1B', 'SSS 1C'],
-    subject: ['Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology', 'Basic Science', 'Social Studies'],
-};
-
-export default function FilterChips({ filters, onFilterChange, onClearFilters }: FilterChipsProps) {
+export default function FilterChips({ filters, options, onFilterChange, onClearFilters }: FilterChipsProps) {
     const hasActiveFilters = Object.values(filters).some(value => value !== '');
     const [openFilter, setOpenFilter] = useState<string | null>(null);
 
@@ -34,51 +33,61 @@ export default function FilterChips({ filters, onFilterChange, onClearFilters }:
 
     return (
         <div className="mb-10 flex flex-wrap items-center gap-4">
-            <FilterPill 
-                label="Academic Year" 
-                value={filters.academicYear} 
-                options={filterOptions.academicYear} 
-                icon={Calendar} 
-                isOpen={openFilter === 'year'}
-                onToggle={() => toggleFilter('year')}
-                onChange={(val: string) => { onFilterChange('academicYear', val); setOpenFilter(null); }}
-            />
-            <FilterPill 
-                label="Term" 
-                value={filters.term} 
-                options={filterOptions.term} 
-                icon={Clock} 
-                isOpen={openFilter === 'term'}
-                onToggle={() => toggleFilter('term')}
-                onChange={(val: string) => { onFilterChange('term', val); setOpenFilter(null); }}
-            />
-             <FilterPill 
-                label="Level" 
-                value={filters.level} 
-                options={filterOptions.level} 
-                icon={Layers} 
-                isOpen={openFilter === 'level'}
-                onToggle={() => toggleFilter('level')}
-                onChange={(val: string) => { onFilterChange('level', val); setOpenFilter(null); }}
-            />
-             <FilterPill 
-                label="Class" 
-                value={filters.class} 
-                options={filterOptions.class} 
-                icon={GraduationCap} 
-                isOpen={openFilter === 'class'}
-                onToggle={() => toggleFilter('class')}
-                onChange={(val: string) => { onFilterChange('class', val); setOpenFilter(null); }}
-            />
-             <FilterPill 
-                label="Subject" 
-                value={filters.subject} 
-                options={filterOptions.subject} 
-                icon={BookOpen} 
-                isOpen={openFilter === 'subject'}
-                onToggle={() => toggleFilter('subject')}
-                onChange={(val: string) => { onFilterChange('subject', val); setOpenFilter(null); }}
-            />
+            {options.academicYear.length > 0 && (
+                <FilterPill 
+                    label="Academic Year" 
+                    value={filters.academicYear} 
+                    options={options.academicYear} 
+                    icon={Calendar} 
+                    isOpen={openFilter === 'year'}
+                    onToggle={() => toggleFilter('year')}
+                    onChange={(val: string) => { onFilterChange('academicYear', val); setOpenFilter(null); }}
+                />
+            )}
+            {options.term.length > 0 && (
+                <FilterPill 
+                    label="Term" 
+                    value={filters.term} 
+                    options={options.term} 
+                    icon={Clock} 
+                    isOpen={openFilter === 'term'}
+                    onToggle={() => toggleFilter('term')}
+                    onChange={(val: string) => { onFilterChange('term', val); setOpenFilter(null); }}
+                />
+            )}
+            {options.level.length > 0 && (
+                <FilterPill 
+                    label="Level" 
+                    value={filters.level} 
+                    options={options.level} 
+                    icon={Layers} 
+                    isOpen={openFilter === 'level'}
+                    onToggle={() => toggleFilter('level')}
+                    onChange={(val: string) => { onFilterChange('level', val); setOpenFilter(null); }}
+                />
+            )}
+            {options.class.length > 0 && (
+                <FilterPill 
+                    label="Class" 
+                    value={filters.class} 
+                    options={options.class} 
+                    icon={GraduationCap} 
+                    isOpen={openFilter === 'class'}
+                    onToggle={() => toggleFilter('class')}
+                    onChange={(val: string) => { onFilterChange('class', val); setOpenFilter(null); }}
+                />
+            )}
+            {options.subject.length > 0 && (
+                <FilterPill 
+                    label="Subject" 
+                    value={filters.subject} 
+                    options={options.subject} 
+                    icon={BookOpen} 
+                    isOpen={openFilter === 'subject'}
+                    onToggle={() => toggleFilter('subject')}
+                    onChange={(val: string) => { onFilterChange('subject', val); setOpenFilter(null); }}
+                />
+            )}
 
             {/* Clear Filters Button Modernized */}
             <AnimatePresence>
