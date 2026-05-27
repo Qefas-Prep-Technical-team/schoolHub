@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-toastify";
-import { Loader2, BookOpen, Clock, FileText, UserCircle, Save, Eye, Edit3 } from "lucide-react";
+import { Loader2, BookOpen, Clock, FileText, UserCircle, Save, Eye, Edit3, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
@@ -30,6 +30,7 @@ const paperSchema = z.object({
   title: z.string().min(3, "Title is too short"),
   instructions: z.string().min(5, "Please provide instructions"),
   readingContent: z.string().optional(),
+  durationMinutes: z.coerce.number().min(1, "Duration must be at least 1 minute"),
   creationMode: z.enum(["MANUAL", "AI", "OMR"]).default("MANUAL"),
 });
 

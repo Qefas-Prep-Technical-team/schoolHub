@@ -10,7 +10,7 @@ import Link from "next/link";
 
 export default function CreateStandalonePaperPage() {
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.defaultTenantId;
+  const schoolId = user?.schools?.[0]?.schoolId || (user as any)?.defaultTenantId;
   console.log("School ID:", schoolId);
   console.log("User Schools:", user?.schools);
 

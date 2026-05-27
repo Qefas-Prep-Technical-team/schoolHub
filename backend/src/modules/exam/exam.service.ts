@@ -566,7 +566,7 @@ export const createSubjectPaperService = async ({
       readingContent: readingContent || null,
       images: images || [],
       imageLabels: imageLabels || [],
-      creationMode: creationMode || "MANUAL",
+      creationMode: (creationMode || "MANUAL") as any,
       exams: examId && examId !== 'none' ? {
         create: {
           examId

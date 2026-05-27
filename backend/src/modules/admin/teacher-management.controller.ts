@@ -393,7 +393,7 @@ export const inviteTeacher = async (req: Request, res: Response) => {
         const emailRegex = new RegExp(`^teacher(\\d+)@${schoolDomain}\\.com$`, "i");
 
         for (const t of existingTeachers) {
-          const match = t.email.match(emailRegex);
+          const match = t.email?.match(emailRegex);
           if (match) {
             const num = parseInt(match[1], 10);
             if (num > maxNumber) {
@@ -466,7 +466,6 @@ export const inviteTeacher = async (req: Request, res: Response) => {
           data: {
             classId,
             teacherId: teacher.id,
-            isPrimary: true,
           }
         });
       }
@@ -478,7 +477,6 @@ export const inviteTeacher = async (req: Request, res: Response) => {
             teacherId: teacher.id,
             subjectId,
             schoolId: school.id,
-            status: "ACTIVE",
           }
         });
       }

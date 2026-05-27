@@ -48,7 +48,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
     });
 
     const isQuiz = assessment.category === 'QUIZ';
-    const isCA = assessment.category === 'CA';
+    const isCA = (assessment.category as string) === 'CA';
     const isExam = !isQuiz && !isCA;
 
     // Distinct Theme Configuration

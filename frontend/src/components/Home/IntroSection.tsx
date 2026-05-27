@@ -90,12 +90,26 @@ const DashboardMockup: FC = () => (
 
 const IntroSection: FC = () => {
   return (
-    <section className="relative w-full overflow-hidden bg-[#EEF2FF] dark:bg-[#0a0f1e]" style={{ background: undefined }}>
-      {/* Subtle background blobs */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-100/60 dark:bg-blue-900/20 rounded-full blur-[120px] pointer-events-none -z-0" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-100/40 dark:bg-indigo-900/10 rounded-full blur-[100px] pointer-events-none -z-0" />
+    <section className="relative w-full min-h-[100dvh] flex items-center overflow-hidden bg-black">
+      {/* Video Background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      >
+        <source src="/videos/hero%20video.mp4" type="video/mp4" />
+      </video>
 
-      <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-10 py-20 lg:py-28">
+      {/* Gradient Overlay for Text Readability */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent dark:from-[#0a0f1e]/75 dark:via-[#0a0f1e]/50 dark:to-transparent backdrop-blur-[1px]" />
+
+      {/* Subtle background blobs */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-400/20 dark:bg-blue-900/40 rounded-full blur-[120px] pointer-events-none z-0" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-400/20 dark:bg-indigo-900/30 rounded-full blur-[100px] pointer-events-none z-0" />
+
+      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 lg:px-10 py-20 lg:py-28">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-12 items-center">
 
           {/* ── LEFT: Hero Text ───────────────────────────────────── */}
@@ -106,9 +120,9 @@ const IntroSection: FC = () => {
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold uppercase tracking-[0.15em] mb-8"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-900/40 border border-blue-800/50 text-blue-300 rounded-full text-xs font-bold uppercase tracking-[0.15em] mb-8"
             >
-              <CheckCircle className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+              <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />
               The Gold Standard in EdTech
             </motion.div>
 
@@ -117,11 +131,11 @@ const IntroSection: FC = () => {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight leading-[1.08] text-[#1a1a2b] dark:text-white mb-6"
+              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight leading-[1.08] text-white mb-6"
               style={{ letterSpacing: '-0.02em' }}
             >
               Education management,{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-500 to-indigo-400 bg-clip-text text-transparent">
                 reimagined.
               </span>
             </motion.h1>
@@ -131,11 +145,11 @@ const IntroSection: FC = () => {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-base md:text-lg text-[#45464c] dark:text-slate-400 leading-relaxed mb-10 max-w-xl font-light"
+              className="text-base md:text-lg text-slate-300 leading-relaxed mb-10 max-w-xl font-light"
             >
               One unified platform to power your entire institution.{' '}
               Streamline every workflow from admissions to graduation with{' '}
-              <strong className="text-[#1a1a2b] font-semibold">Qefas Hub.</strong>
+              <strong className="text-white font-semibold">Qefas Hub.</strong>
             </motion.p>
 
             {/* CTAs */}
@@ -147,16 +161,16 @@ const IntroSection: FC = () => {
             >
               <Link href="/signup" className="w-full sm:w-auto">
                 <button
-                  className="w-full sm:w-auto px-8 py-4 bg-[#111827] dark:bg-white dark:text-[#111827] text-white text-base font-semibold rounded-full hover:bg-[#1f2937] dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-slate-900/20 dark:shadow-white/10 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-4 bg-white text-[#111827] text-base font-semibold rounded-full hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-white/10 flex items-center justify-center gap-2"
                 >
                   Start Your Journey →
                 </button>
               </Link>
               <Link href="/contact" className="w-full sm:w-auto">
                 <button
-                  className="w-full sm:w-auto px-8 py-4 bg-white/80 dark:bg-white/5 dark:border-white/10 border border-slate-200 text-[#1a1a2b] dark:text-white text-base font-semibold rounded-full hover:bg-white dark:hover:bg-white/10 hover:border-slate-300 transition-all duration-200 shadow-sm flex items-center justify-center gap-2 backdrop-blur-sm"
+                  className="w-full sm:w-auto px-8 py-4 bg-white/10 border-white/20 border text-white text-base font-semibold rounded-full hover:bg-white/20 transition-all duration-200 shadow-sm flex items-center justify-center gap-2 backdrop-blur-sm"
                 >
-                  <PlayCircle className="w-5 h-5 text-blue-500" />
+                  <PlayCircle className="w-5 h-5 text-blue-400" />
                   Request a Demo
                 </button>
               </Link>
@@ -167,7 +181,7 @@ const IntroSection: FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.5 }}
-              className="mt-10 inline-flex items-center gap-4 bg-white/70 dark:bg-white/5 backdrop-blur-md border border-white/80 dark:border-white/10 rounded-2xl px-5 py-3 shadow-sm shadow-slate-200/50 dark:shadow-black/20"
+              className="mt-10 inline-flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl px-5 py-3 shadow-sm shadow-black/20"
             >
               <div className="flex -space-x-3">
                 {[1, 2, 3, 4].map((i) => (
@@ -186,7 +200,7 @@ const IntroSection: FC = () => {
                 <div className="flex text-amber-400 mb-0.5">
                   {[1, 2, 3, 4, 5].map((i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
                 </div>
-                <p className="text-xs text-[#45464c] dark:text-slate-400 font-medium">Trusted by 500+ institutions</p>
+                <p className="text-xs text-slate-300 font-medium">Trusted by 500+ institutions</p>
               </div>
             </motion.div>
           </div>
@@ -204,7 +218,7 @@ const IntroSection: FC = () => {
       </div>
 
       {/* Bottom fade into next section */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white/60 dark:from-[#0a0f1e]/80 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#fcf8ff] dark:from-[#0a0f1e] to-transparent pointer-events-none" />
     </section>
   );
 };

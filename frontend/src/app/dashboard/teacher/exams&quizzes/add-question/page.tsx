@@ -460,7 +460,7 @@ export default function TeacherAddQuestionDashboard() {
       <PaperPreviewModal
         isOpen={isPreviewModalOpen}
         onClose={() => setIsPreviewModalOpen(false)}
-        paper={paper}
+        paper={paper as any}
       />
 
       <EditPaperModal

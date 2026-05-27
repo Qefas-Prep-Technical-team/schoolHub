@@ -567,13 +567,13 @@ export default function TeacherPaperDetailPage() {
       <PaperPreviewModal
         isOpen={isPreviewModalOpen}
         onClose={() => setIsPreviewModalOpen(false)}
-        paper={paper}
+        paper={paper as any}
       />
 
       <EditPaperModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        paper={paper}
+        paper={paper as any}
         subjects={subjects}
         teachers={teachers}
         isLoadingData={isLoadingSubjects || isLoadingTeachers}

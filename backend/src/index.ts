@@ -31,6 +31,10 @@ app.use(
         "https://www.schoolhub.flexitistudio.com",
         "https://qefas.com",
         "https://www.qefas.com",
+        "https://qefashub.com",
+        "https://www.qefashub.com",
+        "https://api.qefashub.com",
+        "https://www.api.qefashub.com",
       ];
 
       try {
@@ -43,6 +47,8 @@ app.use(
           hostname.endsWith(".localhost") ||
           hostname === "qefas.com" ||
           hostname.endsWith(".qefas.com") ||
+          hostname === "qefashub.com" ||
+          hostname.endsWith(".qefashub.com") ||
           hostname.endsWith(".flexitistudio.com");
 
         if (isAllowed) {

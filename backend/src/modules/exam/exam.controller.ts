@@ -70,8 +70,8 @@ export const getExams = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      data: result.data || result, // Handle both paginated and non-paginated return formats safely
-      pagination: result.pagination,
+      data: (result as any).data || result, // Handle both paginated and non-paginated return formats safely
+      pagination: (result as any).pagination,
     });
   } catch (error: any) {
     console.error("LOG ERROR: [getExams] controller failed:", error);
@@ -713,8 +713,8 @@ export const getSubjectPapers = async (req: Request, res: Response) => {
     const result = await getSubjectPapersService(filters);
     res.status(200).json({ 
       success: true, 
-      data: result.data || result, 
-      pagination: result.pagination 
+      data: (result as any).data || result, 
+      pagination: (result as any).pagination 
     });
   } catch (error: any) {
     console.error("LOG ERROR: [getSubjectPapers]", error);

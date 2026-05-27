@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
+import { apiClient } from '@/lib/api/client'
 import { useSchoolTeachers, useSchoolSettings } from '@/lib/api/hooks/useSchool'
 import { useMarkBulkTeacherAttendance, useSchoolTeacherAttendanceByDate, useSchoolTeacherAttendanceTrend } from '@/lib/api/hooks/useAdmin'
 import { AddTeacherModal } from './components/AddTeacherModal'
@@ -81,6 +82,7 @@ export default function ManageTeachersPage() {
         return teachersData.map((t: any) => ({
             id: t.id,
             teacherCode: t.teacherCode,
+            code: t.teacherCode || 'UNASSIGNED',
             name: t.name,
             email: t.email || 'No Email Registered',
             subjects: t.teacherSubjects?.map((ts: any) => ts.subject.name) || [],
