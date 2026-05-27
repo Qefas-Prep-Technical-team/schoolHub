@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, GraduationCap, Award, CreditCard, Settings } from "lucide-react";
+import { LayoutDashboard, GraduationCap, Award, BookOpenCheck, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -17,19 +17,19 @@ const NAV_ITEMS = [
     icon: GraduationCap,
   },
   {
+    name: "Class",
+    href: "/dashboard/admin/classes",
+    icon: CalendarDays,
+  },
+  {
     name: "Grades",
     href: "/dashboard/admin/grades",
     icon: Award,
   },
   {
-    name: "Finance",
-    href: "/dashboard/admin/finance",
-    icon: CreditCard,
-  },
-  {
-    name: "Settings",
-    href: "/dashboard/admin/settings",
-    icon: Settings,
+    name: "Exam",
+    href: "/dashboard/admin/exams",
+    icon: BookOpenCheck,
   },
 ];
 

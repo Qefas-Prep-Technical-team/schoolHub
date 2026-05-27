@@ -83,6 +83,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     { icon: BrainCircuit, label: "Linking Hub", href: "/dashboard/admin/linking", featureKey: "linkingHub", section: "core" },
     { icon: CalendarDays, label: "Session Management", href: "/dashboard/admin/sessions", featureKey: "sessions", section: "core" },
     { icon: Globe, label: "Sub Domain", href: "/dashboard/admin/subdomain", featureKey: "subdomain", section: "core" },
+    { icon: MessageSquare, label: "Inquiries", href: "/dashboard/admin/inquiries", featureKey: "subdomain", section: "core" },
 
     // === ACADEMICS ===
     { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },
@@ -141,16 +142,21 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
     const subdomain = schoolProfile?.subdomain
     const subdomainUrl = useMemo(() => {
         if (!subdomain) return ""
-        const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000"
+        const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
+        
+        if (!baseUrl) {
+            return `https://${subdomain}.qefashub.com`;
+        }
+
         try {
             const url = new URL(baseUrl)
-            if (url.hostname === "localhost") {
-                return `${url.protocol}//${subdomain}.localhost:${url.port || "3000"}`
+            if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+                return `${url.protocol}//${subdomain}.lvh.me:${url.port || "3000"}`
             } else {
                 return `${url.protocol}//${subdomain}.${url.hostname}`
             }
         } catch (e) {
-            return `http://${subdomain}.localhost:3000`
+            return `https://${subdomain}.qefashub.com`
         }
     }, [subdomain])
 

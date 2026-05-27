@@ -243,3 +243,26 @@ export const useSchoolTodayAttendance = (schoolId: string, date?: string) => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
+
+export const useSubmitInquiry = () => {
+  return useMutation({
+    mutationFn: ({
+      subdomain,
+      data,
+    }: {
+      subdomain: string;
+      data: Record<string, unknown>;
+    }) => schoolService.submitInquiry(subdomain, data),
+  });
+};
+
+export const useSchoolInquiries = (
+  schoolId: string,
+  params?: { page?: number; limit?: number },
+) => {
+  return useQuery({
+    queryKey: [...schoolQueryKeys.all, "inquiries", schoolId, params],
+    queryFn: () => schoolService.getInquiries(schoolId, params),
+    enabled: !!schoolId,
+  });
+};

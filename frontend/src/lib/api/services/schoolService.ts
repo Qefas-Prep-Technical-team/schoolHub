@@ -148,4 +148,14 @@ export const schoolService = {
     const response = await apiClient.get(`/academic/subjects`, { params: { schoolId } });
     return response.data.data;
   },
+
+  submitInquiry: async (subdomain: string, data: Record<string, unknown>) => {
+    const response = await apiClient.post(`/schools/subdomain/${subdomain}/inquiry`, data);
+    return response.data;
+  },
+
+  getInquiries: async (schoolId: string, params?: { page?: number; limit?: number }) => {
+    const response = await apiClient.get(`/schools/${schoolId}/inquiries`, { params });
+    return response.data;
+  },
 };

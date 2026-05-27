@@ -108,18 +108,19 @@ export default function SubdomainBuilderPage() {
     const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
     
     if (!baseUrl) {
-      return `http://${subdomain}.qefashub.com`;
+      return `https://${subdomain}.qefashub.com`;
     }
 
     try {
       const url = new URL(baseUrl);
-      if (url.hostname === "localhost") {
-        return `${url.protocol}//${subdomain}.localhost:${url.port || "3000"}`;
+      if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+        // Windows and some browsers don't resolve *.localhost correctly, use lvh.me instead
+        return `${url.protocol}//${subdomain}.lvh.me:${url.port || "3000"}`;
       } else {
         return `${url.protocol}//${subdomain}.${url.hostname}`;
       }
     } catch (e) {
-      return `http://${subdomain}.qefashub.com`;
+      return `https://${subdomain}.qefashub.com`;
     }
   }, [subdomain]);
 

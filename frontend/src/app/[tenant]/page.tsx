@@ -1,7 +1,8 @@
 "use client";
 
 import React, { use } from "react";
-import { useSchoolLandingPageBySubdomain } from "@/lib/api/hooks/useSchool";
+import { useSchoolLandingPageBySubdomain, useSubmitInquiry } from "@/lib/api/hooks/useSchool";
+import { toast } from "react-toastify";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -45,6 +46,35 @@ export default function TenantLandingPage({ params }: PageProps) {
     const images = ["/image/backgroundSchool.jpg", "/image/backgroundSchool2.jpg"];
     setHeroBgImage(images[Math.floor(Math.random() * images.length)]);
   }, []);
+
+  const [inquiryForm, setInquiryForm] = React.useState({
+    name: "",
+    email: "",
+    phone: "",
+    subject: "Website Inquiry",
+    message: ""
+  });
+  const { mutate: submitInquiry, isPending: isSubmittingInquiry } = useSubmitInquiry();
+
+  const handleInquirySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inquiryForm.name || !inquiryForm.email || !inquiryForm.message) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+    submitInquiry(
+      { subdomain: tenant, data: inquiryForm },
+      {
+        onSuccess: () => {
+          toast.success("Inquiry submitted successfully! We will get back to you soon.");
+          setInquiryForm({ name: "", email: "", phone: "", subject: "Website Inquiry", message: "" });
+        },
+        onError: () => {
+          toast.error("Failed to submit inquiry. Please try again.");
+        }
+      }
+    );
+  };
 
   if (isLoading) {
     return (
@@ -625,14 +655,17 @@ export default function TenantLandingPage({ params }: PageProps) {
           }`}>
             <h4 className={`text-xl font-bold mb-6 transition-colors duration-300 ${
               darkMode ? "text-white" : "text-slate-900"
-            }`}>Send a Message</h4>
-            <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+            }`}>Send an Inquiry</h4>
+            <form className="space-y-5" onSubmit={handleInquirySubmit}>
               <div>
                 <label className={`block text-xs font-semibold uppercase tracking-wider mb-2 transition-colors duration-300 ${
                   darkMode ? "text-slate-400" : "text-slate-500"
                 }`}>Full Name</label>
                 <input
                   type="text"
+                  required
+                  value={inquiryForm.name}
+                  onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
                   placeholder="John Doe"
                   className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${
                     darkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
@@ -645,7 +678,24 @@ export default function TenantLandingPage({ params }: PageProps) {
                 }`}>Email Address</label>
                 <input
                   type="email"
+                  required
+                  value={inquiryForm.email}
+                  onChange={(e) => setInquiryForm({ ...inquiryForm, email: e.target.value })}
                   placeholder="john@example.com"
+                  className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${
+                    darkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                  }`}
+                />
+              </div>
+              <div>
+                <label className={`block text-xs font-semibold uppercase tracking-wider mb-2 transition-colors duration-300 ${
+                  darkMode ? "text-slate-400" : "text-slate-500"
+                }`}>Phone Number</label>
+                <input
+                  type="tel"
+                  value={inquiryForm.phone}
+                  onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
+                  placeholder="+1 (555) 123-4567"
                   className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${
                     darkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                   }`}
@@ -657,6 +707,9 @@ export default function TenantLandingPage({ params }: PageProps) {
                 }`}>Message</label>
                 <textarea
                   rows={4}
+                  required
+                  value={inquiryForm.message}
+                  onChange={(e) => setInquiryForm({ ...inquiryForm, message: e.target.value })}
                   placeholder="How can we help you?"
                   className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${
                     darkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
@@ -665,10 +718,11 @@ export default function TenantLandingPage({ params }: PageProps) {
               </div>
               <button
                 type="submit"
-                className="w-full py-4 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:brightness-110 hover:-translate-y-0.5"
+                disabled={isSubmittingInquiry}
+                className="w-full py-4 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:brightness-110 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: primaryColor }}
               >
-                Submit Message
+                {isSubmittingInquiry ? "Sending..." : "Submit Inquiry"}
               </button>
             </form>
           </div>

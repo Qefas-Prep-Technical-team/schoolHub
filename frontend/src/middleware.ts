@@ -15,10 +15,18 @@ export function middleware(req: NextRequest) {
 
   // 2. Extract subdomain
   let subdomain = "";
-  if (host.includes("localhost")) {
+  if (host.includes("localhost") || host.includes("lvh.me")) {
     const parts = host.split(".");
     if (parts.length > 1) {
-      parts.pop(); // pop localhost:3000
+      // pop localhost:3000 or lvh.me:3000
+      // wait, lvh.me has two parts: lvh and me.
+      // So if host is subdomain.lvh.me:3000 -> parts: ["subdomain", "lvh", "me:3000"]
+      if (host.includes("lvh.me")) {
+        parts.pop(); // me:3000
+        parts.pop(); // lvh
+      } else {
+        parts.pop(); // localhost:3000
+      }
       subdomain = parts.join(".");
     }
   } else {
@@ -42,6 +50,7 @@ export function middleware(req: NextRequest) {
     subdomain === "www" ||
     subdomain === "flexiti" ||
     subdomain === "localhost" ||
+    subdomain === "lvh" ||
     subdomain === "schoolhub"
   ) {
     return NextResponse.next();

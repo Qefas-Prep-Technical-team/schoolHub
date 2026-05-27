@@ -416,3 +416,102 @@ export const getSchoolTodayAttendance = async (req: Request, res: Response) => {
     return handleError(res, error, "school.getSchoolTodayAttendance");
   }
 };
+
+/**
+ * Handle submitting an inquiry from the public landing page
+ */
+export const submitInquiry = async (req: Request, res: Response) => {
+  try {
+    const { subdomain } = req.params;
+    const { name, email, phone, subject, message } = req.body;
+    
+    if (!subdomain || !name || !email || !message) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
+
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+
+    const school = await prisma.school.findFirst({
+      where: { subdomain: subdomain as string }
+    });
+
+    if (!school) {
+      return res.status(404).json({ success: false, message: "School not found" });
+    }
+
+    const inquiry = await prisma.inquiry.create({
+      data: {
+        schoolId: school.id,
+        name,
+        email,
+        phone,
+        subject,
+        message,
+        status: "UNREAD"
+      }
+    });
+
+    // Notify the school admins
+    const { createNotification } = require("../notification/notification.service");
+    await createNotification({
+      recipientType: "SCHOOL",
+      recipientId: school.id,
+      type: "GENERAL",
+      title: "New Website Inquiry",
+      message: `You have a new inquiry from ${name} (${email}).`,
+    });
+
+    return res.status(201).json({ success: true, message: "Inquiry submitted successfully", data: inquiry });
+  } catch (error: any) {
+    return handleError(res, error, "school.submitInquiry");
+  }
+};
+
+/**
+ * Handle fetching inquiries for the admin dashboard
+ */
+export const getInquiries = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    if (!schoolId) {
+      return res.status(400).json({ success: false, message: "schoolId is required" });
+    }
+
+    if (!validateSchoolAccess(req, schoolId as string)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+
+    const [data, total] = await Promise.all([
+      prisma.inquiry.findMany({
+        where: { schoolId: schoolId as string },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.inquiry.count({
+        where: { schoolId: schoolId as string }
+      })
+    ]);
+
+    return res.status(200).json({ 
+      success: true, 
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error: any) {
+    return handleError(res, error, "school.getInquiries");
+  }
+};

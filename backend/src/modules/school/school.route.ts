@@ -23,6 +23,10 @@ const router = Router();
 // Public route to fetch landing page settings by subdomain
 router.get("/subdomain/:subdomain/landing-page", getSchoolLandingPageBySubdomain);
 
+// Public route to submit an inquiry
+import { submitInquiry, getInquiries } from "./school.controller";
+router.post("/subdomain/:subdomain/inquiry", submitInquiry);
+
 // All school member routes require authentication
 router.use(authenticateToken);
 
@@ -112,5 +116,12 @@ router.patch("/:schoolId/landing-page", updateSchoolLandingPage);
  * @access  Private-Admin
  */
 router.get("/:schoolId/today-attendance", getSchoolTodayAttendance);
+
+/**
+ * @route   GET /api/v1/schools/:schoolId/inquiries
+ * @desc    Get all inquiries for a school
+ * @access  Private-Admin
+ */
+router.get("/:schoolId/inquiries", getInquiries);
 
 export default router;

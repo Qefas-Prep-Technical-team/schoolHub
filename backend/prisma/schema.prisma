@@ -88,6 +88,7 @@ model School {
   transactions             Transaction[]
   landingPage              SchoolLandingPage?
   teacherAttendances       TeacherAttendance[]
+  inquiries                Inquiry[]
 }
 
 model SchoolSetting {
@@ -1736,4 +1737,22 @@ model SchoolLandingPage {
   updatedAt    DateTime @updatedAt
 
   @@map("school_landing_pages")
+}
+
+model Inquiry {
+  id        String   @id @default(uuid())
+  schoolId  String
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  status    String   @default("UNREAD")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@index([createdAt])
+  @@map("inquiries")
 }
