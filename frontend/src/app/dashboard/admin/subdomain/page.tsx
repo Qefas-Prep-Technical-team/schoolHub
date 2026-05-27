@@ -60,21 +60,57 @@ export default function SubdomainBuilderPage() {
 
   // Synchronize when landing data loads
   React.useEffect(() => {
-    if (landingData) {
-      setHeroTitle(landingData.landingPage?.heroTitle || "");
-      setHeroSubtitle(landingData.landingPage?.heroSubtitle || "");
-      setAboutTitle(landingData.landingPage?.aboutTitle || "");
-      setAboutText(landingData.landingPage?.aboutText || "");
-      setPrimaryColor(landingData.landingPage?.primaryColor || "#3b82f6");
-      setFeatures(landingData.landingPage?.features || []);
-      setTestimonials(landingData.landingPage?.testimonials || []);
+    if (landingData?.landingPage) {
+      setHeroTitle(landingData.landingPage.heroTitle || "");
+      setHeroSubtitle(landingData.landingPage.heroSubtitle || "");
+      setAboutTitle(landingData.landingPage.aboutTitle || "");
+      setAboutText(landingData.landingPage.aboutText || "");
+      setPrimaryColor(landingData.landingPage.primaryColor || "#3b82f6");
+      setFeatures(landingData.landingPage.features || []);
+      setTestimonials(landingData.landingPage.testimonials || []);
+    } else if (schoolProfile) {
+      // If no landing page exists yet, populate with default school data
+      setHeroTitle(schoolProfile.name ? `Welcome to ${schoolProfile.name}` : "Welcome to Our School");
+      setHeroSubtitle("Empowering the next generation of leaders through quality education and innovative learning.");
+      setAboutTitle("About Us");
+      setAboutText(schoolProfile.description || "We are dedicated to providing an exceptional educational experience that fosters academic excellence, character development, and a passion for lifelong learning.");
+      setPrimaryColor("#3b82f6");
+      setFeatures([
+        {
+          title: "Expert Faculty",
+          description: "Learn from highly qualified educators dedicated to student success.",
+          icon: "Award"
+        },
+        {
+          title: "Modern Facilities",
+          description: "State-of-the-art classrooms and laboratories for interactive learning.",
+          icon: "Sparkles"
+        },
+        {
+          title: "Holistic Education",
+          description: "Focusing on academic, social, and emotional development.",
+          icon: "Users"
+        }
+      ]);
+      setTestimonials([
+        {
+          name: "Parent Name",
+          role: "Parent",
+          text: "This school has transformed my child's learning experience."
+        }
+      ]);
     }
-  }, [landingData]);
+  }, [landingData, schoolProfile]);
 
   const subdomain = schoolProfile?.subdomain;
   const subdomainUrl = React.useMemo(() => {
     if (!subdomain) return "";
-    const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
+    
+    if (!baseUrl) {
+      return `http://${subdomain}.qefashub.com`;
+    }
+
     try {
       const url = new URL(baseUrl);
       if (url.hostname === "localhost") {
@@ -83,7 +119,7 @@ export default function SubdomainBuilderPage() {
         return `${url.protocol}//${subdomain}.${url.hostname}`;
       }
     } catch (e) {
-      return `http://${subdomain}.localhost:3000`;
+      return `http://${subdomain}.qefashub.com`;
     }
   }, [subdomain]);
 

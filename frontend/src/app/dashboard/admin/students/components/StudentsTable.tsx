@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -77,7 +78,12 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
     mutationFn: (studentId: string) => adminService.verifyStudent(studentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["school-students"] });
+      queryClient.invalidateQueries({ queryKey: ["links"] });
+      toast.success("Student successfully authorized!", { theme: "colored" });
     },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to authorize student.");
+    }
   });
 
   const handleVerify = (e: React.MouseEvent, studentId: string) => {
@@ -146,7 +152,8 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
 
   return (
     <div className="rounded-[3.5rem] bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 overflow-hidden shadow-3xl">
-      <div className="overflow-x-auto custom-scrollbar">
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto custom-scrollbar">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-slate-100 dark:border-white/5">
@@ -270,6 +277,100 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile List View */}
+      <div className="md:hidden flex flex-col space-y-4 p-4">
+        {students.map((student: any) => {
+          const isSelected = selectedIds.includes(student.id);
+          const studentClass = student.classes?.[0]?.class;
+          
+          return (
+            <div 
+              key={student.id} 
+              className={cn(
+                "bg-white dark:bg-slate-900/60 p-5 rounded-3xl border shadow-sm flex flex-col gap-4 relative transition-all",
+                isSelected ? "border-primary" : "border-slate-200 dark:border-slate-800"
+              )}
+              style={isSelected ? { backgroundColor: `${primaryColor}05`, borderColor: primaryColor } : {}}
+            >
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <input
+                    type="checkbox"
+                    className="size-5 shrink-0 rounded-lg border-2 border-slate-200 dark:border-white/10 transition-all cursor-pointer"
+                    style={{ accentColor: primaryColor }}
+                    checked={isSelected}
+                    onChange={(e) => toggleSelect(e, student.id)}
+                  />
+                  <div className="relative shrink-0">
+                    <div className="size-10 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-md">
+                      {student.profileImage ? (
+                        <img src={student.profileImage} alt={student.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                           <User size={18} />
+                        </div>
+                      )}
+                    </div>
+                    {student.verified && (
+                      <div className="absolute -bottom-1 -right-1 size-3.5 bg-blue-500 rounded-lg border-2 border-white dark:border-slate-900 shadow-md flex items-center justify-center text-white">
+                         <ShieldCheck size={7} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 pr-2">
+                    <Link href={`/dashboard/admin/students/${student.id}`}>
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">{student.name}</h4>
+                    </Link>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{student.email}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <StatusChip status={student.verified} themeColor={primaryColor} />
+                  <code className="text-[8px] font-black text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded flex items-center gap-1 uppercase tracking-widest max-w-[80px] truncate">
+                    {student.studentCode || 'UNASSIGNED'}
+                  </code>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 mt-2 pt-4 border-t border-slate-100 dark:border-slate-800/50">
+                <div>
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Class</span>
+                  {studentClass ? (
+                    <div className="flex items-center gap-1.5 text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+                      <BookOpen size={12} />
+                      {studentClass.name} {studentClass.section}
+                    </div>
+                  ) : (
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-50">None</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-end gap-2">
+                  {!student.verified && (
+                    <Button 
+                      onClick={(e) => handleVerify(e, student.id)}
+                      disabled={verifyMutation.isPending}
+                      style={{ backgroundColor: primaryColor }}
+                      className="h-8 px-3 rounded-lg text-white font-black text-[9px] uppercase tracking-widest shadow-md"
+                    >
+                      {verifyMutation.isPending && verifyMutation.variables === student.id ? "Syncing..." : "Authorize"}
+                    </Button>
+                  )}
+                  <Link href={`/dashboard/admin/students/${student.id}`}>
+                    <Button 
+                      variant="outline"
+                      className="h-8 px-3 rounded-lg font-black text-[9px] uppercase tracking-widest"
+                      style={{ color: primaryColor, borderColor: `${primaryColor}30` }}
+                    >
+                      View
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {students.length === 0 && (

@@ -58,6 +58,7 @@ import { useClasses } from '@/lib/api/hooks/useClasses';
 import { usePublishGrade, useDeleteGrade } from '@/lib/api/hooks/useGrades';
 import { useFeatureAccess } from '@/lib/api/hooks/useFeatureAccess';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import GradeEntryModal from './GradeEntryModal';
 import GradeUploadModal from './GradeUploadModal';
 import GradeUploadInstructionsModal from './GradeUploadInstructionsModal';
@@ -70,9 +71,11 @@ interface GradeHubProps {
   isLoading: boolean;
   schoolId: string;
   primaryColor?: string;
+  onOpenExam?: (examId: string, studentId: string) => void;
 }
 
-export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '#2563eb' }: GradeHubProps) {
+export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '#2563eb', onOpenExam }: GradeHubProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6; // Set to 6 to stay premium and consistent
@@ -103,6 +106,17 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
     }
     setIsOCRModalOpen(true);
   };
+
+  const handleGradeClick = (grade: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const studentId = grade.student?.id || grade.studentId;
+    if (grade.examId && onOpenExam) {
+      onOpenExam(grade.examId, studentId);
+    } else {
+      router.push(`/dashboard/admin/students/${studentId}?tab=academic`);
+    }
+  };
+
 
   // Mutations
   const publishMutation = usePublishGrade();
@@ -412,7 +426,7 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
             return (
               <div 
                 key={grade.id} 
-                onClick={() => setSelectedGrade(grade)}
+                onClick={() => handleGradeClick(grade)}
                 className="group relative overflow-hidden bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[2rem] p-8 shadow-xl transition-all duration-500 hover:-translate-y-1.5 flex flex-col justify-between min-h-[260px] cursor-pointer"
               >
                 <div className="space-y-5">
@@ -505,9 +519,11 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
         </div>
       ) : (
         /* Original Table / List Layout Mode */
-        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/40 dark:shadow-none relative">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/40 dark:shadow-none relative">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
                   <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
@@ -521,7 +537,7 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
                 {paginatedGrades.map((grade: any) => (
                   <tr 
                     key={grade.id} 
-                    onClick={() => setSelectedGrade(grade)}
+                    onClick={() => handleGradeClick(grade)}
                     className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 cursor-pointer"
                   >
                     <td className="px-8 py-7">
@@ -604,7 +620,7 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
                             <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
                               <Edit size={14} /> Edit Grade
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); }}>
+                            <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => handleGradeClick(grade, e)}>
                               <Eye size={14} /> View Details
                             </DropdownMenuItem>
                             {grade.status !== 'PUBLISHED' && !grade.examAttemptId && !grade.subjectExamAttemptId && (
@@ -621,9 +637,90 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* Mobile List View */}
+          <div className="md:hidden flex flex-col space-y-4">
+            {paginatedGrades.map((grade: any) => (
+              <div 
+                key={grade.id} 
+                onClick={() => handleGradeClick(grade)}
+                className="bg-white dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-4 relative cursor-pointer active:scale-[0.98] transition-all"
+              >
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="h-10 w-10 shrink-0 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 shadow-inner"
+                    >
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-slate-800 dark:text-slate-100 line-clamp-1">{grade.student?.name}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Lvl {grade.student?.gradeLevel} • {grade.class?.name || 'Class'}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end shrink-0">
+                    <span className="text-lg font-black text-slate-900 dark:text-white leading-none">
+                      {grade.score}<span className="text-[10px] text-slate-400">/{grade.maxMarks}</span>
+                    </span>
+                    <div className="w-12 h-1 rounded-full bg-slate-100 dark:bg-slate-800 mt-2 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${(grade.score / grade.maxMarks) * 100}%`, backgroundColor: primaryColor }} />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-800/60 pt-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                      <FileText size={14} style={{ color: primaryColor }} /> <span className="line-clamp-1">{grade.subject}</span>
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      {grade.category || grade.assessmentType} <span className="h-1 w-1 bg-slate-300 rounded-full"></span> W:{grade.weight?.toFixed(1) || '1.0'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {(grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId) ? (
+                      <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-[0.1em] border border-emerald-100 dark:border-emerald-900/30">
+                        Published
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-[0.1em] border border-slate-100 dark:border-slate-800">
+                        Draft
+                      </span>
+                    )}
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
+                            <MoreVertical size={18} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl">
+                          <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
+                            <Edit size={14} /> Edit Grade
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => handleGradeClick(grade, e)}>
+                            <Eye size={14} /> View Details
+                          </DropdownMenuItem>
+                          {grade.status !== 'PUBLISHED' && !grade.examAttemptId && !grade.subjectExamAttemptId && (
+                            <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 gap-2" onClick={(e) => handlePublish(grade, e)}>
+                              <Send size={14} /> Publish Now
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-rose-600 gap-2" onClick={(e) => handleDeleteClick(grade, e)}>
+                            <Trash2 size={14} /> Delete Record
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Sliding Pagination Control */}

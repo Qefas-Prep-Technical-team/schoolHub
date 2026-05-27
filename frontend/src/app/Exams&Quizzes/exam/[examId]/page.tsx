@@ -140,11 +140,11 @@ export default function UnifiedExamPage() {
     }
 
     // console.log("Saving answer:", {
-      examId,
-      subjectPaperId: activeSubjectId,
-      questionId: activeQuestion.id,
-      answer: optionId
-    });
+    //   examId,
+    //   subjectPaperId: activeSubjectId,
+    //   questionId: activeQuestion.id,
+    //   answer: optionId
+    // });
 
     // Update local state immediately for responsive UI
     setLocalAnswers(prev => ({

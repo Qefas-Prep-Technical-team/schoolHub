@@ -58,7 +58,7 @@ export function PendingRequestsGrid({
         <Button 
           onClick={onAcceptAll}
           disabled={isAcceptAllPending}
-          className="h-10 px-6 rounded-xl bg-primary text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all"
+          className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all"
         >
           {isAcceptAllPending ? (
             <Loader2 className="animate-spin mr-2" size={14} />

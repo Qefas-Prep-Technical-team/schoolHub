@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useState, useMemo, useEffect } from 'react'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { studentService } from '@/lib/api/services/studentService'
 import { gradeService } from '@/lib/api/services/gradeService'
@@ -256,6 +256,7 @@ const TABS = [
 export default function StudentProfilePage() {
     const params = useParams()
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { user } = useAuthStore()
     const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || ''
     const studentId = typeof params.studentId === 'string' ? params.studentId : Array.isArray(params.studentId) ? params.studentId[0] : ''
@@ -276,8 +277,15 @@ export default function StudentProfilePage() {
     const { data: settings } = useSchoolSettings(schoolId)
     const primaryColor = settings?.themeColor || '#2563eb'
 
-    const [activeTab, setActiveTab] = useState('overview')
+    const tabParam = searchParams.get('tab')
+    const [activeTab, setActiveTab] = useState(tabParam || 'overview')
     const [academicSubTab, setAcademicSubTab] = useState<'exams' | 'papers'>('exams')
+    
+    useEffect(() => {
+        if (tabParam) {
+            setActiveTab(tabParam)
+        }
+    }, [tabParam])
     const [isTranscriptModalOpen, setIsTranscriptModalOpen] = useState(false)
     const [selectedScheduleCell, setSelectedScheduleCell] = useState<{ day: string; hour: string; type: 'attendance' | 'timetable' } | null>(null)
     const [scheduleDate, setScheduleDate] = useState(new Date())

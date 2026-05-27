@@ -118,7 +118,7 @@ const KeyBenefits = () => {
       {/* ── PARTNER STRIP ─────────────────────────────────────────────── */}
       <section className="bg-white dark:bg-[#111827] border-y border-slate-100 dark:border-white/[0.05] py-10 px-6 overflow-hidden">
         <div className="max-w-[1280px] mx-auto">
-          <p className="text-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mb-8">
+          <p className="text-center text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-[0.3em] mb-8">
             Institutional Partners
           </p>
 
@@ -127,9 +127,9 @@ const KeyBenefits = () => {
             {partners.map(({ Icon, name }) => (
               <div
                 key={name}
-                className="flex items-center gap-2 text-base font-bold tracking-tight text-slate-300 dark:text-slate-600 hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-300 cursor-default group"
+                className="flex items-center gap-2 text-base font-bold tracking-tight text-slate-700 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 cursor-default group"
               >
-                <Icon className="w-5 h-5 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
+                <Icon className="w-5 h-5 text-slate-700 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                 {name}
               </div>
             ))}
@@ -143,8 +143,8 @@ const KeyBenefits = () => {
               className="flex items-center gap-12 whitespace-nowrap"
             >
               {[...partners, ...partners, ...partners].map(({ Icon, name }, idx) => (
-                <div key={idx} className="flex items-center gap-2 text-sm font-bold text-slate-300">
-                  <Icon className="w-4 h-4 text-blue-300" /> {name}
+                <div key={idx} className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-400">
+                  <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400" /> {name}
                 </div>
               ))}
             </motion.div>

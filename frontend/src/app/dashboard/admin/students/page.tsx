@@ -190,7 +190,41 @@ export default function StudentsPage() {
                 
                 <div className="flex items-center gap-4">
                      <FilterChips selectedFilters={filters} onFilterChange={handleFilterChange} />
-                     <Button variant="outline" className="h-16 px-8 rounded-[2rem] border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-3 hidden sm:flex hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                     <Button 
+                       onClick={async () => {
+                         try {
+                           const result = await adminService.getSchoolStudents(schoolId!, 1, 10000, searchTerm, filters);
+                           const studentsToDownload = result?.data || [];
+                           if (studentsToDownload.length === 0) return;
+                           
+                           const headers = ["Student Name", "Email", "Student Code", "Class", "Department", "Verification Status"];
+                           const csvContent = [
+                             headers.join(","),
+                             ...studentsToDownload.map((student: any) => [
+                               `"${student.name || ''}"`,
+                               `"${student.email || ''}"`,
+                               `"${student.studentCode || 'UNASSIGNED'}"`,
+                               `"${student.classes?.[0]?.class?.name || ''} ${student.classes?.[0]?.class?.section || ''}"`,
+                               `"${student.department?.name || ''}"`,
+                               `"${student.verified ? 'Verified' : 'Pending'}"`
+                             ].join(","))
+                           ].join("\n");
+                           
+                           const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                           const url = URL.createObjectURL(blob);
+                           const link = document.createElement("a");
+                           link.setAttribute("href", url);
+                           link.setAttribute("download", `students_export_${new Date().toISOString().split('T')[0]}.csv`);
+                           document.body.appendChild(link);
+                           link.click();
+                           document.body.removeChild(link);
+                         } catch (error) {
+                           console.error("Failed to download students:", error);
+                         }
+                       }}
+                       variant="outline" 
+                       className="h-16 px-6 sm:px-8 rounded-[2rem] border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-3 flex hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
+                     >
                         <Download size={22} strokeWidth={3} className="text-slate-400" />
                      </Button>
                 </div>

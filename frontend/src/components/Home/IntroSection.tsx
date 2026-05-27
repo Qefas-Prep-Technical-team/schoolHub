@@ -218,7 +218,7 @@ const IntroSection: FC = () => {
       </div>
 
       {/* Bottom fade into next section */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#fcf8ff] dark:from-[#0a0f1e] to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white dark:from-[#111827] to-transparent pointer-events-none" />
     </section>
   );
 };

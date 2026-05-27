@@ -64,7 +64,7 @@ export function LinkingStats({ activeCount, pendingCount, totalCount, usage, lim
               <p className="text-sm font-bold text-gray-400">/ {studentLimit}</p>
             )}
           </div>
-          <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wider">Student Capacity</p>
+          <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wider">All Students</p>
           
           {studentLimit > 0 && (
             <div className="mt-3 overflow-hidden h-1.5 bg-purple-200 dark:bg-purple-900/30 rounded-full">

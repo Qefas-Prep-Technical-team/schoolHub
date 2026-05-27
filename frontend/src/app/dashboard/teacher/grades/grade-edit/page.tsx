@@ -120,11 +120,11 @@ export default function EditStudentGradePage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // console.log('Saving grade data:', {
-        scores,
-        comment,
-        notifyParent,
-        gradeSummary,
-      });
+      //   scores,
+      //   comment,
+      //   notifyParent,
+      //   gradeSummary,
+      // });
 
       setShowSuccessModal(true);
       setIsDirty(false);

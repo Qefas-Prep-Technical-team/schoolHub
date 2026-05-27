@@ -339,6 +339,11 @@ export default function AdminGradesDashboard() {
                 isLoading={isLoadingGrades} 
                 schoolId={schoolId}
                 primaryColor={primaryColor}
+                onOpenExam={(examId, studentId) => {
+                  setSelectedExamId(examId);
+                  setSelectedStudentId(studentId);
+                  setActiveTab('exams');
+                }}
               />
             </motion.section>
           ) : (

@@ -194,9 +194,9 @@ function LinkingHub() {
       />
 
       <LinkingStats 
-        activeCount={activeLinks.length}
-        pendingCount={pendingRequests.length}
-        totalCount={requests.length}
+        activeCount={(activeLinksData as any)?.pagination?.total || activeLinks.length}
+        pendingCount={(pendingRequestsData as any)?.pagination?.total || pendingRequests.length}
+        totalCount={(requestsData as any)?.pagination?.total || requests.length}
         usage={profile?.usage as any}
         limits={profile?.limits as any}
       />

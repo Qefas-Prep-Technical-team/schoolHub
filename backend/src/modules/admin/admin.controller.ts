@@ -771,9 +771,45 @@ export const verifyStudent = async (req: Request, res: Response) => {
       data: { verified: true }
     });
 
+    // Also automatically accept any pending link requests between this student and the school
+    const pendingRequests = await prisma.linkRequest.findMany({
+      where: {
+        linkType: "SCHOOL_STUDENT",
+        status: "PENDING",
+        OR: [
+          { requesterId: studentId, targetId: student.schoolId },
+          { requesterId: student.schoolId, targetId: studentId }
+        ]
+      }
+    });
+
+    const { respondToLinkRequestService } = require("../link/link.respond.service");
+
+    for (const req of pendingRequests) {
+      try {
+        await respondToLinkRequestService({
+          requestId: req.id,
+          action: "ACCEPT",
+          currentUserId: adminId,
+          currentUserType: "ADMIN"
+        });
+      } catch (err) {
+        console.error("Failed to auto-accept link request for student:", req.id, err);
+      }
+    }
+
+    // Also notify the student via socket if possible
+    try {
+      const { getIO } = require("../../socket");
+      getIO().to(`user:${studentId}`).emit("link:updated", {
+        type: "LINK_ACCEPTED",
+        message: "Your school registration has been approved!"
+      });
+    } catch (e) {}
+
     return res.status(200).json({
       success: true,
-      message: "Student verified successfully",
+      message: "Student verified successfully and pending links accepted",
       data: updatedStudent
     });
 

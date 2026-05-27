@@ -15,28 +15,28 @@ export function LinkingCodeCards({ personalCode, schoolCode, onCopy }: LinkingCo
       <div className="relative group overflow-hidden rounded-[2rem] bg-primary p-0.5 shadow-xl shadow-primary/10 active:scale-[0.99] transition-all duration-300">
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-40 pointer-events-none" />
         <div className="relative rounded-[1.8rem] bg-primary px-6 py-6 overflow-hidden">
-           <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+           <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-primary-foreground/10 rounded-full blur-2xl pointer-events-none" />
            <div className="flex items-center justify-between gap-4 relative z-10">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/15 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner ring-1 ring-white/20 transform group-hover:rotate-6 transition-transform duration-500">
-                <ShieldCheck className="text-white" size={24} />
+              <div className="w-12 h-12 bg-primary-foreground/15 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner ring-1 ring-primary-foreground/20 transform group-hover:rotate-6 transition-transform duration-500">
+                <ShieldCheck className="text-primary-foreground" size={24} />
               </div>
               <div>
-                <h3 className="text-lg font-black text-white tracking-tight">Personal</h3>
-                <p className="text-[10px] font-bold text-primary/60 uppercase tracking-widest">Admin Code</p>
+                <h3 className="text-lg font-black text-primary-foreground tracking-tight">Personal</h3>
+                <p className="text-[10px] font-bold text-primary-foreground/60 uppercase tracking-widest">Admin Code</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="bg-white/10 backdrop-blur-xl px-4 py-2.5 rounded-xl border border-white/10 shadow-lg flex items-center justify-center min-w-[100px] group-hover:bg-white/15 transition-all">
-                <span className="text-xl font-black tracking-widest text-white">
+              <div className="bg-primary-foreground/10 backdrop-blur-xl px-4 py-2.5 rounded-xl border border-primary-foreground/10 shadow-lg flex items-center justify-center min-w-[100px] group-hover:bg-primary-foreground/15 transition-all">
+                <span className="text-xl font-black tracking-widest text-primary-foreground">
                   {personalCode || '...'}
                 </span>
               </div>
               <Button 
                 onClick={() => onCopy(personalCode || '')}
                 size="icon"
-                className="h-11 w-11 rounded-xl bg-white text-primary shadow-lg hover:scale-105 active:scale-95 transition-all hover:bg-white/95"
+                className="h-11 w-11 rounded-xl bg-primary-foreground text-primary shadow-lg hover:scale-105 active:scale-95 transition-all hover:bg-primary-foreground/90"
               >
                 <Copy size={18} />
               </Button>
