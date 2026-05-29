@@ -167,7 +167,7 @@ export default function TenantCustomPage({ params }: PageProps) {
         </p>
         <Link
           href={`/${tenant}`}
-          style={{ backgroundColor: primaryColor || "#3b82f6" }}
+          style={{ backgroundColor: schoolData?.landingPage?.primaryColor || "#3b82f6" }}
           className="px-6 py-3 text-white rounded-xl font-semibold shadow-lg transition-all duration-300 hover:brightness-110 hover:-translate-y-0.5"
         >
           Go Back Home

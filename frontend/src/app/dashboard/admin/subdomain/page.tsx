@@ -39,7 +39,8 @@ import {
   MapPin,
   Phone,
   Mail,
-  X
+  X,
+  LayoutDashboard
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -148,7 +149,7 @@ export default function SubdomainBuilderPage() {
   const { data: landingData, isLoading } = useSchoolLandingPage(schoolId);
   const { mutate: updateLandingPage, isPending: isSaving } = useUpdateSchoolLandingPage();
 
-  const [activeTab, setActiveTab] = React.useState<"hero" | "about" | "highlights" | "testimonials" | "settings" | "templates">("hero");
+  const [activeTab, setActiveTab] = React.useState<"hero" | "about" | "highlights" | "testimonials" | "settings" | "templates" | "contact">("hero");
   const [previewDarkMode, setPreviewDarkMode] = React.useState(true);
   const [copiedLink, setCopiedLink] = React.useState(false);
 
