@@ -91,19 +91,19 @@ export default function PlatformSettingsPage() {
                                     key: "google_auth_enabled", 
                                     title: "Google Authentication", 
                                     desc: "Enable/Disable Google Login and Sign Up platform-wide.", 
-                                    enabled: settings?.google_auth_enabled !== "false" 
+                                    enabled: String(settings?.google_auth_enabled) !== "false" 
                                 },
                                 { 
                                     key: "global_registration", 
                                     title: "Global Registration", 
                                     desc: "Enable/Disable new school signups globally.", 
-                                    enabled: settings?.global_registration !== "false" 
+                                    enabled: String(settings?.global_registration) !== "false" 
                                 },
                                 { 
                                     key: "maintenance_mode", 
                                     title: "Maintenance Mode", 
                                     desc: "Activate platform-wide technical lockdown.", 
-                                    enabled: settings?.maintenance_mode === "true" 
+                                    enabled: String(settings?.maintenance_mode) === "true" 
                                 },
                             ].map((opt, i) => (
                                 <div key={i} className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:border-emerald-500/30 transition-all">

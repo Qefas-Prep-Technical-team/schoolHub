@@ -1724,12 +1724,15 @@ model SchoolLandingPage {
   schoolId     String   @unique
   heroTitle    String?  @default("Welcome to Our School")
   heroSubtitle String?  @default("Empowering students to achieve their full potential.")
+  heroImage    String?
   aboutTitle   String?  @default("About Us")
   aboutText    String?  @default("We provide a supportive and challenging learning environment that fosters academic excellence, critical thinking, and character development.")
+  aboutImage   String?
   primaryColor String?  @default("#2563eb")
   features     Json?    @default("[]") // Array of: { title, description, icon }
   testimonials Json?    @default("[]") // Array of: { name, role, text }
   gallery      Json?    @default("[]") // Array of image URLs
+  contactInfo  Json?    @default("{}") // { email, phone, address }
   customPages  Json?    @default("[]") // Pro builder pages: { id, title, slug, blocks: [] }
   draftData    Json? // Unsaved changes for auto-save functionality
   school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)

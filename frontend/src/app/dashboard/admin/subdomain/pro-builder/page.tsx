@@ -5,6 +5,7 @@ import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useSchoolProfile, useSchoolLandingPage, useUpdateSchoolLandingPage } from "@/lib/api/hooks/useSchool";
 import { toast } from "react-toastify";
 import Link from "next/link";
+import ImageUpload from "@/components/reusable/ImageUpload";
 import {
   LayoutDashboard, Layers, Plus, Settings, Eye, Save, ChevronLeft,
   MousePointer2, Trash2, MoveUp, MoveDown, Type, Image as ImageIcon,
@@ -153,6 +154,30 @@ export default function ProBuilderPage() {
     );
   };
 
+  const handleRevertToDefault = () => {
+    if (!schoolId) return;
+    if (window.confirm("Are you sure? This will delete all custom pages and blocks, returning your site to the standard layout. Your custom colors, texts, and contact info will be kept.")) {
+      const payload = {
+        heroTitle, heroSubtitle, aboutTitle, aboutText, primaryColor, features, testimonials,
+        gallery: landingData?.landingPage?.gallery || [],
+        customPages: [],
+        isDraft: false,
+      };
+      updateLandingPage(
+        { schoolId, data: payload },
+        {
+          onSuccess: () => {
+            setPages([{ id: "home", title: "Home", slug: "/", blocks: [] }]);
+            setActivePageId("home");
+            setSaveStatus("saved");
+            toast.success("Site reverted to default layout successfully!");
+          },
+          onError: () => toast.error("Failed to revert website.")
+        }
+      );
+    }
+  };
+
   const addPage = () => {
     const newPage: CustomPage = {
       id: `page-${Date.now()}`,
@@ -233,7 +258,7 @@ export default function ProBuilderPage() {
   if (isLoading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans -m-6 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800">
+    <div className="h-[calc(100vh-80px)] bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans -m-6 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800">
       <header className="h-14 border-b border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 px-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <Link href="/dashboard/admin/subdomain" className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg text-slate-500 transition-colors">
@@ -259,6 +284,10 @@ export default function ProBuilderPage() {
             </button>
           )}
 
+          <button onClick={handleRevertToDefault} disabled={isSaving} className="border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50">
+            <span>Revert to Default Layout</span>
+          </button>
+
           <button onClick={handleSave} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm shadow-blue-500/20 disabled:opacity-50">
             <Save className="w-4 h-4" />
             <span>{isSaving && saveStatus !== "saving" ? "Publishing..." : "Publish Website"}</span>
@@ -266,9 +295,9 @@ export default function ProBuilderPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* LEFT PANEL: PAGES */}
-        <aside className="w-64 border-r border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 flex flex-col shrink-0">
+        <aside className="w-64 border-r border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 flex flex-col shrink-0 min-h-0">
           <div className="p-4 border-b border-slate-200 dark:border-slate-900 flex items-center justify-between">
             <div className="flex items-center gap-2 text-slate-900 dark:text-white">
               <Layers className="w-4 h-4" />
@@ -287,90 +316,13 @@ export default function ProBuilderPage() {
           </div>
         </aside>
 
-        {/* MIDDLE PANEL: CONTROLS / CANVAS */}
-        {isHomePageActive ? (
-          <aside className="w-80 border-r border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 flex flex-col shrink-0">
-            <div className="flex overflow-x-auto border-b border-slate-200 dark:border-slate-900 hide-scrollbar shrink-0 px-2 py-2">
-              <button onClick={() => setActiveTab("hero")} className={`whitespace-nowrap px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${activeTab === "hero" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-md" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"}`}>Hero</button>
-              <button onClick={() => setActiveTab("about")} className={`whitespace-nowrap px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${activeTab === "about" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-md" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"}`}>About</button>
-              <button onClick={() => setActiveTab("highlights")} className={`whitespace-nowrap px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${activeTab === "highlights" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-md" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"}`}>Highlights</button>
-              <button onClick={() => setActiveTab("testimonials")} className={`whitespace-nowrap px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${activeTab === "testimonials" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-md" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"}`}>Reviews</button>
-              <button onClick={() => setActiveTab("settings")} className={`whitespace-nowrap px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${activeTab === "settings" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-md" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"}`}>Style</button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-5">
-              {activeTab === "hero" && (
-                <div className="space-y-5">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Hero Headline</label>
-                    <input type="text" value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-xs bg-slate-50 dark:bg-slate-950 dark:border-slate-800" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Hero Subtitle</label>
-                    <textarea rows={3} value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-xs bg-slate-50 dark:bg-slate-950 dark:border-slate-800"></textarea>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "about" && (
-                <div className="space-y-5">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">About Title</label>
-                    <input type="text" value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-xs bg-slate-50 dark:bg-slate-950 dark:border-slate-800" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">About Copy Description</label>
-                    <textarea rows={6} value={aboutText} onChange={(e) => setAboutText(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-xs bg-slate-50 dark:bg-slate-950 dark:border-slate-800"></textarea>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "settings" && (
-                <div className="space-y-5">
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Primary Brand Color</label>
-                    <div className="flex items-center gap-3">
-                      <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-12 h-12 rounded-xl cursor-pointer" />
-                      <input type="text" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="flex-1 border rounded-xl px-3 py-2 text-xs bg-white dark:bg-slate-950 dark:border-slate-800" />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "highlights" && (
-                <div className="space-y-5">
-                  <button onClick={addFeature} className="px-3 py-1.5 bg-blue-100 text-blue-600 rounded">Add Feature</button>
-                  {features.map((f, i) => (
-                    <div key={i} className="p-4 border rounded-xl space-y-2 relative group">
-                      <button onClick={() => removeFeature(i)} className="absolute top-2 right-2 text-slate-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
-                      <input type="text" value={f.title} onChange={e => updateFeature(i, "title", e.target.value)} placeholder="Title" className="w-full border rounded px-2 py-1 text-xs" />
-                      <input type="text" value={f.description} onChange={e => updateFeature(i, "description", e.target.value)} placeholder="Description" className="w-full border rounded px-2 py-1 text-xs" />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {activeTab === "testimonials" && (
-                <div className="space-y-5">
-                  <button onClick={addTestimonial} className="px-3 py-1.5 bg-blue-100 text-blue-600 rounded">Add Testimonial</button>
-                  {testimonials.map((t, i) => (
-                    <div key={i} className="p-4 border rounded-xl space-y-2 relative group">
-                      <button onClick={() => removeTestimonial(i)} className="absolute top-2 right-2 text-slate-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
-                      <input type="text" value={t.name} onChange={e => updateTestimonial(i, "name", e.target.value)} placeholder="Name" className="w-full border rounded px-2 py-1 text-xs" />
-                      <input type="text" value={t.role} onChange={e => updateTestimonial(i, "role", e.target.value)} placeholder="Role" className="w-full border rounded px-2 py-1 text-xs" />
-                      <textarea value={t.text} onChange={e => updateTestimonial(i, "text", e.target.value)} placeholder="Quote" className="w-full border rounded px-2 py-1 text-xs"></textarea>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-            </div>
-          </aside>
-        ) : (
-          <div className="flex-1 flex flex-col bg-slate-100 dark:bg-slate-900 overflow-hidden relative">
-            <div className="absolute top-4 right-4 flex gap-2 z-10">
-              <button onClick={() => addBlock("HERO")} className="px-3 py-1.5 bg-white dark:bg-slate-800 rounded-lg text-xs font-medium shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"><ImageIcon className="w-3.5 h-3.5" /> Hero</button>
-              <button onClick={() => addBlock("TEXT")} className="px-3 py-1.5 bg-white dark:bg-slate-800 rounded-lg text-xs font-medium shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"><Type className="w-3.5 h-3.5" /> Text</button>
+        {/* MIDDLE PANEL: CANVAS PREVIEW */}
+        <div className="flex-1 flex flex-col bg-slate-100 dark:bg-slate-900 overflow-hidden relative min-h-0">
+            <div className="absolute top-4 right-4 flex gap-2 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 self-center px-2">Add Block:</span>
+              <button onClick={() => addBlock("HERO")} className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-xs font-medium shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-colors"><ImageIcon className="w-3.5 h-3.5 text-blue-500" /> Hero</button>
+              <button onClick={() => addBlock("TEXT")} className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-xs font-medium shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-colors"><Type className="w-3.5 h-3.5 text-emerald-500" /> Text</button>
+              <button onClick={() => addBlock("GALLERY")} className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-xs font-medium shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-colors"><LayoutTemplate className="w-3.5 h-3.5 text-amber-500" /> Gallery</button>
             </div>
             
             <div className="flex-1 overflow-y-auto p-8">
@@ -390,20 +342,39 @@ export default function ProBuilderPage() {
 
                     <div className="pointer-events-none">
                       {block.type === "HERO" && (
-                        <div className="text-center py-12 px-4 rounded-xl" style={{ backgroundColor: primaryColor + "10" }}>
-                          <h2 className="text-4xl font-black mb-4">{block.content.title}</h2>
-                          <p className="text-lg opacity-80">{block.content.subtitle}</p>
+                        <div className="relative text-center py-20 px-4 rounded-xl overflow-hidden" style={{ backgroundColor: primaryColor + "10" }}>
+                          {block.content.bgImage && (
+                            <div className="absolute inset-0">
+                              <img src={block.content.bgImage} alt="Hero Background" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-slate-950" style={{ opacity: (block.content.overlayOpacity || 50) / 100 }}></div>
+                            </div>
+                          )}
+                          <div className="relative z-10 text-white">
+                            <h2 className="text-4xl font-black mb-4 drop-shadow-md">{block.content.title}</h2>
+                            <p className="text-lg opacity-90 drop-shadow-md">{block.content.subtitle}</p>
+                          </div>
                         </div>
                       )}
                       {block.type === "TEXT" && (
-                        <div className={`py-8 ${block.content.alignment === "center" ? "text-center" : "text-left"}`}>
+                        <div 
+                          className={`${block.content.padding || 'py-8'} ${block.content.alignment === "center" ? "text-center" : "text-left"} rounded-xl px-6`}
+                          style={{ backgroundColor: block.content.backgroundColor || 'transparent', color: block.content.textColor || 'inherit' }}
+                        >
                           <h3 className="text-2xl font-bold mb-4">{block.content.heading}</h3>
                           <p className="opacity-80 leading-relaxed">{block.content.text}</p>
                         </div>
                       )}
                       {block.type === "GALLERY" && (
-                        <div className="grid grid-cols-3 gap-4 py-8">
-                          {[1,2,3].map(i => <div key={i} className="aspect-square bg-slate-200 dark:bg-slate-800 rounded-xl flex items-center justify-center"><ImageIcon className="w-8 h-8 opacity-20" /></div>)}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-8">
+                          {block.content.images && block.content.images.length > 0 ? (
+                            block.content.images.map((img: string, i: number) => (
+                              <div key={i} className="aspect-square bg-slate-200 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                                <img src={img} alt={`Gallery ${i}`} className="w-full h-full object-cover" />
+                              </div>
+                            ))
+                          ) : (
+                            [1,2,3].map(i => <div key={i} className="aspect-square bg-slate-200 dark:bg-slate-800 rounded-xl flex items-center justify-center"><ImageIcon className="w-8 h-8 opacity-20" /></div>)
+                          )}
                         </div>
                       )}
                     </div>
@@ -418,35 +389,10 @@ export default function ProBuilderPage() {
                 )}
               </div>
             </div>
-          </div>
-        )}
+        </div>
 
-        {/* RIGHT PANEL: PREVIEW OR SETTINGS */}
-        {isHomePageActive ? (
-          <div className="flex-1 bg-slate-200 dark:bg-slate-800 overflow-hidden flex flex-col relative">
-            <div className="absolute top-4 right-4 flex items-center gap-2 z-10 bg-slate-800/80 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-slate-700/50">
-              <button onClick={() => setPreviewDarkMode(false)} className={`w-6 h-6 rounded-full flex items-center justify-center ${!previewDarkMode ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-white"}`}><Globe className="w-3.5 h-3.5" /></button>
-              <button onClick={() => setPreviewDarkMode(true)} className={`w-6 h-6 rounded-full flex items-center justify-center ${previewDarkMode ? "bg-slate-950 text-white shadow-sm" : "text-slate-400 hover:text-white"}`}><Eye className="w-3.5 h-3.5" /></button>
-            </div>
-            
-            <div className="flex-1 p-4 sm:p-8 flex items-center justify-center overflow-hidden">
-              <div className="w-full max-w-sm sm:max-w-md lg:max-w-4xl h-full bg-white dark:bg-slate-950 rounded-2xl shadow-2xl overflow-hidden flex flex-col border-4 border-slate-800/20 relative transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
-                <div className="h-6 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center px-3 gap-1.5 shrink-0">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-400/80"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400/80"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/80"></div>
-                  <div className="flex-1 flex justify-center"><div className="w-32 h-3 bg-white dark:bg-slate-800 rounded-full opacity-50"></div></div>
-                </div>
-                {subdomainUrl ? (
-                  <iframe src={subdomainUrl} className="flex-1 w-full bg-white dark:bg-slate-950" />
-                ) : (
-                  <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">Please configure subdomain first</div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <aside className="w-80 border-l border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 flex flex-col shrink-0">
+        {/* RIGHT PANEL: SETTINGS */}
+        <aside className="w-80 border-l border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 flex flex-col shrink-0 min-h-0 z-20 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)]">
             {activeBlock ? (
               <div className="flex-1 flex flex-col">
                 <div className="p-4 border-b border-slate-200 dark:border-slate-900 flex items-center gap-2">
@@ -464,6 +410,19 @@ export default function ProBuilderPage() {
                         <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Subtitle</label>
                         <textarea rows={3} value={activeBlock.content.subtitle || ""} onChange={(e) => updateActiveBlock({ subtitle: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 dark:border-slate-800 resize-none" />
                       </div>
+                      <div>
+                        <ImageUpload
+                          label="Background Image"
+                          description="Upload a high-quality background image for your hero section."
+                          value={activeBlock.content.bgImage || ""}
+                          onChange={(url) => updateActiveBlock({ bgImage: url })}
+                          aspectRatio="video"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Overlay Opacity: {activeBlock.content.overlayOpacity || 50}%</label>
+                        <input type="range" min="0" max="100" value={activeBlock.content.overlayOpacity || 50} onChange={(e) => updateActiveBlock({ overlayOpacity: parseInt(e.target.value) })} className="w-full" />
+                      </div>
                     </div>
                   )}
 
@@ -477,20 +436,65 @@ export default function ProBuilderPage() {
                         <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Text Content</label>
                         <textarea rows={6} value={activeBlock.content.text || ""} onChange={(e) => updateActiveBlock({ text: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 dark:border-slate-800 resize-none" />
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Alignment</label>
-                        <select value={activeBlock.content.alignment || "left"} onChange={(e) => updateActiveBlock({ alignment: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 dark:border-slate-800">
-                          <option value="left">Left Aligned</option>
-                          <option value="center">Center Aligned</option>
-                        </select>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Background Color</label>
+                          <input type="color" value={activeBlock.content.backgroundColor || "#ffffff"} onChange={(e) => updateActiveBlock({ backgroundColor: e.target.value })} className="w-full h-8 rounded cursor-pointer" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Text Color</label>
+                          <input type="color" value={activeBlock.content.textColor || "#000000"} onChange={(e) => updateActiveBlock({ textColor: e.target.value })} className="w-full h-8 rounded cursor-pointer" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Alignment</label>
+                          <select value={activeBlock.content.alignment || "left"} onChange={(e) => updateActiveBlock({ alignment: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 dark:border-slate-800">
+                            <option value="left">Left Aligned</option>
+                            <option value="center">Center Aligned</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Padding</label>
+                          <select value={activeBlock.content.padding || "py-8"} onChange={(e) => updateActiveBlock({ padding: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 dark:border-slate-800">
+                            <option value="py-4">Small</option>
+                            <option value="py-8">Medium</option>
+                            <option value="py-16">Large</option>
+                            <option value="py-24">Extra Large</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
                   )}
 
                   {activeBlock.type === "GALLERY" && (
-                    <div className="text-center py-8">
-                      <ImageIcon className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                      <p className="text-xs text-slate-500">Gallery image management is coming soon.</p>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Gallery Images</label>
+                        <button onClick={() => updateActiveBlock({ images: [...(activeBlock.content.images || []), ""] })} className="text-xs text-blue-600 font-medium">+ Add Image</button>
+                      </div>
+                      {(activeBlock.content.images || []).map((img: string, i: number) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <div className="flex-1">
+                            <ImageUpload
+                              label={`Image ${i + 1}`}
+                              description="Upload an image for your gallery"
+                              value={img}
+                              onChange={(url) => {
+                                const newImages = [...(activeBlock.content.images || [])];
+                                newImages[i] = url;
+                                updateActiveBlock({ images: newImages });
+                              }}
+                              aspectRatio="square"
+                            />
+                          </div>
+                          <button onClick={() => {
+                            const newImages = [...(activeBlock.content.images || [])];
+                            newImages.splice(i, 1);
+                            updateActiveBlock({ images: newImages });
+                          }} className="p-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -504,7 +508,6 @@ export default function ProBuilderPage() {
               </div>
             )}
           </aside>
-        )}
       </div>
     </div>
   );

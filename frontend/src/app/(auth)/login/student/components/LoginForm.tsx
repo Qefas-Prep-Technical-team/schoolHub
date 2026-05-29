@@ -139,15 +139,7 @@ export default function LoginForm() {
                 </button>
 
                 {globalFeatures?.googleLogin !== false && (
-                    <>
-                        <div className="relative flex items-center py-4">
-                            <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
-                            <span className="flex-shrink-0 mx-6 text-[10px] uppercase font-black tracking-[0.2em] text-slate-400 dark:text-slate-500">Or continue with</span>
-                            <div className="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
-                        </div>
-                        
-                        <GoogleLoginButton userType="STUDENT" />
-                    </>
+                    <GoogleLoginButton userType="STUDENT" />
                 )}
 
                 <div className="flex justify-end mt-2">

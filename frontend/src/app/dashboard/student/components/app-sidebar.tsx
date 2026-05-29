@@ -122,7 +122,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
     const menuSections = useMemo(() => {
         if (isFeaturesLoading) return null;
         
-        const currentFeatures = dynamicFeatures || STUDENT_FEATURE_FLAGS;
+        const currentFeatures = { ...STUDENT_FEATURE_FLAGS, ...(dynamicFeatures || {}) };
         
         const filtered = studentMenuItems.filter(item => {
             // Map 'results' to 'grades' for consistency with schema/seed

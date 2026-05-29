@@ -137,7 +137,7 @@ export function AppSidebar() {
     // Get the current features configuration
     const currentFeatures = useMemo(() => {
         if (isFeaturesLoading) return null;
-        return dynamicFeatures || FEATURE_FLAGS_TEACHERS;
+        return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}) };
     }, [dynamicFeatures, isFeaturesLoading]);
 
     return (

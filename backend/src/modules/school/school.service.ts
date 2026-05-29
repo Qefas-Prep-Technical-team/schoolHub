@@ -872,15 +872,18 @@ export const updateSchoolLandingPageService = async (
     if (data.heroTitle !== undefined) newDraftData.heroTitle = data.heroTitle;
     if (data.heroSubtitle !== undefined)
       newDraftData.heroSubtitle = data.heroSubtitle;
+    if (data.heroImage !== undefined) newDraftData.heroImage = data.heroImage;
     if (data.aboutTitle !== undefined)
       newDraftData.aboutTitle = data.aboutTitle;
     if (data.aboutText !== undefined) newDraftData.aboutText = data.aboutText;
+    if (data.aboutImage !== undefined) newDraftData.aboutImage = data.aboutImage;
     if (data.primaryColor !== undefined)
       newDraftData.primaryColor = data.primaryColor;
     if (data.features !== undefined) newDraftData.features = data.features;
     if (data.testimonials !== undefined)
       newDraftData.testimonials = data.testimonials;
     if (data.gallery !== undefined) newDraftData.gallery = data.gallery;
+    if (data.contactInfo !== undefined) newDraftData.contactInfo = data.contactInfo;
     if (data.customPages !== undefined)
       newDraftData.customPages = data.customPages;
 
@@ -899,14 +902,17 @@ export const updateSchoolLandingPageService = async (
   if (data.heroTitle !== undefined) updateData.heroTitle = data.heroTitle;
   if (data.heroSubtitle !== undefined)
     updateData.heroSubtitle = data.heroSubtitle;
+  if (data.heroImage !== undefined) updateData.heroImage = data.heroImage;
   if (data.aboutTitle !== undefined) updateData.aboutTitle = data.aboutTitle;
   if (data.aboutText !== undefined) updateData.aboutText = data.aboutText;
+  if (data.aboutImage !== undefined) updateData.aboutImage = data.aboutImage;
   if (data.primaryColor !== undefined)
     updateData.primaryColor = data.primaryColor;
   if (data.features !== undefined) updateData.features = data.features;
   if (data.testimonials !== undefined)
     updateData.testimonials = data.testimonials;
   if (data.gallery !== undefined) updateData.gallery = data.gallery;
+  if (data.contactInfo !== undefined) updateData.contactInfo = data.contactInfo;
   if (data.customPages !== undefined) updateData.customPages = data.customPages;
 
   updateData.draftData = null; // Clear draft data upon publish

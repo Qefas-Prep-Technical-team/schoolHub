@@ -32,7 +32,8 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
       // If user is authenticated but shouldn't be on auth pages (like login)
       if (!requireAuth && isAuthenticated) {
         // console.log("🔐 Redirecting to dashboard: Already authenticated");
-        router.push("/dashboard");
+        const dashPath = user?.userType ? `/dashboard/${user.userType.toLowerCase().replace('_', '-')}` : "/dashboard";
+        router.replace(dashPath);
         return;
       }
 

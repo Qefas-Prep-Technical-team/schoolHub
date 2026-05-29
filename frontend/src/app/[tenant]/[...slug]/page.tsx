@@ -27,12 +27,14 @@ import {
 } from "lucide-react";
 
 interface PageProps {
-  params: Promise<{ tenant: string }>;
+  params: Promise<{ tenant: string; slug: string[] }>;
 }
 
-export default function TenantLandingPage({ params }: PageProps) {
+export default function TenantCustomPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const tenant = resolvedParams.tenant;
+  const slugArray = resolvedParams.slug || [];
+  const targetSlug = "/" + slugArray.join("/");
 
   const { data: schoolData, isLoading, error } = useSchoolLandingPageBySubdomain(tenant);
   // console.log("Fetched landing page data for tenant:", tenant, schoolData);
@@ -154,7 +156,25 @@ export default function TenantLandingPage({ params }: PageProps) {
   const { landingPage, schoolName, schoolLogo, schoolMotto } = schoolData;
 
   const customPages = landingPage?.customPages as any[] || [];
-  const homeCustomPage = customPages.find((p: any) => p.slug === "/");
+  const activePage = customPages.find((p: any) => p.slug === targetSlug);
+
+  if (!activePage || !activePage.blocks || activePage.blocks.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+        <h1 className="text-3xl font-bold text-white mb-3">Page Not Found</h1>
+        <p className="text-slate-400 max-w-md mb-8">
+          The page <span className="text-red-400 font-semibold">{targetSlug}</span> does not exist on this school's site.
+        </p>
+        <Link
+          href={`/${tenant}`}
+          style={{ backgroundColor: primaryColor || "#3b82f6" }}
+          className="px-6 py-3 text-white rounded-xl font-semibold shadow-lg transition-all duration-300 hover:brightness-110 hover:-translate-y-0.5"
+        >
+          Go Back Home
+        </Link>
+      </div>
+    );
+  }
 
   const config = {
     heroTitle: landingPage?.heroTitle || `Welcome to ${schoolName}`,
@@ -393,285 +413,65 @@ export default function TenantLandingPage({ params }: PageProps) {
         )}
       </header>
 
-      {/* Render Dynamic Blocks if available */}
-      {homeCustomPage && homeCustomPage.blocks && homeCustomPage.blocks.length > 0 ? (
-        <div className="flex-1 w-full flex flex-col">
-          {homeCustomPage.blocks.map((block: any) => {
-            if (block.type === "HERO") {
-              return (
-                <section key={block.id} className="relative min-h-[calc(100vh-80px)] flex items-center justify-center py-20 px-6 overflow-hidden group">
-                  <div className="absolute inset-0 z-0">
-                    <img 
-                      src={block.content.bgImage || heroBgImage} 
-                      alt="Hero Background" 
-                      className="w-full h-full object-cover transition-transform duration-[2000ms] scale-105 group-hover:scale-100" 
-                    />
-                    <div className="absolute inset-0 bg-slate-950" style={{ opacity: (block.content.overlayOpacity || 50) / 100 }}></div>
-                  </div>
-                  <div className="max-w-5xl mx-auto text-center relative z-10 text-white">
-                    <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6 drop-shadow-lg">
-                      {block.content.title}
-                    </h1>
-                    <p className="text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-medium drop-shadow">
-                      {block.content.subtitle}
-                    </p>
-                  </div>
-                </section>
-              );
-            }
-            if (block.type === "TEXT") {
-              return (
-                <section 
-                  key={block.id} 
-                  className={`${block.content.padding || 'py-16'} px-6`}
-                  style={{ backgroundColor: block.content.backgroundColor || 'transparent', color: block.content.textColor || 'inherit' }}
-                >
-                  <div className={`max-w-4xl mx-auto ${block.content.alignment === "center" ? "text-center" : "text-left"}`}>
-                    <h3 className="text-3xl sm:text-4xl font-bold mb-6 tracking-tight">{block.content.heading}</h3>
-                    <p className="opacity-80 leading-relaxed text-lg whitespace-pre-wrap">{block.content.text}</p>
-                  </div>
-                </section>
-              );
-            }
-            if (block.type === "GALLERY") {
-              return (
-                <section key={block.id} className="py-16 px-6">
-                  <div className="max-w-6xl mx-auto">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                      {(block.content.images || []).map((img: string, i: number) => (
-                        <div key={i} className="aspect-square rounded-2xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 group">
-                          <img src={img} alt={`Gallery Image ${i}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-              );
-            }
-            return null;
-          })}
-        </div>
-      ) : (
-        <>
-          {/* Hero Section */}
-      <section id="home" className="relative min-h-[calc(100vh-80px)] flex items-center justify-center py-20 px-6 overflow-hidden group">
-        {/* Random Campus Background Image */}
-        <div className="absolute inset-0 z-0">
-          <Image 
-            src={schoolData.landingPage?.heroImage || heroBgImage} 
-            alt="School Campus Background" 
-            fill 
-            priority
-            className="object-cover transition-transform duration-[2000ms] scale-105 group-hover:scale-100 animate-fade-in" 
-          />
-          {/* Stunning glassmorphic overlay for extreme high-contrast readability in both light & dark modes */}
-          <div className={`absolute inset-0 transition-colors duration-300 ${
-            darkMode 
-              ? "bg-gradient-to-b from-slate-950/65 via-slate-950/50 to-slate-950/75" 
-              : "bg-gradient-to-b from-slate-900/55 via-slate-800/40 to-slate-900/65"
-          }`}></div>
-        </div>
-
-        <div className="max-w-5xl mx-auto text-center relative z-10">
-          <div 
-            className="inline-flex items-center gap-2 px-3 py-1 border rounded-full text-xs font-semibold mb-8 animate-fade-in shadow-sm bg-white/10 backdrop-blur-md border-white/20"
-            style={{ color: primaryColor }}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Empowering Modern Education
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-300 drop-shadow-lg">
-              {config.heroTitle}
-            </span>
-          </h1>
-
-          <p className="text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-medium text-slate-200 drop-shadow">
-            {config.heroSubtitle}
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-            <Link
-              href="/login"
-              className="w-full sm:w-auto px-8 py-4 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg flex items-center justify-center gap-2 group hover:brightness-110 hover:-translate-y-0.5"
-              style={{ backgroundColor: primaryColor }}
-            >
-              Access Portal
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
-            </Link>
-            <a
-              href="#about"
-              className="w-full sm:w-auto px-8 py-4 border font-semibold rounded-xl transition-all duration-200 flex items-center justify-center bg-white/10 hover:bg-white/20 backdrop-blur-md border-white/25 text-white hover:text-white shadow-sm"
-            >
-              Discover More
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about" className={`py-24 border-t relative transition-colors duration-300 ${
-        darkMode ? "border-slate-900" : "border-slate-200"
-      }`}>
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Default Image Display Container */}
-          <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border border-slate-800/80 group">
-            <img
-              src={schoolData.landingPage?.aboutImage || "/image/backgroundSchool.jpg"}
-              alt="About Background"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            {/* Rich gradient contrasting overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent"></div>
-            
-            <div className="absolute inset-0 p-8 flex flex-col justify-between z-10">
-              <div className="flex justify-between items-start">
-                <div 
-                  className="w-12 h-12 backdrop-blur-md rounded-2xl flex items-center justify-center border"
-                  style={{ backgroundColor: `${primaryColor}33`, color: primaryColor, borderColor: `${primaryColor}33` }}
-                >
-                  <GraduationCap className="w-6 h-6 animate-pulse" />
+      {/* Render Dynamic Blocks for the active page */}
+      <div className="flex-1 w-full flex flex-col">
+        {activePage.blocks.map((block: any) => {
+          if (block.type === "HERO") {
+            return (
+              <section key={block.id} className="relative min-h-[calc(100vh-80px)] flex items-center justify-center py-20 px-6 overflow-hidden group">
+                <div className="absolute inset-0 z-0">
+                  <img 
+                    src={block.content.bgImage || heroBgImage} 
+                    alt="Hero Background" 
+                    className="w-full h-full object-cover transition-transform duration-[2000ms] scale-105 group-hover:scale-100" 
+                  />
+                  <div className="absolute inset-0 bg-slate-950" style={{ opacity: (block.content.overlayOpacity || 50) / 100 }}></div>
                 </div>
-                <span 
-                  className="text-[10px] uppercase font-black tracking-widest bg-slate-950/80 backdrop-blur-sm px-3 py-1.5 rounded-full border shadow-lg"
-                  style={{ color: primaryColor, borderColor: `${primaryColor}33` }}
-                >
-                  Academic Vision
-                </span>
-              </div>
-              <div>
-                <p className="text-lg italic text-slate-100 font-bold mb-3 drop-shadow-md">
-                  "Education is the passport to the future, for tomorrow belongs to those who prepare for it today."
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="h-[2px] w-6" style={{ backgroundColor: primaryColor }}></div>
-                  <span className="text-xs font-bold text-slate-300 tracking-wide uppercase drop-shadow">Malcolm X</span>
+                <div className="max-w-5xl mx-auto text-center relative z-10 text-white">
+                  <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6 drop-shadow-lg">
+                    {block.content.title}
+                  </h1>
+                  <p className="text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-medium drop-shadow">
+                    {block.content.subtitle}
+                  </p>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-sm uppercase font-bold tracking-widest mb-3" style={{ color: primaryColor }}>About Our School</h2>
-            <h3 className={`text-3xl sm:text-4xl font-bold mb-6 tracking-tight transition-colors duration-300 ${
-              darkMode ? "text-white" : "text-slate-900"
-            }`}>
-              {config.aboutTitle}
-            </h3>
-            <p className={`leading-relaxed text-lg mb-8 transition-colors duration-300 ${
-              darkMode ? "text-slate-400" : "text-slate-600"
-            }`}>
-              {config.aboutText}
-            </p>
-            <div className="grid grid-cols-2 gap-6">
-              <div className={`p-5 border rounded-2xl shadow-sm transition-all duration-300 ${
-                darkMode ? "bg-slate-900/50 border-slate-900" : "bg-white border-slate-200"
-              }`}>
-                <p className={`text-3xl font-bold mb-1 transition-colors duration-300 ${darkMode ? "text-white" : "text-slate-900"}`}>100%</p>
-                <p className={`text-sm font-medium transition-colors duration-300 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>Dedication to Quality</p>
-              </div>
-              <div className={`p-5 border rounded-2xl shadow-sm transition-all duration-300 ${
-                darkMode ? "bg-slate-900/50 border-slate-900" : "bg-white border-slate-200"
-              }`}>
-                <p className={`text-3xl font-bold mb-1 transition-colors duration-300 ${darkMode ? "text-white" : "text-slate-900"}`}>Modern</p>
-                <p className={`text-sm font-medium transition-colors duration-300 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>Interactive Learning</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className={`py-24 border-t transition-all duration-300 ${
-        darkMode ? "bg-slate-900/30 border-slate-900" : "bg-slate-100/50 border-slate-200"
-      }`}>
-        <div className="max-w-7xl mx-auto px-6 text-center mb-16">
-          <h2 className="text-sm uppercase font-bold tracking-widest mb-3" style={{ color: primaryColor }}>Our Core Highlights</h2>
-          <h3 className={`text-3xl sm:text-4xl font-bold tracking-tight transition-colors duration-300 ${
-            darkMode ? "text-white" : "text-slate-900"
-          }`}>
-            Why Choose {schoolName}
-          </h3>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-          {config.features.map((feature: any, idx: number) => (
-            <div
-              key={idx}
-              className={`p-8 border rounded-3xl transition-all duration-300 shadow-xl group hover:-translate-y-1 ${
-                darkMode
-                  ? "bg-slate-900/60 hover:bg-slate-900 border-slate-900 hover:border-slate-800"
-                  : "bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300"
-              }`}
-            >
-              <div 
-                className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border"
-                style={{ backgroundColor: `${primaryColor}1A`, borderColor: `${primaryColor}33` }}
+              </section>
+            );
+          }
+          if (block.type === "TEXT") {
+            return (
+              <section 
+                key={block.id} 
+                className={`${block.content.padding || 'py-16'} px-6`}
+                style={{ backgroundColor: block.content.backgroundColor || 'transparent', color: block.content.textColor || 'inherit' }}
               >
-                {getIcon(feature.icon)}
-              </div>
-              <h4 className={`text-xl font-bold mb-3 transition-colors duration-300 ${
-                darkMode ? "text-white" : "text-slate-900"
-              }`}>{feature.title}</h4>
-              <p className={`leading-relaxed text-sm transition-colors duration-300 ${
-                darkMode ? "text-slate-400" : "text-slate-600"
-              }`}>{feature.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section id="testimonials" className={`py-24 border-t transition-colors duration-300 ${
-        darkMode ? "border-slate-900" : "border-slate-200"
-      }`}>
-        <div className="max-w-7xl mx-auto px-6 text-center mb-16">
-          <h2 className="text-sm uppercase font-bold tracking-widest mb-3" style={{ color: primaryColor }}>Testimonials</h2>
-          <h3 className={`text-3xl sm:text-4xl font-bold tracking-tight transition-colors duration-300 ${
-            darkMode ? "text-white" : "text-slate-900"
-          }`}>
-            What Parents & Students Say
-          </h3>
-        </div>
-
-        <div className="max-w-5xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {config.testimonials.map((t: any, idx: number) => (
-            <div
-              key={idx}
-              className={`p-8 border rounded-3xl relative flex flex-col justify-between transition-all duration-300 shadow-sm ${
-                darkMode ? "bg-slate-900/40 border-slate-900 text-slate-300" : "bg-white border-slate-200 text-slate-700"
-              }`}
-            >
-              <p className={`leading-relaxed italic mb-6 transition-colors duration-300 ${
-                darkMode ? "text-slate-300" : "text-slate-600"
-              }`}>
-                "{t.text}"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                  darkMode ? "bg-slate-800" : "bg-slate-100"
-                }`}
-                style={{ color: primaryColor }}
-              >
-                  {t.name.charAt(0)}
+                <div className={`max-w-4xl mx-auto ${block.content.alignment === "center" ? "text-center" : "text-left"}`}>
+                  <h3 className="text-3xl sm:text-4xl font-bold mb-6 tracking-tight">{block.content.heading}</h3>
+                  <p className="opacity-80 leading-relaxed text-lg whitespace-pre-wrap">{block.content.text}</p>
                 </div>
-                <div>
-                  <h5 className={`font-bold text-sm transition-colors duration-300 ${
-                    darkMode ? "text-white" : "text-slate-900"
-                  }`}>{t.name}</h5>
-                  <p className={`text-xs transition-colors duration-300 ${
-                    darkMode ? "text-slate-400" : "text-slate-500"
-                  }`}>{t.role}</p>
+              </section>
+            );
+          }
+          if (block.type === "GALLERY") {
+            return (
+              <section key={block.id} className="py-16 px-6">
+                <div className="max-w-6xl mx-auto">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    {(block.content.images || []).map((img: string, i: number) => (
+                      <div key={i} className="aspect-square rounded-2xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 group">
+                        <img src={img} alt={`Gallery Image ${i}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+              </section>
+            );
+          }
+          return null;
+        })}
+      </div>
 
-      </>
-      )}
+
 
       {/* Contact Section */}
       <section id="contact" className={`py-24 border-t transition-all duration-300 ${

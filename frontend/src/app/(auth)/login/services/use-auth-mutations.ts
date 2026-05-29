@@ -41,9 +41,8 @@ export const useLoginMutation = () => {
       const actualRole = response.data.userRole || variables.userType;
       const userDash = actualRole.toLowerCase().replace('_', '-');
 
-      setTimeout(() => {
-        router.push(`/dashboard/${userDash}`);
-      }, 1000);
+      // Use replace immediately to prevent aborted fetch race conditions
+      router.replace(`/dashboard/${userDash}`);
     },
     onError: (error: any, variables) => {
       const errorMessage = error.response?.data?.message || "Login failed";
