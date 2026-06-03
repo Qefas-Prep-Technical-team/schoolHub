@@ -124,7 +124,7 @@ export function ParentSidebar() {
             };
         }
 
-        const currentFeatures = dynamicFeatures || PARENT_FEATURE_FLAGS;
+        const currentFeatures = { ...PARENT_FEATURE_FLAGS, ...(dynamicFeatures || {}) };
 
         const filtered = parentMenuItems.filter(item => {
             // Map 'results' to 'grades' for consistency with schema/seed

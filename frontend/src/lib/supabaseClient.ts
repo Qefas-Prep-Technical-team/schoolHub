@@ -9,12 +9,15 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
     : null;
 
 export const getSupabase = () => {
-    if (!supabase) {
+    if (!supabaseUrl || !supabaseAnonKey) {
+        const missing = [];
+        if (!supabaseUrl) missing.push("NEXT_PUBLIC_SUPABASE_URL");
+        if (!supabaseAnonKey) missing.push("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+        
         throw new Error(
-            "Supabase environment variables are missing. " +
-            "Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env.local file."
+            `Missing Supabase config: ${missing.join(" and ")}. Please check your .env files.`
         );
     }
-    return supabase;
+    return supabase!;
 };
 

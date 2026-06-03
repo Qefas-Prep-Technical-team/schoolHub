@@ -8,6 +8,7 @@ import {
 } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { toast } from "react-toastify";
+import ImageUpload from "@/components/reusable/ImageUpload";
 import Link from "next/link";
 import {
   Layout,
@@ -34,10 +35,113 @@ import {
   Crown,
   LayoutTemplate,
   Layers,
-  Blocks
+  Blocks,
+  MapPin,
+  Phone,
+  Mail,
+  X,
+  LayoutDashboard
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+const TEMPLATE_CONFIGS = [
+  {
+    id: "modern-academic",
+    name: "Modern Academic",
+    description: "A professional, multi-page layout ideal for modern schools and universities. Includes Home, About Us, and Admissions pages.",
+    isPro: true,
+    thumbnailType: "modern",
+    customPages: [
+      {
+        id: "home",
+        title: "Home",
+        slug: "/",
+        blocks: [
+          {
+            id: "b1",
+            type: "HERO",
+            content: { title: "Welcome to Excellence", subtitle: "Empowering the next generation with modern education.", bgImage: "/image/backgroundSchool.jpg", overlayOpacity: 50 }
+          },
+          {
+            id: "b2",
+            type: "TEXT",
+            content: { heading: "Our Mission", text: "We strive to provide a world-class education that fosters critical thinking and innovation.", alignment: "center", padding: "py-16" }
+          },
+          {
+            id: "b3",
+            type: "GALLERY",
+            content: { images: ["/image/backgroundSchool.jpg", "/image/backgroundSchool.jpg", "/image/backgroundSchool.jpg"] }
+          }
+        ]
+      },
+      {
+        id: "about-us",
+        title: "About Us",
+        slug: "/about",
+        blocks: [
+          {
+            id: "b4",
+            type: "TEXT",
+            content: { heading: "Our History", text: "Founded in 1990, our institution has a long legacy of academic excellence and community leadership.", alignment: "left", padding: "py-24" }
+          }
+        ]
+      },
+      {
+        id: "admissions",
+        title: "Admissions",
+        slug: "/admissions",
+        blocks: [
+          {
+            id: "b5",
+            type: "TEXT",
+            content: { heading: "Join Our Community", text: "We welcome passionate learners. Applications are open for the upcoming academic year. Contact our admissions office to schedule a campus tour.", alignment: "center", padding: "py-24", backgroundColor: "#f8fafc" }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "creative-school",
+    name: "Creative School",
+    description: "A visually striking layout with an emphasis on imagery and portfolios. Perfect for art schools or design academies.",
+    isPro: true,
+    thumbnailType: "sidebar",
+    customPages: [
+      {
+        id: "home",
+        title: "Home",
+        slug: "/",
+        blocks: [
+          {
+            id: "c1",
+            type: "HERO",
+            content: { title: "Unleash Your Creativity", subtitle: "Where imagination meets education.", bgImage: "/image/backgroundSchool.jpg", overlayOpacity: 60 }
+          },
+          {
+            id: "c2",
+            type: "GALLERY",
+            content: { images: ["/image/backgroundSchool.jpg", "/image/backgroundSchool.jpg", "/image/backgroundSchool.jpg", "/image/backgroundSchool.jpg", "/image/backgroundSchool.jpg", "/image/backgroundSchool.jpg"] }
+          }
+        ]
+      },
+      {
+        id: "programs",
+        title: "Programs",
+        slug: "/programs",
+        blocks: [
+          {
+            id: "c3",
+            type: "TEXT",
+            content: { heading: "Our Programs", text: "We offer diverse programs in visual arts, digital media, and performance.", alignment: "left", padding: "py-20" }
+          }
+        ]
+      }
+    ]
+  }
+];
 
 export default function SubdomainBuilderPage() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
 
@@ -45,29 +149,49 @@ export default function SubdomainBuilderPage() {
   const { data: landingData, isLoading } = useSchoolLandingPage(schoolId);
   const { mutate: updateLandingPage, isPending: isSaving } = useUpdateSchoolLandingPage();
 
-  const [activeTab, setActiveTab] = React.useState<"hero" | "about" | "highlights" | "testimonials" | "settings" | "templates">("hero");
+  const [activeTab, setActiveTab] = React.useState<"hero" | "about" | "highlights" | "testimonials" | "settings" | "templates" | "contact">("hero");
   const [previewDarkMode, setPreviewDarkMode] = React.useState(true);
   const [copiedLink, setCopiedLink] = React.useState(false);
 
-  // Form states matching public landing config structure
+  // Basic Text states
   const [heroTitle, setHeroTitle] = React.useState("");
   const [heroSubtitle, setHeroSubtitle] = React.useState("");
+  const [heroImage, setHeroImage] = React.useState("");
   const [aboutTitle, setAboutTitle] = React.useState("");
   const [aboutText, setAboutText] = React.useState("");
+  const [aboutImage, setAboutImage] = React.useState("");
   const [primaryColor, setPrimaryColor] = React.useState("#3b82f6");
   const [features, setFeatures] = React.useState<any[]>([]);
   const [testimonials, setTestimonials] = React.useState<any[]>([]);
+  
+  // Contact Info states
+  const [contactEmail, setContactEmail] = React.useState("");
+  const [contactPhone, setContactPhone] = React.useState("");
+  const [contactAddress, setContactAddress] = React.useState("");
+  
+  // Footer state
+  const [footerText, setFooterText] = React.useState("");
+
+  // Template Modal State
+  const [selectedTemplate, setSelectedTemplate] = React.useState<any>(null);
 
   // Synchronize when landing data loads
   React.useEffect(() => {
-    if (landingData?.landingPage) {
-      setHeroTitle(landingData.landingPage.heroTitle || "");
-      setHeroSubtitle(landingData.landingPage.heroSubtitle || "");
-      setAboutTitle(landingData.landingPage.aboutTitle || "");
-      setAboutText(landingData.landingPage.aboutText || "");
-      setPrimaryColor(landingData.landingPage.primaryColor || "#3b82f6");
-      setFeatures(landingData.landingPage.features || []);
-      setTestimonials(landingData.landingPage.testimonials || []);
+    if (landingData && landingData.id) {
+      setHeroTitle(landingData.heroTitle || "");
+      setHeroSubtitle(landingData.heroSubtitle || "Empowering students to achieve their full potential.");
+      setHeroImage(landingData.heroImage || "");
+      setAboutTitle(landingData.aboutTitle || "About Us");
+      setAboutText(landingData.aboutText || "We provide a supportive and challenging learning environment that fosters academic excellence, critical thinking, and character development.");
+      setAboutImage(landingData.aboutImage || "");
+      setPrimaryColor(landingData.primaryColor || "#3b82f6");
+      setFeatures(landingData.features || []);
+      setTestimonials(landingData.testimonials || []);
+      
+      const contactData = landingData.contactInfo || {};
+      setContactEmail(contactData.email || schoolProfile?.schoolEmail || "");
+      setContactPhone(contactData.phone || schoolProfile?.phone || "");
+      setContactAddress(contactData.address || schoolProfile?.address || "");
     } else if (schoolProfile) {
       // If no landing page exists yet, populate with default school data
       setHeroTitle(schoolProfile.name ? `Welcome to ${schoolProfile.name}` : "Welcome to Our School");
@@ -99,6 +223,10 @@ export default function SubdomainBuilderPage() {
           text: "This school has transformed my child's learning experience."
         }
       ]);
+      
+      setContactEmail(schoolProfile.schoolEmail || "");
+      setContactPhone(schoolProfile.phone || "");
+      setContactAddress(schoolProfile.address || "");
     }
   }, [landingData, schoolProfile]);
 
@@ -133,13 +261,21 @@ export default function SubdomainBuilderPage() {
     const payload = {
       heroTitle,
       heroSubtitle,
+      heroImage,
       aboutTitle,
       aboutText,
+      aboutImage,
       primaryColor,
       features,
       testimonials,
+      contactInfo: {
+        email: contactEmail,
+        phone: contactPhone,
+        address: contactAddress,
+      },
       // Carry forward existing gallery if any
-      gallery: landingData?.landingPage?.gallery || []
+      gallery: landingData?.gallery || [],
+      footerText: footerText
     };
 
     updateLandingPage(
@@ -151,6 +287,41 @@ export default function SubdomainBuilderPage() {
         onError: (err: any) => {
           console.error(err);
           toast.error("Failed to save. Please try again.");
+        }
+      }
+    );
+  };
+
+  const handleApplyTemplate = () => {
+    if (!selectedTemplate || !schoolId) return;
+    
+    // We update the landing page with the predefined customPages,
+    // merging them with existing texts/colors so we don't wipe out basic data unless intended.
+    const payload = {
+      heroTitle, heroSubtitle, aboutTitle, aboutText, primaryColor, features, testimonials,
+      contactInfo: {
+        email: contactEmail,
+        phone: contactPhone,
+        address: contactAddress
+      },
+      footerConfig: {
+        copyrightText: footerText
+      },
+      gallery: landingData?.gallery || [],
+      customPages: selectedTemplate.customPages,
+      isDraft: false,
+    };
+
+    updateLandingPage(
+      { schoolId, data: payload },
+      {
+        onSuccess: () => {
+          toast.success("Template applied successfully!");
+          router.push("/dashboard/admin/subdomain/pro-builder");
+        },
+        onError: (err: any) => {
+          console.error(err);
+          toast.error("Failed to apply template. Please try again.");
         }
       }
     );
@@ -299,6 +470,7 @@ export default function SubdomainBuilderPage() {
               { id: "about", label: "About" },
               { id: "highlights", label: "Highlights" },
               { id: "testimonials", label: "Quotes" },
+              { id: "contact", label: "Contact" },
               { id: "settings", label: "Style" }
             ].map((t) => (
               <button
@@ -347,31 +519,35 @@ export default function SubdomainBuilderPage() {
 
                   {/* Pro Templates */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="relative p-1 rounded-2xl border border-slate-200 dark:border-slate-800 opacity-60 hover:opacity-100 transition-opacity cursor-not-allowed group">
-                      <div className="absolute top-2 right-2 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shadow-md flex items-center gap-1">
-                        <Crown className="w-2.5 h-2.5" /> Pro
+                    {TEMPLATE_CONFIGS.map((template) => (
+                      <div 
+                        key={template.id}
+                        onClick={() => setSelectedTemplate(template)}
+                        className="relative p-1 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer group bg-white dark:bg-slate-900"
+                      >
+                        {template.isPro && (
+                          <div className="absolute top-2 right-2 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shadow-md flex items-center gap-1">
+                            <Crown className="w-2.5 h-2.5" /> Pro
+                          </div>
+                        )}
+                        <div className="w-full h-24 rounded-xl bg-slate-100 dark:bg-slate-950 overflow-hidden relative border border-slate-100 dark:border-slate-800">
+                          {template.thumbnailType === "modern" ? (
+                            <>
+                              <div className="absolute inset-x-2 top-2 h-4 bg-blue-500/20 rounded-sm"></div>
+                              <div className="absolute inset-x-2 top-8 bottom-2 bg-slate-200 dark:bg-slate-800 rounded-sm"></div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="absolute left-2 w-8 top-2 bottom-2 bg-blue-500/20 rounded-sm"></div>
+                              <div className="absolute left-12 right-2 top-2 bottom-2 bg-slate-200 dark:bg-slate-800 rounded-sm"></div>
+                            </>
+                          )}
+                        </div>
+                        <div className="p-2 text-center">
+                          <h4 className="text-[10px] font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{template.name}</h4>
+                        </div>
                       </div>
-                      <div className="w-full h-24 rounded-xl bg-slate-200 dark:bg-slate-900 overflow-hidden group-hover:blur-sm transition-all relative">
-                        <div className="absolute inset-x-2 top-2 h-4 bg-slate-300 dark:bg-slate-800 rounded-sm"></div>
-                        <div className="absolute inset-x-2 top-8 bottom-2 bg-slate-300 dark:bg-slate-800 rounded-sm"></div>
-                      </div>
-                      <div className="p-2 text-center">
-                        <h4 className="text-[10px] font-bold text-slate-900 dark:text-white">Modern Multi-Page</h4>
-                      </div>
-                    </div>
-                    
-                    <div className="relative p-1 rounded-2xl border border-slate-200 dark:border-slate-800 opacity-60 hover:opacity-100 transition-opacity cursor-not-allowed group">
-                      <div className="absolute top-2 right-2 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shadow-md flex items-center gap-1">
-                        <Crown className="w-2.5 h-2.5" /> Pro
-                      </div>
-                      <div className="w-full h-24 rounded-xl bg-slate-200 dark:bg-slate-900 overflow-hidden group-hover:blur-sm transition-all relative">
-                        <div className="absolute left-2 w-8 top-2 bottom-2 bg-slate-300 dark:bg-slate-800 rounded-sm"></div>
-                        <div className="absolute left-12 right-2 top-2 bottom-2 bg-slate-300 dark:bg-slate-800 rounded-sm"></div>
-                      </div>
-                      <div className="p-2 text-center">
-                        <h4 className="text-[10px] font-bold text-slate-900 dark:text-white">Sidebar Layout</h4>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
@@ -394,12 +570,21 @@ export default function SubdomainBuilderPage() {
                       Advanced layout designs and complete font control
                     </li>
                   </ul>
-                  <Link
-                    href="/dashboard/admin/subdomain/pro-builder"
-                    className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-xl text-[11px] font-bold shadow-md shadow-amber-500/20 transition-all active:scale-95 text-center inline-block"
-                  >
-                    Upgrade to Pro Now
-                  </Link>
+                  {process.env.NEXT_PUBLIC_PRO_COMING_SOON === 'true' ? (
+                    <button
+                      disabled
+                      className="w-full py-2 bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl text-[11px] font-bold cursor-not-allowed transition-all text-center inline-block"
+                    >
+                      Coming Soon
+                    </button>
+                  ) : (
+                    <Link
+                      href="/dashboard/admin/subdomain/pro-builder"
+                      className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-xl text-[11px] font-bold shadow-md shadow-amber-500/20 transition-all active:scale-95 text-center inline-block"
+                    >
+                      Upgrade to Pro Now
+                    </Link>
+                  )}
                 </div>
               </div>
             )}
@@ -437,11 +622,20 @@ export default function SubdomainBuilderPage() {
                 <div className="p-4 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-900 rounded-2xl flex items-start gap-3">
                   <Globe className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white mb-1">Random Hero Backgrounds</h4>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white mb-1">Dynamic Hero Background</h4>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Your landing page will automatically cycle between dynamic campus background images randomly on page mount to maximize visual aesthetic and engagement!
+                      Upload a custom image below to serve as your hero background. If no image is uploaded, your landing page will automatically cycle between random dynamic campus images to maximize visual aesthetic!
                     </p>
                   </div>
+                </div>
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <ImageUpload
+                    label="Hero Background Image"
+                    description="Upload an image to display in the header (16:9 recommended)"
+                    value={heroImage}
+                    onChange={(url) => setHeroImage(url)}
+                    aspectRatio="video"
+                  />
                 </div>
               </div>
             )}
@@ -474,6 +668,16 @@ export default function SubdomainBuilderPage() {
                     placeholder="Describe your school's history, core educational values, and what makes the learning experience unique."
                     className="w-full border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all duration-200 resize-none"
                   ></textarea>
+                </div>
+
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <ImageUpload
+                    label="About Section Image"
+                    description="Upload an image for the about section (4:3 recommended)"
+                    value={aboutImage}
+                    onChange={(url) => setAboutImage(url)}
+                    aspectRatio="video"
+                  />
                 </div>
               </div>
             )}
@@ -625,6 +829,49 @@ export default function SubdomainBuilderPage() {
               </div>
             )}
 
+            {/* CONTACT SECTION CONTROLS */}
+            {activeTab === "contact" && (
+              <div className="space-y-5">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-900">
+                  <Globe className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                  <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Contact & Location</h3>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Email Address</label>
+                  <input
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="admissions@school.edu"
+                    className="w-full border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all duration-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder="+234 801 234 5678"
+                    className="w-full border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all duration-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Physical Address / Location</label>
+                  <input
+                    type="text"
+                    value={contactAddress}
+                    onChange={(e) => setContactAddress(e.target.value)}
+                    placeholder="Greenwood Campus, Main Boulevard"
+                    className="w-full border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all duration-200"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* BRANDING STYLE CONTROLS */}
             {activeTab === "settings" && (
               <div className="space-y-5">
@@ -679,6 +926,21 @@ export default function SubdomainBuilderPage() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                <div className="space-y-3 pt-6 border-t border-slate-200 dark:border-slate-900">
+                  <div className="flex items-center gap-2 pb-2">
+                    <LayoutDashboard className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                    <h3 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white uppercase">Global Footer</h3>
+                  </div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Footer Copyright Text</label>
+                  <input
+                    type="text"
+                    value={footerText}
+                    onChange={(e) => setFooterText(e.target.value)}
+                    placeholder="© 2026 Your School Name. All rights reserved."
+                    className="w-full border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all duration-200"
+                  />
                 </div>
               </div>
             )}
@@ -735,14 +997,17 @@ export default function SubdomainBuilderPage() {
 
             {/* Hero Mimic */}
             <div className="relative py-16 px-6 text-center flex flex-col items-center justify-center min-h-[300px] group overflow-hidden">
-              {/* Default Mock Background Image inside preview */}
-              <div className="absolute inset-0 z-0 opacity-40">
+              <div className="absolute inset-0 z-0">
                 <img
-                  src="/image/backgroundSchool.jpg"
+                  src={heroImage || "/image/backgroundSchool.jpg"}
                   alt="Hero Background"
                   className="w-full h-full object-cover"
                 />
-                <div className={`absolute inset-0 ${previewDarkMode ? "bg-slate-950" : "bg-slate-50"}`}></div>
+                <div className={`absolute inset-0 ${
+                  previewDarkMode 
+                    ? "bg-gradient-to-b from-slate-950/65 via-slate-950/50 to-slate-950/75" 
+                    : "bg-gradient-to-b from-slate-900/55 via-slate-800/40 to-slate-900/65"
+                }`}></div>
               </div>
 
               <div className="relative z-10 space-y-4 max-w-xl">
@@ -788,7 +1053,7 @@ export default function SubdomainBuilderPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center max-w-3xl mx-auto">
                 <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-900">
                   <img
-                    src="/image/backgroundSchool2.jpg"
+                    src={aboutImage || "/image/backgroundSchool2.jpg"}
                     alt="Campus building"
                     className="w-full h-full object-cover"
                   />
@@ -851,9 +1116,184 @@ export default function SubdomainBuilderPage() {
                 ))}
               </div>
             </div>
+
+            {/* Testimonials Mimic */}
+            <div className={`py-12 px-6 border-t transition-colors ${
+              previewDarkMode ? "bg-slate-950 border-slate-900" : "bg-white border-slate-200"
+            }`}>
+              <h3 className="text-center text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">
+                What People Say
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                {(testimonials.length > 0 ? testimonials : [
+                  { name: "Sarah Jenkins", role: "Parent", text: "This school has transformed my child's learning experience." },
+                  { name: "Michael Chang", role: "Alumni", text: "The foundation I received here prepared me for university and beyond." }
+                ]).map((t, i) => (
+                  <div key={i} className={`p-4 rounded-xl border ${
+                    previewDarkMode ? "bg-slate-900/50 border-slate-800" : "bg-slate-50 border-slate-200"
+                  }`}>
+                    <p className="text-[10px] italic opacity-80 mb-3">"{t.text}"</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-slate-300 dark:bg-slate-700 flex items-center justify-center text-[8px] font-bold">
+                        {t.name.substring(0, 1)}
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold">{t.name}</p>
+                        <p className="text-[8px] opacity-60 uppercase">{t.role}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Contact Mimic */}
+            <div className={`py-12 px-6 border-t transition-colors ${
+              previewDarkMode ? "bg-slate-900/20 border-slate-900" : "bg-slate-100/50 border-slate-200"
+            }`}>
+              <div className="max-w-3xl mx-auto flex flex-col md:flex-row gap-8">
+                <div className="flex-1">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2" style={{ color: primaryColor }}>Contact Us</h3>
+                  <h2 className="text-lg font-bold tracking-tight mb-4">Get in Touch</h2>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded flex items-center justify-center border" style={{ backgroundColor: `${primaryColor}1A`, color: primaryColor, borderColor: `${primaryColor}33` }}>
+                        <MapPin className="w-3 h-3" />
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold">Location</p>
+                        <p className="text-[8px] opacity-70">{contactAddress || schoolProfile?.address || "Greenwood Campus, Main Boulevard"}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded flex items-center justify-center border" style={{ backgroundColor: `${primaryColor}1A`, color: primaryColor, borderColor: `${primaryColor}33` }}>
+                        <Phone className="w-3 h-3" />
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold">Phone</p>
+                        <p className="text-[8px] opacity-70">{contactPhone || schoolProfile?.phone || "+234 801 234 5678"}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded flex items-center justify-center border" style={{ backgroundColor: `${primaryColor}1A`, color: primaryColor, borderColor: `${primaryColor}33` }}>
+                        <Mail className="w-3 h-3" />
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold">Email</p>
+                        <p className="text-[8px] opacity-70">{contactEmail || schoolProfile?.schoolEmail || "admissions@school.edu"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`flex-1 p-5 rounded-xl border ${
+                  previewDarkMode ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200 shadow-sm"
+                }`}>
+                  <h4 className="text-[10px] font-bold mb-3">Send an Inquiry</h4>
+                  <div className="space-y-2">
+                    <div className="h-6 w-full rounded bg-slate-200 dark:bg-slate-800 opacity-50"></div>
+                    <div className="h-6 w-full rounded bg-slate-200 dark:bg-slate-800 opacity-50"></div>
+                    <div className="h-12 w-full rounded bg-slate-200 dark:bg-slate-800 opacity-50"></div>
+                    <div className="h-6 w-full rounded text-center flex items-center justify-center text-[8px] font-bold text-white shadow-sm" style={{ backgroundColor: primaryColor }}>Submit</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
+
+      {/* Template Preview Modal */}
+      {selectedTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <LayoutTemplate className="w-5 h-5 text-blue-500" />
+                Template Preview
+              </h3>
+              <button 
+                onClick={() => setSelectedTemplate(null)}
+                className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[70vh]">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-32 h-24 rounded-xl bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                  <Layout className="w-8 h-8 text-slate-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">{selectedTemplate.name}</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-3">
+                    {selectedTemplate.description}
+                  </p>
+                  <div className="flex gap-2">
+                    {selectedTemplate.isPro && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-500 px-2 py-1 rounded">
+                        <Crown className="w-3 h-3" /> Pro Template
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-500 px-2 py-1 rounded">
+                      <Layers className="w-3 h-3" /> {selectedTemplate.customPages.length} Pages
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Included Pages & Blocks</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {selectedTemplate.customPages.map((page: any) => (
+                    <div key={page.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                      <h5 className="font-bold text-sm text-slate-900 dark:text-white mb-2">{page.title}</h5>
+                      <ul className="space-y-1.5">
+                        {page.blocks.map((block: any, idx: number) => (
+                          <li key={idx} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                            <Blocks className="w-3.5 h-3.5 text-slate-400" />
+                            {block.type} Block
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-end gap-3">
+              <button 
+                onClick={() => setSelectedTemplate(null)}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  if(window.confirm("Applying this template will replace any Pro Builder pages you currently have. Do you want to continue?")) {
+                    handleApplyTemplate();
+                  }
+                }}
+                disabled={isSaving}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <CheckCircle className="w-4 h-4" />
+                )}
+                {isSaving ? "Applying..." : "Apply Template & Edit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

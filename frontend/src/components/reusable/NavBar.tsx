@@ -17,12 +17,19 @@ function NavBar() {
         if (typeof window !== "undefined") {
             const host = window.location.hostname;
             let hasSub = false;
-            if (host.includes("localhost")) {
-                const parts = host.split(".");
-                hasSub = parts.length > 1 && parts[0] !== "localhost" && parts[0] !== "www";
-            } else {
-                const parts = host.split(".");
-                hasSub = parts.length > 2 && parts[0] !== "www";
+            
+            const rootDomains = ["schoolhub.flexitistudio.com", "qefashub.com", "localhost", "127.0.0.1"];
+            const isRoot = rootDomains.some(domain => 
+                host === domain || host === `www.${domain}`
+            );
+            
+            if (!isRoot) {
+                if (host.includes("localhost") || host.includes("127.0.0.1")) {
+                    const parts = host.split(".");
+                    hasSub = parts.length > 1 && parts[0] !== "localhost" && parts[0] !== "www";
+                } else {
+                    hasSub = true;
+                }
             }
             setIsSubdomain(hasSub);
         }

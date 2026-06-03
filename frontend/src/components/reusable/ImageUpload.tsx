@@ -92,8 +92,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           )}
 
           {isUploading && (
-            <div className="absolute inset-0 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md flex items-center justify-center">
-              <Loader2 className="animate-spin text-primary" size={32} />
+            <div className="absolute inset-0 z-10 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center">
+              <Loader2 className="animate-spin text-blue-500 mb-2" size={32} />
+              <span className="text-[10px] font-black uppercase tracking-widest text-blue-500 animate-pulse">Uploading...</span>
             </div>
           )}
           

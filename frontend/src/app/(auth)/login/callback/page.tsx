@@ -11,27 +11,7 @@ import { Loader2 } from "lucide-react";
 
 /** Maps raw/internal error messages to safe, user-friendly strings. */
 function getSafeErrorMessage(raw: string): string {
-    if (!raw) return "Google sign-in failed. Please try again.";
-
-    // Covers google-auth-library errors that embed the token in the message
-    if (raw.toLowerCase().includes("wrong number of segments")) {
-        return "Google sign-in configuration error. Please contact support.";
-    }
-    if (raw.toLowerCase().includes("invalid token") || raw.toLowerCase().includes("jwt")) {
-        return "Your session token is invalid. Please sign in again.";
-    }
-    if (raw.toLowerCase().includes("no session")) {
-        return "No session found. Please try signing in again.";
-    }
-    if (raw.toLowerCase().includes("id token")) {
-        return "Could not complete Google sign-in. Please try again.";
-    }
-    // Backend messages are safe to show (they're written by us)
-    if (raw.length < 120 && !raw.startsWith("ya29.") && !raw.includes("eyJ")) {
-        return raw;
-    }
-    // Catch-all: don't leak anything long/token-like
-    return "Google sign-in failed. Please try again.";
+    return "Login failed";
 }
 
 export default function GoogleAuthCallback() {

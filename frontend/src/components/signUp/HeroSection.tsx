@@ -2,8 +2,51 @@
 import { currentName } from '@/utils/data';
 import React, { FC } from 'react';
 import { motion } from 'framer-motion';
+import { useTenantBranding } from '@/lib/api/hooks/useTenantBranding';
 
 const HeroSection: FC = () => {
+    const { branding, isLoading } = useTenantBranding();
+
+    if (isLoading) {
+        return <div className="h-32 flex items-center justify-center"><div className="w-8 h-8 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin"></div></div>;
+    }
+
+    if (branding.isBranded) {
+        return (
+            <section className="relative">
+                <div className="flex flex-col items-center justify-center gap-6 text-center max-w-3xl mx-auto">
+                    {branding.logo && (
+                        <motion.img 
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            src={branding.logo} 
+                            alt={branding.schoolName || "School Logo"} 
+                            className="w-24 h-24 object-contain mx-auto mb-2 rounded-2xl shadow-sm"
+                        />
+                    )}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <h1 className="text-slate-900 dark:text-white text-5xl md:text-6xl font-black leading-[1.1] tracking-tight font-lexend">
+                            Join {branding.schoolName || "Us"}
+                        </h1>
+                    </motion.div>
+                    
+                    <motion.p 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.1 }}
+                        className="text-slate-500 dark:text-slate-400 text-lg md:text-xl font-medium max-w-2xl leading-relaxed"
+                    >
+                        {branding.heroSubtitle || "Create an account to get started."}
+                    </motion.p>
+                </div>
+            </section>
+        );
+    }
+
     return (
         <section className="relative">
             <div className="flex flex-col items-center justify-center gap-6 text-center max-w-3xl mx-auto">

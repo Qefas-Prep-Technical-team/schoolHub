@@ -37,6 +37,11 @@ const nextConfig = {
         protocol: "https",
         hostname: "imagedelivery.net",
       },
+      {
+        // Supabase storage
+        protocol: "https",
+        hostname: "khogvaepivbqzlqndedv.supabase.co",
+      },
     ],
   },
   transpilePackages: ["@react-pdf/renderer", "@react-pdf/pdfkit", "yoga-layout"],

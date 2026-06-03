@@ -23,7 +23,7 @@ app.use(
       // Allow requests with no origin (like mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
 
-      const allowedPattern = /^(https?:\/\/)?(localhost(:\d+)?|([a-zA-Z0-9-]+\.)*qefashub\.com|([a-zA-Z0-9-]+\.)*qefas\.com|([a-zA-Z0-9-]+\.)*flexitistudio\.com)$/i;
+      const allowedPattern = /^(https?:\/\/)?(([a-zA-Z0-9-]+\.)*localhost(:\d+)?|([a-zA-Z0-9-]+\.)*lvh\.me(:\d+)?|([a-zA-Z0-9-]+\.)*qefashub\.com|([a-zA-Z0-9-]+\.)*qefas\.com|([a-zA-Z0-9-]+\.)*flexitistudio\.com)$/i;
 
       if (allowedPattern.test(origin)) {
         callback(null, true);

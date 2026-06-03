@@ -144,17 +144,6 @@ export default function TeacherLoginForm() {
                 </button>
             </div>
 
-            <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-slate-100 dark:border-slate-800" />
-                </div>
-                <div className="relative flex justify-center text-[10px] uppercase font-black tracking-[0.2em]">
-                    <span className="bg-white dark:bg-slate-900 px-6 text-slate-400 dark:text-slate-500">
-                        Or continue with
-                    </span>
-                </div>
-            </div>
-
             {globalFeatures?.googleLogin !== false && (
                 <GoogleLoginButton userType="TEACHER" />
             )}
