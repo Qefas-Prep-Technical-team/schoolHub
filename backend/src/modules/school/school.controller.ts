@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import prisma from "../../config/database";
+import { createNotification } from "../notification/notification.service";
 import {
   getSchoolTeachersService,
   getSchoolStudentsService,
@@ -429,9 +431,6 @@ export const submitInquiry = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
-
     const school = await prisma.school.findFirst({
       where: { subdomain: subdomain as string }
     });
@@ -453,7 +452,6 @@ export const submitInquiry = async (req: Request, res: Response) => {
     });
 
     // Notify the school admins
-    const { createNotification } = require("../notification/notification.service");
     await createNotification({
       recipientType: "SCHOOL",
       recipientId: school.id,
@@ -485,9 +483,6 @@ export const getInquiries = async (req: Request, res: Response) => {
     if (!validateSchoolAccess(req, schoolId as string)) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
-
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
 
     const [data, total] = await Promise.all([
       prisma.inquiry.findMany({

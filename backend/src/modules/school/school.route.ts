@@ -16,6 +16,8 @@ import {
   getSchoolLandingPageBySubdomain,
   updateSchoolLandingPage,
   getSchoolTodayAttendance,
+  submitInquiry,
+  getInquiries,
 } from "./school.controller";
 
 const router = Router();
@@ -24,7 +26,6 @@ const router = Router();
 router.get("/subdomain/:subdomain/landing-page", getSchoolLandingPageBySubdomain);
 
 // Public route to submit an inquiry
-import { submitInquiry, getInquiries } from "./school.controller";
 router.post("/subdomain/:subdomain/inquiry", submitInquiry);
 
 // All school member routes require authentication
