@@ -17,7 +17,18 @@ const processQueue = (error: any, token: string | null = null) => {
 
   failedQueue = [];
 };
-// console.log("API Client initialized with base URL:", process.env.NEXT_PUBLIC_API_URL);
+
+/** Clears auth state and redirects to the login page with a session-expired notice. */
+const handleSessionExpiry = () => {
+  useAuthStore.getState().clearAuth();
+  if (typeof window !== "undefined") {
+    // Only redirect if not already on a login/public page to prevent redirect loops.
+    if (!window.location.pathname.startsWith("/login")) {
+      window.location.href = "/login?session=expired";
+    }
+  }
+};
+
 // Create axios instance with base configuration
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -47,14 +58,27 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Handle common errors
+    // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (originalRequest.url?.includes("/auth/refresh")) {
+      const isLoginRequest = originalRequest.url?.includes("/auth/login");
+      const isAuthPage = typeof window !== "undefined" && 
+        ["/login", "/signup", "/verification", "/onboarding", "/reset-password", "/forgot-password"].some(
+          path => window.location.pathname === path || window.location.pathname.startsWith(`${path}/`)
+        );
+
+      if (isLoginRequest || isAuthPage) {
+        // Silently clear the old/expired tokens without triggering refresh/redirect loops
+        Cookies.remove("token", { path: "/" });
         useAuthStore.getState().clearAuth();
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
         return Promise.reject(error);
+      }
+
+      // If the refresh call itself failed — session is truly dead, redirect gracefully.
+      if (originalRequest.url?.includes("/auth/refresh")) {
+        handleSessionExpiry();
+        // Return a never-resolving promise so no downstream error handler fires
+        // after the page redirect is already in flight.
+        return new Promise(() => {});
       }
 
       if (isRefreshing) {
@@ -99,10 +123,9 @@ apiClient.interceptors.response.use(
           })
           .catch((err) => {
             processQueue(err, null);
-            useAuthStore.getState().clearAuth();
-            if (typeof window !== "undefined") {
-              window.location.href = "/login";
-            }
+            // The nested /auth/refresh failure is already handled by the guard above,
+            // but as a safety net handle it here too.
+            handleSessionExpiry();
             reject(err);
           })
           .finally(() => {

@@ -16,7 +16,6 @@ const PortalsFooter: React.FC = () => {
                     <Link className="hover:text-[#0051d5] dark:hover:text-blue-400 transition-colors" href="/privacy">Privacy Policy</Link>
                     <Link className="hover:text-[#0051d5] dark:hover:text-blue-400 transition-colors" href="/terms">Terms of Service</Link>
                     <Link className="hover:text-[#0051d5] dark:hover:text-blue-400 transition-colors" href="/contact">Contact Us</Link>
-                    <Link className="hover:text-[#0051d5] dark:hover:text-blue-400 transition-colors" href="/accessibility">Accessibility</Link>
                 </div>
             </div>
         </footer>

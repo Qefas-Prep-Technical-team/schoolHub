@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Apple, PlayCircle, Bolt, WifiOff, Bell } from 'lucide-react';
+import { Bolt, WifiOff, Bell } from 'lucide-react';
 
 // ─── dashdesign01 "Lumina Finance" — MobileExperience ────────────────────────
 // Adapted from the fintech "Achieve Your Financial Goals with Confidence" section.
@@ -113,9 +113,9 @@ const MobileExperience = () => {
             className="text-3xl md:text-5xl font-black text-[#1a1a2b] dark:text-white tracking-tight leading-[1.1] mb-4"
             style={{ letterSpacing: '-0.02em' }}
           >
-            Manage Everything{' '}
+            Run your school{' '}
             <span className="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
-              with Confidence
+              from anywhere
             </span>
           </motion.h2>
           <motion.p
@@ -125,8 +125,8 @@ const MobileExperience = () => {
             transition={{ delay: 0.1 }}
             className="text-[#45464c] dark:text-slate-400 text-base md:text-lg font-light leading-relaxed mb-8"
           >
-            Full control from any device, anytime. Qefas Hub keeps administrators,
-            teachers, and parents connected with real-time updates and native performance.
+            Administrators, teachers, and parents all connected in one place. Get live updates,
+            manage schedules, and stay on top of every aspect of your institution — from any device.
           </motion.p>
 
           {/* Feature points */}
@@ -138,8 +138,8 @@ const MobileExperience = () => {
             className="space-y-5 mb-8"
           >
             {[
-              { Icon: Bolt, title: 'Instant Notifications', desc: 'Real-time alerts for grades, attendance, and institutional events.' },
-              { Icon: WifiOff, title: 'Offline Sync', desc: 'Continue managing tasks and viewing resources without internet.' },
+              { Icon: Bolt, title: 'Instant Notifications', desc: 'Push alerts for new grades, absent students, upcoming exams, and school announcements — delivered the moment they happen.' },
+              { Icon: WifiOff, title: 'Works Offline Too', desc: 'Losing internet doesn\'t stop your school. Core features sync in the background and update when you\'re back online.' },
             ].map(({ Icon, title, desc }) => (
               <li key={title} className="flex items-start gap-4 group">
                 <div className="w-11 h-11 rounded-2xl bg-white dark:bg-white/[0.05] border border-slate-200 dark:border-white/[0.08] flex items-center justify-center group-hover:bg-blue-600 group-hover:border-blue-500 transition-all duration-300 shadow-sm shrink-0">
@@ -208,23 +208,21 @@ const MobileExperience = () => {
             </motion.div>
           </div>
 
-          {/* App store buttons */}
+          {/* Additional CTA */}
           <div className="flex flex-wrap gap-4 mt-8">
-            {[
-              { Icon: Apple, label: 'App Store', sub: 'Download on the' },
-              { Icon: PlayCircle, label: 'Google Play', sub: 'Get it on' },
-            ].map(({ Icon, label, sub }) => (
-              <div
-                key={label}
-                className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] px-5 py-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:border-slate-300 dark:hover:border-white/20 hover:shadow-md transition-all group min-w-[160px] shadow-sm"
-              >
-                <Icon className="w-7 h-7 text-[#1a1a2b] group-hover:scale-110 transition-transform shrink-0" />
-                <div>
-                  <p className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500">{sub}</p>
-                  <p className="text-sm font-black text-[#1a1a2b] dark:text-white">{label}</p>
-                </div>
-              </div>
-            ))}
+            <Link
+              href="/features"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] text-[#1a1a2b] dark:text-white font-semibold rounded-full hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all group text-sm shadow-sm"
+            >
+              Explore all features
+              <span className="group-hover:translate-x-1 transition-transform inline-block">&rarr;</span>
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 transition-all text-sm shadow-md shadow-blue-600/20"
+            >
+              Book a demo
+            </Link>
           </div>
         </div>
       </div>

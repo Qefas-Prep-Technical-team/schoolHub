@@ -104,7 +104,29 @@
 - Translating the generated Stitch HTML design into production-ready Next.js + Tailwind components.
 - Maintaining parity between the new light lavender-white hero aesthetic and the existing dark-mode dashboard.
 
-## Completed
+### Thursday, June 04, 2026
+- **Subdomain Landing Page 500 Internal Server Error Fix & Footer Modernization**:
+    - [x] **Root Cause Diagnosis**: Identified that the 500 error on the live `/api/schools/subdomain/:subdomain/landing-page` endpoint was caused by missing or out-of-sync Prisma Client generation during Vercel/Render deployments.
+    - [x] **Build Script Updates**: Added a `"postinstall": "prisma generate"` script to `backend/package.json` to ensure the Prisma Client is automatically regenerated upon dependency installation in production environments.
+    - [x] **Race Condition Fix**: Replaced `prisma.schoolLandingPage.findUnique` followed by `create` with an atomic `prisma.schoolLandingPage.upsert` in both `getSchoolLandingPageBySubdomainService` and `getSchoolLandingPageService` to prevent Unique Constraint violations (HTTP 500) during concurrent requests from the frontend.
+    - [x] **Footer & Legal Compliance**:
+        *   Resolved the 500 Internal Server Error occurring when accessing a subdomain landing page by configuring Prisma generation inside the build pipeline (`postinstall`) and updating concurrent database creation logic to use an atomic `upsert`.
+        *   Replaced dummy footer links (`href="#"`) across the landing page and subdomains with valid, existing routes (`/about`, `/features`, `/pricing`, `/contact`) and created dedicated `/terms` and `/privacy` legal pages synced with the registration modal content.
+        *   Updated the footer social media links (Facebook, Instagram, and Twitter/X) with accurate URLs and replaced the old Twitter logo with the modern X logo, ensuring they open in new tabs.
+        *   Refactored the video showcase section on the landing page (`InAction.tsx`) to use a more premium design, natively fetch the YouTube thumbnail via `react-player` `light` mode, and securely pull the video URL from the `.env` variable `NEXT_PUBLIC_SHOWCASE_VIDEO_URL`.
+        *   Redesigned the top hero section of the Features page (`FeaturesHero.tsx`) with ambient backgrounds, better gradients, improved typography, and sleeker floating elements for a premium look.
+        *   Fixed non-playing YouTube showcase section (`InAction.tsx`): removed broken `react-player` dynamic import (incompatible with Turbopack sub-path `react-player/lazy`), replaced with a native YouTube `<iframe>` embed with a custom thumbnail + play-button overlay. Also fixed `NEXT_PUBLIC_SHOWCASE_VIDEO_URL` in `.env` which had literal surrounding double-quotes making the URL string invalid.
+        *   Resolved expired session login page errors: Modified the Axios interceptor (`src/lib/api/client.ts`) to bypass refresh token flows and redirects when the user is on the login/auth screens or submitting login requests, silently clearing expired session data instead. This ensures users do not encounter "no refresh token" errors, page reloads, or loops when logging back in.
+
+### Current Status
+*   **Active Focus:** Modernizing Qefas Landing Page Footer and Legal Compliance
+*   **Completed Milestones:**
+    *   Resolved production deployment errors (Prisma client sync).
+    *   Fixed Subdomain `GET` API 500 error (`getSchoolLandingPageService`).
+    *   Updated `Footer.tsx`, `[tenant]/page.tsx`, and `[tenant]/[...slug]/page.tsx` footer links.
+    *   Implemented premium and highly comprehensive legal agreements for `src/app/terms/page.tsx` and `src/app/privacy/page.tsx` that include standard SaaS protection clauses, billing, subscription terms, FERPA/COPPA compliance, and AI grading scanner liability disclaimers.
+*   **Pending Tasks:**
+    *   Monitor production after Vercel deployment of these fixes.
 
 ### Thursday, May 21, 2026
 - **Add Student 400 AxiosError Root Cause Fix**:

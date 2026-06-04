@@ -1,20 +1,20 @@
 [
   {
     "image": "/users/user 1.jpeg",
-    "comment": "SchoolHub has transformed our school's administrative processes. It's intuitive and saves us so much time.",
+    "comment": "Qefas Hub completely changed how we run our school. Attendance, grades, and parent communication — all in one place. Our admin workload dropped by more than half.",
     "name": "Oluwaseun Adeyemi",
-    "role": "Principal at Excel Secondary School"
+    "role": "Principal, Excel Secondary School"
   },
   {
     "image": "/users/user 2.jpeg",
-    "comment": "The attendance tracking feature is a game-changer. We can easily monitor student attendance and identify trends.",
+    "comment": "Before Qefas Hub, tracking attendance across 12 classes was a daily headache. Now I get an instant overview every morning. It's like having an extra administrator on staff.",
     "name": "Chinedu Okoro",
-    "role": "Administrator at Model Private College"
+    "role": "Administrator, Model Private College"
   },
   {
     "image": "/users/user 3.jpeg",
-    "comment": "Generating reports used to be a tedious task. With SchoolHub, it's now quick and effortless.",
+    "comment": "End-of-term reports used to take our team an entire week. With Qefas Hub, we generate them in under an hour. The parents love the transparency it brings.",
     "name": "Amina Abubakar",
-    "role": "Head of Academics at Grace International School"
+    "role": "Head of Academics, Grace International School"
   }
 ]

@@ -1,14 +1,26 @@
 [
   {
-    "question": "Can I import existing student data?",
-    "answer": "Yes, you can easily import your existing student data into SchoolHub using our intuitive import tool. We support various file formats like CSV and Excel, and our support team is available to assist you in ensuring a smooth and seamless data transition."
+    "question": "How quickly can my school get started on Qefas Hub?",
+    "answer": "Most schools are fully up and running within 48 hours. Our onboarding team guides you through setup, data import, and staff training so there is no disruption to your operations."
   },
   {
-    "question": "How does the payment system work?",
-    "answer": " Our platform integrates with secure payment gateways to handle tuition fees, event payments, and other financial transactions. Parents can pay online, and the school administration can track payments and generate financial reports effortlessly."
+    "question": "Can I import our existing student and staff data?",
+    "answer": "Yes. Qefas Hub supports bulk import from CSV and Excel files. Simply export your existing records, upload them through the admin panel, and our system maps everything automatically. Our support team is available to assist every step of the way."
   },
   {
-    "question": "Is there a mobile app available for parents and teachers?",
-    "answer": "Absolutely! SchoolHub offers dedicated mobile apps for both iOS and Android. This allows teachers to manage their classes on the go and keeps parents updated with real-time notifications about their child's progress, attendance, and school announcements."
+    "question": "Is there a mobile app for parents and teachers?",
+    "answer": "Yes! Qefas Hub has native mobile apps for both iOS and Android. Teachers can take attendance, post grades, and send messages on the go, while parents receive real-time push notifications about their child's progress and school events."
+  },
+  {
+    "question": "How does school fee collection and payment tracking work?",
+    "answer": "Qefas Hub integrates with secure Nigerian payment gateways including Paystack. Parents can pay school fees online from anywhere, and school admins get a live payment dashboard with automated receipts and financial reports."
+  },
+  {
+    "question": "What happens to our data if we decide to leave?",
+    "answer": "Your data always belongs to you. You can export all student records, grades, attendance history, and financial data in standard formats at any time. We do not lock you in."
+  },
+  {
+    "question": "Is Qefas Hub secure and compliant with Nigerian data regulations?",
+    "answer": "Absolutely. All data is encrypted at rest and in transit. We follow strict access controls with role-based permissions, and our infrastructure is hosted on enterprise-grade servers with regular security audits."
   }
 ]

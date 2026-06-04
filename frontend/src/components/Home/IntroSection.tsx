@@ -123,7 +123,7 @@ const IntroSection: FC = () => {
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-900/40 border border-blue-800/50 text-blue-300 rounded-full text-xs font-bold uppercase tracking-[0.15em] mb-8"
             >
               <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-              The Gold Standard in EdTech
+              Built for Nigerian Schools
             </motion.div>
 
             {/* H1 */}
@@ -147,9 +147,8 @@ const IntroSection: FC = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-base md:text-lg text-slate-300 leading-relaxed mb-10 max-w-xl font-light"
             >
-              One unified platform to power your entire institution.{' '}
-              Streamline every workflow from admissions to graduation with{' '}
-              <strong className="text-white font-semibold">Qefas Hub.</strong>
+              One platform for your entire institution. Manage students, teachers, attendance,
+              grades, and parent communication — all without switching between tools.
             </motion.p>
 
             {/* CTAs */}
@@ -187,7 +186,7 @@ const IntroSection: FC = () => {
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="w-9 h-9 rounded-full border-2 border-white overflow-hidden shadow-sm">
                     <NextImage
-                      src={`https://i.pravatar.cc/36?u=qefas${i}`}
+                      src={`/users/user ${i}.jpeg`}
                       alt="User avatar"
                       width={36}
                       height={36}
@@ -200,7 +199,7 @@ const IntroSection: FC = () => {
                 <div className="flex text-amber-400 mb-0.5">
                   {[1, 2, 3, 4, 5].map((i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
                 </div>
-                <p className="text-xs text-slate-300 font-medium">Trusted by 500+ institutions</p>
+                <p className="text-xs text-slate-300 font-medium">Trusted by schools across Nigeria</p>
               </div>
             </motion.div>
           </div>

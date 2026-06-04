@@ -2,16 +2,16 @@
   {
     "image": "/image/Student Management.png",
     "title": "Student Management",
-    "description": "Manage student records, admissions, and communication efficiently."
+    "description": "A complete digital hub for every student — from enrollment and record-keeping to parent communication and academic history. Everything you need, in one clean view."
   },
   {
     "image": "/image/Attendance Tracking.png",
-    "title": "Attendance Tracking",
-    "description": "Track student attendance with ease and accuracy."
+    "title": "Smart Attendance",
+    "description": "Mark attendance in seconds and spot trends before they become problems. Get real-time class summaries, automated parent alerts, and month-by-month reports — no paperwork needed."
   },
   {
     "image": "/image/Automated Reporting.png",
-    "title": "Automated Reporting",
-    "description": "Generate reports and analyze student performance with a single click."
+    "title": "Automated Reports",
+    "description": "Generate beautiful, print-ready report cards and performance analytics with a single click. Save your staff hours every term and give parents clear insights into their child's progress."
   }
 ]

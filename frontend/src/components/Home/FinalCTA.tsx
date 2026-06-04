@@ -46,7 +46,7 @@ const FinalCTA = () => {
                         Ready to lead the future of education?
                     </h2>
                     <p className="text-lg md:text-2xl text-blue-100/70 mb-12 font-light leading-relaxed max-w-2xl mx-auto transition-colors px-4">
-                        Join hundreds of institutions worldwide and transform your management experience today with Qefas Hub.
+                        Join schools and institutions across Nigeria already using Qefas Hub to simplify management and improve student outcomes.
                     </p>
                     
                     <div className="flex flex-col sm:flex-row justify-center gap-6">
@@ -63,7 +63,7 @@ const FinalCTA = () => {
                     </div>
                     
                     <p className="mt-12 text-[11px] text-blue-200/50 tracking-[0.3em] uppercase font-bold">
-                        No credit card required • 14-day free trial
+                        No credit card required &bull; Free plan available
                     </p>
                 </div>
             </motion.div>

@@ -806,17 +806,13 @@ export const getSchoolLandingPageService = async (schoolId: string) => {
   const resolvedId = await resolveSchoolId(schoolId);
   if (!resolvedId) throw new Error("School not found");
 
-  let landingPage = await prisma.schoolLandingPage.findUnique({
+  const landingPage = await prisma.schoolLandingPage.upsert({
     where: { schoolId: resolvedId },
+    update: {},
+    create: {
+      schoolId: resolvedId,
+    },
   });
-
-  if (!landingPage) {
-    landingPage = await prisma.schoolLandingPage.create({
-      data: {
-        schoolId: resolvedId,
-      },
-    });
-  }
 
   return landingPage;
 };
@@ -830,17 +826,13 @@ export const getSchoolLandingPageBySubdomainService = async (
   console.log("subdomain, school", subdomain, school);
   if (!school) return null;
 
-  let landingPage = await prisma.schoolLandingPage.findUnique({
+  const landingPage = await prisma.schoolLandingPage.upsert({
     where: { schoolId: school.id },
+    update: {},
+    create: {
+      schoolId: school.id,
+    },
   });
-
-  if (!landingPage) {
-    landingPage = await prisma.schoolLandingPage.create({
-      data: {
-        schoolId: school.id,
-      },
-    });
-  }
 
   return {
     landingPage,

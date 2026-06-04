@@ -94,19 +94,19 @@ const featureCards = [
   {
     Icon: BarChart2,
     title: 'Live Grade Tracking',
-    desc: 'Real-time academic analytics with subject-level breakdowns and automatic class rankings.',
+    desc: 'See every student\'s academic performance in real time — subject breakdowns, class rankings, and trend alerts, all in one dashboard.',
     accent: 'bg-blue-50 text-blue-600',
   },
   {
     Icon: Calendar,
     title: 'Smart Timetable',
-    desc: 'Conflict-free scheduling engine that auto-allocates classrooms, teachers, and time slots.',
+    desc: 'Build conflict-free weekly schedules in minutes. The system automatically allocates classrooms, teachers, and time slots for you.',
     accent: 'bg-amber-50 text-amber-600',
   },
   {
     Icon: Shield,
     title: 'Role-Based Access',
-    desc: 'Granular permissions for every stakeholder in your institution.',
+    desc: 'Every user sees only what they need to. Granular permissions keep your data secure across all stakeholder levels.',
     badges: ['Admin', 'Teacher', 'Student', 'Parent'],
     accent: 'bg-emerald-50 text-emerald-600',
   },
@@ -119,7 +119,7 @@ const KeyBenefits = () => {
       <section className="bg-white dark:bg-[#111827] border-y border-slate-100 dark:border-white/[0.05] py-10 px-6 overflow-hidden">
         <div className="max-w-[1280px] mx-auto">
           <p className="text-center text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-[0.3em] mb-8">
-            Institutional Partners
+            Trusted by leading institutions
           </p>
 
           {/* Desktop */}
@@ -170,8 +170,8 @@ const KeyBenefits = () => {
               </span>
             </motion.h2>
             <p className="text-[#45464c] dark:text-slate-400 text-lg font-light max-w-2xl mx-auto leading-relaxed">
-              We&apos;ve built a holistic ecosystem that addresses the intricate challenges of modern education,
-              from classroom dynamics to complex administration.
+              Everything your school needs to run smoothly — from classroom to boardroom — in one
+              beautifully designed platform.
             </p>
           </div>
 

@@ -627,8 +627,8 @@ export default function TenantCustomPage({ params }: PageProps) {
             {landingPage?.footerText ? landingPage.footerText : `© 2026 ${schoolName}. All rights reserved. Powered by Qefas Hub`}
           </p>
           <div className="flex items-center gap-6 text-sm font-medium">
-            <a href="#" className={`transition-colors duration-200 ${darkMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}>Privacy Policy</a>
-            <a href="#" className={`transition-colors duration-200 ${darkMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}>Terms of Service</a>
+            <Link href="/privacy" className={`transition-colors duration-200 ${darkMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}>Privacy Policy</Link>
+            <Link href="/terms" className={`transition-colors duration-200 ${darkMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}>Terms of Service</Link>
           </div>
         </div>
       </footer>
