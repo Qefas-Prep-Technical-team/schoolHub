@@ -35,16 +35,9 @@ export const handleError = (res: Response, error: any, location: string) => {
     ? "Internal server error" 
     : (error?.message || "Internal server error");
 
-  // Prevent sending massive stack traces or raw SQL queries to the frontend
-  if (safeMessage.length > 200 || safeMessage.includes('prisma')) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-
   return res.status(500).json({
     success: false,
-    message: safeMessage,
+    message: error?.message || String(error),
+    stack: error?.stack
   });
 };
