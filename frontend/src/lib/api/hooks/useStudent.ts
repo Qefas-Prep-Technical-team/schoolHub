@@ -94,3 +94,26 @@ export const useUpdateStudentBehaviourProfile = (studentId: string) => {
     },
   });
 };
+
+export const useStudentAttendance = (studentId: string, filters?: { startDate?: string; endDate?: string }) => {
+  return useQuery({
+    queryKey: [...studentKeys.all, studentId, "attendance", filters],
+    queryFn: () => studentService.getAttendance(studentId, filters),
+    enabled: !!studentId,
+  });
+};
+
+export const useUpdateStudentAttendance = (studentId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { date: string; status: string; note?: string }) =>
+      studentService.updateAttendance(studentId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...studentKeys.all, studentId, "attendance"] });
+      toast.success("Attendance updated successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to update attendance");
+    },
+  });
+};

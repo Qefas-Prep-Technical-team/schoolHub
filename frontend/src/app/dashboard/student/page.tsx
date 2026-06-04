@@ -25,6 +25,7 @@ import { useUserStore } from '@/store/useUserStore';
 import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
 import { useGrades } from '@/lib/api/hooks/useGrades';
 import { useLinkProfile } from '@/lib/api/hooks/useLinks';
+import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ import { Badge } from '@/components/ui/badge';
 import StudentHero from './components/dashboard/StudentHero';
 import ConsoleInsights from './components/dashboard/ConsoleInsights';
 import AcademicHistory from './components/dashboard/AcademicHistory';
+import PerformanceTrend from './components/dashboard/PerformanceTrend';
 import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 
 
@@ -42,11 +44,20 @@ export default function StudentHomeDashboard() {
   const { data: attemptsData, isLoading: isLoadingExams } = useStudentExamAttempts();
   const { data: standaloneGradesData, isLoading: isLoadingGrades } = useGrades();
   const { data: profileResponse } = useLinkProfile();
+  const { data: studentProfile } = useStudentProfile();
   const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
 
   const attempts = attemptsData?.attempts || [];
   const standaloneGrades = standaloneGradesData?.grades || [];
   const studentCode = profileResponse?.data?.linkingCode || "";
+
+  const activeClass = studentProfile?.classes?.[0]?.class;
+  const termInfo = activeClass?.session || activeClass?.term 
+    ? `${activeClass.session || 'Current Session'} - ${activeClass.term || 'Active Term'}`
+    : "2023/24 - Second Term";
+
+  const enrolledSubjectsCount = activeClass?.subjects?.length || 0;
+  const courseIntensity = enrolledSubjectsCount > 0 ? `${enrolledSubjectsCount} Subjects` : "Coming Soon";
 
   // AI Analysis Logic
   const analysis = useMemo(() => {
@@ -134,7 +145,9 @@ export default function StudentHomeDashboard() {
           
           <StudentHero 
             username={username || 'Scholar'} 
-            selectedSchoolName={profileResponse?.data?.school?.name}
+            selectedSchoolName={studentProfile?.school?.name || profileResponse?.data?.school?.name}
+            globalId={studentCode}
+            termInfo={termInfo}
           />
 
           <AnimatePresence mode="wait">
@@ -147,7 +160,7 @@ export default function StudentHomeDashboard() {
               <ConsoleInsights 
                 gpa={gpa}
                 examsTaken={attempts?.length || 0}
-                credits="18 / 24"
+                credits={courseIntensity}
               />
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -221,6 +234,7 @@ export default function StudentHomeDashboard() {
                     </div>
                   </motion.div>
 
+                  <PerformanceTrend attempts={attempts} standaloneGrades={standaloneGrades} />
                   <AcademicHistory attempts={attempts} isLoading={isLoadingExams} />
                 </div>
 
@@ -232,9 +246,9 @@ export default function StudentHomeDashboard() {
                     upgradeLink="/dashboard/student/billing"
                     upgradeLabel="View Learning Plans"
                   />
-                  <div className="bg-slate-900 dark:bg-slate-100 rounded-[3rem] p-10 text-white dark:text-slate-900 shadow-2xl relative overflow-hidden group">
+                  <div className="bg-slate-900 dark:bg-slate-900/60 border border-transparent dark:border-slate-800/60 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group backdrop-blur-xl">
 
-                     <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 dark:bg-slate-900/10 rounded-full blur-3xl -translate-y-20 translate-x-10 group-hover:scale-150 transition-transform duration-700" />
+                     <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 dark:bg-pink-500/10 rounded-full blur-3xl -translate-y-20 translate-x-10 group-hover:scale-150 transition-transform duration-700" />
                      <div className="relative z-10 space-y-8">
                         <div className="flex items-center justify-between">
                             <h3 className="text-2xl font-black uppercase tracking-tighter italic">Quick <span className="text-pink-500">Actions</span></h3>
@@ -248,7 +262,7 @@ export default function StudentHomeDashboard() {
                         </div>
                         <Button 
                           onClick={() => setIsConnectionModalOpen(true)}
-                          className="w-full h-14 rounded-2xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-black uppercase tracking-[0.2em] text-[10px] hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
+                          className="w-full h-14 rounded-2xl bg-white dark:bg-pink-500 hover:bg-slate-100 dark:hover:bg-pink-600 text-slate-900 dark:text-white font-black uppercase tracking-[0.2em] text-[10px] hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
                         >
                           Generate Connection ID
                         </Button>
@@ -261,21 +275,13 @@ export default function StudentHomeDashboard() {
                         <Badge variant="outline" className="text-[9px] font-black uppercase border-pink-500/20 text-pink-600 bg-pink-50 dark:bg-pink-500/10">3 Enrolled</Badge>
                      </div>
                      <div className="space-y-4">
-                        {[
-                            { title: "Advanced Calculus", status: "Ongoing", progress: 75 },
-                            { title: "Quantum Physics", status: "Revision", progress: 92 },
-                            { title: "Organic Chemistry", status: "Upcoming", progress: 0 },
-                        ].map((course, i) => (
-                            <div key={i} className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800 hover:border-pink-500/20 transition-all cursor-pointer group">
-                                <div className="flex justify-between items-start mb-4">
-                                    <h4 className="font-black text-slate-800 dark:text-slate-200 tracking-tight group-hover:text-pink-600 transition-colors uppercase italic">{course.title}</h4>
-                                    <ArrowUpRight size={16} className="text-slate-300 group-hover:text-pink-500 transition-colors" />
-                                </div>
-                                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                                     <div className="h-full bg-pink-500 rounded-full transition-all duration-1000" style={{ width: `${course.progress}%` }} />
-                                </div>
-                            </div>
-                        ))}
+                        <div className="flex flex-col items-center justify-center py-12 text-center bg-slate-50 dark:bg-slate-950/40 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
+                           <div className="h-16 w-16 rounded-full bg-pink-500/10 flex items-center justify-center mb-4">
+                              <BookOpen className="w-8 h-8 text-pink-500" />
+                           </div>
+                           <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Coming Soon</h4>
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 max-w-[200px]">The interactive curriculum map is under construction.</p>
+                        </div>
                      </div>
                   </div>
                 </div>
@@ -297,11 +303,11 @@ export default function StudentHomeDashboard() {
 
 function QuickAction({ icon: Icon, label, color }: { icon: React.ElementType, label: string, color: string }) {
   return (
-    <button className="flex flex-col items-center justify-center p-5 bg-white dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all group">
+    <button className="flex flex-col items-center justify-center p-5 bg-white/5 dark:bg-white/[0.02] rounded-3xl border border-white/10 dark:border-white/5 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:bg-white/10 dark:hover:bg-white/[0.05] active:scale-95 transition-all group">
       <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-current/20 group-hover:scale-110 transition-transform", color)}>
         <Icon size={24} />
       </div>
-      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">{label}</span>
+      <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-400 group-hover:text-white transition-colors">{label}</span>
     </button>
   );
 }

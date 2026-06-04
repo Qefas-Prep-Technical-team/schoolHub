@@ -548,3 +548,8 @@
 
 
 
+
+### Thursday, June 04, 2026
+- **Student Dashboard Fixes**:
+    - [x] Fixed teacher name resolution on the /dashboard/student/my-classes cards by updating the frontend to map cls.teachers[0].teacher.name correctly from the backend payload.
+

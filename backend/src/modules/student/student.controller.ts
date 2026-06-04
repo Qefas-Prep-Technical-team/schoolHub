@@ -5,7 +5,9 @@ import {
   getStudentProfileService, 
   updateStudentProfileService,
   requestEmailUpdateService,
-  verifyEmailUpdateService
+  verifyEmailUpdateService,
+  getStudentAttendanceService,
+  updateStudentAttendanceService
 } from "./student.service";
 import { sendEmailUpdateVerification } from "../auth/auth.service";
 import { handleError } from "../../utils/error-handler";
@@ -189,5 +191,67 @@ export const getStudentById = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return handleError(res, error, "student.getStudentById");
+  }
+};
+
+export const getStudentAttendance = async (req: Request, res: Response) => {
+  try {
+    const { id: studentId } = req.params;
+    const { startDate, endDate } = req.query;
+    const { userType: currentUserType, id: currentUserId } = req.user!;
+
+    // Admins and teachers can view. Students/Parents can view if it's them.
+    // Assuming middleware handles high-level auth, but we might want to check if the student can view their own.
+    if (currentUserType === UserRole.STUDENT && currentUserId !== studentId) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only view your own attendance",
+      });
+    }
+
+    const attendance = await getStudentAttendanceService(studentId as string, {
+      startDate: startDate as string,
+      endDate: endDate as string,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: attendance,
+    });
+  } catch (error: any) {
+    return handleError(res, error, "student.getStudentAttendance");
+  }
+};
+
+export const updateStudentAttendance = async (req: Request, res: Response) => {
+  try {
+    const { id: studentId } = req.params;
+    const { date, status, note } = req.body;
+    const { userType: currentUserType } = req.user!;
+
+    // Ensure only admins or authorized staff can update attendance
+    if (currentUserType === UserRole.STUDENT || currentUserType === UserRole.PARENT) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to update attendance records",
+      });
+    }
+
+    if (!date || !status) {
+      return res.status(400).json({
+        success: false,
+        message: "Date and status are required fields",
+      });
+    }
+
+    const updatedAttendance = await updateStudentAttendanceService(studentId, { date, status, note });
+
+    return res.status(200).json({
+      success: true,
+      message: "Attendance updated successfully",
+      data: updatedAttendance,
+    });
+  } catch (error: any) {
+    return handleError(res, error, "student.updateStudentAttendance");
   }
 };

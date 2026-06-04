@@ -23,6 +23,7 @@ import {
 } from 'recharts'
 import { format, addWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns'
 import { TranscriptModal } from './components/TranscriptModal'
+import AttendanceCalendar from './components/attendance/AttendanceCalendar'
 import { toast } from 'react-toastify'
 import { 
     useStudentBehaviourProfile, 
@@ -1422,27 +1423,7 @@ export default function StudentProfilePage() {
             {/* ── Attendance Tab ─────────────────────────────────────────────── */}
             {activeTab === 'attendance' && (
                 <main className="max-w-7xl mx-auto px-0 md:px-12 mt-10 pb-20">
-                     <SectionCard 
-                        title="Attendance Tracker"
-                        headerAction={
-                            <div className="flex items-center gap-6">
-                                <WeekControls 
-                                    currentDate={scheduleDate}
-                                    onPrev={() => setScheduleDate(d => addWeeks(d, -1))}
-                                    onNext={() => setScheduleDate(d => addWeeks(d, 1))}
-                                    themeColor={primaryColor}
-                                />
-                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-lg">94% Monthly Avg</span>
-                            </div>
-                        }
-                    >
-                        <ScheduleGrid 
-                            type="attendance" 
-                            themeColor={primaryColor} 
-                            onCellClick={(day, hour) => setSelectedScheduleCell({ day, hour, type: 'attendance' })}
-                            currentDate={scheduleDate}
-                        />
-                     </SectionCard>
+                     <AttendanceCalendar studentId={studentId} themeColor={primaryColor} />
                 </main>
             )}
 

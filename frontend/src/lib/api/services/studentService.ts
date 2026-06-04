@@ -14,6 +14,9 @@ export interface Student {
       id: string;
       name: string;
       section?: string;
+      session?: string;
+      term?: string;
+      subjects?: any[];
     };
   }[];
   department?: {
@@ -116,6 +119,21 @@ export const studentService = {
 
   updateBehaviourProfile: async (studentId: string, data: { conductScore?: number; strengths?: { name: string; description: string; icon: string }[] }) => {
     const response = await apiClient.put<{ data: StudentBehaviourProfile }>(`/students/${studentId}/behaviour-profile`, data);
+    return response.data.data;
+  },
+
+  getAttendance: async (studentId: string, filters?: { startDate?: string; endDate?: string }) => {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    
+    const response = await apiClient.get<{ data: any[] }>(`/students/${studentId}/attendance${queryString}`);
+    return response.data.data;
+  },
+
+  updateAttendance: async (studentId: string, data: { date: string; status: string; note?: string }) => {
+    const response = await apiClient.post<{ data: any }>(`/students/${studentId}/attendance`, data);
     return response.data.data;
   },
 };

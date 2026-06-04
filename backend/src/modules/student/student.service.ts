@@ -158,7 +158,11 @@ export const getStudentProfileService = async (studentId: string) => {
       behaviourProfile: true,
       classes: {
         include: {
-          class: true,
+          class: {
+            include: {
+              subjects: true,
+            },
+          },
         },
       },
       parentLinks: {
@@ -255,5 +259,68 @@ export const verifyEmailUpdateService = async (studentId: string, code: string) 
       emailVerificationCode: null,
       emailVerificationExpiry: null,
     },
+  });
+};
+
+export const getStudentAttendanceService = async (studentId: string, query?: { startDate?: string; endDate?: string }) => {
+  const whereClause: any = { studentId };
+
+  if (query?.startDate || query?.endDate) {
+    whereClause.date = {};
+    if (query.startDate) whereClause.date.gte = new Date(query.startDate);
+    if (query.endDate) whereClause.date.lte = new Date(query.endDate);
+  }
+
+  return prisma.attendance.findMany({
+    where: whereClause,
+    orderBy: { date: 'asc' },
+    include: {
+      class: {
+        select: { id: true, name: true }
+      }
+    }
+  });
+};
+
+export const updateStudentAttendanceService = async (studentId: string, data: { date: string; status: string; note?: string }) => {
+  // Find the student's primary class
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    include: { classes: true }
+  });
+
+  if (!student) {
+    throw new Error("Student not found");
+  }
+
+  const primaryClass = student.classes[0];
+  if (!primaryClass) {
+    throw new Error("Student is not assigned to any class. Cannot log attendance.");
+  }
+
+  const classId = primaryClass.classId;
+  const attendanceDate = new Date(data.date);
+
+  // Check if a record exists to use upsert properly with the unique constraint
+  // The unique constraint is @@unique([classId, studentId, date])
+  return prisma.attendance.upsert({
+    where: {
+      classId_studentId_date: {
+        classId,
+        studentId,
+        date: attendanceDate,
+      }
+    },
+    update: {
+      status: data.status,
+      note: data.note,
+    },
+    create: {
+      classId,
+      studentId,
+      date: attendanceDate,
+      status: data.status,
+      note: data.note,
+    }
   });
 };

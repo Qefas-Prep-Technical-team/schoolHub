@@ -14,7 +14,7 @@ interface AcademicHistoryProps {
 
 const AcademicHistory: React.FC<AcademicHistoryProps> = ({ attempts, isLoading }) => {
   return (
-    <div className="bg-white dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800/60 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/40 dark:shadow-none min-h-[400px] relative overflow-hidden group h-full">
+    <div className="bg-white dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800/60 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/40 dark:shadow-none relative overflow-hidden group">
       <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-pink-500/5 dark:bg-pink-500/10 rounded-full blur-3xl -translate-y-1/2 pointer-events-none" />
       
       <div className="flex items-center justify-between mb-10 relative z-10">

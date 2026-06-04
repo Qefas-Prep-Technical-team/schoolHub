@@ -9,12 +9,14 @@ interface StudentHeroProps {
   username: string;
   selectedSchoolName?: string;
   termInfo?: string;
+  globalId?: string;
 }
 
 const StudentHero: React.FC<StudentHeroProps> = ({ 
   username, 
   selectedSchoolName = "Qefas Hub Academy",
-  termInfo = "2023/24 - Second Term"
+  termInfo = "2023/24 - Second Term",
+  globalId
 }) => {
   return (
     <section className="relative overflow-hidden rounded-[3rem] p-8 md:p-14 shadow-2xl border border-pink-100/50 dark:border-pink-900/20 bg-white dark:bg-slate-900 group">
@@ -84,7 +86,7 @@ const StudentHero: React.FC<StudentHeroProps> = ({
             </div>
             <div className="text-right space-y-1">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Global ID</p>
-                <p className="text-lg font-black text-slate-900 dark:text-white tracking-widest">#{username?.slice(0, 4).toUpperCase() || 'HUB'}-2024</p>
+                <p className="text-lg font-black text-slate-900 dark:text-white tracking-widest">{globalId || `#${username?.slice(0, 4).toUpperCase() || 'HUB'}-2024`}</p>
             </div>
         </div>
       </div>
