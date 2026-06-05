@@ -170,5 +170,20 @@ export const studentService = {
     const response = await apiClient.get<{ data: any[] }>(`/students/${studentId}/history`);
     return response.data.data;
   },
+
+  assignPrefectRole: async (studentId: string, role: string) => {
+    const response = await apiClient.post(`/students/${studentId}/prefect-role`, { role });
+    return response.data.data;
+  },
+
+  removePrefectRole: async (studentId: string, reason: string) => {
+    const response = await apiClient.delete(`/students/${studentId}/prefect-role`, { data: { reason } });
+    return response.data.data;
+  },
+
+  acknowledgePrefectCelebration: async (studentId: string) => {
+    const response = await apiClient.post(`/students/${studentId}/prefect-role/acknowledge`);
+    return response.data.data;
+  },
 };
 

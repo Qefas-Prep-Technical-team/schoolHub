@@ -23,8 +23,8 @@ import {
 } from 'recharts'
 import { format, addWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns'
 import { TranscriptModal } from './components/TranscriptModal'
-import { ExitStudentModal } from './components/ExitStudentModal'
-import { StudentHistoryTimeline } from './components/StudentHistoryTimeline'
+import { ExitStudentModal } from '../components/ExitStudentModal'
+import { StudentHistoryTimeline } from '../components/StudentHistoryTimeline'
 import AttendanceCalendar from './components/attendance/AttendanceCalendar'
 import { toast } from 'react-toastify'
 import { 

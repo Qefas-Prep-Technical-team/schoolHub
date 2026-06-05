@@ -8,12 +8,15 @@ import { ExamTable } from './components/ExamTable'
 import { Exam, ExamFilter, ExamStatus } from './components/types'
 import { teacherService } from '@/lib/api/services/teacherService'
 import { Loader2 } from 'lucide-react'
+import Pagination from '@/components/ui/Pagination'
 
 export default function ExamsPage() {
   const params = useParams()
   const classId = params.classId as string
   const [searchQuery, setSearchQuery] = useState('')
   const [filters] = useState<ExamFilter>({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const { data, isLoading } = useQuery({
     queryKey: ['class-exams', classId],
@@ -71,6 +74,7 @@ export default function ExamsPage() {
     }
 
     setFilteredExams(filtered)
+    setCurrentPage(1)
   }, [searchQuery, exams, filters])
 
   const handleViewExam = (exam: Exam) => {
@@ -131,13 +135,25 @@ export default function ExamsPage() {
         />
 
         <ExamTable
-          exams={filteredExams}
+          exams={filteredExams.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)}
           onView={handleViewExam}
           onEdit={handleEditExam}
           onDelete={handleDeleteExam}
           onDuplicate={handleDuplicateExam}
           onExport={handleExportExam}
         />
+        
+        {filteredExams.length > 0 && (
+            <div className="mt-8 flex justify-center pb-8">
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(filteredExams.length / itemsPerPage)}
+                    totalItems={filteredExams.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                />
+            </div>
+        )}
       </div>
     </>
   )

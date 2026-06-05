@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useTeacherAssignments } from '@/lib/api/hooks/useAssignments';
 import { AssignmentsSkeleton } from './components/AssignmentsSkeleton';
 import { PlusCircle, SearchX, Sparkles, BookOpen } from 'lucide-react';
 
@@ -27,17 +28,12 @@ export default function AssignmentsPage() {
 
     const isPersonal = selectedSchoolId === user?.id;
 
-    const { data: assignments = [], isLoading } = useQuery({
-        queryKey: ['teacher-assignments', selectedSchoolId],
-        queryFn: async () => {
-            const filterId = isPersonal ? undefined : selectedSchoolId;
-            const data = await teacherService.getExams({ 
-                schoolId: filterId || undefined,
-                category: 'ASSIGNMENT'
-            });
-            return data;
-        }
-    });
+    const { data: assignmentsData, isLoading } = useTeacherAssignments(
+        selectedSchoolId || "",
+        filters.status === 'all' ? undefined : filters.status
+    );
+
+    const assignments = assignmentsData?.assignments || [];
 
     // Filter and search assignments
     const filteredAssignments = useMemo(() => {

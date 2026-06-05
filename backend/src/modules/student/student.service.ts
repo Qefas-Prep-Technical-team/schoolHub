@@ -1,5 +1,5 @@
 import prisma from "../../config/database";
-import { LinkEntityType, UserRole } from "@prisma/client";
+import { LinkEntityType, UserRole, HistoryEventType } from "@prisma/client";
 import { createNotification } from "../notification/notification.service";
 
 export const pickDepartmentService = async ({
@@ -419,5 +419,100 @@ export const getStudentHistoryService = async (studentId: string, schoolId?: str
         select: { id: true, name: true, logoUrl: true }
       }
     }
+  });
+};
+
+export const assignPrefectRoleService = async (studentId: string, role: string, adminId: string, schoolId: string) => {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId, schoolId },
+    include: { parentLinks: true }
+  });
+
+  if (!student) throw new Error("Student not found");
+
+  const oldRole = student.prefectRole;
+  const eventType = oldRole ? HistoryEventType.PREFECT_UPDATED : HistoryEventType.PREFECT_ASSIGNED;
+
+  const updatedStudent = await prisma.student.update({
+    where: { id: studentId },
+    data: {
+      prefectRole: role,
+      hasSeenPrefectCelebration: false
+    }
+  });
+
+  await prisma.studentHistory.create({
+    data: {
+      studentId,
+      schoolId,
+      eventType,
+      title: `Appointed as ${role}`,
+      description: oldRole ? `Role updated from ${oldRole} to ${role}` : `Assigned prefect role: ${role}`,
+      performedBy: adminId
+    }
+  });
+
+  await createNotification({
+    recipientType: "STUDENT",
+    recipientId: studentId,
+    senderType: "SCHOOL",
+    senderId: schoolId,
+    type: "GENERAL",
+    title: `Congratulations! You are now ${role}`,
+    message: `You have been appointed as ${role}. Log in to view your new responsibilities.`,
+    meta: { studentId, role }
+  }).catch(console.error);
+
+  for (const link of student.parentLinks) {
+    await createNotification({
+      recipientType: "PARENT",
+      recipientId: link.parentId,
+      senderType: "SCHOOL",
+      senderId: schoolId,
+      type: "GENERAL",
+      title: `Your child is now ${role}`,
+      message: `${student.name} has been appointed as ${role}.`,
+      meta: { studentId, role }
+    }).catch(console.error);
+  }
+
+  return updatedStudent;
+};
+
+export const removePrefectRoleService = async (studentId: string, reason: string, adminId: string, schoolId: string) => {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId, schoolId }
+  });
+
+  if (!student || !student.prefectRole) throw new Error("Student does not have an active prefect role");
+
+  const oldRole = student.prefectRole;
+
+  const updatedStudent = await prisma.student.update({
+    where: { id: studentId },
+    data: {
+      prefectRole: null,
+      hasSeenPrefectCelebration: true
+    }
+  });
+
+  await prisma.studentHistory.create({
+    data: {
+      studentId,
+      schoolId,
+      eventType: HistoryEventType.PREFECT_REMOVED,
+      title: `Removed from ${oldRole} role`,
+      description: `Reason: ${reason}`,
+      performedBy: adminId
+    }
+  });
+
+  return updatedStudent;
+};
+
+export const acknowledgePrefectCelebrationService = async (studentId: string) => {
+  return prisma.student.update({
+    where: { id: studentId },
+    data: { hasSeenPrefectCelebration: true }
   });
 };

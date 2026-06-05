@@ -26,6 +26,7 @@ import QRCode from "react-qr-code";
 import { motion } from "framer-motion";
 import { useLinkRequests, useActiveLinks, useLinkProfile, useRespondToLinkRequest, useRevokeActiveLink, useCreateLinkRequest, useCancelLinkRequest } from '@/lib/api/hooks/useLinks';
 import { useRequestToJoinClass } from '@/lib/api/hooks/useClasses';
+import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { ConfirmationModal } from '@/components/reusable/ConfirmationModal';
 import { cn } from '@/lib/utils';
@@ -269,7 +270,7 @@ export default function LinkingHub() {
                      {profile.profileImage || user?.profileImage ? (
                         <NextImage 
                           src={profile.profileImage || user?.profileImage} 
-                          alt={profile.name} 
+                          alt={profile.name || user?.name || "Profile Image"} 
                           fill
                           className="object-cover rounded-xl"
                         />
@@ -732,6 +733,9 @@ function ConnectModal({ isOpen, onClose }: Record<string, any>) {
   const [linkType, setLinkType] = useState('STUDENT_CLASS');
   const createMutation = useCreateLinkRequest();
   const joinClassMutation = useRequestToJoinClass();
+  const { data: studentProfile } = useStudentProfile();
+  
+  const connectedSchool = studentProfile?.school;
 
   const handleConnect = (e: React.FormEvent) => {
     e.preventDefault();
@@ -782,6 +786,13 @@ function ConnectModal({ isOpen, onClose }: Record<string, any>) {
                 <SelectItem value="PARENT_STUDENT">👪 Student to Parent</SelectItem>
               </SelectContent>
             </Select>
+            {linkType === 'SCHOOL_STUDENT' && connectedSchool && (
+              <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+                <p className="text-xs font-bold text-amber-600 dark:text-amber-400 leading-relaxed">
+                  Note: You are already connected to <span className="font-black uppercase tracking-tight">{connectedSchool.name}</span>. Linking to a new school may override your current academic affiliation.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

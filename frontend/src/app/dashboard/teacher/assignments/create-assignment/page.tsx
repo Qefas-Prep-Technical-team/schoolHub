@@ -9,11 +9,17 @@ import Attachments from './components/Attachments';
 import DueDateScheduling from './components/DueDateScheduling';
 import Settings from './components/Settings';
 import SubmitBar from './components/SubmitBar';
-
+import { useCreateAssignment } from '@/lib/api/hooks/useAssignments';
+import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
+import { toast } from 'react-toastify';
 
 export default function CreateAssignmentPage() {
     const router = useRouter();
+    const { selectedSchoolId } = useDashboardStore();
     const [isLoading, setIsLoading] = useState(false);
+    
+    // We pass `false` for isAdmin since this is the teacher version
+    const { mutateAsync: createAssignment } = useCreateAssignment(selectedSchoolId || '', false);
 
     // Form state
     const [formData, setFormData] = useState<AssignmentFormData>({
@@ -66,26 +72,21 @@ export default function CreateAssignmentPage() {
             // In a real app, you would upload files first
             const uploadedAttachments = await uploadFiles(formData.attachments as any);
 
-            // Submit to API
-            const response = await fetch('/api/assignments', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    ...submissionData,
-                    attachments: uploadedAttachments
-                }),
+            // Submit to API using hook
+            const result = await createAssignment({
+                title: submissionData.title,
+                classIds: submissionData.classes.map(c => c.id),
+                subjectId: submissionData.subject || "1", // Fallback subject ID for now if empty
+                instructions: submissionData.instructions,
+                dueDate: submissionData.dueDate || undefined,
+                maxScore: submissionData.maxScore,
+                status: submissionData.status,
+                attachments: uploadedAttachments
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to create assignment');
-            }
-
-            const result = await response.json();
-
-            // Redirect to assignments page or show success message
-            router.push(`/assignments/${result.id}`);
+            toast.success("Assignment created successfully!");
+            // Redirect to assignments page
+            router.push(`/dashboard/teacher/assignments`);
 
         } catch (error) {
             console.error('Error creating assignment:', error);

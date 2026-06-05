@@ -12,7 +12,7 @@ const InfoBanner: React.FC = () => {
                         Your attendance affects your overall academic performance score.
                     </p>
                 </div>
-                <Button size="sm" variant="primary">
+                <Button size="sm" variant="primary" className="dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 dark:border dark:border-slate-700">
                     Learn More
                 </Button>
             </div>

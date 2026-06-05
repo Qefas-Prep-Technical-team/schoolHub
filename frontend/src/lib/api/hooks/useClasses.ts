@@ -15,6 +15,7 @@ export const useClasses = (schoolId?: string) => {
   return useQuery({
     queryKey: classQueryKeys.list(schoolId),
     queryFn: () => classService.getClasses(schoolId),
+    enabled: !!schoolId,
     refetchInterval: 5000, // Refetch every 5 seconds for "real-time" feel
     staleTime: 4000,       // Keep data fresh for 4 seconds
     refetchIntervalInBackground: true, // Continue polling when tab is not focused if needed

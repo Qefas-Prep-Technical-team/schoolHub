@@ -39,7 +39,7 @@ export interface Grade {
 }
 
 export const gradeService = {
-  getStudentGrades: async (studentId?: string, params?: { page?: number; limit?: number }) => {
+  getStudentGrades: async (studentId?: string, params?: { page?: number; limit?: number; assessmentType?: string | string[] }) => {
     const { data } = await apiClient.get<{ 
       success: boolean; 
       grades: Grade[]; 
@@ -59,6 +59,11 @@ export const gradeService = {
   
   getGradeById: async (id: string) => {
     const { data } = await apiClient.get<{ success: boolean; data: Grade }>(`/academic/grades/${id}`);
+    return data.data;
+  },
+
+  getClassLeaderboard: async (classId: string) => {
+    const { data } = await apiClient.get<{ success: boolean; data: string[] }>(`/academic/grades/leaderboard/${classId}`);
     return data.data;
   },
 

@@ -26,6 +26,7 @@ import {
     CalendarDays,
     Award,
     BookOpenCheck,
+    ClipboardList,
     CheckSquare,
     LibraryBig,
     CreditCard,
@@ -88,6 +89,7 @@ export const adminMenuItems: AdminMenuItem[] = [
     // === ACADEMICS ===
     { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },
     { icon: BookOpenCheck, label: "Exam Setup", href: "/dashboard/admin/exams", featureKey: "exams", section: "academics" },
+    { icon: ClipboardList, label: "Assignments", href: "/dashboard/admin/assignments", featureKey: "assignments", section: "academics" },
     { icon: BookOpenCheck, label: "Subjects", href: "/dashboard/admin/subjects", featureKey: "subjects", section: "academics" },
     { icon: Building2, label: "Departments", href: "/dashboard/admin/departments", featureKey: "departments", section: "academics" },
     { icon: CheckSquare, label: "Attendance", href: "/dashboard/admin/attendance", featureKey: "attendance", section: "academics" },
@@ -208,8 +210,10 @@ export function AdminSidebar({ isCollapsed, setIsCollapsed, primaryColor = '#256
                             <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-full w-full object-contain" />
                         </div>
                         {!isCollapsed && (
-                            <div className="flex flex-col">
-                                <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight uppercase">QEFAS HUB</span>
+                            <div className="flex flex-col overflow-hidden">
+                                <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight uppercase truncate max-w-[120px]" title={schoolProfile?.schoolName || "QEFAS HUB"}>
+                                    {schoolProfile?.schoolName || "QEFAS HUB"}
+                                </span>
                                 <span className="text-[10px] text-primary font-bold uppercase tracking-widest">Admin Portal</span>
                             </div>
                         )}

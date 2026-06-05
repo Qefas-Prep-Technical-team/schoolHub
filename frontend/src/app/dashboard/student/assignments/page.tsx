@@ -10,90 +10,15 @@ import { Assignment, AssignmentStatus, User } from './components/types';
 import Link from 'next/link';
 import ComingSoonWrapper from '@/components/dashboard/ComingSoonWrapper';
 
-// Mock data
-const mockUser: User = {
-  name: 'Alex Johnson',
-  avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDFXnU12PnVSDhnNPB6Iu0k4IAbfDCQaBUHEwwciyRvTC5Dvt3ZO_ylDnm8wJfFsgbUsgcamVxCFYh5tIt7IYHZ-J7BoTO0EaaojQollVYQFjFyOHttuq4CyVNSCCPoTSijxZY_w7ujCuczIWWqUv7TXTK4LCQ_l0wImRo9cNm-4JetIbwHqR12M-9jnFZfTNIgRzD-G9Wf_E3GjSCmxi2qDifUs1ETj7meNtSF5rMaiZmvlNlYF2-3mX6EelpqrUqU1psy5eRgtcA',
-  grade: 'Grade 10'
-};
-
-const mockAssignments: Assignment[] = [
-  {
-    id: '1',
-    title: 'The Renaissance Essay',
-    subject: 'History 101',
-    instructor: 'Prof. Eleanor Vance',
-    dueDate: '2024-10-15',
-    status: 'graded' as AssignmentStatus,
-    progress: 100,
-    grade: 'A+',
-    submissionDate: '2024-10-15',
-    color: 'green'
-  },
-  {
-    id: '2',
-    title: 'Polynomial Functions Worksheet',
-    subject: 'Algebra II',
-    instructor: 'Mr. Ben Carter',
-    dueDate: '2024-10-26',
-    status: 'submitted' as AssignmentStatus,
-    progress: 75,
-    dueInDays: 3,
-    color: 'blue'
-  },
-  {
-    id: '3',
-    title: 'Lab Report: Titration',
-    subject: 'Chemistry',
-    instructor: 'Dr. Anya Sharma',
-    dueDate: '2024-11-02',
-    status: 'pending' as AssignmentStatus,
-    progress: 0,
-    dueInDays: 10,
-    color: 'orange'
-  },
-  {
-    id: '4',
-    title: '"The Great Gatsby" Analysis',
-    subject: 'English Literature',
-    instructor: 'Ms. Davis',
-    dueDate: '2024-10-20',
-    status: 'overdue' as AssignmentStatus,
-    progress: 50,
-    overdueDays: 3,
-    color: 'red'
-  },
-  {
-    id: '5',
-    title: 'Mapping South America',
-    subject: 'World Geography',
-    instructor: 'Mr. Rodriguez',
-    dueDate: '2024-11-15',
-    status: 'pending' as AssignmentStatus,
-    progress: 0,
-    dueInDays: 23,
-    color: 'orange'
-  },
-  {
-    id: '6',
-    title: 'Newton\'s Laws Problem Set',
-    subject: 'Physics',
-    instructor: 'Dr. Chen',
-    dueDate: '2024-10-18',
-    status: 'graded' as AssignmentStatus,
-    progress: 100,
-    grade: 'B',
-    submissionDate: '2024-10-18',
-    color: 'green'
-  }
-];
-
+import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
+import { Skeleton } from '@/components/ui/skeleton';
 const subjects = ['All Subjects', 'History 101', 'Algebra II', 'Chemistry', 'English Literature', 'World Geography', 'Physics'];
 const statuses = ['All Statuses', 'Pending', 'Submitted', 'Graded', 'Overdue'];
 const dueDates = ['All Dates', 'This Week', 'Next Week', 'This Month', 'Overdue'];
 
 export default function AssignmentsPage() {
-  const [assignments, setAssignments] = useState<Assignment[]>(mockAssignments);
+  const { data: assignmentsData, isLoading } = useStudentAssignments({ limit: 100 });
+  const assignments: Assignment[] = assignmentsData?.assignments || [];
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
   const [selectedStatus, setSelectedStatus] = useState('All Statuses');
@@ -192,7 +117,17 @@ export default function AssignmentsPage() {
             </div>
 
             {/* Assignments Grid/List */}
-            {filteredAssignments.length === 0 ? (
+            {isLoading ? (
+              <div className={`grid gap-6 ${
+                viewMode === 'grid' 
+                  ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
+                  : 'grid-cols-1'
+              }`}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className={`rounded-xl border border-gray-200 dark:border-gray-800 ${viewMode === 'grid' ? 'h-48' : 'h-24'}`} />
+                ))}
+              </div>
+            ) : filteredAssignments.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <span className="material-symbols-outlined text-6xl text-gray-400 dark:text-gray-600 mb-4">
                   assignment

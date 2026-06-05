@@ -13,7 +13,14 @@ export const getStudentGrades = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "studentId is required" });
     }
 
-    const data = await getStudentGradesService(studentId, page, limit);
+    const assessmentTypeQuery = req.query.assessmentType as string | string[];
+    let assessmentType: string | string[] | undefined = assessmentTypeQuery;
+    
+    if (typeof assessmentTypeQuery === 'string' && assessmentTypeQuery.includes(',')) {
+      assessmentType = assessmentTypeQuery.split(',');
+    }
+
+    const data = await getStudentGradesService(studentId, page, limit, assessmentType);
     return res.status(200).json({ success: true, ...data });
   } catch (error: any) {
     return handleError(res, error, "academic.getStudentGrades");
@@ -49,5 +56,19 @@ export const getAllGrades = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
     return handleError(res, error, "academic.getAllGrades");
+  }
+};
+
+export const getClassLeaderboard = async (req: Request, res: Response) => {
+  try {
+    const { classId } = req.params;
+    if (!classId) {
+      return res.status(400).json({ success: false, message: "classId is required" });
+    }
+
+    const leaderboard = await getClassLeaderboardService(classId);
+    return res.status(200).json({ success: true, data: leaderboard });
+  } catch (error: any) {
+    return handleError(res, error, "academic.getClassLeaderboard");
   }
 };

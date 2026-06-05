@@ -22,7 +22,7 @@ export interface Exam {
 
 interface ExamsTableProps {
   exams: Exam[];
-  activeTab: 'exams' | 'quizzes' | 'subject-papers';
+  activeTab: 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment';
 }
 
 export default function ExamsTable({ exams, activeTab }: ExamsTableProps) {

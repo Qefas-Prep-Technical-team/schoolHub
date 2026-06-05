@@ -780,28 +780,61 @@ export const getExamResultService = async ({
     performanceInsight = "This was a challenging assessment. Don't be discouraged—review the foundations and reach out for extra support.";
   }
 
+  // Check if AI Insight should be available based on subscription
+  let hasAiInsightAccess = false;
+  const userSub = await prisma.userSubscription.findUnique({
+    where: { userId: studentId },
+    include: { subscriptionPlan: true }
+  });
+
+  if (userSub?.status === 'ACTIVE' && userSub.subscriptionPlan?.features?.includes('ai_insight')) {
+    hasAiInsightAccess = true;
+  } else {
+    const studentEnforcedSetting = await prisma.platformSettings.findUnique({
+      where: { key: 'sub_enforced_students' }
+    });
+    const isStudentEnforced = studentEnforcedSetting?.value !== 'false'; // Defaults to true
+    
+    if (!isStudentEnforced) {
+      if (attempt.exam.schoolId) {
+        const schoolSub = await prisma.schoolSubscription.findUnique({
+          where: { schoolId: attempt.exam.schoolId },
+          include: { subscriptionPlan: true }
+        });
+        if (schoolSub?.status === 'ACTIVE' && schoolSub.subscriptionPlan?.features?.includes('ai_insight')) {
+           hasAiInsightAccess = true;
+        }
+      }
+    }
+  }
+
   // Attempt to generate AI insight if OpenAI key is present, otherwise fallback to heuristic
-  if (attempt.performanceInsight) {
-      performanceInsight = attempt.performanceInsight;
-  } else if (process.env.OPENAI_API_KEY) {
-     try {
-        performanceInsight = await generateStudentPerformanceInsight({
-            studentName: attempt.student.name,
-            totalScore: attempt.totalScore,
-            totalMarks: attempt.totalMarks,
-            grade,
-            proficiency,
-            subjects: subjectBreakdown
-        });
-        
-        // Cache the insight
-        await prisma.examAttempt.update({
-            where: { id: attempt.id },
-            data: { performanceInsight }
-        });
-     } catch (err) {
-        console.error("Failed to generate AI insight, using heuristic.");
-     }
+  // Only generate if they have access to avoid wasting tokens
+  if (hasAiInsightAccess) {
+      if (attempt.performanceInsight) {
+          performanceInsight = attempt.performanceInsight;
+      } else if (process.env.OPENAI_API_KEY) {
+         try {
+            performanceInsight = await generateStudentPerformanceInsight({
+                studentName: attempt.student.name,
+                totalScore: attempt.totalScore,
+                totalMarks: attempt.totalMarks,
+                grade,
+                proficiency,
+                subjects: subjectBreakdown
+            });
+            
+            // Cache the insight
+            await prisma.examAttempt.update({
+                where: { id: attempt.id },
+                data: { performanceInsight }
+            });
+         } catch (err) {
+            console.error("Failed to generate AI insight, using heuristic.");
+         }
+      }
+  } else {
+      performanceInsight = "Premium AI insights are available to help you understand your performance and how to improve. Upgrade to a premium plan to unlock.";
   }
 
   const isReleased = 
@@ -818,7 +851,8 @@ export const getExamResultService = async ({
     globalStanding: isReleased ? globalStanding : null,
     position: isReleased ? position : null,
     velocity: isReleased ? velocity : null,
-    performanceInsight: isReleased ? performanceInsight : "Detailed insights will be available once results are officially released."
+    performanceInsight: isReleased ? performanceInsight : "Detailed insights will be available once results are officially released.",
+    hasAiInsightAccess: isReleased ? hasAiInsightAccess : false
   };
 
   return finalResponse;

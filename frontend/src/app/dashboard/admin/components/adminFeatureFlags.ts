@@ -13,6 +13,7 @@ export const ADMIN_FEATURE_FLAGS = {
   // === ACADEMICS ===
   grades: true,
   exams: true,
+  assignments: true,
   attendance: true,
   library: false,
   departments: true,

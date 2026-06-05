@@ -2,22 +2,24 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { FileText, ClipboardList } from "lucide-react";
+import { FileText, ClipboardList, PenTool, BookOpen } from "lucide-react";
 
 interface AssessmentTypeToggleProps {
-    onTypeChange: (type: 'exams' | 'quizzes') => void;
+    onTypeChange: (type: 'exams' | 'quizzes' | 'ca' | 'assignment') => void;
 }
 
 export default function AssessmentTypeToggle({ onTypeChange }: AssessmentTypeToggleProps) {
     const types = [
         { id: 'exams', label: 'Exams', icon: FileText },
         { id: 'quizzes', label: 'Quizzes', icon: ClipboardList },
+        { id: 'ca', label: 'CA', icon: PenTool },
+        { id: 'assignment', label: 'Assignments', icon: BookOpen },
     ] as const;
 
-    const [active, setActive] = useState<'exams' | 'quizzes'>('exams');
+    const [active, setActive] = useState<'exams' | 'quizzes' | 'ca' | 'assignment'>('exams');
 
     return (
-        <div className="mt-8 flex gap-3 p-1.5 bg-slate-100/50 dark:bg-slate-800/40 rounded-2xl w-fit border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
+        <div className="mt-8 flex flex-wrap gap-3 p-1.5 bg-slate-100/50 dark:bg-slate-800/40 rounded-2xl w-full sm:w-fit border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
             {types.map(({ id, label, icon: Icon }) => (
                 <button
                     key={id}

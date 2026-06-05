@@ -400,3 +400,54 @@ export const getStudentHistory = async (req: Request, res: Response) => {
     return handleError(res, error, 'student.getStudentHistory');
   }
 };
+
+export const assignPrefectRole = async (req: Request, res: Response) => {
+  try {
+    const { id: studentId } = req.params;
+    const { role } = req.body;
+    const adminId = req.user!.id;
+    const schoolAdmin = await import('../../config/database').then(m => m.default.schoolAdmin.findFirst({
+      where: { adminId, active: true }
+    }));
+    if (!schoolAdmin) return res.status(403).json({ success: false, message: 'Forbidden' });
+
+    if (!role) return res.status(400).json({ success: false, message: 'Role is required' });
+
+    const updated = await import('./student.service').then(m => m.assignPrefectRoleService(studentId, role, adminId, schoolAdmin.schoolId));
+    return res.status(200).json({ success: true, message: 'Prefect role assigned successfully', data: updated });
+  } catch (error: any) {
+    return handleError(res, error, 'student.assignPrefectRole');
+  }
+};
+
+export const removePrefectRole = async (req: Request, res: Response) => {
+  try {
+    const { id: studentId } = req.params;
+    const { reason } = req.body;
+    const adminId = req.user!.id;
+    const schoolAdmin = await import('../../config/database').then(m => m.default.schoolAdmin.findFirst({
+      where: { adminId, active: true }
+    }));
+    if (!schoolAdmin) return res.status(403).json({ success: false, message: 'Forbidden' });
+
+    if (!reason) return res.status(400).json({ success: false, message: 'Reason is required' });
+
+    const updated = await import('./student.service').then(m => m.removePrefectRoleService(studentId, reason, adminId, schoolAdmin.schoolId));
+    return res.status(200).json({ success: true, message: 'Prefect role removed successfully', data: updated });
+  } catch (error: any) {
+    return handleError(res, error, 'student.removePrefectRole');
+  }
+};
+
+export const acknowledgePrefectCelebration = async (req: Request, res: Response) => {
+  try {
+    const { id: studentId } = req.params;
+    if (req.user!.id !== studentId && req.user!.userType !== UserRole.STUDENT) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    const updated = await import('./student.service').then(m => m.acknowledgePrefectCelebrationService(studentId));
+    return res.status(200).json({ success: true, message: 'Celebration acknowledged', data: updated });
+  } catch (error: any) {
+    return handleError(res, error, 'student.acknowledgePrefectCelebration');
+  }
+};

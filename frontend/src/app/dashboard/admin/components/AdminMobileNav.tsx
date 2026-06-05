@@ -16,6 +16,7 @@ import {
   CalendarDays,
   Award,
   BookOpenCheck,
+  ClipboardList,
   CheckSquare,
   LibraryBig,
   CreditCard,
@@ -36,6 +37,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useLogoutMutation } from "@/app/(auth)/login/services/use-auth-mutations";
 import { ADMIN_FEATURE_FLAGS, type AdminFeatureFlagKey } from "./adminFeatureFlags";
 import { AdminMobileDrawer } from "./AdminMobileDrawer";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 
 /* =========================
    Types
@@ -76,6 +79,7 @@ export const adminMenuItems: AdminMenuItem[] = [
   // === ACADEMICS ===
   { icon: Award, label: "Grades", href: "/dashboard/admin/grades", featureKey: "grades", section: "academics" },
   { icon: BookOpenCheck, label: "Exam Setup", href: "/dashboard/admin/exams", featureKey: "exams", section: "academics" },
+  { icon: ClipboardList, label: "Assignments", href: "/dashboard/admin/assignments", featureKey: "assignments", section: "academics" },
   { icon: CheckSquare, label: "Attendance", href: "/dashboard/admin/attendance", featureKey: "attendance", section: "academics" },
   { icon: LibraryBig, label: "Library", href: "/dashboard/admin/library", featureKey: "library", section: "academics" },
 
@@ -137,6 +141,10 @@ export function AdminMobileNav() {
   const sections = React.useMemo(() => getFilteredMenuItemsBySection(adminMenuItems), []);
   const bottomTabs = React.useMemo(() => buildBottomTabs(adminMenuItems), []);
 
+  const { user } = useAuthStore();
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+
   return (
     <>
       {/* Top bar (mobile only) */}
@@ -147,7 +155,9 @@ export function AdminMobileNav() {
               <School className="h-5 w-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">QEFAS HUB</span>
+              <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight truncate max-w-[200px]">
+                {schoolProfile?.schoolName || "QEFAS HUB"}
+              </span>
               <span className="text-[9px] text-primary font-bold uppercase tracking-widest">Admin Hub</span>
             </div>
           </div>

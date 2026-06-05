@@ -10,7 +10,7 @@ import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { ExamsTableSkeleton } from './ExamsSkeleton';
-import { Trophy, ClipboardList, Sparkles, Building2 } from 'lucide-react';
+import { Trophy, ClipboardList, Sparkles, Building2, FileText, BookOpen } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,10 @@ import {
 } from "@/components/ui/dialog";
 import CreatePaperForm from './CreatePaperForm';
 import { useRouter } from 'next/navigation';
+import Pagination from '@/components/ui/Pagination';
 
 export default function ExamsQuizzesOverview() {
-  const [activeTab, setActiveTab] = useState<'exams' | 'quizzes' | 'subject-papers'>('exams');
+  const [activeTab, setActiveTab] = useState<'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment'>('exams');
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
   const [filters, setFilters] = useState({
@@ -32,9 +33,11 @@ export default function ExamsQuizzesOverview() {
   });
   const [isAddPaperModalOpen, setIsAddPaperModalOpen] = useState(false);
   const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const isPersonal = selectedSchoolId === user?.id;
-  const category = activeTab === 'exams' ? 'EXAM' : 'QUIZ';
+  const category = activeTab === 'exams' ? 'EXAM' : activeTab === 'quizzes' ? 'QUIZ' : activeTab === 'ca' ? 'CA' : activeTab === 'assignment' ? 'ASSIGNMENT' : 'EXAM';
 
   const { data, isLoading } = useQuery({
     queryKey: ['teacher-exams', selectedSchoolId, activeTab, filters],
@@ -70,6 +73,12 @@ export default function ExamsQuizzesOverview() {
       status: '',
       date: '',
     });
+    setCurrentPage(1);
+  };
+
+  const handleTabChange = (tab: 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment') => {
+      setActiveTab(tab);
+      setCurrentPage(1);
   };
 
   return (
@@ -92,21 +101,33 @@ export default function ExamsQuizzesOverview() {
             <div className="inline-flex p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-[1.5rem] shadow-inner">
               <TabButton 
                 active={activeTab === 'exams'} 
-                onClick={() => setActiveTab('exams')}
+                onClick={() => handleTabChange('exams')}
                 icon={Trophy}
                 label="Exams"
               />
               <TabButton 
                 active={activeTab === 'quizzes'} 
-                onClick={() => setActiveTab('quizzes')}
+                onClick={() => handleTabChange('quizzes')}
                 icon={ClipboardList}
                 label="Quizzes"
               />
               <TabButton 
                 active={activeTab === 'subject-papers'} 
-                onClick={() => setActiveTab('subject-papers')}
+                onClick={() => handleTabChange('subject-papers')}
                 icon={Sparkles}
                 label="Subject Papers"
+              />
+              <TabButton 
+                active={activeTab === 'ca'} 
+                onClick={() => handleTabChange('ca')}
+                icon={FileText}
+                label="CA"
+              />
+              <TabButton 
+                active={activeTab === 'assignment'} 
+                onClick={() => handleTabChange('assignment')}
+                icon={BookOpen}
+                label="Assignments"
               />
             </div>
 
@@ -144,9 +165,20 @@ export default function ExamsQuizzesOverview() {
                   transition={{ duration: 0.4 }}
                 >
                   <ExamsTable 
-                    exams={data || []} 
+                    exams={data ? data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage) : []} 
                     activeTab={activeTab}
                   />
+                  {data && data.length > 0 && (
+                      <div className="mt-8 flex justify-center">
+                          <Pagination
+                              currentPage={currentPage}
+                              totalPages={Math.ceil(data.length / itemsPerPage)}
+                              totalItems={data.length}
+                              itemsPerPage={itemsPerPage}
+                              onPageChange={setCurrentPage}
+                          />
+                      </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

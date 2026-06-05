@@ -13,10 +13,13 @@ import {
     timeFilters 
 } from './components/data';
 import { Loader2 } from 'lucide-react';
+import Pagination from '@/components/ui/Pagination';
 
 export default function Home() {
-    const [assessmentType, setAssessmentType] = useState<'exams' | 'quizzes'>('exams');
+    const [assessmentType, setAssessmentType] = useState<'exams' | 'quizzes' | 'ca' | 'assignment'>('exams');
     const [timeFilter, setTimeFilter] = useState('term');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     // Fetch student stats and published assessments
     const { data: statsData, isLoading: isStatsLoading } = useStudentStats();
@@ -60,7 +63,7 @@ export default function Home() {
                     ? (attempt?.totalScore != null ? `${Math.round((attempt.totalScore / (attempt.totalMarks || 1)) * 100)}%` : null) 
                     : null,
                 status,
-                type: item.category?.toLowerCase() === 'quiz' ? 'quiz' : 'exam',
+                type: item.category?.toLowerCase() === 'quiz' ? 'quiz' : item.category?.toLowerCase() === 'ca' ? 'ca' : item.category?.toLowerCase() === 'assignment' ? 'assignment' : 'exam',
                 durationMinutes,
                 questionsCount,
             };
@@ -114,7 +117,10 @@ export default function Home() {
     // Filter assessments by type
     const filteredAssessments = useMemo(() => {
         return allAssessments.filter(assessment =>
-            assessmentType === 'exams' ? assessment.type === 'exam' : assessment.type === 'quiz'
+            assessmentType === 'exams' ? assessment.type === 'exam' 
+            : assessmentType === 'quizzes' ? assessment.type === 'quiz'
+            : assessmentType === 'ca' ? assessment.type === 'ca'
+            : assessment.type === 'assignment'
         );
     }, [allAssessments, assessmentType]);
 
@@ -138,9 +144,12 @@ export default function Home() {
     return (
         <div className="flex min-h-screen">
             <main className="flex-1 p-6 lg:p-8">
-                <div className="mx-auto max-max-w-7xl">
+                <div className="mx-auto max-w-7xl">
                     <PageHeader />
-                    <AssessmentTypeToggle onTypeChange={setAssessmentType} />
+                    <AssessmentTypeToggle onTypeChange={(type) => {
+                        setAssessmentType(type);
+                        setCurrentPage(1);
+                    }} />
 
                     {/* Stats & Performance Grid */}
                     <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -155,10 +164,21 @@ export default function Home() {
                         filters={timeFilters}
                         activeFilter={timeFilter}
                         onFilterChange={setTimeFilter}
-                        title={`Upcoming ${assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1)}`}
+                        title={`Upcoming ${assessmentType === 'ca' ? 'CA' : assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1)}`}
                     />
 
-                    <AssessmentList assessments={filteredAssessments} />
+                    <AssessmentList assessments={filteredAssessments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)} />
+                    {filteredAssessments.length > 0 && (
+                        <div className="mt-8 flex justify-center">
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={Math.ceil(filteredAssessments.length / itemsPerPage)}
+                                totalItems={filteredAssessments.length}
+                                itemsPerPage={itemsPerPage}
+                                onPageChange={setCurrentPage}
+                            />
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

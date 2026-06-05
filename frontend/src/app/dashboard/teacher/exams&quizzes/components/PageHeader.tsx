@@ -5,7 +5,7 @@ interface PageHeaderProps {
   title: string;
   onCreateNew: () => void;
   onAddPaper?: () => void;
-  activeTab?: 'exams' | 'quizzes' | 'subject-papers';
+  activeTab?: 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment';
 }
 
 export default function PageHeader({ title, onCreateNew, onAddPaper, activeTab }: PageHeaderProps) {

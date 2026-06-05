@@ -30,6 +30,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import Link from 'next/link';
 import { StudentConnectionModal } from './components/StudentConnectionModal';
 import { Badge } from '@/components/ui/badge';
 import StudentHero from './components/dashboard/StudentHero';
@@ -37,6 +38,8 @@ import ConsoleInsights from './components/dashboard/ConsoleInsights';
 import AcademicHistory from './components/dashboard/AcademicHistory';
 import PerformanceTrend from './components/dashboard/PerformanceTrend';
 import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
+import PrefectCelebration from './components/PrefectCelebration';
+import PrefectRoleBanner from './components/PrefectRoleBanner';
 
 
 export default function StudentHomeDashboard() {
@@ -58,6 +61,9 @@ export default function StudentHomeDashboard() {
 
   const enrolledSubjectsCount = activeClass?.subjects?.length || 0;
   const courseIntensity = enrolledSubjectsCount > 0 ? `${enrolledSubjectsCount} Subjects` : "Coming Soon";
+
+  const prefectRole = studentProfile?.prefectRole;
+  const hasSeenCelebration = studentProfile?.hasSeenPrefectCelebration ?? true;
 
   // AI Analysis Logic
   const analysis = useMemo(() => {
@@ -89,19 +95,21 @@ export default function StudentHomeDashboard() {
       fullMark: 100,
     }));
 
+    if (chartData.length === 0) return null;
+
     const sortedSubjects = [...chartData].sort((a, b) => a.A - b.A);
     const weakest = sortedSubjects[0];
     const strongest = sortedSubjects[sortedSubjects.length - 1];
 
     let advice = "";
     if (weakest.A < 40) {
-      advice = `Urgent intervention required in ${weakest.subject} (F9 standing). We recommend specialized tutoring and a review of foundational prerequisites to stabilize performance before the next assessment cycle.`;
+      advice = `You need to put more effort into ${weakest.subject} (F9 standing). We recommend getting a tutor and practicing well before the next exam.`;
     } else if (weakest.A < 50) {
-      advice = `Performance in ${weakest.subject} is currently at Pass level (D7/E8). Aim for more consistent practice with past WAEC/NECO papers to elevate this to a Credit (C6) or higher.`;
+      advice = `Your performance in ${weakest.subject} is at a Pass level (D7/E8). Try practicing more past questions so you can hit Credit (C6) or higher.`;
     } else if (weakest.A < 75) {
-      advice = `Strong performance in ${weakest.subject} (Credit range). With targeted focus on high-weight topics, you are well-positioned to achieve a Distinction (A1/B2) in upcoming cycles.`;
+      advice = `You are doing well in ${weakest.subject} (Credit range). If you push a bit more, you can secure a Distinction (A1/B2) for the next one.`;
     } else {
-      advice = `Exceptional academic standing! Your mastery of ${weakest.subject} at ${weakest.A}% demonstrates Distinction-level (A1) command. Maintain this excellence while supporting peers in collaborative sessions.`;
+      advice = `Excellent! You have mastered ${weakest.subject} well at ${weakest.A}% (A1 level). Keep it up and help your peers who are struggling.`;
     }
 
     return { chartData, weakest, strongest, advice };
@@ -143,6 +151,8 @@ export default function StudentHomeDashboard() {
       <main className="p-4 md:p-6 lg:p-10 pb-32 md:pb-10">
         <div className="max-w-[1600px] mx-auto space-y-10">
 
+          <PrefectRoleBanner roleName={prefectRole} />
+
           <StudentHero
             username={username || 'Scholar'}
             selectedSchoolName={studentProfile?.school?.name || profileResponse?.data?.school?.name}
@@ -178,7 +188,7 @@ export default function StudentHomeDashboard() {
                           <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center shadow-lg shadow-pink-500/30">
                             <Sparkles size={24} className="animate-pulse" />
                           </div>
-                          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">Academic <span className="text-pink-600">Advisory</span></h2>
+                          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">Your Academic <span className="text-pink-600">Progress</span></h2>
                         </div>
 
                         {analysis ? (
@@ -193,21 +203,21 @@ export default function StudentHomeDashboard() {
                               <div className="p-6 rounded-[2rem] bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/10 shadow-sm">
                                 <div className="flex items-center gap-2 text-emerald-500 mb-2">
                                   <TrendingUp size={16} />
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-[#10b981]">Best Subject</span>
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-[#10b981]">Strongest Subject</span>
                                 </div>
                                 <p className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">{analysis.strongest.subject}</p>
                               </div>
                               <div className="p-6 rounded-[2rem] bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/10 shadow-sm">
                                 <div className="flex items-center gap-2 text-rose-500 mb-2">
                                   <Target size={16} />
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-[#f43f5e]">Needs Work</span>
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-[#f43f5e]">Needs Improvement</span>
                                 </div>
                                 <p className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">{analysis.weakest.subject}</p>
                               </div>
                             </div>
                           </div>
                         ) : (
-                          <p className="text-slate-400 font-bold italic">Awaiting assessment results...</p>
+                          <p className="text-slate-400 font-bold italic">Waiting for your results...</p>
                         )}
                       </div>
 
@@ -255,17 +265,11 @@ export default function StudentHomeDashboard() {
                         <Zap size={24} className="text-pink-500 fill-pink-500" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        <QuickAction icon={BookOpen} label="Subjects" color="bg-pink-500 text-white" />
-                        <QuickAction icon={Target} label="CA & Exams" color="bg-rose-500 text-white" />
-                        <QuickAction icon={Calendar} label="Timetable" color="bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900" />
-                        <QuickAction icon={Star} label="Results" color="bg-amber-500 text-white" />
+                        <QuickAction icon={BookOpen} label="Subjects" color="bg-pink-500 text-white" href="/dashboard/student/my-classes" />
+                        <QuickAction icon={Target} label="CA & Exams" color="bg-rose-500 text-white" href="/dashboard/student/exams" />
+                        <QuickAction icon={Calendar} label="Timetable" color="bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900" href="/dashboard/student/timetable" />
+                        <QuickAction icon={Star} label="Results" color="bg-amber-500 text-white" href="/dashboard/student/results" />
                       </div>
-                      <Button
-                        onClick={() => setIsConnectionModalOpen(true)}
-                        className="w-full h-14 rounded-2xl bg-white dark:bg-pink-500 hover:bg-slate-100 dark:hover:bg-pink-600 text-slate-900 dark:text-white font-black uppercase tracking-[0.2em] text-[10px] hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
-                      >
-                        Generate Connection ID
-                      </Button>
                     </div>
                   </div>
 
@@ -279,8 +283,8 @@ export default function StudentHomeDashboard() {
                         <div className="h-16 w-16 rounded-full bg-pink-500/10 flex items-center justify-center mb-4">
                           <BookOpen className="w-8 h-8 text-pink-500" />
                         </div>
-                        <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Coming Soon</h4>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 max-w-[200px]">Your subject list is being mapped.</p>
+                        <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Loading...</h4>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 max-w-[200px]">Setting up your subjects.</p>
                       </div>
                     </div>
                   </div>
@@ -297,17 +301,25 @@ export default function StudentHomeDashboard() {
         onClose={() => setIsConnectionModalOpen(false)}
         studentCode={studentCode}
       />
+
+      <PrefectCelebration
+        studentId={studentProfile?.id || ''}
+        studentName={studentProfile?.name || username || 'Scholar'}
+        roleName={prefectRole || ''}
+        hasSeenCelebration={hasSeenCelebration}
+        onAcknowledge={() => {}}
+      />
     </div>
   );
 }
 
-function QuickAction({ icon: Icon, label, color }: { icon: React.ElementType, label: string, color: string }) {
+function QuickAction({ icon: Icon, label, color, href }: { icon: React.ElementType, label: string, color: string, href: string }) {
   return (
-    <button className="flex flex-col items-center justify-center p-5 bg-white/5 dark:bg-white/[0.02] rounded-3xl border border-white/10 dark:border-white/5 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:bg-white/10 dark:hover:bg-white/[0.05] active:scale-95 transition-all group">
+    <Link href={href} className="flex flex-col items-center justify-center p-5 bg-white/5 dark:bg-white/[0.02] rounded-3xl border border-white/10 dark:border-white/5 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:bg-white/10 dark:hover:bg-white/[0.05] active:scale-95 transition-all group">
       <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-current/20 group-hover:scale-110 transition-transform", color)}>
         <Icon size={24} />
       </div>
       <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-400 group-hover:text-white transition-colors">{label}</span>
-    </button>
+    </Link>
   );
 }

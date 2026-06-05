@@ -263,6 +263,8 @@ model Student {
   gender                  Gender?
   departmentId            String?
   termAverage             Float?
+  prefectRole             String?
+  hasSeenPrefectCelebration Boolean @default(true)
   emailVerificationCode   String?
   emailVerificationExpiry DateTime?
   pendingEmail            String?
@@ -1565,6 +1567,7 @@ enum QuestionType {
   MULTIPLE_CHOICE
   TRUE_FALSE
   SHORT_ANSWER
+  FILE_UPLOAD
 }
 
 enum AssessmentCreationMode {
@@ -1786,6 +1789,7 @@ enum HistoryEventType {
   CLASS_CHANGED
   STREAM_CHANGED
   PREFECT_ASSIGNED
+  PREFECT_UPDATED
   PREFECT_REMOVED
   AWARD_RECEIVED
   CERTIFICATE_ISSUED
@@ -1841,4 +1845,116 @@ model StudentEnrollment {
   @@index([schoolId])
   @@index([status])
   @@map("student_enrollments")
+}
+
+enum AssignmentSubmissionStatus {
+  PENDING
+  SUBMITTED
+  GRADED
+  OVERDUE
+}
+
+model Assignment {
+  id              String                @id @default(uuid())
+  title           String
+  instructions    String?
+  dueDate         DateTime?
+  totalMarks      Float                 @default(100)
+  status          SubjectPaperStatus    @default(DRAFT)
+  
+  schoolId        String
+  teacherId       String
+  classId         String
+  subjectId       String
+  
+  attachmentUrl   String?
+  
+  questions       AssignmentQuestion[]
+  submissions     AssignmentSubmission[]
+  
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([schoolId])
+  @@index([teacherId])
+  @@index([classId])
+  @@index([subjectId])
+  @@map("assignments")
+}
+
+model AssignmentQuestion {
+  id              String                @id @default(uuid())
+  assignmentId    String
+  assignment      Assignment            @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  
+  type            QuestionType
+  question        String
+  marks           Float                 @default(1)
+  order           Int                   @default(0)
+  
+  // For multiple choice
+  optionA         String?
+  optionB         String?
+  optionC         String?
+  optionD         String?
+  correctAnswer   String?               
+  explanation     String?
+  
+  // AI grading
+  rubric          String?
+
+  answers         AssignmentAnswer[]
+  
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([assignmentId])
+  @@map("assignment_questions")
+}
+
+model AssignmentSubmission {
+  id              String                      @id @default(uuid())
+  assignmentId    String
+  assignment      Assignment                  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  studentId       String
+  
+  status          AssignmentSubmissionStatus  @default(PENDING)
+  score           Float?
+  feedback        String?
+  
+  // For document uploads
+  fileUrl         String?
+  fileName        String?
+  
+  answers         AssignmentAnswer[]
+  
+  submittedAt     DateTime?
+  gradedAt        DateTime?
+  
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+
+  @@index([assignmentId])
+  @@index([studentId])
+  @@map("assignment_submissions")
+}
+
+model AssignmentAnswer {
+  id              String                @id @default(uuid())
+  submissionId    String
+  submission      AssignmentSubmission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  questionId      String
+  question        AssignmentQuestion    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  answer          String?
+  score           Float                 @default(0)
+  isCorrect       Boolean               @default(false)
+  teacherComment  String?
+  
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([submissionId])
+  @@index([questionId])
+  @@map("assignment_answers")
 }

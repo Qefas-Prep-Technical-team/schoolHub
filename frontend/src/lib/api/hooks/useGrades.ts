@@ -11,7 +11,7 @@ export const gradeKeys = {
   hub: (filters: Record<string, unknown>) => [...gradeKeys.all, "hub", filters] as const,
 };
 
-export const useStudentGrades = (studentId?: string, params?: { page?: number; limit?: number }) => {
+export const useStudentGrades = (studentId?: string, params?: { page?: number; limit?: number; assessmentType?: string | string[] }) => {
   return useQuery({
     queryKey: gradeKeys.list({ studentId, ...params }),
     queryFn: () => gradeService.getStudentGrades(studentId, params),
@@ -19,6 +19,14 @@ export const useStudentGrades = (studentId?: string, params?: { page?: number; l
 };
 
 export const useGrades = useStudentGrades;
+
+export const useClassLeaderboard = (classId?: string) => {
+  return useQuery({
+    queryKey: gradeKeys.list({ action: "leaderboard", classId }),
+    queryFn: () => gradeService.getClassLeaderboard(classId!),
+    enabled: !!classId,
+  });
+};
 
 export const useAdminGrades = (filters?: { classId?: string; subject?: string }) => {
   return useQuery({

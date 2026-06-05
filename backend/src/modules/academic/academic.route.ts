@@ -32,6 +32,7 @@ import {
   getStudentGrades,
   getGradeById,
   getAllGrades,
+  getClassLeaderboard,
 } from "./grade.controller";
 import { 
   getSubjectSchemes, 
@@ -82,6 +83,7 @@ router.get("/teacher-subjects", authenticateToken, getTeacherSubjects);
 
 // Grade Routes
 router.get("/grades", authenticateToken, getStudentGrades);
+router.get("/grades/leaderboard/:classId", authenticateToken, getClassLeaderboard);
 router.get("/grades/admin", authenticateToken, getAllGrades);
 router.get("/grades/:id", authenticateToken, getGradeById);
 

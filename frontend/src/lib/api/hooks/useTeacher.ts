@@ -98,3 +98,19 @@ export const useUpdateTeacherSettings = () => {
     },
   });
 };
+
+export const useTeacherClasses = (schoolId?: string) => {
+  return useQuery({
+    queryKey: [...teacherKeys.all, "classes", { schoolId }],
+    queryFn: () => teacherService.getClasses({ schoolId }),
+    enabled: !!schoolId,
+  });
+};
+
+export const useTeacherSubjects = (schoolId?: string) => {
+  return useQuery({
+    queryKey: [...teacherKeys.all, "subjects", { schoolId }],
+    queryFn: () => teacherService.getSubjects({ schoolId }),
+    enabled: !!schoolId,
+  });
+};

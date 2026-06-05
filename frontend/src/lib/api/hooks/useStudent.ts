@@ -123,3 +123,46 @@ export const useUpdateStudentAttendance = (studentId: string) => {
     },
   });
 };
+
+export const useAssignPrefectRole = (studentId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (role: string) => studentService.assignPrefectRole(studentId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...studentKeys.all, studentId, "history"] });
+      queryClient.invalidateQueries({ queryKey: studentKeys.profile() });
+      toast.success("Prefect role assigned successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to assign prefect role");
+    },
+  });
+};
+
+export const useRemovePrefectRole = (studentId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reason: string) => studentService.removePrefectRole(studentId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...studentKeys.all, studentId, "history"] });
+      queryClient.invalidateQueries({ queryKey: studentKeys.profile() });
+      toast.success("Prefect role removed successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to remove prefect role");
+    },
+  });
+};
+
+export const useAcknowledgePrefectCelebration = (studentId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => studentService.acknowledgePrefectCelebration(studentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: studentKeys.profile() });
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      console.error("Failed to acknowledge celebration", error);
+    },
+  });
+};

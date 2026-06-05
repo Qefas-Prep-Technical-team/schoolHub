@@ -129,6 +129,13 @@
 - Translating the generated Stitch HTML design into production-ready Next.js + Tailwind components.
 - Maintaining parity between the new light lavender-white hero aesthetic and the existing dark-mode dashboard.
 
+### Friday, June 05, 2026
+- **Admin & Teacher Assignment Architecture Setup**:
+    - [x] **Backend Services**: Developed `createAssignmentService` and `getTeacherAssignmentsService` within `assignment.service.ts` to allow teachers to dispatch independent class assignments securely to database.
+    - [x] **API Endpoints**: Registered distinct `POST` and `GET` APIs for both teachers and admins in `assignment.controller.ts` and `assignment.route.ts`. 
+    - [x] **React Query Hooks**: Created robust `useTeacherAssignments`, `useAdminAssignments`, and `useCreateAssignment` data-fetching tools in `useAssignments.ts` for unified remote state management.
+    - [x] **Admin Pages & Forms**: Built standard page listings at `admin/assignments` and dynamic creation forms at `admin/assignments/create-assignment`, integrating the React Query mutation hooks to process secure payloads.
+
 ### Thursday, June 04, 2026
 - **Subdomain Landing Page 500 Internal Server Error Fix & Footer Modernization**:
     - [x] **Root Cause Diagnosis**: Identified that the 500 error on the live `/api/schools/subdomain/:subdomain/landing-page` endpoint was caused by missing or out-of-sync Prisma Client generation during Vercel/Render deployments.
