@@ -25,19 +25,11 @@ export const handleError = (res: Response, error: any, location: string) => {
   console.error(`======================================================\n`);
 
   // 3. Custom error message sent to the frontend for safety
-  // If it is a known validation error from our app, we might allow it through.
-  // Otherwise, default to "Internal server error" as requested.
-  
-  const isPrismaError = error?.message?.includes('PrismaClient') || error?.message?.includes('Invalid `prisma.');
-  
-  // Mask raw database errors
-  const safeMessage = isPrismaError 
-    ? "Internal server error" 
-    : (error?.message || "Internal server error");
+  // If it is a known validation error from our app (like a 400), we should ideally handle it earlier in the controller.
+  // By the time it reaches this 500 catch-all, we should mask the raw error entirely.
 
   return res.status(500).json({
     success: false,
-    message: error?.message || String(error),
-    stack: error?.stack
+    message: "An unexpected error occurred. Please try again later."
   });
 };

@@ -10,6 +10,7 @@ export interface Notification {
   priority: NotificationPriority;
   title: string;
   message: string;
+  meta?: Record<string, unknown>;
   data?: Record<string, unknown>;
   link?: string;
   linkRequestId?: string;

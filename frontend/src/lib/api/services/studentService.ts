@@ -27,9 +27,16 @@ export interface Student {
   gender?: string;
   dateOfBirth?: string;
   gradeLevel?: string;
+  level?: string;
   createdAt?: string;
   profileImage?: string;
   bannerImage?: string;
+  height?: number;
+  weight?: number;
+  club?: string;
+  favouriteColour?: string;
+  guardianName?: string;
+  guardianPhone?: string;
 }
 
 export interface StudentBehaviourProfile {
@@ -46,6 +53,7 @@ export interface StudentProfile extends Student {
   school?: {
     id: string;
     name: string;
+    levels?: string[];
   };
   parentLinks?: {
     parent: {
@@ -85,6 +93,11 @@ export const studentService = {
     return response.data.data;
   },
 
+  updateLevel: async (level: string) => {
+    const response = await apiClient.patch<{ data: Student }>("/students/profile/level", { level });
+    return response.data.data;
+  },
+
   updateDepartmentByAdmin: async (studentId: string, departmentId: string) => {
     const response = await apiClient.patch<{ data: Student }>(`/students/${studentId}/department`, { departmentId });
     return response.data.data;
@@ -97,6 +110,12 @@ export const studentService = {
     dateOfBirth?: string | Date;
     profileImage?: string;
     bannerImage?: string;
+    height?: string | number;
+    weight?: string | number;
+    club?: string;
+    favouriteColour?: string;
+    guardianName?: string;
+    guardianPhone?: string;
   }) => {
     const response = await apiClient.patch<{ data: StudentProfile }>("/students/profile", data);
     return response.data.data;
@@ -134,6 +153,21 @@ export const studentService = {
 
   updateAttendance: async (studentId: string, data: { date: string; status: string; note?: string }) => {
     const response = await apiClient.post<{ data: any }>(`/students/${studentId}/attendance`, data);
+    return response.data.data;
+  },
+
+  updatePassword: async (data: any): Promise<any> => {
+    const response = await apiClient.post("/auth/password/change", data);
+    return response.data;
+  },
+
+  exitStudent: async (studentId: string, data: { exitType: string; exitDate: string; exitReason?: string; exitNotes?: string }): Promise<any> => {
+    const response = await apiClient.post(`/students/${studentId}/exit`, data);
+    return response.data;
+  },
+
+  getStudentHistory: async (studentId: string): Promise<any[]> => {
+    const response = await apiClient.get<{ data: any[] }>(`/students/${studentId}/history`);
     return response.data.data;
   },
 };

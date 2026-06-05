@@ -14,31 +14,31 @@ interface ConsoleInsightsProps {
 const ConsoleInsights: React.FC<ConsoleInsightsProps> = ({ gpa, examsTaken, credits }) => {
   const stats = [
     { 
-      label: "Academic GPA", 
+      label: "Term Average", 
       value: gpa, 
       icon: Trophy, 
       color: "text-amber-500", 
       bg: "bg-amber-500/10",
       border: "border-amber-500/20",
-      trend: "+0.2 this term"
+      trend: "+2.0 this term"
     },
     { 
-      label: "Global Exam Registry", 
+      label: "Assessments Taken", 
       value: examsTaken, 
       icon: Target, 
       color: "text-pink-600", 
       bg: "bg-pink-500/10",
       border: "border-pink-500/20",
-      trend: "All validated"
+      trend: "All marked"
     },
     { 
-      label: "Course Intensity", 
+      label: "Total Subjects", 
       value: credits, 
       icon: BookOpen, 
       color: "text-indigo-500", 
       bg: "bg-indigo-500/10",
       border: "border-indigo-500/20",
-      trend: "Progressing"
+      trend: "Active Enrolment"
     },
   ];
 

@@ -56,7 +56,10 @@ export const confirmEmailUpdate = async (req: Request, res: Response) => {
 export const updateStudentProfile = async (req: Request, res: Response) => {
   try {
     const { id: currentUserId } = req.user!;
-    const { name, email, gender, dateOfBirth, profileImage, bannerImage } = req.body;
+    const { 
+      name, email, gender, dateOfBirth, profileImage, bannerImage,
+      height, weight, club, favouriteColour, guardianName, guardianPhone 
+    } = req.body;
 
     const updatedProfile = await updateStudentProfileService(currentUserId, {
       name,
@@ -65,6 +68,12 @@ export const updateStudentProfile = async (req: Request, res: Response) => {
       dateOfBirth,
       profileImage,
       bannerImage,
+      height,
+      weight,
+      club,
+      favouriteColour,
+      guardianName,
+      guardianPhone
     });
 
     return res.status(200).json({
@@ -253,5 +262,141 @@ export const updateStudentAttendance = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return handleError(res, error, "student.updateStudentAttendance");
+  }
+};
+
+export const pickLevel = async (req: Request, res: Response) => {
+  try {
+    const { level } = req.body;
+    const { id: studentId, userType: currentUserType } = req.user!;
+
+    if (!level || typeof level !== 'string') {
+      return res.status(400).json({ success: false, message: 'level is required' });
+    }
+
+    const student = await import('../../config/database').then(m => m.default.student.findUnique({ where: { id: studentId } }));
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
+
+    // One-time lock: students can only pick once
+    if (currentUserType === UserRole.STUDENT && student.level && student.level !== level) {
+      return res.status(403).json({ success: false, message: 'Level already set. Only the connected school can change it.' });
+    }
+
+    // Validate the level is in the school's allowed list
+    if (student.schoolId) {
+      const school = await import('../../config/database').then(m => m.default.school.findUnique({ where: { id: student.schoolId! }, select: { levels: true } }));
+      if (school && school.levels.length > 0 && !school.levels.includes(level)) {
+        return res.status(400).json({ success: false, message: `"${level}" is not a valid level for this school.` });
+      }
+    }
+
+    const updated = await import('../../config/database').then(m => m.default.student.update({
+      where: { id: studentId },
+      data: { level },
+      include: { department: true, school: true },
+    }));
+
+    return res.status(200).json({ success: true, message: 'Level updated successfully', data: updated });
+  } catch (error: any) {
+    return handleError(res, error, 'student.pickLevel');
+  }
+};
+
+export const updateStudentLevelByAdmin = async (req: Request, res: Response) => {
+  try {
+    const { id: studentId } = req.params;
+    const { level } = req.body;
+    const { userType: currentUserType } = req.user!;
+
+    if (currentUserType !== UserRole.ADMIN) {
+      return res.status(403).json({ success: false, message: 'Only admins can change student levels' });
+    }
+    if (!level || typeof level !== 'string') {
+      return res.status(400).json({ success: false, message: 'level is required' });
+    }
+
+    const updated = await import('../../config/database').then(m => m.default.student.update({
+      where: { id: studentId },
+      data: { level },
+      include: { department: true, school: true },
+    }));
+
+    return res.status(200).json({ success: true, message: 'Student level updated by admin', data: updated });
+  } catch (error: any) {
+    return handleError(res, error, 'student.updateStudentLevelByAdmin');
+  }
+};
+
+import { exitStudentService } from "./student.service";
+import { EnrollmentStatus } from "@prisma/client";
+
+export const exitStudent = async (req: Request, res: Response) => {
+  try {
+    const { id: studentId } = req.params;
+    const { exitType, exitDate, exitReason, exitNotes } = req.body;
+    const { id: currentUserId, userType: currentUserType } = req.user!;
+
+    if (currentUserType !== UserRole.ADMIN) {
+      return res.status(403).json({ success: false, message: 'Only admins can exit students from school' });
+    }
+
+    if (!exitType || !exitDate) {
+      return res.status(400).json({ success: false, message: 'exitType and exitDate are required' });
+    }
+
+    // Get the school ID of the admin
+    const schoolAdmin = await import('../../config/database').then(m => m.default.schoolAdmin.findFirst({
+      where: { adminId: currentUserId, active: true },
+    }));
+
+    if (!schoolAdmin) {
+      return res.status(403).json({ success: false, message: 'You are not assigned to a school' });
+    }
+
+    await exitStudentService(
+      studentId,
+      schoolAdmin.schoolId,
+      {
+        exitType: exitType as EnrollmentStatus,
+        exitDate,
+        exitReason,
+        exitNotes,
+      },
+      currentUserId
+    );
+
+    return res.status(200).json({ success: true, message: `Student successfully marked as ${exitType}` });
+  } catch (error: any) {
+    return handleError(res, error, 'student.exitStudent');
+  }
+};
+
+import { getStudentHistoryService } from "./student.service";
+
+export const getStudentHistory = async (req: Request, res: Response) => {
+  try {
+    const { id: studentId } = req.params;
+    const { userType: currentUserType, id: currentUserId } = req.user!;
+
+    // Security check: if not admin, maybe check if it's the student themselves or a parent
+    if (currentUserType === UserRole.STUDENT && currentUserId !== studentId) {
+       return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    let schoolIdFilter: string | undefined = undefined;
+    if (currentUserType === UserRole.ADMIN) {
+      const schoolAdmin = await import('../../config/database').then(m => m.default.schoolAdmin.findFirst({
+        where: { adminId: currentUserId, active: true },
+      }));
+      if (schoolAdmin) {
+        schoolIdFilter = schoolAdmin.schoolId;
+      }
+    }
+
+    const history = await getStudentHistoryService(studentId, schoolIdFilter);
+
+    return res.status(200).json({ success: true, data: history });
+  } catch (error: any) {
+    return handleError(res, error, 'student.getStudentHistory');
   }
 };

@@ -52,10 +52,10 @@ export default function NotificationDetailModal({
 }: NotificationDetailModalProps) {
   const router = useRouter();
   const { user } = useAuthStore();
-  const linkId = notification?.linkRequestId || (notification?.data as Record<string, unknown> & { linkId?: string })?.linkId;
+  const linkId = notification?.linkRequestId || ((notification?.meta || notification?.data) as Record<string, unknown> & { linkId?: string })?.linkId;
   const { data: linkRequest, isLoading: isLoadingLink } = useSingleLinkRequest(
-    notification?.type === 'LINK_REQUEST' ? (linkId || '') : '',
-    { enabled: isOpen && notification?.type === 'LINK_REQUEST' && !!linkId }
+    linkId || '',
+    { enabled: isOpen && !!linkId }
   );
 
   const lr = linkRequest as Record<string, unknown> & { status?: string; requesterId?: string; targetStudent?: Record<string, string>; targetTeacher?: Record<string, string>; targetParent?: Record<string, string>; requesterStudent?: Record<string, string>; requesterTeacher?: Record<string, string>; requesterParent?: Record<string, string>; targetSchool?: Record<string, string>; requesterSchool?: Record<string, string>; targetType?: string; requesterType?: string };
@@ -173,8 +173,8 @@ export default function NotificationDetailModal({
             </p>
           </div>
 
-          {/* Detailed Person Info for LINK_REQUEST */}
-          {notification.type === 'LINK_REQUEST' && (
+          {/* Detailed Person Info for Link Requests */}
+          {!!linkId && (
             <div className="space-y-4">
               {isLoadingLink ? (
                 <div className="flex items-center justify-center p-8 bg-slate-50 dark:bg-slate-900/50 rounded-[1.5rem] border-2 border-dashed">
@@ -204,23 +204,34 @@ export default function NotificationDetailModal({
 
               {/* Action Buttons if Pending */}
               {lr?.status === 'PENDING' && (
-                <div className="flex gap-4 pt-2">
-                  <Button 
-                    onClick={() => onRespondToLink?.(notification.id, linkId!, 'ACCEPT')}
-                    disabled={isResponding || isLoadingLink}
-                    className="flex-[2] h-14 bg-primary hover:bg-primary/90 text-white font-black rounded-2xl shadow-xl shadow-primary/25 transition-all hover:scale-[1.02] active:scale-95 text-xs uppercase tracking-widest"
-                  >
-                    {isResponding ? <Loader2 className="animate-spin mr-2" size={18} /> : <Check size={20} className="mr-2" />} 
-                    {isResponding ? "Processing..." : "Accept Request"}
-                  </Button>
-                  <Button 
-                    onClick={() => onRespondToLink?.(notification.id, linkId!, 'REJECT')}
-                    disabled={isResponding || isLoadingLink}
-                    variant="outline"
-                    className="flex-1 h-14 border-2 border-slate-100 dark:border-slate-800 font-black rounded-2xl hover:bg-red-50 hover:text-red-600 hover:border-red-100 dark:hover:bg-red-950/20 transition-all text-[10px] uppercase tracking-widest"
-                  >
-                    Decline
-                  </Button>
+                <div className="pt-2">
+                  {lr.requesterId === user?.id ? (
+                    <div className="flex items-center justify-center p-4 bg-orange-50 dark:bg-orange-950/20 rounded-2xl border border-orange-100 dark:border-orange-900/30">
+                      <Loader2 className="animate-spin text-orange-500 mr-2" size={16} />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-orange-600">
+                        Waiting for response...
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex gap-4">
+                      <Button 
+                        onClick={() => onRespondToLink?.(notification.id, linkId!, 'ACCEPT')}
+                        disabled={isResponding || isLoadingLink}
+                        className="flex-[2] h-14 bg-primary hover:bg-primary/90 text-white font-black rounded-2xl shadow-xl shadow-primary/25 transition-all hover:scale-[1.02] active:scale-95 text-xs uppercase tracking-widest"
+                      >
+                        {isResponding ? <Loader2 className="animate-spin mr-2" size={18} /> : <Check size={20} className="mr-2" />} 
+                        {isResponding ? "Processing..." : "Accept Request"}
+                      </Button>
+                      <Button 
+                        onClick={() => onRespondToLink?.(notification.id, linkId!, 'REJECT')}
+                        disabled={isResponding || isLoadingLink}
+                        variant="outline"
+                        className="flex-1 h-14 border-2 border-slate-100 dark:border-slate-800 font-black rounded-2xl hover:bg-red-50 hover:text-red-600 hover:border-red-100 dark:hover:bg-red-950/20 transition-all text-[10px] uppercase tracking-widest"
+                      >
+                        Decline
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
 

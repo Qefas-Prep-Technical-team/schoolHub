@@ -122,4 +122,9 @@ export const classService = {
     const response = await apiClient.delete(`/classes/${classId}/behaviour-alerts/${alertId}`);
     return response.data;
   },
+
+  promoteStudents: async (classId: string, data: { toClassId: string; studentIds: string[] }) => {
+    const response = await apiClient.post(`/classes/${classId}/promote`, data);
+    return response.data;
+  },
 };

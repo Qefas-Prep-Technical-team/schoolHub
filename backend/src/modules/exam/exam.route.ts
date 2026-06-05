@@ -67,8 +67,15 @@ router.patch("/papers/:paperId", authenticateToken, updateSubjectPaper);
 router.patch("/papers/:paperId/link", authenticateToken, linkSubjectPaperToExam);
 router.patch("/papers/:paperId/unlink", authenticateToken, unlinkSubjectPaper);
 
-router.get("/", authenticateToken, getExams);
+// --- Static /my/* routes MUST come before /:id wildcard ---
 router.get("/my/stats", authenticateToken, getMyGlobalStats);
+router.get("/my/attempts", authenticateToken, getMyExamAttempts);
+
+// --- Static /analytics/* routes MUST come before /:id wildcard ---
+router.get("/analytics/session", authenticateToken, getSessionExamAnalytics);
+
+// --- Wildcard /:id routes ---
+router.get("/", authenticateToken, getExams);
 router.get("/:id", authenticateToken, getExamById);
 router.patch("/:id", authenticateToken, updateExam);
 router.post("/", authenticateToken, createExam);
@@ -94,7 +101,6 @@ router.post("/:id/papers/:paperId/unpublish", authenticateToken, unpublishSubjec
 router.delete("/:id/papers/:paperId", authenticateToken, deleteSubjectPaper);
 
 router.post("/:id/start", authenticateToken, startExamAttempt);
-router.get("/my/attempts", authenticateToken, getMyExamAttempts);
 router.get("/:id/attempt", authenticateToken, getExamAttempt);
 router.get("/:id/attempts", authenticateToken, getExamAttempts);
 router.delete("/:id/attempts/:studentId", authenticateToken, deleteExamAttempt);
@@ -106,6 +112,5 @@ router.get("/:id/result", authenticateToken, getExamResult);
 router.get("/:id/ranking", authenticateToken, getExamRanking);
 router.get("/:id/analytics/class", authenticateToken, getClassExamAnalytics);
 router.get("/:id/analytics/department", authenticateToken, getDepartmentExamAnalytics);
-router.get("/analytics/session", authenticateToken, getSessionExamAnalytics);
 
 export default router;

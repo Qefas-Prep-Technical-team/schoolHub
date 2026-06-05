@@ -25,6 +25,12 @@ export const useUpdateStudentProfile = () => {
       dateOfBirth?: string | Date;
       profileImage?: string;
       bannerImage?: string;
+      height?: string | number;
+      weight?: string | number;
+      club?: string;
+      favouriteColour?: string;
+      guardianName?: string;
+      guardianPhone?: string;
     }) =>
       studentService.updateProfile(data),
     onSuccess: () => {

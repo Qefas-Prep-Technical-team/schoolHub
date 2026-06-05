@@ -8,12 +8,14 @@ import BulkActions from './components/BulkActions';
 import { Student, FilterOptions } from './components/types';
 import Pagination from '@/components/ui/Pagination';
 import StudentDetailsModal from './components/StudentDetailsModal';
+import PromoteStudentsModal from '../PromoteStudentsModal';
 
 interface ClassStudentsPageProps {
   enrollments?: any[];
+  classData?: any;
 }
 
-export default function ClassStudentsPage({ enrollments = [] }: ClassStudentsPageProps) {
+export default function ClassStudentsPage({ enrollments = [], classData }: ClassStudentsPageProps) {
   const router = useRouter();
   const params = useParams();
   const classId = params.id as string;
@@ -30,6 +32,7 @@ export default function ClassStudentsPage({ enrollments = [] }: ClassStudentsPag
 
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isPromoteOpen, setIsPromoteOpen] = useState(false);
 
   // Map real enrollment data to Student type
   const students: Student[] = useMemo(() => {
@@ -117,10 +120,18 @@ export default function ClassStudentsPage({ enrollments = [] }: ClassStudentsPag
 
   return (
     <div className="flex flex-col gap-6">
-      <FiltersToolbar
-        filters={filters}
-        onFiltersChange={setFilters}
-      />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <FiltersToolbar
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
+        <button
+          onClick={() => setIsPromoteOpen(true)}
+          className="px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
+        >
+          Promote Students
+        </button>
+      </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {paginatedStudents.map((student) => (
@@ -163,6 +174,12 @@ export default function ClassStudentsPage({ enrollments = [] }: ClassStudentsPag
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         student={selectedStudent}
+      />
+
+      <PromoteStudentsModal
+        isOpen={isPromoteOpen}
+        onClose={() => setIsPromoteOpen(false)}
+        classData={classData}
       />
     </div>
   );

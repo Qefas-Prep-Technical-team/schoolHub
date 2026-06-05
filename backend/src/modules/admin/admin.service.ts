@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { generateUniqueCode } from "../../utils/code-generator";
 import { UserSubscriptionService } from "../subscription/user-subscription.service";
 import { enforceStudentLimit } from "../subscription/quota.helpers";
+import { StudentLifecycleService } from "../student/student.lifecycle.service";
 
 /**
  * Update personal admin profile
@@ -132,13 +133,16 @@ export const createStudentService = async (params: CreateStudentParams) => {
         password: passwordHash,
         studentCode: studentCode,
         role: UserRole.STUDENT,
-        schoolId: schoolId,
         verified: true,
         acceptedTerms: true,
         gender: gender || null,
         tenantId: school.tenantId || "default-tenant-id",
+        // Note: schoolId is set in the lifecycle service to ensure enrollments are generated
       },
     });
+
+    // Enroll in School via Lifecycle Service
+    await StudentLifecycleService.enrollStudentInSchool(tx, student.id, schoolId, adminId);
 
     // Enroll student in class
     await tx.classEnrollment.create({

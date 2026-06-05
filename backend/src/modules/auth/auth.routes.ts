@@ -1,4 +1,5 @@
 import express from "express";
+import { authenticateToken } from "../../middleware/authMiddleware";
 import {
   registerSchool,
   registerTeacher,
@@ -18,6 +19,7 @@ import {
   googleAuth,
   finalizeCheckoutSetup,
   claimAccount,
+  changePassword,
 } from "./auth.controller";
 import { validateRequest } from "../../middleware/validateRequest";
 import {
@@ -30,6 +32,7 @@ import {
   loginSchema,
   completePasswordResetSchema,
   googleAuthSchema,
+  changePasswordSchema,
 } from "./auth.validation";
 import { getStudentByCode, linkChildToParent } from "./auth.service";
 import { authRateLimiter, loginRateLimiter } from "../../middleware/rateLimiter";
@@ -92,6 +95,14 @@ router.post(
   "/password/reset/complete",
   validateRequest(completePasswordResetSchema),
   completePasswordReset
+);
+
+router.post(
+  "/password/change",
+  authenticateToken,
+  authRateLimiter,
+  validateRequest(changePasswordSchema),
+  changePassword
 );
 
 router.post("/finalize-checkout-setup", finalizeCheckoutSetup);

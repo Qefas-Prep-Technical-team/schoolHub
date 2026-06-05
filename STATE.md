@@ -6,6 +6,24 @@
 - Optimizing mobile-first navigation and role-based authentication flows.
 - Localizing platform assets (images and testimonials) for the Nigerian market.
 
+## Upcoming / Planning
+
+- Implementation of remaining `STUDENT_LIFECYCLE_SPEC.md` features (Promotion, Awards, etc.).
+
+## Completed
+
+- **Student Lifecycle Promotion (June 5, 2026)**:
+  - Added `promoteStudents` method in `StudentLifecycleService` to handle moving students between classes, updating levels, and generating immutable history.
+  - Implemented promotion notification triggers for teachers and parents.
+  - Created `PromoteStudentsModal` in the frontend Admin Class Management dashboard and exposed API endpoints.
+
+- **Student Lifecycle & History Tracking (June 5, 2026)**:
+  - Database schema updates: Added `StudentHistory` and `StudentEnrollment` models to track all academic and administrative changes permanently.
+  - Enforcement of single active school enrollment constraint via `StudentLifecycleService`.
+  - Built automated history events and workflows for Enrolling and Exiting students (Withdrawal, Graduation, Transfer, Expulsion).
+  - Integrated lifecycle changes into the notification infrastructure for parents and admins.
+  - Implemented the History Timeline UI in the Student Profile for visualizing immutable audit trails.
+
 ## Completed
 
 - **Frontend Type Safety & Hardening (Final Build Stabilization)**:
@@ -84,18 +102,25 @@
   - [x] **Plain English Transition**: Replaced all technical jargon (e.g., "Protocol Root", "Registry Nodes", "Efficiency Index") with clear, natural language throughout the Grades dashboard.
 
 ## Recent Accomplishments
-- **Dashboard Metrics Enhancement**: 
-    - Replaced hardcoded placeholder student counts with real dynamic data from the database.
-    - Integrated `totalPapers` and `totalQuestions` statistics into both Grid and List views of the Exam cards.
-    - Added student attempt tracking to Subject Paper cards.
-- **Backend Optimization**: 
-    - Updated `ExamService` to include aggregate counts (`_count`) and pre-calculated statistics in the API response.
-- **UI Consistency**: 
-    - Refined all card layouts to ensure premium aesthetics while displaying increased data density.
+- **Admin Dashboard Standardization**: 
+    - Completed localized `loading.tsx` skeleton components for all admin sub-pages (`Settings`, `Finance`, `Billing`, `Attendance`, etc.) to eliminate layout shifts and match specific page designs.
+- **Student Settings Refinement**: 
+    - Implemented a 2-step password change pop-up flow with local state validation and backend integration.
+    - Updated the "Account" tab to dynamically show the linked school's subscription plan when subscription enforcement is off.
+    - Added one-time Level Selection functionality on the "Academic" tab.
+    - Verified the accurate rendering of `profileImage` across the dashboard settings.
+    - Added Guardian Contact display to the Student Profile page and wired up the Quick Actions to correctly navigate to their respective settings pages.
+    - Added `guardianName`, `guardianPhone` to the `Student` Prisma model.
+    - Synchronized the `StudentProfilePage` edit drawer to allow students to input their guardian contact info, `height`, `weight`, `club`, and `favouriteColour`.
 
-- **School Console Navigation & Reliability**:
-  - [x] **Resolved "School Not Found" Error**: Hardened the platform console backend with robust ID resolution and diagnostic logging.
-  - [x] **Frontend Resilience**: Implemented error boundaries and retry logic for the school details view.
+### Security & Config Updates
+- **Error Handling Standardization**: Updated the global `error-handler.ts` to strictly return a generic `"An unexpected error occurred. Please try again later."` message instead of leaking stack traces or internal exception details to the frontend during 500 errors.
+- **Google OAuth Configuration**: Set `GoogleLoginButton` to strictly require explicit backend configuration (`google_auth_enabled === "true"`) in order to render. It now defaults to hidden if the settings are missing or undefined.
+
+- **Student Dashboard Fixes**: 
+    - Fixed the display of "Assignments" to "Assessments" in the single class details view, implementing accurate fallback states for unlinked departments.
+    - Replaced the static "Qefas Hub Academic Hub" badge in the student top navigation with a dynamic rendering of the student's currently linked school name and logo.
+
 # Project State: Qefas Hub
 
 ## Current Focus
@@ -552,4 +577,13 @@
 ### Thursday, June 04, 2026
 - **Student Dashboard Fixes**:
     - [x] Fixed teacher name resolution on the /dashboard/student/my-classes cards by updating the frontend to map cls.teachers[0].teacher.name correctly from the backend payload.
+- **Dev-Mode 404 Cold-Start Fix**:
+    - [x] **Root Cause Diagnosed**: `GET /login/student 404 in 16.0s` was a Next.js dev Webpack cold-start timeout (15.8s compile), NOT a missing route. The route exists at `src/app/(auth)/login/student/page.tsx` and the second request (717ms) confirmed it works once compiled.
+    - [x] **Fix Applied**: Added `--turbopack` flag to the `dev` script in `frontend/package.json`. Turbopack compiles routes incrementally per-request, reducing first-load from ~16s to ~1-2s.
+- **Student Classes Page — Real Data Integration**:
+    - [x] **AcademicSummary wired to live data**: Updated `my-classes/page.tsx` to fetch `useStudentExamAttempts`, `useGrades`, and `useStudentStats` (global stats). Removed all hardcoded placeholder values (`124` for Total Units, `#08` for Position).
+    - [x] **Subject Count**: Computed `totalSubjects` by counting unique subject names across all enrolled classes via a `Set` — correctly reflects 0 when no classes are linked.
+    - [x] **Total Marks**: Summed `totalScore` from exam attempts + `score` from standalone grades into a real `totalMarks` value.
+    - [x] **Class Position**: Reads `overallRank` and `totalStudentsInClass` from the backend `/exams/my/stats` endpoint (`getStudentGlobalStatsService`), displays as `#02 / 34` format. Shows `—` with "Coming soon" if no graded attempts exist yet.
+    - [x] **AcademicSummary.tsx refactored**: Accepts `totalSubjects`, `totalMarks`, and `classPosition` props; handles zero-state gracefully with dash and helper labels.
 

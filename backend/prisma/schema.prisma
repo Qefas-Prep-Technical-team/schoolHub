@@ -89,6 +89,8 @@ model School {
   landingPage              SchoolLandingPage?
   teacherAttendances       TeacherAttendance[]
   inquiries                Inquiry[]
+  studentHistories         StudentHistory[]
+  studentEnrollments       StudentEnrollment[]
 }
 
 model SchoolSetting {
@@ -270,6 +272,8 @@ model Student {
   weight                  Float?
   club                    String?
   favouriteColour         String?
+  guardianName            String?
+  guardianPhone           String?
   isTrialActive           Boolean                  @default(false)
   lastPaymentDate         DateTime?
   plan                    String                   @default("FREE")
@@ -308,6 +312,8 @@ model Student {
   parentLinks             ParentChildLink[]
   payments                Payment[]
   termlyEvaluations       TermlyEvaluation[]
+  histories               StudentHistory[]
+  enrollments             StudentEnrollment[]
 }
 
 model Parent {
@@ -1758,4 +1764,81 @@ model Inquiry {
   @@index([schoolId])
   @@index([createdAt])
   @@map("inquiries")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  GRADUATED
+  TRANSFERRED
+  EXPELLED
+  WITHDRAWN
+  SUSPENDED
+}
+
+enum HistoryEventType {
+  JOINED_SCHOOL
+  EXITED_SCHOOL
+  TRANSFERRED
+  GRADUATED
+  RE_ENROLLED
+  PROMOTED
+  DEMOTED
+  CLASS_CHANGED
+  STREAM_CHANGED
+  PREFECT_ASSIGNED
+  PREFECT_REMOVED
+  AWARD_RECEIVED
+  CERTIFICATE_ISSUED
+  WARNING_ISSUED
+  SUSPENDED
+  EXPELLED
+  PARENT_UPDATED
+  STUDENT_UPDATED
+}
+
+model StudentHistory {
+  id           String           @id @default(uuid())
+  studentId    String
+  schoolId     String
+  eventType    HistoryEventType
+  title        String
+  description  String?
+  meta         Json?
+  performedBy  String?
+  date         DateTime         @default(now())
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  
+  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  school       School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([schoolId])
+  @@index([eventType])
+  @@index([date])
+  @@map("student_histories")
+}
+
+model StudentEnrollment {
+  id               String           @id @default(uuid())
+  studentId        String
+  schoolId         String
+  status           EnrollmentStatus @default(ACTIVE)
+  enrollmentDate   DateTime         @default(now())
+  exitDate         DateTime?
+  exitReason       String?
+  exitNotes        String?
+  academicSession  String?
+  academicTerm     String?
+  academicLevel    String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  student          Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  school           School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([schoolId])
+  @@index([status])
+  @@map("student_enrollments")
 }

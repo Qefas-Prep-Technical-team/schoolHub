@@ -10,14 +10,14 @@ export default function Breadcrumbs({ classTitle }: BreadcrumbsProps) {
   return (
     <nav className="flex items-center space-x-2 text-sm text-gray-500">
       <Link 
-        href="/student/dashboard" 
+        href="/dashboard/student"
         className="hover:text-primary transition-colors"
       >
         Dashboard
       </Link>
       <ChevronRight className="h-4 w-4" />
       <Link 
-        href="/student/classes" 
+        href="/dashboard/student/my-classes"
         className="hover:text-primary transition-colors"
       >
         Classes

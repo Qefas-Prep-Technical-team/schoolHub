@@ -13,7 +13,7 @@ import {
     ShieldCheck, Clock, ChevronRight, ChevronLeft, Award, UserCheck,
     Building2, Calendar, Hash, User, Activity, TrendingUp,
     Target, BarChart3, PieChart, ShieldAlert, Heart, ThumbsUp, Smile,
-    Trash2, Plus
+    Trash2, Plus, UserMinus
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -23,6 +23,8 @@ import {
 } from 'recharts'
 import { format, addWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns'
 import { TranscriptModal } from './components/TranscriptModal'
+import { ExitStudentModal } from './components/ExitStudentModal'
+import { StudentHistoryTimeline } from './components/StudentHistoryTimeline'
 import AttendanceCalendar from './components/attendance/AttendanceCalendar'
 import { toast } from 'react-toastify'
 import { 
@@ -252,6 +254,7 @@ const TABS = [
     { id: 'attendance', label: 'Attendance' },
     { id: 'timetable', label: 'Time Table' },
     { id: 'behaviour', label: 'Behaviour' },
+    { id: 'history', label: 'History' },
 ]
 
 export default function StudentProfilePage() {
@@ -275,6 +278,12 @@ export default function StudentProfilePage() {
         enabled: !!studentId
     })
 
+    const { data: historyData, isLoading: isHistoryLoading } = useQuery({
+        queryKey: ['student-history', studentId],
+        queryFn: () => studentService.getStudentHistory(studentId),
+        enabled: !!studentId
+    })
+
     const { data: settings } = useSchoolSettings(schoolId)
     const primaryColor = settings?.themeColor || '#2563eb'
 
@@ -288,6 +297,7 @@ export default function StudentProfilePage() {
         }
     }, [tabParam])
     const [isTranscriptModalOpen, setIsTranscriptModalOpen] = useState(false)
+    const [isExitModalOpen, setIsExitModalOpen] = useState(false)
     const [selectedScheduleCell, setSelectedScheduleCell] = useState<{ day: string; hour: string; type: 'attendance' | 'timetable' } | null>(null)
     const [scheduleDate, setScheduleDate] = useState(new Date())
 
@@ -772,6 +782,7 @@ export default function StudentProfilePage() {
                                             }
                                         } 
                                     },
+                                    { label: 'Exit Student', icon: UserMinus, onClick: () => setIsExitModalOpen(true) },
                                     { label: 'Attendance Entry', icon: Calendar, onClick: () => toast.info('Attendance entry is coming soon.') },
                                 ].map((act, i) => (
                                     <button 
@@ -817,6 +828,22 @@ export default function StudentProfilePage() {
                             )}
                         </SectionCard>
                     </div>
+                </main>
+            )}
+
+            {/* ── History Tab ─────────────────────────────────────────────── */}
+            {activeTab === 'history' && (
+                <main className="max-w-4xl mx-auto px-4 md:px-12 mt-10 pb-20">
+                    <SectionCard title="Student Timeline">
+                        {isHistoryLoading ? (
+                            <div className="py-20 flex flex-col items-center justify-center space-y-4">
+                                <div className="size-10 rounded-full border-2 border-slate-200 dark:border-white/10 animate-spin" style={{ borderTopColor: primaryColor }} />
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading History...</p>
+                            </div>
+                        ) : (
+                            <StudentHistoryTimeline history={historyData || []} primaryColor={primaryColor} />
+                        )}
+                    </SectionCard>
                 </main>
             )}
 
@@ -1947,6 +1974,14 @@ export default function StudentProfilePage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* ── Exit Student Modal ───────────────────────────────────────────── */}
+            <ExitStudentModal
+                isOpen={isExitModalOpen}
+                onClose={() => setIsExitModalOpen(false)}
+                studentId={studentId}
+                studentName={name}
+            />
         </div>
     )
 }

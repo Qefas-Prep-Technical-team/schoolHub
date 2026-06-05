@@ -51,7 +51,7 @@ export default function StudentNotificationsPage() {
                          n.message.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filter === 'all' || 
                          (filter === 'unread' && !n.isRead) || 
-                         (filter === 'requests' && n.type === 'LINK_REQUEST');
+                         (filter === 'requests' && (n.type === 'LINK_REQUEST' || !!n.linkRequestId));
     return matchesSearch && matchesFilter;
   });
 

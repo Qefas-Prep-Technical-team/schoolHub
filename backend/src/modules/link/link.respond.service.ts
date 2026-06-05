@@ -8,6 +8,7 @@ import {
 } from "@prisma/client";
 import { createNotification } from "../notification/notification.service";
 import { checkLinkCapacity, canSchoolAcceptTeacher } from "../payment/subscription.utils";
+import { StudentLifecycleService } from "../student/student.lifecycle.service";
 
 type RespondToLinkRequestInput = {
   requestId: string;
@@ -239,12 +240,15 @@ const applyDomainSideEffects = async (
         request.requesterType === "STUDENT" &&
         request.targetType === "SCHOOL"
       ) {
+        await StudentLifecycleService.enrollStudentInSchool(
+          tx,
+          request.requesterId,
+          request.targetId,
+        );
+        // We still need to verify the student
         await tx.student.update({
           where: { id: request.requesterId },
-          data: { 
-            schoolId: request.targetId,
-            verified: true 
-          },
+          data: { verified: true },
         });
       }
 
@@ -253,12 +257,14 @@ const applyDomainSideEffects = async (
         request.targetType === "STUDENT" &&
         request.targetId
       ) {
+        await StudentLifecycleService.enrollStudentInSchool(
+          tx,
+          request.targetId,
+          request.requesterId,
+        );
         await tx.student.update({
           where: { id: request.targetId },
-          data: { 
-            schoolId: request.requesterId,
-            verified: true 
-          },
+          data: { verified: true },
         });
       }
       break;
@@ -320,12 +326,14 @@ const applyDomainSideEffects = async (
         where: { id: request.classId },
       });
       if (foundClass?.schoolId) {
+        await StudentLifecycleService.enrollStudentInSchool(
+          tx,
+          studentId,
+          foundClass.schoolId,
+        );
         await tx.student.update({
           where: { id: studentId },
-          data: { 
-            schoolId: foundClass.schoolId,
-            verified: true 
-          },
+          data: { verified: true },
         });
       }
       break;

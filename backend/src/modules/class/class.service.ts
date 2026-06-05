@@ -12,6 +12,8 @@ import {
 } from "@prisma/client";
 import { updateCurrentSchoolContext } from "utils/update-current-school";
 import { hasActiveSchoolLink } from "../academic/academic.permissions";
+import { StudentLifecycleService } from "../student/student.lifecycle.service";
+import { createNotification } from "../notification/notification.service";
 
 type CreateClassInput = {
   currentUserId: string;
@@ -953,4 +955,89 @@ export const getClassStatsService = async (classId: string) => {
     performanceTrend,
     overallAvgScore,
   };
+};
+
+export const promoteStudentsService = async ({
+  classId,
+  toClassId,
+  studentIds,
+  currentUserId,
+}: {
+  classId: string;
+  toClassId: string;
+  studentIds: string[];
+  currentUserId: string;
+}) => {
+  const fromClass = await prisma.class.findUnique({
+    where: { id: classId },
+    include: { teachers: true }
+  });
+  
+  const toClass = await prisma.class.findUnique({
+    where: { id: toClassId },
+    include: { teachers: true }
+  });
+
+  if (!fromClass || !toClass) throw new Error("Source or Target class not found");
+
+  if (!fromClass.schoolId) {
+    throw new Error("Promotion is only applicable to school classes");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await StudentLifecycleService.promoteStudents(
+      tx,
+      studentIds,
+      fromClass.schoolId!,
+      classId,
+      toClassId,
+      currentUserId
+    );
+  });
+
+  // Post-transaction notifications
+  const students = await prisma.student.findMany({
+    where: { id: { in: studentIds } },
+    include: { parentLinks: true }
+  });
+
+  const notificationPromises: Promise<any>[] = [];
+
+  for (const student of students) {
+    // Notify parents
+    if (student.parentLinks && student.parentLinks.length > 0) {
+      for (const parentLink of student.parentLinks) {
+        notificationPromises.push(
+          createNotification({
+            recipientType: "PARENT",
+            recipientId: parentLink.parentId,
+            senderType: "SYSTEM",
+            senderId: "system",
+            type: "GENERAL",
+            title: "Student Promoted",
+            message: `${student.name} has been promoted to ${toClass.name}.`,
+          }).catch(err => console.error(`Failed to notify parent ${parentLink.parentId}:`, err))
+        );
+      }
+    }
+  }
+
+  // Notify new class teachers
+  for (const classTeacher of toClass.teachers) {
+    notificationPromises.push(
+      createNotification({
+        recipientType: "TEACHER",
+        recipientId: classTeacher.teacherId,
+        senderType: "SYSTEM",
+        senderId: "system",
+        type: "GENERAL",
+        title: "Students Promoted",
+        message: `${studentIds.length} students have been promoted to your class ${toClass.name}.`,
+      }).catch(err => console.error(`Failed to notify teacher ${classTeacher.teacherId}:`, err))
+    );
+  }
+
+  await Promise.all(notificationPromises);
+
+  return { success: true, message: `Successfully promoted ${studentIds.length} students` };
 };

@@ -17,8 +17,10 @@ import {
     Briefcase,
     Fingerprint,
     Cake,
-    ShieldCheck
+    ShieldCheck,
+    Phone
 } from 'lucide-react';
+import Link from 'next/link';
 import { useStudentProfile, useUpdateStudentProfile, useRequestEmailUpdate, useVerifyEmailUpdate } from '@/lib/api/hooks/useStudent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,7 +54,13 @@ export default function StudentProfilePage() {
         gender: '',
         dateOfBirth: '',
         profileImage: '',
-        bannerImage: ''
+        bannerImage: '',
+        height: '',
+        weight: '',
+        club: '',
+        favouriteColour: '',
+        guardianName: '',
+        guardianPhone: ''
     });
 
     const [emailStep, setEmailStep] = useState<'input' | 'verify'>('input');
@@ -66,7 +74,13 @@ export default function StudentProfilePage() {
             gender: profile.gender || '',
             dateOfBirth: profile.dateOfBirth ? format(new Date(profile.dateOfBirth), 'yyyy-MM-dd') : '',
             profileImage: profile.profileImage || '',
-            bannerImage: profile.bannerImage || ''
+            bannerImage: profile.bannerImage || '',
+            height: profile.height?.toString() || '',
+            weight: profile.weight?.toString() || '',
+            club: profile.club || '',
+            favouriteColour: profile.favouriteColour || '',
+            guardianName: profile.guardianName || '',
+            guardianPhone: profile.guardianPhone || profile.parentLinks?.[0]?.parent?.phone || ''
         });
         setEmailStep('input');
         setVerificationCode('');
@@ -192,6 +206,8 @@ export default function StudentProfilePage() {
                                 <InfoItem icon={<Mail size={20} />} label="Email" value={profile.email} description="Primary contact address." />
                                 <InfoItem icon={<ShieldCheck size={20} />} label="Gender" value={profile.gender || 'Not Specified'} description="Biological gender." />
                                 <InfoItem icon={<Cake size={20} />} label="Birth Date" value={profile.dateOfBirth ? format(new Date(profile.dateOfBirth), 'PPP') : 'N/A'} description="Official date of birth." />
+                                <InfoItem icon={<User size={20} />} label="Guardian Name" value={profile.guardianName || profile.parentLinks?.[0]?.parent?.name || 'Not Linked'} description="Primary emergency contact." />
+                                <InfoItem icon={<Phone size={20} />} label="Guardian Phone" value={profile.guardianPhone || profile.parentLinks?.[0]?.parent?.phone || 'Not Linked'} description="Emergency contact number." />
                             </div>
                         </CardContent>
                     </Card>
@@ -232,9 +248,35 @@ export default function StudentProfilePage() {
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Institutional Services</p>
                         </div>
                         <div className="space-y-4">
-                            <MobileQuickAction icon={<MapPin size={22} />} label="Home Address" status="Set Location" color="text-rose-500 bg-rose-50 dark:bg-rose-500/10" />
-                            <MobileQuickAction icon={<Calendar size={22} />} label="Academic Calendar" status="View Schedule" color="text-primary bg-indigo-50 dark:bg-primary/10" />
-                            <MobileQuickAction icon={<ShieldCheck size={22} />} label="Security Settings" status="Strong" color="text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" />
+                            <MobileQuickAction href="/dashboard/student/settings" icon={<MapPin size={22} />} label="Home Address" status="Set Location" color="text-rose-500 bg-rose-50 dark:bg-rose-500/10" />
+                            <MobileQuickAction href="/dashboard/student/my-classes" icon={<Calendar size={22} />} label="Academic Calendar" status="View Schedule" color="text-primary bg-indigo-50 dark:bg-primary/10" />
+                            <MobileQuickAction href="/dashboard/student/settings" icon={<ShieldCheck size={22} />} label="Security Settings" status="Strong" color="text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" />
+                        </div>
+                    </div>
+
+                    {/* Bio Attributes */}
+                    <div className="p-8 pb-10 rounded-[2.5rem] md:rounded-[3rem] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-inner space-y-8">
+                        <div className="space-y-1">
+                            <h3 className="text-xl font-black italic uppercase text-slate-900 dark:text-white tracking-tight">Extracurricular & Bio</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Student Attributes</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Club</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{profile.club || 'None'}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Fav Colour</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{profile.favouriteColour || 'None'}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Height</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{profile.height ? `${profile.height} cm` : 'N/A'}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Weight</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{profile.weight ? `${profile.weight} kg` : 'N/A'}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -414,6 +456,79 @@ export default function StudentProfilePage() {
                                         </div>
                                     </div>
                                 </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Height (cm)</Label>
+                                        <Input 
+                                            type="number"
+                                            placeholder="170"
+                                            value={formData.height} 
+                                            onChange={(e) => setFormData({...formData, height: e.target.value})}
+                                            className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Weight (kg)</Label>
+                                        <Input 
+                                            type="number"
+                                            placeholder="60"
+                                            value={formData.weight} 
+                                            onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                                            className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Club / Activities</Label>
+                                        <Input 
+                                            placeholder="E.g. Science Club"
+                                            value={formData.club} 
+                                            onChange={(e) => setFormData({...formData, club: e.target.value})}
+                                            className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Favourite Colour</Label>
+                                        <Input 
+                                            placeholder="E.g. Blue"
+                                            value={formData.favouriteColour} 
+                                            onChange={(e) => setFormData({...formData, favouriteColour: e.target.value})}
+                                            className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 rounded-[2rem] bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100/50 dark:border-indigo-800/50">
+                                    <div className="space-y-3 sm:col-span-2">
+                                        <h4 className="text-sm font-black italic uppercase text-indigo-900 dark:text-indigo-400 flex items-center gap-2">
+                                            <ShieldCheck size={18} /> Emergency / Guardian Contact
+                                        </h4>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Guardian Name</Label>
+                                        <Input 
+                                            placeholder="Full Name"
+                                            value={formData.guardianName} 
+                                            onChange={(e) => setFormData({...formData, guardianName: e.target.value})}
+                                            className="h-14 rounded-2xl bg-white dark:bg-slate-950 border-none ring-1 ring-indigo-200/50 dark:ring-indigo-800/50 font-bold focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Guardian Phone</Label>
+                                        <div className="relative group">
+                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                            <Input 
+                                                placeholder="+1 (555) 000-0000"
+                                                value={formData.guardianPhone} 
+                                                onChange={(e) => setFormData({...formData, guardianPhone: e.target.value})}
+                                                className="h-14 pl-12 rounded-2xl bg-white dark:bg-slate-950 border-none ring-1 ring-indigo-200/50 dark:ring-indigo-800/50 font-bold focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="pt-6">
@@ -467,9 +582,12 @@ function InfoItem({ icon, label, value, description }: { icon: React.ReactNode, 
     );
 }
 
-function MobileQuickAction({ icon, label, status, color }: { icon: React.ReactNode, label: string, status: string, color: string }) {
+function MobileQuickAction({ href, icon, label, status, color }: { href?: string, icon: React.ReactNode, label: string, status: string, color: string }) {
+    const Component = href ? Link : 'button';
+    const props = href ? { href } : {};
+
     return (
-        <button className="w-full flex items-center justify-between p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-primary/20 transition-all group overflow-hidden relative">
+        <Component {...props as any} className="w-full flex items-center justify-between p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-primary/20 transition-all group overflow-hidden relative">
             <div className="flex items-center gap-4 relative z-10">
                 <div className={cn("h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110", color)}>
                     {icon}
@@ -481,6 +599,6 @@ function MobileQuickAction({ icon, label, status, color }: { icon: React.ReactNo
             </div>
             <ChevronRight size={16} className="text-slate-300 group-hover:text-primary transition-colors relative z-10" />
             <div className="absolute top-0 right-0 h-full w-1/2 bg-gradient-to-l from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        </button>
+        </Component>
     );
 }

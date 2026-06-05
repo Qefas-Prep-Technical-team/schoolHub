@@ -22,6 +22,7 @@ import {
   archiveClassService,
   replaceClassSubjectsService,
   removeSubjectFromClassService,
+  promoteStudentsService,
 } from "./class.service";
 import { handleError } from "../../utils/error-handler";
 
@@ -784,5 +785,50 @@ export const getClassStats = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return handleError(res, error, "class.getClassStats");
+  }
+};
+
+export const promoteStudents = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { toClassId, studentIds } = req.body;
+
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const allowed = await canManageClass({
+      userId: req.user.id,
+      userType: req.user.userType,
+      classId: id as string,
+    });
+
+    if (!allowed) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to manage this class",
+      });
+    }
+
+    if (!toClassId || !studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "toClassId and a non-empty array of studentIds are required",
+      });
+    }
+
+    const result = await promoteStudentsService({
+      classId: id as string,
+      toClassId,
+      studentIds,
+      currentUserId: req.user.id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error: any) {
+    return handleError(res, error, "class.promoteStudents");
   }
 };

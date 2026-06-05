@@ -12,6 +12,8 @@ import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { useRouter } from "next/navigation";
 import { linkService } from "@/lib/api/services/linkService";
 import { UserQRModal } from "@/components/reusable/UserQRModal";
+import { useQuery } from "@tanstack/react-query";
+import { studentService } from "@/lib/api/services/studentService";
 
 export default function TopNavBar({
   onToggleSidebar,
@@ -26,12 +28,18 @@ export default function TopNavBar({
   const [searchQuery, setSearchQuery] = useState('');
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
+  const { data: studentProfile } = useQuery({
+    queryKey: ["student-profile"],
+    queryFn: () => studentService.getProfile(),
+  });
+
   useEffect(() => {
     linkService.getProfile().then(setProfile).catch(() => {});
   }, []);
 
   const displayImage = profile?.data?.profileImage || user?.profileImage;
   const displayName = profile?.data?.name || user?.name || user?.email;
+  const displaySchool = (studentProfile as any)?.school?.name || "Academic Hub";
 
   const handleProfileClick = () => {
     router.push("/dashboard/student/profile");
@@ -54,8 +62,8 @@ export default function TopNavBar({
 
         {/* Dashboard Badge */}
         <Link href="/" className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-full shadow-sm hover:border-pink-500/30 transition-all group/badge">
-            <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-4 w-4 object-contain group-hover/badge:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold text-pink-400 uppercase tracking-widest">Academic Hub</span>
+            <img src={(studentProfile as any)?.school?.logo || "/logo/favicon.svg"} alt={displaySchool} className="h-4 w-4 object-contain group-hover/badge:scale-110 transition-transform rounded-full" />
+            <span className="text-[10px] font-bold text-pink-400 uppercase tracking-widest">{displaySchool}</span>
         </Link>
 
         {/* Mobile hamburger */}

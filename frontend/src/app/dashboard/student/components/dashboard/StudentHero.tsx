@@ -33,12 +33,12 @@ const StudentHero: React.FC<StudentHeroProps> = ({
         <div className="space-y-6 max-w-2xl">
           <div className="flex flex-wrap items-center gap-3">
             <Badge className="bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-500/20 rounded-full px-5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm backdrop-blur-md">
-              Scholar Command
+              Student Dashboard
             </Badge>
             <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700/50 shadow-sm">
               <Star size={12} className="text-amber-500 fill-amber-500" />
               <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">
-                Elite Status
+                Active Student
               </span>
             </div>
           </div>
@@ -53,7 +53,7 @@ const StudentHero: React.FC<StudentHeroProps> = ({
           </div>
           
           <p className="text-base md:text-lg text-slate-500 dark:text-slate-400 font-bold max-w-xl leading-relaxed">
-            Your educational journey at <span className="text-slate-900 dark:text-white font-black">{selectedSchoolName}</span> is evolving. Access your global performance benchmarks below.
+            Your educational journey at <span className="text-slate-900 dark:text-white font-black">{selectedSchoolName}</span> is progressing. Access your termly results and continuous assessments below.
           </p>
 
           <div className="flex flex-wrap gap-4 pt-4">
@@ -62,7 +62,7 @@ const StudentHero: React.FC<StudentHeroProps> = ({
                     <Calendar size={20} />
                 </div>
                 <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Current Iteration</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Academic Term</p>
                     <p className="text-sm font-black text-slate-900 dark:text-white">{termInfo}</p>
                 </div>
              </div>
@@ -85,7 +85,7 @@ const StudentHero: React.FC<StudentHeroProps> = ({
                 </div>
             </div>
             <div className="text-right space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Global ID</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Student ID</p>
                 <p className="text-lg font-black text-slate-900 dark:text-white tracking-widest">{globalId || `#${username?.slice(0, 4).toUpperCase() || 'HUB'}-2024`}</p>
             </div>
         </div>

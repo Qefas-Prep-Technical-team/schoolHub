@@ -89,3 +89,33 @@ export const getUnreadCount = async (req: Request, res: Response) => {
     return handleError(res, error, "notification.getUnreadCount");
   }
 };
+
+export const deleteNotification = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    // Check if the notification exists and belongs to the user
+    const notification = await prisma.notification.findUnique({
+      where: { id: id as string },
+    });
+
+    if (!notification || notification.recipientId !== userId) {
+      return res.status(404).json({
+        success: false,
+        message: "Notification not found",
+      });
+    }
+
+    await prisma.notification.delete({
+      where: { id: id as string },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Notification deleted successfully",
+    });
+  } catch (error) {
+    return handleError(res, error, "notification.deleteNotification");
+  }
+};

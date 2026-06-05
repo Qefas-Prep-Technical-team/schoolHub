@@ -3000,3 +3000,73 @@ export const claimAccount = async (req: Request, res: Response) => {
     return handleError(res, error, "auth.claimAccount");
   }
 };
+
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const { id: userId, userType } = req.user!;
+
+    if (!userId || !userType) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    let user;
+    switch (userType) {
+      case UserRole.STUDENT:
+        user = await prisma.student.findUnique({ where: { id: userId } });
+        break;
+      case UserRole.TEACHER:
+        user = await prisma.teacher.findUnique({ where: { id: userId } });
+        break;
+      case UserRole.ADMIN:
+        user = await prisma.admin.findUnique({ where: { id: userId } });
+        break;
+      case UserRole.PARENT:
+        user = await prisma.parent.findUnique({ where: { id: userId } });
+        break;
+      default:
+        return res.status(400).json({ success: false, message: "Invalid user role" });
+    }
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: "You are using Google Login. You cannot change your password here.",
+      });
+    }
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      return res.status(400).json({ success: false, message: "Incorrect current password" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const updateData = { password: hashedPassword };
+
+    switch (userType) {
+      case UserRole.STUDENT:
+        await prisma.student.update({ where: { id: userId }, data: updateData });
+        break;
+      case UserRole.TEACHER:
+        await prisma.teacher.update({ where: { id: userId }, data: updateData });
+        break;
+      case UserRole.ADMIN:
+        await prisma.admin.update({ where: { id: userId }, data: updateData });
+        break;
+      case UserRole.PARENT:
+        await prisma.parent.update({ where: { id: userId }, data: updateData });
+        break;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error: any) {
+    return handleError(res, error, "auth.changePassword");
+  }
+};

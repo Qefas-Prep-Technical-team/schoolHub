@@ -239,7 +239,7 @@ export default function ClassDetailsPage() {
     { 
       id: 'students', 
       label: 'Students', 
-      content: <ClassStudentsPage enrollments={classData?.enrollments || []} />  
+      content: <ClassStudentsPage enrollments={classData?.enrollments || []} classData={classData} />  
     },
     { 
       id: 'subjects', 

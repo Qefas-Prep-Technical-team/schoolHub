@@ -43,10 +43,24 @@ import {
   BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePublicPlatformSettings } from "@/lib/api/hooks/usePlatformGovernance";
+import { useSchoolBilling, useUserBilling } from "@/lib/api/hooks/useSchool";
+import { useRouter } from "next/navigation";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function StudentSettingsPage() {
   const queryClient = useQueryClient();
   const [selectedDept, setSelectedDept] = useState<string>("");
+  const [selectedLevel, setSelectedLevel] = useState<string>("");
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordStep, setPasswordStep] = useState(1);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const router = useRouter();
 
   // 1. Fetch Student Profile
   const { data: profile, isLoading: isProfileLoading } = useQuery({
@@ -61,9 +75,29 @@ export default function StudentSettingsPage() {
     enabled: !!profile?.schoolId,
   });
 
+  const { data: platformSettings, isLoading: isSettingsLoading } = usePublicPlatformSettings();
+  const { data: userBilling, isLoading: isUserBillingLoading } = useUserBilling(profile?.id as string, { limit: 1 });
+  const { data: schoolBilling, isLoading: isSchoolBillingLoading } = useSchoolBilling(profile?.schoolId as string, { limit: 1 });
+
+  const isEnforced = platformSettings?.sub_enforced_students !== "false";
+  const isLoadingBilling = isSettingsLoading || isUserBillingLoading || isSchoolBillingLoading;
+  
+  const activePlanName = isLoadingBilling 
+    ? "Loading..."
+    : isEnforced 
+      ? (userBilling?.data?.subscription?.plan || "Free Plan")
+      : (schoolBilling?.subscription?.plan || "No School Plan");
+
+  const activeLicenseText = isEnforced
+    ? "Standard Student License"
+    : `Institutional License (${profile?.school?.name || "School"})`;
+
   useEffect(() => {
     if (profile?.departmentId) {
       setSelectedDept(profile.departmentId);
+    }
+    if (profile?.level) {
+      setSelectedLevel(profile.level);
     }
   }, [profile]);
 
@@ -79,6 +113,47 @@ export default function StudentSettingsPage() {
     },
   });
 
+  // 3b. Mutation for picked level
+  const levelMutation = useMutation({
+    mutationFn: (level: string) => studentService.updateLevel(level),
+    onSuccess: () => {
+      toast.success('Level successfully selected!');
+      queryClient.invalidateQueries({ queryKey: ['student-profile'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update level');
+    },
+  });
+
+  const handleLevelUpdate = () => {
+    if (!selectedLevel) { toast.warn('Please select a level first'); return; }
+    levelMutation.mutate(selectedLevel);
+  };
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (data: any) => studentService.updatePassword(data),
+    onSuccess: () => {
+      toast.success("Password updated successfully!");
+      setIsPasswordModalOpen(false);
+      setPasswordStep(1);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update password");
+    }
+  });
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+    changePasswordMutation.mutate({ currentPassword, newPassword });
+  };
+
   const handleUpdate = () => {
     if (!selectedDept) {
       toast.warn("Please select a department first");
@@ -88,6 +163,26 @@ export default function StudentSettingsPage() {
   };
 
   const isLocked = !!profile?.departmentId;
+  const isLevelLocked = !!profile?.level;
+  const schoolLevels: string[] = (profile as any)?.school?.levels || [];
+
+  const AcademicSkeleton = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="lg:col-span-2 space-y-8">
+        <div className="rounded-3xl border-0 shadow-lg bg-white dark:bg-slate-900 p-8 space-y-6">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-10 w-full rounded-2xl" />
+          <Skeleton className="h-14 w-full rounded-2xl" />
+        </div>
+        <div className="rounded-3xl border-0 shadow-lg bg-white dark:bg-slate-900 p-8 space-y-6">
+          <Skeleton className="h-6 w-36" />
+          <Skeleton className="h-10 w-full rounded-2xl" />
+          <Skeleton className="h-14 w-full rounded-2xl" />
+        </div>
+      </div>
+      <div><Skeleton className="h-64 w-full rounded-3xl" /></div>
+    </div>
+  );
 
   if (isProfileLoading) {
     return (
@@ -118,7 +213,7 @@ export default function StudentSettingsPage() {
           <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
             <div className="relative group">
               <Avatar className="size-28 md:size-32 border-4 border-white/20 shadow-2xl ring-4 ring-white/10 group-hover:scale-105 transition-transform duration-500">
-                <AvatarImage src="" />
+                <AvatarImage src={profile?.profileImage || ""} />
                 <AvatarFallback className="bg-white/10 text-4xl font-black text-white backdrop-blur-md">
                   {initials}
                 </AvatarFallback>
@@ -248,6 +343,7 @@ export default function StudentSettingsPage() {
 
             {/* Academic Tab */}
             <TabsContent value="academic" className="animate-in fade-in duration-500">
+              {(isProfileLoading || isDeptsLoading) ? <AcademicSkeleton /> : (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
                   {/* Department Section */}
@@ -338,6 +434,96 @@ export default function StudentSettingsPage() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* Level Section */}
+                  <Card className="border-0 shadow-lg bg-white dark:bg-slate-900 rounded-3xl overflow-hidden">
+                    <CardHeader className="border-b bg-slate-50/50 dark:bg-slate-800/50 px-8 py-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <GraduationCap className="text-rose-500" size={20} />
+                          <CardTitle className="text-lg font-black uppercase tracking-wider">Academic Level</CardTitle>
+                        </div>
+                        {isLevelLocked && (
+                          <Badge className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20 px-3 py-1 font-black text-[10px] uppercase tracking-tighter">
+                            <CheckCircle2 size={12} className="mr-1" /> Locked
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="p-8 space-y-6">
+                      {isLevelLocked && (
+                        <div className="flex items-center gap-4 p-5 bg-rose-50/60 dark:bg-rose-500/10 rounded-2xl border border-rose-100 dark:border-rose-500/20">
+                          <div className="size-10 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0">
+                            <BookOpen className="text-rose-600" size={20} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Your Level</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white">{profile?.level}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {!isLevelLocked ? (
+                        <div className="bg-amber-50 dark:bg-amber-500/10 border-l-4 border-amber-400 p-6 rounded-2xl flex gap-4">
+                          <ShieldAlert className="text-amber-500 shrink-0" size={24} />
+                          <div>
+                            <h4 className="font-bold text-amber-900 dark:text-amber-200 text-sm uppercase tracking-tight">One-Time Choice</h4>
+                            <p className="text-amber-700/80 dark:text-amber-400/80 text-sm mt-1 leading-relaxed font-medium">
+                              Level selection is permanent. Only the school can update it after.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex gap-4 items-center p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                          <Lock className="text-slate-400" size={18} />
+                          <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                            Level is locked. Contact your school administrator to change it.
+                          </p>
+                        </div>
+                      )}
+
+                      {!profile?.schoolId ? (
+                        <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed text-center">
+                          <School size={32} className="mx-auto text-slate-300 mb-3" />
+                          <p className="text-sm font-bold text-slate-400">Link to a school to see available levels.</p>
+                        </div>
+                      ) : schoolLevels.length === 0 ? (
+                        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed text-center">
+                          <p className="text-sm font-bold text-slate-400">No levels configured by the school yet.</p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col md:flex-row gap-4">
+                          <div className="flex-1">
+                            <Select value={selectedLevel} onValueChange={setSelectedLevel} disabled={isLevelLocked}>
+                              <SelectTrigger className="h-14 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm text-base font-bold">
+                                <SelectValue placeholder="Choose Level" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-2xl shadow-2xl p-1">
+                                {schoolLevels.map((lvl: string) => (
+                                  <SelectItem key={lvl} value={lvl}
+                                    className="rounded-xl my-1 focus:bg-rose-50 dark:focus:bg-rose-900/40 text-sm cursor-pointer py-3 font-black uppercase tracking-tight">
+                                    {lvl}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {!isLevelLocked && (
+                            <Button
+                              onClick={handleLevelUpdate}
+                              disabled={levelMutation.isPending || !selectedLevel}
+                              className="h-14 px-8 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black shadow-lg shadow-rose-200 transition-all hover:-translate-y-1 active:scale-95 group"
+                            >
+                              {levelMutation.isPending ? 'Saving...' : 'Lock In'}
+                              <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={18} />
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                 </div>
 
                 <div className="space-y-8">
@@ -367,6 +553,7 @@ export default function StudentSettingsPage() {
                   </Card>
                 </div>
               </div>
+              )}
             </TabsContent>
 
             {/* Account Tab */}
@@ -391,7 +578,12 @@ export default function StudentSettingsPage() {
                                  <p className="text-xs text-slate-500 font-medium">Password and Two-Factor Authentication</p>
                                </div>
                              </div>
-                             <Button variant="outline" size="sm" className="rounded-xl font-bold text-[10px] uppercase tracking-widest border-2">Change</Button>
+                             <Button 
+                               onClick={() => setIsPasswordModalOpen(true)}
+                               variant="outline" size="sm" className="rounded-xl font-bold text-[10px] uppercase tracking-widest border-2"
+                             >
+                               Change
+                             </Button>
                           </div>
                           <Separator className="opacity-50" />
                           <div className="flex items-center justify-between">
@@ -422,10 +614,16 @@ export default function StudentSettingsPage() {
                              <Badge variant="secondary" className="bg-slate-200 dark:bg-slate-700 font-black text-[9px] uppercase tracking-widest">System Default</Badge>
                           </div>
                           
-                          <div className="mt-12 p-6 rounded-2xl bg-violet-600 text-white relative flex items-center justify-between group overflow-hidden cursor-pointer">
+                          <div 
+                             onClick={() => router.push(isEnforced ? "/dashboard/student/billing" : "#")}
+                             className="mt-12 p-6 rounded-2xl bg-violet-600 text-white relative flex items-center justify-between group overflow-hidden cursor-pointer"
+                          >
                              <div className="relative z-10">
-                                <h4 className="font-black text-sm uppercase tracking-widest">Qefas Hub Pro</h4>
-                                <p className="text-[10px] opacity-80 font-bold">Standard Student License</p>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-black text-sm uppercase tracking-widest">{activePlanName}</h4>
+                                  {!isEnforced && <Badge className="bg-white/20 hover:bg-white/20 text-white text-[9px] border-none uppercase tracking-widest">Linked</Badge>}
+                                </div>
+                                <p className="text-[10px] opacity-80 font-bold">{activeLicenseText}</p>
                              </div>
                              <BookOpen size={24} className="opacity-20 group-hover:scale-125 transition-transform" />
                              <div className="absolute bottom-0 right-0 -mr-10 -mb-10 size-32 bg-white/10 rounded-full blur-2xl" />
@@ -438,8 +636,109 @@ export default function StudentSettingsPage() {
           </div>
         </Tabs>
 
+        <Dialog open={isPasswordModalOpen} onOpenChange={(open) => {
+          setIsPasswordModalOpen(open);
+          if (!open) {
+            setPasswordStep(1);
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+          }
+        }}>
+          <DialogContent className="sm:max-w-[425px] rounded-3xl p-6 border-0 shadow-2xl">
+            <DialogHeader className="mb-4">
+              <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">
+                {passwordStep === 1 ? "Verify Current Password" : "Set New Password"}
+              </DialogTitle>
+              <DialogDescription className="text-slate-500 font-medium">
+                {passwordStep === 1 
+                  ? "Please enter your current password to proceed securely." 
+                  : "Ensure your account is using a long, random password to stay secure."}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (passwordStep === 1) {
+                if (currentPassword.length > 0) {
+                  setPasswordStep(2);
+                } else {
+                  toast.error("Please enter your current password");
+                }
+              } else {
+                handlePasswordSubmit(e);
+              }
+            }} className="space-y-4">
+              
+              {passwordStep === 1 && (
+                <div className="space-y-2 animate-in slide-in-from-right-4">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Current Password</Label>
+                  <Input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="rounded-xl h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-violet-500 font-medium"
+                    required
+                  />
+                </div>
+              )}
+
+              {passwordStep === 2 && (
+                <div className="space-y-4 animate-in slide-in-from-right-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">New Password</Label>
+                    <Input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="rounded-xl h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-violet-500 font-medium"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Confirm Password</Label>
+                    <Input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="rounded-xl h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-violet-500 font-medium"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter className="mt-6 flex justify-between sm:justify-between items-center w-full">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    if (passwordStep === 2) {
+                      setPasswordStep(1);
+                    } else {
+                      setIsPasswordModalOpen(false);
+                      setCurrentPassword("");
+                      setNewPassword("");
+                      setConfirmPassword("");
+                    }
+                  }}
+                  className="rounded-xl font-bold uppercase tracking-widest text-[10px]"
+                >
+                  {passwordStep === 2 ? "Back" : "Cancel"}
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={changePasswordMutation.isPending}
+                  className="rounded-xl font-bold uppercase tracking-widest text-[10px] bg-violet-600 hover:bg-violet-700 text-white ml-auto"
+                >
+                  {passwordStep === 1 
+                    ? "Next Step" 
+                    : (changePasswordMutation.isPending ? "Saving..." : "Save Password")}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
 }
-

@@ -19,6 +19,7 @@ import {
   archiveClass,
   editClassSubjects,
   removeSubjectFromClass,
+  promoteStudents,
 } from "./class.controller";
 import {
   getClassBehaviourAlerts,
@@ -60,6 +61,7 @@ router.delete(
   authenticateToken,
   removeStudentFromClass,
 );
+router.post("/:id/promote", authenticateToken, promoteStudents);
 
 router.patch("/:id/approve", authenticateToken, approveClass);
 router.patch("/:id/reject", authenticateToken, rejectClass);

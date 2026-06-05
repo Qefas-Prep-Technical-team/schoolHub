@@ -14,7 +14,7 @@ export default function GoogleLoginButton({ userType }: GoogleLoginButtonProps) 
     const [isLoading, setIsLoading] = useState(false);
     const { data: settings, isLoading: settingsLoading } = usePublicPlatformSettings();
 
-    const googleAuthEnabledGlobal = String(settings?.google_auth_enabled) !== "false";
+    const googleAuthEnabledGlobal = String(settings?.google_auth_enabled) === "true";
     const googleLoginFeature = settings?.google_login_feature as Record<string, boolean> | undefined;
     
     // Map URL role to backend feature role
@@ -26,8 +26,8 @@ export default function GoogleLoginButton({ userType }: GoogleLoginButtonProps) 
     };
     const backendRole = roleMap[userType.toLowerCase()] || userType.toLowerCase();
     
-    const googleAuthEnabledForRole = googleLoginFeature?.[backendRole] !== false;
-    const isEnabled = googleAuthEnabledGlobal && googleAuthEnabledForRole;
+    const googleAuthEnabledForRole = googleLoginFeature ? googleLoginFeature[backendRole] !== false : true;
+    const isEnabled = !!settings && googleAuthEnabledGlobal && googleAuthEnabledForRole;
 
     if (settingsLoading) return <div className="h-14 w-full bg-slate-50 dark:bg-slate-800 animate-pulse rounded-xl" />;
     if (!isEnabled) return null;

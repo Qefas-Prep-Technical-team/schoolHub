@@ -181,6 +181,12 @@ export const updateStudentProfileService = async (studentId: string, data: {
   dateOfBirth?: string | Date;
   profileImage?: string;
   bannerImage?: string;
+  height?: number;
+  weight?: number;
+  club?: string;
+  favouriteColour?: string;
+  guardianName?: string;
+  guardianPhone?: string;
 }) => {
   const updateData: any = {};
   if (data.name) updateData.name = data.name;
@@ -189,6 +195,12 @@ export const updateStudentProfileService = async (studentId: string, data: {
   if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth);
   if (data.profileImage !== undefined) updateData.profileImage = data.profileImage;
   if (data.bannerImage !== undefined) updateData.bannerImage = data.bannerImage;
+  if (data.height !== undefined) updateData.height = Number(data.height);
+  if (data.weight !== undefined) updateData.weight = Number(data.weight);
+  if (data.club !== undefined) updateData.club = data.club;
+  if (data.favouriteColour !== undefined) updateData.favouriteColour = data.favouriteColour;
+  if (data.guardianName !== undefined) updateData.guardianName = data.guardianName;
+  if (data.guardianPhone !== undefined) updateData.guardianPhone = data.guardianPhone;
 
   return prisma.student.update({
     where: { id: studentId },
@@ -321,6 +333,91 @@ export const updateStudentAttendanceService = async (studentId: string, data: { 
       date: attendanceDate,
       status: data.status,
       note: data.note,
+    }
+  });
+};
+
+import { StudentLifecycleService } from "./student.lifecycle.service";
+import { EnrollmentStatus } from "@prisma/client";
+
+export const exitStudentService = async (
+  studentId: string,
+  schoolId: string,
+  exitData: {
+    exitType: EnrollmentStatus;
+    exitDate: string | Date;
+    exitReason?: string;
+    exitNotes?: string;
+  },
+  adminId: string
+) => {
+  const student = await prisma.student.findFirst({
+    where: { id: studentId, schoolId },
+    include: { parentLinks: true },
+  });
+
+  if (!student) {
+    throw new Error("Student not found or not actively enrolled in your school.");
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    await StudentLifecycleService.exitStudentFromSchool(
+      tx,
+      studentId,
+      schoolId,
+      {
+        exitType: exitData.exitType,
+        exitDate: new Date(exitData.exitDate),
+        exitReason: exitData.exitReason,
+        exitNotes: exitData.exitNotes,
+      },
+      adminId
+    );
+    return true;
+  });
+
+  // Notify Student
+  await createNotification({
+    recipientType: "STUDENT",
+    recipientId: student.id,
+    senderType: "SCHOOL",
+    senderId: schoolId,
+    type: "GENERAL",
+    title: `School Enrollment Ended`,
+    message: `Your enrollment at the school has been updated to ${exitData.exitType.toLowerCase()}.`,
+    meta: { studentId: student.id, exitType: exitData.exitType },
+  }).catch(err => console.error("Failed to notify student of exit:", err));
+
+  // Notify Parents
+  for (const link of student.parentLinks) {
+    await createNotification({
+      recipientType: "PARENT",
+      recipientId: link.parentId,
+      senderType: "SCHOOL",
+      senderId: schoolId,
+      type: "GENERAL",
+      title: "Child's School Enrollment Ended",
+      message: `${student.name}'s school enrollment has been marked as ${exitData.exitType.toLowerCase()}.`,
+      meta: { studentId: student.id, exitType: exitData.exitType },
+    }).catch(err => console.error(`Failed to notify parent ${link.parentId} of exit:`, err));
+  }
+
+  return result;
+};
+
+export const getStudentHistoryService = async (studentId: string, schoolId?: string) => {
+  const whereClause: any = { studentId };
+  if (schoolId) {
+    whereClause.schoolId = schoolId;
+  }
+
+  return prisma.studentHistory.findMany({
+    where: whereClause,
+    orderBy: { date: 'desc' },
+    include: {
+      school: {
+        select: { id: true, name: true, logoUrl: true }
+      }
     }
   });
 };
