@@ -1011,8 +1011,8 @@ export const promoteStudentsService = async ({
           createNotification({
             recipientType: "PARENT",
             recipientId: parentLink.parentId,
-            senderType: "SYSTEM",
-            senderId: "system",
+            senderType: "ADMIN",
+            senderId: currentUserId,
             type: "GENERAL",
             title: "Student Promoted",
             message: `${student.name} has been promoted to ${toClass.name}.`,
@@ -1028,8 +1028,8 @@ export const promoteStudentsService = async ({
       createNotification({
         recipientType: "TEACHER",
         recipientId: classTeacher.teacherId,
-        senderType: "SYSTEM",
-        senderId: "system",
+        senderType: "ADMIN",
+        senderId: currentUserId,
         type: "GENERAL",
         title: "Students Promoted",
         message: `${studentIds.length} students have been promoted to your class ${toClass.name}.`,

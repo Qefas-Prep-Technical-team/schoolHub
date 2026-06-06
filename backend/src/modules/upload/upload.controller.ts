@@ -112,7 +112,7 @@ export const deleteS3File = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "File ID is required" });
     }
 
-    await deleteS3FileService(id, user.schoolId);
+    await deleteS3FileService(id as string, user.schoolId);
 
     return res.status(200).json({ success: true, message: "File deleted successfully" });
   } catch (error: any) {
@@ -129,7 +129,7 @@ export const deleteBunnyFile = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "File ID is required" });
     }
 
-    await deleteBunnyFileService(id, user.schoolId);
+    await deleteBunnyFileService(id as string, user.schoolId);
 
     return res.status(200).json({ success: true, message: "File deleted successfully from Bunny.net" });
   } catch (error: any) {

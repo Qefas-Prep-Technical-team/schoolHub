@@ -18,10 +18,13 @@ import { apiClient } from '@/lib/api/client';
 export default function CreateAssignmentPage() {
     const router = useRouter();
     const { selectedSchoolId } = useDashboardStore();
+    const { user } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
     
+    const effectiveSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || '';
+
     // We pass `false` for isAdmin since this is the teacher version
-    const { mutateAsync: createAssignment } = useCreateAssignment(selectedSchoolId || '', false);
+    const { mutateAsync: createAssignment } = useCreateAssignment(effectiveSchoolId, false);
 
     // Form state
     const [formData, setFormData] = useState<AssignmentFormData>({

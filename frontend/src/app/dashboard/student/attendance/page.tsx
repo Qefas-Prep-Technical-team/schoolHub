@@ -19,7 +19,7 @@ export default function Home() {
     
     // Process attendance data
     const attendanceData = useMemo(() => {
-        const records = response?.data || [];
+        const records = response || [];
         
         let present = 0;
         let absent = 0;
@@ -107,7 +107,7 @@ export default function Home() {
         <div className="relative flex min-h-screen w-full">
             <main className="flex-1 p-6 lg:p-8">
                 <div className="max-w-7xl mx-auto">
-                    <PageHeader records={response?.data || []} />
+                    <PageHeader records={response || []} />
                     <InfoBanner />
 
                     {isLoading ? (

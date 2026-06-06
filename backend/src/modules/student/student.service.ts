@@ -416,7 +416,7 @@ export const getStudentHistoryService = async (studentId: string, schoolId?: str
     orderBy: { date: 'desc' },
     include: {
       school: {
-        select: { id: true, name: true, logoUrl: true }
+        select: { id: true, name: true, logo: true }
       }
     }
   });

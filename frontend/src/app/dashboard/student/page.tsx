@@ -151,7 +151,7 @@ export default function StudentHomeDashboard() {
       <main className="p-4 md:p-6 lg:p-10 pb-32 md:pb-10">
         <div className="max-w-[1600px] mx-auto space-y-10">
 
-          <PrefectRoleBanner roleName={prefectRole} />
+          <PrefectRoleBanner roleName={prefectRole || ''} />
 
           <StudentHero
             username={username || 'Scholar'}

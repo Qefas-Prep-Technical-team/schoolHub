@@ -63,6 +63,8 @@ export interface StudentProfile extends Student {
       phone?: string;
     };
   }[];
+  prefectRole?: string;
+  hasSeenPrefectCelebration?: boolean;
 }
 
 export const studentService = {

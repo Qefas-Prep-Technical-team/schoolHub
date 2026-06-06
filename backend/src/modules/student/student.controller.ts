@@ -11,6 +11,7 @@ import {
 } from "./student.service";
 import { sendEmailUpdateVerification } from "../auth/auth.service";
 import { handleError } from "../../utils/error-handler";
+import prisma from "../../config/database";
 
 export const requestEmailUpdate = async (req: Request, res: Response) => {
   try {
@@ -253,7 +254,7 @@ export const updateStudentAttendance = async (req: Request, res: Response) => {
       });
     }
 
-    const updatedAttendance = await updateStudentAttendanceService(studentId, { date, status, note });
+    const updatedAttendance = await updateStudentAttendanceService(studentId as string, { date, status, note });
 
     return res.status(200).json({
       success: true,
@@ -274,7 +275,7 @@ export const pickLevel = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'level is required' });
     }
 
-    const student = await import('../../config/database').then(m => m.default.student.findUnique({ where: { id: studentId } }));
+    const student = await prisma.student.findUnique({ where: { id: studentId } });
     if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
 
     // One-time lock: students can only pick once
@@ -284,17 +285,17 @@ export const pickLevel = async (req: Request, res: Response) => {
 
     // Validate the level is in the school's allowed list
     if (student.schoolId) {
-      const school = await import('../../config/database').then(m => m.default.school.findUnique({ where: { id: student.schoolId! }, select: { levels: true } }));
+      const school = await prisma.school.findUnique({ where: { id: student.schoolId! }, select: { levels: true } });
       if (school && school.levels.length > 0 && !school.levels.includes(level)) {
         return res.status(400).json({ success: false, message: `"${level}" is not a valid level for this school.` });
       }
     }
 
-    const updated = await import('../../config/database').then(m => m.default.student.update({
+    const updated = await prisma.student.update({
       where: { id: studentId },
       data: { level },
       include: { department: true, school: true },
-    }));
+    });
 
     return res.status(200).json({ success: true, message: 'Level updated successfully', data: updated });
   } catch (error: any) {
@@ -315,11 +316,11 @@ export const updateStudentLevelByAdmin = async (req: Request, res: Response) => 
       return res.status(400).json({ success: false, message: 'level is required' });
     }
 
-    const updated = await import('../../config/database').then(m => m.default.student.update({
-      where: { id: studentId },
+    const updated = await prisma.student.update({
+      where: { id: studentId as string },
       data: { level },
       include: { department: true, school: true },
-    }));
+    });
 
     return res.status(200).json({ success: true, message: 'Student level updated by admin', data: updated });
   } catch (error: any) {
@@ -345,16 +346,16 @@ export const exitStudent = async (req: Request, res: Response) => {
     }
 
     // Get the school ID of the admin
-    const schoolAdmin = await import('../../config/database').then(m => m.default.schoolAdmin.findFirst({
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
       where: { adminId: currentUserId, active: true },
-    }));
+    });
 
     if (!schoolAdmin) {
       return res.status(403).json({ success: false, message: 'You are not assigned to a school' });
     }
 
     await exitStudentService(
-      studentId,
+      studentId as string,
       schoolAdmin.schoolId,
       {
         exitType: exitType as EnrollmentStatus,
@@ -385,15 +386,15 @@ export const getStudentHistory = async (req: Request, res: Response) => {
 
     let schoolIdFilter: string | undefined = undefined;
     if (currentUserType === UserRole.ADMIN) {
-      const schoolAdmin = await import('../../config/database').then(m => m.default.schoolAdmin.findFirst({
+      const schoolAdmin = await prisma.schoolAdmin.findFirst({
         where: { adminId: currentUserId, active: true },
-      }));
+      });
       if (schoolAdmin) {
         schoolIdFilter = schoolAdmin.schoolId;
       }
     }
 
-    const history = await getStudentHistoryService(studentId, schoolIdFilter);
+    const history = await getStudentHistoryService(studentId as string, schoolIdFilter);
 
     return res.status(200).json({ success: true, data: history });
   } catch (error: any) {
@@ -406,14 +407,14 @@ export const assignPrefectRole = async (req: Request, res: Response) => {
     const { id: studentId } = req.params;
     const { role } = req.body;
     const adminId = req.user!.id;
-    const schoolAdmin = await import('../../config/database').then(m => m.default.schoolAdmin.findFirst({
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
       where: { adminId, active: true }
-    }));
+    });
     if (!schoolAdmin) return res.status(403).json({ success: false, message: 'Forbidden' });
 
     if (!role) return res.status(400).json({ success: false, message: 'Role is required' });
 
-    const updated = await import('./student.service').then(m => m.assignPrefectRoleService(studentId, role, adminId, schoolAdmin.schoolId));
+    const updated = await import('./student.service.js').then(m => m.assignPrefectRoleService(studentId as string, role, adminId, schoolAdmin.schoolId));
     return res.status(200).json({ success: true, message: 'Prefect role assigned successfully', data: updated });
   } catch (error: any) {
     return handleError(res, error, 'student.assignPrefectRole');
@@ -425,14 +426,14 @@ export const removePrefectRole = async (req: Request, res: Response) => {
     const { id: studentId } = req.params;
     const { reason } = req.body;
     const adminId = req.user!.id;
-    const schoolAdmin = await import('../../config/database').then(m => m.default.schoolAdmin.findFirst({
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
       where: { adminId, active: true }
-    }));
+    });
     if (!schoolAdmin) return res.status(403).json({ success: false, message: 'Forbidden' });
 
     if (!reason) return res.status(400).json({ success: false, message: 'Reason is required' });
 
-    const updated = await import('./student.service').then(m => m.removePrefectRoleService(studentId, reason, adminId, schoolAdmin.schoolId));
+    const updated = await import('./student.service.js').then(m => m.removePrefectRoleService(studentId as string, reason, adminId, schoolAdmin.schoolId));
     return res.status(200).json({ success: true, message: 'Prefect role removed successfully', data: updated });
   } catch (error: any) {
     return handleError(res, error, 'student.removePrefectRole');
@@ -445,7 +446,7 @@ export const acknowledgePrefectCelebration = async (req: Request, res: Response)
     if (req.user!.id !== studentId && req.user!.userType !== UserRole.STUDENT) {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
-    const updated = await import('./student.service').then(m => m.acknowledgePrefectCelebrationService(studentId));
+    const updated = await import('./student.service.js').then(m => m.acknowledgePrefectCelebrationService(studentId as string));
     return res.status(200).json({ success: true, message: 'Celebration acknowledged', data: updated });
   } catch (error: any) {
     return handleError(res, error, 'student.acknowledgePrefectCelebration');

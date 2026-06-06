@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { UserRole } from "@prisma/client";
-import { getStudentGradesService, getGradeByIdService, getAllGradesService } from "./grade.service";
+import { getStudentGradesService, getGradeByIdService, getAllGradesService, getClassLeaderboardService } from "./grade.service";
 import { handleError } from "../../utils/error-handler";
 
 export const getStudentGrades = async (req: Request, res: Response) => {
@@ -66,7 +66,7 @@ export const getClassLeaderboard = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "classId is required" });
     }
 
-    const leaderboard = await getClassLeaderboardService(classId);
+    const leaderboard = await getClassLeaderboardService(classId as string);
     return res.status(200).json({ success: true, data: leaderboard });
   } catch (error: any) {
     return handleError(res, error, "academic.getClassLeaderboard");
