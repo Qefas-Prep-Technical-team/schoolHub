@@ -48,8 +48,8 @@ export default function DueDateScheduling({
                     <p className="text-[#0e121b] dark:text-white text-base font-medium leading-normal pb-3">
                         Publish Status
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {(['draft', 'publish-now', 'schedule-later'] as PublishStatus[]).map((status) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {(['publish-now', 'schedule-later'] as PublishStatus[]).map((status) => (
                             <label
                                 key={status}
                                 className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${publishStatus === status
@@ -65,7 +65,7 @@ export default function DueDateScheduling({
                                     checked={publishStatus === status}
                                     onChange={(e) => onPublishStatusChange(e.target.value as PublishStatus)}
                                 />
-                                <span className="text-sm font-medium capitalize">
+                                <span className="text-[#0e121b] dark:text-white text-sm font-medium capitalize">
                                     {status.replace('-', ' ')}
                                 </span>
                             </label>

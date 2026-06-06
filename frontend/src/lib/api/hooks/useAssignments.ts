@@ -19,7 +19,7 @@ export const useStudentAssignments = (params?: { page?: number; limit?: number; 
   return useQuery({
     queryKey: ['studentAssignments', params],
     queryFn: async () => {
-      const response = await api.get('/api/v1/assignment/student', { params });
+      const response = await api.get('/assignment/student', { params });
       return response.data.data;
     },
   });
@@ -29,7 +29,7 @@ export const useTeacherAssignments = (schoolId: string, status?: string) => {
   return useQuery<{ assignments: Assignment[], total: number, pages: number }, Error>({
     queryKey: ['assignments', 'teacher', schoolId, status],
     queryFn: async () => {
-      const response = await api.get('/api/v1/assignment/teacher', {
+      const response = await api.get('/assignment/teacher', {
         headers: { 'x-school-id': schoolId },
         params: { status }
       });
@@ -43,25 +43,26 @@ export const useAdminAssignments = (schoolId: string, status?: string) => {
   return useQuery<{ assignments: Assignment[], total: number, pages: number }, Error>({
     queryKey: ['assignments', 'admin', schoolId, status],
     queryFn: async () => {
-      const response = await api.get('/api/v1/assignment/admin', {
+      const response = await api.get('/assignment/admin', {
         headers: { 'x-school-id': schoolId },
         params: { status }
       });
       return response.data.data;
     },
-    enabled: !!schoolId,
+    enabled: !!schoolId && schoolId !== "undefined",
   });
 };
 
 export const useCreateAssignment = (schoolId: string, isAdmin: boolean = false) => {
   const queryClient = useQueryClient();
-  const endpoint = isAdmin ? '/api/v1/assignment/admin' : '/api/v1/assignment/teacher';
+  const endpoint = isAdmin ? '/assignment/admin' : '/assignment/teacher';
 
   return useMutation({
     mutationFn: async (data: {
       title: string;
       classIds: string[];
       subjectId: string;
+      departmentId?: string;
       instructions?: string;
       dueDate?: string;
       maxScore?: number;
@@ -83,7 +84,7 @@ export const useAssignmentById = (id: string) => {
   return useQuery({
     queryKey: ['assignment', id],
     queryFn: async () => {
-      const response = await api.get(`/api/v1/assignment/student/${id}`);
+      const response = await api.get(`/assignment/student/${id}`);
       return response.data.data;
     },
     enabled: !!id,
@@ -95,12 +96,29 @@ export const useSubmitAssignment = () => {
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: { fileUrl?: string; fileName?: string; answers?: any[] } }) => {
-      const response = await api.post(`/api/v1/assignment/student/${id}/submit`, data);
+      const response = await api.post(`/assignment/student/${id}/submit`, data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['studentAssignments'] });
       queryClient.invalidateQueries({ queryKey: ['assignment', variables.id] });
     },
+  });
+};
+
+export const useUpdateAssignmentStatus = (schoolId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ assignmentId, status }: { assignmentId: string, status: 'DRAFT' | 'PUBLISHED' }) => {
+      const response = await api.patch(`/assignment/${assignmentId}/status`, { status }, {
+        headers: { 'x-school-id': schoolId }
+      });
+      return response.data.data;
+    },
+    onSuccess: (_, { assignmentId }) => {
+      queryClient.invalidateQueries({ queryKey: ['assignment-detail', assignmentId] });
+      queryClient.invalidateQueries({ queryKey: ['assignments'] });
+    }
   });
 };

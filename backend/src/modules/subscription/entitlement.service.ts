@@ -9,7 +9,7 @@ export class EntitlementService {
   /**
    * Internal helper to check if subscription enforcement is enabled for a category
    */
-  private static async isEnforced(category: "students" | "teachers" | "parents" | "schools"): Promise<boolean> {
+  public static async isEnforced(category: "students" | "teachers" | "parents" | "schools" | string): Promise<boolean> {
     const setting = await prisma.platformSettings.findUnique({
       where: { key: `sub_enforced_${category}` }
     });

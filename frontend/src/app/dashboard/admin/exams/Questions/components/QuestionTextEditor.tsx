@@ -152,7 +152,13 @@ const QuestionTextEditor: React.FC<QuestionTextEditorProps> = ({
                     onChange={(e) => onQuestionTextChange(e.target.value)}
                 />
 
-                    <div className="p-3 bg-slate-50 dark:bg-slate-900/30 flex flex-wrap gap-4 border-t border-slate-50 dark:border-slate-900">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/30 flex flex-wrap gap-4 border-t border-slate-50 dark:border-slate-900 min-h-[4rem]">
+                        {isUploading && (
+                            <div className="flex flex-col items-center justify-center gap-2 w-32 aspect-square rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+                                <Loader2 size={24} className="animate-spin text-slate-400" />
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Uploading...</span>
+                            </div>
+                        )}
                         {images.map((url, idx) => (
                             <div key={idx} className="flex flex-col gap-2 w-32">
                                 <div className="relative group w-full aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">

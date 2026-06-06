@@ -10,14 +10,16 @@ import AssignmentFilters from './components/AssignmentFilters';
 import AssignmentCard from './components/AssignmentCard';
 import Pagination from './components/Pagination';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useAdminAssignments } from '@/lib/api/hooks/useAssignments';
 import { useSchoolSubjects } from '@/lib/api/hooks/useSchool';
 import { AssignmentsSkeleton } from './components/AssignmentsSkeleton';
-import { PlusCircle, SearchX, Sparkles, BookOpen } from 'lucide-react';
+import { PlusCircle, SearchX, Sparkles, BookOpen, FileText, CheckCircle2, Clock, FileEdit } from 'lucide-react';
 
 export default function AssignmentsPage() {
+    const router = useRouter();
     const { selectedSchoolId } = useDashboardStore();
     const { user } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState('');
@@ -27,14 +29,15 @@ export default function AssignmentsPage() {
     const itemsPerPage = 8;
 
     const isPersonal = false; // Admins oversee the whole school
+    const effectiveSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "";
 
     const { data: assignmentsData, isLoading } = useAdminAssignments(
-        selectedSchoolId || "",
+        effectiveSchoolId,
         filters.status === 'all' ? undefined : filters.status
     );
 
-    const { data: subjectsData } = useSchoolSubjects(selectedSchoolId || '');
-    const availableSubjects = Array.isArray(subjectsData) ? subjectsData : (subjectsData?.subjects || []);
+    const { data: subjectsData } = useSchoolSubjects(effectiveSchoolId);
+    const availableSubjects = Array.isArray(subjectsData) ? subjectsData : (subjectsData?.data || subjectsData?.subjects || []);
 
     const assignments = assignmentsData?.assignments || [];
 
@@ -45,7 +48,7 @@ export default function AssignmentsPage() {
                 !searchQuery ||
                 assignment.title.toLowerCase().includes(searchQuery.toLowerCase());
 
-            const matchesStatus = !filters.status || assignment.status === filters.status;
+            const matchesStatus = !filters.status || assignment.status?.toLowerCase() === filters.status.toLowerCase();
             
             // Handle subject matching if nested
             const subjectName = assignment.subject?.name || assignment.subject || "";
@@ -62,6 +65,21 @@ export default function AssignmentsPage() {
     }, [filteredAssignments, currentPage, itemsPerPage]);
 
     const totalPages = Math.ceil(filteredAssignments.length / itemsPerPage);
+
+    // Calculate Stats
+    const stats = useMemo(() => {
+        const total = assignments.length;
+        const active = assignments.filter((a: any) => a.status?.toLowerCase() === 'published').length;
+        const overdue = assignments.filter((a: any) => a.status?.toLowerCase() === 'overdue').length;
+        const drafts = assignments.filter((a: any) => a.status?.toLowerCase() === 'draft').length;
+        
+        return [
+            { title: "Total Assignments", value: total, icon: FileText, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+            { title: "Active (Published)", value: active, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+            { title: "Overdue", value: overdue, icon: Clock, color: "text-rose-500", bg: "bg-rose-500/10", border: "border-rose-500/20" },
+            { title: "Drafts", value: drafts, icon: FileEdit, color: "text-slate-500", bg: "bg-slate-500/10", border: "border-slate-500/20" },
+        ];
+    }, [assignments]);
 
     const handleSearch = (query: string) => {
         setSearchQuery(query);
@@ -85,7 +103,7 @@ export default function AssignmentsPage() {
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="hidden md:flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 transition-all hover:bg-primary/90"
+                                className="hidden md:flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-2xl shadow-xl shadow-primary/20 transition-all hover:bg-primary/90"
                             >
                                 <PlusCircle size={18} strokeWidth={2.5} />
                                 Create New Assignment
@@ -93,6 +111,36 @@ export default function AssignmentsPage() {
                         </Link>
                     }
                 />
+
+                {/* Analytics Hub Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {stats.map((stat, i) => {
+                        const Icon = stat.icon;
+                        return (
+                            <motion.div 
+                                key={i}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                className="p-8 rounded-[2.5rem] bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-xl relative overflow-hidden"
+                            >
+                                <div className={`absolute -right-6 -bottom-6 w-32 h-32 rounded-full blur-3xl opacity-20 ${stat.bg.replace('/10', '')}`} />
+                                <div className="flex justify-between items-start relative z-10 mb-6">
+                                    <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} border ${stat.border}`}>
+                                        <Icon size={24} strokeWidth={2.5} />
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Stat</span>
+                                </div>
+                                <div className="space-y-1 relative z-10">
+                                    <h4 className="text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                                        {isLoading ? "-" : stat.value}
+                                    </h4>
+                                    <p className="text-sm font-medium text-slate-500">{stat.title}</p>
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </div>
 
                 {/* Filters with Glow */}
                 <motion.div 
@@ -106,11 +154,11 @@ export default function AssignmentsPage() {
                                 <BookOpen size={24} strokeWidth={2.5} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 italic tracking-tight underline architecture-none decoration-primary/30">Task Registry</h3>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Manage Coursework & Deadlines</p>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Assignments</h3>
+                                <p className="text-sm font-medium text-slate-500">Manage coursework and deadlines</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px] bg-primary/5 px-4 py-2 rounded-xl border border-primary/10">
+                        <div className="flex items-center gap-2 text-primary font-medium text-sm bg-primary/5 px-4 py-2 rounded-xl border border-primary/10">
                             <Sparkles size={14} className="animate-pulse" />
                             {isPersonal ? "Global View" : "Local School View"}
                         </div>
@@ -153,17 +201,21 @@ export default function AssignmentsPage() {
                                         key={assignment.id}
                                         assignment={{
                                             ...assignment,
-                                            subject: assignment.subject?.name || "General",
-                                            className: assignment.class?.name || "All Classes",
+                                            subject: typeof assignment.subject === 'string' ? assignment.subject : (assignment.subject?.name || "General"),
+                                            className: typeof assignment.class === 'string' ? assignment.class : (assignment.class?.name || "All Classes"),
                                             dueDate: assignment.endDate ? new Date(assignment.endDate).toLocaleDateString() : "No Deadline",
-                                            submitted: assignment.examAttempts?.length || 0,
-                                            totalStudents: assignment.class?._count?.enrollments || 30, // Fallback
-                                            progress: assignment.examAttempts?.length ? Math.round((assignment.examAttempts.length / 30) * 100) : 0
+                                            submitted: assignment._count?.submissions || 0,
+                                            totalStudents: typeof assignment.class === 'object' && assignment.class?._count?.enrollments 
+                                                ? assignment.class._count.enrollments 
+                                                : 0,
+                                            progress: assignment._count?.submissions && typeof assignment.class === 'object' && assignment.class?._count?.enrollments
+                                                ? Math.round((assignment._count.submissions / assignment.class._count.enrollments) * 100) 
+                                                : 0
                                         }}
                                         onEdit={() => {}}
                                         onGrade={() => {}}
                                         onDelete={() => {}}
-                                        onViewDetails={() => {}}
+                                        onViewDetails={() => router.push(`/dashboard/admin/assignments/${assignment.id}`)}
                                     />
                                 ))}
                             </motion.div>
@@ -177,8 +229,8 @@ export default function AssignmentsPage() {
                                 <div className="p-8 rounded-[2rem] bg-slate-100 dark:bg-slate-800 mb-6">
                                     <SearchX className="w-16 h-16 text-slate-400" />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mb-2">No Assignments Found</h3>
-                                <p className="text-slate-500 dark:text-slate-400 max-w-sm text-sm font-bold uppercase tracking-widest leading-relaxed">
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">No Assignments Found</h3>
+                                <p className="text-slate-500 dark:text-slate-400 max-w-sm text-sm leading-relaxed">
                                     Adjust your search or start a new task for your students.
                                 </p>
                             </motion.div>

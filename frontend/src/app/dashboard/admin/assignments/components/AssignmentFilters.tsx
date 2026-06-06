@@ -62,7 +62,7 @@ export default function AssignmentFilters({
                     <select
                         value={filters.status}
                         onChange={(e) => handleFilterChange('status', e.target.value)}
-                        className="w-full h-12 pl-4 pr-10 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20 transition-all outline-none group-hover:bg-white dark:group-hover:bg-slate-800"
+                        className="w-full h-12 pl-4 pr-10 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20 transition-all outline-none group-hover:bg-white dark:group-hover:bg-slate-800"
                     >
                         {statusOptions.map((option) => (
                             <option key={option.value} value={option.value} className="bg-white dark:bg-slate-900">
@@ -77,7 +77,7 @@ export default function AssignmentFilters({
                     <select
                         value={filters.subject}
                         onChange={(e) => handleFilterChange('subject', e.target.value)}
-                        className="w-full h-12 pl-4 pr-10 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20 transition-all outline-none group-hover:bg-white dark:group-hover:bg-slate-800"
+                        className="w-full h-12 pl-4 pr-10 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20 transition-all outline-none group-hover:bg-white dark:group-hover:bg-slate-800"
                     >
                         {subjectOptions.map((option) => (
                             <option key={option.value} value={option.value} className="bg-white dark:bg-slate-900">

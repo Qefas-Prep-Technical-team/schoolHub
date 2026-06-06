@@ -12,38 +12,47 @@ import SubmitBar from './components/SubmitBar';
 import { useCreateAssignment } from '@/lib/api/hooks/useAssignments';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useClasses } from '@/lib/api/hooks/useClasses';
-import { useSchoolSubjects } from '@/lib/api/hooks/useSchool';
+import { useSchoolSubjects, useSchoolDepartments } from '@/lib/api/hooks/useSchool';
 import { useTeacherClasses, useTeacherSubjects } from '@/lib/api/hooks/useTeacher';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { toast } from 'react-toastify';
+import { apiClient } from '@/lib/api/client';
 
 export default function CreateAssignmentPage() {
     const router = useRouter();
     const { selectedSchoolId } = useDashboardStore();
     const { user } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
-    
-    const isAdmin = user?.role === 'ADMIN';
-    const isTeacher = user?.role === 'TEACHER';
 
-    const { mutateAsync: createAssignment } = useCreateAssignment(selectedSchoolId || '', isAdmin);
+    // Use userType (not role) for role checking — auth store stores userType
+    const isAdmin = user?.userType === 'ADMIN';
+    const isTeacher = user?.userType === 'TEACHER';
+
+    // Resolve the school ID: prefer the dashboard context, fall back to the user's primary school
+    const effectiveSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || '';
+
+    const { mutateAsync: createAssignment } = useCreateAssignment(effectiveSchoolId, isAdmin);
 
     // Fetch available data for Admin
-    const { data: adminClassesData, isLoading: isAdminClassesLoading } = useClasses(isAdmin ? selectedSchoolId || '' : undefined);
-    const { data: adminSubjectsData, isLoading: isAdminSubjectsLoading } = useSchoolSubjects(isAdmin ? selectedSchoolId || '' : '');
+    const { data: adminClassesData, isLoading: isAdminClassesLoading } = useClasses(isAdmin ? effectiveSchoolId : undefined);
+    const { data: adminSubjectsData, isLoading: isAdminSubjectsLoading } = useSchoolSubjects(isAdmin ? effectiveSchoolId : '');
+    const { data: adminDepartmentsData, isLoading: isAdminDepartmentsLoading } = useSchoolDepartments(isAdmin ? effectiveSchoolId : '');
 
     // Fetch available data for Teacher
-    const { data: teacherClassesData, isLoading: isTeacherClassesLoading } = useTeacherClasses(isTeacher ? selectedSchoolId || '' : undefined);
-    const { data: teacherSubjectsData, isLoading: isTeacherSubjectsLoading } = useTeacherSubjects(isTeacher ? selectedSchoolId || '' : undefined);
+    const { data: teacherClassesData, isLoading: isTeacherClassesLoading } = useTeacherClasses(isTeacher ? effectiveSchoolId : undefined);
+    const { data: teacherSubjectsData, isLoading: isTeacherSubjectsLoading } = useTeacherSubjects(isTeacher ? effectiveSchoolId : undefined);
 
     const isClassesLoading = isAdmin ? isAdminClassesLoading : isTeacherClassesLoading;
     const isSubjectsLoading = isAdmin ? isAdminSubjectsLoading : isTeacherSubjectsLoading;
+    const isDepartmentsLoading = isAdmin ? isAdminDepartmentsLoading : false;
 
     const classesData = isAdmin ? adminClassesData : teacherClassesData;
     const subjectsData = isAdmin ? adminSubjectsData : teacherSubjectsData;
+    const departmentsData = isAdmin ? adminDepartmentsData : undefined;
 
     const availableClasses = Array.isArray(classesData) ? classesData : (classesData?.data || classesData?.classes || []);
     const availableSubjects = Array.isArray(subjectsData) ? subjectsData : (subjectsData?.data || subjectsData?.subjects || []);
+    const availableDepartments = Array.isArray(departmentsData) ? departmentsData : (departmentsData?.data || departmentsData?.departments || []);
 
     // Form state
     const [formData, setFormData] = useState<AssignmentFormData>({
@@ -53,7 +62,7 @@ export default function CreateAssignmentPage() {
         instructions: '',
         attachments: [],
         dueDate: '',
-        publishStatus: 'draft',
+        publishStatus: 'publish-now',
         allowLateSubmissions: true,
         maxScore: 100,
         scheduledDate: ''
@@ -77,7 +86,7 @@ export default function CreateAssignmentPage() {
         try {
             // Validate form
             if (action === 'publish' && !formData.title.trim()) {
-                alert('Please enter a title for the assignment');
+                toast.error('Please enter a title for the assignment');
                 setIsLoading(false);
                 return;
             }
@@ -98,6 +107,7 @@ export default function CreateAssignmentPage() {
                 title: submissionData.title,
                 classIds: submissionData.classes.map(c => c.id),
                 subjectId: submissionData.subject || "1", // Fallback subject ID for now if empty
+                departmentId: submissionData.department || undefined,
                 instructions: submissionData.instructions,
                 dueDate: submissionData.dueDate || undefined,
                 maxScore: submissionData.maxScore,
@@ -106,21 +116,63 @@ export default function CreateAssignmentPage() {
             });
 
             toast.success("Assignment created successfully!");
-            // Redirect to assignments page
-            router.push(`/dashboard/admin/assignments`);
+            // Redirect to assignment details page
+            const createdId = Array.isArray(result.data) && result.data.length > 0 
+                ? result.data[0].id 
+                : (result.data?.id || result.id);
+            router.push(`/dashboard/admin/assignments/${createdId}`);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating assignment:', error);
-            alert('Failed to create assignment. Please try again.');
+            toast.error(error.message || 'Failed to create assignment. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Mock file upload function
+    // Upload files using Bunny.net proxy endpoint
     const uploadFiles = async (attachments: Attachment[]): Promise<string[]> => {
-        // In a real app, you would upload files to a storage service
-        return attachments.map(att => `https://example.com/uploads/${att.name}`);
+        const uploadedUrls: string[] = [];
+
+        for (const attachment of attachments) {
+            // If already uploaded and has url, skip upload
+            if (attachment.url) {
+                uploadedUrls.push(attachment.url);
+                continue;
+            }
+
+            // Ensure we have a file object
+            if (!attachment.file) {
+                console.warn(`Attachment ${attachment.name} missing File object. Skipping.`);
+                continue;
+            }
+
+            try {
+                const formData = new FormData();
+                // Add metadata for tracking first
+                formData.append('schoolId', effectiveSchoolId);
+                formData.append('fileName', attachment.name);
+                
+                formData.append('file', attachment.file);
+
+                const response = await apiClient.post('/upload/proxy', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+
+                if (response.data?.success && response.data?.url) {
+                    uploadedUrls.push(response.data.url);
+                } else {
+                    throw new Error(response.data?.message || 'Upload failed for file');
+                }
+            } catch (error) {
+                console.error(`Failed to upload ${attachment.name}:`, error);
+                throw error; // Let the handleSubmit catch it and show alert
+            }
+        }
+
+        return uploadedUrls;
     };
 
     // Handle cancel
@@ -132,7 +184,7 @@ export default function CreateAssignmentPage() {
 
 
 
-    const shouldShowLoading = selectedSchoolId && (isClassesLoading || isSubjectsLoading);
+    const shouldShowLoading = selectedSchoolId && (isClassesLoading || isSubjectsLoading || isDepartmentsLoading);
 
     if (shouldShowLoading) {
         return (
@@ -165,12 +217,15 @@ export default function CreateAssignmentPage() {
                     onTitleChange={(title) => updateFormField('title', title)}
                     subject={formData.subject}
                     onSubjectChange={(subject) => updateFormField('subject', subject)}
+                    department={formData.department}
+                    onDepartmentChange={(department) => updateFormField('department', department)}
                     classes={formData.classes}
                     onClassesChange={(classes) => updateFormField('classes', classes)}
                     instructions={formData.instructions}
                     onInstructionsChange={(instructions) => updateFormField('instructions', instructions)}
                     availableSubjects={availableSubjects}
                     availableClasses={availableClasses}
+                    availableDepartments={availableDepartments}
                 />
 
                 {/* Attachments */}

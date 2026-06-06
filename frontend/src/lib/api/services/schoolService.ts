@@ -149,6 +149,11 @@ export const schoolService = {
     return response.data.data;
   },
 
+  getDepartments: async (schoolId: string) => {
+    const response = await apiClient.get(`/academic/departments`, { params: { schoolId } });
+    return response.data.data;
+  },
+
   submitInquiry: async (subdomain: string, data: Record<string, unknown>) => {
     const response = await apiClient.post(`/schools/subdomain/${subdomain}/inquiry`, data);
     return response.data;

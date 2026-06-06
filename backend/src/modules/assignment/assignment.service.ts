@@ -10,7 +10,7 @@ export const getStudentAssignmentsService = async (options: {
   const skip = (page - 1) * limit;
 
   // Find the student's enrollments to know their classes
-  const enrollments = await prisma.studentEnrollment.findMany({
+  const enrollments = await prisma.classEnrollment.findMany({
     where: { studentId },
     select: { classId: true },
   });
@@ -60,7 +60,7 @@ export const getStudentAssignmentsService = async (options: {
       id: a.id,
       title: a.title,
       subjectId: a.subjectId,
-      instructorId: a.teacherId, // Client will resolve name via subject/instructor mapping if needed, or we fetch it here.
+      instructorId: a.teacherId,
       dueDate: a.dueDate,
       status: computedStatus,
       progress: submission && computedStatus !== "pending" ? 100 : 0,
@@ -89,6 +89,26 @@ export const getAssignmentByIdService = async (studentId: string, assignmentId: 
       questions: true,
       submissions: {
         where: { studentId },
+        include: {
+          answers: true
+        }
+      }
+    }
+  });
+
+  if (!assignment) {
+    throw new Error("Assignment not found");
+  }
+
+  return assignment;
+};
+
+export const getTeacherAssignmentByIdService = async (assignmentId: string, schoolId: string) => {
+  const assignment = await prisma.assignment.findFirst({
+    where: { id: assignmentId, schoolId },
+    include: {
+      questions: { orderBy: { order: 'asc' } },
+      submissions: {
         include: {
           answers: true
         }
@@ -172,7 +192,7 @@ export const getTeacherAssignmentsService = async (options: {
     whereClause.teacherId = teacherId;
   }
   if (status && status !== "all") {
-    whereClause.status = status;
+    whereClause.status = status.toUpperCase();
   }
 
   const total = await prisma.assignment.count({ where: whereClause });
@@ -189,8 +209,29 @@ export const getTeacherAssignmentsService = async (options: {
     take: limit,
   });
 
+  // Manually fetch class and subject names
+  const classIds = [...new Set(assignments.map(a => a.classId))];
+  const subjectIds = [...new Set(assignments.map(a => a.subjectId))];
+
+  const [classes, subjects] = await Promise.all([
+    prisma.class.findMany({ 
+        where: { id: { in: classIds } }, 
+        select: { id: true, name: true, _count: { select: { enrollments: true } } } 
+    }),
+    prisma.subject.findMany({ where: { id: { in: subjectIds } }, select: { id: true, name: true } })
+  ]);
+
+  const classMap = Object.fromEntries(classes.map(c => [c.id, c]));
+  const subjectMap = Object.fromEntries(subjects.map(s => [s.id, s]));
+
+  const assignmentsWithNames = assignments.map(a => ({
+    ...a,
+    class: classMap[a.classId] || null,
+    subject: subjectMap[a.subjectId] || null
+  }));
+
   return {
-    assignments,
+    assignments: assignmentsWithNames,
     total,
     pages: Math.ceil(total / limit),
   };
@@ -228,4 +269,53 @@ export const createAssignmentService = async (data: {
   );
 
   return createdAssignments;
+};
+
+export const addQuestionToAssignment = async (assignmentId: string, questionData: any) => {
+  return prisma.assignmentQuestion.create({
+    data: {
+      ...questionData,
+      assignmentId
+    }
+  });
+};
+
+export const updateAssignmentQuestion = async (questionId: string, data: any) => {
+  return prisma.assignmentQuestion.update({ where: { id: questionId }, data });
+};
+
+export const deleteAssignmentQuestion = async (questionId: string) => {
+  return prisma.assignmentQuestion.delete({ where: { id: questionId } });
+};
+
+export const reorderAssignmentQuestions = async (assignmentId: string, reorderedIds: string[]) => {
+  return prisma.$transaction(
+    reorderedIds.map((id, index) => prisma.assignmentQuestion.update({ where: { id }, data: { order: index } }))
+  );
+};
+
+export const updateAssignmentStatusService = async (assignmentId: string, schoolId: string, status: "DRAFT" | "PUBLISHED") => {
+  // Use updateMany to allow filtering by non-unique fields in the WHERE clause,
+  // or first verify it exists and then update it by id.
+  const assignment = await prisma.assignment.findFirst({
+    where: { id: assignmentId, schoolId }
+  });
+  if (!assignment) throw new Error("Assignment not found");
+
+  return prisma.assignment.update({
+    where: { id: assignmentId },
+    data: { status }
+  });
+};
+
+export const updateAssignmentSettingsService = async (assignmentId: string, schoolId: string, data: any) => {
+  const assignment = await prisma.assignment.findFirst({
+    where: { id: assignmentId, schoolId }
+  });
+  if (!assignment) throw new Error("Assignment not found");
+
+  return prisma.assignment.update({
+    where: { id: assignmentId },
+    data
+  });
 };

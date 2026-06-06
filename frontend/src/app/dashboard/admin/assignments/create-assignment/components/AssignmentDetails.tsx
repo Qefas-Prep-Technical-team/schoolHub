@@ -12,12 +12,15 @@ interface AssignmentDetailsProps {
     onTitleChange: (title: string) => void;
     subject: string;
     onSubjectChange: (subject: string) => void;
+    department?: string;
+    onDepartmentChange?: (department: string) => void;
     classes: ClassTag[];
     onClassesChange: (classes: ClassTag[]) => void;
     instructions: string;
     onInstructionsChange: (instructions: string) => void;
     availableSubjects?: { id: string; name: string }[];
     availableClasses?: { id: string; name: string }[];
+    availableDepartments?: { id: string; name: string }[];
 }
 
 export default function AssignmentDetails({
@@ -25,18 +28,26 @@ export default function AssignmentDetails({
     onTitleChange,
     subject,
     onSubjectChange,
+    department,
+    onDepartmentChange,
     classes,
     onClassesChange,
     instructions,
     onInstructionsChange,
     availableSubjects = [],
-    availableClasses = []
+    availableClasses = [],
+    availableDepartments = []
 }: AssignmentDetailsProps) {
     const [selectedClassId, setSelectedClassId] = useState('');
 
     const subjectOptions = [
         { value: '', label: 'Select a subject' },
         ...availableSubjects.map(s => ({ value: s.id, label: s.name }))
+    ];
+
+    const departmentOptions = [
+        { value: '', label: 'Select a department (optional)' },
+        ...availableDepartments.map(d => ({ value: d.id, label: d.name }))
     ];
 
     const handleRemoveClass = (id: string) => {
@@ -73,6 +84,15 @@ export default function AssignmentDetails({
                     value={subject}
                     onChange={(e) => onSubjectChange(e.target.value)}
                 />
+
+                {onDepartmentChange && (
+                    <Select
+                        label="Department (Optional)"
+                        options={departmentOptions}
+                        value={department || ''}
+                        onChange={(e) => onDepartmentChange(e.target.value)}
+                    />
+                )}
 
                 <div className="flex flex-col col-span-2">
                     <p className="text-[#0e121b] dark:text-white text-base font-medium leading-normal pb-2">

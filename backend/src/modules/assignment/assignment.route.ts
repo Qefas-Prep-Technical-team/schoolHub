@@ -5,7 +5,13 @@ import {
   getAssignmentById, 
   submitAssignment,
   getTeacherAssignments,
-  createAssignment
+  getTeacherAssignmentById,
+  createAssignment,
+  addQuestion,
+  updateQuestion,
+  deleteQuestion,
+  reorderQuestions,
+  updateAssignmentStatus
 } from "./assignment.controller";
 
 const router = Router();
@@ -19,10 +25,19 @@ router.post("/student/:id/submit", submitAssignment);
 
 // Teacher endpoints
 router.get("/teacher", getTeacherAssignments);
+router.get("/teacher/:id", getTeacherAssignmentById);
 router.post("/teacher", createAssignment);
 
 // Admin endpoints (reusing teacher endpoints since admin can view all based on schoolId)
 router.get("/admin", getTeacherAssignments);
+router.get("/admin/:id", getTeacherAssignmentById);
 router.post("/admin", createAssignment);
+
+// Question endpoints (usable by teachers/admins)
+router.post("/:assignmentId/questions", addQuestion);
+router.patch("/questions/:questionId", updateQuestion);
+router.delete("/questions/:questionId", deleteQuestion);
+router.patch("/:assignmentId/questions/reorder", reorderQuestions);
+router.patch("/:assignmentId/status", updateAssignmentStatus);
 
 export default router;

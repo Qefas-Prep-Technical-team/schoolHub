@@ -91,6 +91,8 @@ model School {
   inquiries                Inquiry[]
   studentHistories         StudentHistory[]
   studentEnrollments       StudentEnrollment[]
+  storageUsedBytes         Float                @default(0)
+  fileRecords              FileRecord[]
 }
 
 model SchoolSetting {
@@ -1957,4 +1959,20 @@ model AssignmentAnswer {
   @@index([submissionId])
   @@index([questionId])
   @@map("assignment_answers")
+}
+
+model FileRecord {
+  id           String   @id @default(uuid())
+  fileName     String
+  fileUrl      String   @unique
+  fileSize     Float    // in bytes
+  mimeType     String?
+  uploaderId   String
+  uploaderType String   // "ADMIN", "TEACHER", "STUDENT", "PARENT"
+  schoolId     String
+  createdAt    DateTime @default(now())
+
+  school       School   @relation(fields: [schoolId], references: [id])
+
+  @@map("file_records")
 }

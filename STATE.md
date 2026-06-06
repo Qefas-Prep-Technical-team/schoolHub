@@ -136,6 +136,14 @@
     - [x] **React Query Hooks**: Created robust `useTeacherAssignments`, `useAdminAssignments`, and `useCreateAssignment` data-fetching tools in `useAssignments.ts` for unified remote state management.
     - [x] **Admin Pages & Forms**: Built standard page listings at `admin/assignments` and dynamic creation forms at `admin/assignments/create-assignment`, integrating the React Query mutation hooks to process secure payloads.
 
+### Saturday, June 06, 2026
+- **Direct-to-S3 File Management Architecture**:
+    - [x] **Database Normalization**: Added `storageUsedBytes` field to the `School` model and a new `FileRecord` model in Prisma to reliably track individual file sizes, S3 URLs, and uploader identities (Admin/Teacher/Student).
+    - [x] **S3 Integration**: Migrated the legacy proxy-to-Bunny.net architecture to native direct-to-S3 uploads to resolve backend throughput bottlenecks.
+    - [x] **Presigned URL Route**: Engineered `POST /api/v1/upload/presigned-url` integrating `@aws-sdk/s3-request-presigner` to securely grant temporary upload tokens.
+    - [x] **Subscription & Quota Tracking**: Engineered `POST /api/v1/upload/confirm` and `DELETE /api/v1/upload/:id` endpoints utilizing Prisma `$transaction` to atomically log the file and increment/decrement the school's `storageUsedBytes` counter.
+    - [x] **Enforcement Fallback**: Verified that when subscription enforcement is manually disabled by platform admins, the `storageUsedBytes` counter still faithfully increments under the connected school to preserve system audit integrity.
+
 ### Thursday, June 04, 2026
 - **Subdomain Landing Page 500 Internal Server Error Fix & Footer Modernization**:
     - [x] **Root Cause Diagnosis**: Identified that the 500 error on the live `/api/schools/subdomain/:subdomain/landing-page` endpoint was caused by missing or out-of-sync Prisma Client generation during Vercel/Render deployments.

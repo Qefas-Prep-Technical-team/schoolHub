@@ -4,7 +4,7 @@ import * as assignmentService from "./assignment.service";
 
 export const getStudentAssignments = async (req: Request, res: Response) => {
   try {
-    const studentId = req.user?.userId;
+    const studentId = req.user?.id;
     if (!studentId) {
       return res.status(401).json({ success: false, error: "Unauthorized" });
     }
@@ -26,14 +26,15 @@ export const getStudentAssignments = async (req: Request, res: Response) => {
 
 export const getAssignmentById = async (req: Request, res: Response) => {
   try {
-    const studentId = req.user?.userId;
+    const studentId = req.user?.id;
     const { id } = req.params;
 
     if (!studentId) {
       return res.status(401).json({ success: false, error: "Unauthorized" });
     }
 
-    const data = await assignmentService.getAssignmentByIdService(studentId, id);
+    const safeId = Array.isArray(id) ? id[0] : id as string;
+    const data = await assignmentService.getAssignmentByIdService(studentId, safeId);
 
     return res.status(200).json({ success: true, data });
   } catch (error) {
@@ -41,16 +42,35 @@ export const getAssignmentById = async (req: Request, res: Response) => {
   }
 };
 
+export const getTeacherAssignmentById = async (req: Request, res: Response) => {
+  try {
+    const schoolId = req.headers["x-school-id"] as string;
+    const { id } = req.params;
+
+    if (!schoolId) {
+      return res.status(400).json({ success: false, error: "Missing school ID" });
+    }
+
+    const safeId = Array.isArray(id) ? id[0] : id as string;
+    const data = await assignmentService.getTeacherAssignmentByIdService(safeId, schoolId);
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return handleError(res, error, "assignment.getTeacherAssignmentById");
+  }
+};
+
 export const submitAssignment = async (req: Request, res: Response) => {
   try {
-    const studentId = req.user?.userId;
+    const studentId = req.user?.id;
     const { id } = req.params;
 
     if (!studentId) {
       return res.status(401).json({ success: false, error: "Unauthorized" });
     }
 
-    const data = await assignmentService.submitAssignmentService(studentId, id, req.body);
+    const safeId = Array.isArray(id) ? id[0] : id as string;
+    const data = await assignmentService.submitAssignmentService(studentId, safeId, req.body);
 
     return res.status(200).json({ success: true, data });
   } catch (error) {
@@ -60,16 +80,16 @@ export const submitAssignment = async (req: Request, res: Response) => {
 
 export const getTeacherAssignments = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     const schoolId = req.headers["x-school-id"] as string;
 
-    if (!userId || !schoolId) {
-      return res.status(401).json({ success: false, error: "Unauthorized or missing school ID" });
+    if (!userId || !schoolId || schoolId === "undefined") {
+      return res.status(400).json({ success: false, error: "Missing or invalid school ID" });
     }
 
     // Determine if user is admin or teacher based on context/role if needed.
     // For now, if role is TEACHER, pass teacherId. If admin, pass undefined to fetch all.
-    const isTeacher = req.user?.role === "TEACHER";
+    const isTeacher = req.user?.userType === "TEACHER";
     const { status, page = "1", limit = "10" } = req.query;
 
     const data = await assignmentService.getTeacherAssignmentsService({
@@ -88,11 +108,11 @@ export const getTeacherAssignments = async (req: Request, res: Response) => {
 
 export const createAssignment = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     const schoolId = req.headers["x-school-id"] as string;
 
-    if (!userId || !schoolId) {
-      return res.status(401).json({ success: false, error: "Unauthorized or missing school ID" });
+    if (!userId || !schoolId || schoolId === "undefined") {
+      return res.status(400).json({ success: false, error: "Missing or invalid school ID" });
     }
 
     const {
@@ -117,12 +137,98 @@ export const createAssignment = async (req: Request, res: Response) => {
       instructions,
       dueDate: dueDate ? new Date(dueDate) : undefined,
       totalMarks: maxScore ? parseFloat(maxScore) : undefined,
-      status: status === "publish" ? "PUBLISHED" : status === "draft" ? "DRAFT" : "SCHEDULED",
+      status: (status === "publish" || status === "publish-now") ? "PUBLISHED" : status === "draft" ? "DRAFT" : "SCHEDULED",
       attachmentUrl
     });
 
     return res.status(201).json({ success: true, data: createdAssignments });
   } catch (error) {
     return handleError(res, error, "assignment.createAssignment");
+  }
+};
+
+export const addQuestion = async (req: Request, res: Response) => {
+  try {
+    const { assignmentId } = req.params;
+    const safeAssignmentId = Array.isArray(assignmentId) ? assignmentId[0] : assignmentId as string;
+    const data = await assignmentService.addQuestionToAssignment(safeAssignmentId, req.body);
+    return res.status(201).json({ success: true, data });
+  } catch (error) {
+    return handleError(res, error, "assignment.addQuestion");
+  }
+};
+
+export const updateQuestion = async (req: Request, res: Response) => {
+  try {
+    const { questionId } = req.params;
+    const safeQuestionId = Array.isArray(questionId) ? questionId[0] : questionId as string;
+    const data = await assignmentService.updateAssignmentQuestion(safeQuestionId, req.body);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return handleError(res, error, "assignment.updateQuestion");
+  }
+};
+
+export const deleteQuestion = async (req: Request, res: Response) => {
+  try {
+    const { questionId } = req.params;
+    const safeQuestionId = Array.isArray(questionId) ? questionId[0] : questionId as string;
+    const data = await assignmentService.deleteAssignmentQuestion(safeQuestionId);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return handleError(res, error, "assignment.deleteQuestion");
+  }
+};
+
+export const reorderQuestions = async (req: Request, res: Response) => {
+  try {
+    const { assignmentId } = req.params;
+    const { reorderedIds } = req.body;
+    const safeAssignmentId = Array.isArray(assignmentId) ? assignmentId[0] : assignmentId as string;
+    const data = await assignmentService.reorderAssignmentQuestions(safeAssignmentId, reorderedIds);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return handleError(res, error, "assignment.reorderQuestions");
+  }
+};
+
+export const updateAssignmentStatus = async (req: Request, res: Response) => {
+  try {
+    const headerSchoolId = req.headers["x-school-id"];
+    const schoolId = Array.isArray(headerSchoolId) ? headerSchoolId[0] : headerSchoolId as string;
+    const { assignmentId } = req.params;
+    const { status } = req.body;
+
+    if (!schoolId) {
+      return res.status(400).json({ success: false, error: "Missing school ID" });
+    }
+
+    if (status !== "DRAFT" && status !== "PUBLISHED") {
+      return res.status(400).json({ success: false, error: "Invalid status" });
+    }
+
+    const safeAssignmentId = Array.isArray(assignmentId) ? assignmentId[0] : assignmentId as string;
+    const data = await assignmentService.updateAssignmentStatusService(safeAssignmentId, schoolId, status);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return handleError(res, error, "assignment.updateAssignmentStatus");
+  }
+};
+
+export const updateAssignmentSettings = async (req: Request, res: Response) => {
+  try {
+    const { assignmentId } = req.params;
+    const safeAssignmentId = Array.isArray(assignmentId) ? assignmentId[0] : assignmentId as string;
+    const schoolIdHeader = req.headers["x-school-id"];
+    const schoolId = Array.isArray(schoolIdHeader) ? schoolIdHeader[0] : schoolIdHeader as string;
+    
+    if (!schoolId) {
+      return res.status(400).json({ success: false, message: "Missing school ID" });
+    }
+
+    const data = await assignmentService.updateAssignmentSettingsService(safeAssignmentId, schoolId, req.body);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return handleError(res, error, "assignment.updateAssignmentSettings");
   }
 };

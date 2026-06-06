@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Assignment, AssignmentCardProps } from './types';
 import { motion } from 'framer-motion';
-import { Edit, GraduationCap as Grading, Trash2, Calendar, FileText, ExternalLink, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Edit, GraduationCap as Grading, Trash2, Calendar, FileText, ExternalLink, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
 
 export default function AssignmentCard({
     assignment,
@@ -12,6 +13,7 @@ export default function AssignmentCard({
     onDelete,
     onViewDetails
 }: AssignmentCardProps) {
+    const [isNavigating, setIsNavigating] = useState(false);
 
     const getStatusStyles = (status: Assignment['status']) => {
         switch (status) {
@@ -100,16 +102,23 @@ export default function AssignmentCard({
                         <IconButton onClick={() => onDelete?.(assignment.id)} icon={Trash2} title="Delete" variant="danger" />
                     </div>
 
-                    <Link href="/dashboard/teacher/assignments/preview">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
-                        >
-                            Review
+                    <motion.button
+                        onClick={() => {
+                            setIsNavigating(true);
+                            onViewDetails?.(assignment.id);
+                        }}
+                        disabled={isNavigating}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {isNavigating ? 'Loading...' : 'Review'}
+                        {isNavigating ? (
+                            <Loader2 size={14} className="animate-spin" strokeWidth={2.5} />
+                        ) : (
                             <ExternalLink size={14} strokeWidth={2.5} />
-                        </motion.button>
-                    </Link>
+                        )}
+                    </motion.button>
                 </div>
             </div>
         </motion.div>

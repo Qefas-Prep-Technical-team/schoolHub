@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { uploadBufferToBunnyService } from "./upload.service";
 import { handleError } from "../../utils/error-handler";
+import { uploadBufferToBunnyService, getS3PresignedUrlService, confirmS3UploadService, deleteS3FileService, deleteBunnyFileService } from "./upload.service";
 
 /**
  * Legacy - No longer supported. Use /upload/proxy instead.
@@ -42,15 +42,97 @@ export const proxyUpload = async (req: Request, res: Response) => {
     const data = await uploadBufferToBunnyService(file.buffer, file.mimetype, {
       userId: user.id,
       userType: user.userType,
-      schoolId: user.schoolId,
-      fileName: file.originalname
+      schoolId: req.body.schoolId || user.schoolId,
+      fileName: req.body.fileName || file.originalname
     });
     
     return res.status(200).json({
       success: true,
+      url: data.publicUrl,
       data,
     });
   } catch (error: any) {
     return handleError(res, error, "upload.proxyUpload");
+  }
+};
+
+export const getS3PresignedUrl = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const { fileName, fileType, fileSize } = req.body;
+
+    if (!fileName || !fileType || !fileSize) {
+      return res.status(400).json({ success: false, message: "fileName, fileType, and fileSize are required" });
+    }
+
+    const data = await getS3PresignedUrlService({
+      schoolId: user.schoolId,
+      fileName,
+      fileType,
+      fileSize: Number(fileSize),
+    });
+
+    return res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    return handleError(res, error, "upload.getS3PresignedUrl");
+  }
+};
+
+export const confirmS3Upload = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const { fileName, fileUrl, fileSize, mimeType } = req.body;
+
+    if (!fileName || !fileUrl || !fileSize) {
+      return res.status(400).json({ success: false, message: "fileName, fileUrl, and fileSize are required" });
+    }
+
+    const record = await confirmS3UploadService({
+      schoolId: user.schoolId,
+      fileName,
+      fileUrl,
+      fileSize: Number(fileSize),
+      mimeType: mimeType || "application/octet-stream",
+      uploaderId: user.id,
+      uploaderType: user.userType || "ADMIN",
+    });
+
+    return res.status(200).json({ success: true, data: record });
+  } catch (error: any) {
+    return handleError(res, error, "upload.confirmS3Upload");
+  }
+};
+
+export const deleteS3File = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ success: false, message: "File ID is required" });
+    }
+
+    await deleteS3FileService(id, user.schoolId);
+
+    return res.status(200).json({ success: true, message: "File deleted successfully" });
+  } catch (error: any) {
+    return handleError(res, error, "upload.deleteS3File");
+  }
+};
+
+export const deleteBunnyFile = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ success: false, message: "File ID is required" });
+    }
+
+    await deleteBunnyFileService(id, user.schoolId);
+
+    return res.status(200).json({ success: true, message: "File deleted successfully from Bunny.net" });
+  } catch (error: any) {
+    return handleError(res, error, "upload.deleteBunnyFile");
   }
 };

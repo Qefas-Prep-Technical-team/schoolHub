@@ -2223,6 +2223,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     });
 
     if (!dbToken || dbToken.expiresAt < new Date()) {
+      console.error("LOG ERROR: [refreshToken] dbToken missing or expired for token", token);
       return res.status(401).json({
         success: false,
         message: "Invalid refresh token",

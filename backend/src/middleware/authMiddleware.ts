@@ -16,6 +16,7 @@ export const authenticateToken = async (
     const token = bearerToken || req.cookies.token;
 
     if (!token) {
+      console.error(`LOG ERROR: [authMiddleware] Missing token for URL: ${req.originalUrl}`);
       return res.status(401).json({
         success: false,
         message: "Access token required",
@@ -58,6 +59,8 @@ export const authenticateToken = async (
     next();
   } catch (error: any) {
     console.error("LOG ERROR: [authMiddleware] failure:", error);
+    console.error("LOG ERROR: [authMiddleware] authHeader was:", req.header("Authorization"));
+    console.error("LOG ERROR: [authMiddleware] cookies were:", req.cookies);
     const message = error.name === "TokenExpiredError" ? "Session expired, please login again" : "Invalid token";
     return res.status(401).json({
       success: false,

@@ -188,8 +188,10 @@ export const rejectClass = async (req: Request, res: Response) => {
 export const getClasses = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
+      console.error("LOG ERROR: [getClasses] req.user missing");
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
+    console.log(`LOG DEBUG: [getClasses] called by ${req.user.id} with schoolId: ${req.query.schoolId}`);
 
     const data = await getClassesService({
       currentUserId: req.user.id,
@@ -794,8 +796,10 @@ export const promoteStudents = async (req: Request, res: Response) => {
     const { toClassId, studentIds } = req.body;
 
     if (!req.user) {
+      console.error("LOG ERROR: [promoteStudents] req.user missing");
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
+    console.log(`LOG DEBUG: [promoteStudents] called for class ${id} by ${req.user.id}`);
 
     const allowed = await canManageClass({
       userId: req.user.id,
