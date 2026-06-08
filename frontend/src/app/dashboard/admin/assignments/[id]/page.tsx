@@ -13,7 +13,24 @@ import QuestionManager from "./components/QuestionManager";
 import { useUpdateAssignmentStatus } from "@/lib/api/hooks/useAssignments";
 import { toast } from "react-toastify";
 import SettingsModal from "./components/SettingsModal";
+import SubmissionList from "./components/SubmissionList";
 import { useState } from "react";
+
+const getEmbedUrl = (url: string) => {
+  if (!url) return '';
+  try {
+    if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
+      const videoId = url.includes('youtube.com/watch') 
+        ? new URL(url).searchParams.get('v')
+        : url.split('youtu.be/')[1]?.split('?')[0];
+      
+      if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return url;
+  } catch (e) {
+    return url;
+  }
+};
 
 export default function AssignmentDetailPage() {
   const params = useParams();
@@ -213,11 +230,10 @@ export default function AssignmentDetailPage() {
           </TabsContent>
 
           <TabsContent value="submissions">
-             <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 text-center shadow-sm">
-                <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Submissions Tracker</h3>
-                <p className="text-slate-500">Student submissions will appear here once they complete the assignment.</p>
-             </div>
+             <SubmissionList 
+               assignment={assignment} 
+               schoolId={effectiveSchoolId} 
+             />
           </TabsContent>
 
           <TabsContent value="instructions">
@@ -255,7 +271,7 @@ export default function AssignmentDetailPage() {
                     <h4 className="m-0">Video Resource</h4>
                     <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 aspect-video w-full relative">
                       <iframe 
-                        src={assignment.videoUrl} 
+                        src={getEmbedUrl(assignment.videoUrl)} 
                         className="w-full h-full border-0 absolute inset-0" 
                         title="Video Resource"
                         allowFullScreen

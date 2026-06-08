@@ -15,6 +15,21 @@ interface TimeRemaining {
 }
 
 export default function Header({ assignment }: Props) {
+  // Helper to calculate time remaining
+  const calculateTimeRemaining = () => {
+    if (!assignment?.dueDate) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    const now = new Date().getTime();
+    const due = new Date(assignment.dueDate).getTime();
+    const diff = Math.max(due - now, 0);
+
+    return {
+      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((diff / (1000 * 60)) % 60),
+      seconds: Math.floor((diff / 1000) % 60),
+    };
+  };
+
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining>({
     days: 0,
     hours: 0,
@@ -22,19 +37,15 @@ export default function Header({ assignment }: Props) {
     seconds: 0,
   });
 
+  const [isMounted, setIsMounted] = useState(false);
+
   // Update countdown every second
   useEffect(() => {
+    setIsMounted(true);
+    setTimeRemaining(calculateTimeRemaining());
+    
     const interval = setInterval(() => {
-      const now = new Date().getTime();
-      const due = new Date(assignment.dueDate).getTime();
-      const diff = Math.max(due - now, 0);
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-
-      setTimeRemaining({ days, hours, minutes, seconds });
+      setTimeRemaining(calculateTimeRemaining());
     }, 1000);
 
     return () => clearInterval(interval);
@@ -69,6 +80,13 @@ export default function Header({ assignment }: Props) {
     }
   };
 
+  const isPastDue = assignment?.dueDate && new Date().getTime() > new Date(assignment.dueDate).getTime();
+  const isGraded = assignment.status === 'GRADED' || assignment.status === 'graded' || assignment.submissions?.[0]?.status === 'GRADED' || assignment.submissions?.[0]?.status === 'graded';
+  const isSubmitted = assignment.status === 'SUBMITTED' || assignment.status === 'submitted' || assignment.submissions?.[0]?.status === 'SUBMITTED' || assignment.submissions?.[0]?.status === 'submitted' || isGraded;
+  const effectiveStatus = (isPastDue && !isGraded && !isSubmitted) 
+    ? 'overdue' 
+    : (assignment?.status || 'unknown');
+
   return (
     <header className="mb-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-6 shadow-sm">
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
@@ -99,12 +117,12 @@ export default function Header({ assignment }: Props) {
           </h1>
           
           <div className="flex flex-wrap items-center gap-3">
-            <div className={`flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full px-3 ${getStatusColor(assignment.status)}`}>
+            <div className={`flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full px-3 ${getStatusColor(effectiveStatus)}`}>
               <p className="text-sm font-medium capitalize">
-                {assignment.status.replace('_', ' ').toLowerCase()}
+                {effectiveStatus.replace('_', ' ').toLowerCase()}
               </p>
             </div>
-            {assignment.dueDate && (
+            {assignment?.dueDate && (
               <p className="text-slate-500 dark:text-slate-400 text-sm">
                 Due: {formatDueDate(assignment.dueDate)}
               </p>
@@ -116,33 +134,61 @@ export default function Header({ assignment }: Props) {
           </div>
         </div>
         
-        {/* Right Side: Countdown Timer */}
-        {assignment.dueDate && (
-          <div className="w-full md:w-auto md:min-w-80 rounded-lg bg-slate-100 dark:bg-slate-800/50 p-4">
-            <p className="text-sm font-medium text-center text-slate-600 dark:text-slate-400 mb-3">
-              Time Remaining
-            </p>
-          <div className="flex gap-3">
-            {[
-              { value: timeRemaining.days, label: 'Days' },
-              { value: timeRemaining.hours, label: 'Hours' },
-              { value: timeRemaining.minutes, label: 'Minutes' },
-              { value: timeRemaining.seconds, label: 'Seconds' },
-            ].map((item) => (
-              <div key={item.label} className="flex flex-1 flex-col items-center gap-2">
-                <div className="flex h-16 w-full items-center justify-center rounded-lg bg-white dark:bg-slate-900">
-                  <p className="text-slate-900 dark:text-slate-100 text-2xl font-bold">
-                    {item.value.toString().padStart(2, '0')}
-                  </p>
-                </div>
-                <p className="text-slate-500 dark:text-slate-400 text-xs font-normal">
-                  {item.label}
-                </p>
+        {/* Right Side: Dynamic State Panel */}
+        <div className="w-full md:w-auto md:min-w-[320px]">
+          {isGraded ? (
+            <div className="flex h-full flex-col items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/20 p-6 border border-green-200 dark:border-green-800/50">
+              <p className="text-sm font-bold uppercase tracking-wider text-green-600 dark:text-green-400 mb-2">
+                Final Score
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-black text-slate-900 dark:text-white">
+                  {assignment.grade || '0'}
+                </span>
+                <span className="text-xl font-medium text-slate-500 dark:text-slate-400">
+                  / {assignment.totalMarks}
+                </span>
               </div>
-            ))}
-          </div>
-          </div>
-        )}
+            </div>
+          ) : isSubmitted ? (
+            <div className="flex h-full flex-col items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20 p-6 border border-blue-200 dark:border-blue-800/50">
+              <span className="material-symbols-outlined text-4xl text-blue-500 dark:text-blue-400 mb-2">
+                pending_actions
+              </span>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">
+                Awaiting Results
+              </p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1">
+                Your submission is currently being reviewed.
+              </p>
+            </div>
+          ) : assignment.dueDate ? (
+            <div className="rounded-lg bg-slate-100 dark:bg-slate-800/50 p-4">
+              <p className="text-sm font-medium text-center text-slate-600 dark:text-slate-400 mb-3">
+                Time Remaining
+              </p>
+              <div className="flex gap-3">
+                {[
+                  { value: timeRemaining.days, label: 'Days' },
+                  { value: timeRemaining.hours, label: 'Hours' },
+                  { value: timeRemaining.minutes, label: 'Minutes' },
+                  { value: timeRemaining.seconds, label: 'Seconds' },
+                ].map((item) => (
+                  <div key={item.label} className="flex flex-1 flex-col items-center gap-2">
+                    <div className="flex h-16 w-full items-center justify-center rounded-lg bg-white dark:bg-slate-900">
+                      <p className="text-slate-900 dark:text-slate-100 text-2xl font-bold">
+                        {item.value.toString().padStart(2, '0')}
+                      </p>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs font-normal">
+                      {item.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
   );

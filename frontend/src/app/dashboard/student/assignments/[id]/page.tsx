@@ -64,7 +64,7 @@ export default function AssignmentDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const assignmentId = params.id as string;
-  
+
   const [activeTab, setActiveTab] = useState<'instructions' | 'attachments' | 'rubric' | 'materials' | 'quiz'>('instructions');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
@@ -76,14 +76,14 @@ export default function AssignmentDetailsPage() {
 
   // Load existing answers on mount when assignment details loads
   useEffect(() => {
-    if (assignment?.submissions?.[0]?.answers && !isAnswersInitialized) {
+    if (Array.isArray(assignment?.submissions?.[0]?.answers) && !isAnswersInitialized) {
       const initialAnswers: Record<string, string> = {};
       assignment.submissions[0].answers.forEach((ans: any) => {
         initialAnswers[ans.questionId] = ans.answer;
       });
       setQuizAnswers(initialAnswers);
       setIsAnswersInitialized(true);
-    } else if (assignment && !assignment.submissions?.[0]?.answers) {
+    } else if (assignment && !Array.isArray(assignment.submissions?.[0]?.answers)) {
       // Mark initialized even if there are no existing submission answers yet
       setIsAnswersInitialized(true);
     }
@@ -92,15 +92,24 @@ export default function AssignmentDetailsPage() {
   // Periodic / Debounced Sync of Quiz Answers to database as draft
   useEffect(() => {
     if (!isAnswersInitialized) return;
+    
+    // Prevent auto-save if already submitted or graded
+    const submissionStatus = assignment?.submissions?.[0]?.status;
+    if (submissionStatus === 'SUBMITTED' || submissionStatus === 'GRADED' || submissionStatus === 'submitted' || submissionStatus === 'graded') {
+      return;
+    }
+
     const answeredCount = Object.keys(quizAnswers).length;
     if (answeredCount === 0) return;
 
     // Check if current state is different from saved database answers to prevent unnecessary saves
-    const savedAnswers = assignment?.submissions?.[0]?.answers || [];
+    const savedAnswers = assignment?.submissions?.[0]?.answers;
+    const savedAnswersArray = Array.isArray(savedAnswers) ? savedAnswers : [];
+    
     const isDifferent = Object.entries(quizAnswers).some(([qId, ansVal]) => {
-      const savedAns = savedAnswers.find((sa: any) => sa.questionId === qId);
+      const savedAns = savedAnswersArray.find((sa: any) => sa.questionId === qId);
       return !savedAns || savedAns.answer !== ansVal;
-    }) || savedAnswers.length !== answeredCount;
+    }) || savedAnswersArray.length !== answeredCount;
 
     if (!isDifferent) return;
 
@@ -154,11 +163,11 @@ export default function AssignmentDetailsPage() {
           answers: formattedAnswers,
         }
       });
-      toast.success("Assignment submitted successfully!");
-      setIsModalOpen(false);
+      // Modal handles success state and closing
     } catch (err) {
       toast.error("Failed to submit assignment. Please try again.");
       console.error(err);
+      throw err; // Let the modal catch it
     }
   };
 
@@ -200,42 +209,43 @@ export default function AssignmentDetailsPage() {
       <div className="flex-grow">
         <main className="mx-auto flex w-full max-w-5xl flex-col px-4 py-8 sm:px-6 lg:px-8">
           <Breadcrumbs items={breadcrumbs} />
-          
+
           <Header assignment={assignment as Assignment} />
-          
-          <TabNavigation 
+
+          <TabNavigation
             activeTab={activeTab}
             onTabChange={setActiveTab}
             attachmentsCount={assignment.attachmentUrl ? 1 : 0}
             questionsCount={assignment.questions?.length || 0}
+            isGraded={assignment.status === 'GRADED' || assignment.status === 'graded' || assignment.submissions?.[0]?.status === 'GRADED' || assignment.submissions?.[0]?.status === 'graded'}
           />
-          
+
           <div className="mt-8 mb-24">
             {activeTab === 'instructions' && (
               <div className="space-y-6">
                 <InstructionsPanel instructions={assignment.instructions} />
-                
+
                 {assignment.videoUrl && (
                   <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
                     <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Video Reference</h4>
                     <div className="aspect-video w-full max-w-4xl overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
-                      <iframe 
-                        src={getEmbedUrl(assignment.videoUrl)} 
-                        className="w-full h-full" 
-                        allowFullScreen 
+                      <iframe
+                        src={getEmbedUrl(assignment.videoUrl)}
+                        className="w-full h-full"
+                        allowFullScreen
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         loading="lazy"
                       ></iframe>
                     </div>
                   </div>
                 )}
-                
+
                 {assignment.referenceUrl && (
                   <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
                     <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">External Reference</h4>
-                    <a 
-                      href={assignment.referenceUrl} 
-                      target="_blank" 
+                    <a
+                      href={assignment.referenceUrl}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                     >
@@ -246,17 +256,27 @@ export default function AssignmentDetailsPage() {
                 )}
               </div>
             )}
-            
-            {activeTab === 'quiz' && (
+
+            {activeTab === 'quiz' && (() => {
+              const isGraded = assignment.status === 'GRADED' || assignment.status === 'graded' || assignment.submissions?.[0]?.status === 'GRADED' || assignment.submissions?.[0]?.status === 'graded';
+              const isLocked = assignment.status === 'SUBMITTED' || assignment.status === 'submitted' || assignment.submissions?.[0]?.status === 'SUBMITTED' || assignment.submissions?.[0]?.status === 'submitted' || isGraded;
+              
+              return (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
-                  <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Assignment Quiz</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                    Please answer the questions below. Your answers will be submitted when you click the "Submit Assignment" button in the footer.
-                  </p>
-                  
-                  <div className="space-y-8">
-                    {assignment.questions && assignment.questions.map((q: any, idx: number) => (
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Assignment Quiz</h4>
+                    {isGraded && <span className="px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-full">Graded</span>}
+                    {isLocked && !isGraded && <span className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs font-bold rounded-full">Locked for Review</span>}
+                  </div>
+                  {!isLocked && (
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                      Please answer the questions below. Your answers will be submitted when you click the "Submit Assignment" button in the footer.
+                    </p>
+                  )}
+
+                  <div className="space-y-8 mt-6">
+                    {Array.isArray(assignment.questions) && assignment.questions.map((q: any, idx: number) => (
                       <div key={q.id} className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20">
                         <div className="flex items-start justify-between gap-4 mb-4">
                           <h5 className="font-semibold text-slate-900 dark:text-slate-100 flex gap-2">
@@ -267,7 +287,7 @@ export default function AssignmentDetailsPage() {
                             {q.marks} {q.marks === 1 ? 'Mark' : 'Marks'}
                           </span>
                         </div>
-                        
+
                         {/* MULTIPLE_CHOICE */}
                         {q.type === 'MULTIPLE_CHOICE' && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -276,23 +296,38 @@ export default function AssignmentDetailsPage() {
                               if (!optionVal) return null;
                               const optionLetter = optKey.replace('option', ''); // A, B, C, D
                               const isSelected = quizAnswers[q.id] === optionLetter;
+                              const isCorrectAnswer = isGraded && q.correctAnswer === optionLetter;
+                              
+                              let labelClass = 'border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300';
+                              
+                              if (isGraded) {
+                                if (isCorrectAnswer) {
+                                  labelClass = 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-medium shadow-sm';
+                                } else if (isSelected && !isCorrectAnswer) {
+                                  labelClass = 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 font-medium opacity-70';
+                                } else {
+                                  labelClass = 'border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-500 opacity-50';
+                                }
+                              } else if (isSelected) {
+                                labelClass = 'border-primary bg-primary/5 dark:border-pink-500 dark:bg-pink-500/5 text-primary dark:text-pink-400 font-medium';
+                              }
+
                               return (
                                 <label
                                   key={optKey}
-                                  className={`flex items-center gap-3 p-3.5 rounded-lg border cursor-pointer transition-colors ${
-                                    isSelected
-                                      ? 'border-primary bg-primary/5 dark:border-pink-500 dark:bg-pink-500/5 text-primary dark:text-pink-400 font-medium'
-                                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
-                                  }`}
+                                  className={`flex items-center gap-3 p-3.5 rounded-lg border ${!isLocked ? 'cursor-pointer' : 'cursor-default'} transition-colors ${labelClass}`}
                                 >
                                   <input
                                     type="radio"
                                     name={`question_${q.id}`}
                                     checked={isSelected}
+                                    disabled={isLocked}
                                     onChange={() => handleAnswerChange(q.id, optionLetter)}
-                                    className="h-4.5 w-4.5 border-slate-300 text-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-850 dark:text-pink-600 dark:focus:ring-pink-500"
+                                    className="h-4.5 w-4.5 border-slate-300 text-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-850 dark:text-pink-600 dark:focus:ring-pink-500 disabled:opacity-50"
                                   />
-                                  <span>{optionVal}</span>
+                                  <span className="flex-1">{optionVal}</span>
+                                  {isGraded && isCorrectAnswer && <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-xl">check_circle</span>}
+                                  {isGraded && isSelected && !isCorrectAnswer && <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-xl">cancel</span>}
                                 </label>
                               );
                             })}
@@ -304,21 +339,34 @@ export default function AssignmentDetailsPage() {
                           <div className="flex gap-4">
                             {['True', 'False'].map((val) => {
                               const isSelected = quizAnswers[q.id] === val;
+                              const isCorrectAnswer = isGraded && q.correctAnswer === val;
+                              
+                              let labelClass = 'border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300';
+                              
+                              if (isGraded) {
+                                if (isCorrectAnswer) {
+                                  labelClass = 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-medium shadow-sm';
+                                } else if (isSelected && !isCorrectAnswer) {
+                                  labelClass = 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 font-medium opacity-70';
+                                } else {
+                                  labelClass = 'border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-500 opacity-50';
+                                }
+                              } else if (isSelected) {
+                                labelClass = 'border-primary bg-primary/5 dark:border-pink-500 dark:bg-pink-500/5 text-primary dark:text-pink-400 font-medium';
+                              }
+
                               return (
                                 <label
                                   key={val}
-                                  className={`flex items-center gap-3 px-6 py-3 rounded-lg border cursor-pointer transition-colors min-w-[120px] justify-center ${
-                                    isSelected
-                                      ? 'border-primary bg-primary/5 dark:border-pink-500 dark:bg-pink-500/5 text-primary dark:text-pink-400 font-medium'
-                                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
-                                  }`}
+                                  className={`flex items-center gap-3 px-6 py-3 rounded-lg border ${!isLocked ? 'cursor-pointer' : 'cursor-default'} transition-colors min-w-[120px] justify-center ${labelClass}`}
                                 >
                                   <input
                                     type="radio"
                                     name={`question_${q.id}`}
                                     checked={isSelected}
+                                    disabled={isLocked}
                                     onChange={() => handleAnswerChange(q.id, val)}
-                                    className="h-4.5 w-4.5 border-slate-300 text-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-850 dark:text-pink-600 dark:focus:ring-pink-500"
+                                    className="h-4.5 w-4.5 border-slate-300 text-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-850 dark:text-pink-600 dark:focus:ring-pink-500 disabled:opacity-50"
                                   />
                                   <span>{val}</span>
                                 </label>
@@ -329,13 +377,22 @@ export default function AssignmentDetailsPage() {
 
                         {/* SHORT_ANSWER */}
                         {q.type === 'SHORT_ANSWER' && (
-                          <textarea
-                            value={quizAnswers[q.id] || ''}
-                            onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                            placeholder="Type your answer here..."
-                            rows={3}
-                            className="w-full rounded-lg border border-slate-255 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-pink-500/20"
-                          />
+                          <div className="space-y-3">
+                            <textarea
+                              value={quizAnswers[q.id] || ''}
+                              onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                              placeholder="Type your answer here..."
+                              rows={3}
+                              disabled={isLocked}
+                              className="w-full rounded-lg border border-slate-255 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-pink-500/20 disabled:opacity-70 disabled:bg-slate-50 dark:disabled:bg-slate-900"
+                            />
+                            {isGraded && q.correctAnswer && (
+                              <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 text-sm">
+                                <p className="font-semibold text-green-800 dark:text-green-300 mb-1">Correct Answer:</p>
+                                <p className="text-green-700 dark:text-green-400">{q.correctAnswer}</p>
+                              </div>
+                            )}
+                          </div>
                         )}
 
                         {/* FILE_UPLOAD */}
@@ -349,7 +406,8 @@ export default function AssignmentDetailsPage() {
                               value={quizAnswers[q.id] || ''}
                               onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                               placeholder="Type reference notes, file name or comment..."
-                              className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-pink-500/20"
+                              disabled={isLocked}
+                              className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-pink-500/20 disabled:opacity-70 disabled:bg-slate-50 dark:disabled:bg-slate-900"
                             />
                           </div>
                         )}
@@ -358,8 +416,9 @@ export default function AssignmentDetailsPage() {
                   </div>
                 </div>
               </div>
-            )}
-            
+              );
+            })()}
+
             {activeTab === 'attachments' && (
               <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
                 <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Attachments</h4>
@@ -409,8 +468,8 @@ export default function AssignmentDetailsPage() {
 
                     {/* Action buttons */}
                     <div className="flex flex-wrap items-center gap-3 mt-2">
-                      <a 
-                        href={assignment.attachmentUrl} 
+                      <a
+                        href={assignment.attachmentUrl}
                         download
                         target="_blank"
                         rel="noopener noreferrer"
@@ -419,9 +478,9 @@ export default function AssignmentDetailsPage() {
                         <span className="material-symbols-outlined text-base">download</span>
                         Download Attachment
                       </a>
-                      <a 
-                        href={assignment.attachmentUrl} 
-                        target="_blank" 
+                      <a
+                        href={assignment.attachmentUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-semibold rounded-lg transition-colors cursor-pointer shadow-sm"
                       >
@@ -435,16 +494,16 @@ export default function AssignmentDetailsPage() {
                 )}
               </div>
             )}
-            
+
             {activeTab === 'rubric' && (
               <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
-                 <p className="text-slate-500 dark:text-slate-400 italic">No rubric provided.</p>
+                <p className="text-slate-500 dark:text-slate-400 italic">No rubric provided.</p>
               </div>
             )}
-            
+
             {activeTab === 'materials' && (
               <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
-                 <p className="text-slate-500 dark:text-slate-400 italic">No additional materials provided.</p>
+                <p className="text-slate-500 dark:text-slate-400 italic">No additional materials provided.</p>
               </div>
             )}
           </div>
@@ -453,13 +512,13 @@ export default function AssignmentDetailsPage() {
 
       {/* Persistent Action Footer */}
       {assignment.status !== 'GRADED' && (
-        <ActionFooter 
+        <ActionFooter
           assignment={assignment as Assignment}
           onSubmit={() => setIsModalOpen(true)}
         />
       )}
 
-      <SubmissionModal 
+      <SubmissionModal
         assignment={assignment as Assignment}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

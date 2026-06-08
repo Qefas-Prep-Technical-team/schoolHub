@@ -1,5 +1,12 @@
 import prisma from "../../config/database";
 
+// Helper: verify teacherId exists in the Teacher table before using as FK
+async function resolveTeacherId(teacherId: string | null | undefined): Promise<string | null> {
+  if (!teacherId) return null;
+  const teacher = await prisma.teacher.findUnique({ where: { id: teacherId }, select: { id: true } });
+  return teacher ? teacher.id : null;
+}
+
 export const getStudentAssignmentsService = async (options: {
   studentId: string;
   status?: string;
@@ -67,7 +74,52 @@ export const getStudentAssignmentsService = async (options: {
     
     let computedStatus = "pending";
     if (submission) {
-      computedStatus = submission.status.toLowerCase();
+      if (submission.status === "SUBMITTED") {
+        const releaseDate = a.scoreReleaseDate || a.dueDate;
+        if (!releaseDate || new Date(releaseDate) <= new Date()) {
+          computedStatus = "graded";
+          (async () => {
+            try {
+              await prisma.assignmentSubmission.update({
+                where: { id: submission.id },
+                data: { status: "GRADED", gradedAt: new Date() }
+              });
+
+              // Sync to Grade model
+              if (submission.score !== null) {
+                const subjectName = subjectMap[a.subjectId] || "Assignment";
+                const validTeacherId = await resolveTeacherId(a.teacherId);
+                await prisma.grade.upsert({
+                  where: { id: `grade-assignment-${submission.id}` },
+                  update: {
+                    score: submission.score,
+                    maxMarks: a.totalMarks,
+                    updatedAt: new Date(),
+                  },
+                  create: {
+                    id: `grade-assignment-${submission.id}`,
+                    studentId: studentId,
+                    schoolId: a.schoolId,
+                    teacherId: validTeacherId,
+                    classId: a.classId,
+                    subject: subjectName,
+                    assessmentType: "ASSIGNMENT",
+                    score: submission.score,
+                    maxMarks: a.totalMarks,
+                    remarks: a.title,
+                  }
+                });
+              }
+            } catch (err) {
+              console.error("Failed to lazily sync grade for assignment:", err);
+            }
+          })();
+        } else {
+          computedStatus = "submitted";
+        }
+      } else {
+        computedStatus = submission.status.toLowerCase();
+      }
     } else if (a.dueDate && new Date(a.dueDate) < new Date()) {
       computedStatus = "overdue";
     }
@@ -119,6 +171,55 @@ export const getAssignmentByIdService = async (studentId: string, assignmentId: 
     throw new Error("Assignment not found");
   }
 
+  if (assignment.submissions && assignment.submissions.length > 0) {
+    let sub = assignment.submissions[0];
+    if (sub.status === "SUBMITTED") {
+      const releaseDate = assignment.scoreReleaseDate || assignment.dueDate;
+      if (!releaseDate || new Date(releaseDate) <= new Date()) {
+        (async () => {
+          try {
+            await prisma.assignmentSubmission.update({
+              where: { id: sub.id },
+              data: { status: "GRADED", gradedAt: new Date() }
+            });
+
+            if (sub.score !== null) {
+              const subject = await prisma.subject.findUnique({ where: { id: assignment.subjectId } });
+              const subjectName = subject ? subject.name : "Assignment";
+              
+                  const validTeacherId = await resolveTeacherId(assignment.teacherId);
+                  await prisma.grade.upsert({
+                    where: { id: `grade-assignment-${sub.id}` },
+                    update: {
+                      score: sub.score,
+                      maxMarks: assignment.totalMarks,
+                      updatedAt: new Date(),
+                    },
+                    create: {
+                      id: `grade-assignment-${sub.id}`,
+                      studentId: studentId,
+                      schoolId: assignment.schoolId,
+                      teacherId: validTeacherId,
+                      classId: assignment.classId,
+                      subject: subjectName,
+                      assessmentType: "ASSIGNMENT",
+                      score: sub.score,
+                      maxMarks: assignment.totalMarks,
+                      remarks: assignment.title,
+                    }
+                  });
+            }
+          } catch (err) {
+            console.error("Failed to lazily sync grade for assignment:", err);
+          }
+        })();
+        
+        sub.status = "GRADED";
+        sub.gradedAt = new Date();
+      }
+    }
+  }
+
   const [classData, subjectData, departmentData, teacherData] = await Promise.all([
     prisma.class.findUnique({ where: { id: assignment.classId }, select: { id: true, name: true } }),
     prisma.subject.findUnique({ where: { id: assignment.subjectId }, select: { id: true, name: true } }),
@@ -128,6 +229,7 @@ export const getAssignmentByIdService = async (studentId: string, assignmentId: 
 
   return {
     ...assignment,
+    grade: assignment.submissions?.[0]?.score ?? null,
     class: classData,
     subject: subjectData,
     department: departmentData,
@@ -328,6 +430,7 @@ export const createAssignmentService = async (data: {
   attachmentUrl?: string;
   videoUrl?: string;
   referenceUrl?: string;
+  scoreReleaseDate?: Date;
 }) => {
   const { classIds, departmentId, ...assignmentData } = data;
   
@@ -343,7 +446,8 @@ export const createAssignmentService = async (data: {
           ...assignmentData,
           classId,
           departmentId: departmentId || null,
-          status: (assignmentData.status as any) || "DRAFT"
+          status: (assignmentData.status as any) || "DRAFT",
+          scoreReleaseDate: assignmentData.scoreReleaseDate || null
         }
       })
     )
@@ -437,4 +541,89 @@ export const deleteAssignmentService = async (assignmentId: string, schoolId: st
   return prisma.assignment.delete({
     where: { id: assignmentId }
   });
+};
+
+export const gradeSubmissionService = async (
+  assignmentId: string,
+  submissionId: string,
+  schoolId: string,
+  grades: Array<{ answerId: string; isCorrect: boolean; score: number; teacherComment?: string }>
+) => {
+  // Verify assignment belongs to the school
+  const assignment = await prisma.assignment.findFirst({
+    where: { id: assignmentId, schoolId }
+  });
+  if (!assignment) throw new Error("Assignment not found");
+
+  // Fetch the submission and its answers
+  const submission = await prisma.assignmentSubmission.findUnique({
+    where: { id: submissionId },
+    include: { answers: true }
+  });
+
+  if (!submission || submission.assignmentId !== assignmentId) {
+    throw new Error("Submission not found");
+  }
+
+  // Update answers within a transaction
+  await prisma.$transaction(async (tx) => {
+    let totalScore = 0;
+
+    for (const grade of grades) {
+      await tx.assignmentAnswer.update({
+        where: { id: grade.answerId },
+        data: {
+          isCorrect: grade.isCorrect,
+          score: grade.score,
+          teacherComment: grade.teacherComment
+        }
+      });
+    }
+
+    // Recalculate total score
+    const allAnswers = await tx.assignmentAnswer.findMany({
+      where: { submissionId }
+    });
+
+    totalScore = allAnswers.reduce((sum, ans) => sum + ans.score, 0);
+
+    // Update submission
+    await tx.assignmentSubmission.update({
+      where: { id: submissionId },
+      data: {
+        score: totalScore,
+        status: "GRADED",
+        gradedAt: new Date()
+      }
+    });
+
+    // Sync to Grade model so it appears on the student grades dashboard
+    const subject = await tx.subject.findUnique({ where: { id: assignment.subjectId } });
+    const subjectName = subject ? subject.name : "Assignment";
+
+    const validTeacherId = await resolveTeacherId(assignment.teacherId);
+
+    await tx.grade.upsert({
+      where: { id: `grade-assignment-${submissionId}` },
+      update: {
+        score: totalScore,
+        maxMarks: assignment.totalMarks,
+        updatedAt: new Date(),
+      },
+      create: {
+        id: `grade-assignment-${submissionId}`,
+        studentId: submission.studentId,
+        schoolId: assignment.schoolId,
+        teacherId: validTeacherId,
+        classId: assignment.classId,
+        subject: subjectName,
+        assessmentType: "ASSIGNMENT",
+        score: totalScore,
+        maxMarks: assignment.totalMarks,
+        remarks: assignment.title,
+      }
+    });
+  });
+
+  return { success: true };
 };

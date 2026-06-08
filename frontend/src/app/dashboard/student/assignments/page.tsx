@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 import AssignmentCard from './components/AssignmentCard';
 import SearchBar from './components/SearchBar';
@@ -24,6 +24,8 @@ export default function AssignmentsPage() {
   const [selectedDueDate, setSelectedDueDate] = useState('All Dates');
   const [selectedDepartment, setSelectedDepartment] = useState('All Departments');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 9;
 
   const dynamicSubjects = useMemo(() => {
     const subjectNames = Array.from(new Set(assignments.map(a => (a as any).subject || "General")));
@@ -60,6 +62,17 @@ export default function AssignmentsPage() {
 
     return matchesSearch && matchesSubject && matchesStatus && matchesDueDate && matchesDepartment;
   });
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedSubject, selectedStatus, selectedDueDate, selectedDepartment]);
+
+  const totalPages = Math.ceil(filteredAssignments.length / ITEMS_PER_PAGE);
+  const paginatedAssignments = filteredAssignments.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleNewSubmission = () => {
     // Handle new submission logic
@@ -155,18 +168,54 @@ export default function AssignmentsPage() {
                 </p>
               </div>
             ) : (
-              <div className={`grid gap-6 ${
-                viewMode === 'grid' 
-                  ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
-                  : 'grid-cols-1'
-              }`}>
-                {filteredAssignments.map((assignment) => (
-                  <AssignmentCard
-                    key={assignment.id}
-                    assignment={assignment}
-                    viewMode={viewMode}
-                  />
-                ))}
+              <div className="space-y-6">
+                <div className={`grid gap-6 ${
+                  viewMode === 'grid' 
+                    ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
+                    : 'grid-cols-1'
+                }`}>
+                  {paginatedAssignments.map((assignment) => (
+                    <AssignmentCard
+                      key={assignment.id}
+                      assignment={assignment}
+                      viewMode={viewMode}
+                    />
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-8">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Previous
+                    </button>
+                    <div className="flex gap-1">
+                      {Array.from({ length: totalPages }).map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setCurrentPage(idx + 1)}
+                          className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                            currentPage === idx + 1
+                              ? "bg-primary text-primary-foreground"
+                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                          }`}
+                        >
+                          {idx + 1}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

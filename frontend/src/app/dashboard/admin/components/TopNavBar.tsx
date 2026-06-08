@@ -10,6 +10,7 @@ import NotificationCenter from "./NotificationCenter";
 import { AdminMobileDrawer } from "./AdminMobileDrawer";
 import { linkService } from "@/lib/api/services/linkService";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
 import { useEffect } from "react";
 
 /**
@@ -21,6 +22,7 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed, primaryColor = '#2563eb' }: {
     const [profile, setProfile] = useState<any>(null);
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const { userType, user } = useAuthStore();
+    const { selectedSchoolName } = useDashboardStore();
     const router = useRouter();
 
     useEffect(() => {
@@ -46,7 +48,11 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed, primaryColor = '#2563eb' }: {
                     style={{ boxShadow: `0 4px 6px -1px ${primaryColor}10` }}
                 >
                     <img src="/logo/favicon.svg" alt="Qefas Hub" className="h-5 w-5 md:h-4 md:w-4 object-contain group-hover/badge:scale-110 transition-transform" />
-                    <span className="hidden sm:inline-block text-[10px] font-bold text-primary uppercase tracking-widest mt-0.5">Admin Hub</span>
+                    <span className="hidden sm:inline-block text-[10px] font-bold text-primary uppercase tracking-widest mt-0.5">
+                        {selectedSchoolName && selectedSchoolName !== "Personal Dashboard" 
+                            ? selectedSchoolName 
+                            : (profile?.data?.schoolAdmins?.[0]?.school?.name || user?.schools?.[0]?.name || "Admin Hub")}
+                    </span>
                 </Link>
 
                 {/* Desktop collapse / Back button */}

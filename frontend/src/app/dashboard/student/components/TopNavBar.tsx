@@ -53,10 +53,10 @@ export default function TopNavBar({
           <Button
             variant="ghost"
             size="icon"
-            onClick={onToggleSidebar}
+            onClick={() => router.back()}
             className="h-9 w-9 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 transition-all border border-slate-200 dark:border-white/5"
           >
-            {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            <ChevronLeft size={18} />
           </Button>
         </div>
 

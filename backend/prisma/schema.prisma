@@ -1629,6 +1629,7 @@ model Assignment {
   attachmentUrl String?
   videoUrl      String?
   referenceUrl  String?
+  scoreReleaseDate DateTime?
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   department    Department?            @relation(fields: [departmentId], references: [id])

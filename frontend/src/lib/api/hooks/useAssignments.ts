@@ -70,6 +70,7 @@ export const useCreateAssignment = (schoolId: string, isAdmin: boolean = false) 
       attachments?: string[];
       videoUrl?: string;
       referenceUrl?: string;
+      scoreReleaseDate?: string;
     }) => {
       const response = await api.post(endpoint, data, {
         headers: { 'x-school-id': schoolId },
@@ -137,6 +138,22 @@ export const useDeleteAssignment = (schoolId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments'] });
+    }
+  });
+};
+
+export const useGradeSubmission = (schoolId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ assignmentId, submissionId, grades }: { assignmentId: string, submissionId: string, grades: Array<{ answerId: string, isCorrect: boolean, score: number, teacherComment?: string }> }) => {
+      const response = await api.post(`/assignment/admin/${assignmentId}/submissions/${submissionId}/grade`, { grades }, {
+        headers: { 'x-school-id': schoolId }
+      });
+      return response.data;
+    },
+    onSuccess: (_, { assignmentId }) => {
+      queryClient.invalidateQueries({ queryKey: ['assignment-detail', assignmentId] });
     }
   });
 };

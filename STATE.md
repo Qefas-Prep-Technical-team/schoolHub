@@ -2,13 +2,29 @@
 
 ## Current Focus
 
+- Student Grades Full Academic Transcript Polish and Verification.
 - Finalizing landing page and authentication UI modernization.
-- Optimizing mobile-first navigation and role-based authentication flows.
-- Localizing platform assets (images and testimonials) for the Nigerian market.
 
 ## Upcoming / Planning
 
 - Implementation of remaining `STUDENT_LIFECYCLE_SPEC.md` features (Promotion, Awards, etc.).
+
+## Blockers
+
+- None.
+
+## Next Action
+
+- Deploy to staging and manual testing of transcript layout and PDF generation.
+
+## Completed
+
+- **Official Nigerian Transcript Layout & AI Remarks (June 08, 2026)**:
+  - Redesigned full academic transcript modal and downloaded PDF to conform to Nigerian standards.
+  - Configured 40/60 CA/Exam scaling aggregation and WAEC grading scale alignment.
+  - Added school logo/details and student passport photo at the top.
+  - Implemented Class Teacher and Principal bottom AI remarks with signature lines.
+  - Validated frontend workspace compilation with `npx tsc --noEmit`.
 
 ## Completed
 
@@ -630,4 +646,17 @@
         - Render a lock icon/overlay with upgrade buttons if unauthorized.
         - Display remaining daily prompts count ("X of Y prompts left today").
         - Limit tool usage and show limit exceeded overlay and alerts when daily usage reaches 100%.
+- **Student Dashboard Class Listing & Admin Schedule Fix**:
+    - [x] **Hook Level Fix**: Resolved a bug where the `useClasses` hook had a strict `enabled: !!schoolId` check that was preventing student and teacher class queries from executing (since they do not require a `schoolId` filter). Checked user type in the hook using `useAuthStore` and only enforce the constraint for `ADMIN` users.
+    - [x] **Timetable Schedule Modal Fix**: Passed `schoolId` from `SchedulePage.tsx` to `AddScheduleModal.tsx` and updated the modal's `useClasses(schoolId)` query to pull classes correctly, fixing a bug where classes could not load in the schedule modal for admins.
+    - [x] **Robust Array Handling**: Hardened `classes` resolution in the modal to seamlessly handle directly nested array structures and fallback configurations.
+    - [x] **Build Verification**: Verified absolute compilation stability with `npx tsc --noEmit`.
+- **Comprehensive Transcript & AI Remarks in Student Dashboard**:
+    - [x] **Official Nigerian Transcript Layout**: Redesigned the "View Full Transcript" modal in `page.tsx` and the exported PDF `ComprehensiveTranscriptReport` inside `IndividualStudentReport.tsx` to conform to official Nigerian secondary school report card standards.
+    - [x] **Header Real-Data Integration**: Added the school details (Logo, Name, Address, Phone, Email) and student passport profile image at the top right of the transcript modal matching the PDF layout.
+    - [x] **40/60 CA/Exam Scale Aggregation**: Replaced row-level AI text columns with a standardized score layout: Subject, C.A. (40), Exam (60), Total (100), Grade, and Remarks. Engineered a scaling/split aggregator combining exam attempts and standalone grades, falling back to mathematical splits if only one score is present.
+    - [x] **WAEC Grading Standard Alignment**: Applied the standard WAEC alpha grading scale (A1, B2, B3, C4, C5, C6, D7, E8, F9) and official remarks (EXCELLENT, CREDIT, PASS, FAIL) across all subject records.
+    - [x] **AI-Generated Pedagogical Comments**: Replaced row-level text blocks with a single Class Teacher's AI Remark and a Principal's AI Verdict at the bottom, dynamically computed from the student's overall average.
+    - [x] **Formal Signature Blocks**: Appended official Class Teacher and Principal signature lines with date and next-term placeholders to the bottom of the transcript layout.
+    - [x] **Build & Compile Stability**: Checked all files with `npx tsc --noEmit` on the frontend workspace and confirmed zero compilation errors.
 

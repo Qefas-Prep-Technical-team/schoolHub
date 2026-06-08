@@ -4,12 +4,13 @@ interface Props {
   onTabChange: (tab: 'instructions' | 'attachments' | 'rubric' | 'materials' | 'quiz') => void;
   attachmentsCount?: number;
   questionsCount?: number;
+  isGraded?: boolean;
 }
 
-export default function TabNavigation({ activeTab, onTabChange, attachmentsCount = 0, questionsCount = 0 }: Props) {
+export default function TabNavigation({ activeTab, onTabChange, attachmentsCount = 0, questionsCount = 0, isGraded = false }: Props) {
   const tabs = [
     { id: 'instructions', label: 'Instructions' },
-    ...(questionsCount > 0 ? [{ id: 'quiz', label: `Take Quiz (${questionsCount})` }] : []),
+    ...(questionsCount > 0 ? [{ id: 'quiz', label: isGraded ? `Review Quiz (${questionsCount})` : `Take Quiz (${questionsCount})` }] : []),
     { id: 'attachments', label: `Attachments (${attachmentsCount})` },
     { id: 'rubric', label: 'Rubric' },
     { id: 'materials', label: 'Related Materials' },

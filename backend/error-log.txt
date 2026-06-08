@@ -2584,4 +2584,367 @@ Please make sure your database server is running at `aws-1-eu-west-1.pooler.supa
     at C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\assignment\assignment.service.ts:218:30
     at async Promise.all (index 6)
     at Object.submitAssignmentService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\assignment\assignment.service.ts:240:5)
-    at submitAssignment (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\assignment\assignment.controller.ts:73:18)
+    at submitAssignment (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\assignment\assignment.controller.ts:73:18)TypeError: Cannot read properties of undefined (reading 'count')
+    at getUserUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:301:57)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:21:16)TypeError: Cannot read properties of undefined (reading 'count')
+    at getUserUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:301:57)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:21:16)TypeError: Cannot read properties of undefined (reading 'count')
+    at getUserUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:301:57)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:21:16)TypeError: Cannot read properties of undefined (reading 'count')
+    at getUserUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:301:57)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:21:16)PrismaClientValidationError: 
+Invalid `prisma.assignment.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.service.ts:38:41
+
+  35   ]
+  36 };
+  37 
+→ 38 const total = await prisma.assignment.count({
+       select: {
+         _count: {
+           select: {
+             _all: true
+           }
+         }
+       },
+       where: {
+         classId: {
+           in: [
+             "95f8af2c-9cc3-4d89-b160-f459966f3258"
+           ]
+         },
+         status: "PUBLISHED",
+         OR: [
+           {
+             departmentId: null
+           },
+           {
+             departmentId: "4238f480-68d1-4b91-8d55-b144ab3c3033"
+           }
+         ]
+       }
+     })
+
+Unknown argument `departmentId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getStudentAssignmentsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.service.ts:38:17)
+    at getStudentAssignments (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.controller.ts:14:18)PrismaClientValidationError: 
+Invalid `prisma.assignment.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.service.ts:38:41
+
+  35   ]
+  36 };
+  37 
+→ 38 const total = await prisma.assignment.count({
+       select: {
+         _count: {
+           select: {
+             _all: true
+           }
+         }
+       },
+       where: {
+         classId: {
+           in: [
+             "95f8af2c-9cc3-4d89-b160-f459966f3258"
+           ]
+         },
+         status: "PUBLISHED",
+         OR: [
+           {
+             departmentId: null
+           },
+           {
+             departmentId: "4238f480-68d1-4b91-8d55-b144ab3c3033"
+           }
+         ]
+       }
+     })
+
+Unknown argument `departmentId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getStudentAssignmentsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.service.ts:38:17)
+    at getStudentAssignments (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.controller.ts:14:18)PrismaClientValidationError: 
+Invalid `prisma.assignment.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.service.ts:38:41
+
+  35   ]
+  36 };
+  37 
+→ 38 const total = await prisma.assignment.count({
+       select: {
+         _count: {
+           select: {
+             _all: true
+           }
+         }
+       },
+       where: {
+         classId: {
+           in: [
+             "95f8af2c-9cc3-4d89-b160-f459966f3258"
+           ]
+         },
+         status: "PUBLISHED",
+         OR: [
+           {
+             departmentId: null
+           },
+           {
+             departmentId: "4238f480-68d1-4b91-8d55-b144ab3c3033"
+           }
+         ]
+       }
+     })
+
+Unknown argument `departmentId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getStudentAssignmentsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.service.ts:38:17)
+    at getStudentAssignments (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.controller.ts:14:18)PrismaClientValidationError: 
+Invalid `prisma.assignment.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.service.ts:38:41
+
+  35   ]
+  36 };
+  37 
+→ 38 const total = await prisma.assignment.count({
+       select: {
+         _count: {
+           select: {
+             _all: true
+           }
+         }
+       },
+       where: {
+         classId: {
+           in: [
+             "95f8af2c-9cc3-4d89-b160-f459966f3258"
+           ]
+         },
+         status: "PUBLISHED",
+         OR: [
+           {
+             departmentId: null
+           },
+           {
+             departmentId: "4238f480-68d1-4b91-8d55-b144ab3c3033"
+           }
+         ]
+       }
+     })
+
+Unknown argument `departmentId`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getStudentAssignmentsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.service.ts:38:17)
+    at getStudentAssignments (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.controller.ts:14:18)Error: Assignment already submitted
+    at Object.submitAssignmentService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.service.ts:186:11)
+    at submitAssignment (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.controller.ts:73:18)Error: Assignment already submitted
+    at Object.submitAssignmentService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.service.ts:186:11)
+    at submitAssignment (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.controller.ts:73:18)Error: Assignment already submitted
+    at Object.submitAssignmentService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.service.ts:186:11)
+    at submitAssignment (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\assignment\assignment.controller.ts:73:18)PrismaClientKnownRequestError: 
+Invalid `prisma.fileMetric.aggregate()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:287:23
+
+  284   : role === 'STUDENT'
+  285     ? prisma.classEnrollment.count({ where: { studentId: userId } })
+  286     : Promise.resolve(0),
+→ 287 prisma.fileMetric.aggregate(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 2)
+    at getUserUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:274:64)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:21:16)PrismaClientKnownRequestError: 
+Invalid `prisma.fileMetric.aggregate()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:753:23
+
+  750 prisma.transaction.count({
+  751   where: { schoolId: resolvedId },
+  752 }),
+→ 753 prisma.fileMetric.aggregate(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 3)
+    at getSchoolBillingService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:742:7)
+    at getSchoolBilling (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.controller.ts:324:18)PrismaClientKnownRequestError: 
+Invalid `prisma.exam.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:99:17
+
+  96   select: { leftEntityType: true, leftEntityId: true, rightEntityId: true }
+  97 }),
+  98 // D. Direct counts
+→ 99 prisma.exam.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 3)
+    at getSchoolUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:74:98)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:26:14)PrismaClientInitializationError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:55
+
+  895     return res.status(400).json({ message: "Invalid role" });
+  896 }
+  897 
+→ 898 const features = await prisma.platformFeature.findMany(
+Timed out fetching a new connection from the connection pool. More info: http://pris.ly/d/connection-pool (Current connection pool timeout: 10, connection limit: 10)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:26)PrismaClientInitializationError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:47
+
+  2214 
+  2215 const payload: any = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
+  2216 
+→ 2217 const dbToken = await prisma.refreshToken.findFirst(
+Timed out fetching a new connection from the connection pool. More info: http://pris.ly/d/connection-pool (Current connection pool timeout: 10, connection limit: 10)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:21)PrismaClientKnownRequestError: 
+Invalid `prismaModel.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:194:30
+
+  191 const prismaModel = (prisma as any)[roleKey];
+  192 
+  193 if (prismaModel) {
+→ 194   user = await prismaModel.findUnique(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getUserUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:194:12)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:21:16)PrismaClientKnownRequestError: 
+Invalid `prisma.notification.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\notification\notification.controller.ts:9:53
+
+  6 try {
+  7   const userId = req.user.id;
+  8 
+→ 9   const notifications = await prisma.notification.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getMyNotifications (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\notification\notification.controller.ts:9:27)PrismaClientKnownRequestError: 
+Invalid `prisma.classEnrollment.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:285:34
+
+  282 role === 'TEACHER'
+  283   ? prisma.classTeacher.count({ where: { teacherId: userId } })
+  284   : role === 'STUDENT'
+→ 285     ? prisma.classEnrollment.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 1)
+    at getUserUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:274:64)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:21:16)PrismaClientInitializationError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:55
+
+  895     return res.status(400).json({ message: "Invalid role" });
+  896 }
+  897 
+→ 898 const features = await prisma.platformFeature.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:26)PrismaClientInitializationError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:47
+
+  2214 
+  2215 const payload: any = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
+  2216 
+→ 2217 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:21)PrismaClientKnownRequestError: 
+Invalid `prisma.grade.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:48:18
+
+  45   skip,
+  46   take: limit,
+  47 }),
+→ 48 prisma.grade.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 1)
+    at getStudentGradesService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:33:25)
+    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)PrismaClientKnownRequestError: 
+Invalid `prisma.grade.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:48:18
+
+  45   skip,
+  46   take: limit,
+  47 }),
+→ 48 prisma.grade.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 1)
+    at getStudentGradesService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:33:25)
+    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)

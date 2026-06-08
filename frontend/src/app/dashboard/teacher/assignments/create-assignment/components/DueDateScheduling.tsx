@@ -11,6 +11,8 @@ interface DueDateSchedulingProps {
     onPublishStatusChange: (status: PublishStatus) => void;
     scheduledDate?: string;
     onScheduledDateChange?: (date: string) => void;
+    scoreReleaseDate?: string;
+    onScoreReleaseDateChange?: (date: string) => void;
 }
 
 export default function DueDateScheduling({
@@ -19,7 +21,9 @@ export default function DueDateScheduling({
     publishStatus,
     onPublishStatusChange,
     scheduledDate,
-    onScheduledDateChange
+    onScheduledDateChange,
+    scoreReleaseDate,
+    onScoreReleaseDateChange
 }: DueDateSchedulingProps) {
     const getDefaultDueDate = () => {
         const date = new Date();
@@ -84,6 +88,18 @@ export default function DueDateScheduling({
                         />
                     </div>
                 )}
+
+                <div className="w-full md:w-1/2">
+                    <Input
+                        label="Result Release Date & Time"
+                        type="datetime-local"
+                        value={scoreReleaseDate || ''}
+                        onChange={(e) => onScoreReleaseDateChange?.(e.target.value)}
+                    />
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        If left blank, results will be released on the deadline.
+                    </p>
+                </div>
             </div>
         </div>
     );

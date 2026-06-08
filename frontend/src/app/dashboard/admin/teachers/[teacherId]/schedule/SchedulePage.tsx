@@ -425,6 +425,7 @@ export default function SchedulePage({ teacher, teacherId, primaryColor, schoolI
         teacherId={teacherId}
         teacherSubjects={teacher.professionalInfo?.subjectObjects || []}
         initialData={selectedPeriod}
+        schoolId={schoolId}
       />
     </div>
   )

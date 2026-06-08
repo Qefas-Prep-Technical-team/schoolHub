@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   ChevronRight, 
   ArrowLeft,
@@ -28,13 +28,52 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import ProgressCircle from '@/components/ui/ProgressCircle';
 import Pagination from '@/components/ui/Pagination';
+import { Skeleton } from '@/components/ui/skeleton';
 import dynamic from 'next/dynamic';
-import IndividualStudentReport from '@/app/dashboard/admin/grades/components/IndividualStudentReport';
+import IndividualStudentReport, { ComprehensiveTranscriptReport } from '@/app/dashboard/admin/grades/components/IndividualStudentReport';
 
 const PDFDownloadLink = dynamic(
   () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
   { ssr: false }
 );
+
+function generateAIClassTeacherRemark(studentName: string, overallAverage: number): string {
+  const name = studentName || "The student";
+  if (overallAverage >= 75) {
+    return `${name} has shown outstanding brilliance and academic maturity this term. A highly dedicated and self-motivated student whose performance is exemplary. Keep up the excellent work!`;
+  } else if (overallAverage >= 60) {
+    return `${name} has demonstrated strong academic capability and consistent effort. Quite active and cooperative in class activities. With sustained focus, higher achievements are well within reach.`;
+  } else if (overallAverage >= 50) {
+    return `${name} is a student of average capability who has made satisfactory progress. However, there is a clear need for more consistent study habits to improve performance in weaker subjects.`;
+  } else {
+    return `${name} has struggled significantly this term and has performed below the required academic standard. Closer supervision, regular revision, and remedial assistance are highly recommended to help them catch up.`;
+  }
+}
+
+function generateAIPrincipalRemark(studentName: string, overallAverage: number): string {
+  const name = studentName || "The student";
+  if (overallAverage >= 75) {
+    return `An excellent and commendable result. ${name} is a credit to the school. Highly recommended for promotion with distinction. Keep it up!`;
+  } else if (overallAverage >= 60) {
+    return `A very good result showing promising prospects. With dedication and hard work, ${name} can attain academic excellence. Promotion approved.`;
+  } else if (overallAverage >= 50) {
+    return `A fair performance. There is ample room for improvement. ${name} must sit up and work much harder next term to achieve better grades. Promotion approved.`;
+  } else {
+    return `A poor result that is not acceptable. ${name} must put in double effort and undergo remedial studies. Promotion is currently under review.`;
+  }
+}
+
+function getWAECGradeAndRemark(score: number): { grade: string, remark: string } {
+  if (score >= 75) return { grade: 'A1', remark: 'EXCELLENT' };
+  if (score >= 70) return { grade: 'B2', remark: 'VERY GOOD' };
+  if (score >= 65) return { grade: 'B3', remark: 'GOOD' };
+  if (score >= 60) return { grade: 'C4', remark: 'CREDIT' };
+  if (score >= 55) return { grade: 'C5', remark: 'CREDIT' };
+  if (score >= 50) return { grade: 'C6', remark: 'CREDIT' };
+  if (score >= 45) return { grade: 'D7', remark: 'PASS' };
+  if (score >= 40) return { grade: 'E8', remark: 'PASS' };
+  return { grade: 'F9', remark: 'FAIL' };
+}
 
 export default function StudentGradesPage() {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
@@ -43,6 +82,8 @@ export default function StudentGradesPage() {
   const [examsPage, setExamsPage] = useState(1);
   const [gradesPage, setGradesPage] = useState(1);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
+  const [isAiThinking, setIsAiThinking] = useState(false);
   const itemsPerPage = 6;
   
   const { user } = useAuthStore();
@@ -57,10 +98,16 @@ export default function StudentGradesPage() {
     limit: itemsPerPage,
     assessmentType: caTab === 'ALL' ? 'CA,QUIZ,ASSIGNMENT' : caTab
   });
+  const { data: allAttemptsRes } = useStudentExamAttempts({ limit: 1000 });
+  const { data: allGradesRes } = useGrades(undefined, { limit: 1000 });
+
   const attempts = attemptsData?.attempts || [];
   const examPagination = attemptsData?.pagination;
   const standaloneGrades = standaloneGradesData?.grades || [];
   const gradePagination = standaloneGradesData?.pagination;
+
+  const allAttempts = allAttemptsRes?.attempts || [];
+  const allGrades = allGradesRes?.grades || [];
 
   // Extract classId from fetched grades since user object might not have it
   const studentClassId = standaloneGrades.find((g: any) => g.classId)?.classId || attempts.find((a: any) => a.classId)?.classId;
@@ -68,11 +115,175 @@ export default function StudentGradesPage() {
 
   const handleBackToExams = () => setSelectedExamId(null);
 
+  useEffect(() => {
+    if (isTranscriptOpen) {
+      setIsAiThinking(true);
+      const timer = setTimeout(() => setIsAiThinking(false), 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [isTranscriptOpen]);
+
+  const transcriptData = useMemo(() => {
+    if (!user) return null;
+
+    const subjectsMap: Record<string, {
+      subjectName: string;
+      examScore: number;
+      examMax: number;
+      caScore: number;
+      caMax: number;
+      quizScore: number;
+      quizMax: number;
+      assignmentScore: number;
+      assignmentMax: number;
+      totalScore: number;
+      totalMax: number;
+    }> = {};
+
+    // 1. Process Exams
+    allAttempts.forEach((attempt: any) => {
+      attempt.subjects?.forEach((sub: any) => {
+        const sName = (sub.subjectName || 'General').toUpperCase();
+        if (!subjectsMap[sName]) {
+          subjectsMap[sName] = {
+            subjectName: sName,
+            examScore: 0,
+            examMax: 0,
+            caScore: 0,
+            caMax: 0,
+            quizScore: 0,
+            quizMax: 0,
+            assignmentScore: 0,
+            assignmentMax: 0,
+            totalScore: 0,
+            totalMax: 0,
+          };
+        }
+        subjectsMap[sName].examScore += sub.score || 0;
+        subjectsMap[sName].examMax += sub.totalMarks || 0;
+      });
+    });
+
+    // 2. Process Standalone Grades (CA, QUIZ, ASSIGNMENT)
+    allGrades.forEach((grade: any) => {
+      const sName = (grade.subject || 'General').toUpperCase();
+      if (!subjectsMap[sName]) {
+        subjectsMap[sName] = {
+          subjectName: sName,
+          examScore: 0,
+          examMax: 0,
+          caScore: 0,
+          caMax: 0,
+          quizScore: 0,
+          quizMax: 0,
+          assignmentScore: 0,
+          assignmentMax: 0,
+          totalScore: 0,
+          totalMax: 0,
+        };
+      }
+      const score = grade.score || 0;
+      const maxMarks = grade.maxMarks || 0;
+      
+      if (grade.assessmentType === 'CA') {
+        subjectsMap[sName].caScore += score;
+        subjectsMap[sName].caMax += maxMarks;
+      } else if (grade.assessmentType === 'QUIZ') {
+        subjectsMap[sName].quizScore += score;
+        subjectsMap[sName].quizMax += maxMarks;
+      } else if (grade.assessmentType === 'ASSIGNMENT') {
+        subjectsMap[sName].assignmentScore += score;
+        subjectsMap[sName].assignmentMax += maxMarks;
+      }
+    });
+
+    const subjects = Object.values(subjectsMap).map((sub) => {
+      const caMax = sub.caMax + sub.quizMax + sub.assignmentMax;
+      const caScore = sub.caScore + sub.quizScore + sub.assignmentScore;
+      const examMax = sub.examMax;
+      const examScore = sub.examScore;
+
+      let normalizedCa = 0;
+      let normalizedExam = 0;
+      let total = 0;
+
+      if (caMax > 0 && examMax > 0) {
+        normalizedCa = Math.round((caScore / caMax) * 40);
+        normalizedExam = Math.round((examScore / examMax) * 60);
+        total = normalizedCa + normalizedExam;
+      } else if (caMax > 0) {
+        const percent = caScore / caMax;
+        total = Math.round(percent * 100);
+        normalizedCa = Math.round(total * 0.4);
+        normalizedExam = total - normalizedCa;
+      } else if (examMax > 0) {
+        const percent = examScore / examMax;
+        total = Math.round(percent * 100);
+        normalizedCa = Math.round(total * 0.4);
+        normalizedExam = total - normalizedCa;
+      } else {
+        normalizedCa = 0;
+        normalizedExam = 0;
+        total = 0;
+      }
+
+      const gradeInfo = getWAECGradeAndRemark(total);
+
+      return {
+        subjectName: sub.subjectName,
+        caScore: normalizedCa,
+        examScore: normalizedExam,
+        totalScore: total,
+        totalMax: 100,
+        percent: total,
+        grade: gradeInfo.grade,
+        remark: gradeInfo.remark,
+      };
+    });
+
+    let totalScoreSum = 0;
+    const totalMaxSum = subjects.length * 100;
+    
+    subjects.forEach((s) => {
+      totalScoreSum += s.totalScore;
+    });
+
+    const overallAverage = subjects.length > 0 ? Math.round(totalScoreSum / subjects.length) : 0;
+    const gpa = (overallAverage / 25).toFixed(1);
+    
+    const aiClassTeacherRemark = generateAIClassTeacherRemark(user.name, overallAverage);
+    const aiGeneralRemark = generateAIPrincipalRemark(user.name, overallAverage);
+
+    const firstAttempt = allAttempts[0];
+    const className = firstAttempt?.className || user?.schools?.[0]?.name || 'General Class';
+    const sessionName = firstAttempt?.session?.name || 'Academic Session';
+    const school = firstAttempt?.school || user?.schools?.[0] || {};
+
+    return {
+      student: {
+        name: user.name,
+        gender: (user as any).gender || 'N/A',
+        studentCode: user.studentCode || 'N/A',
+        profileImage: user.profileImage || null,
+      },
+      school,
+      className,
+      sessionName,
+      subjects,
+      totalScore: totalScoreSum,
+      totalMax: totalMaxSum,
+      overallAverage,
+      gpa,
+      aiClassTeacherRemark,
+      aiGeneralRemark,
+    };
+  }, [allAttempts, allGrades, user]);
+
   const calculateCumulativeAvg = () => {
     const examPercents = attemptsData?.attempts?.map((a: Record<string, any>) => (a.totalScore / (a.totalMarks || 1)) * 100) || [];
     const standalonePercents = standaloneGradesData?.grades?.map((g: Record<string, any>) => (g.score / (g.maxMarks || 1)) * 100) || [];
     const allPercents = [...examPercents, ...standalonePercents];  
-    if (allPercents.length === 0) return "3.8"; // Default placeholder if empty
+    if (allPercents.length === 0) return "0.0"; 
     const avg = allPercents.reduce((acc, curr) => acc + (curr || 0), 0) / allPercents.length;
     return (avg / 25).toFixed(1); // Rough conversion to 4.0 scale
   };
@@ -98,8 +309,17 @@ export default function StudentGradesPage() {
                 <p className="text-slate-500 max-w-md font-medium leading-relaxed italic">Maintaining excellent consistency across all core subjects and electives.</p>
               </div>
               <div className="text-right">
-                <div className="text-8xl font-black text-[#0856c8] dark:text-blue-400 tracking-tighter italic">{gpa}<span className="text-2xl text-slate-300 dark:text-slate-700 font-normal"> / 4.0</span></div>
-                <p className="text-[10px] font-black text-[#445581] dark:text-blue-300 bg-[#d9e2ff]/50 dark:bg-blue-900/20 px-4 py-2 rounded-full inline-block mt-4 uppercase tracking-widest">Excellent Result</p>
+                <div className="text-8xl font-black text-[#0856c8] dark:text-blue-400 tracking-tighter italic flex items-baseline justify-end gap-2">
+                  {(isLoadingAttempts || isLoadingGrades) ? (
+                    <Skeleton className="h-24 w-40 rounded-2xl" />
+                  ) : (
+                    gpa
+                  )}
+                  <span className="text-2xl text-slate-300 dark:text-slate-700 font-normal"> / 4.0</span>
+                </div>
+                <p className="text-[10px] font-black text-[#445581] dark:text-blue-300 bg-[#d9e2ff]/50 dark:bg-blue-900/20 px-4 py-2 rounded-full inline-block mt-4 uppercase tracking-widest">
+                  {(isLoadingAttempts || isLoadingGrades) ? <Skeleton className="h-3 w-20" /> : "Academic Result"}
+                </p>
               </div>
             </div>
 
@@ -130,19 +350,13 @@ export default function StudentGradesPage() {
                 <h3 className="text-2xl font-black tracking-tight text-[#191c1d] dark:text-white">Main Examinations</h3>
                 <p className="text-slate-500 text-sm font-medium italic">Results for mid-term and end of term examinations</p>
               </div>
-              {attempts.length > 0 && (
-                <PDFDownloadLink
-                  document={<IndividualStudentReport result={attempts[0]} school={attempts[0].school} />}
-                  fileName="Academic_Report.pdf"
-                >
-                  {({ loading }) => (
-                    <button className="text-[#0856c8] font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:underline">
-                      {loading ? 'Processing...' : 'View Full Transcript'} 
-                      <Download size={16} />
-                    </button>
-                  )}
-                </PDFDownloadLink>
-              )}
+              <button 
+                onClick={() => setIsTranscriptOpen(true)}
+                className="text-[#0856c8] dark:text-blue-400 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:underline"
+              >
+                View Full Transcript
+                <FileText size={16} />
+              </button>
             </div>
             <div className="grid grid-cols-4 gap-6">
               {isLoadingAttempts ? (
@@ -199,7 +413,7 @@ export default function StudentGradesPage() {
           {/* Desktop Assessments Section */}
           <section className="space-y-8">
             <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-black tracking-tight text-[#191c1d] dark:text-white">Continuous Assessment (C.A)</h3>
+                <h3 className="text-2xl font-black tracking-tight text-[#191c1d] dark:text-white">C.A, Tests & Assignments</h3>
                 <div className="flex gap-2 bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl">
                     {['ALL', 'CA', 'QUIZ', 'ASSIGNMENT'].map(tab => (
                         <button 
@@ -221,6 +435,7 @@ export default function StudentGradesPage() {
                   <tr className="bg-slate-50/30 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
                     <th className="px-10 py-7 text-[10px] font-black text-[#445581] dark:text-blue-300 uppercase tracking-widest">Date</th>
                     <th className="px-10 py-7 text-[10px] font-black text-[#445581] dark:text-blue-300 uppercase tracking-widest">Subject</th>
+                    <th className="px-10 py-7 text-[10px] font-black text-[#445581] dark:text-blue-300 uppercase tracking-widest">Title</th>
                     <th className="px-10 py-7 text-[10px] font-black text-[#445581] dark:text-blue-300 uppercase tracking-widest">Type</th>
                     <th className="px-10 py-7 text-[10px] font-black text-[#445581] dark:text-blue-300 uppercase tracking-widest text-right">Score Obtained</th>
                   </tr>
@@ -235,11 +450,16 @@ export default function StudentGradesPage() {
                           <h5 className="text-sm font-black text-[#191c1d] dark:text-white uppercase italic group-hover:text-[#0856c8] dark:group-hover:text-blue-400 transition-colors">{grade.subject}</h5>
                         </td>
                         <td className="px-10 py-7">
+                          <span className="text-sm font-medium text-slate-600 dark:text-slate-300 line-clamp-1">{grade.remarks || '-'}</span>
+                        </td>
+                        <td className="px-10 py-7">
                           <span className={cn(
                             "px-5 py-2 rounded-full text-[9px] font-black tracking-widest uppercase",
-                            grade.remarks?.toLowerCase().includes('quiz') ? "bg-[#d9e2ff] text-[#0856c8] dark:bg-blue-900/30 dark:text-blue-400" : "bg-[#ffdbc8] text-[#753400] dark:bg-orange-900/30 dark:text-orange-400"
+                            grade.assessmentType === 'QUIZ' ? "bg-[#d9e2ff] text-[#0856c8] dark:bg-blue-900/30 dark:text-blue-400" :
+                            grade.assessmentType === 'ASSIGNMENT' ? "bg-[#fce7f3] text-[#be185d] dark:bg-pink-900/30 dark:text-pink-400" :
+                            "bg-[#ffdbc8] text-[#753400] dark:bg-orange-900/30 dark:text-orange-400"
                           )}>
-                            {grade.remarks || 'Standard'}
+                            {grade.assessmentType || 'Standard'}
                           </span>
                         </td>
                         <td className="px-10 py-7 text-right">
@@ -273,7 +493,11 @@ export default function StudentGradesPage() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#0856C8] dark:text-blue-400 mb-1">Overall Performance</p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-6xl font-black tracking-tighter text-[#191C1D] dark:text-white italic">{gpa}</span>
+                  {(isLoadingAttempts || isLoadingGrades) ? (
+                    <Skeleton className="h-16 w-24 rounded-xl" />
+                  ) : (
+                    <span className="text-6xl font-black tracking-tighter text-[#191C1D] dark:text-white italic">{gpa}</span>
+                  )}
                   <span className="text-2xl font-medium text-slate-400">/ 4.0</span>
                 </div>
               </div>
@@ -298,7 +522,7 @@ export default function StudentGradesPage() {
               <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-slate-400">Main Exams</h2>
               <div className="flex gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
                   <button onClick={() => setActiveTab('exams')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'exams' ? "bg-white dark:bg-slate-800 text-[#0856C8] dark:text-white shadow-sm" : "text-slate-400")}>Exams</button>
-                  <button onClick={() => setActiveTab('standalone')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'standalone' ? "bg-white dark:bg-slate-800 text-[#0856C8] dark:text-white shadow-sm" : "text-slate-400")}>C.A</button>
+                  <button onClick={() => setActiveTab('standalone')} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'standalone' ? "bg-white dark:bg-slate-800 text-[#0856C8] dark:text-white shadow-sm" : "text-slate-400")}>C.A, Tests & Assignments</button>
               </div>
             </div>
 
@@ -366,7 +590,7 @@ export default function StudentGradesPage() {
                 </div>
                 {standaloneGrades.map((grade: Record<string, any>) => {
                   const percent = Math.round((grade.score / (grade.maxMarks || 1)) * 100);
-                  const isQuiz = grade.remarks?.toLowerCase().includes('quiz');
+                  const isQuiz = grade.assessmentType === 'QUIZ';
                   const Icon = isQuiz ? Zap : FileText;
                   return (
                     <div key={grade.id} className="bg-[#F3F4F5] dark:bg-slate-900/50 p-5 rounded-3xl flex items-center gap-5 border border-transparent hover:border-[#0856C8]/20 dark:hover:border-blue-500/20 hover:bg-white dark:hover:bg-slate-900 hover:shadow-lg transition-all active:scale-[0.98]">
@@ -375,6 +599,7 @@ export default function StudentGradesPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h5 className="text-sm font-black italic uppercase tracking-tight text-slate-900 dark:text-white truncate">{grade.subject}</h5>
+                        <p className="text-[10px] text-slate-500 font-medium truncate mb-1">{grade.remarks || '-'}</p>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{format(new Date(grade.createdAt), "MMM d, yyyy")}</p>
                       </div>
                       <div className="text-right shrink-0">
@@ -383,7 +608,7 @@ export default function StudentGradesPage() {
                           "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
                           percent >= 50 ? "bg-[#D9E2FF] text-[#0856C8] dark:bg-blue-900/30 dark:text-blue-400" : "bg-error-container text-error dark:bg-rose-900/30 dark:text-rose-400"
                         )}>
-                           {isQuiz ? 'TEST' : 'ESSAY'}
+                           {grade.assessmentType || 'TEST'}
                         </span>
                       </div>
                     </div>
@@ -405,6 +630,260 @@ export default function StudentGradesPage() {
           </section>
         </div>
       </main>
+
+      {/* Transcript Modal */}
+      {isTranscriptOpen && transcriptData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsTranscriptOpen(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 md:p-10 max-w-4xl w-full max-h-[95vh] overflow-y-auto shadow-2xl border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            
+            {/* Official Header */}
+            <div className="flex flex-col md:flex-row justify-between items-center pb-8 border-b-2 border-slate-900 dark:border-slate-800 gap-6">
+              <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
+                {transcriptData.school?.logo ? (
+                  <img src={transcriptData.school.logo} alt="School Logo" className="w-20 h-20 rounded-2xl object-contain shadow-sm bg-slate-50 dark:bg-slate-800" />
+                ) : (
+                  <div className="w-20 h-20 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-[#0856c8] dark:text-blue-400 font-black text-2xl font-lexend">
+                    {transcriptData.school?.name?.charAt(0) || 'S'}
+                  </div>
+                )}
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{transcriptData.school?.name || 'Academic Institution'}</h2>
+                  <p className="text-sm text-slate-500 font-medium">{transcriptData.school?.settings?.address || 'School Address'}</p>
+                  <p className="text-xs text-slate-400 font-semibold mt-1">TEL: {transcriptData.school?.settings?.phone || 'N/A'} • EMAIL: {transcriptData.school?.settings?.email || 'N/A'}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="bg-slate-50 dark:bg-slate-800/50 px-5 py-3 rounded-2xl border border-slate-100 dark:border-slate-700 text-center">
+                  <span className="text-[9px] font-black text-[#0856c8] dark:text-blue-400 uppercase tracking-widest block">Classification</span>
+                  <span className="text-sm font-black italic text-slate-950 dark:text-white tracking-tight uppercase">Academic Transcript</span>
+                </div>
+                
+                {/* Student Photo */}
+                {transcriptData.student?.profileImage ? (
+                  <img 
+                    src={transcriptData.student.profileImage} 
+                    alt="Student Photo" 
+                    className="w-20 h-24 rounded-xl object-cover border border-slate-300 dark:border-slate-700 shadow-md bg-slate-100" 
+                  />
+                ) : (
+                  <div className="w-20 h-24 rounded-xl border border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400 text-[10px] text-center font-bold px-2">
+                    <span>No Photo</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Student Profile Block */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-8 border-b border-slate-100 dark:border-slate-850">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Student Name</span>
+                <p className="text-sm font-black text-slate-950 dark:text-white italic">{transcriptData.student.name}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Class / Level</span>
+                <p className="text-sm font-black text-slate-950 dark:text-white uppercase italic">{transcriptData.className}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Admission No</span>
+                <p className="text-sm font-mono font-black text-slate-950 dark:text-white">{transcriptData.student.studentCode}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Session</span>
+                <p className="text-sm font-black text-slate-950 dark:text-white uppercase italic">{transcriptData.sessionName}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Gender</span>
+                <p className="text-sm font-black text-slate-950 dark:text-white uppercase italic">{transcriptData.student.gender}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Date Generated</span>
+                <p className="text-sm font-black text-slate-950 dark:text-white italic">{new Date().toLocaleDateString(undefined, { dateStyle: 'medium' })}</p>
+              </div>
+            </div>
+
+            {/* Cognitive Domain Table */}
+            <div className="mt-8 space-y-4">
+              <div className="flex items-center gap-3">
+                <Trophy size={18} className="text-[#0856c8] dark:text-blue-400" />
+                <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Cognitive Domain Summary</h4>
+              </div>
+              
+              <div className="border border-slate-100 dark:border-slate-800 rounded-[2rem] overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="px-6 py-4">Subject</th>
+                        <th className="px-4 py-4 text-center">C.A. (40)</th>
+                        <th className="px-4 py-4 text-center">Exam (60)</th>
+                        <th className="px-4 py-4 text-center">Total (100)</th>
+                        <th className="px-4 py-4 text-center">Grade</th>
+                        <th className="px-6 py-4 text-center">Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {transcriptData.subjects.map((sub, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          <td className="px-6 py-4 font-black uppercase text-slate-950 dark:text-white italic">{sub.subjectName}</td>
+                          <td className="px-4 py-4 text-center text-slate-900 dark:text-slate-100">{sub.caScore}</td>
+                          <td className="px-4 py-4 text-center text-slate-900 dark:text-slate-100">{sub.examScore}</td>
+                          <td className="px-4 py-4 text-center font-black text-slate-950 dark:text-white">{sub.totalScore}</td>
+                          <td className="px-4 py-4 text-center">
+                            <span className={cn(
+                              "px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase",
+                              sub.totalScore >= 75 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
+                              sub.totalScore >= 60 ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" :
+                              sub.totalScore >= 40 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" :
+                              "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                            )}>
+                              {sub.grade}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center font-black uppercase text-slate-900 dark:text-slate-100">
+                            {sub.remark}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Cumulative Summary Card */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+              <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 flex flex-col justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Cumulative Aggregate</span>
+                <div className="mt-4 flex items-baseline gap-2">
+                  <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic">{transcriptData.totalScore}</span>
+                  <span className="text-sm text-slate-400">/ {transcriptData.totalMax}</span>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-wider">Total Marks Earned</p>
+              </div>
+              
+              <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 flex flex-col justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Overall Average</span>
+                <div className="mt-4">
+                  <span className="text-4xl font-black text-[#0856c8] dark:text-blue-400 tracking-tighter italic">{transcriptData.overallAverage}%</span>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-wider">Term Percentile Index</p>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 flex flex-col justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">GPA Equivalent</span>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-4xl font-black text-[#0856c8] dark:text-blue-400 tracking-tighter italic">{transcriptData.gpa}</span>
+                  <span className="text-sm text-slate-400">/ 4.0</span>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-wider">Nigerian Grade Point Average</p>
+              </div>
+            </div>
+
+            {/* Academic Comments & Remarks Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              {/* Class Teacher's Remark Box */}
+              <div className="p-6 md:p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
+                <div className="relative z-10 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 dark:text-blue-400 shrink-0">
+                      <BrainCircuit size={16} />
+                    </div>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest italic">Class Teacher's AI Remark</h4>
+                  </div>
+                  {isAiThinking ? (
+                    <div className="space-y-2 py-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-11/12" />
+                    </div>
+                  ) : (
+                    <p className="text-xs md:text-sm leading-relaxed text-slate-600 dark:text-slate-350 italic font-medium">
+                      "{transcriptData.aiClassTeacherRemark}"
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Principal's Executive Verdict Box */}
+              <div className="p-6 md:p-8 rounded-[2rem] bg-slate-950 border border-slate-800 relative overflow-hidden group">
+                <div className="absolute -top-10 -right-10 p-10 opacity-[0.03] text-primary pointer-events-none group-hover:scale-115 transition-transform duration-1000">
+                  <BrainCircuit size={200} />
+                </div>
+                <div className="relative z-10 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                      <Sparkles size={16} />
+                    </div>
+                    <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Principal's AI Verdict</h4>
+                  </div>
+                  {isAiThinking ? (
+                    <div className="space-y-2 py-2">
+                      <Skeleton className="h-4 w-full bg-slate-800" />
+                      <Skeleton className="h-4 w-11/12 bg-slate-800" />
+                    </div>
+                  ) : (
+                    <p className="text-xs md:text-sm leading-relaxed text-slate-400 italic font-bold">
+                      "{transcriptData.aiGeneralRemark}"
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Official Signatures Section */}
+            <div className="mt-8 border-t border-slate-200 dark:border-slate-850 pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-slate-600 dark:text-slate-400">
+                <div className="space-y-4">
+                  <p className="font-bold">Class Teacher: <span className="font-normal italic">School System AI Assessed</span></p>
+                  <div className="h-px bg-slate-300 dark:bg-slate-700 w-48 mt-8" />
+                  <p className="text-xs text-slate-400">Signature / Date</p>
+                </div>
+                <div className="space-y-4 md:text-right">
+                  <p className="font-bold">Principal: <span className="font-normal italic">School Board Representative</span></p>
+                  <div className="h-px bg-slate-300 dark:bg-slate-700 w-48 mt-8 md:ml-auto" />
+                  <p className="text-xs text-slate-400">Signature / Date</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-10">
+              <button 
+                onClick={() => setIsTranscriptOpen(false)}
+                className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black uppercase tracking-widest transition-colors"
+              >
+                Close
+              </button>
+              
+              <PDFDownloadLink
+                document={<ComprehensiveTranscriptReport transcript={transcriptData} />}
+                fileName={`${transcriptData.student.name.replace(/\s+/g, '_')}_Transcript.pdf`}
+                className="flex-1"
+              >
+                {({ loading }) => (
+                  <button 
+                    disabled={loading || isAiThinking}
+                    className="w-full py-4 rounded-2xl bg-[#0856c8] hover:bg-[#3670e2] disabled:opacity-50 text-white text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-all active:scale-95"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Generating PDF...
+                      </>
+                    ) : (
+                      <>
+                        <Download size={16} />
+                        Download Official Transcript
+                      </>
+                    )}
+                  </button>
+                )}
+              </PDFDownloadLink>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* Top 5 Leaderboard Modal */}
       {isLeaderboardOpen && (

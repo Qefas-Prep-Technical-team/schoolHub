@@ -66,7 +66,8 @@ export default function CreateAssignmentPage() {
         publishStatus: 'publish-now',
         allowLateSubmissions: true,
         maxScore: 100,
-        scheduledDate: ''
+        scheduledDate: '',
+        scoreReleaseDate: ''
     });
 
     // Update form field
@@ -115,7 +116,8 @@ export default function CreateAssignmentPage() {
                 status: submissionData.status,
                 attachments: uploadedAttachments,
                 videoUrl: submissionData.videoUrl || undefined,
-                referenceUrl: submissionData.referenceUrl || undefined
+                referenceUrl: submissionData.referenceUrl || undefined,
+                scoreReleaseDate: submissionData.scoreReleaseDate || undefined
             });
 
             toast.success("Assignment created successfully!");
@@ -242,6 +244,8 @@ export default function CreateAssignmentPage() {
                     onPublishStatusChange={(status) => updateFormField('publishStatus', status)}
                     scheduledDate={formData.scheduledDate}
                     onScheduledDateChange={(date) => updateFormField('scheduledDate', date)}
+                    scoreReleaseDate={formData.scoreReleaseDate}
+                    onScoreReleaseDateChange={(date) => updateFormField('scoreReleaseDate', date)}
                 />
 
                 {/* Settings */}

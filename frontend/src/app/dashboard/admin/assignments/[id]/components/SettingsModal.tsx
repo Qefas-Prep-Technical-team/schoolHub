@@ -23,6 +23,9 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
   const [dueDate, setDueDate] = useState(
     assignment?.dueDate ? new Date(assignment.dueDate).toISOString().slice(0, 16) : ""
   );
+  const [scoreReleaseDate, setScoreReleaseDate] = useState(
+    assignment?.scoreReleaseDate ? new Date(assignment.scoreReleaseDate).toISOString().slice(0, 16) : ""
+  );
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -53,6 +56,7 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
       instructions,
       maxScore: Number(maxScore),
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+      scoreReleaseDate: scoreReleaseDate ? new Date(scoreReleaseDate).toISOString() : null,
     });
   };
 
@@ -144,6 +148,22 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
                 value={dueDate} 
                 onChange={(e) => setDueDate(e.target.value)} 
               />
+            </div>
+
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="scoreReleaseDate" className="flex items-center gap-2">
+                <Calendar size={14} className="text-gray-500" />
+                Result Release Date
+              </Label>
+              <Input 
+                id="scoreReleaseDate" 
+                type="datetime-local" 
+                value={scoreReleaseDate} 
+                onChange={(e) => setScoreReleaseDate(e.target.value)} 
+              />
+              <p className="text-xs text-slate-500">
+                If left blank, results will be released on the deadline.
+              </p>
             </div>
           </div>
 

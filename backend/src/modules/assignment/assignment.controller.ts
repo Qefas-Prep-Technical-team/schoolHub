@@ -126,7 +126,8 @@ export const createAssignment = async (req: Request, res: Response) => {
       status,
       attachments,
       videoUrl,
-      referenceUrl
+      referenceUrl,
+      scoreReleaseDate
     } = req.body;
 
     const attachmentUrl = attachments && attachments.length > 0 ? attachments[0] : undefined;
@@ -144,7 +145,8 @@ export const createAssignment = async (req: Request, res: Response) => {
       status: (status === "publish" || status === "publish-now") ? "PUBLISHED" : status === "draft" ? "DRAFT" : "SCHEDULED",
       attachmentUrl,
       videoUrl,
-      referenceUrl
+      referenceUrl,
+      scoreReleaseDate: scoreReleaseDate ? new Date(scoreReleaseDate) : undefined
     });
 
     return res.status(201).json({ success: true, data: createdAssignments });
@@ -254,5 +256,30 @@ export const deleteAssignment = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, message: 'Assignment deleted successfully' });
   } catch (error) {
     return handleError(res, error, 'assignment.deleteAssignment');
+  }
+};
+
+export const gradeSubmission = async (req: Request, res: Response) => {
+  try {
+    const { id, subId } = req.params;
+    const safeAssignmentId = Array.isArray(id) ? id[0] : id as string;
+    const safeSubId = Array.isArray(subId) ? subId[0] : subId as string;
+    
+    const schoolIdHeader = req.headers['x-school-id'];
+    const schoolId = Array.isArray(schoolIdHeader) ? schoolIdHeader[0] : schoolIdHeader as string;
+    
+    if (!schoolId) {
+      return res.status(400).json({ success: false, message: 'Missing school ID' });
+    }
+
+    const { grades } = req.body;
+    if (!grades || !Array.isArray(grades)) {
+      return res.status(400).json({ success: false, message: 'Missing or invalid grades payload' });
+    }
+
+    await assignmentService.gradeSubmissionService(safeAssignmentId, safeSubId, schoolId, grades);
+    return res.status(200).json({ success: true, message: 'Submission graded successfully' });
+  } catch (error) {
+    return handleError(res, error, 'assignment.gradeSubmission');
   }
 };

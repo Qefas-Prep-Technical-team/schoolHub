@@ -527,4 +527,125 @@ const IndividualStudentReport: React.FC<IndividualStudentReportProps> = ({
   );
 };
 
+export const ComprehensiveTranscriptReport: React.FC<{ transcript: any }> = ({ transcript }) => {
+  if (!transcript) return null;
+
+  const { student, school, className, sessionName, subjects, totalScore, totalMax, overallAverage, gpa, aiClassTeacherRemark, aiGeneralRemark } = transcript;
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          {school?.logo ? (
+            <Image src={school.logo} style={styles.logo} />
+          ) : (
+            <View style={styles.logo} />
+          )}
+          <View style={styles.schoolInfo}>
+            <Text style={styles.schoolName}>{school?.name || 'Academic Institution'}</Text>
+            <Text style={styles.schoolAddress}>{school?.settings?.address || 'School Address'}</Text>
+            <Text style={styles.schoolContact}>TEL: {school?.settings?.phone || 'N/A'}; Email: {school?.settings?.email || 'N/A'}</Text>
+          </View>
+          <View style={styles.photoBox}>
+            {student?.profileImage ? <Image src={student.profileImage} style={{width: '100%', height: '100%'}} /> : null}
+          </View>
+        </View>
+
+        <Text style={styles.reportTitle}>OFFICIAL ACADEMIC TRANSCRIPT</Text>
+
+        {/* Bio Section */}
+        <View style={styles.bioSection}>
+          <View style={styles.bioRow}>
+            <Text style={styles.bioLabel}>NAME:</Text>
+            <Text style={styles.bioValue}>{student?.name}</Text>
+          </View>
+          <View style={styles.bioRow}>
+            <Text style={styles.bioLabel}>GENDER:</Text>
+            <Text style={styles.bioValue}>{student?.gender || 'N/A'}</Text>
+          </View>
+          <View style={styles.bioRow}>
+            <Text style={styles.bioLabel}>CLASS:</Text>
+            <Text style={styles.bioValue}>{className}</Text>
+          </View>
+          <View style={styles.bioRow}>
+            <Text style={styles.bioLabel}>SESSION:</Text>
+            <Text style={styles.bioValue}>{sessionName}</Text>
+          </View>
+          <View style={styles.bioRow}>
+            <Text style={styles.bioLabel}>ADMISSION NO:</Text>
+            <Text style={styles.bioValue}>{student?.studentCode || 'N/A'}</Text>
+          </View>
+          <View style={styles.bioRow}>
+            <Text style={styles.bioLabel}>DATE ISSUED:</Text>
+            <Text style={styles.bioValue}>{new Date().toLocaleDateString()}</Text>
+          </View>
+        </View>
+
+        {/* Cognitive Domain - Subject Breakdown */}
+        <Text style={styles.sectionTitle}>ACADEMIC SUMMARY (COGNITIVE DOMAIN)</Text>
+        <View style={[styles.table, { borderTopWidth: 0 }]}>
+          {/* Table Header */}
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableHeader, { flex: 2.5 }]}>SUBJECTS</Text>
+            <Text style={[styles.tableHeader, { flex: 1 }]}>C.A. (40)</Text>
+            <Text style={[styles.tableHeader, { flex: 1 }]}>EXAM (60)</Text>
+            <Text style={[styles.tableHeader, { flex: 1.2 }]}>TOTAL (100)</Text>
+            <Text style={[styles.tableHeader, { flex: 1 }]}>GRADE</Text>
+            <Text style={[styles.tableHeader, { flex: 1.5, borderRightWidth: 0 }]}>REMARKS</Text>
+          </View>
+
+          {/* Table Body */}
+          {subjects.map((sub: any, i: number) => {
+            return (
+              <View key={i} style={styles.tableRow}>
+                <Text style={[styles.tableCellSubject, { flex: 2.5 }]}>{sub.subjectName}</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{sub.caScore}</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{sub.examScore}</Text>
+                <Text style={[styles.tableCell, { flex: 1.2 }]}>{sub.totalScore}</Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{sub.grade}</Text>
+                <Text style={[styles.tableCell, { flex: 1.5, borderRightWidth: 0 }]}>{sub.remark}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Performance Summary */}
+        <Text style={styles.sectionTitle}>PERFORMANCE SUMMARY & COMMENTS</Text>
+        <View style={[styles.table, { borderTopWidth: 0, flexDirection: 'row' }]}>
+          <View style={{ flex: 1 }}>
+            <View style={styles.tableRow}>
+              <Text style={[styles.tableCell, { flex: 1.2, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>Cumulative Marks:</Text>
+              <Text style={[styles.tableCell, { flex: 1 }]}>{totalScore} / {totalMax}</Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={[styles.tableCell, { flex: 1.2, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>Overall Average:</Text>
+              <Text style={[styles.tableCell, { flex: 1 }]}>{overallAverage}%</Text>
+            </View>
+            <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
+              <Text style={[styles.tableCell, { flex: 1.2, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>GPA Equivalent:</Text>
+              <Text style={[styles.tableCell, { flex: 1 }]}>{gpa} / 4.0</Text>
+            </View>
+          </View>
+          <View style={{ flex: 1.5, padding: 6, borderLeftWidth: 1, borderColor: '#000' }}>
+            <Text style={{ fontSize: 7, fontWeight: 'bold', marginBottom: 2 }}>Class Teacher's Remark (AI Generated):</Text>
+            <Text style={{ fontSize: 7, fontStyle: 'italic', marginBottom: 6 }}>{aiClassTeacherRemark}</Text>
+            
+            <Text style={{ fontSize: 7, fontWeight: 'bold', marginBottom: 2 }}>Principal's Overall Verdict (AI Generated):</Text>
+            <Text style={{ fontSize: 7, fontStyle: 'italic' }}>{aiGeneralRemark}</Text>
+          </View>
+        </View>
+
+        {/* Signatures */}
+        <View style={[styles.remarksSection, { marginTop: 30 }]}>
+          <View style={styles.signatureRow}>
+            <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Class Teacher: ..............................................................</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Principal's Sign: ...................................</Text>
+          </View>
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
 export default IndividualStudentReport;

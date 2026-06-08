@@ -13,6 +13,7 @@ export interface AssignmentFormData {
   scheduledDate?: string;
   videoUrl?: string;
   referenceUrl?: string;
+  scoreReleaseDate?: string;
 }
 interface classes {
     id: string;

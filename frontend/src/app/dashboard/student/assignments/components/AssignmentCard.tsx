@@ -22,7 +22,7 @@ export default function AssignmentCard({ assignment, viewMode, onClick }: Props)
   const getStatusText = (assignment: Assignment) => {
     switch (assignment.status) {
       case 'graded':
-        return `Graded: ${assignment.grade}`;
+        return `Graded: ${assignment.grade ?? 0}`;
       case 'submitted':
         return 'Submitted';
       case 'overdue':

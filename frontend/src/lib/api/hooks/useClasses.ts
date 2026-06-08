@@ -4,6 +4,7 @@ import { apiClient } from "../client";
 import { toast } from "react-toastify";
 import { AxiosError } from "axios";
 import { queryKeys as linkQueryKeys } from "./useLinks";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
 export const classQueryKeys = {
   all: ["classes"] as const,
@@ -12,10 +13,13 @@ export const classQueryKeys = {
 };
 
 export const useClasses = (schoolId?: string) => {
+  const { user } = useAuthStore();
+  const isAdmin = user?.userType === "ADMIN";
+
   return useQuery({
     queryKey: classQueryKeys.list(schoolId),
     queryFn: () => classService.getClasses(schoolId),
-    enabled: !!schoolId,
+    enabled: isAdmin ? !!schoolId : true,
     refetchInterval: 5000, // Refetch every 5 seconds for "real-time" feel
     staleTime: 4000,       // Keep data fresh for 4 seconds
     refetchIntervalInBackground: true, // Continue polling when tab is not focused if needed

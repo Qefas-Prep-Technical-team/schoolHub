@@ -49,6 +49,7 @@ interface AddScheduleModalProps {
   teacherId: string
   teacherSubjects: { id: string; name: string }[]
   initialData?: any
+  schoolId: string
 }
 
 export default function AddScheduleModal({
@@ -56,13 +57,16 @@ export default function AddScheduleModal({
   onClose,
   teacherId,
   teacherSubjects,
-  initialData
+  initialData,
+  schoolId
 }: AddScheduleModalProps) {
-  const { data: classesResponse, isLoading: isLoadingClasses } = useClasses()
+  const { data: classesResponse, isLoading: isLoadingClasses } = useClasses(schoolId)
   const upsertMutation = useUpsertTimetablePeriod(teacherId)
   const deleteMutation = useDeleteTimetablePeriod(teacherId)
 
-  const classes = classesResponse?.classes || []
+  const classes = Array.isArray(classesResponse)
+    ? classesResponse
+    : classesResponse?.classes || (classesResponse as any)?.data || []
 
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleSchema),

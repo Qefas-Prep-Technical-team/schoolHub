@@ -5,8 +5,10 @@ export interface Assignment {
   teacher: { firstName: string; lastName: string; user?: { avatarUrl?: string } };
   status: string;
   dueDate: string;
+  scoreReleaseDate?: string;
   instructions: string;
   totalMarks: number;
+  grade?: string | null;
   attachmentUrl?: string | null;
   videoUrl?: string | null;
   referenceUrl?: string | null;

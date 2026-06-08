@@ -13,7 +13,8 @@ import {
   reorderQuestions,
   updateAssignmentStatus,
   deleteAssignment,
-  updateAssignmentSettings
+  updateAssignmentSettings,
+  gradeSubmission
 } from "./assignment.controller";
 
 const router = Router();
@@ -34,6 +35,7 @@ router.post("/teacher", createAssignment);
 router.get("/admin", getTeacherAssignments);
 router.get("/admin/:id", getTeacherAssignmentById);
 router.post("/admin", createAssignment);
+router.post("/admin/:id/submissions/:subId/grade", gradeSubmission);
 
 // Question endpoints (usable by teachers/admins)
 router.post("/:assignmentId/questions", addQuestion);
