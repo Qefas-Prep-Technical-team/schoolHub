@@ -249,6 +249,35 @@ export default function AssignmentDetailPage() {
                     </div>
                   </div>
                 )}
+
+                {assignment.videoUrl && (
+                  <div className="mt-8 space-y-4">
+                    <h4 className="m-0">Video Resource</h4>
+                    <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 aspect-video w-full relative">
+                      <iframe 
+                        src={assignment.videoUrl} 
+                        className="w-full h-full border-0 absolute inset-0" 
+                        title="Video Resource"
+                        allowFullScreen
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {assignment.referenceUrl && (
+                  <div className="mt-8 space-y-4">
+                    <h4 className="m-0">External Reference</h4>
+                    <a 
+                      href={assignment.referenceUrl} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg text-sm font-bold transition-colors no-underline border border-blue-100 dark:border-blue-800/50"
+                    >
+                      <ExternalLink size={18} /> {assignment.referenceUrl}
+                    </a>
+                  </div>
+                )}
             </div>
           </TabsContent>
         </Tabs>

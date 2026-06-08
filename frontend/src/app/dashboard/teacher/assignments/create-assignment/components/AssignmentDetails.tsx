@@ -16,6 +16,10 @@ interface AssignmentDetailsProps {
     onClassesChange: (classes: ClassTag[]) => void;
     instructions: string;
     onInstructionsChange: (instructions: string) => void;
+    videoUrl?: string;
+    onVideoUrlChange?: (url: string) => void;
+    referenceUrl?: string;
+    onReferenceUrlChange?: (url: string) => void;
 }
 
 export default function AssignmentDetails({
@@ -26,7 +30,11 @@ export default function AssignmentDetails({
     classes,
     onClassesChange,
     instructions,
-    onInstructionsChange
+    onInstructionsChange,
+    videoUrl,
+    onVideoUrlChange,
+    referenceUrl,
+    onReferenceUrlChange
 }: AssignmentDetailsProps) {
     const [newClass, setNewClass] = useState('');
 
@@ -110,6 +118,28 @@ export default function AssignmentDetails({
                     <p className="text-sm text-[#506795] dark:text-[#A1A1AA] mt-2">
                         Start typing to add classes. Press Enter to add.
                     </p>
+                </div>
+
+                <div className="flex flex-col col-span-2 md:col-span-1">
+                    <p className="text-[#0e121b] dark:text-white text-base font-medium leading-normal pb-2">
+                        Video URL (Optional)
+                    </p>
+                    <Input
+                        placeholder="https://youtube.com/..."
+                        value={videoUrl || ''}
+                        onChange={(e) => onVideoUrlChange?.(e.target.value)}
+                    />
+                </div>
+
+                <div className="flex flex-col col-span-2 md:col-span-1">
+                    <p className="text-[#0e121b] dark:text-white text-base font-medium leading-normal pb-2">
+                        Reference Link (Optional)
+                    </p>
+                    <Input
+                        placeholder="https://example.com/resource"
+                        value={referenceUrl || ''}
+                        onChange={(e) => onReferenceUrlChange?.(e.target.value)}
+                    />
                 </div>
 
                 <div className="flex flex-col col-span-2">

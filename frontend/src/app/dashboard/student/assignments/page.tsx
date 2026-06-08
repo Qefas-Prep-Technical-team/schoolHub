@@ -22,11 +22,17 @@ export default function AssignmentsPage() {
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
   const [selectedStatus, setSelectedStatus] = useState('All Statuses');
   const [selectedDueDate, setSelectedDueDate] = useState('All Dates');
+  const [selectedDepartment, setSelectedDepartment] = useState('All Departments');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const dynamicSubjects = useMemo(() => {
     const subjectNames = Array.from(new Set(assignments.map(a => (a as any).subject || "General")));
     return ['All Subjects', ...subjectNames] as string[];
+  }, [assignments]);
+
+  const dynamicDepartments = useMemo(() => {
+    const departmentNames = Array.from(new Set(assignments.map(a => (a as any).department || "Whole Class")));
+    return ['All Departments', ...departmentNames] as string[];
   }, [assignments]);
 
   const filteredAssignments = assignments.filter(assignment => {
@@ -47,10 +53,12 @@ export default function AssignmentsPage() {
     // Due date filter
     const matchesDueDate = selectedDueDate === 'All Dates' || 
       (selectedDueDate === 'Overdue' && assignment.status === 'overdue');
-      // For simplicity on dates, using the same logic without dueInDays if missing
-      // Real app might compute dueInDays on the fly if needed
 
-    return matchesSearch && matchesSubject && matchesStatus && matchesDueDate;
+    // Department filter
+    const matchesDepartment = selectedDepartment === 'All Departments' || 
+      ((assignment as any).department || 'Whole Class') === selectedDepartment;
+
+    return matchesSearch && matchesSubject && matchesStatus && matchesDueDate && matchesDepartment;
   });
 
   const handleNewSubmission = () => {
@@ -88,12 +96,18 @@ export default function AssignmentsPage() {
                 />
               </div>
 
-              <div className="flex gap-3 overflow-x-auto w-full md:w-auto pb-2">
+              <div className="flex gap-3 flex-wrap w-full md:w-auto pb-2">
                 <FilterChips
                   label="Subject"
                   options={dynamicSubjects}
                   selected={selectedSubject}
                   onSelect={setSelectedSubject}
+                />
+                <FilterChips
+                  label="Department"
+                  options={dynamicDepartments}
+                  selected={selectedDepartment}
+                  onSelect={setSelectedDepartment}
                 />
                 <FilterChips
                   label="Status"

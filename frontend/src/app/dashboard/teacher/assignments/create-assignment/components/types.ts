@@ -11,6 +11,8 @@ export interface AssignmentFormData {
   allowLateSubmissions: boolean;
   maxScore: number;
   scheduledDate?: string;
+  videoUrl?: string;
+  referenceUrl?: string;
 }
 interface classes {
     id: string;

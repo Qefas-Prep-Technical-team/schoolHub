@@ -33,13 +33,20 @@ export const imageService = {
   /**
    * Proxy upload through backend to bypass CORS/DNS issues with Bunny.net
    */
-  proxyUploadToBunny: async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
+  proxyUploadToBunny: async (file: File, schoolId?: string) => {
+    // 1. Upload to Supabase directly (migrated from legacy Bunny.net proxy)
+    const { publicUrl, key } = await imageService.uploadToSupabase(file, "school-assets");
 
-    const response = await apiClient.post("/upload/proxy", formData);
+    // 2. Call the backend to confirm the upload and log the FileRecord for quota tracking
+    await apiClient.post("/upload/confirm", {
+      fileName: file.name,
+      fileUrl: publicUrl,
+      fileSize: file.size,
+      mimeType: file.type || "application/octet-stream",
+      schoolId,
+    });
 
-    return response.data.data; // Returns { publicUrl, key }
+    return { publicUrl, key };
   },
 
   /**

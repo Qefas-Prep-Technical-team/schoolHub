@@ -16,7 +16,9 @@ import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useAdminAssignments } from '@/lib/api/hooks/useAssignments';
 import { useSchoolSubjects } from '@/lib/api/hooks/useSchool';
 import { AssignmentsSkeleton } from './components/AssignmentsSkeleton';
-import { PlusCircle, SearchX, Sparkles, BookOpen, FileText, CheckCircle2, Clock, FileEdit } from 'lucide-react';
+import { PlusCircle, SearchX, Sparkles, BookOpen, FileText, CheckCircle2, Clock, FileEdit, AlertTriangle } from 'lucide-react';
+import { useDeleteAssignment } from '@/lib/api/hooks/useAssignments';
+import { toast } from 'react-toastify';
 
 export default function AssignmentsPage() {
     const router = useRouter();
@@ -26,6 +28,7 @@ export default function AssignmentsPage() {
     const [filters, setFilters] = useState({ status: '', subject: '' });
     const [view, setView] = useState<'list' | 'grid'>('grid');
     const [currentPage, setCurrentPage] = useState(1);
+    const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
     const itemsPerPage = 8;
 
     const isPersonal = false; // Admins oversee the whole school
@@ -35,6 +38,8 @@ export default function AssignmentsPage() {
         effectiveSchoolId,
         filters.status === 'all' ? undefined : filters.status
     );
+
+    const { mutate: deleteAssignment, isPending: isDeleting } = useDeleteAssignment(effectiveSchoolId);
 
     const { data: subjectsData } = useSchoolSubjects(effectiveSchoolId);
     const availableSubjects = Array.isArray(subjectsData) ? subjectsData : (subjectsData?.data || subjectsData?.subjects || []);
@@ -70,7 +75,11 @@ export default function AssignmentsPage() {
     const stats = useMemo(() => {
         const total = assignments.length;
         const active = assignments.filter((a: any) => a.status?.toLowerCase() === 'published').length;
-        const overdue = assignments.filter((a: any) => a.status?.toLowerCase() === 'overdue').length;
+        const overdue = assignments.filter((a: any) => {
+            if (a.status?.toLowerCase() === 'overdue') return true;
+            if (a.dueDate && new Date(a.dueDate) < new Date() && a.status?.toLowerCase() !== 'published') return true;
+            return false;
+        }).length;
         const drafts = assignments.filter((a: any) => a.status?.toLowerCase() === 'draft').length;
         
         return [
@@ -89,6 +98,20 @@ export default function AssignmentsPage() {
     const handleFilterChange = (newFilters: { status: string; subject: string }) => {
         setFilters(newFilters);
         setCurrentPage(1);
+    };
+
+    const confirmDelete = () => {
+        if (!assignmentToDelete) return;
+        deleteAssignment(assignmentToDelete, {
+            onSuccess: () => {
+                toast.success('Assignment deleted successfully');
+                setAssignmentToDelete(null);
+            },
+            onError: (error: any) => {
+                toast.error(error?.response?.data?.error || 'Failed to delete assignment');
+                setAssignmentToDelete(null);
+            }
+        });
     };
 
     return (
@@ -196,28 +219,29 @@ export default function AssignmentsPage() {
                                     : 'grid-cols-1'
                                     }`}
                             >
-                                {paginatedAssignments.map((assignment: any) => (
-                                    <AssignmentCard
-                                        key={assignment.id}
-                                        assignment={{
-                                            ...assignment,
-                                            subject: typeof assignment.subject === 'string' ? assignment.subject : (assignment.subject?.name || "General"),
-                                            className: typeof assignment.class === 'string' ? assignment.class : (assignment.class?.name || "All Classes"),
-                                            dueDate: assignment.endDate ? new Date(assignment.endDate).toLocaleDateString() : "No Deadline",
-                                            submitted: assignment._count?.submissions || 0,
-                                            totalStudents: typeof assignment.class === 'object' && assignment.class?._count?.enrollments 
-                                                ? assignment.class._count.enrollments 
-                                                : 0,
-                                            progress: assignment._count?.submissions && typeof assignment.class === 'object' && assignment.class?._count?.enrollments
-                                                ? Math.round((assignment._count.submissions / assignment.class._count.enrollments) * 100) 
-                                                : 0
-                                        }}
-                                        onEdit={() => {}}
-                                        onGrade={() => {}}
-                                        onDelete={() => {}}
-                                        onViewDetails={() => router.push(`/dashboard/admin/assignments/${assignment.id}`)}
-                                    />
-                                ))}
+                                {paginatedAssignments.map((assignment: any) => {
+                                    const totalStudents = typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (typeof assignment.class === 'object' && assignment.class?._count?.enrollments ? assignment.class._count.enrollments : 0);
+                                    const submitted = assignment._count?.submissions || 0;
+                                    const progress = totalStudents > 0 ? Math.round((submitted / totalStudents) * 100) : 0;
+                                    return (
+                                        <AssignmentCard
+                                            key={assignment.id}
+                                            assignment={{
+                                                ...assignment,
+                                                subject: typeof assignment.subject === 'string' ? assignment.subject : (assignment.subject?.name || "General"),
+                                                className: typeof assignment.class === 'string' ? assignment.class : (assignment.class?.name || "All Classes"),
+                                                dueDate: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline",
+                                                submitted,
+                                                totalStudents,
+                                                progress
+                                            }}
+                                            onEdit={() => router.push(`/dashboard/admin/assignments/${assignment.id}?edit=true`)}
+                                            onGrade={() => router.push(`/dashboard/admin/assignments/${assignment.id}`)}
+                                            onDelete={() => setAssignmentToDelete(assignment.id)}
+                                            onViewDetails={() => router.push(`/dashboard/admin/assignments/${assignment.id}`)}
+                                        />
+                                    );
+                                })}
                             </motion.div>
                         ) : (
                             <motion.div
@@ -251,6 +275,53 @@ export default function AssignmentsPage() {
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {assignmentToDelete && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setAssignmentToDelete(null)}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 p-8"
+                        >
+                            <div className="flex flex-col items-center text-center">
+                                <div className="w-16 h-16 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center mb-6">
+                                    <AlertTriangle size={32} strokeWidth={2} />
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mb-2">Delete Assignment?</h3>
+                                <p className="text-slate-500 dark:text-slate-400 mb-8 text-sm leading-relaxed">
+                                    This action cannot be undone. This will permanently delete the assignment, all its questions, and any student submissions.
+                                </p>
+                                <div className="flex items-center gap-3 w-full">
+                                    <button
+                                        onClick={() => setAssignmentToDelete(null)}
+                                        disabled={isDeleting}
+                                        className="flex-1 px-4 py-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDelete}
+                                        disabled={isDeleting}
+                                        className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors flex items-center justify-center disabled:opacity-50"
+                                    >
+                                        {isDeleting ? 'Deleting...' : 'Delete Permanently'}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </main>
     );
 }

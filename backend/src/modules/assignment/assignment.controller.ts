@@ -119,11 +119,14 @@ export const createAssignment = async (req: Request, res: Response) => {
       title,
       classIds,
       subjectId,
+      departmentId,
       instructions,
       dueDate,
       maxScore,
       status,
-      attachments
+      attachments,
+      videoUrl,
+      referenceUrl
     } = req.body;
 
     const attachmentUrl = attachments && attachments.length > 0 ? attachments[0] : undefined;
@@ -134,11 +137,14 @@ export const createAssignment = async (req: Request, res: Response) => {
       teacherId: userId,
       classIds,
       subjectId,
+      departmentId,
       instructions,
       dueDate: dueDate ? new Date(dueDate) : undefined,
       totalMarks: maxScore ? parseFloat(maxScore) : undefined,
       status: (status === "publish" || status === "publish-now") ? "PUBLISHED" : status === "draft" ? "DRAFT" : "SCHEDULED",
-      attachmentUrl
+      attachmentUrl,
+      videoUrl,
+      referenceUrl
     });
 
     return res.status(201).json({ success: true, data: createdAssignments });
@@ -230,5 +236,23 @@ export const updateAssignmentSettings = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, data });
   } catch (error) {
     return handleError(res, error, "assignment.updateAssignmentSettings");
+  }
+};
+
+export const deleteAssignment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const safeId = Array.isArray(id) ? id[0] : id as string;
+    const headerSchoolId = req.headers['x-school-id'];
+    const schoolId = Array.isArray(headerSchoolId) ? headerSchoolId[0] : headerSchoolId as string;
+    
+    if (!schoolId) {
+      return res.status(400).json({ success: false, message: 'Missing school ID' });
+    }
+
+    await assignmentService.deleteAssignmentService(safeId, schoolId);
+    return res.status(200).json({ success: true, message: 'Assignment deleted successfully' });
+  } catch (error) {
+    return handleError(res, error, 'assignment.deleteAssignment');
   }
 };

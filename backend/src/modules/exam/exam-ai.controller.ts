@@ -5,6 +5,7 @@ import {
   parseRawExamTextToStructuredQuestions,
 } from "./exam-ai.service";
 import { handleError } from "../../utils/error-handler";
+import { AiLimiterService } from "../subscription/ai-limiter.service";
 
 export const parseRawExamText = async (req: Request, res: Response) => {
   try {
@@ -12,6 +13,22 @@ export const parseRawExamText = async (req: Request, res: Response) => {
       return res.status(403).json({
         success: false,
         message: "Only admins and teachers can use AI exam parsing",
+      });
+    }
+
+    // 1. Check daily rate limit
+    const stats = await AiLimiterService.getAiUsageStats(
+      req.user.id,
+      req.user.userType,
+      req.user.schoolId
+    );
+
+    if (stats.current >= stats.limit) {
+      return res.status(429).json({
+        success: false,
+        message: `Daily AI usage limit reached (${stats.limit} prompts/day). Please try again tomorrow or upgrade your plan.`,
+        limit: stats.limit,
+        current: stats.current,
       });
     }
 
@@ -29,6 +46,9 @@ export const parseRawExamText = async (req: Request, res: Response) => {
       subjectName,
       examTitle,
     });
+
+    // 2. Log usage after successful generation
+    await AiLimiterService.logAiUsage(req.user.id, "PARSE_TEXT");
 
     return res.status(200).json({
       success: true,
@@ -49,6 +69,22 @@ export const generateExamQuestions = async (req: Request, res: Response) => {
       });
     }
 
+    // 1. Check daily rate limit
+    const stats = await AiLimiterService.getAiUsageStats(
+      req.user.id,
+      req.user.userType,
+      req.user.schoolId
+    );
+
+    if (stats.current >= stats.limit) {
+      return res.status(429).json({
+        success: false,
+        message: `Daily AI usage limit reached (${stats.limit} prompts/day). Please try again tomorrow or upgrade your plan.`,
+        limit: stats.limit,
+        current: stats.current,
+      });
+    }
+
     const { prompt, subjectName, examTitle, questionCount } = req.body;
 
     if (!prompt) {
@@ -64,6 +100,9 @@ export const generateExamQuestions = async (req: Request, res: Response) => {
       examTitle,
       questionCount,
     });
+
+    // 2. Log usage after successful generation
+    await AiLimiterService.logAiUsage(req.user.id, "GENERATE_QUESTIONS");
 
     return res.status(200).json({
       success: true,

@@ -12,6 +12,13 @@
 
 ## Completed
 
+- **Admin Assignments Page Polish (June 06, 2026)**:
+  - Added delete assignment backend API endpoint with full cascading cleanup of questions and submissions.
+  - Wired frontend `useDeleteAssignment` hook and implemented a beautiful confirmation modal popup for deletion actions.
+  - Linked the "Edit" and "Grade" card actions to navigate directly to the assignment details dashboard correctly.
+  - Wired frontend Assignment cards to display real dynamic class/subject stats (totalStudents, submitted, progress percentage, dueDate, className) instead of hardcoded data placeholders.
+
+
 - **Student Lifecycle Promotion (June 5, 2026)**:
   - Added `promoteStudents` method in `StudentLifecycleService` to handle moving students between classes, updating levels, and generating immutable history.
   - Implemented promotion notification triggers for teachers and parents.
@@ -601,4 +608,26 @@
     - [x] **Total Marks**: Summed `totalScore` from exam attempts + `score` from standalone grades into a real `totalMarks` value.
     - [x] **Class Position**: Reads `overallRank` and `totalStudentsInClass` from the backend `/exams/my/stats` endpoint (`getStudentGlobalStatsService`), displays as `#02 / 34` format. Shows `—` with "Coming soon" if no graded attempts exist yet.
     - [x] **AcademicSummary.tsx refactored**: Accepts `totalSubjects`, `totalMarks`, and `classPosition` props; handles zero-state gracefully with dash and helper labels.
+
+### Sunday, June 07, 2026
+- **Database Connection Stabilization**:
+    - [x] **Prisma Pooler Connection Timeout Fix**: Diagnosed and resolved the Prisma "Can't reach database server" error occurring during `auth.login` calls. 
+    - [x] **Direct Connection Setup**: Modified the backend `.env` file to switch `DATABASE_URL` from the Supabase transaction pooler port `6543` (with `pgbouncer=true`) to the session pooler port `5432` without `pgbouncer`. This allows Prisma's native connection pool engine to execute reliably in a long-running Node.js/Express environment without connection drops or IP resolution issues.
+- **File Upload & Proxy Stabilization**:
+    - [x] **Resolved 500 Proxy Error**: Diagnosed the `POST /api/upload/proxy` 500 Internal Server Error occurring during Assignment creation. Discovered it was caused by Bunny.net returning a 401 Unauthorized error due to deprecated or missing credentials following the architecture shift.
+    - [x] **Completed S3/Supabase Migration**: Successfully migrated the remaining Assignment upload flows off the legacy Bunny backend proxy. Modified the frontend `imageService.proxyUploadToBunny` to use direct-to-Supabase Storage uploads (`uploadToSupabase`), avoiding backend throughput bottlenecks.
+    - [x] **Quota Tracking**: Updated `upload.controller.ts`'s `confirmS3Upload` route to correctly log `FileRecord` metrics and attribute storage quotas via `req.body.schoolId`, ensuring accurate storage metrics for both teachers and admins managing assignments.
+
+### Monday, June 08, 2026
+- **AI Subscription Gating & Daily Rate Limiting**:
+    - [x] **Prisma Schema Update**: Added `AiUsageLog` model to track and persist daily AI generation and parsing usage counts. Pushed changes directly to the database via `npx prisma db push`.
+    - [x] **AiLimiterService**: Developed a new backend rate-limiting service that resolves user-level and school-level daily limits, counts today's usage logs, and increments/logs successful AI operations.
+    - [x] **Entitlement Verification**: Applied the existing `requireFeatureAccess("aiInsights")` middleware to exam AI routes (`/exams/ai/generate` and `/exams/ai/parse-text`), securing them from unauthorized access.
+    - [x] **Quota Stats Integration**: Updated `quota.service.ts` to replace placeholder `0` value with real, dynamically computed daily AI usage logs count.
+    - [x] **New Endpoint**: Added `/subscription/ai-usage` GET route returning stats `{ current, limit, remaining }` contextually for frontend components.
+    - [x] **Frontend Gating (AITools.tsx)**: Updated the AI Tools sidebar in both Exam Paper and Assignment editors to:
+        - Check for `aiInsights` access key via `useFeatureAccess` hook.
+        - Render a lock icon/overlay with upgrade buttons if unauthorized.
+        - Display remaining daily prompts count ("X of Y prompts left today").
+        - Limit tool usage and show limit exceeded overlay and alerts when daily usage reaches 100%.
 

@@ -17,6 +17,7 @@ import { useTeacherClasses, useTeacherSubjects } from '@/lib/api/hooks/useTeache
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { toast } from 'react-toastify';
 import { apiClient } from '@/lib/api/client';
+import { imageService } from '@/lib/api/services/imageService';
 
 export default function CreateAssignmentPage() {
     const router = useRouter();
@@ -112,7 +113,9 @@ export default function CreateAssignmentPage() {
                 dueDate: submissionData.dueDate || undefined,
                 maxScore: submissionData.maxScore,
                 status: submissionData.status,
-                attachments: uploadedAttachments
+                attachments: uploadedAttachments,
+                videoUrl: submissionData.videoUrl || undefined,
+                referenceUrl: submissionData.referenceUrl || undefined
             });
 
             toast.success("Assignment created successfully!");
@@ -148,23 +151,13 @@ export default function CreateAssignmentPage() {
             }
 
             try {
-                const formData = new FormData();
-                // Add metadata for tracking first
-                formData.append('schoolId', effectiveSchoolId);
-                formData.append('fileName', attachment.name);
-                
-                formData.append('file', attachment.file);
+                // Upload directly to Supabase storage and log with the backend
+                const { publicUrl } = await imageService.proxyUploadToBunny(attachment.file, effectiveSchoolId);
 
-                const response = await apiClient.post('/upload/proxy', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                });
-
-                if (response.data?.success && response.data?.url) {
-                    uploadedUrls.push(response.data.url);
+                if (publicUrl) {
+                    uploadedUrls.push(publicUrl);
                 } else {
-                    throw new Error(response.data?.message || 'Upload failed for file');
+                    throw new Error('Upload failed for file');
                 }
             } catch (error) {
                 console.error(`Failed to upload ${attachment.name}:`, error);
@@ -184,18 +177,21 @@ export default function CreateAssignmentPage() {
 
 
 
-    const shouldShowLoading = selectedSchoolId && (isClassesLoading || isSubjectsLoading || isDepartmentsLoading);
+    const shouldShowLoading = !!effectiveSchoolId && (isClassesLoading || isSubjectsLoading || isDepartmentsLoading);
 
     if (shouldShowLoading) {
         return (
-            <main className="max-w-4xl mx-auto pb-16 space-y-8 animate-pulse">
-                <div className="flex flex-wrap justify-between gap-3 mb-8">
-                    <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+            <main className="max-w-4xl mx-auto pb-16 space-y-8 p-4 md:p-0">
+                <div className="flex flex-wrap justify-between gap-3 mb-8 animate-pulse">
+                    <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800/80 rounded-lg"></div>
                 </div>
-                <div className="space-y-6">
-                    <div className="h-[400px] w-full bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
-                    <div className="h-32 w-full bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
-                    <div className="h-64 w-full bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                <div className="space-y-6 animate-pulse">
+                    {/* Assignment Details Skeleton */}
+                    <div className="h-[400px] w-full bg-slate-100 dark:bg-[#1C1C1E] rounded-xl border border-slate-200 dark:border-[#2D2D2F]"></div>
+                    {/* Attachments Skeleton */}
+                    <div className="h-32 w-full bg-slate-100 dark:bg-[#1C1C1E] rounded-xl border border-slate-200 dark:border-[#2D2D2F]"></div>
+                    {/* Scheduling Skeleton */}
+                    <div className="h-64 w-full bg-slate-100 dark:bg-[#1C1C1E] rounded-xl border border-slate-200 dark:border-[#2D2D2F]"></div>
                 </div>
             </main>
         );
@@ -223,6 +219,10 @@ export default function CreateAssignmentPage() {
                     onClassesChange={(classes) => updateFormField('classes', classes)}
                     instructions={formData.instructions}
                     onInstructionsChange={(instructions) => updateFormField('instructions', instructions)}
+                    videoUrl={formData.videoUrl}
+                    onVideoUrlChange={(videoUrl) => updateFormField('videoUrl', videoUrl)}
+                    referenceUrl={formData.referenceUrl}
+                    onReferenceUrlChange={(referenceUrl) => updateFormField('referenceUrl', referenceUrl)}
                     availableSubjects={availableSubjects}
                     availableClasses={availableClasses}
                     availableDepartments={availableDepartments}

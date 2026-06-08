@@ -97,8 +97,6 @@ export default function AssignmentCard({
 
                 <div className="pt-6 border-t border-slate-200 dark:border-slate-800/50 flex items-center justify-between">
                     <div className="flex items-center gap-1">
-                        <IconButton onClick={() => onEdit?.(assignment.id)} icon={Edit} title="Edit" />
-                        <IconButton onClick={() => onGrade?.(assignment.id)} icon={Grading} title="Grade" />
                         <IconButton onClick={() => onDelete?.(assignment.id)} icon={Trash2} title="Delete" variant="danger" />
                     </div>
 

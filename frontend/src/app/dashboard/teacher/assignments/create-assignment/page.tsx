@@ -14,6 +14,7 @@ import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { toast } from 'react-toastify';
 import { apiClient } from '@/lib/api/client';
+import { imageService } from '@/lib/api/services/imageService';
 
 export default function CreateAssignmentPage() {
     const router = useRouter();
@@ -86,7 +87,9 @@ export default function CreateAssignmentPage() {
                 dueDate: submissionData.dueDate || undefined,
                 maxScore: submissionData.maxScore,
                 status: submissionData.status,
-                attachments: uploadedAttachments
+                attachments: uploadedAttachments,
+                videoUrl: submissionData.videoUrl || undefined,
+                referenceUrl: submissionData.referenceUrl || undefined
             });
 
             toast.success("Assignment created successfully!");
@@ -119,23 +122,13 @@ export default function CreateAssignmentPage() {
             }
 
             try {
-                const formData = new FormData();
-                // Add metadata for tracking first
-                formData.append('schoolId', effectiveSchoolId);
-                formData.append('fileName', attachment.name);
+                // Upload directly to Supabase storage and log with the backend
+                const { publicUrl } = await imageService.proxyUploadToBunny(attachment.file, effectiveSchoolId);
                 
-                formData.append('file', attachment.file);
-
-                const response = await apiClient.post('/upload/proxy', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                });
-
-                if (response.data?.success && response.data?.url) {
-                    uploadedUrls.push(response.data.url);
+                if (publicUrl) {
+                    uploadedUrls.push(publicUrl);
                 } else {
-                    throw new Error(response.data?.message || 'Upload failed for file');
+                    throw new Error('Upload failed for file');
                 }
             } catch (error) {
                 console.error(`Failed to upload ${attachment.name}:`, error);
@@ -173,6 +166,10 @@ export default function CreateAssignmentPage() {
                     onClassesChange={(classes) => updateFormField('classes', classes)}
                     instructions={formData.instructions}
                     onInstructionsChange={(instructions) => updateFormField('instructions', instructions)}
+                    videoUrl={formData.videoUrl}
+                    onVideoUrlChange={(videoUrl) => updateFormField('videoUrl', videoUrl)}
+                    referenceUrl={formData.referenceUrl}
+                    onReferenceUrlChange={(referenceUrl) => updateFormField('referenceUrl', referenceUrl)}
                 />
 
                 {/* Attachments */}

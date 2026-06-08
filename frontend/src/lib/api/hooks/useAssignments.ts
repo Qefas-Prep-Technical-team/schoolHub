@@ -31,7 +31,7 @@ export const useTeacherAssignments = (schoolId: string, status?: string) => {
     queryFn: async () => {
       const response = await api.get('/assignment/teacher', {
         headers: { 'x-school-id': schoolId },
-        params: { status }
+        params: { status, limit: 1000 }
       });
       return response.data.data;
     },
@@ -45,7 +45,7 @@ export const useAdminAssignments = (schoolId: string, status?: string) => {
     queryFn: async () => {
       const response = await api.get('/assignment/admin', {
         headers: { 'x-school-id': schoolId },
-        params: { status }
+        params: { status, limit: 1000 }
       });
       return response.data.data;
     },
@@ -68,6 +68,8 @@ export const useCreateAssignment = (schoolId: string, isAdmin: boolean = false) 
       maxScore?: number;
       status?: string;
       attachments?: string[];
+      videoUrl?: string;
+      referenceUrl?: string;
     }) => {
       const response = await api.post(endpoint, data, {
         headers: { 'x-school-id': schoolId },
@@ -95,7 +97,7 @@ export const useSubmitAssignment = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { fileUrl?: string; fileName?: string; answers?: any[] } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: { fileUrl?: string; fileName?: string; answers?: any[]; isDraft?: boolean } }) => {
       const response = await api.post(`/assignment/student/${id}/submit`, data);
       return response.data.data;
     },
@@ -118,6 +120,22 @@ export const useUpdateAssignmentStatus = (schoolId: string) => {
     },
     onSuccess: (_, { assignmentId }) => {
       queryClient.invalidateQueries({ queryKey: ['assignment-detail', assignmentId] });
+      queryClient.invalidateQueries({ queryKey: ['assignments'] });
+    }
+  });
+};
+
+export const useDeleteAssignment = (schoolId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (assignmentId: string) => {
+      const response = await api.delete(`/assignment/admin/${assignmentId}`, {
+        headers: { 'x-school-id': schoolId }
+      });
+      return response.data;
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments'] });
     }
   });

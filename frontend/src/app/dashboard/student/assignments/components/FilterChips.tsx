@@ -27,10 +27,10 @@ export default function FilterChips({ label, options, selected, onSelect }: Prop
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-10"
+            className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute top-full mt-1 left-0 z-20 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
+          <div className="absolute top-[calc(100%+8px)] left-0 z-50 min-w-[160px] bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl py-2 overflow-y-auto max-h-[300px]">
             {options.map((option) => (
               <button
                 key={option}
@@ -38,10 +38,10 @@ export default function FilterChips({ label, options, selected, onSelect }: Prop
                   onSelect(option);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
+                className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${
                   selected === option
-                    ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300'
-                    : 'text-gray-700 dark:text-gray-300'
+                    ? 'bg-primary/10 text-primary dark:bg-primary/20 font-semibold'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                 }`}
               >
                 {option}

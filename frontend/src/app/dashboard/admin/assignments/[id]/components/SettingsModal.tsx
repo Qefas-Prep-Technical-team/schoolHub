@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Settings, Save, Calendar, FileText } from "lucide-react";
+import { Loader2, Settings, Save, Calendar, FileText, Users, BookOpen } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 
 interface SettingsModalProps {
@@ -19,7 +19,7 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
   const queryClient = useQueryClient();
   const [title, setTitle] = useState(assignment?.title || "");
   const [instructions, setInstructions] = useState(assignment?.instructions || "");
-  const [maxScore, setMaxScore] = useState(assignment?.maxScore || 100);
+  const [maxScore, setMaxScore] = useState(assignment?.totalMarks || 100);
   const [dueDate, setDueDate] = useState(
     assignment?.dueDate ? new Date(assignment.dueDate).toISOString().slice(0, 16) : ""
   );
@@ -81,6 +81,34 @@ export default function SettingsModal({ isOpen, onClose, assignment, schoolId }:
               onChange={(e) => setTitle(e.target.value)} 
               placeholder="E.g. Midterm Mathematics" 
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Users size={14} className="text-gray-500" />
+                Class
+              </Label>
+              <Input 
+                value={assignment?.class?.name || "All Classes"} 
+                disabled
+                className="bg-gray-50 dark:bg-gray-800"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <BookOpen size={14} className="text-gray-500" />
+                Subject / Department
+              </Label>
+              <Input 
+                value={
+                  (assignment?.subject?.name || "General") + 
+                  (assignment?.department?.name ? ` • ${assignment.department.name}` : "")
+                } 
+                disabled
+                className="bg-gray-50 dark:bg-gray-800"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

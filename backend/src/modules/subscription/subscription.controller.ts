@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { getSchoolUsageService, getUserUsageService } from "./quota.service";
 import { hasFeatureAccess } from "../subscription-checkers";
 import { handleError } from "../../utils/error-handler";
+import { AiLimiterService } from "./ai-limiter.service";
 
 export const getSubscriptionUsage = async (req: Request, res: Response) => {
   try {
@@ -66,5 +67,30 @@ export const checkFeatureAccess = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return handleError(res, error, "subscription.checkFeatureAccess");
+  }
+};
+
+export const getAiUsage = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User context not found. Authentication required."
+      });
+    }
+
+    const stats = await AiLimiterService.getAiUsageStats(
+      user.id,
+      user.userType,
+      user.schoolId
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error: any) {
+    return handleError(res, error, "subscription.getAiUsage");
   }
 };

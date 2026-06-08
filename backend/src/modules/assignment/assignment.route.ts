@@ -11,7 +11,9 @@ import {
   updateQuestion,
   deleteQuestion,
   reorderQuestions,
-  updateAssignmentStatus
+  updateAssignmentStatus,
+  deleteAssignment,
+  updateAssignmentSettings
 } from "./assignment.controller";
 
 const router = Router();
@@ -39,5 +41,6 @@ router.patch("/questions/:questionId", updateQuestion);
 router.delete("/questions/:questionId", deleteQuestion);
 router.patch("/:assignmentId/questions/reorder", reorderQuestions);
 router.patch("/:assignmentId/status", updateAssignmentStatus);
+router.patch("/:assignmentId/settings", updateAssignmentSettings);
 
 export default router;

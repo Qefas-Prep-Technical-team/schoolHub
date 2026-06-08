@@ -76,16 +76,20 @@ export default function Header({ assignment }: Props) {
         <div className="flex-1">
           <div className="flex items-center gap-4 mb-4">
             <div 
-              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-12 w-12"
-              style={{ backgroundImage: `url("${assignment.instructor.avatarUrl}")` }}
-              title={`${assignment.instructor.name}'s profile`}
-            />
+              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-12 w-12 bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden"
+            >
+              {assignment.teacher?.user?.avatarUrl ? (
+                <img src={assignment.teacher.user.avatarUrl} alt={`${assignment.teacher.firstName}'s profile`} className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-xl font-bold text-slate-500">{assignment.teacher?.firstName?.[0] || 'T'}</span>
+              )}
+            </div>
             <div>
               <p className="text-slate-900 dark:text-slate-100 text-lg font-bold">
-                {assignment.instructor.name}
+                {assignment.teacher?.firstName} {assignment.teacher?.lastName}
               </p>
               <p className="text-slate-500 dark:text-slate-400 text-sm">
-                {assignment.subject}
+                {assignment.subject?.name}
               </p>
             </div>
           </div>
@@ -97,30 +101,27 @@ export default function Header({ assignment }: Props) {
           <div className="flex flex-wrap items-center gap-3">
             <div className={`flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full px-3 ${getStatusColor(assignment.status)}`}>
               <p className="text-sm font-medium capitalize">
-                {assignment.status.replace('_', ' ')}
+                {assignment.status.replace('_', ' ').toLowerCase()}
               </p>
             </div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Due: {formatDueDate(assignment.dueDate)}
-            </p>
+            {assignment.dueDate && (
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Due: {formatDueDate(assignment.dueDate)}
+              </p>
+            )}
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
               <span className="material-symbols-outlined text-base">grade</span>
-              <span className="text-sm font-medium">{assignment.points} points</span>
+              <span className="text-sm font-medium">{assignment.totalMarks} points</span>
             </div>
           </div>
-          
-          {assignment.description && (
-            <p className="mt-4 text-slate-600 dark:text-slate-300">
-              {assignment.description}
-            </p>
-          )}
         </div>
         
         {/* Right Side: Countdown Timer */}
-        <div className="w-full md:w-auto md:min-w-80 rounded-lg bg-slate-100 dark:bg-slate-800/50 p-4">
-          <p className="text-sm font-medium text-center text-slate-600 dark:text-slate-400 mb-3">
-            Time Remaining
-          </p>
+        {assignment.dueDate && (
+          <div className="w-full md:w-auto md:min-w-80 rounded-lg bg-slate-100 dark:bg-slate-800/50 p-4">
+            <p className="text-sm font-medium text-center text-slate-600 dark:text-slate-400 mb-3">
+              Time Remaining
+            </p>
           <div className="flex gap-3">
             {[
               { value: timeRemaining.days, label: 'Days' },
@@ -140,7 +141,8 @@ export default function Header({ assignment }: Props) {
               </div>
             ))}
           </div>
-        </div>
+          </div>
+        )}
       </div>
     </header>
   );

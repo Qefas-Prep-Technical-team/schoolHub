@@ -129,6 +129,21 @@ export const getSchoolUsageService = async (schoolId: string) => {
     }
   });
 
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+  
+  // For institutional context, we can count logs from users in this school
+  const aiUsageCount = await (prisma as any).aiUsageLog.count({
+    where: {
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    }
+  });
+
   const storageBytes = Number(storageMetric._sum.fileSize || 0);
   const storageGb = Number((storageBytes / (1024 * 1024 * 1024)).toFixed(3));
 
@@ -138,7 +153,7 @@ export const getSchoolUsageService = async (schoolId: string) => {
     classes: classCount,
     teachers: teacherCount,
     storageGb,
-    aiUsage: 0, // Placeholder for AI usage tracking
+    aiUsage: aiUsageCount,
   };
 
   // 4. Calculate percentages
@@ -278,11 +293,27 @@ export const getUserUsageService = async (userId: string, role: string) => {
       : Promise.resolve(0)
   ]);
 
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+  
+  const aiUsageCount = await (prisma as any).aiUsageLog.count({
+    where: {
+      userId,
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    }
+  });
+
   const storageBytes = Number(storageMetric._sum.fileSize || 0);
   usage.exams = examCount;
   usage.classes = classCount;
   usage.students = studentCount;
   usage.storageGb = Number((storageBytes / (1024 * 1024 * 1024)).toFixed(3));
+  usage.aiUsage = aiUsageCount;
 
   // 6. Calculate percentages
   const percentages = {

@@ -1,228 +1,171 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Breadcrumbs from './components/Breadcrumbs';
 import Header from './components/Header';
 import TabNavigation from './components/TabNavigation';
 import InstructionsPanel from './components/InstructionsPanel';
-import AttachmentsPanel from './components/AttachmentsPanel';
-import RubricPanel from './components/RubricPanel';
-import MaterialsPanel from './components/MaterialsPanel';
 import ActionFooter from './components/ActionFooter';
-import { Assignment, Attachment, RubricItem, Material } from './components/types';
+import { Assignment } from './components/types';
 import SubmissionModal from './components/SubmissionModal';
+import { useAssignmentById, useSubmitAssignment } from '@/lib/api/hooks/useAssignments';
+import { toast } from 'react-toastify';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ExternalLink } from 'lucide-react';
 
-// Mock data
-const mockAssignment: Assignment = {
-  id: '1',
-  title: 'Mid-Term Essay: The Symbolism in The Great Gatsby',
-  subject: 'English 101',
-  instructor: {
-    name: 'Ms. Eleanor Vance',
-    avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBpvZ6Nqx2HFUIYnbU5GbaG6BM9JWASzFfvsIRMbEhB7m61yFmXKwIjUr2UbppkpiCZm50WGblRILhBdU0Nmufdefhtg-2CvFOpSqDpPayC7TPR9I5hm9GPwbY5-ObyR5DU6u9PC8_Y6Idv0XWBl_Oh5VycNrgWOaM5z-YqqCGfpOrDmFqp5CTu2Vz5n0TK2zrJgj7cBShHKbk9I6w44X3RGXPL_oh2vSgsAGNtS7JeG6SVK-m7salJc9_xKfjQUOeN9RBlmNbWVl4',
-  },
-  status: 'not_started',
-  dueDate: new Date(Date.now() + 3600 * 1000 * 24).toISOString(), // 24 hours from now
-  description: 'Analyze the use of symbolism in F. Scott Fitzgerald\'s novel, "The Great Gatsby."',
-  instructions: {
-    objective: 'The purpose of this essay is to analyze the use of symbolism in F. Scott Fitzgerald\'s novel, "The Great Gatsby." Students should identify key symbols, explain their significance, and argue how they contribute to the novel\'s major themes, such as the American Dream, wealth, and the past.',
-    requirements: [
-      { label: 'Length', value: '1,200 - 1,500 words' },
-      { label: 'Format', value: 'MLA 9th Edition. Double-spaced, 12-point Times New Roman font' },
-      { label: 'Sources', value: 'Minimum of three credible academic sources must be cited. The novel itself does not count as one of these sources' },
-      { label: 'Thesis Statement', value: 'Your essay must have a clear, arguable thesis statement in the introductory paragraph' },
-    ],
-    guidingQuestions: [
-      'The Green Light at the end of Daisy\'s dock',
-      'The Valley of Ashes and the eyes of Dr. T.J. Eckleburg',
-      'The contrast between East Egg and West Egg',
-      'Weather patterns and their correlation with key events',
-    ],
-    additionalNotes: 'Your analysis should go beyond simple identification and explore the deeper meanings and connections these symbols have to the characters\' motivations and the novel\'s overarching message.',
-  },
-  points: 100,
-  submissionType: 'file_upload',
-  allowedFormats: ['.doc', '.docx', '.pdf'],
-  maxFileSize: '10MB',
+function getEmbedUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  const cleanUrl = url.trim();
+
+  // YouTube Shorts
+  const shortsRegex = /youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/i;
+  const shortsMatch = cleanUrl.match(shortsRegex);
+  if (shortsMatch && shortsMatch[1]) {
+    return `https://www.youtube.com/embed/${shortsMatch[1]}`;
+  }
+
+  // YouTube standard watch / embed / share URLs
+  const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+  const ytMatch = cleanUrl.match(ytRegex);
+  if (ytMatch && ytMatch[1]) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  }
+
+  // Vimeo standard / embed URLs
+  const vimeoRegex = /(?:vimeo\.com\/|player\.vimeo\.com\/video\/)([0-9]+)/i;
+  const vimeoMatch = cleanUrl.match(vimeoRegex);
+  if (vimeoMatch && vimeoMatch[1]) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  }
+
+  return cleanUrl;
+}
+
+const getFileExtension = (url: string) => {
+  try {
+    const pathname = new URL(url).pathname;
+    return pathname.split('.').pop()?.toLowerCase() || '';
+  } catch (e) {
+    return url.split('.').pop()?.split('?')[0].toLowerCase() || '';
+  }
 };
 
-const mockAttachments: Attachment[] = [
-  {
-    id: '1',
-    name: 'MLA_Formatting_Guide.pdf',
-    type: 'pdf',
-    size: '1.2 MB',
-    url: '#',
-    iconColor: 'red',
-  },
-  {
-    id: '2',
-    name: 'Essay_Template.docx',
-    type: 'document',
-    size: '45 KB',
-    url: '#',
-    iconColor: 'blue',
-  },
-  {
-    id: '3',
-    name: 'Symbolism_Lecture.mp4',
-    type: 'video',
-    size: '150 MB',
-    url: '#',
-    iconColor: 'green',
-  },
-];
-
-const mockRubric: RubricItem[] = [
-  {
-    id: '1',
-    category: 'Thesis Statement',
-    description: 'Clarity and strength of argument',
-    points: 25,
-    criteria: 'Must be clear, arguable, and present in the introduction',
-  },
-  {
-    id: '2',
-    category: 'Symbolism Analysis',
-    description: 'Depth of analysis and evidence',
-    points: 40,
-    criteria: 'Identify at least three symbols and explain their significance with textual evidence',
-  },
-  {
-    id: '3',
-    category: 'Structure & Organization',
-    description: 'Logical flow and paragraph structure',
-    points: 20,
-    criteria: 'Clear introduction, body paragraphs with topic sentences, and conclusion',
-  },
-  {
-    id: '4',
-    category: 'Grammar & Format',
-    description: 'MLA formatting and language use',
-    points: 15,
-    criteria: 'Proper citations, formatting, and error-free writing',
-  },
-];
-
-const mockMaterials: Material[] = [
-  {
-    id: '1',
-    title: 'The Great Gatsby Full Text',
-    type: 'book',
-    description: 'Complete PDF version of the novel',
-    url: '#',
-  },
-  {
-    id: '2',
-    title: 'Symbolism in Literature - Lecture Notes',
-    type: 'notes',
-    description: 'Comprehensive notes on literary symbolism',
-    url: '#',
-  },
-  {
-    id: '3',
-    title: 'MLA Citation Examples',
-    type: 'guide',
-    description: 'Examples of proper MLA 9th edition citations',
-    url: '#',
-  },
-  {
-    id: '4',
-    title: 'Essay Writing Workshop Recording',
-    type: 'video',
-    description: 'Recorded workshop on analytical essay writing',
-    url: '#',
-  },
-];
-
-const breadcrumbs = [
-  { label: 'Dashboard', href: '/dashboard' },
-  { label: 'English 101', href: '/courses/english-101' },
-  { label: 'Assignments', href: '/courses/english-101/assignments' },
-  { label: 'Mid-Term Essay', href: '#', current: true },
-];
+const getFileType = (url: string): 'image' | 'pdf' | 'video' | 'audio' | 'other' => {
+  const extension = getFileExtension(url);
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(extension)) return 'image';
+  if (extension === 'pdf') return 'pdf';
+  if (['mp4', 'webm', 'ogg'].includes(extension)) return 'video';
+  if (['mp3', 'wav', 'mpeg'].includes(extension)) return 'audio';
+  return 'other';
+};
 
 export default function AssignmentDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const assignmentId = params.id as string;
   
-  const [activeTab, setActiveTab] = useState<'instructions' | 'attachments' | 'rubric' | 'materials'>('instructions');
-  const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [isLoading, setIsLoading] = useState(true);
-  // In the main page component, add state for modal
-const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'instructions' | 'attachments' | 'rubric' | 'materials' | 'quiz'>('instructions');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
 
+  const { data: assignment, isLoading, error } = useAssignmentById(assignmentId);
+  const { mutateAsync: submitAssignment } = useSubmitAssignment();
+
+  const [isAnswersInitialized, setIsAnswersInitialized] = useState(false);
+
+  // Load existing answers on mount when assignment details loads
   useEffect(() => {
-    // Fetch assignment data
-    const fetchAssignmentData = async () => {
-      setIsLoading(true);
+    if (assignment?.submissions?.[0]?.answers && !isAnswersInitialized) {
+      const initialAnswers: Record<string, string> = {};
+      assignment.submissions[0].answers.forEach((ans: any) => {
+        initialAnswers[ans.questionId] = ans.answer;
+      });
+      setQuizAnswers(initialAnswers);
+      setIsAnswersInitialized(true);
+    } else if (assignment && !assignment.submissions?.[0]?.answers) {
+      // Mark initialized even if there are no existing submission answers yet
+      setIsAnswersInitialized(true);
+    }
+  }, [assignment, isAnswersInitialized]);
+
+  // Periodic / Debounced Sync of Quiz Answers to database as draft
+  useEffect(() => {
+    if (!isAnswersInitialized) return;
+    const answeredCount = Object.keys(quizAnswers).length;
+    if (answeredCount === 0) return;
+
+    // Check if current state is different from saved database answers to prevent unnecessary saves
+    const savedAnswers = assignment?.submissions?.[0]?.answers || [];
+    const isDifferent = Object.entries(quizAnswers).some(([qId, ansVal]) => {
+      const savedAns = savedAnswers.find((sa: any) => sa.questionId === qId);
+      return !savedAns || savedAns.answer !== ansVal;
+    }) || savedAnswers.length !== answeredCount;
+
+    if (!isDifferent) return;
+
+    const delayDebounceFn = setTimeout(async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        // In real app, fetch data based on assignmentId
-        // console.log('Fetching assignment:', assignmentId);
-      } catch (error) {
-        console.error('Error fetching assignment:', error);
-      } finally {
-        setIsLoading(false);
+        const formattedAnswers = Object.entries(quizAnswers).map(([questionId, answer]) => ({
+          questionId,
+          answer,
+        }));
+        
+        await submitAssignment({
+          id: assignmentId,
+          data: {
+            answers: formattedAnswers,
+            isDraft: true,
+          }
+        });
+        console.log("Quiz answers auto-saved successfully as draft");
+      } catch (err) {
+        console.error("Failed to auto-save quiz answers draft", err);
       }
-    };
+    }, 3000); // Wait 3 seconds of inactivity before autosaving
 
-    fetchAssignmentData();
-  }, [assignmentId]);
+    return () => clearTimeout(delayDebounceFn);
+  }, [quizAnswers, assignmentId, submitAssignment, assignment, isAnswersInitialized]);
 
-  useEffect(() => {
-    // Countdown timer
-    const calculateTimeRemaining = () => {
-      const dueDate = new Date(mockAssignment.dueDate);
-      const now = new Date();
-      const diff = dueDate.getTime() - now.getTime();
-
-      if (diff > 0) {
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-        setTimeRemaining({ days, hours, minutes, seconds });
-      } else {
-        setTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      }
-    };
-
-    calculateTimeRemaining();
-    const timer = setInterval(calculateTimeRemaining, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleSubmit = () => {
-    // console.log('Submitting assignment');
-    // Handle submission logic
+  const handleAnswerChange = (questionId: string, answer: string) => {
+    setQuizAnswers(prev => ({
+      ...prev,
+      [questionId]: answer,
+    }));
   };
 
-  const handleDownload = (attachment: Attachment) => {
-    // console.log('Downloading:', attachment.name);
-    // Handle download logic
+  const handleSubmission = async (files: File[], text: string) => {
+    try {
+      // In a real application, you would upload the files and then post their URLs.
+      // We simulate the file URL generation based on standard practices or just map the first file for testing.
+      const fileUrl = files.length > 0 ? "https://example.com/mock-upload" : undefined;
+      const fileName = files.length > 0 ? files[0].name : undefined;
+
+      const formattedAnswers = Object.entries(quizAnswers).map(([questionId, answer]) => ({
+        questionId,
+        answer,
+      }));
+
+      await submitAssignment({
+        id: assignmentId,
+        data: {
+          fileUrl,
+          fileName,
+          answers: formattedAnswers,
+        }
+      });
+      toast.success("Assignment submitted successfully!");
+      setIsModalOpen(false);
+    } catch (err) {
+      toast.error("Failed to submit assignment. Please try again.");
+      console.error(err);
+    }
   };
-
-  // Update handleSubmit function
-
-
-// Update submit handler
-const handleSubmission = async (files: File[], text: string) => {
-  // console.log('Submitting:', { files, text });
-  // Handle actual submission logic
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  setIsModalOpen(false);
-};
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background-light dark:bg-background-dark p-8">
         <div className="max-w-5xl mx-auto">
-          {/* Skeleton loading */}
           <div className="animate-pulse">
             <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3 mb-8"></div>
             <div className="h-48 bg-slate-200 dark:bg-slate-700 rounded-xl mb-8"></div>
@@ -234,59 +177,294 @@ const handleSubmission = async (files: File[], text: string) => {
     );
   }
 
+  if (error || !assignment) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8 bg-background-light dark:bg-background-dark">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2 text-slate-900 dark:text-slate-100">Assignment not found</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-4">The assignment you are looking for does not exist or you do not have permission to view it.</p>
+          <button onClick={() => router.back()} className="text-primary dark:text-pink-400 hover:underline font-medium">Go back</button>
+        </div>
+      </div>
+    );
+  }
+
+  const breadcrumbs = [
+    { label: 'Dashboard', href: '/dashboard/student' },
+    { label: 'Assignments', href: '/dashboard/student/assignments' },
+    { label: assignment.title, href: '#', current: true },
+  ];
+
   return (
     <div className="relative flex min-h-screen w-full flex-col">
       <div className="flex-grow">
         <main className="mx-auto flex w-full max-w-5xl flex-col px-4 py-8 sm:px-6 lg:px-8">
           <Breadcrumbs items={breadcrumbs} />
           
-          <Header 
-            assignment={mockAssignment}
-         
-          />
+          <Header assignment={assignment as Assignment} />
           
           <TabNavigation 
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            attachmentsCount={mockAttachments.length}
+            attachmentsCount={assignment.attachmentUrl ? 1 : 0}
+            questionsCount={assignment.questions?.length || 0}
           />
           
-          <div className="mt-6">
+          <div className="mt-8 mb-24">
             {activeTab === 'instructions' && (
-              <InstructionsPanel instructions={mockAssignment.instructions} />
+              <div className="space-y-6">
+                <InstructionsPanel instructions={assignment.instructions} />
+                
+                {assignment.videoUrl && (
+                  <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
+                    <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Video Reference</h4>
+                    <div className="aspect-video w-full max-w-4xl overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                      <iframe 
+                        src={getEmbedUrl(assignment.videoUrl)} 
+                        className="w-full h-full" 
+                        allowFullScreen 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        loading="lazy"
+                      ></iframe>
+                    </div>
+                  </div>
+                )}
+                
+                {assignment.referenceUrl && (
+                  <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
+                    <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">External Reference</h4>
+                    <a 
+                      href={assignment.referenceUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      View Reference Link
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {activeTab === 'quiz' && (
+              <div className="space-y-6">
+                <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
+                  <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Assignment Quiz</h4>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                    Please answer the questions below. Your answers will be submitted when you click the "Submit Assignment" button in the footer.
+                  </p>
+                  
+                  <div className="space-y-8">
+                    {assignment.questions && assignment.questions.map((q: any, idx: number) => (
+                      <div key={q.id} className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20">
+                        <div className="flex items-start justify-between gap-4 mb-4">
+                          <h5 className="font-semibold text-slate-900 dark:text-slate-100 flex gap-2">
+                            <span>{idx + 1}.</span>
+                            <span className="whitespace-pre-wrap">{q.question}</span>
+                          </h5>
+                          <span className="shrink-0 text-xs font-semibold px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md border border-slate-200 dark:border-slate-700">
+                            {q.marks} {q.marks === 1 ? 'Mark' : 'Marks'}
+                          </span>
+                        </div>
+                        
+                        {/* MULTIPLE_CHOICE */}
+                        {q.type === 'MULTIPLE_CHOICE' && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {['optionA', 'optionB', 'optionC', 'optionD'].map((optKey) => {
+                              const optionVal = q[optKey];
+                              if (!optionVal) return null;
+                              const optionLetter = optKey.replace('option', ''); // A, B, C, D
+                              const isSelected = quizAnswers[q.id] === optionLetter;
+                              return (
+                                <label
+                                  key={optKey}
+                                  className={`flex items-center gap-3 p-3.5 rounded-lg border cursor-pointer transition-colors ${
+                                    isSelected
+                                      ? 'border-primary bg-primary/5 dark:border-pink-500 dark:bg-pink-500/5 text-primary dark:text-pink-400 font-medium'
+                                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
+                                  }`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`question_${q.id}`}
+                                    checked={isSelected}
+                                    onChange={() => handleAnswerChange(q.id, optionLetter)}
+                                    className="h-4.5 w-4.5 border-slate-300 text-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-850 dark:text-pink-600 dark:focus:ring-pink-500"
+                                  />
+                                  <span>{optionVal}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* TRUE_FALSE */}
+                        {q.type === 'TRUE_FALSE' && (
+                          <div className="flex gap-4">
+                            {['True', 'False'].map((val) => {
+                              const isSelected = quizAnswers[q.id] === val;
+                              return (
+                                <label
+                                  key={val}
+                                  className={`flex items-center gap-3 px-6 py-3 rounded-lg border cursor-pointer transition-colors min-w-[120px] justify-center ${
+                                    isSelected
+                                      ? 'border-primary bg-primary/5 dark:border-pink-500 dark:bg-pink-500/5 text-primary dark:text-pink-400 font-medium'
+                                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
+                                  }`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`question_${q.id}`}
+                                    checked={isSelected}
+                                    onChange={() => handleAnswerChange(q.id, val)}
+                                    className="h-4.5 w-4.5 border-slate-300 text-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-850 dark:text-pink-600 dark:focus:ring-pink-500"
+                                  />
+                                  <span>{val}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* SHORT_ANSWER */}
+                        {q.type === 'SHORT_ANSWER' && (
+                          <textarea
+                            value={quizAnswers[q.id] || ''}
+                            onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                            placeholder="Type your answer here..."
+                            rows={3}
+                            className="w-full rounded-lg border border-slate-255 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-pink-500/20"
+                          />
+                        )}
+
+                        {/* FILE_UPLOAD */}
+                        {q.type === 'FILE_UPLOAD' && (
+                          <div className="space-y-2">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                              For file upload questions, please upload your file using the main "File Upload" section in the submission modal. You can add notes or references below if needed.
+                            </p>
+                            <input
+                              type="text"
+                              value={quizAnswers[q.id] || ''}
+                              onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                              placeholder="Type reference notes, file name or comment..."
+                              className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-pink-500/20"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
             
             {activeTab === 'attachments' && (
-              <AttachmentsPanel 
-                attachments={mockAttachments}
-                onDownload={handleDownload}
-              />
+              <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
+                <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Attachments</h4>
+                {assignment.attachmentUrl ? (
+                  <div className="flex flex-col gap-4">
+                    {/* Render preview based on file type */}
+                    {(() => {
+                      const fileType = getFileType(assignment.attachmentUrl);
+                      if (fileType === 'image') {
+                        return (
+                          <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-2 max-w-4xl w-full">
+                            <img src={assignment.attachmentUrl} alt="Attachment Preview" className="max-h-[600px] w-auto mx-auto object-contain rounded" />
+                          </div>
+                        );
+                      }
+                      if (fileType === 'pdf') {
+                        return (
+                          <div className="w-full max-w-4xl min-h-[650px] overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                            <iframe src={assignment.attachmentUrl} className="w-full min-h-[650px]" title="PDF Preview" />
+                          </div>
+                        );
+                      }
+                      if (fileType === 'video') {
+                        return (
+                          <div className="aspect-video w-full max-w-4xl overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                            <video src={assignment.attachmentUrl} controls className="w-full h-full" />
+                          </div>
+                        );
+                      }
+                      if (fileType === 'audio') {
+                        return (
+                          <div className="w-full max-w-2xl p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                            <audio src={assignment.attachmentUrl} controls className="w-full" />
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="flex items-center gap-4 p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 max-w-4xl w-full">
+                          <span className="material-symbols-outlined text-4xl text-slate-400">description</span>
+                          <div>
+                            <p className="font-medium text-slate-900 dark:text-slate-100">Attachment File</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Preview is not available for this file type. Please download or open it to view.</p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Action buttons */}
+                    <div className="flex flex-wrap items-center gap-3 mt-2">
+                      <a 
+                        href={assignment.attachmentUrl} 
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary dark:bg-pink-600 hover:bg-primary/95 dark:hover:bg-pink-700 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-base">download</span>
+                        Download Attachment
+                      </a>
+                      <a 
+                        href={assignment.attachmentUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-semibold rounded-lg transition-colors cursor-pointer shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-base">open_in_new</span>
+                        Open in New Tab
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-slate-500 dark:text-slate-400 italic">No attachments provided.</p>
+                )}
+              </div>
             )}
             
             {activeTab === 'rubric' && (
-              <RubricPanel 
-                rubric={mockRubric}
-                totalPoints={mockAssignment.points}
-              />
+              <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
+                 <p className="text-slate-500 dark:text-slate-400 italic">No rubric provided.</p>
+              </div>
             )}
             
             {activeTab === 'materials' && (
-              <MaterialsPanel materials={mockMaterials} />
+              <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
+                 <p className="text-slate-500 dark:text-slate-400 italic">No additional materials provided.</p>
+              </div>
             )}
           </div>
         </main>
       </div>
-      
-      <ActionFooter 
-        onSubmit={handleSubmit}
-        onViewHistory={() => console.log('View history')}
+
+      {/* Persistent Action Footer */}
+      {assignment.status !== 'GRADED' && (
+        <ActionFooter 
+          assignment={assignment as Assignment}
+          onSubmit={() => setIsModalOpen(true)}
+        />
+      )}
+
+      <SubmissionModal 
+        assignment={assignment as Assignment}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSubmission}
       />
-        <SubmissionModal
-      assignment={mockAssignment}
-      isOpen={isModalOpen}
-      onClose={() => setIsModalOpen(false)}
-      onSubmit={handleSubmission}
-    />
     </div>
   );
 }

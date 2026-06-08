@@ -81,14 +81,14 @@ export const getS3PresignedUrl = async (req: Request, res: Response) => {
 export const confirmS3Upload = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const { fileName, fileUrl, fileSize, mimeType } = req.body;
+    const { fileName, fileUrl, fileSize, mimeType, schoolId } = req.body;
 
     if (!fileName || !fileUrl || !fileSize) {
       return res.status(400).json({ success: false, message: "fileName, fileUrl, and fileSize are required" });
     }
 
     const record = await confirmS3UploadService({
-      schoolId: user.schoolId,
+      schoolId: schoolId || user.schoolId,
       fileName,
       fileUrl,
       fileSize: Number(fileSize),

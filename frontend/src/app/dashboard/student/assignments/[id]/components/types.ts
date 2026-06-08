@@ -1,24 +1,17 @@
 export interface Assignment {
   id: string;
   title: string;
-  subject: string;
-  instructor: {
-    name: string;
-    avatarUrl: string;
-  };
-  status: 'not_started' | 'in_progress' | 'submitted' | 'graded' | 'overdue';
+  subject: { id: string; name: string };
+  teacher: { firstName: string; lastName: string; user?: { avatarUrl?: string } };
+  status: string;
   dueDate: string;
-  description: string;
-  points: number;
-  submissionType: 'file_upload' | 'text_entry' | 'both';
-  allowedFormats?: string[];
-  maxFileSize?: string;
-  instructions: {
-    objective: string;
-    requirements: { label: string; value: string }[];
-    guidingQuestions: string[];
-    additionalNotes: string;
-  };
+  instructions: string;
+  totalMarks: number;
+  attachmentUrl?: string | null;
+  videoUrl?: string | null;
+  referenceUrl?: string | null;
+  questions: any[];
+  submissions: any[];
 }
 
 export interface Attachment {

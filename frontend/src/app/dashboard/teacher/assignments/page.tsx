@@ -152,9 +152,11 @@ export default function AssignmentsPage() {
                                             subject: assignment.subject?.name || "General",
                                             className: assignment.class?.name || "All Classes",
                                             dueDate: assignment.endDate ? new Date(assignment.endDate).toLocaleDateString() : "No Deadline",
-                                            submitted: assignment.examAttempts?.length || 0,
-                                            totalStudents: assignment.class?._count?.enrollments || 30, // Fallback
-                                            progress: assignment.examAttempts?.length ? Math.round((assignment.examAttempts.length / 30) * 100) : 0
+                                            submitted: assignment._count?.submissions || 0,
+                                            totalStudents: typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0),
+                                            progress: (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0)) > 0 
+                                                ? Math.round(((assignment._count?.submissions || 0) / (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0))) * 100) 
+                                                : 0
                                         }}
                                         onEdit={() => {}}
                                         onGrade={() => {}}

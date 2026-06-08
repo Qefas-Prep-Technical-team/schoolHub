@@ -9,22 +9,30 @@ export const getStudentAssignmentsService = async (options: {
   const { studentId, status, page, limit } = options;
   const skip = (page - 1) * limit;
 
-  // Find the student's enrollments to know their classes
-  const enrollments = await prisma.classEnrollment.findMany({
-    where: { studentId },
-    select: { classId: true },
+  // Find the student and their enrollments to know their classes and department
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { departmentId: true, classes: { select: { classId: true } } },
   });
 
-  const classIds = enrollments.map((e) => e.classId).filter(Boolean) as string[];
+  if (!student) {
+    return { assignments: [], total: 0, pages: 0 };
+  }
+
+  const classIds = student.classes.map((e) => e.classId).filter(Boolean) as string[];
 
   if (classIds.length === 0) {
     return { assignments: [], total: 0, pages: 0 };
   }
 
-  // Get assignments for those classes
+  // Get assignments for those classes, filtering by department if applicable
   const whereClause: any = {
     classId: { in: classIds },
     status: "PUBLISHED", // Only show published assignments
+    OR: [
+      { departmentId: null },
+      { departmentId: student.departmentId }
+    ]
   };
 
   const total = await prisma.assignment.count({ where: whereClause });
@@ -32,6 +40,7 @@ export const getStudentAssignmentsService = async (options: {
   const assignments = await prisma.assignment.findMany({
     where: whereClause,
     include: {
+      department: { select: { name: true } },
       submissions: {
         where: { studentId },
         take: 1, // At most 1 submission per assignment
@@ -44,6 +53,13 @@ export const getStudentAssignmentsService = async (options: {
     skip,
     take: limit,
   });
+
+  const subjectIds = [...new Set(assignments.map(a => a.subjectId))];
+  const subjects = await prisma.subject.findMany({
+    where: { id: { in: subjectIds } },
+    select: { id: true, name: true }
+  });
+  const subjectMap = Object.fromEntries(subjects.map(s => [s.id, s.name]));
 
   // Transform and calculate status
   let transformed = assignments.map((a) => {
@@ -60,6 +76,9 @@ export const getStudentAssignmentsService = async (options: {
       id: a.id,
       title: a.title,
       subjectId: a.subjectId,
+      subject: subjectMap[a.subjectId],
+      departmentId: a.departmentId,
+      department: a.department?.name,
       instructorId: a.teacherId,
       dueDate: a.dueDate,
       status: computedStatus,
@@ -100,7 +119,26 @@ export const getAssignmentByIdService = async (studentId: string, assignmentId: 
     throw new Error("Assignment not found");
   }
 
-  return assignment;
+  const [classData, subjectData, departmentData, teacherData] = await Promise.all([
+    prisma.class.findUnique({ where: { id: assignment.classId }, select: { id: true, name: true } }),
+    prisma.subject.findUnique({ where: { id: assignment.subjectId }, select: { id: true, name: true } }),
+    assignment.departmentId ? prisma.department.findUnique({ where: { id: assignment.departmentId }, select: { id: true, name: true } }) : Promise.resolve(null),
+    prisma.teacher.findUnique({ where: { id: assignment.teacherId }, select: { name: true, profileImage: true } })
+  ]);
+
+  return {
+    ...assignment,
+    class: classData,
+    subject: subjectData,
+    department: departmentData,
+    teacher: teacherData ? {
+      firstName: teacherData.name.split(' ')[0] || '',
+      lastName: teacherData.name.split(' ').slice(1).join(' ') || '',
+      user: {
+        avatarUrl: teacherData.profileImage
+      }
+    } : null
+  };
 };
 
 export const getTeacherAssignmentByIdService = async (assignmentId: string, schoolId: string) => {
@@ -120,13 +158,24 @@ export const getTeacherAssignmentByIdService = async (assignmentId: string, scho
     throw new Error("Assignment not found");
   }
 
-  return assignment;
+  const [classData, subjectData, departmentData] = await Promise.all([
+    prisma.class.findUnique({ where: { id: assignment.classId }, select: { id: true, name: true } }),
+    prisma.subject.findUnique({ where: { id: assignment.subjectId }, select: { id: true, name: true } }),
+    assignment.departmentId ? prisma.department.findUnique({ where: { id: assignment.departmentId }, select: { id: true, name: true } }) : Promise.resolve(null)
+  ]);
+
+  return {
+    ...assignment,
+    class: classData,
+    subject: subjectData,
+    department: departmentData
+  };
 };
 
 export const submitAssignmentService = async (
   studentId: string, 
   assignmentId: string, 
-  data: { fileUrl?: string; fileName?: string; answers?: Array<{ questionId: string, answer: string }> }
+  data: { fileUrl?: string; fileName?: string; answers?: Array<{ questionId: string, answer: string }>; isDraft?: boolean }
 ) => {
   // Check if submission already exists
   let submission = await prisma.assignmentSubmission.findFirst({
@@ -137,40 +186,57 @@ export const submitAssignmentService = async (
     throw new Error("Assignment already submitted");
   }
 
+  const finalStatus = data.isDraft ? "PENDING" : "SUBMITTED";
+  const finalSubmittedAt = data.isDraft ? null : new Date();
+
   if (!submission) {
     submission = await prisma.assignmentSubmission.create({
       data: {
         studentId,
         assignmentId,
-        status: "SUBMITTED",
+        status: finalStatus,
         fileUrl: data.fileUrl,
         fileName: data.fileName,
-        submittedAt: new Date(),
+        submittedAt: finalSubmittedAt,
       }
     });
   } else {
     submission = await prisma.assignmentSubmission.update({
       where: { id: submission.id },
       data: {
-        status: "SUBMITTED",
-        fileUrl: data.fileUrl,
-        fileName: data.fileName,
-        submittedAt: new Date(),
+        status: finalStatus,
+        fileUrl: data.fileUrl ?? submission.fileUrl,
+        fileName: data.fileName ?? submission.fileName,
+        submittedAt: finalSubmittedAt ?? submission.submittedAt,
       }
     });
   }
 
-  // Handle specific question answers if provided
+  // Handle specific question answers if provided (upsert each answer to allow updates/draft sync)
   if (data.answers && data.answers.length > 0) {
-    const answerPromises = data.answers.map(ans => 
-      prisma.assignmentAnswer.create({
-        data: {
+    const answerPromises = data.answers.map(async (ans) => {
+      const existingAnswer = await prisma.assignmentAnswer.findFirst({
+        where: {
           submissionId: submission.id,
           questionId: ans.questionId,
-          answer: ans.answer,
         }
-      })
-    );
+      });
+
+      if (existingAnswer) {
+        return prisma.assignmentAnswer.update({
+          where: { id: existingAnswer.id },
+          data: { answer: ans.answer }
+        });
+      } else {
+        return prisma.assignmentAnswer.create({
+          data: {
+            submissionId: submission.id,
+            questionId: ans.questionId,
+            answer: ans.answer,
+          }
+        });
+      }
+    });
     await Promise.all(answerPromises);
   }
 
@@ -224,10 +290,21 @@ export const getTeacherAssignmentsService = async (options: {
   const classMap = Object.fromEntries(classes.map(c => [c.id, c]));
   const subjectMap = Object.fromEntries(subjects.map(s => [s.id, s]));
 
-  const assignmentsWithNames = assignments.map(a => ({
-    ...a,
-    class: classMap[a.classId] || null,
-    subject: subjectMap[a.subjectId] || null
+  const assignmentsWithNames = await Promise.all(assignments.map(async a => {
+    // get class enrollment count for this assignment's department
+    const targetStudentsCount = await prisma.classEnrollment.count({
+      where: {
+        classId: a.classId,
+        ...(a.departmentId ? { student: { departmentId: a.departmentId } } : {})
+      }
+    });
+
+    return {
+      ...a,
+      class: classMap[a.classId] || null,
+      subject: subjectMap[a.subjectId] || null,
+      totalTargetedStudents: targetStudentsCount
+    };
   }));
 
   return {
@@ -243,13 +320,16 @@ export const createAssignmentService = async (data: {
   teacherId: string;
   classIds: string[];
   subjectId: string;
+  departmentId?: string;
   instructions?: string;
   dueDate?: Date;
   totalMarks?: number;
   status?: string;
   attachmentUrl?: string;
+  videoUrl?: string;
+  referenceUrl?: string;
 }) => {
-  const { classIds, ...assignmentData } = data;
+  const { classIds, departmentId, ...assignmentData } = data;
   
   if (!classIds || classIds.length === 0) {
     throw new Error("At least one class is required to create an assignment.");
@@ -262,6 +342,7 @@ export const createAssignmentService = async (data: {
         data: {
           ...assignmentData,
           classId,
+          departmentId: departmentId || null,
           status: (assignmentData.status as any) || "DRAFT"
         }
       })
@@ -314,8 +395,46 @@ export const updateAssignmentSettingsService = async (assignmentId: string, scho
   });
   if (!assignment) throw new Error("Assignment not found");
 
+  const updateData: any = {};
+  if (data.title !== undefined) updateData.title = data.title;
+  if (data.instructions !== undefined) updateData.instructions = data.instructions;
+  if (data.dueDate !== undefined) updateData.dueDate = data.dueDate;
+  if (data.maxScore !== undefined) updateData.totalMarks = data.maxScore;
+  if (data.totalMarks !== undefined) updateData.totalMarks = data.totalMarks;
+
   return prisma.assignment.update({
     where: { id: assignmentId },
-    data
+    data: updateData
+  });
+};
+
+export const deleteAssignmentService = async (assignmentId: string, schoolId: string) => {
+  const assignment = await prisma.assignment.findFirst({
+    where: { id: assignmentId, schoolId }
+  });
+  if (!assignment) throw new Error("Assignment not found");
+
+  // First delete related assignment questions to avoid foreign key constraints
+  await prisma.assignmentQuestion.deleteMany({
+    where: { assignmentId }
+  });
+
+  // Then delete submissions (and their answers due to cascade or manual)
+  const submissions = await prisma.assignmentSubmission.findMany({
+    where: { assignmentId }
+  });
+  
+  if (submissions.length > 0) {
+    const submissionIds = submissions.map(s => s.id);
+    await prisma.assignmentAnswer.deleteMany({
+      where: { submissionId: { in: submissionIds } }
+    });
+    await prisma.assignmentSubmission.deleteMany({
+      where: { assignmentId }
+    });
+  }
+
+  return prisma.assignment.delete({
+    where: { id: assignmentId }
   });
 };

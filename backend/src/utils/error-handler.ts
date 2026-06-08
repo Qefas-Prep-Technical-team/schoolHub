@@ -1,4 +1,5 @@
 import { Response } from "express";
+import fs from "fs";
 
 /**
  * A centralized error handler that logs the error securely to the console
@@ -19,8 +20,10 @@ export const handleError = (res: Response, error: any, location: string) => {
   
   if (error instanceof Error) {
     console.error(error.stack || error.message);
+    fs.appendFileSync('error-log.txt', error.stack || error.message + '\n');
   } else {
     console.error(error);
+    fs.appendFileSync('error-log.txt', JSON.stringify(error) + '\n');
   }
   console.error(`======================================================\n`);
 

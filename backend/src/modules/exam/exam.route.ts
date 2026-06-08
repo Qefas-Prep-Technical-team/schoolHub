@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticateToken } from "../../middleware/authMiddleware";
+import { requireFeatureAccess } from "../subscription-checkers";
 import {
   addAIQuestionsToPaper,
   addManualQuestionsToPaper,
@@ -55,8 +56,8 @@ import {
 
 const router = Router();
 
-router.post("/ai/parse-text", authenticateToken, parseRawExamText);
-router.post("/ai/generate", authenticateToken, generateExamQuestions);
+router.post("/ai/parse-text", authenticateToken, requireFeatureAccess("aiInsights"), parseRawExamText);
+router.post("/ai/generate", authenticateToken, requireFeatureAccess("aiInsights"), generateExamQuestions);
 
 router.get("/review/queue", authenticateToken, getManualReviewQueue);
 router.patch("/review/answers/:answerId", authenticateToken, markSubjectiveAnswer);
