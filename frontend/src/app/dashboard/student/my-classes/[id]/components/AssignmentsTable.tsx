@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 
 export interface Assignment {
   id: number;
@@ -13,6 +14,8 @@ export interface Assignment {
   status: 'graded' | 'submitted' | 'upcoming' | 'overdue';
   grade?: string;
   maxPoints?: number;
+  type?: string;
+  link?: string;
 }
 
 interface AssignmentsTableProps {
@@ -43,6 +46,23 @@ export default function AssignmentsTable({
     }
   };
 
+  const getTypeBadgeStyles = (type?: string) => {
+    switch (type) {
+      case 'Exam':
+        return 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/60';
+      case 'Subject Paper':
+        return 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/60';
+      case 'Assignment':
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60';
+      case 'CA':
+        return 'bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-900/60';
+      case 'Test (Quiz)':
+        return 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60';
+      default:
+        return 'bg-slate-50 text-slate-700 border border-slate-200 dark:bg-slate-950/40 dark:text-slate-300 dark:border-slate-900/60';
+    }
+  };
+
   const getActionText = (status: Assignment['status']) => {
     switch (status) {
       case 'graded':    return 'View Details';
@@ -67,6 +87,9 @@ export default function AssignmentsTable({
                       Assessment
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Due Date
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -88,6 +111,11 @@ export default function AssignmentsTable({
                           {assignment.title}
                         </div>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getTypeBadgeStyles(assignment.type)}`}>
+                          {assignment.type || 'Assessment'}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {assignment.dueDate}
                       </td>
@@ -102,10 +130,18 @@ export default function AssignmentsTable({
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <Button variant="ghost" size="sm" className="gap-1 cursor-pointer">
-                          {getActionText(assignment.status)}
-                          <ExternalLink className="h-3 w-3" />
-                        </Button>
+                        {assignment.link && assignment.link !== '#' ? (
+                          <Link href={assignment.link}>
+                            <Button variant="ghost" size="sm" className="gap-1 cursor-pointer">
+                              {getActionText(assignment.status)}
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Button variant="ghost" size="sm" className="gap-1 cursor-pointer" disabled>
+                            {getActionText(assignment.status)}
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -148,7 +184,7 @@ export default function AssignmentsTable({
                     onClick={() => setPage(pg)}
                     className={`h-8 w-8 rounded-md text-xs font-black transition-all ${
                       pg === safePage
-                        ? 'bg-primary text-white shadow'
+                        ? 'bg-indigo-600 text-white shadow dark:bg-indigo-500 dark:text-white hover:bg-indigo-700 dark:hover:bg-indigo-600'
                         : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                   >

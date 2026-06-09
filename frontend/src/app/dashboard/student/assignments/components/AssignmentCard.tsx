@@ -6,9 +6,10 @@ interface Props {
   assignment: Assignment;
   viewMode: 'grid' | 'list';
   onClick?: () => void;
+  index?: number;
 }
 
-export default function AssignmentCard({ assignment, viewMode, onClick }: Props) {
+export default function AssignmentCard({ assignment, viewMode, onClick, index }: Props) {
   const getStatusColor = (status: string, color: string) => {
     const colorMap: Record<string, string> = {
       green: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
@@ -87,10 +88,15 @@ export default function AssignmentCard({ assignment, viewMode, onClick }: Props)
       <div className={`flex ${viewMode === 'list' ? 'flex-1' : 'w-full'} items-start justify-between`}>
         <div className="flex-1">
           <p className="text-sm font-medium text-primary">{assignment.subject}</p>
-          <h3 className={`font-bold text-gray-900 dark:text-white ${
+          <h3 className={`font-bold text-gray-900 dark:text-white flex items-center gap-2 ${
             viewMode === 'list' ? 'text-xl' : 'text-lg'
           }`}>
-            {assignment.title}
+            {index !== undefined && (
+              <span className="shrink-0 flex items-center justify-center text-[10px] font-black bg-[#0856c8]/10 text-[#0856c8] dark:bg-blue-500/10 dark:text-blue-400 w-5 h-5 rounded-md">
+                {index}
+              </span>
+            )}
+            <span>{assignment.title}</span>
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400">{assignment.instructor}</p>
           

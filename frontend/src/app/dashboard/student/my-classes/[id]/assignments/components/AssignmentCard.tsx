@@ -6,9 +6,10 @@ import { Assignment } from './assignmentsData'
 
 interface AssignmentCardProps {
   assignment: Assignment
+  index?: number
 }
 
-export default function AssignmentCard({ assignment }: AssignmentCardProps) {
+export default function AssignmentCard({ assignment, index }: AssignmentCardProps) {
   const getStatusConfig = (status: Assignment['status']) => {
     switch (status) {
       case 'graded':
@@ -79,8 +80,13 @@ export default function AssignmentCard({ assignment }: AssignmentCardProps) {
       <CardContent className="p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-col gap-2">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {assignment.title}
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              {index !== undefined && (
+                <span className="shrink-0 flex items-center justify-center text-[10px] font-black bg-[#0856c8]/10 text-[#0856c8] dark:bg-blue-500/10 dark:text-blue-400 w-5 h-5 rounded-md">
+                  {index}
+                </span>
+              )}
+              <span>{assignment.title}</span>
             </h3>
             
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500 dark:text-gray-400">

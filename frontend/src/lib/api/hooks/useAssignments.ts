@@ -3,6 +3,7 @@ import { apiClient as api } from '../client';
 
 export interface Assignment {
   id: string;
+  classId: string;
   title: string;
   subjectId: string;
   instructorId: string;
@@ -13,6 +14,11 @@ export interface Assignment {
   submissionDate?: string;
   totalMarks: number;
   questionCount: number;
+  attachmentUrl?: string | null;
+  videoUrl?: string | null;
+  referenceUrl?: string | null;
+  instructions?: string | null;
+  createdAt?: string;
 }
 
 export const useStudentAssignments = (params?: { page?: number; limit?: number; status?: string }) => {

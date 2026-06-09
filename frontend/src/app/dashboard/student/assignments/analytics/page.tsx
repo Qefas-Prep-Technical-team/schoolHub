@@ -4,7 +4,7 @@ import StatsCards from './components/StatsCards';
 import PerformanceChart from './components/PerformanceChart';
 import UpcomingDeadlines from './components/UpcomingDeadlines';
 import SuggestedImprovements from './components/SuggestedImprovements';
-import { stats, deadlines, improvementTips } from './components/data';
+import { stats, deadlines, improvementTips, performanceData } from './components/data';
 
 export default function Home() {
   return (
@@ -16,7 +16,7 @@ export default function Home() {
             <StatsCards stats={stats} />
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                <PerformanceChart />
+                <PerformanceChart data={performanceData} averageScore={88} />
                 <UpcomingDeadlines deadlines={deadlines} />
               </div>
               <div className="lg:col-span-1">

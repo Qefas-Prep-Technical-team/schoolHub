@@ -15,7 +15,7 @@ import {
   Area,
 } from 'recharts';
 
-export default function PerformanceChart() {
+export default function PerformanceChart({ data, averageScore }: { data: { month: string; score: number }[]; averageScore?: number }) {
   const [selectedPeriod, setSelectedPeriod] = useState('This Semester');
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -30,13 +30,15 @@ export default function PerformanceChart() {
     return null;
   };
 
+  const displayScore = averageScore !== undefined && averageScore > 0 ? `${averageScore}%` : 'N/A';
+
   return (
     <Card className="flex flex-col gap-2">
       <p className="text-base font-medium leading-normal text-gray-900 dark:text-white">
         Performance Trend
       </p>
       <p className="truncate text-[32px] font-bold leading-tight tracking-light text-gray-900 dark:text-white">
-        88%
+        {displayScore}
       </p>
       <div className="flex gap-1">
         <p className="text-base font-normal leading-normal text-gray-500 dark:text-gray-400">
@@ -48,7 +50,7 @@ export default function PerformanceChart() {
       </div>
       <div className="h-[180px] w-full py-4">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={performanceData}>
+          <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
             <XAxis
               dataKey="month"

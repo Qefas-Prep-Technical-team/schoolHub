@@ -4,14 +4,16 @@ import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 
 interface TabNavigationProps {
-  activeTab:  'assessments' | 'materials' | 'attendance' | 'discussions';
-  onTabChange: (tab:  'assessments' | 'materials' | 'attendance' | 'discussions') => void;
+  activeTab:  'assessments' | 'materials' | 'timetable' | 'subjects' | 'attendance' | 'discussions';
+  onTabChange: (tab:  'assessments' | 'materials' | 'timetable' | 'subjects' | 'attendance' | 'discussions') => void;
   children?: React.ReactNode;
 }
 
 const tabs = [
   { id: 'assessments', label: 'Assessments' },
   { id: 'materials', label: 'Materials' },
+  { id: 'timetable', label: 'Timetable' },
+  { id: 'subjects', label: 'Subjects' },
   { id: 'attendance', label: 'Attendance' },
   { id: 'discussions', label: 'Discussions' },
 ] as const;

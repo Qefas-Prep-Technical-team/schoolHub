@@ -265,10 +265,10 @@ export default function StudentHomeDashboard() {
                         <Zap size={24} className="text-pink-500 fill-pink-500" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        <QuickAction icon={BookOpen} label="Subjects" color="bg-pink-500 text-white" href="/dashboard/student/my-classes" />
-                        <QuickAction icon={Target} label="CA & Exams" color="bg-rose-500 text-white" href="/dashboard/student/exams" />
-                        <QuickAction icon={Calendar} label="Timetable" color="bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900" href="/dashboard/student/timetable" />
-                        <QuickAction icon={Star} label="Results" color="bg-amber-500 text-white" href="/dashboard/student/results" />
+                        <QuickAction icon={BookOpen} label="My Classes" color="bg-pink-500 text-white" href="/dashboard/student/my-classes" />
+                        <QuickAction icon={Target} label="CA & Exams" color="bg-rose-500 text-white" href="/dashboard/student/exams&quizzes" />
+                        <QuickAction icon={Calendar} label="Assignments" color="bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900" href="/dashboard/student/assignments" />
+                        <QuickAction icon={Star} label="Results" color="bg-amber-500 text-white" href="/dashboard/student/result" />
                       </div>
                     </div>
                   </div>

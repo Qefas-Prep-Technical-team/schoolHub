@@ -156,6 +156,7 @@ const styles = StyleSheet.create({
   signatureRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 10,
   },
   signatureLine: {
@@ -163,6 +164,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#000',
     marginTop: 15,
+  },
+  stampBox: {
+    width: 50,
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#3B82F6',
+    borderRadius: 25,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 2,
+    backgroundColor: '#EFF6FF',
+  },
+  stampText: {
+    fontSize: 5,
+    fontWeight: 'bold',
+    color: '#3B82F6',
+    textAlign: 'center',
   },
 });
 
@@ -198,7 +217,13 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
           <Text style={styles.schoolContact}>TEL: {school?.settings?.phone || 'N/A'}; Email: {school?.settings?.email || 'N/A'}</Text>
         </View>
         <View style={styles.photoBox}>
-            {result.student?.profileImage ? <Image src={result.student.profileImage} style={{width: '100%', height: '100%'}} /> : null}
+            {result.student?.profileImage ? (
+              <Image src={result.student.profileImage} style={{ width: '100%', height: '100%' }} />
+            ) : (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' }}>
+                <Text style={{ fontSize: 6, color: '#9CA3AF', fontWeight: 'bold', textAlign: 'center' }}>NO PHOTO</Text>
+              </View>
+            )}
         </View>
       </View>
 
@@ -482,9 +507,29 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
         <View style={styles.remarkBox}>
           <Text style={{ fontStyle: 'italic' }}>{result.termlyEvaluation?.teacherRemark || (hasPerformanceAccess ? result.performanceInsight : null) || 'An excellent performance. Keep it up!'}</Text>
         </View>
-        <View style={styles.signatureRow}>
-          <Text style={{ fontWeight: 'bold' }}>Teacher's Name: ..............................................................</Text>
-          <Text>Sign: ..............................</Text>
+        <View style={[styles.signatureRow, { marginTop: 15 }]}>
+          <View style={{ flex: 1, alignItems: 'flex-start' }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Class Teacher's Signature</Text>
+            <View style={[styles.signatureLine, { width: 140 }]} />
+            <Text style={{ fontSize: 6, color: '#6B7280', marginTop: 2 }}>Signature / Date</Text>
+          </View>
+          
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={styles.stampBox}>
+              {school?.logo ? (
+                <Image src={school.logo} style={{ width: 35, height: 35, opacity: 0.6 }} />
+              ) : (
+                <Text style={styles.stampText}>STAMP</Text>
+              )}
+            </View>
+            <Text style={{ fontSize: 6, color: '#3B82F6', marginTop: 4, fontWeight: 'bold' }}>OFFICIAL STAMP</Text>
+          </View>
+
+          <View style={{ flex: 1, alignItems: 'flex-end' }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Principal's Signature</Text>
+            <View style={[styles.signatureLine, { width: 140 }]} />
+            <Text style={{ fontSize: 6, color: '#6B7280', marginTop: 2 }}>Signature / Date</Text>
+          </View>
         </View>
 
         {isComprehensive && (
@@ -493,14 +538,10 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
                 <View style={styles.remarkBox}>
                 <Text style={{ fontStyle: 'italic', textAlign: 'center', fontWeight: 'bold' }}>{result.termlyEvaluation?.principalRemark || 'An outstanding result!! You should keep it up'}</Text>
                 </View>
-                <View style={styles.signatureRow}>
-                <Text style={{ fontWeight: 'bold' }}>Principal's Name: ..............................................................</Text>
-                <Text>Sign: ..............................</Text>
-                </View>
 
-                <View style={[styles.signatureRow, { marginTop: 15 }]}>
-                <Text style={{ fontWeight: 'bold' }}>Next Term Begins: .....................................................</Text>
-                <Text style={{ fontWeight: 'bold' }}>Date: {new Date().toLocaleDateString()}</Text>
+                <View style={[styles.signatureRow, { marginTop: 15, borderTopWidth: 0.5, borderTopColor: '#E5E7EB', paddingTop: 8 }]}>
+                <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Next Term Begins: .....................................................</Text>
+                <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Date: {new Date().toLocaleDateString()}</Text>
                 </View>
             </>
         )}
@@ -544,11 +585,17 @@ export const ComprehensiveTranscriptReport: React.FC<{ transcript: any }> = ({ t
           )}
           <View style={styles.schoolInfo}>
             <Text style={styles.schoolName}>{school?.name || 'Academic Institution'}</Text>
-            <Text style={styles.schoolAddress}>{school?.settings?.address || 'School Address'}</Text>
-            <Text style={styles.schoolContact}>TEL: {school?.settings?.phone || 'N/A'}; Email: {school?.settings?.email || 'N/A'}</Text>
+            <Text style={styles.schoolAddress}>{school?.settings?.address || school?.address || 'School Address'}</Text>
+            <Text style={styles.schoolContact}>TEL: {school?.settings?.phone || school?.phone || 'N/A'}; Email: {school?.settings?.email || school?.schoolEmail || 'N/A'}</Text>
           </View>
           <View style={styles.photoBox}>
-            {student?.profileImage ? <Image src={student.profileImage} style={{width: '100%', height: '100%'}} /> : null}
+            {student?.profileImage ? (
+              <Image src={student.profileImage} style={{ width: '100%', height: '100%' }} />
+            ) : (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' }}>
+                <Text style={{ fontSize: 6, color: '#9CA3AF', fontWeight: 'bold' }}>NO PHOTO</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -622,16 +669,33 @@ export const ComprehensiveTranscriptReport: React.FC<{ transcript: any }> = ({ t
               <Text style={[styles.tableCell, { flex: 1.2, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>Overall Average:</Text>
               <Text style={[styles.tableCell, { flex: 1 }]}>{overallAverage}%</Text>
             </View>
-            <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
+            <View style={styles.tableRow}>
               <Text style={[styles.tableCell, { flex: 1.2, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>GPA Equivalent:</Text>
               <Text style={[styles.tableCell, { flex: 1 }]}>{gpa} / 4.0</Text>
             </View>
+            <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
+              <Text style={[styles.tableCell, { flex: 1.2, backgroundColor: '#E5E7EB', fontWeight: 'bold' }]}>Overall Grade:</Text>
+              {(() => {
+                const overallPct = overallAverage || 0;
+                let overallGrade = 'F9';
+                let overallRemark = 'FAIL';
+                if (overallPct >= 75) { overallGrade = 'A1'; overallRemark = 'EXCELLENT'; }
+                else if (overallPct >= 70) { overallGrade = 'B2'; overallRemark = 'VERY GOOD'; }
+                else if (overallPct >= 65) { overallGrade = 'B3'; overallRemark = 'GOOD'; }
+                else if (overallPct >= 60) { overallGrade = 'C4'; overallRemark = 'CREDIT'; }
+                else if (overallPct >= 55) { overallGrade = 'C5'; overallRemark = 'CREDIT'; }
+                else if (overallPct >= 50) { overallGrade = 'C6'; overallRemark = 'CREDIT'; }
+                else if (overallPct >= 45) { overallGrade = 'D7'; overallRemark = 'PASS'; }
+                else if (overallPct >= 40) { overallGrade = 'E8'; overallRemark = 'PASS'; }
+                return <Text style={[styles.tableCell, { flex: 1 }]}>{overallGrade} ({overallRemark})</Text>;
+              })()}
+            </View>
           </View>
           <View style={{ flex: 1.5, padding: 6, borderLeftWidth: 1, borderColor: '#000' }}>
-            <Text style={{ fontSize: 7, fontWeight: 'bold', marginBottom: 2 }}>Class Teacher's Remark (AI Generated):</Text>
+            <Text style={{ fontSize: 7, fontWeight: 'bold', marginBottom: 2 }}>Class Teacher's Remark:</Text>
             <Text style={{ fontSize: 7, fontStyle: 'italic', marginBottom: 6 }}>{aiClassTeacherRemark}</Text>
             
-            <Text style={{ fontSize: 7, fontWeight: 'bold', marginBottom: 2 }}>Principal's Overall Verdict (AI Generated):</Text>
+            <Text style={{ fontSize: 7, fontWeight: 'bold', marginBottom: 2 }}>Principal's Overall Verdict:</Text>
             <Text style={{ fontSize: 7, fontStyle: 'italic' }}>{aiGeneralRemark}</Text>
           </View>
         </View>
@@ -639,8 +703,28 @@ export const ComprehensiveTranscriptReport: React.FC<{ transcript: any }> = ({ t
         {/* Signatures */}
         <View style={[styles.remarksSection, { marginTop: 30 }]}>
           <View style={styles.signatureRow}>
-            <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Class Teacher: ..............................................................</Text>
-            <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Principal's Sign: ...................................</Text>
+            <View style={{ flex: 1, alignItems: 'flex-start' }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Class Teacher: System Assessed</Text>
+              <View style={[styles.signatureLine, { width: 140 }]} />
+              <Text style={{ fontSize: 6, color: '#6B7280', marginTop: 2 }}>Signature / Date</Text>
+            </View>
+            
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={styles.stampBox}>
+                {school?.logo ? (
+                  <Image src={school.logo} style={{ width: 35, height: 35, opacity: 0.6 }} />
+                ) : (
+                  <Text style={styles.stampText}>STAMP</Text>
+                )}
+              </View>
+              <Text style={{ fontSize: 6, color: '#3B82F6', marginTop: 4, fontWeight: 'bold' }}>OFFICIAL STAMP</Text>
+            </View>
+
+            <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 8 }}>Principal: Board Rep.</Text>
+              <View style={[styles.signatureLine, { width: 140 }]} />
+              <Text style={{ fontSize: 6, color: '#6B7280', marginTop: 2 }}>Signature / Date</Text>
+            </View>
           </View>
         </View>
       </Page>

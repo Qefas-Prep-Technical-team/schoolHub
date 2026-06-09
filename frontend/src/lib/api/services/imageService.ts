@@ -54,8 +54,17 @@ export const imageService = {
    */
   uploadToSupabase: async (file: File, bucket: string = "school-assets") => {
     const supabase = getSupabase();
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const fileExt = file.name.split('.').pop() || 'bin';
+    // Preserve the original name: lowercase it, replace spaces/special chars, prefix with short timestamp for uniqueness
+    const baseName = file.name
+      .replace(`.${fileExt}`, '')          // strip extension
+      .toLowerCase()
+      .replace(/\s+/g, '-')               // spaces → hyphens
+      .replace(/[^a-z0-9\-_]/g, '')       // strip special chars
+      .slice(0, 80)                        // cap at 80 chars
+      || 'file';
+    const timestamp = Date.now().toString(36);  // short base36 timestamp (e.g. "lm6v1e")
+    const fileName = `${timestamp}-${baseName}.${fileExt}`;
     const filePath = `uploads/${fileName}`;
 
     const { error } = await supabase.storage

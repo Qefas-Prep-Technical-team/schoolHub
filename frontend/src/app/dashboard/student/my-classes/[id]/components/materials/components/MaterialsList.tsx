@@ -3,14 +3,16 @@ import MaterialItem from './MaterialItem'
 import { StudyMaterial } from './materialsData'
 
 interface MaterialsListProps {
-  materials: StudyMaterial[]
+  materials: any[]
   viewMode: 'list' | 'grid'
   emptyMessage?: string
+  onPreview: (material: any) => void
 }
 
 export default function MaterialsList({ 
   materials, 
   viewMode, 
+  onPreview,
   emptyMessage = "No materials found" 
 }: MaterialsListProps) {
   if (materials.length === 0) {
@@ -35,6 +37,7 @@ export default function MaterialsList({
             key={material.id} 
             material={material} 
             viewMode="grid"
+            onPreview={onPreview}
           />
         ))}
       </div>
@@ -60,6 +63,7 @@ export default function MaterialsList({
             key={material.id} 
             material={material} 
             viewMode="list"
+            onPreview={onPreview}
           />
         ))}
       </div>

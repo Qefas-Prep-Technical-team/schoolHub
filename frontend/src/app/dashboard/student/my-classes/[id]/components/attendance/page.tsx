@@ -1,208 +1,233 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { AttendanceInsight, AttendanceRecord, AttendanceStatsType, Course, MonthlyData } from "./components/types";
-import StudentLayout from "./components/StudentLayout";
+// app/student/classes/[id]/attendance/page.tsx
+import { useState } from "react";
+import { useParams } from 'next/navigation';
+import { useSingleClass } from '@/lib/api/hooks/useClasses';
+import { useStudentProfile, useStudentAttendance } from '@/lib/api/hooks/useStudent';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import AttendanceStats from "./components/AttendanceStats";
-import AttendanceInsights from "./components/AttendanceInsights";
-import AttendanceChart from "./components/AttendanceChart";
-import AttendanceTable from "./components/AttendanceTable";
-import Select from "./components/ui/Select";
-
-
-// Mock data
-const mockUser = {
-    name: 'Alex Johnson',
-    avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDT6HukhJ7NnC1XwS_z8zgOaIEXbwqcd18VhSsMLWbsM6YEZhsdaqjSIepQ33lJYyefjP9_UAJjrYusTRd5bNZ7QJJwfSdl8tmRmhWveox1Z9kml4RNbl4ALbmoxhpzjqcPwTnt1U4K802cpIA_Z0dwAFUQfgsFjx-Uj5noKunmJpoGROU8Vl-qvJ9LLnA9OplUV7AKgdK_sV-Oc3KfNhzuGFzQD8H7lTfztknZcR4Icf_7lpNCCAE71d7uB5xSTpoqySk72Q4VgBs',
-    studentId: 'STU2024001'
-};
-
-const mockStats: AttendanceStatsType = {
-    overallRate: 92,
-    daysPresent: 42,
-    daysAbsent: 3,
-    lateArrivals: 5,
-    changeFromPrevious: {
-        rate: 5,
-        absent: -1,
-        late: 2
-    }
-};
-
-const mockMonthlyData: MonthlyData[] = [
-    { month: 'Jan', present: 14, absent: 4, late: 2 },
-    { month: 'Feb', present: 18, absent: 1, late: 1 },
-    { month: 'Mar', present: 20, absent: 0, late: 0 },
-    { month: 'Apr', present: 17, absent: 1, late: 3 },
-    { month: 'May', present: 19, absent: 0, late: 1, isCurrent: true },
-    { month: 'Jun', present: 18, absent: 2, late: 0 },
-];
-
-const mockInsights: AttendanceInsight[] = [
-    {
-        type: 'positive',
-        icon: 'trending_up',
-        message: 'Great job! Your attendance improved by 5% this month compared to last month.'
-    },
-    {
-        type: 'warning',
-        icon: 'warning',
-        message: 'You have 2 late arrivals this month. Try to be on time for the next class!'
-    }
-];
-
-const mockRecords: AttendanceRecord[] = [
-    { id: '1', date: '2024-05-24', status: 'present', classTopic: 'Design Principles & Hierarchy', time: '9:00 AM' },
-    { id: '2', date: '2024-05-22', status: 'absent', classTopic: 'Color Theory Fundamentals', time: '9:00 AM' },
-    { id: '3', date: '2024-05-20', status: 'late', classTopic: 'Introduction to Typography', time: '9:15 AM' },
-    { id: '4', date: '2024-05-17', status: 'present', classTopic: 'User Research Methods', time: '9:00 AM' },
-    { id: '5', date: '2024-05-15', status: 'present', classTopic: 'Wireframing & Prototyping', time: '9:00 AM' },
-    { id: '6', date: '2024-05-13', status: 'present', classTopic: 'UI Design Patterns', time: '9:00 AM' },
-    { id: '7', date: '2024-05-10', status: 'present', classTopic: 'Design Systems', time: '9:00 AM' },
-    { id: '8', date: '2024-05-08', status: 'late', classTopic: 'Interaction Design', time: '9:10 AM' },
-];
-
-const mockCourses: Course[] = [
-    { id: '1', name: 'Introduction to Design', code: 'DES101', instructor: 'Prof. Sarah Chen' },
-    { id: '2', name: 'Web Development', code: 'WEB201', instructor: 'Dr. Michael Rodriguez' },
-    { id: '3', name: 'Data Structures', code: 'CS301', instructor: 'Dr. James Wilson' },
-    { id: '4', name: 'Calculus I', code: 'MATH101', instructor: 'Prof. Emily Brown' },
-];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function AttendancePage() {
-    const [stats, setStats] = useState<AttendanceStatsType | null>(null);
-    const [records, setRecords] = useState<AttendanceRecord[]>([]);
-    const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
-    const [insights, setInsights] = useState<AttendanceInsight[]>([]);
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [selectedCourse, setSelectedCourse] = useState<string>('1');
-    const [isLoading, setIsLoading] = useState(true);
+  const { id } = useParams() as { id: string };
+  
+  const { data: classData, isLoading: isClassLoading } = useSingleClass(id);
+  const { data: studentProfile, isLoading: isProfileLoading } = useStudentProfile();
+  
+  const studentId = studentProfile?.id || '';
+  const { data: allAttendanceRecords, isLoading: isAttendanceLoading, isError } = useStudentAttendance(studentId);
 
-    useEffect(() => {
-        const fetchAttendanceData = async () => {
-            setIsLoading(true);
-            try {
-                // In a real app, fetch from API with selected course
-                // const response = await fetch(`/api/attendance?courseId=${selectedCourse}`);
-                // const data = await response.json();
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 800));
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-                setStats(mockStats);
-                setRecords(mockRecords);
-                setMonthlyData(mockMonthlyData);
-                setInsights(mockInsights);
-                setCourses(mockCourses);
-            } catch (error) {
-                console.error('Error fetching attendance data:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+  const themeColor = "#2563eb"; // Standard primary color, or fetch from school settings
 
-        fetchAttendanceData();
-    }, [selectedCourse]);
+  // Filter records specifically for this class
+  const classAttendanceRecords = Array.isArray(allAttendanceRecords) 
+    ? allAttendanceRecords.filter((record: any) => record.classId === id)
+    : [];
 
-    const handleCourseChange = (courseId: string) => {
-        setSelectedCourse(courseId);
-    };
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+  };
+  
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+  };
 
-    if (isLoading) {
-        return (
-            <StudentLayout user={mockUser}>
-                <div className="flex flex-col gap-6">
-                    {/* Skeleton for page header */}
-                    <div className="flex flex-wrap justify-between items-center gap-4">
-                        <div className="flex min-w-72 flex-col gap-2">
-                            <div className="h-12 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-64"></div>
-                            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-48"></div>
-                        </div>
-                        <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-48"></div>
-                    </div>
+  const getAttendanceForDate = (day: number) => {
+    const y = year;
+    const m = String(month + 1).padStart(2, '0');
+    const d = String(day).padStart(2, '0');
+    const targetDate = `${y}-${m}-${d}`;
+    
+    return classAttendanceRecords.find((record: any) => {
+      const recordDate = record.date.split('T')[0];
+      return recordDate === targetDate;
+    });
+  };
 
-                    {/* Skeleton for stats */}
-                    <div className="flex flex-wrap gap-4">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex-1 min-w-[158px] h-32 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse"></div>
-                        ))}
-                    </div>
-                </div>
-            </StudentLayout>
-        );
+  const getStatusColor = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === 'present') return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30';
+    if (s === 'late') return 'bg-amber-500/10 text-amber-500 border-amber-500/30';
+    if (s === 'absent') return 'bg-rose-500/10 text-rose-500 border-rose-500/30';
+    return 'bg-slate-100 dark:bg-white/5 text-slate-400 border-slate-200 dark:border-white/10';
+  };
+
+  const getStatusDot = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === 'present') return <CheckCircle2 size={12} />;
+    if (s === 'late') return <AlertCircle size={12} />;
+    if (s === 'absent') return <XCircle size={12} />;
+    return null;
+  };
+
+  // Calculate stats for current month
+  let presentCount = 0;
+  let lateCount = 0;
+  let absentCount = 0;
+
+  classAttendanceRecords.forEach((record: any) => {
+    const rDate = new Date(record.date);
+    if (rDate.getFullYear() === year && rDate.getMonth() === month) {
+      const s = record.status.toLowerCase();
+      if (s === 'present') presentCount++;
+      else if (s === 'late') lateCount++;
+      else if (s === 'absent') absentCount++;
     }
+  });
 
+  const totalDays = presentCount + lateCount + absentCount;
+  const attendanceRate = totalDays > 0 ? Math.round(((presentCount + lateCount) / totalDays) * 100) : 0;
+
+  if (isClassLoading || isProfileLoading || isAttendanceLoading) {
     return (
-        <StudentLayout user={mockUser}>
-            {/* Page Header */}
-            <div className="flex flex-wrap justify-between items-center gap-4">
-                <div className="flex min-w-72 flex-col gap-2">
-                    <h1 className="text-slate-900 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">
-                        Attendance Record
-                    </h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">
-                        Showing attendance for: {courses.find(c => c.id === selectedCourse)?.name || 'Introduction to Design'}
-                    </p>
-                </div>
-
-                {/* Course Selector */}
-                <div className="relative">
-                    <Select
-                        options={courses.map(course => ({
-                            value: course.id,
-                            label: `${course.name} (${course.code})`
-                        }))}
-                        value={selectedCourse}
-                        onChange={(e) => handleCourseChange(e.target.value)}
-                        className="min-w-[200px]"
-                    />
-                </div>
-            </div>
-
-            {/* Stats Cards */}
-            {stats && <AttendanceStats stats={stats} />}
-
-            {/* Chart and Insights */}
-            <div className="flex flex-col lg:flex-row gap-6">
-                <div className="flex-1">
-                    <AttendanceChart monthlyData={monthlyData} />
-                </div>
-                <div className="lg:max-w-xs">
-                    <AttendanceInsights insights={insights} />
-                </div>
-            </div>
-
-            {/* Attendance Table */}
-            <AttendanceTable records={records} />
-
-            {/* Additional Info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                    <h4 className="text-sm font-semibold text-primary mb-2">Attendance Policy</h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                        Minimum 80% attendance required to pass. Late arrivals count as 0.5 absence after 15 minutes.
-                    </p>
-                </div>
-
-                <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
-                    <h4 className="text-sm font-semibold text-green-600 dark:text-green-500 mb-2">
-                        Good Standing
-                    </h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                        Your current attendance rate of {stats?.overallRate}% exceeds the minimum requirement.
-                    </p>
-                </div>
-
-                <div className="p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                    <h4 className="text-sm font-semibold text-amber-600 dark:text-amber-500 mb-2">
-                        Late Arrivals
-                    </h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                        Consider arriving 10 minutes early to account for unexpected delays.
-                    </p>
-                </div>
-            </div>
-        </StudentLayout>
+      <div className="rounded-[3.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-12 space-y-6 mt-4">
+        <Skeleton className="h-20 w-full rounded-3xl" />
+        <div className="grid grid-cols-7 gap-4">
+           {Array.from({length: 35}).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+        </div>
+      </div>
     );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-12 text-center rounded-[3.5rem] bg-red-50 dark:bg-red-950/20 text-red-600 font-bold mt-4">
+        Failed to load attendance records.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8 py-4">
+      {/* Header & Stats */}
+      <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-8 rounded-[2.5rem] shadow-sm">
+        <div className="flex items-center gap-6">
+          <div className="size-16 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColor}12`, color: themeColor }}>
+            <CalendarIcon size={32} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-4">
+              <button onClick={handlePrevMonth} className="hover:text-primary transition-colors"><ChevronLeft size={24}/></button>
+              {MONTHS[month]} {year}
+              <button onClick={handleNextMonth} className="hover:text-primary transition-colors"><ChevronRight size={24}/></button>
+            </h2>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+              {classData?.name} {classData?.section} • Attendance
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-4">
+          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Present</p>
+            <p className="text-xl font-black text-emerald-500">{presentCount}</p>
+          </div>
+          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Late</p>
+            <p className="text-xl font-black text-amber-500">{lateCount}</p>
+          </div>
+          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Absent</p>
+            <p className="text-xl font-black text-rose-500">{absentCount}</p>
+          </div>
+          <div className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center min-w-[100px]">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Rate</p>
+            <p className="text-xl font-black text-slate-900 dark:text-white">{attendanceRate}%</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm">
+        <div className="grid grid-cols-7 gap-4 mb-4">
+          {DAYS.map(day => (
+            <div key={day} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              {day}
+            </div>
+          ))}
+        </div>
+        
+        <div className="grid grid-cols-7 gap-2 md:gap-4">
+          {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+            <div key={`empty-${i}`} className="h-24 rounded-2xl bg-slate-50/50 dark:bg-white/[0.01] border border-transparent" />
+          ))}
+          
+          {Array.from({ length: daysInMonth }).map((_, i) => {
+            const day = i + 1;
+            const record = getAttendanceForDate(day);
+            const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+            
+            return (
+              <div 
+                key={day} 
+                className={cn(
+                  "h-24 rounded-2xl border p-3 flex flex-col justify-between transition-all",
+                  record ? getStatusColor(record.status) : "bg-slate-50/50 dark:bg-white/[0.01] border-slate-100 dark:border-white/5",
+                  isToday && !record && "border-primary/50 shadow-sm"
+                )}
+                style={isToday && !record ? { borderColor: themeColor } : {}}
+              >
+                <div className="flex justify-between items-start">
+                  <span className={cn(
+                    "text-sm font-black", 
+                    record ? "opacity-90" : "text-slate-400",
+                    isToday && !record && "text-slate-900 dark:text-white"
+                  )}>
+                    {day}
+                  </span>
+                  {record && getStatusDot(record.status)}
+                </div>
+                
+                {record && (
+                  <div className="text-[9px] font-black uppercase tracking-widest mt-auto truncate" title={record.note || record.status}>
+                    {record.status} {record.note && "• " + record.note}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      
+      {/* Attendance Policy Guidance */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20">
+            <h4 className="text-sm font-black text-primary mb-2 uppercase tracking-wide">Attendance Policy</h4>
+            <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                Minimum 80% attendance required to pass. Late arrivals count as 0.5 absence after 15 minutes.
+            </p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20">
+            <h4 className="text-sm font-black text-emerald-600 dark:text-emerald-500 mb-2 uppercase tracking-wide">
+                Good Standing
+            </h4>
+            <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                Your current attendance rate of {attendanceRate}% {attendanceRate >= 80 ? 'exceeds' : 'is below'} the minimum requirement.
+            </p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+            <h4 className="text-sm font-black text-amber-600 dark:text-amber-500 mb-2 uppercase tracking-wide">
+                Late Arrivals
+            </h4>
+            <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                Consider arriving 10 minutes early to account for unexpected delays.
+            </p>
+        </div>
+      </div>
+    </div>
+  );
 }

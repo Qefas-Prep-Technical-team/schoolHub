@@ -22,6 +22,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useStudentExamAttempts, useExamResult } from '@/lib/api/hooks/useExams';
 import { useGrades, useClassLeaderboard } from '@/lib/api/hooks/useGrades';
+import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -89,6 +90,7 @@ export default function StudentGradesPage() {
   const { user } = useAuthStore();
 
   // Data fetching
+  const { data: profile } = useStudentProfile();
   const { data: attemptsData, isLoading: isLoadingAttempts } = useStudentExamAttempts({ 
     page: examsPage, 
     limit: itemsPerPage 
@@ -185,45 +187,68 @@ export default function StudentGradesPage() {
       const score = grade.score || 0;
       const maxMarks = grade.maxMarks || 0;
       
-      if (grade.assessmentType === 'CA') {
-        subjectsMap[sName].caScore += score;
-        subjectsMap[sName].caMax += maxMarks;
-      } else if (grade.assessmentType === 'QUIZ') {
+      const type = (grade.assessmentType || grade.category || '').toUpperCase();
+      
+      if (type === 'EXAM') {
+        subjectsMap[sName].examScore += score;
+        subjectsMap[sName].examMax += maxMarks;
+      } else if (type === 'QUIZ') {
         subjectsMap[sName].quizScore += score;
         subjectsMap[sName].quizMax += maxMarks;
-      } else if (grade.assessmentType === 'ASSIGNMENT') {
+      } else if (type === 'ASSIGNMENT') {
         subjectsMap[sName].assignmentScore += score;
         subjectsMap[sName].assignmentMax += maxMarks;
+      } else {
+        // Any other type (CA, test, midterm, etc.) counts as CA
+        subjectsMap[sName].caScore += score;
+        subjectsMap[sName].caMax += maxMarks;
       }
     });
 
     const subjects = Object.values(subjectsMap).map((sub) => {
-      const caMax = sub.caMax + sub.quizMax + sub.assignmentMax;
-      const caScore = sub.caScore + sub.quizScore + sub.assignmentScore;
+      let weightedSum = 0;
+      let totalWeight = 0;
+
+      if (sub.assignmentMax > 0) {
+        weightedSum += (sub.assignmentScore / sub.assignmentMax) * 0.2;
+        totalWeight += 0.2;
+      }
+      if (sub.quizMax > 0) {
+        weightedSum += (sub.quizScore / sub.quizMax) * 0.2;
+        totalWeight += 0.2;
+      }
+      if (sub.caMax > 0) {
+        weightedSum += (sub.caScore / sub.caMax) * 0.6;
+        totalWeight += 0.6;
+      }
+
+      const hasCa = totalWeight > 0;
+      const caPct = hasCa ? (weightedSum / totalWeight) : 0;
       const examMax = sub.examMax;
       const examScore = sub.examScore;
 
-      let normalizedCa = 0;
-      let normalizedExam = 0;
+      let normalizedCa: number | string = 0;
+      let normalizedExam: number | string = 0;
       let total = 0;
 
-      if (caMax > 0 && examMax > 0) {
-        normalizedCa = Math.round((caScore / caMax) * 40);
-        normalizedExam = Math.round((examScore / examMax) * 60);
-        total = normalizedCa + normalizedExam;
-      } else if (caMax > 0) {
-        const percent = caScore / caMax;
-        total = Math.round(percent * 100);
-        normalizedCa = Math.round(total * 0.4);
-        normalizedExam = total - normalizedCa;
+      if (hasCa && examMax > 0) {
+        const caVal = Math.round(caPct * 40);
+        const examVal = Math.round((examScore / examMax) * 60);
+        normalizedCa = caVal;
+        normalizedExam = examVal;
+        total = caVal + examVal;
+      } else if (hasCa) {
+        total = Math.round(caPct * 100);
+        normalizedCa = Math.round(caPct * 40);
+        normalizedExam = '-';
       } else if (examMax > 0) {
         const percent = examScore / examMax;
         total = Math.round(percent * 100);
-        normalizedCa = Math.round(total * 0.4);
-        normalizedExam = total - normalizedCa;
+        normalizedCa = '-';
+        normalizedExam = Math.round(percent * 60);
       } else {
-        normalizedCa = 0;
-        normalizedExam = 0;
+        normalizedCa = '-';
+        normalizedExam = '-';
         total = 0;
       }
 
@@ -254,17 +279,17 @@ export default function StudentGradesPage() {
     const aiClassTeacherRemark = generateAIClassTeacherRemark(user.name, overallAverage);
     const aiGeneralRemark = generateAIPrincipalRemark(user.name, overallAverage);
 
-    const firstAttempt = allAttempts[0];
-    const className = firstAttempt?.className || user?.schools?.[0]?.name || 'General Class';
-    const sessionName = firstAttempt?.session?.name || 'Academic Session';
-    const school = firstAttempt?.school || user?.schools?.[0] || {};
+    const primaryClass = profile?.classes?.[0]?.class;
+    const className = primaryClass?.name || 'General Class';
+    const sessionName = primaryClass?.session || 'Academic Session';
+    const school = (profile?.school || user?.schools?.[0] || {}) as any;
 
     return {
       student: {
-        name: user.name,
-        gender: (user as any).gender || 'N/A',
-        studentCode: user.studentCode || 'N/A',
-        profileImage: user.profileImage || null,
+        name: profile?.name || user.name,
+        gender: profile?.gender || (user as any).gender || 'N/A',
+        studentCode: profile?.studentCode || user.studentCode || 'N/A',
+        profileImage: profile?.profileImage || user.profileImage || null,
       },
       school,
       className,
@@ -277,7 +302,7 @@ export default function StudentGradesPage() {
       aiClassTeacherRemark,
       aiGeneralRemark,
     };
-  }, [allAttempts, allGrades, user]);
+  }, [allAttempts, allGrades, user, profile]);
 
   const calculateCumulativeAvg = () => {
     const examPercents = attemptsData?.attempts?.map((a: Record<string, any>) => (a.totalScore / (a.totalMarks || 1)) * 100) || [];
@@ -648,8 +673,8 @@ export default function StudentGradesPage() {
                 )}
                 <div>
                   <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{transcriptData.school?.name || 'Academic Institution'}</h2>
-                  <p className="text-sm text-slate-500 font-medium">{transcriptData.school?.settings?.address || 'School Address'}</p>
-                  <p className="text-xs text-slate-400 font-semibold mt-1">TEL: {transcriptData.school?.settings?.phone || 'N/A'} • EMAIL: {transcriptData.school?.settings?.email || 'N/A'}</p>
+                  <p className="text-sm text-slate-500 font-medium">{transcriptData.school?.settings?.address || transcriptData.school?.address || 'School Address'}</p>
+                  <p className="text-xs text-slate-400 font-semibold mt-1">TEL: {transcriptData.school?.settings?.phone || transcriptData.school?.phone || 'N/A'} • EMAIL: {transcriptData.school?.settings?.email || transcriptData.school?.schoolEmail || 'N/A'}</p>
                 </div>
               </div>
               
@@ -752,7 +777,7 @@ export default function StudentGradesPage() {
             </div>
 
             {/* Cumulative Summary Card */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
               <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 flex flex-col justify-between">
                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Cumulative Aggregate</span>
                 <div className="mt-4 flex items-baseline gap-2">
@@ -776,8 +801,22 @@ export default function StudentGradesPage() {
                   <span className="text-4xl font-black text-[#0856c8] dark:text-blue-400 tracking-tighter italic">{transcriptData.gpa}</span>
                   <span className="text-sm text-slate-400">/ 4.0</span>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-wider">Nigerian Grade Point Average</p>
+                <p className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-wider">Nigerian GPA</p>
               </div>
+
+              {(() => {
+                const gradeInfo = getWAECGradeAndRemark(transcriptData.overallAverage);
+                return (
+                  <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 flex flex-col justify-between">
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Overall Grade</span>
+                    <div className="mt-4 flex items-baseline gap-2">
+                      <span className="text-4xl font-black text-[#0856c8] dark:text-blue-400 tracking-tighter italic">{gradeInfo.grade}</span>
+                      <span className="text-xs font-bold text-slate-400 uppercase">({gradeInfo.remark})</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-wider">WAEC Grading Standard</p>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Academic Comments & Remarks Section */}
@@ -789,7 +828,7 @@ export default function StudentGradesPage() {
                     <div className="h-8 w-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 dark:text-blue-400 shrink-0">
                       <BrainCircuit size={16} />
                     </div>
-                    <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest italic">Class Teacher's AI Remark</h4>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest italic">Class Teacher's Remark</h4>
                   </div>
                   {isAiThinking ? (
                     <div className="space-y-2 py-2">
@@ -814,7 +853,7 @@ export default function StudentGradesPage() {
                     <div className="h-8 w-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
                       <Sparkles size={16} />
                     </div>
-                    <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Principal's AI Verdict</h4>
+                    <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Principal's Verdict</h4>
                   </div>
                   {isAiThinking ? (
                     <div className="space-y-2 py-2">
@@ -832,12 +871,26 @@ export default function StudentGradesPage() {
 
             {/* Official Signatures Section */}
             <div className="mt-8 border-t border-slate-200 dark:border-slate-850 pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-slate-600 dark:text-slate-400">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center text-sm text-slate-600 dark:text-slate-400">
                 <div className="space-y-4">
-                  <p className="font-bold">Class Teacher: <span className="font-normal italic">School System AI Assessed</span></p>
+                  <p className="font-bold">Class Teacher: <span className="font-normal italic">School System Assessed</span></p>
                   <div className="h-px bg-slate-300 dark:bg-slate-700 w-48 mt-8" />
                   <p className="text-xs text-slate-400">Signature / Date</p>
                 </div>
+                
+                {/* Official School Stamp */}
+                <div className="flex flex-col items-center justify-center space-y-2 py-4">
+                  <div className="relative w-24 h-24 rounded-full border-2 border-dashed border-[#0856c8] dark:border-blue-500/50 flex items-center justify-center p-2 bg-blue-50/20 dark:bg-blue-900/10">
+                    {transcriptData.school?.logo ? (
+                      <img src={transcriptData.school.logo} alt="School Stamp" className="w-16 h-16 rounded-full object-contain opacity-70 dark:opacity-60" />
+                    ) : (
+                      <div className="text-[10px] font-black text-[#0856c8] dark:text-blue-400 uppercase tracking-widest text-center">STAMP</div>
+                    )}
+                    <div className="absolute inset-0 rounded-full border border-blue-500/10 animate-[spin_20s_linear_infinite]" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Official Stamp</span>
+                </div>
+
                 <div className="space-y-4 md:text-right">
                   <p className="font-bold">Principal: <span className="font-normal italic">School Board Representative</span></p>
                   <div className="h-px bg-slate-300 dark:bg-slate-700 w-48 mt-8 md:ml-auto" />

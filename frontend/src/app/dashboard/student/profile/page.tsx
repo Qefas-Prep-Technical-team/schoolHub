@@ -249,8 +249,8 @@ export default function StudentProfilePage() {
                         </div>
                         <div className="space-y-4">
                             <MobileQuickAction href="/dashboard/student/settings" icon={<MapPin size={22} />} label="Home Address" status="Set Location" color="text-rose-500 bg-rose-50 dark:bg-rose-500/10" />
-                            <MobileQuickAction href="/dashboard/student/my-classes" icon={<Calendar size={22} />} label="Academic Calendar" status="View Schedule" color="text-primary bg-indigo-50 dark:bg-primary/10" />
-                            <MobileQuickAction href="/dashboard/student/settings" icon={<ShieldCheck size={22} />} label="Security Settings" status="Strong" color="text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" />
+                            <MobileQuickAction href="/dashboard/student/grades" icon={<Calendar size={22} />} label="Grades & Results" status="View Results" color="text-primary bg-indigo-50 dark:bg-primary/10" />
+                            <MobileQuickAction href="/dashboard/student/attendance" icon={<ShieldCheck size={22} />} label="Attendance" status="View Records" color="text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" />
                         </div>
                     </div>
 

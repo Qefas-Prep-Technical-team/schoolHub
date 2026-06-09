@@ -115,6 +115,20 @@ export default function DiscussionsPage() {
     };
 
     return (
+        <div className="p-20 text-center space-y-6 bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[2.5rem] shadow-sm">
+            <div className="size-20 bg-indigo-50 dark:bg-indigo-500/10 rounded-[2rem] flex items-center justify-center mx-auto text-indigo-500">
+                <span className="material-symbols-outlined text-4xl">forum</span>
+            </div>
+            <div className="space-y-2">
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Discussions Coming Soon</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest max-w-md mx-auto leading-relaxed">
+                    We are currently building an interactive discussion platform for this class. Check back later!
+                </p>
+            </div>
+        </div>
+        
+        /* 
+        // --- ORIGINAL UI PRESERVED FOR LATER REVIEW ---
         <DiscussionLayout user={mockUser}>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <aside className="lg:col-span-3">
@@ -141,5 +155,6 @@ export default function DiscussionsPage() {
                 </section>
             </div>
         </DiscussionLayout>
+        */
     );
 }

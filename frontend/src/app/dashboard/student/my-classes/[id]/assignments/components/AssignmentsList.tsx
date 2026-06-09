@@ -35,8 +35,8 @@ export default function AssignmentsList({ assignments }: AssignmentsListProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {sortedAssignments.map((assignment) => (
-        <AssignmentCard key={assignment.id} assignment={assignment} />
+      {sortedAssignments.map((assignment, index) => (
+        <AssignmentCard key={assignment.id} assignment={assignment} index={index + 1} />
       ))}
     </div>
   )

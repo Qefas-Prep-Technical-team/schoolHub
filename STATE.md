@@ -19,12 +19,31 @@
 
 ## Completed
 
+- **Student Class View, Multi-Teacher Sliding Carousel, & Contact Dialog (June 08, 2026)**:
+  - Overhauled the Student Class Details dashboard (`my-classes/[id]/page.tsx`) to pull and calculate real dynamic academic metrics: Attendance rate from live database records, Completed/Total assignments, overall grade letter from weighted assignments/exams/grades, and real Last Activity timestamp.
+  - Implemented an automatic sliding carousel card for multiple assigned teachers (`ClassOverview.tsx`) with manual navigation controls and index indicators.
+  - Created a premium glassmorphic Contact dialog modal popup in the teacher card, displaying live-populated email and phone contact options with clickable `mailto:` and `tel:` buttons.
+  - Refined Student Class view tabs: Updated Assessment Tab with direct assignment links. Enhanced Materials Tab to properly fetch actual attachment, video, and reference URLs from exams, quizzes, and CAs (and added inline display for PDFs/images).
+  - Integrated a full read-only Timetable preview tab (expanded all the way down to 18:00).
+  - Built a dedicated Student Subjects tab that opens a dynamic SubjectDetailsModal on click, featuring a comprehensive Mock "Scheme of Work" week-by-week timeline.
+  - Hardened backend multi-class assignment duplication logic (`assignment.service.ts`) to query and duplicate associated assignment questions, ensuring deep replication when assigning coursework to multiple target classes.
+  - Successfully verified 100% type safety and compile-ready status for both frontend and backend workspaces with `npx tsc --noEmit` returning exit code 0.
+
 - **Official Nigerian Transcript Layout & AI Remarks (June 08, 2026)**:
   - Redesigned full academic transcript modal and downloaded PDF to conform to Nigerian standards.
   - Configured 40/60 CA/Exam scaling aggregation and WAEC grading scale alignment.
   - Added school logo/details and student passport photo at the top.
   - Implemented Class Teacher and Principal bottom AI remarks with signature lines.
   - Validated frontend workspace compilation with `npx tsc --noEmit`.
+
+- **Student Assignment Numbering & Analytics Upgrade (June 08, 2026)**:
+  - Added visual assignment numbering sequentially onto individual student assignment cards in grid and list views.
+  - Re-engineered the "Academic Performance Analytics" button on the student assignment page to trigger a pop-up modal dialog showing real, live-calculated assignment metrics and charts.
+  - Implemented client-side mathematical computation of assignment metrics, calculating real overall completion rates, average scores, grade distributions, and monthly performance trends dynamically.
+  - Modified the Analytics modal layout to `max-w-6xl` size with proper spacing and styling for a more detailed display of graphs and tips.
+  - Fixed standalone routing type mismatches inside `analytics/page.tsx` and successfully validated frontend Next.js production build (`npm run build`).
+  - Fixed assignment average grade parsing bug in analytics card where slash formats like `10/10` or `100/100` resulted in inflated percentages (e.g. `10100%`) by introducing a dedicated `parseGradeToPercentage` utility.
+  - Updated backend assignment status mapping to calculate the progress percentage dynamically based on the number of answered questions in draft assignments.
 
 ## Completed
 

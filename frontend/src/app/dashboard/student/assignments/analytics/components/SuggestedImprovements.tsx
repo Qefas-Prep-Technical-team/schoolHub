@@ -17,7 +17,7 @@ export default function SuggestedImprovements({ tips }: SuggestedImprovementsPro
           >
             auto_awesome
           </span>
-          AI Generated
+          System Recommended
         </span>
       </div>
       <div className="space-y-4">

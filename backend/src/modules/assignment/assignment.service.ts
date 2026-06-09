@@ -50,6 +50,11 @@ export const getStudentAssignmentsService = async (options: {
       department: { select: { name: true } },
       submissions: {
         where: { studentId },
+        include: {
+          answers: {
+            select: { answer: true }
+          }
+        },
         take: 1, // At most 1 submission per assignment
       },
       _count: {
@@ -124,8 +129,25 @@ export const getStudentAssignmentsService = async (options: {
       computedStatus = "overdue";
     }
 
+    const totalQuestions = a._count.questions;
+    const answeredCount = submission && submission.answers 
+      ? submission.answers.filter((ans: any) => ans.answer && ans.answer.trim() !== "").length 
+      : 0;
+
+    let computedProgress = 0;
+    if (submission) {
+      if (computedStatus === "submitted" || computedStatus === "graded") {
+        computedProgress = 100;
+      } else {
+        computedProgress = totalQuestions > 0 
+          ? Math.round((answeredCount / totalQuestions) * 100) 
+          : 0;
+      }
+    }
+
     return {
       id: a.id,
+      classId: a.classId,
       title: a.title,
       subjectId: a.subjectId,
       subject: subjectMap[a.subjectId],
@@ -134,11 +156,16 @@ export const getStudentAssignmentsService = async (options: {
       instructorId: a.teacherId,
       dueDate: a.dueDate,
       status: computedStatus,
-      progress: submission && computedStatus !== "pending" ? 100 : 0,
+      progress: computedProgress,
       grade: submission?.score ? `${submission.score}/${a.totalMarks}` : null,
       submissionDate: submission?.submittedAt,
       totalMarks: a.totalMarks,
-      questionCount: a._count.questions
+      questionCount: a._count.questions,
+      attachmentUrl: a.attachmentUrl,
+      videoUrl: a.videoUrl,
+      referenceUrl: a.referenceUrl,
+      instructions: a.instructions,
+      createdAt: a.createdAt,
     };
   });
 

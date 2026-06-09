@@ -11,7 +11,7 @@ interface SubjectCardProps {
 const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) => {
   return (
     <div 
-      className="flex flex-col gap-4 rounded-xl bg-white dark:bg-background-dark/50 border border-gray-200 dark:border-white/10 p-5 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+      className="flex flex-col gap-4 rounded-xl bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-gray-200 dark:border-white/10 p-5 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer"
       onClick={() => onClick?.(subject)}
     >
       <div className="flex items-center gap-3">
@@ -41,7 +41,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) => {
       </div>
       
       <button 
-        className="w-full flex items-center justify-center rounded-lg h-10 px-4 bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300 text-sm font-bold leading-normal hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors"
+        className="w-full flex items-center justify-center rounded-lg h-10 px-4 bg-primary/10 text-primary dark:bg-blue-500/10 dark:text-blue-400 text-sm font-bold leading-normal hover:bg-primary/20 dark:hover:bg-blue-500/20 transition-colors"
         onClick={(e) => {
           e.stopPropagation();
           onClick?.(subject);
