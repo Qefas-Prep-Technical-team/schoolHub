@@ -6362,4 +6362,35 @@ Unknown argument `paper`. Available options are marked with ?.
     at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
     at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
-    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientInitializationError: 
+Invalid `prisma.platformStaff.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\auth\auth.controller.ts:21:46
+
+  18 }
+  19 
+  20 // Find staff record
+→ 21 const staff = await prisma.platformStaff.findUnique(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at platformLogin (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\auth\auth.controller.ts:21:19)TypeError: Do not know how to serialize a BigInt
+    at JSON.stringify (<anonymous>)
+    at stringify (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\express\lib\response.js:1034:12)
+    at ServerResponse.json (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\express\lib\response.js:245:14)
+    at getGlobalStats (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\analytics\analytics.controller.ts:57:28)TypeError: Do not know how to serialize a BigInt
+    at JSON.stringify (<anonymous>)
+    at stringify (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\express\lib\response.js:1034:12)
+    at ServerResponse.json (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\express\lib\response.js:245:14)
+    at getGlobalStats (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\analytics\analytics.controller.ts:57:28)TypeError: Do not know how to serialize a BigInt
+    at JSON.stringify (<anonymous>)
+    at stringify (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\express\lib\response.js:1034:12)
+    at ServerResponse.json (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\express\lib\response.js:245:14)
+    at getGlobalStats (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\analytics\analytics.controller.ts:57:28)TypeError: Do not know how to serialize a BigInt
+    at JSON.stringify (<anonymous>)
+    at stringify (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\express\lib\response.js:1034:12)
+    at ServerResponse.json (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\express\lib\response.js:245:14)
+    at getGlobalStats (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\analytics\analytics.controller.ts:57:28)

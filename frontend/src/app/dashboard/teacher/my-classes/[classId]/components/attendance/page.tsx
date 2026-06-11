@@ -98,7 +98,7 @@ export default function AttendancePage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                            {students.map((student, idx) => (
+                            {students.map((student: { id: string; name: string; rollNo: string; status: string }, idx: number) => (
                                 <motion.tr 
                                     key={student.id}
                                     initial={{ opacity: 0, y: 10 }}

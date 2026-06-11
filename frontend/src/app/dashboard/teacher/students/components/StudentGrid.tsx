@@ -11,22 +11,24 @@ import { Student } from "./types";
 interface StudentGridProps {
   page: number;
   searchQuery: string;
+  selectedClassId?: string;
   limit: number;
   onDataLoaded: (total: number) => void;
 }
 
-const StudentGrid: React.FC<StudentGridProps> = ({ page, searchQuery, limit, onDataLoaded }) => {
+const StudentGrid: React.FC<StudentGridProps> = ({ page, searchQuery, selectedClassId, limit, onDataLoaded }) => {
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
   
   const { data, isLoading, error } = useQuery({
-    queryKey: ['teacher-students', selectedSchoolId, searchQuery, page, limit],
+    queryKey: ['teacher-students', selectedSchoolId, searchQuery, selectedClassId, page, limit],
     queryFn: async () => {
       const isPersonal = selectedSchoolName === "Personal Dashboard" || selectedSchoolId === user?.id;
       const filterId = isPersonal ? undefined : selectedSchoolId;
       const result = await teacherService.getStudents({
         schoolId: filterId || undefined,
         search: searchQuery || undefined,
+        classId: selectedClassId || undefined,
         page,
         limit,
       });

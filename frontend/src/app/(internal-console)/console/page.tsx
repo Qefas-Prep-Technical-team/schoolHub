@@ -12,7 +12,9 @@ import {
     Cpu,
     GraduationCap,
     BookUser,
-    UserRound
+    UserRound,
+    AlertCircle,
+    RefreshCw
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
@@ -28,62 +30,62 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { SubscriptionAnalytics } from "./components/SubscriptionAnalytics"
 
 export default function PlatformDashboard() {
-    const { data: stats, isLoading: statsLoading } = usePlatformStats()
-    const { data: growth, isLoading: growthLoading } = usePlatformGrowth()
+    const { data: stats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = usePlatformStats()
+    const { data: growth, isLoading: growthLoading, isError: growthError, refetch: refetchGrowth } = usePlatformGrowth()
 
     const metricCards = [
         { 
             title: "Global Schools", 
-            value: stats?.totalSchools ?? 0, 
+            value: statsError ? "Unavailable" : (statsLoading ? "" : (stats?.totalSchools ?? 0)), 
             icon: Building2, 
-            color: "text-blue-400",
-            bg: "bg-blue-500/5",
-            sub: `${stats?.activeSchools ?? 0} active`,
+            color: statsError ? "text-red-400" : "text-blue-400",
+            bg: statsError ? "bg-red-500/5" : "bg-blue-500/5",
+            sub: statsError ? "Data offline" : `${stats?.activeSchools ?? 0} active`,
             description: "Institutions on platform"
         },
         { 
             title: "Total Students", 
-            value: stats?.totalStudents ?? 0, 
+            value: statsError ? "Unavailable" : (statsLoading ? "" : (stats?.totalStudents ?? 0)), 
             icon: GraduationCap, 
-            color: "text-emerald-400",
-            bg: "bg-emerald-500/5",
+            color: statsError ? "text-red-400" : "text-emerald-400",
+            bg: statsError ? "bg-red-500/5" : "bg-emerald-500/5",
             sub: null,
             description: "Cross-tenant student population"
         },
         { 
             title: "Total Teachers", 
-            value: stats?.totalTeachers ?? 0, 
+            value: statsError ? "Unavailable" : (statsLoading ? "" : (stats?.totalTeachers ?? 0)), 
             icon: BookUser, 
-            color: "text-violet-400",
-            bg: "bg-violet-500/5",
+            color: statsError ? "text-red-400" : "text-violet-400",
+            bg: statsError ? "bg-red-500/5" : "bg-violet-500/5",
             sub: null,
             description: "Registered teaching staff"
         },
         { 
             title: "Total Parents", 
-            value: stats?.totalParents ?? 0, 
+            value: statsError ? "Unavailable" : (statsLoading ? "" : (stats?.totalParents ?? 0)), 
             icon: UserRound, 
-            color: "text-pink-400",
-            bg: "bg-pink-500/5",
+            color: statsError ? "text-red-400" : "text-pink-400",
+            bg: statsError ? "bg-red-500/5" : "bg-pink-500/5",
             sub: null,
             description: "Parent accounts"
         },
         { 
             title: "Total Users", 
-            value: stats?.totalUsers ?? 0, 
+            value: statsError ? "Unavailable" : (statsLoading ? "" : (stats?.totalUsers ?? 0)), 
             icon: Users, 
-            color: "text-amber-400",
-            bg: "bg-amber-500/5",
+            color: statsError ? "text-red-400" : "text-amber-400",
+            bg: statsError ? "bg-red-500/5" : "bg-amber-500/5",
             sub: null,
             description: "All registered users"
         },
         { 
             title: "Platform Revenue", 
-            value: `₦${((stats?.totalRevenue ?? 0)).toLocaleString()}`, 
+            value: statsError ? "Unavailable" : (statsLoading ? "" : `₦${((stats?.totalRevenue ?? 0)).toLocaleString()}`), 
             icon: CreditCard, 
-            color: "text-indigo-400",
-            bg: "bg-indigo-500/5",
-            sub: `₦${((stats?.mrr ?? 0)).toLocaleString()} MRR`,
+            color: statsError ? "text-red-400" : "text-indigo-400",
+            bg: statsError ? "bg-red-500/5" : "bg-indigo-500/5",
+            sub: statsError ? null : `₦${((stats?.mrr ?? 0)).toLocaleString()} MRR`,
             description: "Gross volume (All time)"
         },
         { 
@@ -97,10 +99,10 @@ export default function PlatformDashboard() {
         },
         { 
             title: "Currency", 
-            value: stats?.currency ?? "NGN", 
+            value: statsError ? "Unavailable" : (statsLoading ? "" : (stats?.currency ?? "NGN")), 
             icon: CreditCard, 
-            color: "text-orange-400",
-            bg: "bg-orange-500/5",
+            color: statsError ? "text-red-400" : "text-orange-400",
+            bg: statsError ? "bg-red-500/5" : "bg-orange-500/5",
             sub: null,
             description: "Primary settlement currency"
         },
@@ -119,6 +121,33 @@ export default function PlatformDashboard() {
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Engine Feed</span>
                 </div>
             </div>
+
+            {/* Error Alert Banner */}
+            {(statsError || growthError) && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-red-500/25 flex items-center justify-center shrink-0">
+                            <AlertCircle className="h-5 w-5 text-red-500" />
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">Analytics Feed Interrupted</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                We were unable to sync with the primary telemetry engine. Dashboard metrics may be outdated or incomplete.
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => {
+                            if (statsError) refetchStats();
+                            if (growthError) refetchGrowth();
+                        }}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white dark:text-slate-100 text-xs font-bold rounded-xl shadow transition-all active:scale-95 whitespace-nowrap self-start sm:self-center"
+                    >
+                        <RefreshCw size={14} />
+                        Retry Sync
+                    </button>
+                </div>
+            )}
 
             {/* Metrics Grid - Fluid Auto-fill */}
             <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5">
@@ -184,6 +213,14 @@ export default function PlatformDashboard() {
                     <div className="h-[320px] w-full">
                         {growthLoading ? (
                             <Skeleton className="h-full w-full bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                        ) : growthError ? (
+                            <div className="h-full w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-6 text-center">
+                                <AlertCircle className="h-8 w-8 text-slate-400 dark:text-slate-600 mb-2" />
+                                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">Acquisition Data Offline</h4>
+                                <p className="text-xs text-slate-500 max-w-[240px] mt-1">
+                                    Unable to connect to the telemetry pipeline.
+                                </p>
+                            </div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={growth || []}>
@@ -274,6 +311,14 @@ export default function PlatformDashboard() {
                     <div className="h-[320px] w-full">
                         {growthLoading ? (
                             <Skeleton className="h-full w-full bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                        ) : growthError ? (
+                            <div className="h-full w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-6 text-center">
+                                <AlertCircle className="h-8 w-8 text-slate-400 dark:text-slate-600 mb-2" />
+                                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">Registration Trends Offline</h4>
+                                <p className="text-xs text-slate-500 max-w-[240px] mt-1">
+                                    Unable to connect to the telemetry pipeline.
+                                </p>
+                            </div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={growth || []}>
@@ -342,6 +387,12 @@ export default function PlatformDashboard() {
                                         <Skeleton className="h-5 w-full bg-slate-100 dark:bg-slate-800" />
                                         <Skeleton className="h-5 w-full bg-slate-100 dark:bg-slate-800" />
                                     </>
+                                ) : statsError ? (
+                                    <div className="flex flex-col items-center justify-center py-4 text-center">
+                                        <AlertCircle className="h-6 w-6 text-red-500/80 mb-2" />
+                                        <span className="text-xs font-bold text-slate-850 dark:text-slate-200">Summary Offline</span>
+                                        <span className="text-[10px] text-slate-500 mt-0.5 font-medium">Telemetry unavailable</span>
+                                    </div>
                                 ) : (
                                     <>
                                         <div className="flex justify-between items-center">

@@ -1,11 +1,22 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export interface DashboardSchool {
+  id: string;
+  name: string;
+  logo?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  linkingCode?: string;
+  schoolCode?: string;
+}
+
 interface DashboardState {
   selectedSchoolId: string;
   selectedSchoolName: string;
-  schools: Record<string, unknown>[];
-  setSchools: (schools: Record<string, unknown>[]) => void;
+  schools: DashboardSchool[];
+  setSchools: (schools: DashboardSchool[]) => void;
   setSelectedSchoolId: (schoolId: string, schoolName: string) => void;
 }
 

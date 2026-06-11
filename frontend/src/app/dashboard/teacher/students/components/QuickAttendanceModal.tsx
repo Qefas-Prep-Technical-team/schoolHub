@@ -239,10 +239,11 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
                         const index = students.indexOf(student);
                         const isTop = index === swipeIndex;
                         const offset = index - swipeIndex;
+                        const studentName = student.user ? `${student.user.firstName} ${student.user.lastName}` : "Unknown Student";
                         return (
                           <SwipeCard 
                             key={student.id}
-                            student={{ name: student.name, code: student.studentCode }}
+                            student={{ name: studentName, code: student.studentCode }}
                             isTop={isTop}
                             offset={offset}
                             onSwipe={(status) => {
@@ -298,15 +299,16 @@ export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttend
             <div className="space-y-3">
               {students.map((student) => {
                 const data = attendanceData[student.id] || { status: "PRESENT", note: "" };
+                const studentName = student.user ? `${student.user.firstName} ${student.user.lastName}` : "Unknown Student";
                 
                 return (
                   <div key={student.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black uppercase">
-                        {student.name ? student.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2) : '?'}
+                        {studentName ? studentName.split(' ').map((n: string) => n[0]).join('').substring(0, 2) : '?'}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">{student.name}</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white">{studentName}</p>
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">{student.studentCode}</p>
                       </div>
                     </div>

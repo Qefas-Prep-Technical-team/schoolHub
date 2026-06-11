@@ -2,6 +2,7 @@
 
 import { useSubscriptionStats } from "@/lib/api/hooks/usePlatformAnalytics"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AlertCircle } from "lucide-react"
 import { 
     LineChart, 
     Line, 
@@ -16,14 +17,22 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PieChart, Pie, Cell } from "recharts"
 
 export function SubscriptionAnalytics() {
-    const { data: subStats, isLoading } = useSubscriptionStats()
+    const { data: subStats, isLoading, isError } = useSubscriptionStats()
 
     if (isLoading) {
         return <Skeleton className="h-[400px] w-full rounded-xl bg-slate-100 dark:bg-slate-800" />
     }
 
-    if (!subStats || !subStats.distribution) {
-        return null;
+    if (isError || !subStats || !subStats.distribution) {
+        return (
+            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6 flex flex-col items-center justify-center min-h-[300px] text-center shadow-sm">
+                <AlertCircle className="h-10 w-10 text-slate-400 dark:text-slate-600 mb-3" />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Subscription Analytics Unavailable</h3>
+                <p className="text-sm text-slate-500 max-w-md mt-1.5">
+                    We could not retrieve current subscription distribution metrics or trends at this time.
+                </p>
+            </Card>
+        );
     }
 
     const distributionData = [

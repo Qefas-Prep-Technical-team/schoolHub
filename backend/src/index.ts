@@ -1,6 +1,11 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+// Support BigInt serialization in JSON responses globally
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
