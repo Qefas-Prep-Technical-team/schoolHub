@@ -1,4 +1,5 @@
-import { ArrowRight, FileText, ClipboardList, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, FileText, ClipboardList, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface Assignment {
@@ -18,6 +19,15 @@ interface AssignmentsExamsProps {
 }
 
 export default function AssignmentsExams({ assignments, onViewAll }: AssignmentsExamsProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.max(1, Math.ceil(assignments.length / itemsPerPage));
+  
+  const currentItems = assignments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const getStatusColor = (status: Assignment['status']) => {
     switch (status) {
       case 'pending':
@@ -49,11 +59,11 @@ export default function AssignmentsExams({ assignments, onViewAll }: Assignments
       <div className="flex items-center justify-between mb-10">
         <div>
           <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-            Curriculum <span className="text-emerald-600">Feed</span>
+            Assessments
           </h2>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-2">
             <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Active Assessments
+            Recent Exams & Assignments
           </p>
         </div>
         <button
@@ -66,7 +76,7 @@ export default function AssignmentsExams({ assignments, onViewAll }: Assignments
       </div>
 
       <div className="space-y-4 flex-1">
-        {assignments.map((assignment, idx) => (
+        {currentItems.map((assignment, idx) => (
           <motion.div
             key={assignment.id}
             initial={{ opacity: 0, x: -10 }}
@@ -116,13 +126,37 @@ export default function AssignmentsExams({ assignments, onViewAll }: Assignments
         ))}
       </div>
 
+      {assignments.length > itemsPerPage && (
+        <div className="mt-6 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 pt-6">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            Page {currentPage} of {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-600 disabled:opacity-50 disabled:hover:text-slate-400 transition-colors"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-600 disabled:opacity-50 disabled:hover:text-slate-400 transition-colors"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {assignments.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-800/50 mb-6 group-hover:scale-110 transition-transform duration-700">
             <ClipboardList className="w-12 h-12 text-slate-300 dark:text-slate-600" />
           </div>
-          <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Focus Achieved</h4>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">All tasks synchronized</p>
+          <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Up to Date</h4>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">No pending assessments</p>
         </div>
       )}
     </div>

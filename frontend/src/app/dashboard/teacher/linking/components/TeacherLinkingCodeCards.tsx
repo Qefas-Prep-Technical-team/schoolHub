@@ -1,6 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Copy, School } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { ShieldCheck, Copy, School, Sparkles } from 'lucide-react';
 
 interface TeacherLinkingCodeCardsProps {
   personalCode?: string;
@@ -11,73 +10,147 @@ interface TeacherLinkingCodeCardsProps {
 
 export function TeacherLinkingCodeCards({ personalCode, schoolCode, onCopy, isPersonal }: TeacherLinkingCodeCardsProps) {
   return (
-    <div className={`grid grid-cols-1 ${isPersonal || !schoolCode ? 'max-w-2xl mx-auto' : 'md:grid-cols-2'} gap-6 pb-2`}>
-      {/* Individual Code Card */}
+    <div className={`grid grid-cols-1 ${isPersonal || !schoolCode ? 'max-w-xl mx-auto' : 'md:grid-cols-2'} gap-4 pb-2 w-full`}>
+
+      {/* ── Personal / Teacher Code Card ── */}
       {isPersonal && (
-        <div className="relative group overflow-hidden rounded-[2rem] bg-primary p-0.5 shadow-xl shadow-primary/10 active:scale-[0.99] transition-all duration-300">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-40 pointer-events-none" />
-          <div className="relative rounded-[1.8rem] bg-primary px-6 py-8 overflow-hidden text-center">
-             <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-             <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-              <div className="flex items-center gap-4 text-left">
-                <div className="w-14 h-14 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner ring-1 ring-white/20 transform group-hover:rotate-6 transition-transform duration-500">
-                  <ShieldCheck className="text-white" size={28} />
+        <div className="
+          relative group overflow-hidden rounded-2xl
+          bg-gradient-to-br from-primary via-primary to-violet-600
+          dark:from-indigo-600 dark:via-violet-700 dark:to-indigo-800
+          p-px shadow-lg shadow-primary/20 dark:shadow-indigo-500/20
+          active:scale-[0.99] transition-all duration-300
+        ">
+          <div className="relative rounded-[0.95rem] overflow-hidden px-4 py-4
+            bg-gradient-to-br from-primary/95 via-primary to-violet-600/90
+            dark:from-indigo-600/90 dark:via-violet-700/85 dark:to-indigo-800/90
+          ">
+            {/* Ambient glows */}
+            <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10 dark:bg-indigo-300/10 blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-violet-300/10 dark:bg-violet-400/10 blur-xl pointer-events-none" />
+
+            {/* Shimmer */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 pointer-events-none group-hover:via-white/10 transition-all duration-700" />
+
+            {/* Decorative sparkle */}
+            <div className="absolute top-2 right-3 opacity-10 dark:opacity-[0.07] pointer-events-none">
+              <Sparkles size={40} className="text-white" />
+            </div>
+
+            {/* Single-row layout: icon+label | code+copy */}
+            <div className="flex items-center justify-between gap-4 relative z-10">
+              {/* Left: icon + label */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="w-9 h-9 bg-white/15 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner ring-1 ring-white/20 group-hover:rotate-6 transition-transform duration-500">
+                  <ShieldCheck className="text-white drop-shadow-sm" size={18} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-white tracking-tight">Teacher Code</h3>
-                  <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Personal Account</p>
+                  <h3 className="text-sm font-black text-white tracking-tight leading-tight">Teacher Code</h3>
+                  <p className="text-[9px] font-bold text-white/60 uppercase tracking-widest leading-tight">Personal</p>
                 </div>
               </div>
 
+              {/* Right: code pill + copy */}
               <div className="flex items-center gap-2">
-                <div className="bg-white/10 backdrop-blur-xl px-8 py-3 rounded-2xl border border-white/10 shadow-lg flex items-center justify-center min-w-[150px] group-hover:bg-white/15 transition-all">
-                  <span className="text-3xl font-black tracking-widest text-white">
-                    {personalCode || '...'}
+                <div className="
+                  bg-white/10 dark:bg-black/20 backdrop-blur-xl
+                  px-4 py-1.5 rounded-xl
+                  border border-white/15 dark:border-white/10
+                  shadow-md flex items-center justify-center
+                  group-hover:bg-white/15 dark:group-hover:bg-black/30
+                  transition-all duration-300
+                ">
+                  <span className="text-base font-black tracking-widest text-white drop-shadow-sm whitespace-nowrap">
+                    {personalCode || '···'}
                   </span>
                 </div>
-                <Button 
+                <button
                   onClick={() => onCopy(personalCode || '')}
-                  size="icon"
-                  className="h-12 w-12 rounded-2xl bg-white text-primary shadow-lg hover:scale-110 active:scale-95 transition-all hover:bg-white/95"
+                  className="
+                    h-8 w-8 rounded-xl flex items-center justify-center cursor-pointer shrink-0
+                    bg-white text-primary
+                    dark:bg-white/90 dark:text-indigo-700
+                    shadow-md shadow-black/15
+                    hover:scale-110 active:scale-95
+                    transition-all duration-200
+                  "
                 >
-                  <Copy size={20} />
-                </Button>
+                  <Copy size={14} />
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* School Code Card */}
+      {/* ── School Code Card ── */}
       {!isPersonal && schoolCode && (
-        <div className="relative group overflow-hidden rounded-[2rem] bg-indigo-600 p-0.5 shadow-xl shadow-indigo-500/10 active:scale-[0.99] transition-all duration-300">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-40 pointer-events-none" />
-          <div className="relative rounded-[1.8rem] bg-indigo-600 px-6 py-8 overflow-hidden">
-             <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-             <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-              <div className="flex items-center gap-4 text-left">
-                <div className="w-14 h-14 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner ring-1 ring-white/20 transform group-hover:-rotate-6 transition-transform duration-500">
-                  <School className="text-white" size={28} />
+        <div className="
+          relative group overflow-hidden rounded-2xl
+          bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-700
+          dark:from-slate-800 dark:via-indigo-900 dark:to-slate-900
+          p-px shadow-lg shadow-indigo-500/20 dark:shadow-indigo-500/10
+          active:scale-[0.99] transition-all duration-300
+          dark:border dark:border-indigo-500/20
+        ">
+          <div className="relative rounded-[0.95rem] overflow-hidden px-4 py-4
+            bg-gradient-to-br from-indigo-600/95 via-indigo-700/90 to-violet-700/85
+            dark:from-slate-800/95 dark:via-indigo-900/90 dark:to-slate-900/95
+          ">
+            {/* Ambient glows */}
+            <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-indigo-300/15 dark:bg-indigo-400/10 blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full bg-violet-400/10 dark:bg-violet-500/10 blur-xl pointer-events-none" />
+
+            {/* Shimmer */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 pointer-events-none group-hover:via-white/8 transition-all duration-700" />
+
+            {/* Decorative sparkle */}
+            <div className="absolute top-2 right-3 opacity-10 dark:opacity-[0.06] pointer-events-none">
+              <Sparkles size={40} className="text-white" />
+            </div>
+
+            {/* Single-row layout */}
+            <div className="flex items-center justify-between gap-4 relative z-10">
+              {/* Left: icon + label */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="w-9 h-9 bg-white/15 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner ring-1 ring-white/20 group-hover:-rotate-6 transition-transform duration-500">
+                  <School className="text-white drop-shadow-sm" size={18} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-white tracking-tight">Selected School</h3>
-                  <p className="text-[10px] font-bold text-indigo-100/60 uppercase tracking-widest">Active Context</p>
+                  <h3 className="text-sm font-black text-white tracking-tight leading-tight">School Code</h3>
+                  <p className="text-[9px] font-bold text-indigo-100/60 dark:text-indigo-300/50 uppercase tracking-widest leading-tight">Active Context</p>
                 </div>
               </div>
 
+              {/* Right: code pill + copy */}
               <div className="flex items-center gap-2">
-                <div className="bg-white/10 backdrop-blur-xl px-8 py-3 rounded-2xl border border-white/10 shadow-lg flex items-center justify-center min-w-[150px] group-hover:bg-white/15 transition-all">
-                  <span className="text-3xl font-black tracking-widest text-white">
+                <div className="
+                  bg-white/10 dark:bg-black/25 backdrop-blur-xl
+                  px-4 py-1.5 rounded-xl
+                  border border-white/15 dark:border-indigo-400/20
+                  shadow-md flex items-center justify-center
+                  group-hover:bg-white/15 dark:group-hover:bg-black/35
+                  transition-all duration-300
+                ">
+                  <span className="text-base font-black tracking-widest text-white drop-shadow-sm whitespace-nowrap">
                     {schoolCode}
                   </span>
                 </div>
-                <Button 
+                <button
                   onClick={() => onCopy(schoolCode)}
-                  size="icon"
-                  className="h-12 w-12 rounded-2xl bg-white text-indigo-600 shadow-lg hover:scale-110 active:scale-95 transition-all hover:bg-white/95"
+                  className="
+                    h-8 w-8 rounded-xl flex items-center justify-center cursor-pointer shrink-0
+                    bg-white text-indigo-600
+                    dark:bg-indigo-400/20 dark:text-indigo-200
+                    dark:border dark:border-indigo-400/30
+                    shadow-md shadow-black/15
+                    hover:scale-110 active:scale-95
+                    transition-all duration-200
+                    dark:hover:bg-indigo-400/30
+                  "
                 >
-                  <Copy size={20} />
-                </Button>
+                  <Copy size={14} />
+                </button>
               </div>
             </div>
           </div>

@@ -32,16 +32,19 @@ import { Button } from '@/components/ui/button';
 export default function DashboardPage() {
   const [stats, setStats] = useState({
     totalClasses: 0,
+    classNames: [] as string[],
     totalStudents: 0,
     upcomingLessons: 0,
     averagePerformance: 0,
     attendanceRate: 0,
+    session: "Loading...",
   });
   const [performanceMetrics, setPerformanceMetrics] = useState({
     topStudents: [],
     distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 }
   });
   const [recentExams, setRecentExams] = useState<any[]>([]);
+  const [todaySchedule, setTodaySchedule] = useState<any[]>([]);
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
@@ -55,9 +58,16 @@ export default function DashboardPage() {
       setError(null);
       const filterId = isPersonal ? undefined : selectedSchoolId;
       const dashboardData = await teacherService.getDashboardStats(filterId || undefined);
-      setStats(dashboardData.stats);
+      
+      // Merge with default to ensure session string exists if backend hasn't updated yet
+      setStats({
+        ...dashboardData.stats,
+        session: dashboardData.stats.session || "Session Not Set",
+        classNames: dashboardData.stats.classNames || []
+      });
       setPerformanceMetrics(dashboardData.performanceMetrics);
       setRecentExams(dashboardData.recentExams);
+      setTodaySchedule(dashboardData.todaySchedule || []);
     } catch (err: any) {
       console.error('Failed to load dashboard data', err);
       const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout');
@@ -93,6 +103,27 @@ export default function DashboardPage() {
     isUnread: !n.isRead,
     isAnnouncement: n.type === 'ANNOUNCEMENT',
   }));
+
+  const recentActivities = [
+    ...recentExams.map(exam => ({
+      id: `exam-${exam.id}`,
+      type: 'grade',
+      title: `Assessment: ${exam.title}`,
+      description: `For ${exam.subject} in ${exam.className}`,
+      time: new Date(exam.date).toLocaleDateString(),
+      dateObj: new Date(exam.date),
+      color: 'emerald',
+    })),
+    ...notifications.map((n: any) => ({
+      id: `notif-${n.id}`,
+      type: n.type === 'ANNOUNCEMENT' ? 'alert' : 'message',
+      title: n.title,
+      description: n.message,
+      time: new Date(n.createdAt || Date.now()).toLocaleDateString(),
+      dateObj: new Date(n.createdAt || Date.now()),
+      color: n.type === 'ANNOUNCEMENT' ? 'amber' : 'emerald',
+    }))
+  ].sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
 
   if (loading && !stats.totalClasses) {
     return <DashboardSkeleton />;
@@ -134,6 +165,9 @@ export default function DashboardPage() {
           <TeacherHero 
             selectedSchoolName={selectedSchoolName} 
             isPersonal={isPersonal} 
+            totalClasses={stats.totalClasses}
+            sessionName={stats.session}
+            classNames={stats.classNames}
           />
 
           <AnimatePresence mode="wait">
@@ -167,7 +201,7 @@ export default function DashboardPage() {
                     upgradeLink="/dashboard/teacher/billing"
                     upgradeLabel="Manage Teacher Plan"
                   />
-                  <TeacherSchedule />
+                  <TeacherSchedule schedule={todaySchedule} />
                 </div>
 
                 {/* Performance Analytics (8 Cols) */}
@@ -182,7 +216,7 @@ export default function DashboardPage() {
 
                 {/* Personal Feed (8 Cols) */}
                 <div className="lg:col-span-8">
-                  <RecentPersonalActivity />
+                  <RecentPersonalActivity activities={recentActivities as any} />
                 </div>
 
                 {/* Quick Tools & Announcements (4 Cols) */}

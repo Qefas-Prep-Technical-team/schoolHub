@@ -14,46 +14,43 @@ interface ScheduleItem {
   color: string;
 }
 
-const TeacherSchedule: React.FC = () => {
-  // Mock schedule data for the vibrancy demo
-  const schedule: ScheduleItem[] = [
-    {
-      id: '1',
-      time: '08:30 AM',
-      subject: 'Mathematics',
-      className: 'Grade 10A',
-      room: 'Room 204',
-      status: 'past',
-      color: 'emerald'
-    },
-    {
-      id: '2',
-      time: '10:15 AM',
-      subject: 'Advanced Algebra',
-      className: 'Grade 11B',
-      room: 'Main Lab',
-      status: 'current',
-      color: 'emerald'
-    },
-    {
-      id: '3',
-      time: '01:30 PM',
-      subject: 'Geometry',
-      className: 'Grade 9C',
-      room: 'Room 102',
-      status: 'upcoming',
-      color: 'emerald'
-    },
-    {
-      id: '4',
-      time: '03:00 PM',
-      subject: 'Statistics',
-      className: 'Grade 12A',
-      room: 'Library',
-      status: 'upcoming',
-      color: 'emerald'
+interface TeacherScheduleProps {
+  schedule?: any[];
+}
+
+const TeacherSchedule: React.FC<TeacherScheduleProps> = ({ schedule = [] }) => {
+  const currentMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+
+  // Process and sort real data
+  const processedSchedule = schedule.map(item => {
+    const [h, m] = (item.startTime || "00:00").split(':').map(Number);
+    const startMins = h * 60 + m;
+    
+    let status: 'past' | 'current' | 'upcoming' = 'upcoming';
+    // Assume a class is ~60 mins for status calculation if no end time logic is strict
+    if (startMins <= currentMinutes && startMins > currentMinutes - 60) {
+      status = 'current';
+    } else if (startMins < currentMinutes) {
+      status = 'past';
     }
-  ];
+
+    return {
+      id: item.id,
+      time: item.time,
+      subject: item.title.split(' - ')[0] || item.title,
+      className: item.type === 'class' ? (item.title.split(' - ')[1] || '') : 'Break',
+      room: item.room,
+      status,
+      color: 'emerald',
+      startMins
+    };
+  }).sort((a, b) => a.startMins - b.startMins);
+
+  // Find the 4 periods closest to current time
+  const futurePeriods = processedSchedule.filter(item => item.startMins >= currentMinutes - 60);
+  const displaySchedule = futurePeriods.length >= 4 
+    ? futurePeriods.slice(0, 4) 
+    : processedSchedule.slice(-4);
 
   return (
     <div className="flex flex-col rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50 p-8 shadow-2xl shadow-slate-200/40 dark:shadow-none h-full transition-all duration-500 hover:border-emerald-500/20">
@@ -68,7 +65,11 @@ const TeacherSchedule: React.FC = () => {
       </div>
 
       <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar relative before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800/50">
-        {schedule.map((item, idx) => (
+        {displaySchedule.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No schedule found for today</p>
+          </div>
+        ) : displaySchedule.map((item, idx) => (
           <motion.div 
             key={item.id}
             initial={{ opacity: 0, x: -10 }}
@@ -100,10 +101,12 @@ const TeacherSchedule: React.FC = () => {
                 {item.subject}
               </h4>
               <div className="flex items-center gap-4 mt-3">
-                <div className="flex items-center gap-1.5">
-                  <Clock size={12} className={item.status === 'current' ? 'text-emerald-100/70' : 'text-slate-400'} />
-                  <span className={`text-[10px] font-bold uppercase tracking-tight ${item.status === 'current' ? 'text-white/90' : 'text-slate-500'}`}>{item.className}</span>
-                </div>
+                {item.className && (
+                  <div className="flex items-center gap-1.5">
+                    <Clock size={12} className={item.status === 'current' ? 'text-emerald-100/70' : 'text-slate-400'} />
+                    <span className={`text-[10px] font-bold uppercase tracking-tight ${item.status === 'current' ? 'text-white/90' : 'text-slate-500'}`}>{item.className}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5">
                   <MapPin size={12} className={item.status === 'current' ? 'text-emerald-100/70' : 'text-slate-400'} />
                   <span className={`text-[10px] font-bold uppercase tracking-tight ${item.status === 'current' ? 'text-white/90' : 'text-slate-500'}`}>{item.room}</span>

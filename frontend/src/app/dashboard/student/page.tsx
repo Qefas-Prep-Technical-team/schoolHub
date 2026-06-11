@@ -199,20 +199,20 @@ export default function StudentHomeDashboard() {
                               </p>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div className="p-6 rounded-[2rem] bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/10 shadow-sm">
-                                <div className="flex items-center gap-2 text-emerald-500 mb-2">
-                                  <TrendingUp size={16} />
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-[#10b981]">Strongest Subject</span>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="min-w-0 p-4 sm:p-6 rounded-[2rem] bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/10 shadow-sm overflow-hidden">
+                                <div className="flex items-center gap-1.5 text-emerald-500 mb-2 min-w-0">
+                                  <TrendingUp size={14} className="shrink-0" />
+                                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-[#10b981] truncate">Strongest</span>
                                 </div>
-                                <p className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">{analysis.strongest.subject}</p>
+                                <p className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight break-words line-clamp-3 leading-tight">{analysis.strongest.subject}</p>
                               </div>
-                              <div className="p-6 rounded-[2rem] bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/10 shadow-sm">
-                                <div className="flex items-center gap-2 text-rose-500 mb-2">
-                                  <Target size={16} />
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-[#f43f5e]">Needs Improvement</span>
+                              <div className="min-w-0 p-4 sm:p-6 rounded-[2rem] bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/10 shadow-sm overflow-hidden">
+                                <div className="flex items-center gap-1.5 text-rose-500 mb-2 min-w-0">
+                                  <Target size={14} className="shrink-0" />
+                                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-[#f43f5e] truncate">Needs Work</span>
                                 </div>
-                                <p className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">{analysis.weakest.subject}</p>
+                                <p className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight break-words line-clamp-3 leading-tight">{analysis.weakest.subject}</p>
                               </div>
                             </div>
                           </div>

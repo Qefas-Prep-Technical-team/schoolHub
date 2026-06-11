@@ -5,12 +5,14 @@ import Header from './Header';
 import ControlsBar from './ControlsBar';
 import StudentGrid from './StudentGrid';
 import Pagination from './Pagination';
+import QuickAttendanceModal from './QuickAttendanceModal';
 
 
 const StudentPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [totalItems, setTotalItems] = useState<number>(0);
+  const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const itemsPerPage = 8;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
 
@@ -26,7 +28,7 @@ const StudentPage: React.FC = () => {
         
         <main className="flex-1 p-8">
           <div className="mx-auto max-w-7xl">
-            <Header />
+            <Header onQuickAttendance={() => setIsAttendanceModalOpen(true)} />
             <ControlsBar 
               searchQuery={searchQuery}
               onSearchChange={handleSearchChange}
@@ -48,6 +50,15 @@ const StudentPage: React.FC = () => {
           </div>
         </main>
       </div>
+      
+      {isAttendanceModalOpen && (
+        <QuickAttendanceModal 
+          onClose={() => setIsAttendanceModalOpen(false)} 
+          onSuccess={() => {
+            // Optionally refresh the student grid if needed to show updated attendance percentages
+          }}
+        />
+      )}
     </div>
   );
 };

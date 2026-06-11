@@ -344,7 +344,7 @@ export const createLinkRequestService = async ({
 
       note: note || null,
       schoolId: schoolId || requester.schoolId || target.schoolId || null,
-      classId: classId || null,
+      classId: classId || target.classId || null,
 
       requesterSchoolId: requester.type === LinkEntityType.SCHOOL ? requester.id : null,
       targetSchoolId: target.type === LinkEntityType.SCHOOL ? target.id : null,

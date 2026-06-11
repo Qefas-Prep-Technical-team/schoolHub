@@ -34,15 +34,50 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
       teacherId,
       ...(schoolId ? { class: { schoolId } } : {}),
     },
-    select: { classId: true },
+    select: { 
+      classId: true,
+      class: { select: { name: true } }
+    },
   });
 
   const assignedClassIds = classTeachers.map((ct) => ct.classId);
+  const classNames = classTeachers.map((ct) => ct.class?.name).filter(Boolean) as string[];
   const totalClasses = assignedClassIds.length;
+
+  // Calculate Session
+  let currentSession = "Session Not Set";
+  let sessionSchoolId = schoolId;
+  
+  if (!sessionSchoolId && assignedClassIds.length > 0) {
+    // We can't await prisma here without moving it outside, but we can just use Prisma here since it's an async function
+    const firstClass = await prisma.class.findUnique({ where: { id: assignedClassIds[0] }, select: { schoolId: true }});
+    sessionSchoolId = firstClass?.schoolId || undefined;
+  }
+
+  if (sessionSchoolId) {
+    // First try to get the active session
+    let session = await prisma.session.findFirst({
+      where: { schoolId: sessionSchoolId, isActive: true },
+      select: { name: true, currentTerm: true }
+    });
+
+    // Fallback: If no active session, just grab the most recent one
+    if (!session) {
+      session = await prisma.session.findFirst({
+        where: { schoolId: sessionSchoolId },
+        orderBy: { createdAt: 'desc' },
+        select: { name: true, currentTerm: true }
+      });
+    }
+
+    if (session) {
+      currentSession = `${session.name} - ${session.currentTerm?.replace('_', ' ') || 'Term'}`;
+    }
+  }
 
   if (totalClasses === 0) {
     return {
-      stats: { totalClasses: 0, totalStudents: 0, upcomingLessons: 0, averagePerformance: 0, attendanceRate: 100 },
+      stats: { totalClasses: 0, classNames: [], totalStudents: 0, upcomingLessons: 0, averagePerformance: 0, attendanceRate: 100, session: currentSession },
       performanceMetrics: { topStudents: [], distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 } },
       recentExams: [],
     };
@@ -153,13 +188,45 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
     })
   );
 
+  // Calculate Today's Schedule
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const currentDayStr = days[new Date().getDay()];
+  
+  const rawSchedule = await prisma.timetablePeriod.findMany({
+    where: {
+      OR: [
+        { classId: { in: assignedClassIds } },
+        { teacherId }
+      ],
+      day: currentDayStr
+    },
+    include: {
+      class: { select: { name: true } },
+      subject: { select: { name: true } }
+    },
+    orderBy: {
+      startTime: 'asc'
+    }
+  });
+
+  const todaySchedule = rawSchedule.map(p => ({
+    id: p.id,
+    time: `${p.startTime} - ${p.endTime}`,
+    title: p.isBreak ? p.breakLabel || "Break Time" : `${p.subject?.name || "Subject"} - ${p.class?.name || "Class"}`,
+    type: p.isBreak ? "break" : "class",
+    room: p.room || "TBA",
+    startTime: p.startTime // For sorting on frontend
+  }));
+
   return {
     stats: {
       totalClasses,
+      classNames,
       totalStudents: enrollmentCount,
-      upcomingLessons: 0,
+      upcomingLessons: todaySchedule.filter(s => s.type === 'class').length,
       averagePerformance: averageScore,
       attendanceRate,
+      session: currentSession,
     },
     performanceMetrics: {
       topStudents: topStudentsWithInfo.sort((a, b) => b.average - a.average || 0).slice(0, 5),
@@ -173,6 +240,7 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
       status: exam.status,
       date: exam.createdAt,
     })),
+    todaySchedule
   };
 };
 

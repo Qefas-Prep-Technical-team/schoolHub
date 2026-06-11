@@ -2,8 +2,8 @@
 
 ## Current Focus
 
+- Student Dashboard Overview responsive polish (small screen fixes).
 - Student Grades Full Academic Transcript Polish and Verification.
-- Finalizing landing page and authentication UI modernization.
 
 ## Upcoming / Planning
 
@@ -16,6 +16,45 @@
 ## Next Action
 
 - Deploy to staging and manual testing of transcript layout and PDF generation.
+- Continue responsive sweep of other student dashboard sections if needed.
+
+### Tuesday, June 10, 2026
+- **Teacher TopNavBar Full Redesign**:
+    - [x] `TopNavBar.tsx` — Reduced height h-20→h-16. Identity block now conditionally shows school name + School icon when connected to a school, or "Teacher Portal / Qefas Hub" when in personal mode. Profile pill correctly renders `displayImage` (teacher profile image) with online dot. All sections sized and spaced for a clean, uncluttered layout. Removed unused `Image` and `linkService` imports.
+    - [x] `SchoolSwitcher.tsx` — Auto-selects single connected school via `useEffect` on mount. Auto-falls back to personal if nothing is selected. Shows an emerald static pill (no dropdown) for single-school teachers. Dropdown only appears when 0 or multiple schools are linked.
+
+
+- **Teacher Top Nav Bar + SchoolSwitcher Improvements**:
+    - [x] `TopNavBar.tsx` — Renamed "Faculty Hub" → "Teacher Portal" (plain English). Badge is now more spacious (`px-4 py-2`) with a two-line layout: bold "Teacher Portal" + small "Qefas Hub" subtitle. Added a live green dot on the logo for a premium feel.
+    - [x] `SchoolSwitcher.tsx` — When teacher is connected to exactly 1 school and that school is selected, the dropdown is replaced with a clean static pill showing the school name, a "Connected School" label, and a glowing green live indicator. Dropdown is only shown when multiple schools exist or teacher is in personal mode.
+
+
+- **Teacher Linking Hub Dark Mode Fix**:
+    - [x] `TeacherLinkingCodeCards.tsx` — replaced flat `bg-primary` / `bg-indigo-600` with dual-layer glassmorphic gradient cards. Dark mode uses `dark:from-slate-800 dark:via-indigo-900 dark:to-slate-900` with ambient glow blobs, shimmer overlay, and decorative Sparkles icon.
+    - [x] Copy button inside cards swapped from shadcn `<Button>` to raw `<button>` to prevent CVA `bg-primary` hardcode from fighting dark-mode overrides.
+    - [x] `TeacherLinkingHeader.tsx` — "Connect with Code" button swapped to raw `<button>` with `dark:bg-gradient-to-r dark:from-indigo-500 dark:to-violet-600` and indigo glow shadow in dark mode. Light mode keeps `bg-primary` unchanged.
+    - [x] "View QR Hub" outline button remains shadcn `<Button>` with added `dark:bg-gray-800/60 dark:border-gray-700/60 dark:text-indigo-400` for proper dark contrast.
+
+
+- **AcademicSummary Dark Mode Fix (Classes Page)**:
+    - [x] Root cause identified: `AcademicSummary.tsx` used `dark:bg-white dark:text-slate-900` — a fully inverted pattern that turned the card blindingly white on dark backgrounds.
+    - [x] Replaced inverted dark-mode with a proper dark glassmorphic treatment: `dark:from-indigo-950 dark:via-slate-900 dark:to-slate-900` gradient background.
+    - [x] Added dual ambient glow blobs (primary/violet) for depth in both light and dark modes.
+    - [x] Added an "Academic Overview" pill badge and gradient `Performance` heading text.
+    - [x] Stat cards (Total Marks, Position) now use `dark:bg-indigo-500/5` / `dark:bg-violet-500/5` glass instead of `dark:bg-slate-50` (white).
+    - [x] All text colors locked to `text-white` explicitly — no dark-mode inversion.
+    - [x] Outline button border changed from `border-slate-700` to `border-white/20 dark:border-indigo-400/30` with glassmorphic background.
+
+
+- **Student Dashboard Overview — Responsive Subject Cards Fix**:
+    - [x] Fixed "Strongest Subject" and "Needs Improvement" cards in `page.tsx` overflowing and breaking on small screens.
+    - [x] Changed grid from `grid-cols-1 sm:grid-cols-2` → always `grid-cols-2` (side-by-side) with tighter `gap-3`.
+    - [x] Added `min-w-0` + `overflow-hidden` to each card to allow flex-shrink.
+    - [x] Reduced padding to `p-4 sm:p-6` and icon size to 14px on mobile.
+    - [x] Shortened label text: "Strongest Subject" → "Strongest", "Needs Improvement" → "Needs Work" with `truncate` to prevent label overflow.
+    - [x] Applied `text-sm sm:text-base`, `break-words`, `line-clamp-3`, and `leading-tight` to the subject name to handle long names like "Law & Arts (1/4/2026) (Total)" gracefully.
+
+
 
 ## Completed
 

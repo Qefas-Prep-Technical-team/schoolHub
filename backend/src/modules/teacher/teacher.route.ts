@@ -128,4 +128,13 @@ router.get("/settings", getTeacherSettings);
  */
 router.patch("/settings", updateTeacherSettings);
 
+import { teacherAttendanceController } from './teacher-attendance.controller';
+
+/**
+ * @route   POST /api/v1/teacher/schools/:schoolId/attendance
+ * @desc    Record attendance for a class
+ * @access  Private-Teacher
+ */
+router.post("/schools/:schoolId/attendance", teacherAttendanceController.saveClassAttendance);
+
 export default router;

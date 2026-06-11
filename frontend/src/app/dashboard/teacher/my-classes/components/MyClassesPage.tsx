@@ -107,6 +107,7 @@ export default function MyClassesPage() {
                     description={isPersonal 
                         ? "Managing coursework delivery across your entire institutional network." 
                         : `Course modules currently assigned at ${selectedSchoolName}.`}
+                    isPersonal={isPersonal}
                 />
 
                 {/* High-Impact Stat Wall (Promoted to top) */}

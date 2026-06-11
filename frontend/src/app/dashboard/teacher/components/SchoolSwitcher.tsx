@@ -1,9 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, School, User, Globe } from "lucide-react"
+import { School, User, ChevronDown, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,115 +17,213 @@ interface SchoolSwitcherProps {
   selectedId: string
   onSelect: (id: string, name: string) => void
   userId: string
+  userImage?: string
+  userName?: string
 }
 
-export function SchoolSwitcher({ schools, selectedId, onSelect, userId }: SchoolSwitcherProps) {
+export function SchoolSwitcher({ schools, selectedId, onSelect, userId, userImage, userName }: SchoolSwitcherProps) {
   const [open, setOpen] = React.useState(false)
 
+  // Auto-select on first load only — when nothing has been chosen yet
+  React.useEffect(() => {
+    if (!selectedId) {
+      if (schools.length > 0) {
+        // Connected to one or more schools - default to the first school
+        onSelect(schools[0].id, schools[0].name)
+      } else {
+        // Not connected to any school - default to personal
+        onSelect(userId, "Personal Dashboard")
+      }
+    }
+  }, [schools, userId]) // intentionally excludes selectedId/onSelect to only run on mount
+
+
   const selectedSchool = React.useMemo(() => {
-    if (!selectedId || selectedId === userId) return { name: "Personal Dashboard", id: userId, type: 'personal' }
+    if (!selectedId || selectedId === userId)
+      return { name: "Personal Dashboard", id: userId, type: 'personal' as const }
     const school = schools.find((s) => s.id === selectedId)
-    return school ? { ...school, type: 'school' } : { name: "Personal Dashboard", id: userId, type: 'personal' }
+    return school
+      ? { ...school, type: 'school' as const }
+      : { name: "Personal Dashboard", id: userId, type: 'personal' as const }
   }, [schools, selectedId, userId])
+
+  const isPersonal = selectedSchool.type === 'personal'
+
+  // Avatar for currently selected option
+  const selectedImage = isPersonal
+    ? userImage
+    : selectedSchool.logo || selectedSchool.image || undefined
+  const selectedInitial = isPersonal
+    ? (userName?.charAt(0) ?? 'T')
+    : (selectedSchool.name?.charAt(0) ?? 'S')
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="lg"
+        <button
           className={cn(
-            "flex items-center gap-2 px-3 h-11 transition-all duration-300 rounded-xl",
-            "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700",
-            "border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600",
-            "w-[200px] justify-between shadow-sm active:scale-[0.98]",
-            open && "ring-2 ring-primary/20 bg-white dark:bg-slate-900 border-primary/30"
+            "flex items-center gap-2 px-2 py-1.5 rounded-xl cursor-pointer",
+            "transition-all duration-200 active:scale-[0.98]",
+            "border shadow-sm",
+            isPersonal
+              ? "bg-slate-100/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:bg-slate-200/80 dark:hover:bg-slate-700/80"
+              : "bg-emerald-500/8 dark:bg-emerald-500/10 border-emerald-200/60 dark:border-emerald-500/25 hover:bg-emerald-500/12 dark:hover:bg-emerald-500/15",
+            open && (isPersonal
+              ? "ring-2 ring-slate-300 dark:ring-slate-600"
+              : "ring-2 ring-emerald-500/30 dark:ring-emerald-500/30")
           )}
         >
-          <div className="flex items-center gap-2.5 truncate">
-            <div className={cn(
-              "flex items-center justify-center h-6 w-6 rounded-md shrink-0 transition-colors",
-              selectedSchool.type === 'personal' 
-                ? "bg-primary/20 text-primary" 
-                : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+          {/* Avatar */}
+          <div className={cn(
+            "relative h-7 w-7 rounded-lg shrink-0 overflow-hidden ring-2",
+            isPersonal ? "ring-slate-200 dark:ring-slate-700" : "ring-emerald-400/30 dark:ring-emerald-500/30"
+          )}>
+            {selectedImage ? (
+              <img src={selectedImage} alt={selectedSchool.name} className="h-full w-full object-cover" />
+            ) : (
+              <div className={cn(
+                "h-full w-full flex items-center justify-center text-white text-[11px] font-black",
+                isPersonal
+                  ? "bg-gradient-to-br from-slate-400 to-slate-500 dark:from-slate-600 dark:to-slate-700"
+                  : "bg-gradient-to-br from-emerald-500 to-teal-600"
+              )}>
+                {selectedInitial}
+              </div>
+            )}
+          </div>
+
+          {/* Label */}
+          <div className="flex flex-col leading-none min-w-0 text-left">
+            <span className={cn(
+              "text-[9px] font-bold uppercase tracking-widest leading-none",
+              isPersonal ? "text-slate-400 dark:text-slate-500" : "text-emerald-500 dark:text-emerald-400"
             )}>
-              {selectedSchool.type === 'personal' ? (
-                <User className="h-4 w-4" />
-              ) : (
-                <School className="h-4 w-4" />
-              )}
-            </div>
-            <div className="flex flex-col items-start min-w-0">
-              <span className="text-[12px] font-bold text-gray-900 dark:text-gray-100 leading-none truncate w-full">
-                {selectedSchool.name}
-              </span>
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-none mt-1">
-                {selectedSchool.type === 'personal' ? 'Personal' : 'School Context'}
-              </span>
-            </div>
+              {isPersonal ? "Personal" : "My School"}
+            </span>
+            <span className="text-[12px] font-black text-slate-800 dark:text-white tracking-tight truncate max-w-[150px] mt-0.5 leading-tight">
+              {selectedSchool.name}
+            </span>
           </div>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 text-gray-400" />
-        </Button>
+
+          {/* Live dot (school) or chevron (always) */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {!isPersonal && (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" />
+            )}
+            <ChevronDown className={cn(
+              "h-3.5 w-3.5 text-slate-400 transition-transform duration-300",
+              open ? "rotate-180 text-emerald-500" : "group-hover:text-emerald-500"
+            )} />
+          </div>
+        </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="start" 
-        className="w-[240px] p-2 rounded-xl shadow-2xl border-slate-200 dark:border-slate-800 animate-in fade-in-0 zoom-in-95"
+
+      <DropdownMenuContent
+        align="start"
+        sideOffset={8}
+        className="w-[250px] p-2 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-in fade-in-0 zoom-in-95 duration-150"
       >
-        <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400">
-          Workspaces
+        <DropdownMenuLabel className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400">
+          Switch Workspace
         </DropdownMenuLabel>
-        
+
+        {/* Personal option */}
         <DropdownMenuItem
-          onClick={() => onSelect(userId, "Personal Dashboard")}
+          onClick={() => { onSelect(userId, "Personal Dashboard"); setOpen(false) }}
           className={cn(
-            "flex items-center gap-2 p-2.5 rounded-lg cursor-pointer transition-colors",
-            selectedId === userId ? "bg-primary/10 text-primary" : "hover:bg-slate-100 dark:hover:bg-slate-800"
+            "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-150 focus:outline-none",
+            selectedId === userId
+              ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+              : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
           )}
         >
-          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/20 text-primary">
-            <User className="h-4 w-4" />
+          {/* Personal avatar */}
+          <div className="relative h-9 w-9 rounded-xl overflow-hidden shrink-0 ring-2 ring-slate-200 dark:ring-slate-700">
+            {userImage ? (
+              <img src={userImage} alt={userName ?? 'Me'} className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-slate-400 to-slate-500 dark:from-slate-600 dark:to-slate-700 text-white text-sm font-black">
+                {userName?.charAt(0) ?? <User className="h-4 w-4" />}
+              </div>
+            )}
           </div>
-          <div className="flex flex-col flex-1">
-            <span className="text-sm font-bold">Personal Dashboard</span>
-            <span className="text-[10px] opacity-70">General Overview</span>
+          <div className="flex flex-col flex-1 min-w-0">
+            <span className="text-[12px] font-black text-slate-900 dark:text-white leading-tight">Personal Dashboard</span>
+            <span className="text-[10px] text-slate-400 font-medium leading-tight mt-0.5">No school context</span>
           </div>
-          {selectedId === userId && <Check className="h-4 w-4" />}
-        </DropdownMenuItem>
-        
-        <DropdownMenuSeparator className="my-2 bg-slate-100 dark:bg-slate-800" />
-        
-        <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400">
-          Connected Schools
-        </DropdownMenuLabel>
-        
-        <div className="space-y-1">
-          {schools.length === 0 ? (
-            <div className="px-2 py-8 text-center">
-              < Globe className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-              <p className="text-[11px] text-slate-400">No schools linked yet</p>
+          {selectedId === userId && (
+            <div className="shrink-0 h-5 w-5 rounded-full bg-emerald-500/15 flex items-center justify-center">
+              <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
             </div>
-          ) : (
-            schools.map((school) => (
-              <DropdownMenuItem
-                key={school.id}
-                onClick={() => onSelect(school.id, school.name)}
-                className={cn(
-                  "flex items-center gap-2 p-2.5 rounded-lg cursor-pointer transition-colors",
-                  selectedId === school.id ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" : "hover:bg-slate-100 dark:hover:bg-slate-800"
-                )}
-              >
-                <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500/20 text-blue-600 dark:text-blue-300">
-                  <School className="h-4 w-4" />
-                </div>
-                <div className="flex flex-col flex-1">
-                  <span className="text-sm font-bold">{school.name}</span>
-                  <span className="text-[10px] opacity-70">School Context</span>
-                </div>
-                {selectedId === school.id && <Check className="h-4 w-4" />}
-              </DropdownMenuItem>
-            ))
           )}
-        </div>
+        </DropdownMenuItem>
+
+        {/* School options */}
+        {schools.length > 0 && (
+          <>
+            <DropdownMenuSeparator className="my-1.5 bg-slate-100 dark:bg-slate-800" />
+            <DropdownMenuLabel className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400">
+              Connected Schools
+            </DropdownMenuLabel>
+            <div className="space-y-0.5">
+              {schools.map((school) => (
+                <DropdownMenuItem
+                  key={school.id}
+                  onClick={() => { onSelect(school.id, school.name); setOpen(false) }}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-150 focus:outline-none",
+                    selectedId === school.id
+                      ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300"
+                      : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                  )}
+                >
+                  {/* School avatar / logo */}
+                  <div className={cn(
+                    "relative h-9 w-9 rounded-xl overflow-hidden shrink-0 ring-2",
+                    selectedId === school.id
+                      ? "ring-emerald-400/40 dark:ring-emerald-500/30"
+                      : "ring-blue-200/50 dark:ring-blue-800/30"
+                  )}>
+                    {(school.logo || school.image) ? (
+                      <img src={school.logo || school.image} alt={school.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className={cn(
+                        "h-full w-full flex items-center justify-center text-white text-sm font-black",
+                        selectedId === school.id
+                          ? "bg-gradient-to-br from-emerald-500 to-teal-600"
+                          : "bg-gradient-to-br from-blue-500 to-indigo-600"
+                      )}>
+                        {school.name?.charAt(0) ?? <School className="h-4 w-4" />}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className="text-[12px] font-black text-slate-900 dark:text-white leading-tight truncate">{school.name}</span>
+                    <span className="text-[10px] text-slate-400 font-medium leading-tight mt-0.5">School context</span>
+                  </div>
+                  {selectedId === school.id && (
+                    <div className="shrink-0 h-5 w-5 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                      <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </div>
+          </>
+        )}
+
+        {schools.length === 0 && (
+          <>
+            <DropdownMenuSeparator className="my-1.5 bg-slate-100 dark:bg-slate-800" />
+            <div className="px-3 py-4 text-center">
+              <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2">
+                <School className="h-4 w-4 text-slate-300 dark:text-slate-600" />
+              </div>
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500">No schools linked yet</p>
+              <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-0.5">Connect via the Linking Hub</p>
+            </div>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )

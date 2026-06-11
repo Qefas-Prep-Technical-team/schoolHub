@@ -79,6 +79,15 @@ export default function SessionsPage() {
     onError: () => toast.error("Failed to delete session"),
   });
 
+  const setActiveMutation = useMutation({
+    mutationFn: (id: string) => sessionService.updateSession(id, { isActive: true }),
+    onSuccess: () => {
+      toast.success("Session marked as active");
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    },
+    onError: () => toast.error("Failed to set session as active"),
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-12 space-y-12">
@@ -287,6 +296,14 @@ export default function SessionsPage() {
                           <DropdownMenuContent align="end" className="w-56 rounded-[1.5rem] p-2 border-2 border-slate-100 dark:border-white/5">
                             <DropdownMenuLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 py-2">Session Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/5" />
+                            {session.status !== 'ACTIVE' && session.status !== 'ARCHIVED' && (
+                              <DropdownMenuItem 
+                                className="rounded-xl gap-3 font-bold py-3 cursor-pointer text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                                onClick={() => setActiveMutation.mutate(session.id)}
+                              >
+                                <Activity size={16} /> Set as Active
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem 
                               className="rounded-xl gap-3 font-bold py-3 cursor-pointer"
                               onClick={() => {

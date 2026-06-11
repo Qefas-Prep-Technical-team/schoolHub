@@ -118,11 +118,13 @@ function LinkingHub() {
     approvedFromRequest?: any;
     targetStudent?: any; targetTeacher?: any; targetParent?: any; targetSchool?: any; approverAdmin?: any;
     requesterStudent?: any; requesterTeacher?: any; requesterParent?: any; requesterSchool?: any; requesterAdmin?: any;
+    school?: any; class?: any;
   }) => {
     const r = item.approvedFromRequest || item;
     const participants = [
       r.targetStudent, r.targetTeacher, r.targetParent, r.targetSchool, r.approverAdmin,
-      r.requesterStudent, r.requesterTeacher, r.requesterParent, r.requesterSchool, r.requesterAdmin
+      r.requesterStudent, r.requesterTeacher, r.requesterParent, r.requesterSchool, r.requesterAdmin,
+      item.school, item.class
     ].filter(Boolean);
 
     return participants.find((p: any) => p.id !== user?.id);
@@ -393,12 +395,28 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
+function getTeacherLinkTheme(linkType: string) {
+  switch (linkType) {
+    case 'SCHOOL_TEACHER':
+      return { border: 'border-l-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/10', text: 'text-indigo-600 dark:text-indigo-400', badge: 'bg-indigo-500', iconBg: 'bg-indigo-500 text-white' };
+    case 'TEACHER_CLASS':
+      return { border: 'border-l-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/10', text: 'text-purple-600 dark:text-purple-400', badge: 'bg-purple-500', iconBg: 'bg-purple-500 text-white' };
+    case 'STUDENT_CLASS':
+    case 'PARENT_STUDENT':
+      return { border: 'border-l-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/10', text: 'text-blue-600 dark:text-blue-400', badge: 'bg-blue-500', iconBg: 'bg-blue-500 text-white' };
+    default:
+      return { border: 'border-l-gray-300', bg: 'bg-gray-50 dark:bg-gray-800/50', text: 'text-primary', badge: 'bg-gray-500', iconBg: 'bg-white dark:bg-gray-700' };
+  }
+}
+
 function MemberCard({ link, onRevoke, onCopy }: { link: any, onRevoke: (id: string) => void, onCopy: (text: string) => void }) {
+  const theme = getTeacherLinkTheme(link.linkType);
+  
   return (
-    <Card className="rounded-2xl overflow-hidden border-none shadow-sm hover:shadow-lg transition-all group border-gray-100 dark:border-gray-800">
-      <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 p-4 flex flex-row items-center justify-between space-y-0">
+    <Card className={cn("rounded-2xl overflow-hidden border-none shadow-sm hover:shadow-lg transition-all group border-l-4", theme.border)}>
+      <CardHeader className={cn("p-4 flex flex-row items-center justify-between space-y-0", theme.bg)}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all overflow-hidden border border-gray-100 dark:border-gray-800">
+          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-sm overflow-hidden", theme.iconBg)}>
             {link.peerImage ? (
               <Image src={link.peerImage} alt={link.peerName} width={40} height={40} className="h-full w-full object-cover" />
             ) : (
@@ -407,7 +425,9 @@ function MemberCard({ link, onRevoke, onCopy }: { link: any, onRevoke: (id: stri
           </div>
           <div className="min-w-0">
             <CardTitle className="text-sm font-black truncate max-w-[100px]">{link.peerName}</CardTitle>
-            <CardDescription className="text-[9px] font-bold uppercase tracking-widest text-primary truncate">{link.linkType.replace('_', ' ')}</CardDescription>
+            <CardDescription className={cn("text-[9px] font-bold uppercase tracking-widest truncate", theme.text)}>
+              {link.linkType.replace('_', ' ')}
+            </CardDescription>
           </div>
         </div>
         <DropdownMenu>
@@ -422,13 +442,13 @@ function MemberCard({ link, onRevoke, onCopy }: { link: any, onRevoke: (id: stri
       </CardHeader>
       <CardContent className="p-4 space-y-3">
         <div className="flex justify-between items-center text-xs">
-          <span className="text-gray-400 font-bold">Email</span>
-          <span className="font-bold text-gray-900 dark:text-white truncate max-w-[110px]">{link.peerEmail}</span>
+          <span className="text-gray-400 font-bold">Identifier</span>
+          <span className="font-bold text-gray-900 dark:text-white truncate max-w-[110px]">{link.peerEmail || 'N/A'}</span>
         </div>
         <div className="flex justify-between items-center p-2.5 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700/50 group/code">
           <div className="flex flex-col">
             <span className="text-[9px] font-black uppercase text-gray-400 tracking-wider">Code</span>
-            <span className="font-black text-primary tracking-widest text-xs">{link.peerCode}</span>
+            <span className={cn("font-black tracking-widest text-xs", theme.text)}>{link.peerCode}</span>
           </div>
           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg opacity-0 group-hover/code:opacity-100 transition-opacity" onClick={() => onCopy(link.peerCode)}>
             <Copy size={12} />
@@ -520,60 +540,75 @@ function ConnectModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
-          <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-widest text-gray-400 pl-1">Connection Type</label>
+        <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Connection Type</label>
             <Select value={linkType} onValueChange={(val: string) => setLinkType(val as LinkType)}>
-              <SelectTrigger className="h-14 rounded-2xl border-2 border-gray-100 bg-gray-50/50 px-4 focus:ring-primary focus:border-primary transition-all">
+              <SelectTrigger className="h-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 px-3 text-sm focus:ring-primary focus:border-primary transition-all">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
-                <SelectItem value="TEACHER_CLASS" className="rounded-xl h-12">👨‍🏫 Teacher to Class</SelectItem>
-                <SelectItem value="SCHOOL_TEACHER" className="rounded-xl h-12">🏫 Link to School</SelectItem>
+              <SelectContent className="rounded-xl border-none shadow-2xl p-1.5">
+                <SelectItem value="TEACHER_CLASS" className="rounded-lg h-9 text-sm">👨‍🏫 Teacher to Class</SelectItem>
+                <SelectItem value="SCHOOL_TEACHER" className="rounded-lg h-9 text-sm">🏫 Link to School</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-widest text-gray-400 pl-1">Linking Code</label>
-            <div className="relative">
-              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <Input
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="ABC-123-XYZ"
-                className="h-14 pl-12 rounded-2xl border-2 border-gray-100 bg-gray-50/50 font-black tracking-widest placeholder:tracking-normal placeholder:font-medium focus:ring-primary focus:border-primary transition-all"
-              />
+          {/* Linking Code — label + input on single row */}
+          <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/50 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Hash size={14} className="text-gray-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 whitespace-nowrap">Code</span>
             </div>
+            <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 shrink-0" />
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="ABC-123-XYZ"
+              className="flex-1 bg-transparent text-sm font-black tracking-widest placeholder:tracking-normal placeholder:font-medium placeholder:text-gray-300 dark:placeholder:text-gray-600 text-gray-900 dark:text-white outline-none min-w-0"
+            />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-widest text-gray-400 pl-1">Note (Optional)</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1">Note (Optional)</label>
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="e.g. Linking to my primary account"
-              className="h-14 rounded-2xl border-2 border-gray-100 bg-gray-50/50 font-medium focus:ring-primary focus:border-primary transition-all"
+              className="h-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 text-sm font-medium focus:ring-primary focus:border-primary transition-all"
             />
           </div>
 
-          <DialogFooter className="pt-4">
+          <DialogFooter className="pt-2">
             <Button
               type="button"
               variant="ghost"
               onClick={onClose}
-              className="h-14 px-6 rounded-2xl font-black text-gray-500 hover:bg-gray-100"
+              className="h-10 px-5 rounded-xl font-black text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               Cancel
             </Button>
-            <Button
+            <button
               type="submit"
               disabled={loading}
-              className="h-14 flex-1 rounded-2xl bg-primary text-white font-black shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="
+                inline-flex items-center justify-center gap-2
+                h-10 flex-1 rounded-xl font-black text-sm cursor-pointer
+                text-white transition-all duration-300
+                bg-primary hover:bg-primary/90
+                shadow-lg shadow-primary/25
+                dark:bg-gradient-to-r dark:from-indigo-500 dark:to-violet-600
+                dark:hover:from-indigo-400 dark:hover:to-violet-500
+                dark:shadow-[0_4px_20px_rgba(99,102,241,0.35)]
+                dark:hover:shadow-[0_4px_28px_rgba(99,102,241,0.55)]
+                hover:scale-[1.02] active:scale-[0.98]
+                disabled:opacity-60 disabled:pointer-events-none
+              "
             >
-              {loading ? <Loader2 className="animate-spin" size={20} /> : 'Send Request'}
-            </Button>
+              {loading ? <Loader2 className="animate-spin" size={16} /> : 'Send Request'}
+            </button>
           </DialogFooter>
+
         </form>
       </DialogContent>
     </Dialog>

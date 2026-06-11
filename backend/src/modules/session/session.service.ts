@@ -14,7 +14,7 @@ export const createSessionService = async ({
   name,
   startDate,
   endDate,
-  isActive,
+  isActive = true, // Default to true as requested
   termDates,
 }: {
   adminId: string;
@@ -46,7 +46,7 @@ export const createSessionService = async ({
       name,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
-      isActive: !!isActive,
+      isActive,
       termPeriods: termDates ? {
         create: termDates.map((td) => ({
           term: td.term as any,

@@ -155,5 +155,17 @@ export const teacherService = {
   updateSettings: async (settings: Record<string, unknown>) => {
     const response = await apiClient.patch("/teacher/settings", settings);
     return response.data.data;
+  },
+
+  /**
+   * Record quick attendance for a class
+   */
+  saveClassAttendance: async (schoolId: string, classId: string, date: string, attendanceRecords: { studentId: string; status: string; note?: string }[]) => {
+    const response = await apiClient.post(`/teacher/schools/${schoolId}/attendance`, {
+      classId,
+      date,
+      attendanceRecords,
+    });
+    return response.data;
   }
 };

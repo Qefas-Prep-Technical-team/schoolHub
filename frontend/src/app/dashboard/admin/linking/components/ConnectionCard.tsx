@@ -2,13 +2,11 @@
 import React from 'react';
 import {
   Link2,
-  UserPlus,
   MoreVertical,
   Info,
   X,
   Copy,
   Clock,
-  Hash,
   ChevronRight,
   Loader2,
   User
@@ -30,7 +28,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
-import { getMemberDetails, isClassLink } from './LinkingUtils';
+import { getMemberDetails, getLinkTypeConfig } from './LinkingUtils';
 
 interface ConnectionCardProps {
   item: any;
@@ -56,19 +54,24 @@ export function ConnectionCard({
   isLoading = false
 }: ConnectionCardProps) {
   const details = getMemberDetails(item, currentUserId);
-  const isClass = isClassLink(item.linkType);
+  const cfg = getLinkTypeConfig(item.linkType);
   const schoolId = item.schoolId || (item as any).targetSchoolId || (item as any).requesterSchoolId;
   const isOutgoing = type === 'pending' && (
-      item.requesterId === currentUserId || 
-      (item.requesterType === 'SCHOOL' && schoolId)
+    item.requesterId === currentUserId ||
+    (item.requesterType === 'SCHOOL' && schoolId)
   );
 
+  // ── ACTIVE CONNECTION CARD ────────────────────────────────────────────────
   if (type === 'active') {
     return (
       <Card className={cn(
-        "rounded-[2rem] overflow-hidden border-none bg-white dark:bg-gray-800 shadow-lg hover:shadow-2xl transition-all group relative border-l-4",
-        isClass ? "border-l-purple-500 shadow-purple-100/50" : "border-l-blue-500 shadow-blue-100/50"
+        "rounded-[2rem] overflow-hidden border-none bg-white dark:bg-gray-800/80 shadow-lg hover:shadow-2xl transition-all group relative border-l-4",
+        cfg.border,
+        cfg.shadow
       )}>
+        {/* Coloured top-right corner accent */}
+        <div className={cn("absolute top-0 right-0 w-24 h-24 rounded-bl-[3rem] opacity-5 pointer-events-none", cfg.avatar)} />
+
         <CardHeader className="p-6 flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-4">
             <div
@@ -77,14 +80,11 @@ export function ConnectionCard({
             >
               <div className={cn(
                 "absolute -inset-1 rounded-2xl blur-md opacity-0 group-hover/avatar:opacity-40 transition-opacity",
-                isClass ? "bg-purple-500" : "bg-blue-500"
+                cfg.avatarGlow
               )} />
-              <Avatar className="h-14 w-14 rounded-2xl border-2 border-white dark:border-gray-800 shadow-sm transition-transform group-hover/avatar:scale-105">
+              <Avatar className="h-14 w-14 rounded-2xl border-2 border-white dark:border-gray-700 shadow-sm transition-transform group-hover/avatar:scale-105">
                 <AvatarImage src={details.image} alt={details.name} className="object-cover" />
-                <AvatarFallback className={cn(
-                  "rounded-2xl text-white font-black text-xl",
-                  isClass ? "bg-purple-500" : "bg-blue-500"
-                )}>
+                <AvatarFallback className={cn("rounded-2xl text-white font-black text-xl", cfg.avatar)}>
                   {details.name?.charAt(0).toUpperCase() || <User size={20} />}
                 </AvatarFallback>
               </Avatar>
@@ -93,20 +93,32 @@ export function ConnectionCard({
               className="cursor-pointer"
               onClick={() => onViewProfile?.(item, details)}
             >
-              <CardTitle className="text-xl font-black truncate max-w-[180px] text-slate-900 dark:text-white group-hover:text-primary transition-colors">{details.name}</CardTitle>
-              <CardDescription className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                {item?.linkType?.replace('_', ' ')}
-              </CardDescription>
+              <CardTitle className={cn(
+                "text-xl font-black truncate max-w-[180px] text-slate-900 dark:text-white transition-colors",
+                cfg.hover
+              )}>
+                {details.name}
+              </CardTitle>
+              {/* Human-readable link type label with coloured dot */}
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className={cn("w-2 h-2 rounded-full shrink-0", cfg.avatar)} />
+                <CardDescription className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  {cfg.label}
+                </CardDescription>
+              </div>
             </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
                 <MoreVertical size={18} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-xl p-2 border-none shadow-2xl">
-              <DropdownMenuItem className="p-3 font-semibold rounded-lg focus:bg-slate-100 dark:focus:bg-slate-800">
+              <DropdownMenuItem
+                className="p-3 font-semibold rounded-lg focus:bg-slate-100 dark:focus:bg-slate-800 cursor-pointer"
+                onClick={() => onViewProfile?.(item, details)}
+              >
                 <Info className="mr-3 h-4 w-4" /> View Details
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -119,6 +131,7 @@ export function ConnectionCard({
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
+
         <CardContent className="px-6 pb-6 pt-0 space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
@@ -129,20 +142,34 @@ export function ConnectionCard({
               <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">Linked Date</span>
               <span className="font-bold text-sm text-slate-900 dark:text-white block">{new Date(item.createdAt).toLocaleDateString()}</span>
             </div>
+            {/* Added school or class details if they exist */}
+            {details.schoolName && (
+              <div className="space-y-1 col-span-2">
+                <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">School</span>
+                <span className="font-bold text-sm text-slate-900 dark:text-white truncate block">{details.schoolName}</span>
+              </div>
+            )}
+            {details.className && (
+              <div className="space-y-1 col-span-2">
+                <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">Class</span>
+                <span className="font-bold text-sm text-slate-900 dark:text-white truncate block">{details.className}</span>
+              </div>
+            )}
           </div>
 
+          {/* Code box — colour-coded per type */}
           <div className={cn(
-            "flex items-center justify-between p-4 rounded-xl border group/code h-14",
-            isClass ? "bg-purple-50/50 border-purple-100 dark:bg-purple-900/10 dark:border-purple-800/50" : "bg-blue-50/50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-800/50"
+            "flex items-center justify-between p-4 rounded-xl border h-14",
+            cfg.codeBox
           )}>
             <div className="flex flex-col">
               <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider mb-0.5">Entity Code</span>
-              <span className={cn("font-black tracking-widest text-sm", isClass ? "text-purple-600" : "text-blue-600")}>{details.code}</span>
+              <span className={cn("font-black tracking-widest text-sm", cfg.code)}>{details.code}</span>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-800"
+              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700"
               onClick={() => onCopy?.(details.code)}
             >
               <Copy size={14} className="text-slate-400" />
@@ -152,7 +179,7 @@ export function ConnectionCard({
           <Button
             variant="outline"
             onClick={() => onViewProfile?.(item, details)}
-            className="w-full justify-between h-12 rounded-xl border-slate-100 dark:border-slate-800 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all group/btn"
+            className="w-full justify-between h-12 rounded-xl border-slate-100 dark:border-slate-700 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all group/btn"
           >
             <span>View Full Profile</span>
             <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
@@ -162,23 +189,26 @@ export function ConnectionCard({
     );
   }
 
-  // Pending Request Card
+
+  // ── PENDING REQUEST CARD ──────────────────────────────────────────────────
   return (
     <Card className={cn(
-      "rounded-[2rem] overflow-hidden border-none bg-white dark:bg-gray-800 shadow-lg transition-all hover:shadow-2xl relative group",
-      isClass ? "shadow-purple-100/50" : "shadow-orange-500/20"
+      "rounded-[2rem] overflow-hidden border-none bg-white dark:bg-gray-800/80 shadow-lg transition-all hover:shadow-2xl relative group",
+      cfg.shadow
     )}>
+      {/* Coloured top bar */}
       <div className={cn(
         "h-1.5 w-full absolute top-0 z-20",
-        isOutgoing ? "bg-slate-300 shadow-sm" : (isClass ? "bg-purple-500 shadow-purple-500/20" : "bg-orange-500 shadow-orange-500/20")
+        isOutgoing ? "bg-slate-300 dark:bg-slate-600" : cfg.topBar
       )} />
 
+      {/* Type badge + direction badge */}
       <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5 z-10">
         <Badge className={cn(
           "border-none px-3 py-1 font-black uppercase text-[8px] tracking-widest rounded-lg",
-          isClass ? "bg-purple-600 text-white" : "bg-orange-500 text-white"
+          isOutgoing ? "bg-slate-400 dark:bg-slate-600 text-white" : cfg.badge
         )}>
-          {details.className || item.linkType.replace('_', ' ')}
+          {cfg.label}
         </Badge>
         <span className="px-2 py-1 rounded-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-[8px] font-black tracking-widest border border-slate-100 dark:border-slate-800 shadow-sm text-slate-500">
           {isOutgoing ? 'SENT' : 'INCOMING'}
@@ -193,13 +223,13 @@ export function ConnectionCard({
           >
             <div className={cn(
               "absolute -inset-1 rounded-2xl blur-md opacity-0 group-hover/avatar:opacity-40 transition-opacity",
-              isClass ? "bg-purple-500" : "bg-orange-500"
+              isOutgoing ? "bg-slate-400" : cfg.avatarGlow
             )} />
-            <Avatar className="h-14 w-14 rounded-2xl shadow-sm transition-transform group-hover/avatar:scale-105 border-2 border-white dark:border-gray-800">
+            <Avatar className="h-14 w-14 rounded-2xl shadow-sm transition-transform group-hover/avatar:scale-105 border-2 border-white dark:border-gray-700">
               <AvatarImage src={details.image} alt={details.name} className="object-cover" />
               <AvatarFallback className={cn(
-                "rounded-2xl font-black text-xl",
-                isClass ? "bg-purple-500 text-white" : "bg-orange-500 text-white"
+                "rounded-2xl font-black text-xl text-white",
+                isOutgoing ? "bg-slate-400 dark:bg-slate-600" : cfg.avatar
               )}>
                 {details.name?.charAt(0).toUpperCase() || <Clock size={20} />}
               </AvatarFallback>
@@ -210,7 +240,10 @@ export function ConnectionCard({
               {new Date(item.createdAt).toLocaleDateString()}
             </span>
             <CardTitle
-              className="text-xl font-black truncate max-w-[150px] text-slate-900 dark:text-white leading-tight cursor-pointer hover:text-orange-500 transition-colors"
+              className={cn(
+                "text-xl font-black truncate max-w-[150px] text-slate-900 dark:text-white leading-tight cursor-pointer transition-colors",
+                cfg.hover
+              )}
               onClick={() => onViewProfile?.(item, details)}
             >
               {details.name}
@@ -224,7 +257,7 @@ export function ConnectionCard({
 
         {item.note && (
           <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 relative overflow-hidden group/note">
-            <div className={cn("absolute top-0 left-0 w-1 h-full opacity-50 transition-opacity group-hover/note:opacity-100", isClass ? "bg-purple-300" : "bg-orange-300")} />
+            <div className={cn("absolute top-0 left-0 w-1 h-full opacity-50 transition-opacity group-hover/note:opacity-100", cfg.noteBar)} />
             <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 italic line-clamp-2 leading-relaxed">"{item.note}"</p>
           </div>
         )}
@@ -239,22 +272,22 @@ export function ConnectionCard({
       <CardContent className="p-6 pt-6 gap-3">
         {!isOutgoing ? (
           <div className="flex gap-2">
-            <Button
+            <button
               onClick={() => onRespond?.(item.id, 'ACCEPT')}
               disabled={isLoading}
               className={cn(
-                "flex-[3] h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all hover:scale-[1.02] active:scale-95",
-                isClass ? "bg-purple-600 text-white shadow-purple-200" : "bg-orange-500 text-white shadow-orange-500/20 hover:bg-orange-600"
+                "flex-[3] h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-60 disabled:pointer-events-none inline-flex items-center justify-center gap-2",
+                cfg.acceptBtn
               )}
             >
-              {isLoading ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
+              {isLoading ? <Loader2 className="animate-spin" size={14} /> : null}
               {isLoading ? "Processing..." : "Accept Request"}
-            </Button>
+            </button>
             <Button
               onClick={() => onRespond?.(item.id, 'REJECT')}
               disabled={isLoading}
               variant="outline"
-              className="flex-1 h-12 rounded-xl border-slate-100 text-red-500 font-extrabold text-[10px] uppercase tracking-widest hover:bg-red-50 dark:border-slate-800 dark:hover:bg-red-950/20 px-0 transition-colors"
+              className="flex-1 h-12 rounded-xl border-slate-100 text-red-500 font-extrabold text-[10px] uppercase tracking-widest hover:bg-red-50 dark:border-slate-700 dark:hover:bg-red-950/20 px-0 transition-colors"
             >
               {isLoading ? <Loader2 className="animate-spin" size={14} /> : "Decline"}
             </Button>
@@ -264,7 +297,7 @@ export function ConnectionCard({
             onClick={() => onCancel?.(item.id)}
             disabled={isLoading}
             variant="outline"
-            className="w-full h-12 rounded-xl border-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 hover:text-red-600 hover:border-red-100 dark:border-slate-800 dark:hover:bg-slate-900 transition-all shadow-sm"
+            className="w-full h-12 rounded-xl border-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 hover:text-red-600 hover:border-red-100 dark:border-slate-700 dark:hover:bg-slate-900 transition-all shadow-sm"
           >
             {isLoading ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
             {isLoading ? "Cancelling..." : "Cancel My Request"}
@@ -274,4 +307,3 @@ export function ConnectionCard({
     </Card>
   );
 }
-
