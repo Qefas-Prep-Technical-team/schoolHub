@@ -11,6 +11,7 @@ interface AssignmentTableProps {
   onEdit: (assignment: Assignment) => void
   onGrade: (assignment: Assignment) => void
   className?: string
+  startIndex?: number
 }
 
 export function AssignmentTable({
@@ -18,9 +19,11 @@ export function AssignmentTable({
   onView,
   onEdit,
   onGrade,
-  className
+  className,
+  startIndex = 0
 }: AssignmentTableProps) {
   const headers = [
+    { key: 'number', label: '#', className: 'w-12 text-center' },
     { key: 'title', label: 'Assignment Title', className: 'w-2/5' },
     { key: 'dueDate', label: 'Due Date', className: 'w-1/5' },
     { key: 'status', label: 'Status', className: 'w-1/5' },
@@ -30,18 +33,18 @@ export function AssignmentTable({
 
   return (
     <div className={cn(
-      "bg-white dark:bg-background-dark rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden",
+      "bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm",
       className
     )}>
       <div className="overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
+          <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40">
             <tr>
               {headers.map((header) => (
                 <th
                   key={header.key}
                   className={cn(
-                    "p-4 text-sm font-semibold text-[#506795] dark:text-gray-400",
+                    "p-4 text-[10px] font-black uppercase tracking-widest text-slate-400",
                     header.className
                   )}
                 >
@@ -51,15 +54,18 @@ export function AssignmentTable({
             </tr>
           </thead>
           <tbody>
-            {assignments.map((assignment) => (
+            {assignments.map((assignment, idx) => (
               <tr
                 key={assignment.id}
-                className="border-b border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
+                className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
               >
-                <td className="p-4 text-[#0e121b] dark:text-gray-200 font-medium">
+                <td className="p-4 text-xs font-black text-slate-300 dark:text-slate-600 text-center">
+                  {startIndex + idx + 1}
+                </td>
+                <td className="p-4 text-sm font-bold text-slate-900 dark:text-white">
                   {assignment.title}
                 </td>
-                <td className="p-4 text-[#506795] dark:text-gray-400">
+                <td className="p-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   {formatDate(assignment.dueDate)}
                 </td>
                 <td className="p-4">
@@ -70,7 +76,7 @@ export function AssignmentTable({
                     {assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
                   </span>
                 </td>
-                <td className="p-4 text-[#506795] dark:text-gray-400">
+                <td className="p-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                   {assignment.status === 'draft' ? (
                     '- / -'
                   ) : (
@@ -81,21 +87,21 @@ export function AssignmentTable({
                   <div className="flex justify-end items-center gap-2">
                     <button
                       onClick={() => onView(assignment)}
-                      className="p-2 text-[#506795] dark:text-gray-400 hover:text-primary dark:hover:text-primary rounded-full hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
+                      className="p-2 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary rounded-xl hover:bg-primary/10 dark:hover:bg-primary/20 transition-all hover:scale-105"
                       title="View assignment"
                     >
                       <Icon name="visibility" className="text-xl" />
                     </button>
                     <button
                       onClick={() => onEdit(assignment)}
-                      className="p-2 text-[#506795] dark:text-gray-400 hover:text-primary dark:hover:text-primary rounded-full hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
+                      className="p-2 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary rounded-xl hover:bg-primary/10 dark:hover:bg-primary/20 transition-all hover:scale-105"
                       title="Edit assignment"
                     >
                       <Icon name="edit" className="text-xl" />
                     </button>
                     <button
                       onClick={() => onGrade(assignment)}
-                      className="p-2 text-[#506795] dark:text-gray-400 hover:text-primary dark:hover:text-primary rounded-full hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
+                      className="p-2 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary rounded-xl hover:bg-primary/10 dark:hover:bg-primary/20 transition-all hover:scale-105"
                       title="Grade submissions"
                       disabled={assignment.status === 'draft'}
                     >

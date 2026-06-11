@@ -169,7 +169,6 @@ model Admin {
   maxStudentsOverride     Int?
   maxTeachersOverride     Int?
   subscriptionPlan        SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
-  reportedBehaviourAlerts BehaviourAlert[]  @relation("Reporter")
   approvedLinkRequests    LinkRequest[]     @relation("ApprovedByAdmin")
   requestedLinkRequests   LinkRequest[]     @relation("RequestedByAdmin")
   schoolAdmins            SchoolAdmin[]
@@ -1103,7 +1102,6 @@ model BehaviourAlert {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   class        Class         @relation(fields: [classId], references: [id])
-  reporter     Admin         @relation("Reporter", fields: [reportedById], references: [id])
   student      Student       @relation(fields: [studentId], references: [id])
 
   @@map("behaviour_alerts")

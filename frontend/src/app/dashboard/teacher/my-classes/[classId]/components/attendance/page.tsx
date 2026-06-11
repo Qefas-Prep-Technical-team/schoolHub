@@ -4,20 +4,33 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckSquare, AlertCircle, Users, Check, X, Clock } from 'lucide-react';
 
+import { useParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { teacherService } from '@/lib/api/services/teacherService';
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function AttendancePage() {
-    // Placeholder students data
-    const students = [
-        { id: '1', name: 'Alice Smith', status: 'present', rollNo: '001' },
-        { id: '2', name: 'Bob Johnson', status: 'absent', rollNo: '002' },
-        { id: '3', name: 'Charlie Brown', status: 'late', rollNo: '003' },
-        { id: '4', name: 'Diana Prince', status: 'present', rollNo: '004' },
-    ];
+    const params = useParams();
+    const classId = params.classId as string;
+
+    const { data, isLoading } = useQuery({
+        queryKey: ['class-students', classId],
+        queryFn: () => teacherService.getStudents({ classId, page: 1, limit: 500 }),
+        enabled: !!classId,
+    });
+
+    const students = data?.students?.map((s: any, idx: number) => ({
+        id: s.id,
+        name: s.name,
+        rollNo: s.studentCode || `00${idx + 1}`,
+        status: 'present' // default for today's registry
+    })) || [];
 
     const stats = {
-        present: 2,
-        absent: 1,
-        late: 1,
-        total: 4
+        present: students.length, // Initialize all to present for new registry
+        absent: 0,
+        late: 0,
+        total: students.length
     };
 
     return (
@@ -38,6 +51,11 @@ export default function AttendancePage() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {isLoading && (
+                    <div className="col-span-4 p-4 text-center text-slate-500 animate-pulse font-bold uppercase tracking-widest text-xs">
+                        Loading class registry from database...
+                    </div>
+                )}
                 <div className="p-5 bg-white dark:bg-slate-900/40 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 flex items-center gap-4 shadow-sm">
                     <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl"><Users size={20} /></div>
                     <div>

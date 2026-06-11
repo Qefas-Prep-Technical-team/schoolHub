@@ -165,11 +165,11 @@ export const getExamsService = async (filters: {
       });
       const subjectIds = assignedSubjects.map(s => s.subjectId);
 
-      // Restriction: Exam must either be for one of these subjects OR include one of these subjects
+      // Restriction: Exam must either be for one of these subjects OR include a paper for one of these subjects
       where.AND = [
         { OR: [
           { subjectId: { in: subjectIds } },
-          { includedSubjects: { some: { subjectId: { in: subjectIds } } } }
+          { subjectExamPapers: { some: { subjectPaper: { subjectId: { in: subjectIds } } } } }
         ] }
       ];
 
@@ -405,21 +405,35 @@ export const getSubjectPapersService = async (filters: {
   if (filters.unlinkedOnly) {
     where.exams = { none: {} };
   } else if (filters.sessionId || filters.term || filters.classId || (filters.departmentIds && filters.departmentIds.length > 0)) {
-    // Advanced filtering via linked exams
-    where.exams = {
-      some: {
-        exam: {
-          ...(filters.sessionId && { sessionId: filters.sessionId }),
-          ...(filters.term && { term: filters.term }),
-          ...(filters.classId && { classId: filters.classId }),
-          ...(filters.departmentIds && filters.departmentIds.length > 0 && {
-            departments: {
-              some: { departmentId: { in: filters.departmentIds } }
-            }
-          })
+    const examFilters: any = {};
+    if (filters.sessionId) examFilters.sessionId = filters.sessionId;
+    if (filters.term) examFilters.term = filters.term;
+    if (filters.classId) examFilters.classId = filters.classId;
+    if (filters.departmentIds && filters.departmentIds.length > 0) {
+      examFilters.departments = {
+        some: { departmentId: { in: filters.departmentIds } }
+      };
+    }
+
+    if (filters.classId) {
+      const classSubjects = await prisma.classSubject.findMany({
+        where: { classId: filters.classId },
+        select: { subjectId: true }
+      });
+      const classSubjectIds = classSubjects.map((cs: any) => cs.subjectId);
+
+      where.OR = [
+        { subjectId: { in: classSubjectIds } },
+        { exams: { some: { exam: examFilters } } }
+      ];
+    } else {
+      // Advanced filtering via linked exams
+      where.exams = {
+        some: {
+          exam: examFilters
         }
-      }
-    };
+      };
+    }
   }
 
   if (filters.status) {

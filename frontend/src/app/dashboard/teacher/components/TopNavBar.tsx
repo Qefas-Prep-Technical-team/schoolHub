@@ -47,12 +47,16 @@ export default function TopNavBar() {
       .catch((err) => console.error("Failed to fetch linked schools:", err));
   }, [setSchools]);
 
-  // Auto-select personal if nothing selected yet
+  // Auto-select first connected school, or personal if none
   useEffect(() => {
-    if (!selectedSchoolId && user?.id) {
-      setSelectedSchoolId(user.id, "Personal Dashboard");
+    if (!selectedSchoolId) {
+      if (schools && schools.length > 0) {
+        setSelectedSchoolId(schools[0].id, schools[0].name);
+      } else if (user?.id) {
+        setSelectedSchoolId(user.id, "Personal Dashboard");
+      }
     }
-  }, [selectedSchoolId, user?.id, setSelectedSchoolId]);
+  }, [selectedSchoolId, schools, user?.id, setSelectedSchoolId]);
 
   const displayImage = teacherProfile?.profileImage || user?.profileImage;
   const displayName = teacherProfile?.name || user?.name || user?.email || "Teacher";

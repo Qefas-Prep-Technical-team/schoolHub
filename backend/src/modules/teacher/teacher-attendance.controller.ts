@@ -39,7 +39,8 @@ export class TeacherAttendanceController {
         success: true,
         data: result,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("[saveClassAttendance] ERROR:", error.message, error.stack);
       next(error);
     }
   };

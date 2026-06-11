@@ -4,12 +4,14 @@ import { Eye, User, Award, ShieldCheck, Mail, BookOpen } from 'lucide-react';
 import { Student } from './types';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useState } from 'react';
 
 interface StudentTableProps {
   students: Student[];
   onView: (student: Student) => void;
   onCall: (student: Student) => void;
   viewMode?: 'list' | 'grid';
+  startIndex?: number;
 }
 
 const statusColors: Record<string, string> = {
@@ -25,11 +27,20 @@ const performanceColors: Record<string, string> = {
 };
 
 function Avatar({ student }: { student: Student }) {
+  const [imgError, setImgError] = useState(false);
+
   return (
     <div className="relative flex-shrink-0">
       <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-700 shadow-md bg-slate-100 dark:bg-slate-800">
-        {student.avatar ? (
-          <Image src={student.avatar} alt={student.name} width={48} height={48} className="w-full h-full object-cover" />
+        {student.avatar && !imgError ? (
+          <Image 
+            src={student.avatar} 
+            alt={student.name} 
+            width={48} 
+            height={48} 
+            className="w-full h-full object-cover" 
+            onError={() => setImgError(true)}
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <User size={20} className="text-slate-400" />
@@ -41,7 +52,7 @@ function Avatar({ student }: { student: Student }) {
   );
 }
 
-function ListRow({ student, onView, idx }: { student: Student; onView: (s: Student) => void; idx: number }) {
+function ListRow({ student, onView, idx, startIndex = 0 }: { student: Student; onView: (s: Student) => void; idx: number, startIndex?: number }) {
   const attendanceNum = typeof student.attendance === 'number' ? student.attendance : parseInt(student.attendance || '0', 10);
 
   return (
@@ -53,6 +64,7 @@ function ListRow({ student, onView, idx }: { student: Student; onView: (s: Stude
     >
       {/* Identity */}
       <div className="col-span-4 flex items-center gap-4">
+        <span className="w-4 text-xs font-black text-slate-300 dark:text-slate-600 text-right shrink-0">{startIndex + idx + 1}</span>
         <Avatar student={student} />
         <div>
           <p className="text-sm font-bold text-slate-900 dark:text-white">{student.name}</p>
@@ -110,7 +122,7 @@ function ListRow({ student, onView, idx }: { student: Student; onView: (s: Stude
         </span>
         <button
           onClick={() => onView(student)}
-          className="p-2.5 rounded-xl bg-primary text-white shadow-md shadow-primary/20 hover:scale-105 transition-all"
+          className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:bg-primary hover:text-white dark:hover:bg-primary/20 dark:hover:text-primary transition-all hover:scale-105"
         >
           <Eye size={15} strokeWidth={2.5} />
         </button>
@@ -178,15 +190,15 @@ function GridCard({ student, onView, idx }: { student: Student; onView: (s: Stud
       {/* Action */}
       <button
         onClick={() => onView(student)}
-        className="w-full h-9 bg-primary text-white rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest shadow-md shadow-primary/20 hover:opacity-90 transition-all"
+        className="w-full h-9 bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white dark:hover:bg-primary/20 dark:hover:text-primary transition-all"
       >
-        <Eye size={13} /> View Profile
+        <Eye size={13} strokeWidth={2.5} /> View Profile
       </button>
     </motion.div>
   );
 }
 
-export function StudentTable({ students, onView, onCall, viewMode = 'list' }: StudentTableProps) {
+export function StudentTable({ students, onView, onCall, viewMode = 'list', startIndex = 0 }: StudentTableProps) {
   if (students.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-16 text-center rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800">
@@ -213,14 +225,17 @@ export function StudentTable({ students, onView, onCall, viewMode = 'list' }: St
     <div className="space-y-2">
       {/* Header */}
       <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800/50 mb-2">
-        <div className="col-span-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Student</div>
+        <div className="col-span-4 flex items-center gap-4">
+          <span className="w-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right shrink-0">#</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Student</span>
+        </div>
         <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Class</div>
         <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Performance</div>
         <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Attendance</div>
         <div className="col-span-2 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Status & Action</div>
       </div>
       {students.map((student, idx) => (
-        <ListRow key={student.id} student={student} onView={onView} idx={idx} />
+        <ListRow key={student.id} student={student} onView={onView} idx={idx} startIndex={startIndex} />
       ))}
     </div>
   );

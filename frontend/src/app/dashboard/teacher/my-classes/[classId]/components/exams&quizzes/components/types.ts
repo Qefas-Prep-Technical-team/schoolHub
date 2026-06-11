@@ -1,5 +1,5 @@
-export type ExamType = 'exam' | 'quiz'
-export type ExamStatus = 'draft' | 'scheduled' | 'completed' | 'graded' | 'cancelled'
+export type ExamType = 'exam' | 'quiz' | 'subject_paper'
+export type ExamStatus = 'draft' | 'scheduled' | 'completed' | 'graded' | 'cancelled' | 'published'
 
 export interface Exam {
   id: string

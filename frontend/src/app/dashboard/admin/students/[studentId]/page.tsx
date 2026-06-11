@@ -1063,7 +1063,7 @@ export default function StudentProfilePage() {
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No core strengths registered</p>
                                         <button
                                             onClick={handleOpenEditProfile}
-                                            className="mt-2 h-9 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest transition-all hover:scale-[1.01]"
+                                            className="mt-2 h-9 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest transition-all hover:scale-[1.01]"
                                         >
                                             Add First Strength
                                         </button>

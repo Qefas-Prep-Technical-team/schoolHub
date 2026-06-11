@@ -86,7 +86,7 @@ export const teacherService = {
   /**
    * Get subject papers for the teacher
    */
-  getSubjectPapers: async (options: { schoolId?: string } = {}) => {
+  getSubjectPapers: async (options: { schoolId?: string; classId?: string; unlinkedOnly?: boolean } = {}) => {
     const response = await apiClient.get("/exams/papers/all", {
       params: options,
     });

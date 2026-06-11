@@ -13,21 +13,20 @@ interface SearchBarProps {
 
 export function SearchBar({ value, onChange, placeholder = "Search...", className }: SearchBarProps) {
   return (
-    <div className={cn("py-6", className)}>
-      <label className="flex flex-col h-12 w-full max-w-md">
-        <div className="flex w-full flex-1 items-stretch rounded-xl h-full">
-          <div className="text-[#506795] dark:text-gray-400 flex bg-white dark:bg-background-dark dark:border dark:border-slate-700 items-center justify-center pl-4 rounded-l-xl border-r-0">
-            <Icon name="search" />
-          </div>
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-xl text-[#0e121b] dark:text-gray-200 focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-l-0 border-gray-200 dark:border-slate-700 bg-white dark:bg-background-dark h-full placeholder:text-[#506795] dark:placeholder-gray-500 px-4 text-base font-normal leading-normal"
-            placeholder={placeholder}
-          />
-        </div>
-      </label>
+    <div className={cn("py-4 mb-4", className)}>
+      <div className="relative group w-full max-w-md">
+        <Icon 
+          name="search" 
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors text-[20px]" 
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full h-11 pl-11 pr-4 bg-white dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-800 focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 text-sm font-semibold text-slate-900 dark:text-white transition-all placeholder:text-slate-400 placeholder:font-normal shadow-sm"
+          placeholder={placeholder}
+        />
+      </div>
     </div>
   )
 }

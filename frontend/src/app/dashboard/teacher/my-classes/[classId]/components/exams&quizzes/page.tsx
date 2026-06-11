@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { ExamToolbar } from './components/ExamToolbar'
@@ -19,31 +19,52 @@ export default function ExamsPage() {
   const itemsPerPage = 10
 
   const { data, isLoading } = useQuery({
-    queryKey: ['class-exams', classId],
-    queryFn: () => teacherService.getClassAssignments(classId), // Fetches all assessments
+    queryKey: ['class-exams-and-papers', classId],
+    queryFn: async () => {
+      let examsRes = [];
+      let papersRes = [];
+      try {
+        examsRes = await teacherService.getExams({ classId });
+      } catch (error) {
+        console.error("Failed to fetch exams:", error);
+      }
+      try {
+        papersRes = await teacherService.getSubjectPapers({ classId });
+      } catch (error) {
+        console.error("Failed to fetch subject papers:", error);
+      }
+      return { exams: examsRes || [], papers: papersRes || [] };
+    },
     enabled: !!classId,
   })
 
   // Map backend exam format to frontend exam format
-  const exams: Exam[] = (data || []).map((e: {
-    id: string;
-    title: string;
-    dueDate?: string | Date;
-    createdAt: string | Date;
-    updatedAt: string | Date;
-    status: ExamStatus;
-  }) => ({
-    id: e.id,
-    title: e.title,
-    type: e.title.toLowerCase().includes('quiz') ? 'quiz' : 'exam',
-    questions: 0,
-    totalMarks: 0,
-    scheduledDate: new Date(e.dueDate || e.createdAt),
-    status: e.status,
-    createdAt: new Date(e.createdAt),
-    updatedAt: new Date(e.updatedAt),
-    classId: classId
-  }))
+  const exams: Exam[] = useMemo(() => [
+    ...(data?.exams || []).map((e: any) => ({
+      id: e.id,
+      title: e.title,
+      type: (e.title || '').toLowerCase().includes('quiz') ? 'quiz' : 'exam',
+      questions: e.totalQuestions || 0,
+      totalMarks: e.totalMarks || 0,
+      scheduledDate: new Date(e.startDate || e.createdAt),
+      status: e.status?.toLowerCase() || 'draft',
+      createdAt: new Date(e.createdAt),
+      updatedAt: new Date(e.updatedAt),
+      classId: classId
+    })),
+    ...(data?.papers || []).map((p: any) => ({
+      id: p.id,
+      title: p.title || 'Untitled Subject Paper',
+      type: 'subject_paper',
+      questions: p.questions?.length || 0,
+      totalMarks: p.totalMarks || 0,
+      scheduledDate: new Date(p.createdAt), // Papers don't have scheduled dates usually
+      status: p.status === 'APPROVED' ? 'published' : 'draft',
+      createdAt: new Date(p.createdAt),
+      updatedAt: new Date(p.updatedAt),
+      classId: classId
+    }))
+  ], [data, classId]);
 
   const [filteredExams, setFilteredExams] = useState<Exam[]>([])
 

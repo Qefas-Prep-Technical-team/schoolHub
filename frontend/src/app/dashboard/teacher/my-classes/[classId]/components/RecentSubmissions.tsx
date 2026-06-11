@@ -44,9 +44,12 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/40 dark:shadow-none">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+    <div className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-200/60 dark:border-slate-800/60 rounded-[3rem] p-8 shadow-2xl relative overflow-hidden">
+      {/* Background Glow */}
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full pointer-events-none"></div>
+
+      <div className="relative z-10 flex items-center justify-between mb-8">
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter flex items-center gap-3">
           <FileText className="text-primary" size={20} />
           Recent Submissions
         </h2>
@@ -66,10 +69,13 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="group flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+            className="group flex items-center justify-between p-5 bg-white/40 dark:bg-slate-800/40 rounded-2xl hover:bg-white dark:hover:bg-slate-800 transition-all border border-slate-200/50 dark:border-slate-700/50 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 cursor-pointer relative overflow-hidden"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm transition-transform group-hover:scale-105 border border-slate-200 dark:border-slate-700">
+            {/* Hover Indicator */}
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            
+            <div className="flex items-center gap-5 relative z-10">
+              <div className="w-14 h-14 rounded-[1.25rem] overflow-hidden shadow-inner transition-transform group-hover:scale-110 group-hover:-rotate-3 border border-slate-200/50 dark:border-slate-700">
                 <Image
                   src={submission.avatar || `/users/user ${(idx % 6) + 1}.jpeg`}
                   alt={submission.studentName}
@@ -79,7 +85,7 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-primary transition-colors">
+                <p className="text-base font-black text-slate-900 dark:text-white tracking-tight group-hover:text-primary transition-colors">
                   {submission.studentName}
                 </p>
                 <div className="flex items-center gap-2">
@@ -107,7 +113,7 @@ export default function RecentSubmissions({ submissions, onGradeSubmission, onVi
 
             <button
               onClick={() => onGradeSubmission(submission.id)}
-              className="flex items-center justify-center h-10 px-4 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl hover:bg-primary hover:text-white hover:border-transparent transition-all border border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest shadow-sm active:scale-95"
+              className="relative z-10 flex items-center justify-center h-10 px-5 bg-white/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 rounded-xl hover:bg-primary hover:text-white hover:border-transparent transition-all border border-slate-200/50 dark:border-slate-800 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:shadow-md active:scale-95 group-hover:border-primary/30"
             >
               {submission.status === 'graded' ? 'Review' : 'Grade'}
             </button>

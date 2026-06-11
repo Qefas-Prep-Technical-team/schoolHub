@@ -49,7 +49,7 @@ export default function StudentsPage() {
     email: s.email,
     gender: (s.gender?.toLowerCase() as Student['gender']) || 'male',
     status: (s.status?.toLowerCase() as Student['status']) || 'active',
-    avatar: s.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.name}`,
+    avatar: s.avatarUrl,
     performance: s.performance || 'Medium',
     attendance: s.attendance ?? 100,
     grade: s.grade,
@@ -215,7 +215,6 @@ export default function StudentsPage() {
       <Toolbar
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
-        onAddStudent={() => {}}
         onExport={handleExport}
         filters={filters}
         onFilterChange={handleFilterChange}
@@ -248,7 +247,13 @@ export default function StudentsPage() {
           </button>
         </div>
       ) : (
-        <StudentTable students={paginated} onView={() => {}} onCall={() => {}} viewMode={viewMode} />
+        <StudentTable 
+          students={paginated} 
+          onView={() => {}} 
+          onCall={() => {}} 
+          viewMode={viewMode} 
+          startIndex={(currentPage - 1) * itemsPerPage} 
+        />
       )}
 
       <Pagination

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { AssignmentTable } from './components/AssignmentTable'
 import { SearchBar } from './components/SearchBar'
+import { Pagination } from '../student/components/Pagination'
 import { Assignment } from './components/types'
 import { useMemo } from 'react'
 import { teacherService } from '@/lib/api/services/teacherService'
@@ -16,6 +17,8 @@ export default function AssignmentsPage() {
   const params = useParams()
   const classId = params.classId as string
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const { data, isLoading } = useQuery({
     queryKey: ['class-assignments', classId],
@@ -54,7 +57,14 @@ export default function AssignmentsPage() {
       )
       setFilteredAssignments(filtered)
     }
+    setCurrentPage(1) // Reset to first page on search
   }, [searchQuery, assignments])
+
+  const totalPages = Math.ceil(filteredAssignments.length / itemsPerPage)
+  const paginatedAssignments = filteredAssignments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   const handleViewAssignment = (assignment: Assignment) => {
     // console.log('View assignment:', assignment)
@@ -95,11 +105,24 @@ export default function AssignmentsPage() {
         />
 
         <AssignmentTable
-          assignments={filteredAssignments}
+          assignments={paginatedAssignments}
           onView={handleViewAssignment}
           onEdit={handleEditAssignment}
           onGrade={handleGradeAssignment}
+          startIndex={(currentPage - 1) * itemsPerPage}
         />
+
+        {filteredAssignments.length > 0 && (
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredAssignments.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
    
   )

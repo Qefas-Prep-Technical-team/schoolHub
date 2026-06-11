@@ -179,10 +179,10 @@ export const getStudentById = async (req: Request, res: Response) => {
     const { id: studentId } = req.params;
     const { userType: currentUserType } = req.user!;
 
-    if (currentUserType !== UserRole.ADMIN) {
+    if (currentUserType !== UserRole.ADMIN && currentUserType !== UserRole.TEACHER) {
       return res.status(403).json({
         success: false,
-        message: "Only admins can fetch student profiles by ID",
+        message: "Only admins and teachers can fetch student profiles by ID",
       });
     }
 

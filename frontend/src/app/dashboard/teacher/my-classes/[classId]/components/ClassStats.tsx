@@ -16,68 +16,82 @@ export default function ClassStats({ stats }: ClassStatsProps) {
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden"
+      className="w-full bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-200/60 dark:border-slate-800/60 rounded-[3rem] shadow-2xl overflow-hidden"
     >
-      <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-y md:divide-y-0 divide-slate-100 dark:divide-slate-800/50">
+      <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-y md:divide-y-0 divide-slate-200/50 dark:divide-slate-800/50">
         <StatBlock 
           label="Class Average"
           value={`${stats.averageGrade}%`}
-          trend="+5%"
+          trend="Overall Average"
           icon={Award}
           color="text-emerald-500"
           bg="bg-emerald-500/10"
+          borderGlow="group-hover:border-emerald-500/50"
+          shadowGlow="group-hover:shadow-emerald-500/20"
         />
         <StatBlock 
           label="Assignments"
           value={stats.assignmentsCompleted}
-          trend="+12 this term"
+          trend="Total Graded"
           icon={ClipboardList}
           color="text-blue-500"
           bg="bg-blue-500/10"
+          borderGlow="group-hover:border-blue-500/50"
+          shadowGlow="group-hover:shadow-blue-500/20"
         />
         <StatBlock 
           label="Quizzes"
           value={stats.quizzesCompleted}
-          trend="+3 this term"
+          trend="Total Completed"
           icon={PenTool}
           color="text-purple-500"
           bg="bg-purple-500/10"
+          borderGlow="group-hover:border-purple-500/50"
+          shadowGlow="group-hover:shadow-purple-500/20"
         />
         <StatBlock 
           label="Deadlines"
           value={stats.upcomingDeadlines}
-          trend="Urgent"
+          trend="Upcoming"
           icon={Calendar}
           color="text-amber-500"
           bg="bg-amber-500/10"
+          borderGlow="group-hover:border-amber-500/50"
+          shadowGlow="group-hover:shadow-amber-500/20"
         />
         <StatBlock 
           label="Engagement"
           value={`${stats.participationRate}%`}
-          trend="High"
+          trend="Attendance"
           icon={ShieldCheck}
           color="text-primary"
           bg="bg-primary/10"
+          borderGlow="group-hover:border-primary/50"
+          shadowGlow="group-hover:shadow-primary/20"
         />
       </div>
     </motion.div>
   );
 }
 
-function StatBlock({ label, value, trend, icon: Icon, color, bg }: any) {
+function StatBlock({ label, value, trend, icon: Icon, color, bg, borderGlow, shadowGlow }: any) {
     return (
-        <div className="p-6 md:p-8 flex flex-col justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
-            <div className="flex items-center justify-between mb-6">
-                <div className={`p-3 rounded-2xl ${bg} ${color} transition-transform group-hover:scale-110`}>
-                    <Icon size={20} strokeWidth={2.5} />
+        <div className={`relative p-8 md:p-10 flex flex-col justify-between transition-all duration-500 group bg-transparent hover:bg-white dark:hover:bg-slate-800/80`}>
+            {/* Hover Glow Effect */}
+            <div className={`absolute inset-0 border-2 border-transparent transition-colors duration-500 ${borderGlow} pointer-events-none rounded-[3rem] z-10 m-[-2px]`}></div>
+            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 shadow-[inset_0_0_80px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_0_80px_rgba(255,255,255,0.02)] ${shadowGlow} pointer-events-none rounded-[3rem]`}></div>
+            
+            <div className="relative z-20 flex items-center justify-between mb-8">
+                <div className={`p-4 rounded-[1.25rem] ${bg} ${color} transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-lg`}>
+                    <Icon size={24} strokeWidth={2.5} />
                 </div>
-                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 ${trend.includes('+') ? 'text-emerald-500' : 'text-slate-400'}`}>
+                <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 text-slate-400 group-hover:bg-transparent group-hover:text-slate-500 transition-colors">
                     {trend}
                 </span>
             </div>
-            <div>
-                <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</h4>
-                <div className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
+            <div className="relative z-20">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 group-hover:text-slate-500 transition-colors">{label}</h4>
+                <div className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter drop-shadow-sm group-hover:scale-105 origin-left transition-transform duration-500">
                     {value}
                 </div>
             </div>

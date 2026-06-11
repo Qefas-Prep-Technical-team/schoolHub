@@ -80,11 +80,11 @@ export function Pagination({
                   onClick={() => onPageChange(page)}
                   className={cn(
                     "relative inline-flex items-center px-4 py-2 text-sm font-semibold",
-                    "ring-1 ring-inset ring-slate-300 dark:ring-slate-600",
-                    "focus:z-20 focus:outline-offset-0",
+                    "ring-1 ring-inset",
+                    "focus:z-20 focus:outline-offset-0 transition-all",
                     page === currentPage
-                      ? "z-10 bg-primary text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                      : "text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors",
+                      ? "z-10 bg-primary text-white ring-primary dark:bg-primary/20 dark:text-primary dark:ring-primary/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      : "ring-slate-300 dark:ring-slate-700 text-slate-800 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80",
                     page > 3 && page < totalPages - 1 && "hidden md:inline-flex"
                   )}
                 >

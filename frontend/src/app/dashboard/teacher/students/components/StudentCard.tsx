@@ -85,7 +85,7 @@ const StudentCard: React.FC<StudentCardProps> = ({ student }) => {
         </div>
       </div>
 
-      <Link href="/dashboard/teacher/students/StudentProfile" className="mt-2"> 
+      <Link href={`/dashboard/teacher/students/${student.id}`} className="mt-2"> 
         <button className="flex w-full items-center justify-center gap-2 h-12 px-6 rounded-2xl bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-200 text-xs font-black uppercase tracking-widest hover:bg-emerald-500 dark:hover:bg-emerald-500 dark:hover:text-white transition-all duration-300 shadow-xl shadow-slate-200/50 dark:shadow-none active:scale-95 group/btn border border-transparent dark:border-slate-700">
           View Detailed Profile
           <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />

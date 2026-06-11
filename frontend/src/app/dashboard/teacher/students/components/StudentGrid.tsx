@@ -16,13 +16,13 @@ interface StudentGridProps {
 }
 
 const StudentGrid: React.FC<StudentGridProps> = ({ page, searchQuery, limit, onDataLoaded }) => {
-  const { selectedSchoolId } = useDashboardStore();
+  const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
   
   const { data, isLoading, error } = useQuery({
     queryKey: ['teacher-students', selectedSchoolId, searchQuery, page, limit],
     queryFn: async () => {
-      const isPersonal = selectedSchoolId === user?.id;
+      const isPersonal = selectedSchoolName === "Personal Dashboard" || selectedSchoolId === user?.id;
       const filterId = isPersonal ? undefined : selectedSchoolId;
       const result = await teacherService.getStudents({
         schoolId: filterId || undefined,

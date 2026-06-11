@@ -12,6 +12,8 @@ export function getExamStatusColor(status: ExamStatus): string {
       return 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300'
     case 'draft':
       return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+    case 'published':
+      return 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300'
     case 'cancelled':
       return 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300'
     default:
@@ -20,6 +22,7 @@ export function getExamStatusColor(status: ExamStatus): string {
 }
 
 export function getExamTypeLabel(type: ExamType): string {
+  if (type === 'subject_paper') return 'Subject Paper'
   return type.charAt(0).toUpperCase() + type.slice(1)
 }
 
@@ -29,7 +32,8 @@ export function getStatusLabel(status: ExamStatus): string {
     scheduled: 'Scheduled',
     completed: 'Completed',
     graded: 'Graded',
-    cancelled: 'Cancelled'
+    cancelled: 'Cancelled',
+    published: 'Published'
   }
   return labels[status]
 }

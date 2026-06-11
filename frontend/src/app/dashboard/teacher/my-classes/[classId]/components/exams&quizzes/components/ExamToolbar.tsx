@@ -39,7 +39,7 @@ export function ExamToolbar({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="w-full border-none bg-transparent text-sm text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-0"
-          placeholder="Search exams or quizzes..."
+          placeholder="Search exams or subject papers..."
         />
       </div>
       <button

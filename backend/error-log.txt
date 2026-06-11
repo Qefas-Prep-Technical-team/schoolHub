@@ -3919,4 +3919,2447 @@ Please make sure your database server is running at `aws-1-eu-west-1.pooler.supa
     at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
     at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at getPublicRoleFeatures (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:26)
+    at getPublicRoleFeatures (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:26)PrismaClientKnownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:55
+
+  895     return res.status(400).json({ message: "Invalid role" });
+  896 }
+  897 
+→ 898 const features = await prisma.platformFeature.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:26)PrismaClientKnownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:55
+
+  895     return res.status(400).json({ message: "Invalid role" });
+  896 }
+  897 
+→ 898 const features = await prisma.platformFeature.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:26)PrismaClientKnownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:55
+
+  895     return res.status(400).json({ message: "Invalid role" });
+  896 }
+  897 
+→ 898 const features = await prisma.platformFeature.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:26)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:47
+
+  2214 
+  2215 const payload: any = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
+  2216 
+→ 2217 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:21)PrismaClientKnownRequestError: 
+Invalid `prismaModel.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:194:30
+
+  191 const prismaModel = (prisma as any)[roleKey];
+  192 
+  193 if (prismaModel) {
+→ 194   user = await prismaModel.findUnique(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getUserUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:194:12)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:21:16)PrismaClientKnownRequestError: 
+Invalid `prisma.notification.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\notification\notification.controller.ts:9:53
+
+  6 try {
+  7   const userId = req.user.id;
+  8 
+→ 9   const notifications = await prisma.notification.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getMyNotifications (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\notification\notification.controller.ts:9:27)PrismaClientKnownRequestError: 
+Invalid `prisma.fileMetric.aggregate()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:287:23
+
+  284   : role === 'STUDENT'
+  285     ? prisma.classEnrollment.count({ where: { studentId: userId } })
+  286     : Promise.resolve(0),
+→ 287 prisma.fileMetric.aggregate(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 2)
+    at getUserUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:274:64)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:21:16)PrismaClientKnownRequestError: 
+Invalid `prisma.notification.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\notification\notification.controller.ts:77:45
+
+  74 try {
+  75   const userId = req.user.id;
+  76 
+→ 77   const count = await prisma.notification.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getUnreadCount (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\notification\notification.controller.ts:77:19)PrismaClientKnownRequestError: 
+Invalid `prisma.exam.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:276:21
+
+  273 
+  274 const [examCount, classCount, storageMetric, studentCount] = await Promise.all([
+  275   role === 'TEACHER'
+→ 276     ? prisma.exam.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getUserUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:274:64)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:21:16)PrismaClientKnownRequestError: 
+Invalid `prisma.classTeacher.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:283:29
+
+  280       ? prisma.examAttempt.count({ where: { studentId: { in: parentChildIds } } })
+  281       : Promise.resolve(0),
+  282 role === 'TEACHER'
+→ 283   ? prisma.classTeacher.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 1)
+    at getUserUsageService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\quota.service.ts:274:64)
+    at getSubscriptionUsage (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\subscription.controller.ts:21:16)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:47
+
+  2214 
+  2215 const payload: any = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
+  2216 
+→ 2217 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:21)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:47
+
+  2214 
+  2215 const payload: any = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
+  2216 
+→ 2217 const dbToken = await prisma.refreshToken.findFirst(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:21)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:47
+
+  2214 
+  2215 const payload: any = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
+  2216 
+→ 2217 const dbToken = await prisma.refreshToken.findFirst(
+Timed out fetching a new connection from the connection pool. More info: http://pris.ly/d/connection-pool (Current connection pool timeout: 10, connection limit: 10)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2217:21)PrismaClientKnownRequestError: 
+Invalid `prisma.behaviourAlert.create()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\behaviour.service.ts:40:48
+
+  37   reportedById: string;
+  38   classId: string;
+  39 }) => {
+→ 40   const newAlert = await prisma.behaviourAlert.create(
+Foreign key constraint violated on the constraint: `behaviour_alerts_reportedById_fkey`
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at createBehaviourAlertService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\behaviour.service.ts:40:20)
+    at createBehaviourAlert (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\behaviour.controller.ts:41:19)PrismaClientValidationError: 
+Invalid `prisma.admin.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\behaviour.service.ts:106:36
+
+  103 }
+  104 
+  105 let reporterName = 'Staff Member';
+→ 106 const admin = await prisma.admin.findUnique({
+        where: {
+          id: "28f8bf7a-821d-4eee-b00d-4e15350ea3a0"
+        },
+        select: {
+          fullName: true,
+          ~~~~~~~~
+          name: true,
+      ?   id?: true,
+      ?   email?: true,
+      ?   password?: true,
+      ?   role?: true,
+      ?   adminCode?: true,
+      ?   googleId?: true,
+      ?   authProvider?: true,
+      ?   verified?: true,
+      ?   status?: true,
+      ?   createdAt?: true,
+      ?   updatedAt?: true,
+      ?   gender?: true,
+      ?   emailVerificationCode?: true,
+      ?   emailVerificationExpiry?: true,
+      ?   pendingEmail?: true,
+      ?   bannerImage?: true,
+      ?   profileImage?: true,
+      ?   isTrialActive?: true,
+      ?   lastPaymentDate?: true,
+      ?   plan?: true,
+      ?   subscriptionEnd?: true,
+      ?   subscriptionStatus?: true,
+      ?   tenantId?: true,
+      ?   trialEndsAt?: true,
+      ?   trialPlan?: true,
+      ?   trialUsed?: true,
+      ?   billingCycle?: true,
+      ?   paystackCustomerCode?: true,
+      ?   paystackSubaccountCode?: true,
+      ?   planId?: true,
+      ?   subscriptionPlanId?: true,
+      ?   acceptedTerms?: true,
+      ?   termsAcceptedAt?: true,
+      ?   maxAiUsageOverride?: true,
+      ?   maxClassesOverride?: true,
+      ?   maxExamsOverride?: true,
+      ?   maxParentsOverride?: true,
+      ?   maxStorageGbOverride?: true,
+      ?   maxStudentsOverride?: true,
+      ?   maxTeachersOverride?: true,
+      ?   subscriptionPlan?: true,
+      ?   approvedLinkRequests?: true,
+      ?   requestedLinkRequests?: true,
+      ?   schoolAdmins?: true,
+      ?   _count?: true
+        }
+      })
+
+Unknown field `fullName` for select statement on model `Admin`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at createBehaviourAlertService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\behaviour.service.ts:106:17)
+    at createBehaviourAlert (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\behaviour.controller.ts:41:19)PrismaClientKnownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:55
+
+  895     return res.status(400).json({ message: "Invalid role" });
+  896 }
+  897 
+→ 898 const features = await prisma.platformFeature.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:26)PrismaClientValidationError: 
+Invalid `prisma.class.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:41
+
+  335 };
+  336 
+  337 export const getSingleClassService = async (classId: string) => {
+→ 338   const foundClass = await prisma.class.findUnique({
+          where: {
+            id: "95f8af2c-9cc3-4d89-b160-f459966f3258"
+          },
+          include: {
+            school: true,
+            teachers: {
+              include: {
+                teacher: true
+              }
+            },
+            subjects: {
+              include: {
+                subject: {
+                  include: {
+                    _count: {
+                      select: {
+                        subjectExamPapers: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            departments: {
+              include: {
+                department: true
+              }
+            },
+            enrollments: {
+              include: {
+                student: true
+              }
+            },
+            exams: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                totalMarks: true,
+                durationMinutes: true,
+                startDate: true,
+                endDate: true,
+                createdAt: true,
+                updatedAt: true,
+                subject: {
+                  select: {
+                    name: true
+                  }
+                },
+                examAttempts: {
+                  select: {
+                    id: true,
+                    isSubmitted: true
+                  }
+                }
+              }
+            },
+            quizzes: true,
+            behaviourAlerts: {
+              include: {
+                student: true,
+                reporter: true,
+                ~~~~~~~~
+        ?       class?: true
+              }
+            }
+          }
+        })
+
+Unknown field `reporter` for include statement on model `BehaviourAlert`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSingleClassService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:22)
+    at getSingleClass (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.controller.ts:219:24)PrismaClientValidationError: 
+Invalid `prisma.class.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:41
+
+  335 };
+  336 
+  337 export const getSingleClassService = async (classId: string) => {
+→ 338   const foundClass = await prisma.class.findUnique({
+          where: {
+            id: "95f8af2c-9cc3-4d89-b160-f459966f3258"
+          },
+          include: {
+            school: true,
+            teachers: {
+              include: {
+                teacher: true
+              }
+            },
+            subjects: {
+              include: {
+                subject: {
+                  include: {
+                    _count: {
+                      select: {
+                        subjectExamPapers: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            departments: {
+              include: {
+                department: true
+              }
+            },
+            enrollments: {
+              include: {
+                student: true
+              }
+            },
+            exams: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                totalMarks: true,
+                durationMinutes: true,
+                startDate: true,
+                endDate: true,
+                createdAt: true,
+                updatedAt: true,
+                subject: {
+                  select: {
+                    name: true
+                  }
+                },
+                examAttempts: {
+                  select: {
+                    id: true,
+                    isSubmitted: true
+                  }
+                }
+              }
+            },
+            quizzes: true,
+            behaviourAlerts: {
+              include: {
+                student: true,
+                reporter: true,
+                ~~~~~~~~
+        ?       class?: true
+              }
+            }
+          }
+        })
+
+Unknown field `reporter` for include statement on model `BehaviourAlert`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSingleClassService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:22)
+    at getSingleClass (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.controller.ts:219:24)PrismaClientValidationError: 
+Invalid `prisma.class.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:41
+
+  335 };
+  336 
+  337 export const getSingleClassService = async (classId: string) => {
+→ 338   const foundClass = await prisma.class.findUnique({
+          where: {
+            id: "95f8af2c-9cc3-4d89-b160-f459966f3258"
+          },
+          include: {
+            school: true,
+            teachers: {
+              include: {
+                teacher: true
+              }
+            },
+            subjects: {
+              include: {
+                subject: {
+                  include: {
+                    _count: {
+                      select: {
+                        subjectExamPapers: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            departments: {
+              include: {
+                department: true
+              }
+            },
+            enrollments: {
+              include: {
+                student: true
+              }
+            },
+            exams: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                totalMarks: true,
+                durationMinutes: true,
+                startDate: true,
+                endDate: true,
+                createdAt: true,
+                updatedAt: true,
+                subject: {
+                  select: {
+                    name: true
+                  }
+                },
+                examAttempts: {
+                  select: {
+                    id: true,
+                    isSubmitted: true
+                  }
+                }
+              }
+            },
+            quizzes: true,
+            behaviourAlerts: {
+              include: {
+                student: true,
+                reporter: true,
+                ~~~~~~~~
+        ?       class?: true
+              }
+            }
+          }
+        })
+
+Unknown field `reporter` for include statement on model `BehaviourAlert`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSingleClassService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:22)
+    at getSingleClass (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.controller.ts:219:24)PrismaClientValidationError: 
+Invalid `prisma.class.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:41
+
+  335 };
+  336 
+  337 export const getSingleClassService = async (classId: string) => {
+→ 338   const foundClass = await prisma.class.findUnique({
+          where: {
+            id: "95f8af2c-9cc3-4d89-b160-f459966f3258"
+          },
+          include: {
+            school: true,
+            teachers: {
+              include: {
+                teacher: true
+              }
+            },
+            subjects: {
+              include: {
+                subject: {
+                  include: {
+                    _count: {
+                      select: {
+                        subjectExamPapers: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            departments: {
+              include: {
+                department: true
+              }
+            },
+            enrollments: {
+              include: {
+                student: true
+              }
+            },
+            exams: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                totalMarks: true,
+                durationMinutes: true,
+                startDate: true,
+                endDate: true,
+                createdAt: true,
+                updatedAt: true,
+                subject: {
+                  select: {
+                    name: true
+                  }
+                },
+                examAttempts: {
+                  select: {
+                    id: true,
+                    isSubmitted: true
+                  }
+                }
+              }
+            },
+            quizzes: true,
+            behaviourAlerts: {
+              include: {
+                student: true,
+                reporter: true,
+                ~~~~~~~~
+        ?       class?: true
+              }
+            }
+          }
+        })
+
+Unknown field `reporter` for include statement on model `BehaviourAlert`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSingleClassService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:22)
+    at getSingleClass (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.controller.ts:219:24)PrismaClientValidationError: 
+Invalid `prisma.class.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:41
+
+  335 };
+  336 
+  337 export const getSingleClassService = async (classId: string) => {
+→ 338   const foundClass = await prisma.class.findUnique({
+          where: {
+            id: "95f8af2c-9cc3-4d89-b160-f459966f3258"
+          },
+          include: {
+            school: true,
+            teachers: {
+              include: {
+                teacher: true
+              }
+            },
+            subjects: {
+              include: {
+                subject: {
+                  include: {
+                    _count: {
+                      select: {
+                        subjectExamPapers: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            departments: {
+              include: {
+                department: true
+              }
+            },
+            enrollments: {
+              include: {
+                student: true
+              }
+            },
+            exams: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                totalMarks: true,
+                durationMinutes: true,
+                startDate: true,
+                endDate: true,
+                createdAt: true,
+                updatedAt: true,
+                subject: {
+                  select: {
+                    name: true
+                  }
+                },
+                examAttempts: {
+                  select: {
+                    id: true,
+                    isSubmitted: true
+                  }
+                }
+              }
+            },
+            quizzes: true,
+            behaviourAlerts: {
+              include: {
+                student: true,
+                reporter: true,
+                ~~~~~~~~
+        ?       class?: true
+              }
+            }
+          }
+        })
+
+Unknown field `reporter` for include statement on model `BehaviourAlert`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSingleClassService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:22)
+    at getSingleClass (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.controller.ts:219:24)PrismaClientValidationError: 
+Invalid `prisma.class.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:41
+
+  335 };
+  336 
+  337 export const getSingleClassService = async (classId: string) => {
+→ 338   const foundClass = await prisma.class.findUnique({
+          where: {
+            id: "95f8af2c-9cc3-4d89-b160-f459966f3258"
+          },
+          include: {
+            school: true,
+            teachers: {
+              include: {
+                teacher: true
+              }
+            },
+            subjects: {
+              include: {
+                subject: {
+                  include: {
+                    _count: {
+                      select: {
+                        subjectExamPapers: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            departments: {
+              include: {
+                department: true
+              }
+            },
+            enrollments: {
+              include: {
+                student: true
+              }
+            },
+            exams: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                totalMarks: true,
+                durationMinutes: true,
+                startDate: true,
+                endDate: true,
+                createdAt: true,
+                updatedAt: true,
+                subject: {
+                  select: {
+                    name: true
+                  }
+                },
+                examAttempts: {
+                  select: {
+                    id: true,
+                    isSubmitted: true
+                  }
+                }
+              }
+            },
+            quizzes: true,
+            behaviourAlerts: {
+              include: {
+                student: true,
+                reporter: true,
+                ~~~~~~~~
+        ?       class?: true
+              }
+            }
+          }
+        })
+
+Unknown field `reporter` for include statement on model `BehaviourAlert`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSingleClassService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:22)
+    at getSingleClass (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.controller.ts:219:24)PrismaClientValidationError: 
+Invalid `prisma.class.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:41
+
+  335 };
+  336 
+  337 export const getSingleClassService = async (classId: string) => {
+→ 338   const foundClass = await prisma.class.findUnique({
+          where: {
+            id: "95f8af2c-9cc3-4d89-b160-f459966f3258"
+          },
+          include: {
+            school: true,
+            teachers: {
+              include: {
+                teacher: true
+              }
+            },
+            subjects: {
+              include: {
+                subject: {
+                  include: {
+                    _count: {
+                      select: {
+                        subjectExamPapers: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            departments: {
+              include: {
+                department: true
+              }
+            },
+            enrollments: {
+              include: {
+                student: true
+              }
+            },
+            exams: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                totalMarks: true,
+                durationMinutes: true,
+                startDate: true,
+                endDate: true,
+                createdAt: true,
+                updatedAt: true,
+                subject: {
+                  select: {
+                    name: true
+                  }
+                },
+                examAttempts: {
+                  select: {
+                    id: true,
+                    isSubmitted: true
+                  }
+                }
+              }
+            },
+            quizzes: true,
+            behaviourAlerts: {
+              include: {
+                student: true,
+                reporter: true,
+                ~~~~~~~~
+        ?       class?: true
+              }
+            }
+          }
+        })
+
+Unknown field `reporter` for include statement on model `BehaviourAlert`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSingleClassService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:22)
+    at getSingleClass (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.controller.ts:219:24)PrismaClientValidationError: 
+Invalid `prisma.class.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:41
+
+  335 };
+  336 
+  337 export const getSingleClassService = async (classId: string) => {
+→ 338   const foundClass = await prisma.class.findUnique({
+          where: {
+            id: "95f8af2c-9cc3-4d89-b160-f459966f3258"
+          },
+          include: {
+            school: true,
+            teachers: {
+              include: {
+                teacher: true
+              }
+            },
+            subjects: {
+              include: {
+                subject: {
+                  include: {
+                    _count: {
+                      select: {
+                        subjectExamPapers: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            departments: {
+              include: {
+                department: true
+              }
+            },
+            enrollments: {
+              include: {
+                student: true
+              }
+            },
+            exams: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                totalMarks: true,
+                durationMinutes: true,
+                startDate: true,
+                endDate: true,
+                createdAt: true,
+                updatedAt: true,
+                subject: {
+                  select: {
+                    name: true
+                  }
+                },
+                examAttempts: {
+                  select: {
+                    id: true,
+                    isSubmitted: true
+                  }
+                }
+              }
+            },
+            quizzes: true,
+            behaviourAlerts: {
+              include: {
+                student: true,
+                reporter: true,
+                ~~~~~~~~
+        ?       class?: true
+              }
+            }
+          }
+        })
+
+Unknown field `reporter` for include statement on model `BehaviourAlert`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSingleClassService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:22)
+    at getSingleClass (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.controller.ts:219:24)PrismaClientValidationError: 
+Invalid `prisma.class.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:41
+
+  335 };
+  336 
+  337 export const getSingleClassService = async (classId: string) => {
+→ 338   const foundClass = await prisma.class.findUnique({
+          where: {
+            id: "95f8af2c-9cc3-4d89-b160-f459966f3258"
+          },
+          include: {
+            school: true,
+            teachers: {
+              include: {
+                teacher: true
+              }
+            },
+            subjects: {
+              include: {
+                subject: {
+                  include: {
+                    _count: {
+                      select: {
+                        subjectExamPapers: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            departments: {
+              include: {
+                department: true
+              }
+            },
+            enrollments: {
+              include: {
+                student: true
+              }
+            },
+            exams: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                totalMarks: true,
+                durationMinutes: true,
+                startDate: true,
+                endDate: true,
+                createdAt: true,
+                updatedAt: true,
+                subject: {
+                  select: {
+                    name: true
+                  }
+                },
+                examAttempts: {
+                  select: {
+                    id: true,
+                    isSubmitted: true
+                  }
+                }
+              }
+            },
+            quizzes: true,
+            behaviourAlerts: {
+              include: {
+                student: true,
+                reporter: true,
+                ~~~~~~~~
+        ?       class?: true
+              }
+            }
+          }
+        })
+
+Unknown field `reporter` for include statement on model `BehaviourAlert`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSingleClassService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:22)
+    at getSingleClass (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.controller.ts:219:24)PrismaClientValidationError: 
+Invalid `prisma.class.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:41
+
+  335 };
+  336 
+  337 export const getSingleClassService = async (classId: string) => {
+→ 338   const foundClass = await prisma.class.findUnique({
+          where: {
+            id: "95f8af2c-9cc3-4d89-b160-f459966f3258"
+          },
+          include: {
+            school: true,
+            teachers: {
+              include: {
+                teacher: true
+              }
+            },
+            subjects: {
+              include: {
+                subject: {
+                  include: {
+                    _count: {
+                      select: {
+                        subjectExamPapers: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            departments: {
+              include: {
+                department: true
+              }
+            },
+            enrollments: {
+              include: {
+                student: true
+              }
+            },
+            exams: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                totalMarks: true,
+                durationMinutes: true,
+                startDate: true,
+                endDate: true,
+                createdAt: true,
+                updatedAt: true,
+                subject: {
+                  select: {
+                    name: true
+                  }
+                },
+                examAttempts: {
+                  select: {
+                    id: true,
+                    isSubmitted: true
+                  }
+                }
+              }
+            },
+            quizzes: true,
+            behaviourAlerts: {
+              include: {
+                student: true,
+                reporter: true,
+                ~~~~~~~~
+        ?       class?: true
+              }
+            }
+          }
+        })
+
+Unknown field `reporter` for include statement on model `BehaviourAlert`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSingleClassService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:338:22)
+    at getSingleClass (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.controller.ts:219:24)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientInitializationError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:55
+
+  895     return res.status(400).json({ message: "Invalid role" });
+  896 }
+  897 
+→ 898 const features = await prisma.platformFeature.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:898:26)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  includedSubjects: {
+                    some: {
+                      subjectId: {
+                        in: []
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `includedSubjects`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  subjectExamPapers: {
+                    some: {
+                      paper: {
+                        subjectId: {
+                          in: []
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `paper`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)PrismaClientValidationError: 
+Invalid `prisma.exam.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:35
+
+  186   }
+  187 }
+  188 
+→ 189 const exams = await prisma.exam.findMany({
+        where: {
+          schoolId: "cbef052a-277c-4987-906c-7e8a41c9ed5e",
+          classId: "95f8af2c-9cc3-4d89-b160-f459966f3258",
+          AND: [
+            {
+              OR: [
+                {
+                  subjectId: {
+                    in: []
+                  }
+                },
+                {
+                  subjectExamPapers: {
+                    some: {
+                      paper: {
+                        subjectId: {
+                          in: []
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        include: {
+          school: true,
+          departments: {
+            include: {
+              department: true
+            }
+          },
+          class: true,
+          session: true,
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  teacher: true,
+                  questions: {
+                    orderBy: {
+                      order: "asc"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          examAttempts: false,
+          _count: {
+            select: {
+              examAttempts: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
+
+Unknown argument `paper`. Available options are marked with ?.
+    at throwValidationException (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:189:17)
+    at getExams (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:69:20)

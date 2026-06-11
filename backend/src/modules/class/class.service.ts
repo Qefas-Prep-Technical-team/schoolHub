@@ -384,7 +384,6 @@ export const getSingleClassService = async (classId: string) => {
       behaviourAlerts: {
         include: {
           student: true,
-          reporter: true,
         },
       },
     },

@@ -5,7 +5,7 @@ import { Sparkles } from "lucide-react";
 const HeaderTitle: React.FC = () => {
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
-  const isPersonal = selectedSchoolId === user?.id;
+  const isPersonal = selectedSchoolName === "Personal Dashboard" || selectedSchoolId === user?.id;
 
   return (
     <div className="flex flex-col">

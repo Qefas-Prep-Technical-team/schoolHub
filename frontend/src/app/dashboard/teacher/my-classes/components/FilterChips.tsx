@@ -77,17 +77,6 @@ export default function FilterChips({ filters, options, onFilterChange, onClearF
                     onChange={(val: string) => { onFilterChange('class', val); setOpenFilter(null); }}
                 />
             )}
-            {options.subject.length > 0 && (
-                <FilterPill 
-                    label="Subject" 
-                    value={filters.subject} 
-                    options={options.subject} 
-                    icon={BookOpen} 
-                    isOpen={openFilter === 'subject'}
-                    onToggle={() => toggleFilter('subject')}
-                    onChange={(val: string) => { onFilterChange('subject', val); setOpenFilter(null); }}
-                />
-            )}
 
             {/* Clear Filters Button Modernized */}
             <AnimatePresence>

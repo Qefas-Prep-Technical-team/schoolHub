@@ -72,10 +72,12 @@ export function ExamTable({
                       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
                         <div className="flex items-center gap-2">
                           <Icon
-                            name={exam.type === 'quiz' ? 'quiz' : 'file_question'}
+                            name={exam.type === 'quiz' ? 'quiz' : exam.type === 'subject_paper' ? 'description' : 'file_question'}
                             className={cn(
                               exam.type === 'quiz' 
                                 ? "text-blue-500" 
+                                : exam.type === 'subject_paper'
+                                ? "text-emerald-500"
                                 : "text-purple-500"
                             )}
                           />
@@ -129,10 +131,10 @@ function EmptyState() {
     <div className="text-center py-20 px-6">
       <Icon name="quiz" className="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600" />
       <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
-        No Exams or Quizzes Yet
+        No Exams or Subject Papers Yet
       </h3>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Click &apos;Create New Exam/Quiz&apos; to get started.
+        Click &apos;Create New Exam/Subject Paper&apos; to get started.
       </p>
     </div>
   )

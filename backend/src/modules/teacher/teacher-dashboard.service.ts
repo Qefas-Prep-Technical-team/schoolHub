@@ -476,6 +476,11 @@ export const getTeacherStudentsService = async (options: {
                       orderBy: { createdAt: 'desc' },
                       take: 1,
                   },
+                  examAttempts: {
+                      where: { status: { in: ['SUBMITTED', 'SCORED'] }, exam: { classId: { in: assignedIds } } },
+                      orderBy: { createdAt: 'desc' },
+                      take: 1,
+                  },
                   attendances: {
                       where: { classId: { in: assignedIds } },
                       take: 10,
@@ -498,9 +503,20 @@ export const getTeacherStudentsService = async (options: {
       if (!s) return null; // Safety check
 
       const lastGrade = s.grades?.[0];
-      const performance = lastGrade 
-          ? (lastGrade.score / lastGrade.maxMarks > 0.8 ? 'High' : lastGrade.score / lastGrade.maxMarks > 0.5 ? 'Medium' : 'Low')
-          : 'Medium';
+      const lastExamAttempt = s.examAttempts?.[0];
+      
+      let performance = 'Medium';
+      let lastExamStr = 'N/A';
+
+      if (lastExamAttempt && lastExamAttempt.totalMarks > 0) {
+          const ratio = lastExamAttempt.totalScore / lastExamAttempt.totalMarks;
+          performance = ratio > 0.8 ? 'High' : ratio > 0.5 ? 'Medium' : 'Low';
+          lastExamStr = `${lastExamAttempt.totalScore}/${lastExamAttempt.totalMarks}`;
+      } else if (lastGrade && lastGrade.maxMarks > 0) {
+          const ratio = lastGrade.score / lastGrade.maxMarks;
+          performance = ratio > 0.8 ? 'High' : ratio > 0.5 ? 'Medium' : 'Low';
+          lastExamStr = `${lastGrade.score}/${lastGrade.maxMarks}`;
+      }
           
       const presentCount = s.attendances?.filter((a: any) => a.status === 'present').length || 0;
       const totalAttendance = s.attendances?.length || 0;
@@ -517,7 +533,7 @@ export const getTeacherStudentsService = async (options: {
           avatarUrl: s.profileImage,
           performance,
           attendance: attendanceRate,
-          lastExam: lastGrade ? `${Math.round((lastGrade.score / lastGrade.maxMarks) * 100)}/100` : 'N/A'
+          lastExam: lastExamStr
       };
   }).filter(Boolean);
 
@@ -662,7 +678,7 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
                 include: {
                     subjects: { include: { subject: true } },
                     _count: { select: { enrollments: true, exams: true } },
-                    grades: { include: { student: true } },
+                    grades: { include: { student: true, exam: { select: { title: true } } } },
                     attendances: true,
                     exams: { include: { subject: true } },
                 }
@@ -744,7 +760,8 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
             score: Math.round(data.total / data.count),
             avatar: data.student.profileImage,
             rank: 0, // Assigned below
-            improvement: "+2%" // Mockup for now
+            improvement: "" // Removed mock
+
         }))
         .sort((a, b) => b.score - a.score)
         .slice(0, 5)
@@ -771,7 +788,7 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
         .map(g => ({
             id: g.id,
             studentName: g.student.name,
-            assignment: "Assessment", // Generic
+            assignment: g.exam?.title || "Assessment", // Generic fallback if no exam relation
             avatar: g.student.profileImage,
             submittedDate: new Date(g.createdAt).toLocaleDateString(),
             status: 'graded'
@@ -859,14 +876,13 @@ export const getTeacherClassAssignmentsService = async (teacherId: string, class
         throw new Error("You are not assigned to this class");
     }
 
-    // 2. Fetch exams for this class
-    const exams = await prisma.exam.findMany({
+    // 2. Fetch assignments for this class
+    const assignments = await prisma.assignment.findMany({
         where: { 
-            classId,
-            ...(category ? { category: category as any } : {})
+            classId
         },
         include: {
-            examAttempts: {
+            submissions: {
                 select: { id: true }
             }
         },
@@ -878,17 +894,17 @@ export const getTeacherClassAssignmentsService = async (teacherId: string, class
         where: { classId }
     });
 
-    return exams.map(exam => ({
-        id: exam.id,
-        title: exam.title,
-        dueDate: exam.endDate,
-        status: exam.status.toLowerCase(), // draft, published, etc
+    return assignments.map(assignment => ({
+        id: assignment.id,
+        title: assignment.title,
+        dueDate: assignment.dueDate,
+        status: assignment.status.toLowerCase(), // draft, published, etc
         submissions: {
-            submitted: exam.examAttempts.length,
+            submitted: assignment.submissions.length,
             total: totalStudents
         },
-        createdAt: exam.createdAt,
-        updatedAt: exam.updatedAt
+        createdAt: assignment.createdAt,
+        updatedAt: assignment.updatedAt
     }));
 };
 
