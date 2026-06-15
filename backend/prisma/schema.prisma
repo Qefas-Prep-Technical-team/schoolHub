@@ -73,6 +73,7 @@ model School {
   exams                    Exam[]               @relation("SchoolContext")
   fileRecords              FileRecord[]
   grades                   Grade[]
+  gradeAuditLogs           GradeAuditLog[]
   inquiries                Inquiry[]
   requesterLinkRequests    LinkRequest[]        @relation("RequesterSchool")
   linkRequests             LinkRequest[]        @relation("SchoolContext")
@@ -505,7 +506,7 @@ model Grade {
   subjectExamAttempt   SubjectExamAttempt? @relation(fields: [subjectExamAttemptId], references: [id])
   subjectPaper         SubjectExamPaper?   @relation(fields: [subjectPaperId], references: [id])
   teacher              Teacher?            @relation(fields: [teacherId], references: [id])
-
+  auditLogs            GradeAuditLog[]
   @@unique([studentId, examId, subjectPaperId])
   @@index([studentId])
   @@map("grades")
@@ -683,11 +684,11 @@ model Department {
   createdAt   DateTime               @default(now())
   updatedAt   DateTime               @updatedAt
   students    Student[]
+  assignments Assignment[]
   classes     ClassDepartment[]
   subjects    DepartmentSubject[]
   exams       ExamDepartment[]
   quizzes     Quiz[]
-  assignments Assignment[]
 
   @@map("departments")
 }
@@ -1043,11 +1044,11 @@ model Attendance {
   date           DateTime @db.Date
   status         String
   note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
   recordedById   String?
   recordedByName String?
   recordedByRole String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
   class          Class    @relation(fields: [classId], references: [id])
   student        Student  @relation(fields: [studentId], references: [id])
 
@@ -1456,7 +1457,6 @@ model AiUsageLog {
   @@map("ai_usage_logs")
 }
 
-
 model SchemeOfWork {
   id          String   @id @default(uuid())
   title       String
@@ -1616,26 +1616,26 @@ model StudentEnrollment {
 }
 
 model Assignment {
-  id            String                 @id @default(uuid())
-  title         String
-  instructions  String?
-  dueDate       DateTime?
-  totalMarks    Float                  @default(100)
-  status        SubjectPaperStatus     @default(DRAFT)
-  schoolId      String
-  teacherId     String
-  classId       String
-  subjectId     String
-  departmentId  String?
-  attachmentUrl String?
-  videoUrl      String?
-  referenceUrl  String?
+  id               String                 @id @default(uuid())
+  title            String
+  instructions     String?
+  dueDate          DateTime?
+  totalMarks       Float                  @default(100)
+  status           SubjectPaperStatus     @default(DRAFT)
+  schoolId         String
+  teacherId        String
+  classId          String
+  subjectId        String
+  attachmentUrl    String?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  departmentId     String?
+  referenceUrl     String?
+  videoUrl         String?
   scoreReleaseDate DateTime?
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  department    Department?            @relation(fields: [departmentId], references: [id])
-  questions     AssignmentQuestion[]
-  submissions   AssignmentSubmission[]
+  questions        AssignmentQuestion[]
+  submissions      AssignmentSubmission[]
+  department       Department?            @relation(fields: [departmentId], references: [id])
 
   @@index([schoolId])
   @@index([teacherId])
@@ -1965,4 +1965,26 @@ enum AssignmentSubmissionStatus {
   SUBMITTED
   GRADED
   OVERDUE
+}
+
+model GradeAuditLog {
+  id              String       @id @default(uuid())
+  gradeId         String
+  schoolId        String
+  changedById     String
+  changedByType   UserRole
+  previousScore   Float?
+  newScore        Float?
+  previousStatus  GradeStatus?
+  newStatus       GradeStatus?
+  reason          String?
+  createdAt       DateTime     @default(now())
+
+  grade           Grade        @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  school          School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  @@index([gradeId])
+  @@index([schoolId])
+  @@index([changedById])
+  @@map("grade_audit_logs")
 }

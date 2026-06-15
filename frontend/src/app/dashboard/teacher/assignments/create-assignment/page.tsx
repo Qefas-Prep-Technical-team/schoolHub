@@ -31,10 +31,7 @@ export default function CreateAssignmentPage() {
     const [formData, setFormData] = useState<AssignmentFormData>({
         title: '',
         subject: '',
-        classes: [
-            { id: '1', name: 'Period 3 - Algebra' },
-            { id: '2', name: 'Period 5 - Algebra' }
-        ],
+        classes: [],
         instructions: '',
         attachments: [],
         dueDate: '',

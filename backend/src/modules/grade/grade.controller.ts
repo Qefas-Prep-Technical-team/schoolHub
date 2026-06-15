@@ -26,7 +26,9 @@ export const getGradeHub = async (req: Request, res: Response) => {
 
 export const createGradeEntry = async (req: Request, res: Response) => {
   try {
-    const grade = await gradeService.createGradeEntryService(req.body);
+    const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+    const grade = await gradeService.createGradeEntryService(req.body, userId, userRole);
     res.json({ success: true, data: grade });
   } catch (error: any) {
     return handleError(res, error, "grade.createGradeEntry");
@@ -37,7 +39,9 @@ export const updateGradeScore = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { score, remarks, status } = req.body;
-    const grade = await gradeService.updateGradeScoreService(id as string, { score, remarks, status });
+    const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+    const grade = await gradeService.updateGradeScoreService(id as string, { score, remarks, status }, userId, userRole);
     res.json({ success: true, data: grade });
   } catch (error: any) {
     return handleError(res, error, "grade.updateGradeScore");
@@ -47,7 +51,9 @@ export const updateGradeScore = async (req: Request, res: Response) => {
 export const publishGrade = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const grade = await gradeService.updateGradeScoreService(id as string, { status: 'PUBLISHED' });
+    const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+    const grade = await gradeService.updateGradeScoreService(id as string, { status: 'PUBLISHED' }, userId, userRole);
     res.json({ success: true, data: grade });
   } catch (error: any) {
     return handleError(res, error, "grade.publishGrade");
@@ -67,7 +73,9 @@ export const processOCR = async (req: Request, res: Response) => {
 export const bulkCreateGrades = async (req: Request, res: Response) => {
   try {
     const { schoolId, grades } = req.body;
-    const result = await gradeService.bulkCreateGradesService(schoolId, grades);
+    const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+    const result = await gradeService.bulkCreateGradesService(schoolId, grades, userId, userRole);
     res.json({ success: true, data: result });
   } catch (error: any) {
     return handleError(res, error, "grade.bulkCreateGrades");

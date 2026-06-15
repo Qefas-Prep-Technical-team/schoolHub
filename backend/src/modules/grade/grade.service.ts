@@ -61,7 +61,7 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
   return { grades, total };
 };
 
-export const createGradeEntryService = async (data: any) => {
+export const createGradeEntryService = async (data: any, userId: string, userRole: string) => {
   const gradeData = {
     ...data,
     score: Number(data.score),
@@ -79,27 +79,76 @@ export const createGradeEntryService = async (data: any) => {
   });
 
   if (existing) {
-    return prisma.grade.update({
+    const updated = await prisma.grade.update({
       where: { id: existing.id },
       data: gradeData,
     });
+    await prisma.gradeAuditLog.create({
+      data: {
+        gradeId: updated.id,
+        schoolId: updated.schoolId,
+        changedById: userId,
+        changedByType: userRole as any,
+        previousScore: existing.score,
+        newScore: gradeData.score,
+        previousStatus: existing.status,
+        newStatus: updated.status,
+        reason: 'Manual grade update via Grade Hub'
+      }
+    });
+    return updated;
   }
 
-  return prisma.grade.create({
+  const created = await prisma.grade.create({
     data: gradeData,
   });
+
+  await prisma.gradeAuditLog.create({
+    data: {
+      gradeId: created.id,
+      schoolId: created.schoolId,
+      changedById: userId,
+      changedByType: userRole as any,
+      previousScore: null,
+      newScore: gradeData.score,
+      previousStatus: null,
+      newStatus: created.status,
+      reason: 'Manual grade creation via Grade Hub'
+    }
+  });
+
+  return created;
 };
 
-export const updateGradeScoreService = async (id: string, data: { score?: number; remarks?: string; status?: string }) => {
+export const updateGradeScoreService = async (id: string, data: { score?: number; remarks?: string; status?: string }, userId: string, userRole: string) => {
   const updateData: any = { updatedAt: new Date() };
   if (data.score !== undefined) updateData.score = Number(data.score);
   if (data.remarks !== undefined) updateData.remarks = data.remarks;
   if (data.status !== undefined) updateData.status = data.status as any;
 
-  return prisma.grade.update({
+  const existing = await prisma.grade.findUnique({ where: { id }});
+  if (!existing) throw new Error("Grade not found");
+
+  const updated = await prisma.grade.update({
     where: { id },
     data: updateData
   });
+
+  await prisma.gradeAuditLog.create({
+    data: {
+      gradeId: updated.id,
+      schoolId: updated.schoolId,
+      changedById: userId,
+      changedByType: userRole as any,
+      previousScore: existing.score,
+      newScore: updated.score,
+      previousStatus: existing.status,
+      newStatus: updated.status,
+      reason: 'Grade score or status update via Grade Hub'
+    }
+  });
+
+  return updated;
 };
 
 export const processGradeOCRService = async (imageUrl: string) => {
@@ -152,7 +201,7 @@ export const processGradeOCRService = async (imageUrl: string) => {
   }
 };
 
-export const bulkCreateGradesService = async (schoolId: string, grades: any[]) => {
+export const bulkCreateGradesService = async (schoolId: string, grades: any[], userId: string, userRole: string) => {
   // Fields that are valid on the Grade model
   const VALID_FIELDS = new Set([
     'studentId', 'schoolId', 'teacherId', 'classId', 'sessionId', 'term',
@@ -220,28 +269,65 @@ export const bulkCreateGradesService = async (schoolId: string, grades: any[]) =
       }
     });
 
-    const existingMap = new Map(existingGrades.map(g => [g.studentId, g.id]));
+    const existingMap = new Map(existingGrades.map(g => [g.studentId, g]));
 
     // 3. Separate into updates and creates
-    const operations = validGrades.map((g) => {
-      const existingId = existingMap.get(g.studentId);
-      if (existingId) {
-        return prisma.grade.update({
-          where: { id: existingId },
+    const operations: any[] = [];
+    
+    // We cannot use transaction with interdependent creates across tables easily without using UUIDs generated in code.
+    // Instead, we will generate the grade ID in JS so we can link the Audit Log immediately in the transaction.
+    const { v4: uuidv4 } = require('uuid');
+
+    validGrades.forEach((g) => {
+      const existingGrade = existingMap.get(g.studentId);
+      if (existingGrade) {
+        operations.push(prisma.grade.update({
+          where: { id: existingGrade.id },
           data: {
             score: g.score,
             maxMarks: g.maxMarks,
             status: g.status,
             updatedAt: new Date(),
           }
-        });
+        }));
+
+        operations.push(prisma.gradeAuditLog.create({
+          data: {
+            gradeId: existingGrade.id,
+            schoolId: existingGrade.schoolId,
+            changedById: userId,
+            changedByType: userRole as any,
+            previousScore: existingGrade.score,
+            newScore: g.score,
+            previousStatus: existingGrade.status,
+            newStatus: g.status,
+            reason: 'Bulk grade sync update'
+          }
+        }));
       } else {
-        return prisma.grade.create({ data: g });
+        const newGradeId = uuidv4();
+        operations.push(prisma.grade.create({ 
+          data: { ...g, id: newGradeId } 
+        }));
+
+        operations.push(prisma.gradeAuditLog.create({
+          data: {
+            gradeId: newGradeId,
+            schoolId: g.schoolId,
+            changedById: userId,
+            changedByType: userRole as any,
+            previousScore: null,
+            newScore: g.score,
+            previousStatus: null,
+            newStatus: g.status,
+            reason: 'Bulk grade sync creation'
+          }
+        }));
       }
     });
 
     const results = await prisma.$transaction(operations);
-    return { count: results.length };
+    return { count: results.length / 2 }; // Divided by 2 since each grade has 1 log
   } catch (error: any) {
     console.error("CRITICAL: [bulkCreateGradesService] Error during manual sync transaction:", error);
     throw error;

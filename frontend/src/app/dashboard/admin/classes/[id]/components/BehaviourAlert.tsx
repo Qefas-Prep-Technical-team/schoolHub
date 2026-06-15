@@ -134,7 +134,7 @@ const BehaviourAlert: React.FC<BehaviourAlertProps> = ({ alerts }) => {
                         onClick={() => setCurrentPage(page as number)}
                         className={`relative inline-flex items-center px-3 py-1 text-sm font-semibold focus:z-20 transition-colors ${
                           currentPage === page 
-                            ? 'z-10 bg-primary text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
+                            ? 'z-10 bg-blue-600 dark:bg-blue-500 text-white shadow-[0_4px_12px_rgba(37,99,235,0.4)] dark:shadow-[0_4px_12px_rgba(59,130,246,0.5)] ring-1 ring-blue-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
                             : 'text-gray-900 dark:text-gray-100 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-offset-0'
                         }`}
                       >

@@ -35,6 +35,16 @@ interface IconProps {
   size?: number
 }
 
+// Import the missing icons
+import {
+  Phone,
+  ChevronLeft,
+  PlusCircle,
+  TrendingUp,
+  TrendingDown,
+  BarChart3
+} from 'lucide-react'
+
 const iconMap = {
   // Existing icons
   search: Search,
@@ -69,19 +79,12 @@ const iconMap = {
   users: Users,
   bell: Bell,
   // Exam specific icons
-
-   
-  
-    filter_list: Filter,
-    calendar_month: Calendar, // Add logout icon
+  filter_list: Filter,
+  calendar_month: Calendar, // Add logout icon
+  trending_up: TrendingUp,
+  trending_down: TrendingDown,
+  bar_chart_3: BarChart3
 }
-
-// Import the missing icons
-import {
-  Phone,
-  ChevronLeft,
-  PlusCircle,
-} from 'lucide-react'
 
 export function Icon({ name, className, size = 20 }: IconProps) {
   const IconComponent = iconMap[name as keyof typeof iconMap]

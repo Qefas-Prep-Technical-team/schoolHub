@@ -1,7 +1,7 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { GradeFilter, StudentGrade, GradeScore, GradeStatus } from './components/types'
 import { GradeStatistics } from './components/GradeStatistics'
 import { GradeToolbar } from './components/GradeToolbar'
@@ -9,10 +9,13 @@ import { GradeTable } from './components/GradeTable'
 import { EditGradeDialog } from './components/EditGradeDialog'
 import { teacherService } from '@/lib/api/services/teacherService'
 import { Loader2 } from 'lucide-react'
+import Pagination from '@/components/ui/Pagination'
+import toast from 'react-hot-toast'
 
 export default function GradesPage() {
   const params = useParams()
   const classId = params.classId as string
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const [filters] = useState<GradeFilter>({})
   const [editingGrade, setEditingGrade] = useState<StudentGrade | null>(null)
@@ -24,7 +27,21 @@ export default function GradesPage() {
     enabled: !!classId,
   })
 
-  const grades: StudentGrade[] = (data || []).map((g: {
+  const updateGradeMutation = useMutation({
+    mutationFn: (data: { studentId: string; payload: any }) => 
+      teacherService.updateClassStudentGrade(classId, data.studentId, data.payload),
+    onSuccess: () => {
+      toast.success('Grade updated successfully')
+      queryClient.invalidateQueries({ queryKey: ['class-grades', classId] })
+      setIsEditDialogOpen(false)
+      setEditingGrade(null)
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update grade')
+    }
+  })
+
+  const grades: StudentGrade[] = useMemo(() => (data || []).map((g: {
     id: string;
     studentId: string;
     studentName: string;
@@ -45,9 +62,11 @@ export default function GradesPage() {
     grades: g.grades,
     status: g.status,
     lastUpdated: g.lastUpdated ? new Date(g.lastUpdated) : undefined
-  }))
+  })), [data])
 
   const [filteredGrades, setFilteredGrades] = useState<StudentGrade[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   useEffect(() => {
     let filtered = grades
@@ -78,7 +97,16 @@ export default function GradesPage() {
     }
 
     setFilteredGrades(filtered)
+    setCurrentPage(1)
   }, [searchQuery, grades, filters])
+
+  // Pagination logic
+  const totalItems = filteredGrades.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const paginatedGrades = filteredGrades.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   const handleEditGrade = (grade: StudentGrade) => {
     setEditingGrade(grade)
@@ -86,10 +114,16 @@ export default function GradesPage() {
   }
 
   const handleSaveGrade = (updatedGrade: StudentGrade) => {
-    // console.log('Save grade:', updatedGrade)
-    // TODO: Implement update mutation
-    setIsEditDialogOpen(false)
-    setEditingGrade(null)
+    updateGradeMutation.mutate({
+      studentId: updatedGrade.id,
+      payload: {
+        continuousScore: updatedGrade.grades.continuousAssessment.score,
+        continuousTotal: updatedGrade.grades.continuousAssessment.total,
+        examScore: updatedGrade.grades.exams.score,
+        examTotal: updatedGrade.grades.exams.total,
+        status: updatedGrade.status,
+      }
+    })
   }
 
   const handleViewDetails = (grade: StudentGrade) => {
@@ -126,10 +160,20 @@ export default function GradesPage() {
         />
 
         <GradeTable
-          grades={filteredGrades}
+          grades={paginatedGrades}
           onEditGrade={handleEditGrade}
           onViewDetails={handleViewDetails}
         />
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
+        )}
 
         {/* Edit Grade Dialog */}
         {editingGrade && (

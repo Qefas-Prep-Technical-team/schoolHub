@@ -1,133 +1,395 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { CheckSquare, AlertCircle, Users, Check, X, Clock } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { Download, Plus } from 'lucide-react';
+import { PremiumExportButton } from '@/components/ui/PremiumExportButton';
+import AttendanceSummaryCard from '@/app/dashboard/admin/classes/[id]/components/attendance/components/AttendanceSummaryCard';
+import AttendanceCalendar from '@/app/dashboard/admin/classes/[id]/components/attendance/components/AttendanceCalendar';
+import AttendanceTable from '@/app/dashboard/admin/classes/[id]/components/attendance/components/AttendanceTable';
+import AttendanceModal from '@/app/dashboard/admin/classes/[id]/components/attendance/components/AttendanceModal';
+import AttendanceModeModal from '@/app/dashboard/admin/classes/[id]/components/attendance/components/AttendanceModeModal';
+import AttendanceSwipeModal from '@/app/dashboard/admin/classes/[id]/components/attendance/components/AttendanceSwipeModal';
+import { 
+  AttendanceRecord, 
+  CalendarDay 
+} from '@/app/dashboard/admin/classes/[id]/components/attendance/components/types';
 
-import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { teacherService } from '@/lib/api/services/teacherService';
-import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  useClassAttendance, 
+  useSubmitAttendance 
+} from '@/lib/api/hooks/useClasses';
+import { useSchoolSettings } from '@/lib/api/hooks/useSchool';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
-export default function AttendancePage() {
-    const params = useParams();
-    const classId = params.classId as string;
+export default function TeacherAttendancePage() {
+  const router = useRouter();
+  const params = useParams();
+  const classId = params.classId as string;
+  
+  const { user } = useAuthStore();
+  const schoolId = (user as any)?.school?.id || user?.schools?.[0]?.schoolId || "";
 
-    const { data, isLoading } = useQuery({
-        queryKey: ['class-students', classId],
-        queryFn: () => teacherService.getStudents({ classId, page: 1, limit: 500 }),
-        enabled: !!classId,
-    });
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showModeModal, setShowModeModal] = useState(false);
+  const [showListModal, setShowListModal] = useState(false);
+  const [showSwipeModal, setShowSwipeModal] = useState(false);
+  const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
+  
+  // Real Data Hooks
+  const { data: attendanceRecords = [], isLoading, isFetching } = useClassAttendance(classId, selectedDate.toLocaleDateString('en-CA'));
+  const { data: settings } = useSchoolSettings(schoolId);
+  const submitMutation = useSubmitAttendance(classId);
 
-    const students = data?.students?.map((s: any, idx: number) => ({
+  // Fetch students for this class
+  const { data: studentsData } = useQuery({
+      queryKey: ['class-students', classId],
+      queryFn: () => teacherService.getStudents({ classId, page: 1, limit: 500 }),
+      enabled: !!classId,
+  });
+
+  const students = useMemo(() => {
+    return (studentsData?.students || []).map((s: any, idx: number) => ({
         id: s.id,
         name: s.name,
-        rollNo: s.studentCode || `00${idx + 1}`,
-        status: 'present' // default for today's registry
-    })) || [];
+        code: s.studentCode || `00${idx + 1}`
+    }));
+  }, [studentsData]);
 
-    const stats = {
-        present: students.length, // Initialize all to present for new registry
-        absent: 0,
-        late: 0,
-        total: students.length
+  useEffect(() => {
+    // Generate calendar days
+    const generateCalendarDays = () => {
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const days: CalendarDay[] = [];
+      const firstDayOfWeek = firstDay.getDay();
+      
+      // Pad previous month
+      for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+        days.push({
+          date: new Date(year, month, -i),
+          isCurrentMonth: false,
+          hasAttendance: false
+        });
+      }
+      
+      // Current month
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const date = new Date(year, month, d);
+        days.push({
+          date,
+          isCurrentMonth: true,
+          hasAttendance: false // Simplified for now
+        });
+      }
+      
+      return days;
+    };
+    
+    setCalendarDays(generateCalendarDays());
+  }, [selectedDate]);
+
+  const dailySummary = useMemo(() => {
+    const total = attendanceRecords.length;
+    const present = attendanceRecords.filter((r: any) => r.status === 'present').length;
+    const absent = attendanceRecords.filter((r: any) => r.status === 'absent').length;
+    const late = attendanceRecords.filter((r: any) => r.status === 'late').length;
+    const excused = attendanceRecords.filter((r: any) => r.status === 'excused').length;
+    
+    return {
+      date: selectedDate.toLocaleDateString('en-CA'),
+      totalStudents: total,
+      present,
+      absent,
+      late,
+      excused,
+      attendanceRate: total > 0 ? (present / total) * 100 : (attendanceRecords.length > 0 ? 100 : 0)
+    };
+  }, [attendanceRecords, selectedDate]);
+
+  const handleStartAttendance = () => {
+    setShowModeModal(true);
+  };
+
+  const handleDownloadReport = () => {
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.width = "0px";
+    iframe.style.height = "0px";
+    iframe.style.border = "none";
+    iframe.style.opacity = "0";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (!doc) return;
+
+    const classNameVal = "Class Attendance";
+    const schoolNameVal = settings?.schoolName || "Academic Institution";
+    const schoolLogoVal = settings?.logo || "";
+    const formattedDate = selectedDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const dayTotal = attendanceRecords.length;
+    const dayPresent = attendanceRecords.filter((r: any) => r.status === 'present').length;
+    const dayAbsent = attendanceRecords.filter((r: any) => r.status === 'absent').length;
+    const dayLate = attendanceRecords.filter((r: any) => r.status === 'late').length;
+    const dayRate = dayTotal > 0 ? ((dayPresent / dayTotal) * 100).toFixed(1) : "100.0";
+
+    const htmlContent = `
+      <html>
+        <head>
+          <title>${classNameVal} - Attendance Report (${selectedDate.toLocaleDateString('en-CA')})</title>
+          <style>
+            @page { size: A4 portrait; margin: 15mm; }
+            body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1e293b; margin: 0; padding: 0; line-height: 1.4; background-color: #ffffff; }
+            .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 20px; }
+            .school-branding { display: flex; align-items: center; gap: 12px; }
+            .school-logo { height: 52px; width: 52px; object-fit: contain; border-radius: 8px; border: 1px solid #cbd5e1; }
+            .school-info h2 { font-size: 18px; font-weight: 800; margin: 0; color: #0f172a; text-transform: uppercase; letter-spacing: -0.3px; }
+            .school-info p { font-size: 11px; color: #64748b; margin: 2px 0 0 0; font-weight: 600; }
+            .report-title-section { text-align: right; }
+            .report-title-section h1 { font-size: 20px; font-weight: 800; margin: 0; color: #047857; text-transform: uppercase; }
+            .report-title-section p { font-size: 11px; color: #475569; margin: 2px 0 0 0; font-weight: 700; }
+            .summary-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; }
+            .summary-card { text-align: center; border-right: 1px solid #e2e8f0; }
+            .summary-card:last-child { border-right: none; }
+            .summary-card-label { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 800; letter-spacing: 0.5px; }
+            .summary-card-value { font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 2px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border: 1px solid #cbd5e1; text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; }
+            td { border: 1px solid #e2e8f0; padding: 10px 12px; font-size: 11px; vertical-align: middle; }
+            tr:nth-child(even) { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .status-badge { display: inline-block; font-weight: 800; font-size: 10px; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; min-width: 64px; }
+            .status-present { background-color: #d1fae5 !important; color: #065f46 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .status-absent { background-color: #fee2e2 !important; color: #991b1b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .status-late { background-color: #fef3c7 !important; color: #92400e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .status-excused { background-color: #e0f2fe !important; color: #075985 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .student-code { font-family: monospace; color: #64748b; font-weight: 600; }
+            .empty-state { text-align: center; padding: 30px; color: #94a3b8; font-style: italic; }
+            .footer { margin-top: 30px; text-align: center; font-size: 9px; color: #94a3b8; border-top: 1px dashed #e2e8f0; padding-top: 12px; font-weight: 600; }
+          </style>
+        </head>
+        <body>
+          <div class="header-container">
+            <div class="school-branding">
+              ${schoolLogoVal ? `<img class="school-logo" src="${schoolLogoVal}" alt="School Logo" />` : ''}
+              <div class="school-info">
+                <h2>${schoolNameVal}</h2>
+                <p>Class: ${classNameVal}</p>
+              </div>
+            </div>
+            <div class="report-title-section">
+              <h1>Attendance Report</h1>
+              <p>${formattedDate}</p>
+            </div>
+          </div>
+
+          <div class="summary-strip">
+            <div class="summary-card">
+              <div class="summary-card-label">Attendance Rate</div>
+              <div class="summary-card-value" style="color: #047857;">${dayRate}%</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-card-label">Total Present</div>
+              <div class="summary-card-value">${dayPresent} / ${dayTotal}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-card-label">Total Absent</div>
+              <div class="summary-card-value" style="color: #b91c1c;">${dayAbsent}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-card-label">Total Late</div>
+              <div class="summary-card-value" style="color: #d97706;">${dayLate}</div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 25%;">Student Name</th>
+                <th style="width: 15%;">Admission ID</th>
+                <th style="width: 15%;">Status</th>
+                <th style="width: 25%;">Comment / Note</th>
+                <th style="width: 20%;">Marked By</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${attendanceRecords.length === 0 ? `
+                <tr>
+                  <td colspan="5" class="empty-state">No attendance recorded for this date.</td>
+                </tr>
+              ` : attendanceRecords.map((rec: any) => {
+                const sName = rec.student?.name || rec.studentName || "Unknown Student";
+                const sCode = rec.student?.studentCode || rec.studentCode || "-";
+                const sStatus = rec.status || "absent";
+                const sComment = rec.comment || rec.note || "-";
+                const sBy = rec.submittedBy || "System";
+                return `
+                  <tr>
+                    <td style="font-weight: 700; color: #1e293b;">${sName}</td>
+                    <td class="student-code">${sCode}</td>
+                    <td><span class="status-badge status-${sStatus}">${sStatus}</span></td>
+                    <td>${sComment}</td>
+                    <td style="color: #475569;">${sBy}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            Qefas Prep Hub Attendance Log Suite &bull; Exported on ${new Date().toLocaleDateString()}
+          </div>
+        </body>
+      </html>
+    `;
+
+    doc.write(htmlContent);
+    doc.close();
+
+    const triggerPrint = () => {
+      if (iframe.contentWindow) {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      }
+      setTimeout(() => { document.body.removeChild(iframe); }, 1000);
     };
 
-    return (
-        <div className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Attendance Registry</h2>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-1">Manage Daily Presence</p>
-                </div>
-                <div className="flex gap-4">
-                    <button className="px-6 py-3 bg-primary/10 text-primary hover:bg-primary/20 text-xs font-black uppercase tracking-widest rounded-2xl transition-colors">
-                        Select Date
-                    </button>
-                    <button className="px-6 py-3 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-all">
-                        Save Registry
-                    </button>
-                </div>
-            </div>
+    const img = doc.querySelector('.school-logo') as HTMLImageElement | null;
+    if (img && !img.complete) {
+      img.onload = triggerPrint;
+      img.onerror = triggerPrint;
+      setTimeout(triggerPrint, 3000);
+    } else {
+      setTimeout(triggerPrint, 1000);
+    }
+  };
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {isLoading && (
-                    <div className="col-span-4 p-4 text-center text-slate-500 animate-pulse font-bold uppercase tracking-widest text-xs">
-                        Loading class registry from database...
-                    </div>
-                )}
-                <div className="p-5 bg-white dark:bg-slate-900/40 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 flex items-center gap-4 shadow-sm">
-                    <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl"><Users size={20} /></div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total</p>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.total}</p>
-                    </div>
-                </div>
-                <div className="p-5 bg-white dark:bg-slate-900/40 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 flex items-center gap-4 shadow-sm">
-                    <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl"><Check size={20} strokeWidth={3} /></div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Present</p>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.present}</p>
-                    </div>
-                </div>
-                <div className="p-5 bg-white dark:bg-slate-900/40 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 flex items-center gap-4 shadow-sm">
-                    <div className="p-3 bg-amber-500/10 text-amber-500 rounded-xl"><Clock size={20} strokeWidth={3} /></div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Late</p>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.late}</p>
-                    </div>
-                </div>
-                <div className="p-5 bg-white dark:bg-slate-900/40 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 flex items-center gap-4 shadow-sm">
-                    <div className="p-3 bg-rose-500/10 text-rose-500 rounded-xl"><X size={20} strokeWidth={3} /></div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Absent</p>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.absent}</p>
-                    </div>
-                </div>
-            </div>
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+  };
 
-            <div className="bg-white dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-slate-800/60 rounded-[2rem] overflow-hidden shadow-xl">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200/60 dark:border-slate-800/60">
-                            <tr>
-                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Roll No</th>
-                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Student Name</th>
-                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
-                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                            {students.map((student, idx) => (
-                                <motion.tr 
-                                    key={student.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: idx * 0.05 }}
-                                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
-                                >
-                                    <td className="px-8 py-5">
-                                        <span className="text-sm font-bold text-slate-500">#{student.rollNo}</span>
-                                    </td>
-                                    <td className="px-8 py-5">
-                                        <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">{student.name}</span>
-                                    </td>
-                                    <td className="px-8 py-5">
-                                        <div className="flex gap-2">
-                                            <button className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${student.status === 'present' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>P</button>
-                                            <button className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${student.status === 'late' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>L</button>
-                                            <button className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${student.status === 'absent' ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>A</button>
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-5 text-right">
-                                        <button className="text-primary hover:text-primary-dark text-sm font-bold underline">Edit Remarks</button>
-                                    </td>
-                                </motion.tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+  const handleEditRecord = (record: AttendanceRecord) => {
+    setShowListModal(true);
+  };
+
+  const handleSaveAttendance = (records: AttendanceRecord[]) => {
+    const formattedRecords = records.map(r => ({
+      studentId: r.studentId,
+      status: r.status,
+      note: r.comment || (r as any).note || '',
+      date: selectedDate.toLocaleDateString('en-CA')
+    }));
+
+    submitMutation.mutate(formattedRecords as unknown as Record<string, unknown>[], {
+      onSuccess: () => {
+        setShowListModal(false);
+        setShowSwipeModal(false);
+      }
+    });
+  };
+
+  return (
+    <div className="w-full flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      
+      {/* Tab Sub-Header */}
+      <header className="py-4 border-b border-gray-150 dark:border-gray-800">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-gray-900 dark:text-white text-xl font-bold">
+              Class Attendance
+            </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">
+              Manage daily attendance records, track summaries, and log status updates.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <PremiumExportButton
+              onExport={handleDownloadReport}
+              label="Download Report"
+              icon={<Download size={16} className="mr-2" />}
+              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"
+            />
+            
+            <button
+              type="button"
+              onClick={handleStartAttendance}
+              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white gap-2 text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_8px_30px_rgba(37,99,235,0.3)] dark:shadow-[0_8px_30px_rgba(59,130,246,0.4)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.5)] hover:-translate-y-0.5"
+            >
+              <Plus size={16} />
+              <span className="truncate">Start Attendance</span>
+            </button>
+          </div>
         </div>
-    );
+      </header>
+      
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column */}
+        <div className="lg:col-span-1 flex flex-col gap-6">
+          <AttendanceSummaryCard 
+            summary={dailySummary}
+            selectedDate={selectedDate.toISOString()}
+            isLoading={isLoading || isFetching}
+          />
+          
+          <AttendanceCalendar 
+            days={calendarDays}
+            selectedDate={selectedDate}
+            onDateSelect={handleDateSelect}
+          />
+        </div>
+        
+        {/* Right Column - Attendance Table */}
+        <AttendanceTable 
+          records={attendanceRecords}
+          date={selectedDate.toISOString()}
+          onEdit={handleEditRecord}
+          isLoading={isLoading || isFetching}
+        />
+      </div>
+
+      <AttendanceModeModal 
+        isOpen={showModeModal}
+        onClose={() => setShowModeModal(false)}
+        onSelectList={() => {
+          setShowModeModal(false);
+          setShowListModal(true);
+        }}
+        onSelectSwipe={() => {
+          setShowModeModal(false);
+          setShowSwipeModal(true);
+        }}
+      />
+
+      <AttendanceModal
+        isOpen={showListModal}
+        onClose={() => setShowListModal(false)}
+        onSave={handleSaveAttendance}
+        students={students}
+        date={selectedDate.toLocaleDateString('en-CA')}
+        initialRecords={attendanceRecords}
+        isSaving={submitMutation.isPending}
+      />
+
+      <AttendanceSwipeModal
+        isOpen={showSwipeModal}
+        onClose={() => setShowSwipeModal(false)}
+        onSave={handleSaveAttendance}
+        students={students}
+        date={selectedDate.toISOString().split('T')[0]}
+        initialRecords={attendanceRecords}
+        isSaving={submitMutation.isPending}
+      />
+    </div>
+  );
 }

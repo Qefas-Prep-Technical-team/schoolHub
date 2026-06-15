@@ -24,18 +24,7 @@ interface SchoolSwitcherProps {
 export function SchoolSwitcher({ schools, selectedId, onSelect, userId, userImage, userName }: SchoolSwitcherProps) {
   const [open, setOpen] = React.useState(false)
 
-  // Auto-select on first load only — when nothing has been chosen yet
-  React.useEffect(() => {
-    if (!selectedId) {
-      if (schools.length > 0) {
-        // Connected to one or more schools - default to the first school
-        onSelect(schools[0].id, schools[0].name)
-      } else {
-        // Not connected to any school - default to personal
-        onSelect(userId, "Personal Dashboard")
-      }
-    }
-  }, [schools, userId]) // intentionally excludes selectedId/onSelect to only run on mount
+
 
 
   const selectedSchool = React.useMemo(() => {

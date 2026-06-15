@@ -64,6 +64,21 @@ export const teacherService = {
   },
 
   /**
+   * Update aggregate grades for a student in a class
+   */
+  updateClassStudentGrade: async (classId: string, studentId: string, data: {
+    continuousScore?: number;
+    continuousTotal?: number;
+    examScore?: number;
+    examTotal?: number;
+    status?: string;
+    notes?: string;
+  }) => {
+    const response = await apiClient.patch(`/teacher/classes/${classId}/grades/student/${studentId}`, data);
+    return response.data;
+  },
+
+  /**
    * Get performance trends for the teacher
    */
   getPerformanceTrends: async (schoolId?: string, range: string = 'month') => {

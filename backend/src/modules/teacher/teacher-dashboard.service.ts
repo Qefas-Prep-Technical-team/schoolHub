@@ -692,10 +692,15 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
 
     const c = classTeacher.class;
 
-    // Fetch active session dynamically
+    // Fetch active session dynamically from Session table or SchoolSetting
     const activeSession = await prisma.session.findFirst({
         where: { schoolId: c.schoolId, isActive: true },
         select: { id: true, name: true, currentTerm: true }
+    });
+
+    const schoolSettings = await prisma.schoolSetting.findUnique({
+        where: { schoolId: c.schoolId || '' },
+        select: { defaultSession: true, defaultTerm: true }
     });
 
     const termMapping: Record<string, string> = {
@@ -704,8 +709,12 @@ export const getTeacherClassDetailService = async (teacherId: string, classId: s
         'THIRD': 'Third Term'
     };
     
-    const academicYear = activeSession?.name || "Current Session";
-    const term = activeSession?.currentTerm ? (termMapping[activeSession.currentTerm] || activeSession.currentTerm) : "Current Term";
+    // Priority: 1. Class level 2. Active Session 3. School Settings
+    const resolvedSession = c.session || activeSession?.name || schoolSettings?.defaultSession || "Current Session";
+    const rawTerm = c.term || activeSession?.currentTerm || schoolSettings?.defaultTerm || "Current Term";
+    
+    const academicYear = resolvedSession;
+    const term = rawTerm ? (termMapping[rawTerm.toUpperCase()] || termMapping[rawTerm] || rawTerm) : "Current Term";
 
     // Determine the specific subjects this teacher teaches in this class
     const teacherSubjects = await prisma.teacherSubject.findMany({
@@ -983,6 +992,110 @@ export const getTeacherClassGradesService = async (teacherId: string, classId: s
     });
 
     return studentGrades;
+};
+
+/**
+ * Update the aggregate CA and EXAM grades for a student in a class.
+ */
+export const updateTeacherClassStudentGradeService = async (
+    teacherId: string, 
+    classId: string, 
+    studentId: string, 
+    data: { 
+        continuousScore?: number, 
+        continuousTotal?: number,
+        examScore?: number, 
+        examTotal?: number,
+        status?: string,
+        notes?: string
+    }
+) => {
+    // 1. Verify assignment
+    const assigned = await prisma.classTeacher.findUnique({
+        where: { classId_teacherId: { classId, teacherId } }
+    });
+
+    if (!assigned) {
+        throw new Error("You are not assigned to this class");
+    }
+
+    const existingGrades = await prisma.grade.findMany({
+        where: { studentId, classId },
+        orderBy: { createdAt: 'desc' }
+    });
+
+    const caGrades = existingGrades.filter(g => g.category !== 'EXAM');
+    const examGrades = existingGrades.filter(g => g.category === 'EXAM');
+
+    const upsertAggregateGrade = async (gradesList: any[], category: any, score?: number, maxMarks: number = 100) => {
+        if (score === undefined) return;
+        
+        if (gradesList.length > 0) {
+            const oldGrade = gradesList[0];
+            const newStatus = (data.status as any) || oldGrade.status;
+            
+            const updatedGrade = await prisma.grade.update({
+                where: { id: oldGrade.id },
+                data: { score, maxMarks, status: newStatus, remarks: data.notes }
+            });
+
+            await prisma.gradeAuditLog.create({
+                data: {
+                    gradeId: updatedGrade.id,
+                    schoolId: updatedGrade.schoolId,
+                    changedById: teacherId,
+                    changedByType: 'TEACHER',
+                    previousScore: oldGrade.score,
+                    newScore: score,
+                    previousStatus: oldGrade.status,
+                    newStatus: newStatus,
+                    reason: 'Teacher dashboard aggregate update'
+                }
+            });
+        } else {
+            const student = await prisma.student.findUnique({ where: { id: studentId }});
+            if (!student) throw new Error("Student not found");
+
+            const newGrade = await prisma.grade.create({
+                data: {
+                    studentId,
+                    classId,
+                    schoolId: student.schoolId,
+                    teacherId,
+                    category,
+                    score,
+                    maxMarks,
+                    subject: 'General',
+                    status: (data.status as any) || 'PUBLISHED',
+                    remarks: data.notes
+                }
+            });
+
+            await prisma.gradeAuditLog.create({
+                data: {
+                    gradeId: newGrade.id,
+                    schoolId: newGrade.schoolId,
+                    changedById: teacherId,
+                    changedByType: 'TEACHER',
+                    previousScore: null,
+                    newScore: score,
+                    previousStatus: null,
+                    newStatus: newGrade.status,
+                    reason: 'Teacher dashboard initial aggregate creation'
+                }
+            });
+        }
+    };
+
+    if (data.continuousScore !== undefined) {
+        await upsertAggregateGrade(caGrades, 'CA', data.continuousScore, data.continuousTotal || 50);
+    }
+
+    if (data.examScore !== undefined) {
+        await upsertAggregateGrade(examGrades, 'EXAM', data.examScore, data.examTotal || 50);
+    }
+
+    return true;
 };
 
 /**

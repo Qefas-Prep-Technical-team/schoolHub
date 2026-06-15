@@ -165,13 +165,34 @@ export const getExamsService = async (filters: {
       });
       const subjectIds = assignedSubjects.map(s => s.subjectId);
 
-      // Restriction: Exam must either be for one of these subjects OR include a paper for one of these subjects
-      where.AND = [
-        { OR: [
+      const teacherOrConditions: any[] = [];
+
+      if (subjectIds.length > 0) {
+        teacherOrConditions.push(
           { subjectId: { in: subjectIds } },
           { subjectExamPapers: { some: { subjectPaper: { subjectId: { in: subjectIds } } } } }
-        ] }
-      ];
+        );
+      }
+
+      // Check if they are assigned to any class directly (as form teacher or otherwise)
+      const assignedClasses = await prisma.classTeacher.findMany({
+        where: { teacherId },
+        select: { classId: true }
+      });
+      const classIds = assignedClasses.map(c => c.classId);
+
+      if (classIds.length > 0) {
+        teacherOrConditions.push({ classId: { in: classIds } });
+      }
+      
+      // They can also always see exams they created
+      teacherOrConditions.push({ teacherId });
+
+      if (teacherOrConditions.length > 0) {
+        where.AND = [{ OR: teacherOrConditions }];
+      } else {
+        where.AND = [{ id: "none" }]; // no access to any exams
+      }
 
       // If it's a teacher, we also usually only want to show their own creations if in personal context
       if (filters.isPersonal) {
@@ -375,12 +396,8 @@ export const getSubjectPapersService = async (filters: {
 }) => {
   const where: any = {};
   
-  // 1. Filter by teacher (creator)
+  // 1. Filter by teacher (creator) or their assigned context
   if (filters.teacherId) {
-    where.teacherId = filters.teacherId;
-
-    // 2. Further filter by subjects specifically assigned to this teacher
-    // (This ensures they only see papers for subjects they are authorized to teach)
     const assignedSubjects = await prisma.teacherSubject.findMany({
       where: { 
         teacherId: filters.teacherId,
@@ -389,10 +406,38 @@ export const getSubjectPapersService = async (filters: {
       select: { subjectId: true }
     });
     const subjectIds = assignedSubjects.map(s => s.subjectId);
-    
-    // Strict filter: If no subjects are assigned to the teacher in this context,
-    // they shouldn't see any papers (as requested: "make sure it is the subject assigned... that shows up")
-    where.subjectId = { in: subjectIds };
+
+    const teacherOrConditions: any[] = [];
+
+    // They can see their own papers
+    teacherOrConditions.push({ teacherId: filters.teacherId });
+
+    // They can see papers for their assigned subjects
+    if (subjectIds.length > 0) {
+      teacherOrConditions.push({ subjectId: { in: subjectIds } });
+    }
+
+    // Check if they are assigned to any classes
+    const assignedClasses = await prisma.classTeacher.findMany({
+      where: { teacherId: filters.teacherId },
+      select: { classId: true }
+    });
+    const classIds = assignedClasses.map(c => c.classId);
+
+    if (classIds.length > 0) {
+      // They can see papers linked to exams that are assigned to their classes
+      teacherOrConditions.push({ exams: { some: { exam: { classId: { in: classIds } } } } });
+    }
+
+    if (filters.isPersonal) {
+      where.teacherId = filters.teacherId;
+    } else {
+      if (teacherOrConditions.length > 0) {
+        where.AND = [{ OR: teacherOrConditions }];
+      } else {
+        where.AND = [{ id: "none" }];
+      }
+    }
   }
 
   // 3. Filter by school or personal context

@@ -1568,29 +1568,9 @@ export const login = async (req: Request, res: Response) => {
     // 1. Try fetching based on provided type
     user = await fetchUserWithRelations(userType as UserRole, normalizedEmail);
 
-    // 2. If not found, search across other roles (Smart Search)
-    if (!user) {
-      console.log(
-        `User not found with provided type [${userType}]. Initiating smart search across all roles for email: [${normalizedEmail}]`,
-      );
-      const rolesToSearch = Object.values(UserRole).filter(
-        (r) => r !== userType,
-      );
-      for (const role of rolesToSearch) {
-        user = await fetchUserWithRelations(role as UserRole, normalizedEmail);
-        if (user) {
-          console.log(
-            `Smart search SUCCESS: User found with role [${role}] for email: [${normalizedEmail}]`,
-          );
-          actualRole = role as UserRole;
-          break;
-        }
-      }
-    }
-
     if (!user) {
       console.error(
-        `CRITICAL: Login failed. User NOT FOUND in any role table for email: [${normalizedEmail}]`,
+        `CRITICAL: Login failed. User NOT FOUND with role [${userType}] for email: [${normalizedEmail}]`,
       );
       return res
         .status(404)

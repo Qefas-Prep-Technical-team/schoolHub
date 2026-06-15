@@ -117,8 +117,8 @@ const TeacherTimetableGrid: React.FC<TeacherTimetableGridProps> = ({ periods, da
   return (
     <div className="overflow-x-auto rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/40 dark:shadow-none">
       <div
-        className="grid"
-        style={{ gridTemplateColumns: `minmax(120px, 1fr) repeat(${days.length}, minmax(200px, 1fr))` }}
+        className="grid w-full"
+        style={{ gridTemplateColumns: `minmax(90px, auto) repeat(${days.length}, minmax(140px, 1fr))` }}
       >
         {/* Headers */}
         <div className="p-4 text-left text-slate-500 dark:text-slate-400 text-sm font-black uppercase tracking-widest border-b border-r border-slate-100 dark:border-slate-800">
@@ -160,7 +160,7 @@ const TeacherTimetableGrid: React.FC<TeacherTimetableGridProps> = ({ periods, da
                   }`}
                 >
                   {isCurrent && (
-                    <div className="absolute top-1 left-1 z-30 bg-primary text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md animate-pulse shadow-md">
+                    <div className="absolute top-2 left-2 z-50 bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md animate-pulse shadow-[0_0_15px_rgba(59,130,246,0.8)] ring-2 ring-blue-300 dark:ring-blue-400">
                       Now
                     </div>
                   )}

@@ -46,7 +46,7 @@ const Pagination: React.FC<PaginationProps> = ({
       
       <div className="flex items-center gap-2">
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
           >
@@ -59,8 +59,8 @@ const Pagination: React.FC<PaginationProps> = ({
                 key={index}
                 className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition-all ${
                   currentPage === page
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none'
-                    : 'bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600'
+                    ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-[0_8px_20px_rgba(37,99,235,0.3)] dark:shadow-[0_8px_20px_rgba(59,130,246,0.4)] ring-1 ring-blue-500/50 dark:ring-blue-400'
+                    : 'bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400'
                 }`}
                 onClick={() => onPageChange(page)}
               >
@@ -74,7 +74,7 @@ const Pagination: React.FC<PaginationProps> = ({
           ))}
           
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 hover:bg-blue-600 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
           >

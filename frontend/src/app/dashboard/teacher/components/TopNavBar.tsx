@@ -40,23 +40,33 @@ export default function TopNavBar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
+  const [isFetchingSchools, setIsFetchingSchools] = useState(true);
+
   useEffect(() => {
+    setIsFetchingSchools(true);
     teacherService
       .getLinkedSchools()
-      .then(setSchools)
-      .catch((err) => console.error("Failed to fetch linked schools:", err));
+      .then((data) => {
+        setSchools(data);
+        setIsFetchingSchools(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch linked schools:", err);
+        setIsFetchingSchools(false);
+      });
   }, [setSchools]);
 
   // Auto-select first connected school, or personal if none
   useEffect(() => {
-    if (!selectedSchoolId) {
+    // Wait until schools are fetched before attempting auto-selection
+    if (!isFetchingSchools && !selectedSchoolId) {
       if (schools && schools.length > 0) {
-        setSelectedSchoolId(schools[0].id, schools[0].name);
+        setSelectedSchoolId(schools[0].id as string, schools[0].name as string);
       } else if (user?.id) {
         setSelectedSchoolId(user.id, "Personal Dashboard");
       }
     }
-  }, [selectedSchoolId, schools, user?.id, setSelectedSchoolId]);
+  }, [selectedSchoolId, schools, user?.id, setSelectedSchoolId, isFetchingSchools]);
 
   const displayImage = teacherProfile?.profileImage || user?.profileImage;
   const displayName = teacherProfile?.name || user?.name || user?.email || "Teacher";

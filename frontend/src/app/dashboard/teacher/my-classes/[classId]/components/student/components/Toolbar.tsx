@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, UserPlus, FileDown, SlidersHorizontal, X, ChevronDown, Check, LayoutGrid, List } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PremiumExportButton } from '@/components/ui/PremiumExportButton';
 
 export type StudentFilters = {
   gender: string;
@@ -181,14 +182,12 @@ export function Toolbar({
       </div>
 
       {/* Export */}
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        onClick={onExport}
-        className="h-9 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl hover:border-primary/40 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
-      >
-        <FileDown size={14} />
-        Export
-      </motion.button>
+      <PremiumExportButton
+        onExport={onExport}
+        label="Export"
+        icon={<FileDown size={14} className="mr-1" />}
+        className="h-9 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl hover:border-primary/40 transition-all flex items-center text-[10px] font-black uppercase tracking-widest"
+      />
     </div>
   );
 }

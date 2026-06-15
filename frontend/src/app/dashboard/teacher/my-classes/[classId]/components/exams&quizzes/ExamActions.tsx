@@ -4,6 +4,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { cn } from '@/lib/utils'
 import { Icon } from '../Icon'
 import { Exam } from './components/types'
+import { PremiumExportButton } from '@/components/ui/PremiumExportButton'
 
 interface ExamActionsProps {
   exam: Exam
@@ -72,13 +73,14 @@ export function ExamActions({
           </DropdownMenu.Item>
 
           {isCompleted && (
-            <DropdownMenu.Item
-              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer outline-none"
-              onClick={onExport}
-            >
-              <Icon name="download" className="h-4 w-4" />
-              Export Results
-            </DropdownMenu.Item>
+            <div className="w-full outline-none">
+              <PremiumExportButton
+                onExport={onExport}
+                label="Export Results"
+                icon={<Icon name="download" className="h-4 w-4 mr-1" />}
+                className="w-full flex items-center justify-start px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer outline-none"
+              />
+            </div>
           )}
 
           <DropdownMenu.Item

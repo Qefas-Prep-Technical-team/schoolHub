@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getTeacherClassAssignmentsService, getTeacherClassDetailService, getTeacherClassGradesService, getTeacherClassesService, getTeacherDashboardStatsService, getTeacherLinkedSchoolsService, getTeacherPerformanceTrendsService, getTeacherProfileService, getTeacherSettingsService, getTeacherStudentsService, getTeacherSubjectsService, requestTeacherEmailUpdateService, updateTeacherProfileService, updateTeacherSettingsService, verifyTeacherEmailUpdateService } from "./teacher-dashboard.service";
+import { getTeacherClassAssignmentsService, getTeacherClassDetailService, getTeacherClassGradesService, getTeacherClassesService, getTeacherDashboardStatsService, getTeacherLinkedSchoolsService, getTeacherPerformanceTrendsService, getTeacherProfileService, getTeacherSettingsService, getTeacherStudentsService, getTeacherSubjectsService, requestTeacherEmailUpdateService, updateTeacherProfileService, updateTeacherSettingsService, verifyTeacherEmailUpdateService, updateTeacherClassStudentGradeService } from "./teacher-dashboard.service";
 
 /**
  * Handle fetching teacher settings
@@ -318,4 +318,20 @@ export const confirmTeacherEmailUpdate = async (req: Request, res: Response) => 
     } catch (error: any) {
     return handleError(res, error, "teacher.confirmTeacherEmailUpdate");
   }
+};
+
+/**
+ * Update aggregate CA and EXAM grades for a student
+ */
+export const updateTeacherClassStudentGrade = async (req: Request, res: Response) => {
+    try {
+        const { classId, studentId } = req.params;
+        const teacherId = (req as any).user.id;
+        
+        const data = await updateTeacherClassStudentGradeService(teacherId, classId, studentId, req.body);
+        
+        return res.status(200).json({ success: true, message: "Grade updated successfully", data });
+    } catch (error: any) {
+        return handleError(res, error, "teacher.updateTeacherClassStudentGrade");
+    }
 };

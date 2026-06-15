@@ -9,6 +9,7 @@ import {
     getTeacherClassDetail,
     getTeacherClassAssignments,
     getTeacherClassGrades,
+    updateTeacherClassStudentGrade,
     getTeacherSubjects,
     getTeacherProfile,
     updateTeacherProfile,
@@ -85,6 +86,13 @@ router.get("/classes/:classId/assignments", getTeacherClassAssignments);
  * @access  Private-Teacher
  */
 router.get("/classes/:classId/grades", getTeacherClassGrades);
+
+/**
+ * @route   PATCH /api/v1/teacher/classes/:classId/grades/student/:studentId
+ * @desc    Update aggregate CA and EXAM grades for a student
+ * @access  Private-Teacher
+ */
+router.patch("/classes/:classId/grades/student/:studentId", updateTeacherClassStudentGrade);
 
 /**
  * @route   GET /api/v1/teacher/profile
