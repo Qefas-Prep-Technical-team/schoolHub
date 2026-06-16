@@ -123,9 +123,25 @@ export const getChildDetailsService = async (parentId: string, childId: string) 
     throw new Error("Student not found.");
   }
 
+  // Resolve reporter for each behaviourAlert dynamically
+  const alertsWithReporter = await Promise.all(student.behaviourAlerts.map(async (alert) => {
+    let reporterName = 'Staff Member';
+    const admin: any = await prisma.admin.findUnique({ where: { id: alert.reportedById } });
+    if (admin) {
+      reporterName = admin.fullName || admin.name || 'Admin';
+    } else {
+      const teacher: any = await prisma.teacher.findUnique({ where: { id: alert.reportedById } });
+      if (teacher) reporterName = teacher.fullName || teacher.name || 'Teacher';
+    }
+    return {
+      ...alert,
+      reporter: { name: reporterName }
+    };
+  }));
+
   return {
     ...student,
-    // Add additional derived stats if needed
+    behaviourAlerts: alertsWithReporter
   };
 };
 

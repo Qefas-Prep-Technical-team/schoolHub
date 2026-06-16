@@ -67,7 +67,7 @@ export const getGlobalStats = async (req: Request, res: Response) => {
         totalRevenue: (totalRevenue._sum.amount || 0),
         mrr: (recentRevenue._sum.amount || 0),
         currency: "NGN",
-        totalStorageBytes: (storageUsage._sum.fileSize || 0),
+        totalStorageBytes: Number(storageUsage._sum.fileSize || 0),
         activeSessions
       }
     });

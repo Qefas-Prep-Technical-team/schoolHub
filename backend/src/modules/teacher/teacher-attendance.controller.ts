@@ -17,7 +17,7 @@ const saveAttendanceSchema = z.object({
 export class TeacherAttendanceController {
   saveClassAttendance = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { schoolId } = req.params;
+      const schoolId = req.params.schoolId as string;
       // Extract teacherId from the authenticated user
       const teacherId = (req as any).user?.id || (req as any).user?.userId;
 
