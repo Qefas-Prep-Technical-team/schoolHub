@@ -1060,7 +1060,7 @@ export const updateTeacherClassStudentGradeService = async (
                 data: {
                     studentId,
                     classId,
-                    schoolId: student.schoolId,
+                    schoolId: student.schoolId as string,
                     teacherId,
                     category,
                     score,

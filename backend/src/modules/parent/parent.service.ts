@@ -115,14 +115,6 @@ export const getChildDetailsService = async (parentId: string, childId: string) 
       behaviourAlerts: {
         orderBy: { createdAt: 'desc' },
         take: 5,
-        include: {
-          reporter: {
-            select: {
-              name: true,
-              profileImage: true,
-            }
-          }
-        }
       }
     },
   });

@@ -35,8 +35,8 @@ export const getClassBehaviourAlertsService = async (classId: string, studentId?
   });
 
   const reporterMap = new Map<string, string>();
-  admins.forEach(a => reporterMap.set(a.id, a.fullName || a.name || 'Admin'));
-  teachers.forEach(t => reporterMap.set(t.id, t.fullName || t.name || 'Teacher'));
+  admins.forEach(a => reporterMap.set(a.id, (a as any).fullName || a.name || 'Admin'));
+  teachers.forEach(t => reporterMap.set(t.id, (t as any).fullName || t.name || 'Teacher'));
 
   return alerts.map(alert => ({
     ...alert,

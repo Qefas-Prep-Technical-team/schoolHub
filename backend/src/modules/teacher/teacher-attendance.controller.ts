@@ -28,7 +28,7 @@ export class TeacherAttendanceController {
       const data = saveAttendanceSchema.parse(req.body);
 
       const result = await teacherAttendanceService.saveClassAttendance(
-        schoolId,
+        schoolId as string,
         teacherId,
         data.classId,
         data.date,

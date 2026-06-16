@@ -328,7 +328,7 @@ export const updateTeacherClassStudentGrade = async (req: Request, res: Response
         const { classId, studentId } = req.params;
         const teacherId = (req as any).user.id;
         
-        const data = await updateTeacherClassStudentGradeService(teacherId, classId, studentId, req.body);
+        const data = await updateTeacherClassStudentGradeService(teacherId, classId as string, studentId as string, req.body);
         
         return res.status(200).json({ success: true, message: "Grade updated successfully", data });
     } catch (error: any) {

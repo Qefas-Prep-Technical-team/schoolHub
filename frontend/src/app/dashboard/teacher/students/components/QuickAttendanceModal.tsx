@@ -19,6 +19,8 @@ interface Student {
     avatarUrl?: string | null;
   };
   studentCode: string;
+  name?: string;
+  fullName?: string;
 }
 
 export default function QuickAttendanceModal({ onClose, onSuccess }: QuickAttendanceModalProps) {
