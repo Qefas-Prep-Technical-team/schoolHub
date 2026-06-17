@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { UserType } from '@/app/(auth)/login/services/auth-store';
 
-
+export type AuthView = 'selection' | 'login-role' | 'signup-role' | 'login-form' | 'signup-form';
 
 interface AuthModalState {
     isOpen: boolean;
