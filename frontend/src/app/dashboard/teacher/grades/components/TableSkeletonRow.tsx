@@ -4,6 +4,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 const TableSkeletonRow: React.FC = () => {
   return (
     <tr className="border-b border-slate-100 dark:border-slate-800/50">
+      {/* Number */}
+      <td className="px-6 py-4">
+        <Skeleton className="h-4 w-6" />
+      </td>
       {/* Student */}
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">

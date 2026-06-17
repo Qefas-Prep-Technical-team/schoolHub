@@ -293,8 +293,21 @@ export const getTeacherAssignmentByIdService = async (assignmentId: string, scho
     assignment.departmentId ? prisma.department.findUnique({ where: { id: assignment.departmentId }, select: { id: true, name: true } }) : Promise.resolve(null)
   ]);
 
+  const studentIds = assignment.submissions.map(s => s.studentId);
+  const students = await prisma.student.findMany({
+    where: { id: { in: studentIds } },
+    select: { id: true, name: true, email: true, profileImage: true }
+  });
+  const studentMap = new Map(students.map(s => [s.id, s]));
+
+  const submissionsWithStudent = assignment.submissions.map(sub => ({
+    ...sub,
+    student: studentMap.get(sub.studentId) || null
+  }));
+
   return {
     ...assignment,
+    submissions: submissionsWithStudent,
     class: classData,
     subject: subjectData,
     department: departmentData
@@ -384,7 +397,16 @@ export const getTeacherAssignmentsService = async (options: {
 
   const whereClause: any = { schoolId };
   if (teacherId) {
-    whereClause.teacherId = teacherId;
+    const classTeachers = await prisma.classTeacher.findMany({
+      where: { teacherId },
+      select: { classId: true }
+    });
+    const assignedClassIds = classTeachers.map(ct => ct.classId);
+    
+    whereClause.OR = [
+      { classId: { in: assignedClassIds } },
+      { teacherId }
+    ];
   }
   if (status && status !== "all") {
     whereClause.status = status.toUpperCase();

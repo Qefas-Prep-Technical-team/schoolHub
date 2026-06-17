@@ -71,17 +71,83 @@ export default function TopNavBar({
       </div>
 
       {/* Central Search Section */}
-      <div className="hidden md:flex flex-1 justify-center max-w-2xl px-8">
+      <div className="hidden md:flex flex-1 justify-center max-w-2xl px-8 relative">
         <div className="relative w-full group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-pink-400 transition-colors" size={18} />
           <input
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search subjects, assignments, resources..."
+            placeholder="Search dashboard modules..."
             className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-slate-200 dark:focus:bg-white/10 transition-all text-sm font-medium"
           />
         </div>
+        
+        {/* Search Results Dropdown */}
+        {searchQuery && (
+          <div className="absolute top-full left-8 right-8 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl overflow-hidden z-50 py-2 animate-in fade-in slide-in-from-top-4">
+            <div className="px-3 pb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+              Quick Navigation
+            </div>
+            <div className="max-h-64 overflow-y-auto mt-2 custom-scrollbar">
+              {[
+                { name: 'Dashboard Overview', path: '/dashboard/student', keywords: 'home main start index' },
+                { name: 'My Profile', path: '/dashboard/student/profile', keywords: 'account details info avatar identity' },
+                { name: 'My Classes', path: '/dashboard/student/my-classes', keywords: 'classrooms homeroom subjects rooms courses' },
+                { name: 'Assignments', path: '/dashboard/student/assignments', keywords: 'homework tasks grading to-do' },
+                { name: 'Exams & Quizzes', path: '/dashboard/student/exams&quizzes', keywords: 'tests assessments CA papers' },
+                { name: 'Attendance Record', path: '/dashboard/student/attendance', keywords: 'presence absent late roll call' },
+                { name: 'Grades & Report Cards', path: '/dashboard/student/grades', keywords: 'marks scores report standalone' },
+                { name: 'Documents & Files', path: '/dashboard/student/documents', keywords: 'resources library files media notes' },
+                { name: 'Term Results', path: '/dashboard/student/result', keywords: 'final transcript certificate performance' },
+                { name: 'Billing & Payments', path: '/dashboard/student/billing', keywords: 'invoices money fee plans subscription tuition' },
+                { name: 'School Linking', path: '/dashboard/student/linking', keywords: 'join connect school hub institutions code invite' },
+                { name: 'System Notifications', path: '/dashboard/student/notifications', keywords: 'alerts inbox unread ping messages' },
+                { name: 'Settings & Security', path: '/dashboard/student/settings', keywords: 'preferences configure config password' },
+                { name: 'Support & Help', path: '/dashboard/student/support', keywords: 'ticket assistance contact customer care faq' },
+              ].filter(item => {
+                const q = searchQuery.toLowerCase();
+                return item.name.toLowerCase().includes(q) || item.keywords.includes(q);
+              })
+              .map((item, index) => (
+                <Link
+                  key={index}
+                  href={item.path}
+                  onClick={() => setSearchQuery("")}
+                  className="flex items-center px-4 py-3 hover:bg-pink-50 dark:hover:bg-pink-500/10 text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors border-l-2 border-transparent hover:border-pink-500"
+                >
+                  {item.name}
+                </Link>
+              ))}
+              
+              {[
+                { name: 'Dashboard Overview', path: '/dashboard/student', keywords: 'home main start index' },
+                { name: 'My Profile', path: '/dashboard/student/profile', keywords: 'account details info avatar identity' },
+                { name: 'My Classes', path: '/dashboard/student/my-classes', keywords: 'classrooms homeroom subjects rooms courses' },
+                { name: 'Assignments', path: '/dashboard/student/assignments', keywords: 'homework tasks grading to-do' },
+                { name: 'Exams & Quizzes', path: '/dashboard/student/exams&quizzes', keywords: 'tests assessments CA papers' },
+                { name: 'Attendance Record', path: '/dashboard/student/attendance', keywords: 'presence absent late roll call' },
+                { name: 'Grades & Report Cards', path: '/dashboard/student/grades', keywords: 'marks scores report standalone' },
+                { name: 'Documents & Files', path: '/dashboard/student/documents', keywords: 'resources library files media notes' },
+                { name: 'Term Results', path: '/dashboard/student/result', keywords: 'final transcript certificate performance' },
+                { name: 'Billing & Payments', path: '/dashboard/student/billing', keywords: 'invoices money fee plans subscription tuition' },
+                { name: 'School Linking', path: '/dashboard/student/linking', keywords: 'join connect school hub institutions code invite' },
+                { name: 'System Notifications', path: '/dashboard/student/notifications', keywords: 'alerts inbox unread ping messages' },
+                { name: 'Settings & Security', path: '/dashboard/student/settings', keywords: 'preferences configure config password' },
+                { name: 'Support & Help', path: '/dashboard/student/support', keywords: 'ticket assistance contact customer care faq' },
+              ].filter(item => {
+                const q = searchQuery.toLowerCase();
+                return item.name.toLowerCase().includes(q) || item.keywords.includes(q);
+              }).length === 0 && (
+                <div className="px-4 py-8 text-center flex flex-col items-center justify-center gap-2">
+                  <Search className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-bold">No modules found</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">Try searching for keywords like "profile", "results", or "assignments"</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-end gap-4 flex-1">

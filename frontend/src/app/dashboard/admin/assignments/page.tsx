@@ -124,11 +124,11 @@ export default function AssignmentsPage() {
                     action={
                         <Link href="/dashboard/admin/assignments/create-assignment">
                             <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="hidden md:flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-2xl shadow-xl shadow-primary/20 transition-all hover:bg-primary/90"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl shadow-md hover:bg-primary/90 transition-all duration-200 dark:bg-gradient-to-r dark:from-indigo-500 dark:to-violet-600 dark:hover:from-indigo-600 dark:hover:to-violet-700 dark:shadow-lg dark:shadow-indigo-500/20 border border-primary/20 dark:border-indigo-400/20"
                             >
-                                <PlusCircle size={18} strokeWidth={2.5} />
+                                <PlusCircle size={18} strokeWidth={2} />
                                 Create New Assignment
                             </motion.button>
                         </Link>

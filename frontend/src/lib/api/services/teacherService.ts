@@ -64,6 +64,23 @@ export const teacherService = {
   },
 
   /**
+   * Get teacher's assignments
+   */
+  getAssignments: async (options: { schoolId?: string; status?: string; classId?: string } = {}) => {
+    const response = await apiClient.get("/assignment/teacher", {
+      headers: options.schoolId ? { 'x-school-id': options.schoolId } : undefined,
+      params: { 
+        status: options.status || undefined,
+        classId: options.classId || undefined,
+        limit: 1000 
+      }
+    });
+    // the backend usually returns { assignments: [...], total: ... } for this route
+    // let's return just the assignments array so it matches Exams shape
+    return response.data.data?.assignments || [];
+  },
+
+  /**
    * Update aggregate grades for a student in a class
    */
   updateClassStudentGrade: async (classId: string, studentId: string, data: {
@@ -181,6 +198,14 @@ export const teacherService = {
       date,
       attendanceRecords,
     });
+    return response.data;
+  },
+
+  /**
+   * Update the teacher's password
+   */
+  updatePassword: async (data: any): Promise<any> => {
+    const response = await apiClient.post("/auth/password/change", data);
     return response.data;
   }
 };

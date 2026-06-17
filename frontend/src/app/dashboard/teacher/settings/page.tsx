@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useTeacherProfile, useTeacherSettings, useUpdateTeacherSettings } from '@/lib/api/hooks/useTeacher';
@@ -34,6 +35,9 @@ import { useLogoutMutation } from '@/app/(auth)/login/services/use-auth-mutation
 import { useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
+import { useMutation } from '@tanstack/react-query';
+import { teacherService } from '@/lib/api/services/teacherService';
+import { toast } from 'react-toastify';
 
 export default function TeacherSettingsPage() {
     const { theme: currentTheme, setTheme } = useTheme();
@@ -41,6 +45,37 @@ export default function TeacherSettingsPage() {
     const { data: backendSettings, isLoading: isSettingsLoading } = useTeacherSettings();
     const updateSettings = useUpdateTeacherSettings();
     const { mutate: logout } = useLogoutMutation();
+
+    // Password Update State
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+
+    const changePasswordMutation = useMutation({
+        mutationFn: (data: any) => teacherService.updatePassword(data),
+        onSuccess: () => {
+            toast.success("Password updated successfully!");
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to update password");
+        }
+    });
+
+    const handlePasswordSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            toast.error("Please fill in all password fields");
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            toast.error("New passwords do not match");
+            return;
+        }
+        changePasswordMutation.mutate({ currentPassword, newPassword });
+    };
 
     // Local state for settings
     const [settings, setSettings] = useState({
@@ -106,9 +141,6 @@ export default function TeacherSettingsPage() {
                     <TabsList className="bg-transparent gap-2 h-auto">
                         <TabsTrigger value="account" className="rounded-2xl h-12 px-6 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-lg transition-all">
                             <User size={16} className="mr-2" /> Account
-                        </TabsTrigger>
-                        <TabsTrigger value="notifications" className="rounded-2xl h-12 px-6 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-lg transition-all">
-                            <Bell size={16} className="mr-2" /> Notifications
                         </TabsTrigger>
                         <TabsTrigger value="security" className="rounded-2xl h-12 px-6 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-lg transition-all">
                             <Shield size={16} className="mr-2" /> Security
@@ -204,88 +236,55 @@ export default function TeacherSettingsPage() {
                     </div>
                 </TabsContent>
 
-                {/* Notifications Settings */}
-                <TabsContent value="notifications" className="focus-visible:outline-none">
-                    <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
-                        <CardHeader className="p-8 md:p-12">
-                            <CardTitle className="text-2xl font-black italic uppercase flex items-center gap-4 tracking-tight">
-                                <Bell className="text-primary" /> Notification Center
-                            </CardTitle>
-                            <CardDescription className="text-xs uppercase font-bold tracking-widest text-slate-400">Manage how we contact you</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-8 md:p-12 pt-0 space-y-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                <SettingsToggle 
-                                    icon={<Mail className="text-indigo-500" />} 
-                                    title="Email Notifications" 
-                                    description="Receive daily digests and critical updates via email." 
-                                    checked={settings.emailNotifications}
-                                    onCheckedChange={(val) => setSettings({...settings, emailNotifications: val})}
-                                />
-                                <SettingsToggle 
-                                    icon={<Smartphone className="text-primary" />} 
-                                    title="Push Notifications" 
-                                    description="Receive real-time alerts on your mobile device." 
-                                    checked={settings.pushNotifications}
-                                    onCheckedChange={(val) => setSettings({...settings, pushNotifications: val})}
-                                />
-                                <SettingsToggle 
-                                    icon={<CheckCircle2 className="text-emerald-500" />} 
-                                    title="Grading Updates" 
-                                    description="Get notified when assignments are submitted or graded." 
-                                    checked={settings.gradingReminders}
-                                    onCheckedChange={(val) => setSettings({...settings, gradingReminders: val})}
-                                />
-                                <SettingsToggle 
-                                    icon={<Bell className="text-rose-500" />} 
-                                    title="Behavior Alerts" 
-                                    description="Immediate notification for high-priority behavior reports." 
-                                    checked={settings.behaviorAlerts}
-                                    onCheckedChange={(val) => setSettings({...settings, behaviorAlerts: val})}
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+
 
                 {/* Security Settings */}
                 <TabsContent value="security" className="focus-visible:outline-none">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
-                            <CardHeader className="p-8">
+                            <CardHeader className="p-8 pb-4">
                                 <CardTitle className="text-xl font-black italic uppercase flex items-center gap-3">
                                     <Lock className="text-rose-500" /> Password
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-8 pt-0 space-y-6">
-                                <div className="space-y-4">
+                                <form className="space-y-4" onSubmit={handlePasswordSubmit}>
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Current Password</Label>
-                                        <Input type="password" placeholder="••••••••" className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-100 dark:ring-slate-800 focus:ring-primary/20" />
+                                        <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-100 dark:ring-slate-800 focus:ring-primary/20" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">New Password</Label>
-                                        <Input type="password" placeholder="••••••••" className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-100 dark:ring-slate-800 focus:ring-primary/20" />
+                                        <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-100 dark:ring-slate-800 focus:ring-primary/20" />
                                     </div>
-                                    <Button className="w-full h-14 rounded-2xl font-black uppercase text-xs tracking-widest">Update Credentials</Button>
-                                </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Confirm New Password</Label>
+                                        <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-100 dark:ring-slate-800 focus:ring-primary/20" />
+                                    </div>
+                                    <Button type="submit" disabled={changePasswordMutation.isPending} className="w-full h-14 rounded-2xl font-black uppercase text-xs tracking-widest bg-rose-600 hover:bg-rose-700 text-white">
+                                        {changePasswordMutation.isPending ? "Updating..." : "Update Credentials"}
+                                    </Button>
+                                </form>
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
-                            <CardHeader className="p-8">
-                                <CardTitle className="text-xl font-black italic uppercase flex items-center gap-3">
-                                    <Shield className="text-emerald-500" /> Two-Factor Auth
+                        <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl relative">
+                            <CardHeader className="p-8 pb-4">
+                                <CardTitle className="text-xl font-black italic uppercase flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <Shield className="text-emerald-500" /> Two-Factor Auth
+                                    </div>
+                                    <Badge variant="outline" className="text-[9px] uppercase tracking-widest font-black text-emerald-500 bg-emerald-500/10 border-emerald-500/20">Coming Soon</Badge>
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-8 pt-0 space-y-6">
+                            <CardContent className="p-8 pt-0 space-y-6 opacity-60 pointer-events-none">
                                 <div className="p-6 rounded-[2rem] bg-emerald-500/10 border border-emerald-500/20 space-y-4">
                                     <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 italic leading-relaxed">
                                         Extra layer of security. We&apos;ll ask for a code on your phone in addition to your password.
                                     </p>
                                     <div className="flex items-center justify-between">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Enable 2FA Protection</span>
-                                        <Switch checked={settings.twoFactor} onCheckedChange={(val) => setSettings({...settings, twoFactor: val})} />
+                                        <Switch checked={false} disabled />
                                     </div>
                                 </div>
                                 <Separator className="bg-slate-200/50 dark:bg-slate-800/50" />
@@ -341,12 +340,15 @@ export default function TeacherSettingsPage() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-4 opacity-60 pointer-events-none relative">
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                                             <Languages size={20} />
                                         </div>
-                                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500">Default Language</Label>
+                                        <div className="flex flex-col">
+                                            <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500">Default Language</Label>
+                                            <Badge variant="outline" className="w-fit mt-1 text-[8px] uppercase tracking-widest font-black text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700">Coming Soon</Badge>
+                                        </div>
                                     </div>
                                     <div className="relative group">
                                         <Input value="English (US)" disabled className="h-14 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border-none font-bold" />
@@ -354,12 +356,15 @@ export default function TeacherSettingsPage() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-4 opacity-60 pointer-events-none relative">
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                                             <Clock size={20} />
                                         </div>
-                                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500">Academic Timezone</Label>
+                                        <div className="flex flex-col">
+                                            <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500">Academic Timezone</Label>
+                                            <Badge variant="outline" className="w-fit mt-1 text-[8px] uppercase tracking-widest font-black text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700">Coming Soon</Badge>
+                                        </div>
                                     </div>
                                     <div className="relative group">
                                         <Input value="UTC +0:00 (London)" disabled className="h-14 rounded-2xl bg-slate-100/50 dark:bg-slate-900/50 border-none font-bold" />

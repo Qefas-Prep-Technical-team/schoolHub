@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Search,
   ChevronLeft,
@@ -125,7 +126,7 @@ export default function TopNavBar() {
         </div>
 
         {/* ── CENTRE: Search ────────────────────────────────────────────── */}
-        <div className="hidden md:flex flex-1 justify-center px-4 max-w-2xl mx-auto">
+        <div className="hidden md:flex flex-1 justify-center px-4 max-w-2xl mx-auto relative">
           <div className="relative w-full group">
             <Search
               className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-all duration-300 group-focus-within:text-emerald-500 group-focus-within:scale-105"
@@ -134,13 +135,83 @@ export default function TopNavBar() {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search students, classes, resources…"
+              placeholder="Search dashboard modules..."
               className="w-full pl-10 pr-14 py-2.5 rounded-xl bg-slate-100/80 dark:bg-white/5 text-sm font-medium border border-transparent focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/15 focus:border-emerald-400/40 transition-all duration-300 outline-none"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 px-1.5 py-1 rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-[9px] font-black text-slate-400 select-none shadow-sm">
               <span className="opacity-50">⌘</span>K
             </div>
           </div>
+          
+          {/* Search Results Dropdown */}
+          {searchQuery && (
+            <div className="absolute top-full left-4 right-4 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl overflow-hidden z-50 py-2 animate-in fade-in slide-in-from-top-4">
+              <div className="px-3 pb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+                Quick Navigation
+              </div>
+              <div className="max-h-64 overflow-y-auto mt-2 custom-scrollbar">
+                {[
+                  { name: 'Dashboard Overview', path: '/dashboard/teacher', keywords: 'home main start index' },
+                  { name: 'My Profile', path: '/dashboard/teacher/profile', keywords: 'account details info avatar identity' },
+                  { name: 'My Classes', path: '/dashboard/teacher/my-classes', keywords: 'classrooms homeroom subjects rooms' },
+                  { name: 'Students Directory', path: '/dashboard/teacher/students', keywords: 'pupils list kids users learners' },
+                  { name: 'Parents & Guardians', path: '/dashboard/teacher/parents', keywords: 'family contact relations' },
+                  { name: 'Exams & Quizzes', path: '/dashboard/teacher/exams&quizzes', keywords: 'tests assessments CA' },
+                  { name: 'Create Exam/Quiz', path: '/dashboard/teacher/exams&quizzes/create', keywords: 'new test make generate' },
+                  { name: 'Assignments', path: '/dashboard/teacher/assignments', keywords: 'homework tasks grading' },
+                  { name: 'Create Assignment', path: '/dashboard/teacher/assignments/create-assignment', keywords: 'new homework task' },
+                  { name: 'Grades Hub', path: '/dashboard/teacher/grades', keywords: 'marks scores standalone report cards' },
+                  { name: 'Documents & Files', path: '/dashboard/teacher/documents', keywords: 'resources library files media pdf' },
+                  { name: 'Billing & Payments', path: '/dashboard/teacher/billing', keywords: 'invoices money fee plans subscription' },
+                  { name: 'School Linking', path: '/dashboard/teacher/linking', keywords: 'join connect school hub institutions code' },
+                  { name: 'Notifications', path: '/dashboard/teacher/notifications', keywords: 'alerts inbox messages unread ping' },
+                  { name: 'Settings', path: '/dashboard/teacher/settings', keywords: 'preferences configure config password' },
+                  { name: 'Support & Help', path: '/dashboard/teacher/support', keywords: 'ticket assistance contact customer care faq' },
+                ].filter(item => {
+                  const q = searchQuery.toLowerCase();
+                  return item.name.toLowerCase().includes(q) || item.keywords.includes(q);
+                })
+                .map((item, index) => (
+                  <Link
+                    key={index}
+                    href={item.path}
+                    onClick={() => setSearchQuery("")}
+                    className="flex items-center px-4 py-3 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors border-l-2 border-transparent hover:border-emerald-500"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                
+                {[
+                  { name: 'Dashboard Overview', path: '/dashboard/teacher', keywords: 'home main start index' },
+                  { name: 'My Profile', path: '/dashboard/teacher/profile', keywords: 'account details info avatar identity' },
+                  { name: 'My Classes', path: '/dashboard/teacher/my-classes', keywords: 'classrooms homeroom subjects rooms' },
+                  { name: 'Students Directory', path: '/dashboard/teacher/students', keywords: 'pupils list kids users learners' },
+                  { name: 'Parents & Guardians', path: '/dashboard/teacher/parents', keywords: 'family contact relations' },
+                  { name: 'Exams & Quizzes', path: '/dashboard/teacher/exams&quizzes', keywords: 'tests assessments CA' },
+                  { name: 'Create Exam/Quiz', path: '/dashboard/teacher/exams&quizzes/create', keywords: 'new test make generate' },
+                  { name: 'Assignments', path: '/dashboard/teacher/assignments', keywords: 'homework tasks grading' },
+                  { name: 'Create Assignment', path: '/dashboard/teacher/assignments/create-assignment', keywords: 'new homework task' },
+                  { name: 'Grades Hub', path: '/dashboard/teacher/grades', keywords: 'marks scores standalone report cards' },
+                  { name: 'Documents & Files', path: '/dashboard/teacher/documents', keywords: 'resources library files media pdf' },
+                  { name: 'Billing & Payments', path: '/dashboard/teacher/billing', keywords: 'invoices money fee plans subscription' },
+                  { name: 'School Linking', path: '/dashboard/teacher/linking', keywords: 'join connect school hub institutions code' },
+                  { name: 'Notifications', path: '/dashboard/teacher/notifications', keywords: 'alerts inbox messages unread ping' },
+                  { name: 'Settings', path: '/dashboard/teacher/settings', keywords: 'preferences configure config password' },
+                  { name: 'Support & Help', path: '/dashboard/teacher/support', keywords: 'ticket assistance contact customer care faq' },
+                ].filter(item => {
+                  const q = searchQuery.toLowerCase();
+                  return item.name.toLowerCase().includes(q) || item.keywords.includes(q);
+                }).length === 0 && (
+                  <div className="px-4 py-8 text-center flex flex-col items-center justify-center gap-2">
+                    <Search className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-bold">No modules found</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">Try searching for keywords like "profile", "grades", or "files"</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── RIGHT: Actions + Profile ──────────────────────────────────── */}

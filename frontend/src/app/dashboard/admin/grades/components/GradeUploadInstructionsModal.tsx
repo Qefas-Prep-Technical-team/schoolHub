@@ -77,11 +77,18 @@ export default function GradeUploadInstructionsModal({ isOpen, onClose, onProcee
           </div>
         </div>
 
-        <DialogFooter className="mt-4 gap-3">
-          <Button variant="outline" onClick={onClose} className="h-12 rounded-xl font-bold transition-all w-24">
+        <DialogFooter className="mt-4 gap-3 flex-row sm:justify-end">
+          <Button 
+            variant="outline" 
+            onClick={onClose} 
+            className="h-12 rounded-xl font-bold border border-slate-200 dark:border-slate-800/80 bg-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/60 dark:hover:border-slate-700/80 transition-all duration-200 w-28"
+          >
             Cancel
           </Button>
-          <Button onClick={handleProceed} className="h-12 rounded-xl bg-primary text-white font-black uppercase tracking-widest flex-1">
+          <Button 
+            onClick={handleProceed} 
+            className="h-12 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 dark:from-indigo-500 dark:to-violet-600 dark:hover:from-indigo-400 dark:hover:to-violet-500 text-white font-black uppercase tracking-widest text-xs flex-1 shadow-lg shadow-indigo-500/20 dark:shadow-indigo-500/30 border border-indigo-400/20 dark:border-indigo-400/20 hover:-translate-y-0.5 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300"
+          >
             <FileUp size={16} className="mr-2" /> Continue to Upload
           </Button>
         </DialogFooter>

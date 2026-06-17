@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageHeader from './PageHeader';
@@ -10,7 +10,7 @@ import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { ExamsTableSkeleton } from './ExamsSkeleton';
-import { Trophy, ClipboardList, Sparkles, Building2, FileText, BookOpen } from 'lucide-react';
+import { Trophy, ClipboardList, Sparkles, Building2, FileText, BookOpen, LayoutGrid, List } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,7 @@ export default function ExamsQuizzesOverview() {
     date: '',
   });
   const [isAddPaperModalOpen, setIsAddPaperModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -39,12 +40,36 @@ export default function ExamsQuizzesOverview() {
   const isPersonal = selectedSchoolId === user?.id;
   const category = activeTab === 'exams' ? 'EXAM' : activeTab === 'quizzes' ? 'QUIZ' : activeTab === 'ca' ? 'CA' : activeTab === 'assignment' ? 'ASSIGNMENT' : 'EXAM';
 
+  const filterId = isPersonal ? undefined : selectedSchoolId;
+
+  const { data: classesData } = useQuery({
+    queryKey: ['teacher-classes', selectedSchoolId],
+    queryFn: () => teacherService.getClasses({ schoolId: filterId }),
+    staleTime: 1000 * 60 * 10,
+    enabled: !!user,
+  });
+
+  const { data: subjectsData } = useQuery({
+    queryKey: ['teacher-subjects', selectedSchoolId],
+    queryFn: () => teacherService.getSubjects({ schoolId: filterId }),
+    staleTime: 1000 * 60 * 10,
+    enabled: !isPersonal && !!filterId,
+  });
+
   const { data, isLoading } = useQuery({
-    queryKey: ['teacher-exams', selectedSchoolId, activeTab, filters],
+    queryKey: ['teacher-exams', selectedSchoolId, activeTab, filters.status, filters.class],
     queryFn: async () => {
       if (activeTab === 'subject-papers') {
         const result = await teacherService.getSubjectPapers({
-          schoolId: selectedSchoolId, // Pass the selectedSchoolId (which could be user.id for personal)
+          schoolId: selectedSchoolId,
+        });
+        return result;
+      }
+      if (activeTab === 'assignment') {
+        const result = await teacherService.getAssignments({
+          schoolId: isPersonal ? undefined : selectedSchoolId,
+          status: filters.status || undefined,
+          classId: filters.class || undefined,
         });
         return result;
       }
@@ -59,11 +84,12 @@ export default function ExamsQuizzesOverview() {
   });
 
   const handleCreateNew = () => {
-    // console.log('Create new exam/quiz');
+    // Handled in PageHeader Link
   };
 
-  const handleFilterChange = (filterType: keyof typeof filters, value: string) => {
+  const handleFilterChange = (filterType: 'class' | 'subject' | 'status' | 'date', value: string) => {
     setFilters(prev => ({ ...prev, [filterType]: value }));
+    setCurrentPage(1);
   };
 
   const handleClearFilters = () => {
@@ -80,6 +106,45 @@ export default function ExamsQuizzesOverview() {
       setActiveTab(tab);
       setCurrentPage(1);
   };
+
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    let list = [...data];
+
+    // Filter by class client-side as well for extra precision
+    if (filters.class) {
+      list = list.filter(item => {
+        const itemClassId = item.classId || item.class?.id;
+        return itemClassId === filters.class;
+      });
+    }
+
+    // Filter by subject client-side
+    if (filters.subject) {
+      list = list.filter(item => {
+        const itemSubjectId = item.subjectId || item.subject?.id || item.subjectExamPapers?.[0]?.subjectPaper?.subjectId || item.subjectExamPapers?.[0]?.subjectPaper?.subject?.id;
+        return itemSubjectId === filters.subject;
+      });
+    }
+
+    // Filter by date client-side
+    if (filters.date) {
+      const now = new Date();
+      list = list.filter(item => {
+        const itemDate = new Date(item.createdAt || item.startDate || now);
+        const diffTime = Math.abs(now.getTime() - itemDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (filters.date === 'Last Week') return diffDays <= 7;
+        if (filters.date === 'Last Month') return diffDays <= 30;
+        if (filters.date === 'Last 3 Months') return diffDays <= 90;
+        if (filters.date === 'This Year') return itemDate.getFullYear() === now.getFullYear();
+        return true;
+      });
+    }
+
+    return list;
+  }, [data, filters.class, filters.subject, filters.date]);
 
   return (
     <main className="min-h-screen bg-transparent p-4 md:p-8 lg:p-12">
@@ -98,7 +163,7 @@ export default function ExamsQuizzesOverview() {
         >
           {/* Tabs Strategy */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-            <div className="inline-flex p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-[1.5rem] shadow-inner">
+            <div className="inline-flex p-1.5 bg-slate-100/80 dark:bg-slate-800/60 rounded-[1.5rem] shadow-inner border border-slate-200/50 dark:border-slate-700/40 flex-wrap md:flex-nowrap gap-1 backdrop-blur-sm">
               <TabButton 
                 active={activeTab === 'exams'} 
                 onClick={() => handleTabChange('exams')}
@@ -131,16 +196,44 @@ export default function ExamsQuizzesOverview() {
               />
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
                <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px] bg-primary/5 px-4 py-2 rounded-xl border border-primary/10">
                   <Sparkles size={14} className="animate-pulse" />
                   {isPersonal ? "All Connected Schools" : "Filtered by School"}
+               </div>
+
+               {/* Grid / List view mode switcher */}
+               <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/60 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700/40 backdrop-blur-sm">
+                 <button
+                   onClick={() => setViewMode('list')}
+                   className={`p-2 rounded-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                     viewMode === 'list' 
+                       ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md' 
+                       : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                   }`}
+                   title="List View"
+                 >
+                   <List size={16} strokeWidth={2.5} />
+                 </button>
+                 <button
+                   onClick={() => setViewMode('grid')}
+                   className={`p-2 rounded-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                     viewMode === 'grid' 
+                       ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md' 
+                       : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                   }`}
+                   title="Grid View"
+                 >
+                   <LayoutGrid size={16} strokeWidth={2.5} />
+                 </button>
                </div>
             </div>
           </div>
 
           <FilterChips
             filters={filters}
+            classes={classesData}
+            subjects={subjectsData}
             onFilterChange={handleFilterChange}
             onClearFilters={handleClearFilters}
           />
@@ -165,15 +258,18 @@ export default function ExamsQuizzesOverview() {
                   transition={{ duration: 0.4 }}
                 >
                   <ExamsTable 
-                    exams={data ? data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage) : []} 
+                    exams={filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)} 
                     activeTab={activeTab}
+                    viewMode={viewMode}
+                    currentPage={currentPage}
+                    itemsPerPage={itemsPerPage}
                   />
-                  {data && data.length > 0 && (
+                  {filteredData.length > 0 && (
                       <div className="mt-8 flex justify-center">
                           <Pagination
                               currentPage={currentPage}
-                              totalPages={Math.ceil(data.length / itemsPerPage)}
-                              totalItems={data.length}
+                              totalPages={Math.ceil(filteredData.length / itemsPerPage)}
+                              totalItems={filteredData.length}
                               itemsPerPage={itemsPerPage}
                               onPageChange={setCurrentPage}
                           />
@@ -200,7 +296,6 @@ export default function ExamsQuizzesOverview() {
           <div className="p-8">
             <CreatePaperForm 
               onSuccess={(paperId) => {
-                // console.log("DEBUG: [ExamsQuizzesOverview] Redirecting to add-question:", paperId);
                 router.push(`/dashboard/teacher/exams&quizzes/add-question?paperId=${paperId}`);
                 setIsAddPaperModalOpen(false);
               }} 
@@ -216,10 +311,10 @@ function TabButton({ active, onClick, icon: Icon, label }: { active: boolean, on
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-500 overflow-hidden ${
+      className={`relative flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-500 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-400/70 focus-visible:ring-offset-0 ${
         active 
           ? 'text-white' 
-          : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+          : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 dark:text-slate-400'
       }`}
     >
       <Icon size={18} className="relative z-10" />
@@ -228,7 +323,7 @@ function TabButton({ active, onClick, icon: Icon, label }: { active: boolean, on
       {active && (
         <motion.div 
           layoutId="active-tab-bg"
-          className="absolute inset-0 bg-primary shadow-lg shadow-primary/20"
+          className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-violet-600 dark:from-indigo-600 dark:to-violet-700 shadow-lg shadow-indigo-500/20 dark:shadow-indigo-950/40"
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}

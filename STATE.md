@@ -2,8 +2,8 @@
 
 ## Current Focus
 
-- Student Dashboard Overview responsive polish (small screen fixes).
-- Student Grades Full Academic Transcript Polish and Verification.
+- Monitor production environment telemetry logs.
+- Continue responsive optimization sweeps across other internal platform console views.
 
 ## Upcoming / Planning
 
@@ -16,7 +16,19 @@
 ## Next Action
 
 - Monitor production environment telemetry logs.
-- Continue responsive optimization sweeps across other internal platform console views.
+
+### Tuesday, June 16, 2026
+- **Teacher Assignment Dashboard Modernization & Functional Parity**:
+    - [x] **Dynamic Routing Pattern Integration**: Completed migration of the teacher's assignment detail view to a fully dynamic path (`/dashboard/teacher/assignments/[id]`). Integrated the shared `QuestionManager`, `SettingsModal`, and `SubmissionList` components for live editing, setting configuration, and submission tracking.
+    - [x] **Programmatic Redirection Flow**: Standardized the creation lifecycle to automatically redirect teachers to their new assignment workspace upon successful creation.
+    - [x] **Backend Student Info Association**: Resolved student profile metadata display bugs in the submissions tracker by querying and mapping student names, emails, and profile images in `getTeacherAssignmentByIdService` on the backend.
+    - [x] **Dark Mode UI Adjustments**: Redesigned the "Record New Grade" button on the teacher's academic grades page to use a vibrant theme-aware gradient background in dark mode, fixing contrast and visibility problems.
+    - [x] **Subscription Gating & Upgrade Nudges**: Checked for the state of teacher subscription enforcement using the `usePublicPlatformSettings` hook. Refined the premium upgrade modal to notify teachers to ask their school administrator to upgrade the institutional plan when individual teacher billing is deactivated, complete with a click-to-copy request template.
+    - [x] **CSV Upload Premium Gating & Styling Refinement**: Implemented entitlement checks for the CSV upload feature on the teacher's grades dashboard. Integrated support to verify individual subscription status, falling back to the institutional school subscription plan when teacher subscription enforcement is turned off. Upgraded the "Cancel" and "Continue to Upload" buttons inside the CSV Upload instructions dialog to match our premium theme-aware and dark-mode designs.
+    - [x] **Class-Scoped Queries Validation**: Verified backend and frontend queries for exams, quizzes, and standalone academic grades, ensuring they are securely restricted to classes assigned to the logged-in teacher context.
+    - [x] **List Numbering & Table Pagination Parity**: Guaranteed all grade entries and exam/quiz items display sequential index numbering. Aligned the grades `TablePagination` styles to use the premium indigo-violet gradient active page layout matching the shared pagination component.
+    - [x] **Exams Tab Focus Rings & Create Button Refinements**: Redesigned the focus state ring on the assessment tab switchers to use zero offset, avoiding outline color rendering bugs on dark card backgrounds. Styled the "Create New Exam/Quiz" button with a glowing dark mode shadow and semi-transparent indigo borders.
+    - [x] **100% Compilation Validation**: Verified flawless TypeScript check status on both backend and frontend workspaces using `npx tsc --noEmit`.
 
 ### Thursday, June 11, 2026
 - **Backend & Frontend Type Safety & Compile Stability**:
@@ -737,4 +749,31 @@
     - [x] **AI-Generated Pedagogical Comments**: Replaced row-level text blocks with a single Class Teacher's AI Remark and a Principal's AI Verdict at the bottom, dynamically computed from the student's overall average.
     - [x] **Formal Signature Blocks**: Appended official Class Teacher and Principal signature lines with date and next-term placeholders to the bottom of the transcript layout.
     - [x] **Build & Compile Stability**: Checked all files with `npx tsc --noEmit` on the frontend workspace and confirmed zero compilation errors.
+
+### Tuesday, June 16, 2026
+- **Teacher Assignment Dashboard Terminology Simplification**:
+    - [x] **Everyday English Copy Polish**: Updated the main Assignments page to replace technical jargon like "Task Registry" with "Assignments", "Manage Coursework & Deadlines" with "Manage Assignments & Deadlines", and generic labels like "Classroom tasks for this institution" with "Classroom assignments for this school".
+    - [x] **Card UI Copy Clean-up**: Modified the `AssignmentCard` component, renaming the database-like label "Submission Sync" to "Submissions".
+    - [x] **Create Button Dark Mode Styling**: Enhanced the "Create New Assignment" button style in dark mode, making it use a clean white background, dark text, and gray-200 hover color for better contrast and appearance.
+- **Teacher Assignment Visibility Optimization**:
+    - [x] **Database Query Refactoring**: Updated `getTeacherAssignmentsService` in `assignment.service.ts` to query `ClassTeacher` relations and fetch all assignments linked to the teacher's assigned classes or created by the teacher.
+    - [x] **Frontend Dynamic Filters**: Updated `AssignmentFilters` and `AssignmentsPage` to dynamically populate subject and class options from retrieved assignments, and added a class-specific dropdown filter.
+- **Compilation Stability & Clean Build**:
+    - [x] **TS compilation fixes**: Resolved a duplicate identifier (`isActive`) in `sessionService.ts` and replaced a missing package import (`react-hot-toast` to `react-toastify`) in `grades/page.tsx`, bringing the entire frontend project to a completely clean compile status (`npx tsc --noEmit` exit code 0).
+    - [x] **Verification**: Verified compilation stability on both backend and frontend projects using `npx tsc --noEmit`.
+- **Teacher Assignment Creation Class Dropdown**:
+    - [x] **Dynamic Data Retrieval**: Integrated `useTeacherClasses` and `useTeacherSubjects` queries in the teacher's `create-assignment` page.
+    - [x] **Dropdown Selection Component**: Refactored the free-text input for "Assign to Class(es)" in the `AssignmentDetails` component to a standard single-selection dropdown `Select` element utilizing real teacher-assigned classes and subjects, removing the complex multi-tag selection container entirely from the page for a clean user interface.
+    - [x] **Remove AI Difficulty Recommendation**: Removed the AI Difficulty Recommendation card and its corresponding calculation helpers from the assignment settings panel to clean up unnecessary AI metrics from the interface.
+- **Teacher Assignment Subject Dropdown & Submission Resolution**:
+    - [x] **Database Query Refactoring**: Updated `getTeacherSubjectsService` in `teacher-dashboard.service.ts` to return subjects taught in any class assigned to the teacher (via `ClassTeacher` -> `Class` -> `ClassSubject` -> `Subject` relationships), fixing the empty dropdown issue for teachers without direct subject-level mappings.
+    - [x] **Form Validation**: Hardened validation in `create-assignment/page.tsx` to ensure Title, Class, and Subject are all populated before sending request to backend, displaying clear error toasts for missing fields.
+    - [x] **Payload Integrity**: Replaced the hardcoded subject fallback `"1"` with the actual selected `subjectId` from the state.
+    - [x] **UI Polish**: Cleaned up the dark mode look of the "Create New Assignment" button by replacing the stark white background in dark mode with a brand-aligned `bg-primary text-white` layout featuring theme-aware shadow dynamics.
+- **Teacher & Admin Assignment Page UI Refinements & Filter Fixes**:
+    - [x] **Create New Assignment Button Styling**: Restored consistent brand identity with a premium style: Light mode utilizes `bg-primary` and dark mode applies `dark:bg-gradient-to-r dark:from-indigo-500 dark:to-violet-600` with an elegant indigo glow shadow.
+    - [x] **Plain English & Normal Casing Sweeps**: Replaced loud, tiny uppercase tracked typography (e.g., `text-[10px] font-black uppercase tracking-widest`) across the filter inputs, card details, view controls, and dashboard headers with standard sentence/title casing and clean font sizes.
+    - [x] **Assignment Status Filter Fix**: Defined a status normalizer `getNormalizedStatus` in `AssignmentsPage` using the same logic as `AssignmentCard` to ensure the status filters ("published", "overdue", "due-soon", "draft") match correctly and update the list.
+    - [x] **Assignment Card Date Bug**: Swapped the data mapping from `endDate` to the correct `dueDate` property to resolve dynamic deadline dates rendering as "No Deadline".
+    - [x] **SubmitBar Theme Glow**: Replaced high-glare stark white backgrounds on the Admin and Teacher "Publish" action buttons in dark mode with the premium indigo-violet gradient matching the new theme patterns.
 

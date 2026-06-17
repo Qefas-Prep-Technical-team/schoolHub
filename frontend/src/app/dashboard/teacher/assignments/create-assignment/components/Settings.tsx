@@ -18,11 +18,6 @@ export default function Settings({
     maxScore,
     onMaxScoreChange
 }: SettingsProps) {
-    const getDifficultyRecommendation = () => {
-        if (maxScore <= 50) return 'Easy';
-        if (maxScore <= 75) return 'Medium';
-        return 'Hard';
-    };
 
     return (
         <div className="bg-white dark:bg-[#1C1C1E] rounded-xl border border-[#E4E4E7] dark:border-[#2D2D2F]">
@@ -48,23 +43,6 @@ export default function Settings({
                         value={maxScore.toString()}
                         onChange={(e) => onMaxScoreChange(parseInt(e.target.value) || 0)}
                     />
-                </div>
-
-                {/* AI Difficulty Recommendation */}
-                <div className="p-4 bg-primary/10 rounded-lg flex items-start gap-4">
-                    <span className="material-symbols-outlined text-primary mt-1">
-                        auto_awesome
-                    </span>
-                    <div>
-                        <h3 className="font-bold text-primary">AI Difficulty Recommendation</h3>
-                        <p className="text-sm text-primary/80 mt-1">
-                            Based on the content and maximum score, we recommend a{' '}
-                            <span className="font-semibold">{getDifficultyRecommendation()}</span> difficulty.
-                            {getDifficultyRecommendation() === 'Easy' && ' This is suitable for introductory assignments.'}
-                            {getDifficultyRecommendation() === 'Medium' && ' This provides a balanced challenge for most students.'}
-                            {getDifficultyRecommendation() === 'Hard' && ' This will challenge advanced students.'}
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>

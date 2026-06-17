@@ -10,7 +10,7 @@ import { EditGradeDialog } from './components/EditGradeDialog'
 import { teacherService } from '@/lib/api/services/teacherService'
 import { Loader2 } from 'lucide-react'
 import Pagination from '@/components/ui/Pagination'
-import toast from 'react-hot-toast'
+import { toast } from 'react-toastify'
 
 export default function GradesPage() {
   const params = useParams()

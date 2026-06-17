@@ -50,23 +50,23 @@ export default function AssignmentCard({
                         {assignment.title}
                     </h3>
                     <div className="flex items-center gap-2">
-                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
+                         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
                             {assignment.subject}
                         </span>
                         <span className="text-slate-300">/</span>
-                        <span className="text-[10px] font-bold text-slate-400">
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                              {assignment.className}
                         </span>
                     </div>
                 </div>
-                <div className={`px-4 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest ${getStatusStyles(assignment.status)}`}>
+                <div className={`px-3 py-1 rounded-xl border text-xs font-semibold ${getStatusStyles(assignment.status)}`}>
                     {getStatusLabel(assignment.status)}
                 </div>
             </div>
 
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-8 font-bold text-xs">
                 <Calendar size={14} className="text-primary" />
-                <span className="opacity-70 uppercase tracking-tighter">Deadline:</span>
+                <span className="opacity-75 font-medium">Deadline:</span>
                 <span className="text-slate-700 dark:text-slate-300">{assignment.dueDate}</span>
             </div>
 
@@ -74,7 +74,7 @@ export default function AssignmentCard({
                 <div className="space-y-2">
                     <div className="flex justify-between items-end">
                         <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Submission Sync</span>
+                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Submissions</span>
                             {assignment.progress === 100 && <CheckCircle2 size={12} className="text-emerald-500" />}
                         </div>
                         <span className="text-sm font-black text-slate-900 dark:text-slate-100 italic">
@@ -100,14 +100,14 @@ export default function AssignmentCard({
                         <IconButton onClick={() => onDelete?.(assignment.id)} icon={Trash2} title="Delete" variant="danger" />
                     </div>
 
-                    <Link href="/dashboard/teacher/assignments/preview">
+                    <Link href={`/dashboard/teacher/assignments/${assignment.id}`}>
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
                         >
                             Review
-                            <ExternalLink size={14} strokeWidth={2.5} />
+                            <ExternalLink size={14} strokeWidth={2} />
                         </motion.button>
                     </Link>
                 </div>

@@ -11,6 +11,7 @@ import Settings from './components/Settings';
 import SubmitBar from './components/SubmitBar';
 import { useCreateAssignment } from '@/lib/api/hooks/useAssignments';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
+import { useTeacherClasses, useTeacherSubjects } from '@/lib/api/hooks/useTeacher';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { toast } from 'react-toastify';
 import { apiClient } from '@/lib/api/client';
@@ -23,6 +24,13 @@ export default function CreateAssignmentPage() {
     const [isLoading, setIsLoading] = useState(false);
     
     const effectiveSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || '';
+
+    // Fetch classes and subjects assigned to the teacher
+    const { data: classesData, isLoading: isClassesLoading } = useTeacherClasses(effectiveSchoolId);
+    const { data: subjectsData, isLoading: isSubjectsLoading } = useTeacherSubjects(effectiveSchoolId);
+
+    const availableClasses = Array.isArray(classesData) ? classesData : (classesData?.data || classesData?.classes || []);
+    const availableSubjects = Array.isArray(subjectsData) ? subjectsData : (subjectsData?.data || subjectsData?.subjects || []);
 
     // We pass `false` for isAdmin since this is the teacher version
     const { mutateAsync: createAssignment } = useCreateAssignment(effectiveSchoolId, false);
@@ -59,8 +67,20 @@ export default function CreateAssignmentPage() {
 
         try {
             // Validate form
-            if (action === 'publish' && !formData.title.trim()) {
+            if (!formData.title.trim()) {
                 toast.error('Please enter a title for the assignment');
+                setIsLoading(false);
+                return;
+            }
+
+            if (formData.classes.length === 0) {
+                toast.error('Please select at least one class');
+                setIsLoading(false);
+                return;
+            }
+
+            if (!formData.subject) {
+                toast.error('Please select a subject');
                 setIsLoading(false);
                 return;
             }
@@ -80,7 +100,7 @@ export default function CreateAssignmentPage() {
             const result = await createAssignment({
                 title: submissionData.title,
                 classIds: submissionData.classes.map(c => c.id),
-                subjectId: submissionData.subject || "1", // Fallback subject ID for now if empty
+                subjectId: submissionData.subject,
                 instructions: submissionData.instructions,
                 dueDate: submissionData.dueDate || undefined,
                 maxScore: submissionData.maxScore,
@@ -92,8 +112,11 @@ export default function CreateAssignmentPage() {
             });
 
             toast.success("Assignment created successfully!");
-            // Redirect to assignments page
-            router.push(`/dashboard/teacher/assignments`);
+            // Redirect to assignment details page
+            const createdId = Array.isArray(result.data) && result.data.length > 0 
+                ? result.data[0].id 
+                : (result.data?.id || result.id);
+            router.push(`/dashboard/teacher/assignments/${createdId}`);
 
         } catch (error: any) {
             console.error('Error creating assignment:', error);
@@ -145,6 +168,26 @@ export default function CreateAssignmentPage() {
         }
     };
 
+    const shouldShowLoading = !!effectiveSchoolId && (isClassesLoading || isSubjectsLoading);
+
+    if (shouldShowLoading) {
+        return (
+            <main className="max-w-4xl mx-auto pb-16 space-y-8 p-4 md:p-0">
+                <div className="flex flex-wrap justify-between gap-3 mb-8 animate-pulse">
+                    <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800/80 rounded-lg"></div>
+                </div>
+                <div className="space-y-6 animate-pulse">
+                    {/* Assignment Details Skeleton */}
+                    <div className="h-[400px] w-full bg-slate-100 dark:bg-[#1C1C1E] rounded-xl border border-slate-200 dark:border-[#2D2D2F]"></div>
+                    {/* Attachments Skeleton */}
+                    <div className="h-32 w-full bg-slate-100 dark:bg-[#1C1C1E] rounded-xl border border-slate-200 dark:border-[#2D2D2F]"></div>
+                    {/* Scheduling Skeleton */}
+                    <div className="h-64 w-full bg-slate-100 dark:bg-[#1C1C1E] rounded-xl border border-slate-200 dark:border-[#2D2D2F]"></div>
+                </div>
+            </main>
+        );
+    }
+
     return (
         <main className="max-w-4xl mx-auto pb-16 space-y-8">
             {/* Page Header */}
@@ -169,6 +212,8 @@ export default function CreateAssignmentPage() {
                     onVideoUrlChange={(videoUrl) => updateFormField('videoUrl', videoUrl)}
                     referenceUrl={formData.referenceUrl}
                     onReferenceUrlChange={(referenceUrl) => updateFormField('referenceUrl', referenceUrl)}
+                    availableClasses={availableClasses}
+                    availableSubjects={availableSubjects}
                 />
 
                 {/* Attachments */}

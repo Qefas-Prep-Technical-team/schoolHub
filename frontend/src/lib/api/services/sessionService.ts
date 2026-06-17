@@ -27,7 +27,6 @@ export interface CreateSessionDTO {
   schoolId: string;
   isActive?: boolean;
   termDates?: { term: string; startDate: string; endDate: string }[];
-  isActive?: boolean;
 }
 
 export const sessionService = {

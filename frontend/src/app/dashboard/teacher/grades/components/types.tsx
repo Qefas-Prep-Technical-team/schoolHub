@@ -3,6 +3,7 @@ export type GradeLetter = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | '-';
 
 export interface StudentGrade {
   id: string;
+  studentId: string;
   name: string;
   studentCode: string;
   subjectPaper: string;

@@ -13,6 +13,9 @@ interface GradesTableProps {
   onSort: () => void;
   onExport: () => void;
   onEditGrade: (grade: StudentGrade) => void;
+  onPublishGrade: (grade: StudentGrade) => void;
+  onDeleteGrade: (grade: StudentGrade) => void;
+  onViewDetailsGrade: (grade: StudentGrade) => void;
   currentPage: number;
   totalPages: number;
   totalItems: number;
@@ -28,6 +31,9 @@ const GradesTable: React.FC<GradesTableProps> = ({
   onSort,
   onExport,
   onEditGrade,
+  onPublishGrade,
+  onDeleteGrade,
+  onViewDetailsGrade,
   currentPage,
   totalPages,
   totalItems,
@@ -54,11 +60,15 @@ const GradesTable: React.FC<GradesTableProps> = ({
             {isLoading ? (
               <TableSkeletonBody rows={7} />
             ) : (
-              grades.map((grade) => (
+              grades.map((grade, index) => (
                 <TableRow
                   key={grade.id}
                   grade={grade}
+                  rowNumber={(currentPage - 1) * 10 + index + 1}
                   onEdit={() => onEditGrade(grade)}
+                  onPublish={() => onPublishGrade(grade)}
+                  onDelete={() => onDeleteGrade(grade)}
+                  onViewDetails={() => onViewDetailsGrade(grade)}
                 />
               ))
             )}

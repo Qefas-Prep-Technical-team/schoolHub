@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'react-toastify';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -224,7 +225,6 @@ export default function SettingsPage() {
   const tabs = [
     { label: 'General', icon: Database },
     { label: 'Appearance', icon: Palette },
-    { label: 'Notifications', icon: Bell },
     { label: 'Security', icon: Lock },
     { label: 'Profile', icon: UserCircle },
     { label: 'Landing Page', icon: Rocket },
@@ -450,35 +450,6 @@ export default function SettingsPage() {
                         </Card>
                     )}
 
-                    {activeTab === 'Notifications' && (
-                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
-                                <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                                    <Bell size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-lg">Communication Preferences</h3>
-                                    <p className="text-xs text-slate-500">Configure how the platform interacts with stakeholders</p>
-                                </div>
-                            </div>
-                            <CardContent className="p-8 space-y-8">
-                                <SettingItem 
-                                    title="Email Notifications"
-                                    description="Send automated emails for announcements, grading updates, and system alerts."
-                                    icon={Mail}
-                                    checked={localSettings.enableEmailNotifications ?? true}
-                                    onCheckedChange={(val: boolean) => handleToggle('enableEmailNotifications', val)}
-                                />
-                                <SettingItem 
-                                    title="Push Notifications"
-                                    description="Deliver real-time alerts to mobile devices and browsers for urgent updates."
-                                    icon={Smartphone}
-                                    checked={localSettings.enablePushNotifications ?? true}
-                                    onCheckedChange={(val: boolean) => handleToggle('enablePushNotifications', val)}
-                                />
-                            </CardContent>
-                        </Card>
-                    )}
 
                     {activeTab === 'Security' && (
                         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
@@ -498,6 +469,7 @@ export default function SettingsPage() {
                                     icon={Settings}
                                     checked={localSettings.enableMaintenanceMode ?? false}
                                     onCheckedChange={(val: boolean) => handleToggle('enableMaintenanceMode', val)}
+                                    comingSoon={true}
                                 />
                                 <SettingItem 
                                     title="Teacher Digital Signatures"
@@ -505,6 +477,7 @@ export default function SettingsPage() {
                                     icon={UserCheck}
                                     checked={localSettings.allowTeacherDigitalSignature ?? false}
                                     onCheckedChange={(val: boolean) => handleToggle('allowTeacherDigitalSignature', val)}
+                                    comingSoon={true}
                                 />
                                 <SettingItem 
                                     title="Lock Institutional Settings"
@@ -512,6 +485,7 @@ export default function SettingsPage() {
                                     icon={Lock}
                                     checked={localSettings.lockSettings ?? false}
                                     onCheckedChange={(val: boolean) => handleToggle('lockSettings', val)}
+                                    comingSoon={true}
                                 />
                             </CardContent>
                         </Card>
@@ -715,19 +689,22 @@ export default function SettingsPage() {
   );
 }
 
-function SettingItem({ title, description, icon: Icon, checked, onCheckedChange }: any) {
+function SettingItem({ title, description, icon: Icon, checked, onCheckedChange, comingSoon }: any) {
   return (
-    <div className="flex items-center justify-between gap-6">
+    <div className={cn("flex items-center justify-between gap-6", comingSoon && "opacity-60 pointer-events-none")}>
       <div className="flex gap-4">
         <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
           <Icon size={20} />
         </div>
         <div className="space-y-0.5">
-          <p className="font-black text-sm">{title}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-black text-sm">{title}</p>
+            {comingSoon && <Badge variant="outline" className="text-[8px] uppercase tracking-widest font-black text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700">Coming Soon</Badge>}
+          </div>
           <p className="text-xs text-slate-500 leading-relaxed max-w-md">{description}</p>
         </div>
       </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+      <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={comingSoon} />
     </div>
   );
 }

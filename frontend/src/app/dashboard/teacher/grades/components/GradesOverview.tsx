@@ -6,7 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   AlertCircle, 
   Settings2,
+  Lock,
+  Sparkles,
+  ArrowRight,
+  AlertTriangle
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 import { FilterOption, GradeLetter, StudentGrade, GradeStatus } from './types';
 import PageHeader from './PageHeader';
@@ -23,14 +28,35 @@ import { calculateGrade } from '../utils/gradeCalculator';
 import GradeSettingsModal from './GradeSettingsModal';
 import EditGradeModal from './EditGradeModal';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { useFeatureAccess } from '@/lib/api/hooks/useFeatureAccess';
+import { usePublicPlatformSettings } from '@/lib/api/hooks/usePlatformGovernance';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useSubscriptionUsage } from '@/lib/api/hooks/useSubscriptionUsage';
+import { toast } from 'react-toastify';
+import GradeEntryModal from '@/app/dashboard/admin/grades/components/GradeEntryModal';
+import GradeUploadModal from '@/app/dashboard/admin/grades/components/GradeUploadModal';
+import GradeUploadInstructionsModal from '@/app/dashboard/admin/grades/components/GradeUploadInstructionsModal';
+import GradeOCRModal from '@/app/dashboard/admin/grades/components/GradeOCRModal';
 
 const GradesOverview: React.FC = () => {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<StudentGrade | null>(null);
+  const [gradeToDelete, setGradeToDelete] = useState<StudentGrade | null>(null);
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
   
+  // Standalone Grade options modal states
+  const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isUploadInstructionsModalOpen, setIsUploadInstructionsModalOpen] = useState(false);
+  const [isOCRModalOpen, setIsOCRModalOpen] = useState(false);
+  const [isUpgradePopupOpen, setIsUpgradePopupOpen] = useState(false);
+
   // Filter States
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
   const [selectedSessionId, setSelectedSessionId] = useState<string>('all');
@@ -42,6 +68,51 @@ const GradesOverview: React.FC = () => {
 
   const isPersonal = !selectedSchoolId || selectedSchoolId === user?.id;
   const filterId = isPersonal ? undefined : selectedSchoolId;
+
+  // Standalone Grade options logic
+  const modalSchoolId = selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const aiFeatureKey = process.env.NEXT_PUBLIC_FEATURE_KEY_AI_INSIGHTS || 'aiInsights';
+  const { data: hasOCRAccess } = useFeatureAccess(aiFeatureKey, modalSchoolId);
+  const { data: platformSettings } = usePublicPlatformSettings();
+  const subEnforcedTeachers = platformSettings?.sub_enforced_teachers !== "false";
+
+  const { data: usageData } = useSubscriptionUsage();
+  const { data: schoolProfile } = useSchoolProfile(modalSchoolId);
+
+  const isTeacherPaying = usageData?.subscriptionStatus?.toLowerCase() === 'active' || usageData?.isTrial;
+  const isSchoolPaying = schoolProfile?.subscriptionStatus?.toLowerCase() === 'active' || schoolProfile?.isTrialActive;
+
+  const hasCSVAccess = subEnforcedTeachers ? !!isTeacherPaying : !!isSchoolPaying;
+
+  const handleOpenOCR = () => {
+    if (!hasOCRAccess) {
+      setIsUpgradePopupOpen(true);
+      return;
+    }
+    setIsOCRModalOpen(true);
+  };
+
+  const handleOpenUploadModal = () => {
+    if (!hasCSVAccess) {
+      setIsUpgradePopupOpen(true);
+      return;
+    }
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const hideInstructions = localStorage.getItem('hideGradeUploadInstructions') === 'true';
+      if (hideInstructions) {
+        setIsUploadModalOpen(true);
+      } else {
+        setIsUploadInstructionsModalOpen(true);
+      }
+    } else {
+      setIsUploadInstructionsModalOpen(true);
+    }
+  };
+
+  const proceedToUpload = () => {
+    setIsUploadInstructionsModalOpen(false);
+    setIsUploadModalOpen(true);
+  };
 
   const { data: classesData } = useQuery({
     queryKey: ['teacher-classes', selectedSchoolId],
@@ -86,6 +157,43 @@ const GradesOverview: React.FC = () => {
     },
   });
 
+  const publishGradeMutation = useMutation({
+    mutationFn: (id: string) => gradeService.publishGrade(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-grades'] });
+      toast.success("Grade published successfully!");
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to publish grade");
+    }
+  });
+
+  const deleteGradeMutation = useMutation({
+    mutationFn: (id: string) => gradeService.deleteGrade(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-grades'] });
+      toast.success("Grade record deleted successfully!");
+      setGradeToDelete(null);
+      setDeleteConfirmName('');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to delete grade");
+    }
+  });
+
+  const handleConfirmDelete = () => {
+    if (!gradeToDelete) return;
+    deleteGradeMutation.mutate(gradeToDelete.id);
+  };
+
+  const handleViewDetails = (grade: StudentGrade) => {
+    if (grade.studentId) {
+      router.push(`/dashboard/teacher/students/${grade.studentId}?tab=academic`);
+    } else {
+      toast.error("Student ID not found for this record");
+    }
+  };
+
   const rawData = useMemo(() => response?.data || [], [response?.data]);
   const apiPagination = response?.pagination || { totalPages: 1, total: 0 };
 
@@ -111,6 +219,7 @@ const GradesOverview: React.FC = () => {
       
       return {
         id: String(item.id || Math.random()),
+        studentId: item.studentId || (item.student as any)?.id || '',
         name: item.student?.name || item.name || 'Unknown Student',
         studentCode: item.student?.studentCode || item.studentId || 'S-0000',
         subjectPaper: item.subjectPaper?.title || item.subject || '-',
@@ -187,7 +296,11 @@ const GradesOverview: React.FC = () => {
             className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4"
           >
             <PageHeader 
-              onAddGrade={() => {}} 
+              onAddGrade={() => setIsEntryModalOpen(true)}
+              onOCRClick={handleOpenOCR}
+              onUploadClick={handleOpenUploadModal}
+              hasOCRAccess={!!hasOCRAccess}
+              hasCSVAccess={hasCSVAccess}
               selectedSchoolName={selectedSchoolName}
               isPersonal={isPersonal}
             />
@@ -275,6 +388,9 @@ const GradesOverview: React.FC = () => {
                     onSort={() => {}}
                     onExport={() => {}}
                     onEditGrade={setEditingGrade}
+                    onPublishGrade={(grade) => publishGradeMutation.mutate(grade.id)}
+                    onDeleteGrade={setGradeToDelete}
+                    onViewDetailsGrade={handleViewDetails}
                     currentPage={currentPage}
                     totalPages={apiPagination.totalPages || 1}
                     totalItems={apiPagination.total || mappedGrades.length}
@@ -287,6 +403,156 @@ const GradesOverview: React.FC = () => {
           </motion.div>
         </div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!gradeToDelete} onOpenChange={(open) => { if (!open) { setGradeToDelete(null); setDeleteConfirmName(''); } }}>
+        <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-slate-200 dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900 z-50">
+          <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-rose-50/50 dark:bg-rose-900/10">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-2xl">
+                <AlertTriangle size={24} />
+              </div>
+              <DialogTitle className="text-xl font-black tracking-tighter uppercase text-slate-900 dark:text-white">
+                Delete Record
+              </DialogTitle>
+            </div>
+          </div>
+          <div className="p-8 space-y-6">
+            <DialogDescription className="text-slate-600 dark:text-slate-300 leading-relaxed text-sm">
+              This action cannot be undone. To proceed, please type <span className="font-black text-slate-900 dark:text-white">{gradeToDelete?.name}</span> to confirm deletion.
+            </DialogDescription>
+            <Input
+              placeholder="Student name"
+              value={deleteConfirmName}
+              onChange={(e) => setDeleteConfirmName(e.target.value)}
+              className="rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950"
+            />
+          </div>
+          <DialogFooter className="p-8 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => { setGradeToDelete(null); setDeleteConfirmName(''); }} className="h-10 rounded-xl px-4 font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
+              Cancel
+            </Button>
+            <Button
+              disabled={!gradeToDelete || deleteConfirmName !== gradeToDelete.name || deleteGradeMutation.isPending}
+              onClick={handleConfirmDelete}
+              className="h-10 rounded-xl px-4 font-black uppercase tracking-wider text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-500/20 active:scale-95 transition-all"
+            >
+              Delete Forever
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Grade entry, upload, instructions, OCR modals and Upgrade popup */}
+      <GradeEntryModal
+        isOpen={isEntryModalOpen}
+        onClose={() => {
+          setIsEntryModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ['teacher-grades'] });
+        }}
+        schoolId={modalSchoolId}
+      />
+
+      <GradeUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => {
+          setIsUploadModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ['teacher-grades'] });
+        }}
+        schoolId={modalSchoolId}
+      />
+
+      <GradeUploadInstructionsModal
+        isOpen={isUploadInstructionsModalOpen}
+        onClose={() => setIsUploadInstructionsModalOpen(false)}
+        onProceed={proceedToUpload}
+      />
+
+      <GradeOCRModal
+        isOpen={isOCRModalOpen}
+        onClose={() => {
+          setIsOCRModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ['teacher-grades'] });
+        }}
+        schoolId={modalSchoolId}
+      />
+
+      <Dialog open={isUpgradePopupOpen} onOpenChange={setIsUpgradePopupOpen}>
+        <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-0 shadow-2xl">
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-10 text-white overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-purple-500/10" />
+            <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-amber-400/5 blur-3xl" />
+            <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-purple-500/5 blur-3xl" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-14 w-14 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center">
+                  <Lock size={24} className="text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">Premium Feature</p>
+                  <h2 className="text-xl font-black tracking-tight text-white">AI Vision Scanner</h2>
+                </div>
+              </div>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Snap a photo of any physical mark sheet and let AI automatically extract all student names and scores for you.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-8 bg-white dark:bg-slate-950 space-y-6">
+            <div className="space-y-3">
+              {[
+                'Scan handwritten or printed mark sheets',
+                'AI extracts names & scores automatically',
+                'Review & edit before saving',
+                'Works with any image format',
+              ].map((feat) => (
+                <div key={feat} className="flex items-center gap-3">
+                  <div className="h-5 w-5 rounded-full bg-amber-50 dark:bg-amber-400/10 border border-amber-200 dark:border-amber-400/20 flex items-center justify-center shrink-0">
+                    <Sparkles size={10} className="text-amber-500" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{feat}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-3 pt-2">
+              {subEnforcedTeachers ? (
+                <Button
+                  onClick={() => { setIsUpgradePopupOpen(false); window.location.href = '/dashboard/teacher/billing'; }}
+                  className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-sm bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-white shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <Sparkles size={16} /> Upgrade Your Plan <ArrowRight size={16} />
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-medium bg-amber-500/10 dark:bg-amber-500/5 p-3 rounded-xl border border-amber-500/20 leading-relaxed">
+                    Individual teacher subscriptions are deactivated. Access to the AI Vision Scanner is managed via your school's institutional plan. Please notify your school administration to upgrade their plan.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      if (typeof navigator !== 'undefined') {
+                        navigator.clipboard.writeText("Hi Administrator, we need the AI Vision Grade Scanner feature to scan physical mark sheets and automatically record grades. Could you please upgrade our school's Qefas Hub subscription plan to unlock it for teachers? Thank you!");
+                        toast.success("Request message copied to clipboard!");
+                      }
+                    }}
+                    className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-xs bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-white shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Sparkles size={16} /> Copy Request for Admin <ArrowRight size={16} />
+                  </Button>
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                onClick={() => setIsUpgradePopupOpen(false)}
+                className="w-full h-10 rounded-xl font-bold text-slate-500 hover:text-slate-700 text-sm"
+              >
+                Maybe later
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

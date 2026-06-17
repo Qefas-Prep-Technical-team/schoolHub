@@ -1,5 +1,6 @@
 const TableHeader: React.FC = () => {
   const headers = [
+    { label: '#', align: 'left' },
     { label: 'Student', align: 'left' },
     { label: 'Assessment', align: 'left' },
     { label: 'Score', align: 'center' },

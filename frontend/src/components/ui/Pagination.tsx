@@ -39,46 +39,46 @@ const Pagination: React.FC<PaginationProps> = ({
   if (!totalItems || totalItems === 0) return null;
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 bg-white dark:bg-gray-800/50 backdrop-blur-sm rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-700/50 gap-4 mt-6">
-      <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-        Showing <span className="text-gray-900 dark:text-white font-bold">{startItem}</span> to <span className="text-gray-900 dark:text-white font-bold">{endItem}</span> of <span className="text-gray-900 dark:text-white font-bold">{totalItems}</span> results
+    <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl rounded-[2rem] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-200/60 dark:border-slate-800/60 gap-4 mt-6">
+      <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+        Showing <span className="text-slate-900 dark:text-slate-100 font-bold">{startItem}</span> to <span className="text-slate-900 dark:text-slate-100 font-bold">{endItem}</span> of <span className="text-slate-900 dark:text-slate-100 font-bold">{totalItems}</span> results
       </p>
       
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={16} />
           </button>
           
           {pageNumbers.map((page, index) => (
             typeof page === 'number' ? (
               <button
                 key={index}
-                className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition-all ${
+                className={`flex h-9 min-w-9 px-3 items-center justify-center rounded-xl text-xs font-black transition-all active:scale-90 ${
                   currentPage === page
-                    ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-[0_8px_20px_rgba(37,99,235,0.3)] dark:shadow-[0_8px_20px_rgba(59,130,246,0.4)] ring-1 ring-blue-500/50 dark:ring-blue-400'
-                    : 'bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400'
+                    ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/20 dark:from-indigo-600 dark:to-violet-700 dark:shadow-indigo-950/40 scale-105'
+                    : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
                 onClick={() => onPageChange(page)}
               >
                 {page}
               </button>
             ) : (
-              <span key={index} className="text-gray-400 font-bold px-1 select-none">
+              <span key={index} className="text-slate-400 px-1 font-black select-none">
                 {page}
               </span>
             )
           ))}
           
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={16} />
           </button>
         </div>
     </div>

@@ -69,17 +69,95 @@ const TopNavBar = ({ onToggleSidebar, isCollapsed, primaryColor = '#2563eb' }: {
             </div>
 
             {/* Central Search Section */}
-            <div className="hidden md:flex flex-1 justify-center max-w-2xl px-8">
+            <div className="hidden md:flex flex-1 justify-center max-w-2xl px-8 relative">
                 <div className="relative w-full group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" size={18} />
                     <input
                         type="search"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search teachers, students, sessions..."
+                        placeholder="Search dashboard modules..."
                         className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-slate-200 dark:focus:bg-white/10 transition-all text-sm font-medium"
                     />
                 </div>
+                
+                {/* Search Results Dropdown */}
+                {searchQuery && (
+                    <div className="absolute top-full left-8 right-8 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl overflow-hidden z-50 py-2 animate-in fade-in slide-in-from-top-4">
+                        <div className="px-3 pb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+                            Quick Navigation
+                        </div>
+                        <div className="max-h-64 overflow-y-auto mt-2 custom-scrollbar">
+                            {[
+                                { name: 'Dashboard Overview', path: '/dashboard/admin', keywords: 'home main start index' },
+                                { name: 'School Profile', path: '/dashboard/admin/school-profile', keywords: 'info details setup logo name' },
+                                { name: 'Staff Directory', path: '/dashboard/admin/teachers', keywords: 'educators tutors personnel employees' },
+                                { name: 'Students Directory', path: '/dashboard/admin/students', keywords: 'pupils learners children kids' },
+                                { name: 'Classes & Forms', path: '/dashboard/admin/classes', keywords: 'rooms sections levels' },
+                                { name: 'Subjects & Departments', path: '/dashboard/admin/academics', keywords: 'courses syllabus learning' },
+                                { name: 'Academic Sessions', path: '/dashboard/admin/sessions', keywords: 'terms years semesters periods' },
+                                { name: 'Attendance Register', path: '/dashboard/admin/attendance', keywords: 'presence absent late roll call' },
+                                { name: 'Exams & Quizzes', path: '/dashboard/admin/exams', keywords: 'tests assessments CA papers' },
+                                { name: 'Assignments', path: '/dashboard/admin/assignments', keywords: 'homework tasks grading' },
+                                { name: 'Grades Hub', path: '/dashboard/admin/grades', courses: 'marks scores reports report cards standalone' },
+                                { name: 'Finance & Billing', path: '/dashboard/admin/finance', keywords: 'money fees payments invoices' },
+                                { name: 'Transactions', path: '/dashboard/admin/transactions', keywords: 'history payments ledger logs' },
+                                { name: 'Files & Resources', path: '/dashboard/admin/files', keywords: 'library media documents storage' },
+                                { name: 'Invitations & Linking', path: '/dashboard/admin/invitations', keywords: 'connect code invite join' },
+                                { name: 'Inquiries & Messages', path: '/dashboard/admin/inquiries', keywords: 'contact us questions emails' },
+                                { name: 'System Notifications', path: '/dashboard/admin/notifications', keywords: 'alerts inbox unread' },
+                                { name: 'Subdomain Management', path: '/dashboard/admin/subdomain', keywords: 'website link url domain' },
+                                { name: 'Settings & Config', path: '/dashboard/admin/settings', keywords: 'preferences setup password admin' },
+                                { name: 'Support Tickets', path: '/dashboard/admin/support', keywords: 'help assistance contact us issues' },
+                            ].filter(item => {
+                                const q = searchQuery.toLowerCase();
+                                return item.name.toLowerCase().includes(q) || (item.keywords && item.keywords.includes(q));
+                            })
+                            .map((item, index) => (
+                                <Link
+                                    key={index}
+                                    href={item.path}
+                                    onClick={() => setSearchQuery("")}
+                                    className="flex items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors border-l-2 border-transparent hover:border-primary"
+                                >
+                                    {item.name}
+                                </Link>
+                            ))}
+                            
+                            {[
+                                { name: 'Dashboard Overview', path: '/dashboard/admin', keywords: 'home main start index' },
+                                { name: 'School Profile', path: '/dashboard/admin/school-profile', keywords: 'info details setup logo name' },
+                                { name: 'Staff Directory', path: '/dashboard/admin/teachers', keywords: 'educators tutors personnel employees' },
+                                { name: 'Students Directory', path: '/dashboard/admin/students', keywords: 'pupils learners children kids' },
+                                { name: 'Classes & Forms', path: '/dashboard/admin/classes', keywords: 'rooms sections levels' },
+                                { name: 'Subjects & Departments', path: '/dashboard/admin/academics', keywords: 'courses syllabus learning' },
+                                { name: 'Academic Sessions', path: '/dashboard/admin/sessions', keywords: 'terms years semesters periods' },
+                                { name: 'Attendance Register', path: '/dashboard/admin/attendance', keywords: 'presence absent late roll call' },
+                                { name: 'Exams & Quizzes', path: '/dashboard/admin/exams', keywords: 'tests assessments CA papers' },
+                                { name: 'Assignments', path: '/dashboard/admin/assignments', keywords: 'homework tasks grading' },
+                                { name: 'Grades Hub', path: '/dashboard/admin/grades', courses: 'marks scores reports report cards standalone' },
+                                { name: 'Finance & Billing', path: '/dashboard/admin/finance', keywords: 'money fees payments invoices' },
+                                { name: 'Transactions', path: '/dashboard/admin/transactions', keywords: 'history payments ledger logs' },
+                                { name: 'Files & Resources', path: '/dashboard/admin/files', keywords: 'library media documents storage' },
+                                { name: 'Invitations & Linking', path: '/dashboard/admin/invitations', keywords: 'connect code invite join' },
+                                { name: 'Inquiries & Messages', path: '/dashboard/admin/inquiries', keywords: 'contact us questions emails' },
+                                { name: 'System Notifications', path: '/dashboard/admin/notifications', keywords: 'alerts inbox unread' },
+                                { name: 'Subdomain Management', path: '/dashboard/admin/subdomain', keywords: 'website link url domain' },
+                                { name: 'Settings & Config', path: '/dashboard/admin/settings', keywords: 'preferences setup password admin' },
+                                { name: 'Support Tickets', path: '/dashboard/admin/support', keywords: 'help assistance contact us issues' },
+                            ].filter(item => {
+                                const q = searchQuery.toLowerCase();
+                                return item.name.toLowerCase().includes(q) || (item.keywords && item.keywords.includes(q));
+                            }).length === 0 && (
+                                <div className="px-4 py-8 text-center flex flex-col items-center justify-center gap-2">
+                                    <Search className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 font-bold">No modules found</p>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500">Try searching for keywords like "profile", "settings", or "finance"</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="flex items-center justify-end gap-4 flex-1">

@@ -586,28 +586,34 @@ export default function StudentSettingsPage() {
                              </Button>
                           </div>
                           <Separator className="opacity-50" />
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between opacity-60 pointer-events-none">
                              <div className="flex gap-4">
                                <div className="size-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
                                  <Bell className="text-violet-600" size={18} />
                                </div>
                                <div>
-                                 <h4 className="font-bold text-slate-900 dark:text-white">Notifications</h4>
+                                 <div className="flex items-center gap-2">
+                                   <h4 className="font-bold text-slate-900 dark:text-white">Notifications</h4>
+                                   <Badge variant="outline" className="text-[8px] uppercase tracking-widest font-black text-violet-600 bg-violet-600/10 border-violet-600/20">Coming Soon</Badge>
+                                 </div>
                                  <p className="text-xs text-slate-500 font-medium">Control what alerts you receive</p>
                                </div>
                              </div>
-                             <Button variant="outline" size="sm" className="rounded-xl font-bold text-[10px] uppercase tracking-widest border-2">Configure</Button>
+                             <Button disabled variant="outline" size="sm" className="rounded-xl font-bold text-[10px] uppercase tracking-widest border-2">Configure</Button>
                           </div>
                        </div>
                        
                        <div className="p-8 space-y-6 bg-slate-50/30 dark:bg-slate-800/30">
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between opacity-60 pointer-events-none">
                              <div className="flex gap-4">
                                <div className="size-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
                                  <SunMoon className="text-orange-600" size={18} />
                                </div>
                                <div>
-                                 <h4 className="font-bold text-slate-900 dark:text-white">Appearance</h4>
+                                 <div className="flex items-center gap-2">
+                                   <h4 className="font-bold text-slate-900 dark:text-white">Appearance</h4>
+                                   <Badge variant="outline" className="text-[8px] uppercase tracking-widest font-black text-orange-600 bg-orange-600/10 border-orange-600/20">Coming Soon</Badge>
+                                 </div>
                                  <p className="text-xs text-slate-500 font-medium">Customize your interface theme</p>
                                </div>
                              </div>

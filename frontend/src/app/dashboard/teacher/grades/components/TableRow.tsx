@@ -1,13 +1,31 @@
 import { GradeStatus, StudentGrade } from "./types";
-import { Edit2, MoreVertical } from "lucide-react";
+import { Edit2, MoreVertical, Edit, Eye, Send, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 interface TableRowProps {
   grade: StudentGrade;
+  rowNumber: number;
   onEdit: () => void;
+  onPublish: () => void;
+  onDelete: () => void;
+  onViewDetails: () => void;
 }
 
-const TableRow: React.FC<TableRowProps> = ({ grade, onEdit }) => {
+const TableRow: React.FC<TableRowProps> = ({
+  grade,
+  rowNumber,
+  onEdit,
+  onPublish,
+  onDelete,
+  onViewDetails
+}) => {
   const getStatusStyles = (status: GradeStatus) => {
     switch (status) {
       case 'Graded':
@@ -30,6 +48,9 @@ const TableRow: React.FC<TableRowProps> = ({ grade, onEdit }) => {
 
   return (
     <tr className="group border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all duration-300">
+      <td className="px-6 py-4 text-sm font-black text-slate-400 dark:text-slate-600">
+        {String(rowNumber).padStart(2, '0')}
+      </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-primary/80 to-primary/40 text-white text-xs font-bold shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform duration-500">
@@ -85,20 +106,30 @@ const TableRow: React.FC<TableRowProps> = ({ grade, onEdit }) => {
       </td>
 
       <td className="px-6 py-4 text-right">
-        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              onEdit();
-            }}
-            className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
-            title="Edit Grade"
-          >
-            <Edit2 size={16} />
-          </button>
-          <button className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-            <MoreVertical size={16} />
-          </button>
+        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
+                <MoreVertical size={16} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl bg-white dark:bg-slate-900 z-50">
+              <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+                <Edit size={14} /> Edit Grade
+              </DropdownMenuItem>
+              <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); onViewDetails(); }}>
+                <Eye size={14} /> View Details
+              </DropdownMenuItem>
+              {grade.status !== 'Graded' && (
+                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 dark:text-emerald-400 gap-2" onClick={(e) => { e.stopPropagation(); onPublish(); }}>
+                  <Send size={14} /> Publish Now
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-rose-600 gap-2" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                <Trash2 size={14} /> Delete Record
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </td>
     </tr>

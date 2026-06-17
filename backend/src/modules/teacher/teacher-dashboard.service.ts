@@ -1109,7 +1109,8 @@ export const getTeacherSubjectsService = async (teacherId: string, schoolId: str
             isArchived: false,
             OR: [
                 { teacherId },
-                { teacherSubjects: { some: { teacherId } } }
+                { teacherSubjects: { some: { teacherId } } },
+                { classes: { some: { class: { teachers: { some: { teacherId } } } } } }
             ]
         },
         include: {

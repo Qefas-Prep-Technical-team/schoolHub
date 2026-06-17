@@ -18,8 +18,27 @@ export const getGradeHubService = async (schoolId?: string, filters: any = {}) =
   if (filters.teacherId && filters.teacherId !== 'all' && filters.teacherId !== '') {
     where.teacherId = filters.teacherId;
   }
-  
-  if (filters.classId && filters.classId !== 'all') where.classId = filters.classId;
+
+  // Restrict to teacher's assigned classes if teacherClassesOnly is requested
+  if (filters.teacherClassesOnly === 'true' && filters.currentTeacherId) {
+    const classTeachers = await prisma.classTeacher.findMany({
+      where: { teacherId: filters.currentTeacherId },
+      select: { classId: true }
+    });
+    const assignedClassIds = classTeachers.map(ct => ct.classId);
+
+    if (filters.classId && filters.classId !== 'all') {
+      if (assignedClassIds.includes(filters.classId)) {
+        where.classId = filters.classId;
+      } else {
+        where.classId = 'none'; // Teacher has no access to this class
+      }
+    } else {
+      where.classId = { in: assignedClassIds };
+    }
+  } else {
+    if (filters.classId && filters.classId !== 'all') where.classId = filters.classId;
+  }
   if (filters.category && filters.category !== 'all') where.category = filters.category;
   if (filters.status && filters.status !== 'all') where.status = filters.status;
   if (filters.term && filters.term !== 'all') where.term = filters.term;

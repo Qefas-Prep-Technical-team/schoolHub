@@ -36,7 +36,7 @@ export default function SubmitBar({
 
                 <button
                     onClick={onPublish}
-                    className="px-6 py-2 text-sm font-medium text-white bg-primary dark:bg-white dark:text-[#0e121b] rounded-lg hover:bg-primary/90 dark:hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 transition-all duration-200 dark:bg-gradient-to-r dark:from-indigo-500 dark:to-violet-600 dark:hover:from-indigo-600 dark:hover:to-violet-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 border border-primary/20 dark:border-indigo-400/20"
                     disabled={isLoading}
                 >
                     {isLoading ? (

@@ -63,6 +63,8 @@ export const getExams = async (req: Request, res: Response) => {
       filters.availableForStudentId = req.user.id;
     } else if (req.user?.userType === UserRole.TEACHER) {
       filters.teacherId = req.user.id;
+      filters.teacherClassesOnly = 'true';
+      filters.currentTeacherId = req.user.id;
     }
 
     console.log("LOG: [getExams] Calling getExamsService with filters:", filters);
@@ -641,6 +643,8 @@ export const getSubjectPapers = async (req: Request, res: Response) => {
 
     if (req.user?.userType === UserRole.TEACHER) {
       filters.teacherId = req.user.id;
+      filters.teacherClassesOnly = 'true';
+      filters.currentTeacherId = req.user.id;
     }
 
     console.log("LOG: [getSubjectPapers] Fetching with filters:", filters);

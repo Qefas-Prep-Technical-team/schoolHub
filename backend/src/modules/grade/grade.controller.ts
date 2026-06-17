@@ -5,7 +5,16 @@ import { handleError } from "../../utils/error-handler";
 export const getGradeHub = async (req: Request, res: Response) => {
   try {
     const { schoolId, page = 1, limit = 10 } = req.query;
-    const { grades, total } = await gradeService.getGradeHubService(schoolId as string, req.query);
+    const userRole = (req as any).user?.role || (req as any).user?.userType;
+    const userId = (req as any).user?.id;
+
+    const queryFilters = { ...req.query };
+    if (userRole === 'TEACHER') {
+      queryFilters.teacherClassesOnly = 'true';
+      queryFilters.currentTeacherId = userId;
+    }
+
+    const { grades, total } = await gradeService.getGradeHubService(schoolId as string, queryFilters);
     
     const totalPages = Math.ceil(total / Number(limit));
 
@@ -27,7 +36,7 @@ export const getGradeHub = async (req: Request, res: Response) => {
 export const createGradeEntry = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const userRole = (req as any).user.role;
+    const userRole = (req as any).user.role || (req as any).user.userType;
     const grade = await gradeService.createGradeEntryService(req.body, userId, userRole);
     res.json({ success: true, data: grade });
   } catch (error: any) {
@@ -40,7 +49,7 @@ export const updateGradeScore = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { score, remarks, status } = req.body;
     const userId = (req as any).user.id;
-    const userRole = (req as any).user.role;
+    const userRole = (req as any).user.role || (req as any).user.userType;
     const grade = await gradeService.updateGradeScoreService(id as string, { score, remarks, status }, userId, userRole);
     res.json({ success: true, data: grade });
   } catch (error: any) {
@@ -52,7 +61,7 @@ export const publishGrade = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user.id;
-    const userRole = (req as any).user.role;
+    const userRole = (req as any).user.role || (req as any).user.userType;
     const grade = await gradeService.updateGradeScoreService(id as string, { status: 'PUBLISHED' }, userId, userRole);
     res.json({ success: true, data: grade });
   } catch (error: any) {
@@ -74,7 +83,7 @@ export const bulkCreateGrades = async (req: Request, res: Response) => {
   try {
     const { schoolId, grades } = req.body;
     const userId = (req as any).user.id;
-    const userRole = (req as any).user.role;
+    const userRole = (req as any).user.role || (req as any).user.userType;
     const result = await gradeService.bulkCreateGradesService(schoolId, grades, userId, userRole);
     res.json({ success: true, data: result });
   } catch (error: any) {

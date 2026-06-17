@@ -104,6 +104,8 @@ export const getExamsService = async (filters: {
   isPersonal?: boolean;
   page?: number;
   limit?: number;
+  teacherClassesOnly?: string;
+  currentTeacherId?: string;
 }) => {
   const where: any = {};
   const studentId = filters.availableForStudentId;
@@ -192,6 +194,18 @@ export const getExamsService = async (filters: {
         where.AND = [{ OR: teacherOrConditions }];
       } else {
         where.AND = [{ id: "none" }]; // no access to any exams
+      }
+
+      // Implement teacherClassesOnly scoping
+      const isTeacherClassesOnly = filters.teacherClassesOnly === 'true';
+      if (isTeacherClassesOnly) {
+        if (filters.classId) {
+          if (!classIds.includes(filters.classId)) {
+            where.classId = "none";
+          }
+        } else {
+          where.classId = { in: classIds };
+        }
       }
 
       // If it's a teacher, we also usually only want to show their own creations if in personal context
@@ -393,6 +407,8 @@ export const getSubjectPapersService = async (filters: {
   status?: string,
   page?: number,
   limit?: number,
+  teacherClassesOnly?: string,
+  currentTeacherId?: string,
 }) => {
   const where: any = {};
   
@@ -436,6 +452,31 @@ export const getSubjectPapersService = async (filters: {
         where.AND = [{ OR: teacherOrConditions }];
       } else {
         where.AND = [{ id: "none" }];
+      }
+
+      // Implement teacherClassesOnly scoping
+      const isTeacherClassesOnly = filters.teacherClassesOnly === 'true';
+      if (isTeacherClassesOnly) {
+        if (filters.classId) {
+          if (!classIds.includes(filters.classId)) {
+            where.id = "none";
+          }
+        } else {
+          const classSubjects = await prisma.classSubject.findMany({
+            where: { classId: { in: classIds } },
+            select: { subjectId: true }
+          });
+          const classSubjectIds = classSubjects.map((cs: any) => cs.subjectId);
+          
+          if (!where.AND) where.AND = [];
+          where.AND.push({
+            OR: [
+              { subjectId: { in: classSubjectIds } },
+              { exams: { some: { exam: { classId: { in: classIds } } } } },
+              { teacherId: filters.teacherId }
+            ]
+          });
+        }
       }
     }
   }
