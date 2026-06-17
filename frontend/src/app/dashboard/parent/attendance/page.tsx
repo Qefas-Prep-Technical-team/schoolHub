@@ -49,7 +49,7 @@ export default function ParentAttendancePage() {
 
     const attendanceRate = dashboard?.stats?.attendanceRate ?? 100;
     
-    const attendances = child?.attendances || [];
+    const attendances = (child as any)?.attendances || [];
     const activities = attendances.slice(0, 5).map((a: any) => {
         let dateStr = '';
         const d = new Date(a.date);

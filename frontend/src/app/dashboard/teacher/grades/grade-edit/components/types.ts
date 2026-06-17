@@ -37,10 +37,4 @@ export interface Teacher {
   avatarUrl: string;
 }
 
-export interface GradeFormData {
-  classwork: number;
-  assignment: number;
-  exam: number;
-  comment: string;
-  notifyParent: boolean;
-}
+

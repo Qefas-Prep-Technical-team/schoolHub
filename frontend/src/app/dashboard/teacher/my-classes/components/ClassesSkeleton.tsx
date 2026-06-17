@@ -42,4 +42,3 @@ export const ClassesSkeleton: React.FC = () => {
   );
 };
 
-export default ClassesSkeleton;

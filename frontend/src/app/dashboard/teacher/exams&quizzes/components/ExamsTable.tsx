@@ -4,9 +4,9 @@ import { motion } from 'framer-motion';
 
 export interface Exam {
   id: string;
-  title: string;
+  title?: string;
   status: string;
-  createdAt: string | Date;
+  createdAt?: string;
   totalMarks?: number;
   durationMinutes?: number;
   subject?: {

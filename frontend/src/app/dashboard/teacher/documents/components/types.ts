@@ -1,9 +1,9 @@
-export type DocumentType = 'PDF' | 'Slides' | 'Worksheet' | 'Notes' | 'Past Questions' | 'Other';
+
 
 export interface Document {
   id: number;
   title: string;
-  type: DocumentType;
+  type: string;
   thumbnailUrl: string;
   modifiedDate: string;
   description?: string;

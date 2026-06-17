@@ -406,4 +406,3 @@ export const TranscriptPDF: React.FC<TranscriptPDFProps> = ({ student, school, g
   );
 };
 
-export default TranscriptPDF;

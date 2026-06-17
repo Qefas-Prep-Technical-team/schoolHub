@@ -13,7 +13,7 @@ import { FileText, Download, Loader2, Award, ShieldCheck, Calendar, BookOpen } f
 import { cn } from '@/lib/utils'
 
 
-import TranscriptPDF from './TranscriptPDF'
+import { TranscriptPDF } from './TranscriptPDF'
 
 interface TranscriptModalProps {
     isOpen: boolean

@@ -46,4 +46,3 @@ export const ExamsTableSkeleton: React.FC = () => {
   );
 };
 
-export default ExamsTableSkeleton;

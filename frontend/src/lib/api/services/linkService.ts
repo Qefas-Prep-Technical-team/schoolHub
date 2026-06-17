@@ -81,7 +81,7 @@ export const linkService = {
   },
 
   getSentLinkRequests: async (
-    options: { page?: number; limit?: number; category?: string } = {},
+    options: { page?: number; limit?: number; category?: string; status?: string } = {},
   ) => {
     try {
       const response = await apiClient.get<PaginatedLinkRequestsResponse>(

@@ -11,14 +11,12 @@ export const gradeKeys = {
   hub: (filters: Record<string, unknown>) => [...gradeKeys.all, "hub", filters] as const,
 };
 
-export const useStudentGrades = (studentId?: string, params?: { page?: number; limit?: number; assessmentType?: string | string[] }) => {
+export const useGrades = (studentId?: string, params?: { page?: number; limit?: number; assessmentType?: string | string[] }) => {
   return useQuery({
     queryKey: gradeKeys.list({ studentId, ...params }),
     queryFn: () => gradeService.getStudentGrades(studentId, params),
   });
 };
-
-export const useGrades = useStudentGrades;
 
 export const useClassLeaderboard = (classId?: string) => {
   return useQuery({

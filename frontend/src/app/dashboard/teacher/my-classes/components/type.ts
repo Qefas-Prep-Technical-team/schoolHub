@@ -26,10 +26,4 @@ export interface ClassFilter {
   subject: string;
 }
 
-export interface ClassStats {
-  totalClasses: number;
-  totalStudents: number;
-  averageAttendance: number;
-  pendingGrading: number;
-  upcomingExams: number;
-}
+

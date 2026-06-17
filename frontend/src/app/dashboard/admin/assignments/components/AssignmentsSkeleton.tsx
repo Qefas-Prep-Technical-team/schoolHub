@@ -37,4 +37,3 @@ export const AssignmentsSkeleton: React.FC = () => {
     );
 };
 
-export default AssignmentsSkeleton;

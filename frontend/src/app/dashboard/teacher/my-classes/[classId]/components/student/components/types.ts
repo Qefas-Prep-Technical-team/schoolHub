@@ -16,9 +16,3 @@ export interface Student {
   lastExam?: string
 }
 
-export interface ClassInfo {
-  id: string
-  name: string
-  subject: string
-  description: string
-}
