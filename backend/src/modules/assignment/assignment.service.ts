@@ -158,6 +158,7 @@ export const getStudentAssignmentsService = async (options: {
       status: computedStatus,
       progress: computedProgress,
       grade: submission?.score ? `${submission.score}/${a.totalMarks}` : null,
+      feedback: submission?.feedback || null,
       submissionDate: submission?.submittedAt,
       totalMarks: a.totalMarks,
       questionCount: a._count.questions,

@@ -163,3 +163,13 @@ export const useGradeSubmission = (schoolId: string) => {
     }
   });
 };
+export const useParentAssignmentDetails = (childId: string | null | undefined, assignmentId: string) => {
+  return useQuery({
+    queryKey: ['parentAssignmentDetails', childId, assignmentId],
+    queryFn: async () => {
+      const response = await api.get(`/parents/children/${childId}/assignments/${assignmentId}`);
+      return response.data.data;
+    },
+    enabled: !!childId && !!assignmentId,
+  });
+};

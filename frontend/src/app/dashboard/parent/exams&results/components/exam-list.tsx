@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import { useChildExams } from '@/lib/api/hooks/useChildExams'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
@@ -30,6 +30,8 @@ export default function ExamList() {
   const [selectedSubject, setSelectedSubject] = useState('all')
   const [selectedTerm, setSelectedTerm] = useState('all')
   const [selectedStatus, setSelectedStatus] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const { selectedChildId } = useParentStore()
   const { data: dashboardData, isLoading: isDashboardLoading } = useParentDashboard(selectedChildId)
@@ -88,12 +90,20 @@ export default function ExamList() {
   const allExams = [...pendingExams, ...completedExams]
 
   const filteredExams = allExams.filter(exam => {
-    const matchesSearch = exam.title.toLowerCase().includes(search.toLowerCase()) || 
-                         exam.subject.toLowerCase().includes(search.toLowerCase())
+    const titleMatch = exam.title ? String(exam.title).toLowerCase().includes(search.toLowerCase()) : false;
+    const subjectMatch = exam.subject ? String(exam.subject).toLowerCase().includes(search.toLowerCase()) : false;
+    const matchesSearch = titleMatch || subjectMatch;
     const matchesSubject = selectedSubject === 'all' || exam.subject.toLowerCase() === selectedSubject.toLowerCase()
     const matchesStatus = selectedStatus === 'all' || exam.status === selectedStatus
     return matchesSearch && matchesSubject && matchesStatus
   })
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, selectedSubject, selectedTerm, selectedStatus])
+
+  const totalPages = Math.ceil(filteredExams.length / itemsPerPage) || 1
+  const paginatedExams = filteredExams.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   function gradeLabel(avg: number) {
     if (avg >= 90) return 'A+'
@@ -204,7 +214,7 @@ export default function ExamList() {
             <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-slate-700 mb-4">search_off</span>
             <p className="text-slate-500 dark:text-slate-400 font-bold">No exams found matching your criteria</p>
           </div>
-        ) : filteredExams.map((exam) => {
+        ) : paginatedExams.map((exam) => {
           const statusStyles = getStatusStyles(exam.status)
           const performanceDiff = exam.score ? exam.score - exam.classAverage : 0
           
@@ -299,13 +309,21 @@ export default function ExamList() {
       {/* Pagination */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 px-4">
         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-          Showing <span className="text-slate-900 dark:text-white">{filteredExams.length}</span> of <span className="text-slate-900 dark:text-white">{allExams.length}</span> assessments
+          Showing <span className="text-slate-900 dark:text-white">
+            {filteredExams.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, filteredExams.length)}
+          </span> of <span className="text-slate-900 dark:text-white">{filteredExams.length}</span> assessments
         </p>
         <div className="flex gap-3">
-          <button className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-all disabled:opacity-30" disabled>
+          <button 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-all disabled:opacity-30">
             Previous
           </button>
-          <button className="px-6 py-2.5 rounded-xl bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-600/20 hover:bg-orange-700 transition-all disabled:opacity-30" disabled={filteredExams.length <= 10}>
+          <button 
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage >= totalPages}
+            className="px-6 py-2.5 rounded-xl bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-600/20 hover:bg-orange-700 transition-all disabled:opacity-30">
             Next Page
           </button>
         </div>

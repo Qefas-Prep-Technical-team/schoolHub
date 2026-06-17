@@ -1,4 +1,5 @@
 import axios from "axios";
+import crypto from "crypto";
 import prisma from "../../config/database";
 import { PRICING_PLANS } from "./plans.data";
 import { sendPaymentReceiptEmail } from "../auth/auth.service";
@@ -43,20 +44,27 @@ export const initializePaymentService = async (params: {
   amount: number;
   email: string;
   plan: string;
+  planCode?: string;
   metadata?: any;
 }) => {
   try {
+    const payload: any = {
+      email: params.email,
+      amount: params.amount * 100, // Paystack works in kobo/cents
+      metadata: {
+        ...params.metadata,
+        userId: params.userId,
+        plan: params.plan,
+      },
+    };
+
+    if (params.planCode) {
+      payload.plan = params.planCode;
+    }
+
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
-      {
-        email: params.email,
-        amount: params.amount * 100, // Paystack works in kobo/cents
-        metadata: {
-          ...params.metadata,
-          userId: params.userId,
-          plan: params.plan,
-        },
-      },
+      payload,
       {
         headers: {
           Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
@@ -502,4 +510,42 @@ export const getMetadataFromReference = async (reference: string) => {
         console.error(`[PaymentService] Error fetching metadata for ref: ${reference}`, error);
         throw new Error("Failed to retrieve transaction metadata");
     }
+};
+
+/**
+ * Handle Paystack Webhook Events (Auto-Renewals)
+ */
+export const paystackWebhookService = async (signature: string, payload: any) => {
+  // Verify Paystack Signature
+  const hash = crypto.createHmac('sha512', PAYSTACK_SECRET_KEY).update(JSON.stringify(payload)).digest('hex');
+  if (hash !== signature) {
+    throw new Error('Invalid signature');
+  }
+
+  const event = payload.event;
+  const data = payload.data;
+
+  // We only care about charge.success for auto-debits / renewals
+  if (event === 'charge.success') {
+    const reference = data.reference;
+    // For auto-renewals, Paystack might not send all metadata if it's a recurring charge,
+    // but the email is always there. We need to match it with our DB if we don't have custom metadata.
+    // However, usually, we can find the user by their authorization_code if we saved it,
+    // or by checking the reference/email.
+    
+    // As a simple placeholder logic for webhook handling:
+    // (You will need robust reference matching or customer matching here)
+    const email = data.customer?.email;
+    const amount = data.amount / 100;
+    
+    console.log(`[Webhook] Auto-renewal charge.success for ${email} - Amount: ${amount}`);
+    
+    // In a real application, you would:
+    // 1. Find user by email
+    // 2. Determine their plan by amount or existing DB state
+    // 3. Extend subscriptionEnd by 1 month / 1 year
+    // 4. Log in SubscriptionHistory
+  }
+
+  return { success: true };
 };

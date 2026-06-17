@@ -107,7 +107,7 @@ export default function StatsBreakdown({
         <div className="mt-6">
           <button
             onClick={onViewDetails}
-            className="w-full py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/20"
+            className="w-full py-2.5 rounded-xl bg-blue-600 dark:bg-indigo-600 text-white text-sm font-black uppercase tracking-widest hover:bg-blue-700 dark:hover:bg-indigo-700 transition-all shadow-lg shadow-blue-600/20 dark:shadow-indigo-600/20"
           >
             View Detailed Breakdown
           </button>

@@ -2,6 +2,7 @@
 import { format, parseISO } from 'date-fns'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useParentStore } from '@/lib/api/hooks/useParentStore'
 
 const typeConfig: Record<string, { label: string; dot: string; badge: string }> = {
   LINK_REQUEST:    { label: 'Link', dot: 'bg-orange-500 ring-orange-500/20', badge: 'text-orange-600 bg-orange-600/10 border-orange-500/20' },
@@ -14,7 +15,8 @@ const getConfig = (type: string) =>
   typeConfig[type] ?? { label: 'General', dot: 'bg-slate-300 dark:bg-slate-700 ring-slate-100', badge: 'text-slate-500 bg-slate-100 border-slate-200' }
 
 export default function Announcements() {
-  const { data, isLoading } = useParentDashboard()
+  const { selectedChildId } = useParentStore()
+  const { data, isLoading } = useParentDashboard(selectedChildId)
   const notifications = data?.notifications ?? []
 
   return (

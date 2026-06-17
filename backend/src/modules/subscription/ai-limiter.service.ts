@@ -15,15 +15,17 @@ export class AiLimiterService {
     if (userType === UserRole.ADMIN && schoolId) {
       const school = await prisma.school.findUnique({ where: { id: schoolId } });
       if (school) {
-        if (school.maxAiUsageOverride !== null && school.maxAiUsageOverride !== undefined) {
+        const isExpired = school.subscriptionEnd && new Date(school.subscriptionEnd) < new Date();
+        
+        if (!isExpired && school.maxAiUsageOverride !== null && school.maxAiUsageOverride !== undefined) {
           return school.maxAiUsageOverride;
         }
         const activePlanId = (school as any).subscriptionPlanId || (school as any).planId;
-        if (activePlanId) {
+        if (!isExpired && activePlanId) {
           const plan = await prisma.subscriptionPlan.findUnique({ where: { id: activePlanId } });
           if (plan) return plan.maxAiUsage;
         }
-        const planName = (school.plan || DEFAULT_PLAN).toUpperCase();
+        const planName = isExpired ? DEFAULT_PLAN.toUpperCase() : (school.plan || DEFAULT_PLAN).toUpperCase();
         const limits = PLAN_LIMITS[planName] || PLAN_LIMITS[DEFAULT_PLAN];
         return limits.maxAiUsage;
       }
@@ -35,15 +37,17 @@ export class AiLimiterService {
     if (userModel) {
       const user = await userModel.findUnique({ where: { id: userId } });
       if (user) {
-        if (user.maxAiUsageOverride !== null && user.maxAiUsageOverride !== undefined) {
+        const isExpired = user.subscriptionEnd && new Date(user.subscriptionEnd) < new Date();
+        
+        if (!isExpired && user.maxAiUsageOverride !== null && user.maxAiUsageOverride !== undefined) {
           return user.maxAiUsageOverride;
         }
         const activePlanId = (user as any).subscriptionPlanId || (user as any).planId;
-        if (activePlanId) {
+        if (!isExpired && activePlanId) {
           const plan = await prisma.subscriptionPlan.findUnique({ where: { id: activePlanId } });
           if (plan) return plan.maxAiUsage;
         }
-        const planName = (user.plan || DEFAULT_PLAN).toUpperCase();
+        const planName = isExpired ? DEFAULT_PLAN.toUpperCase() : (user.plan || DEFAULT_PLAN).toUpperCase();
         const limits = PLAN_LIMITS[planName] || PLAN_LIMITS[DEFAULT_PLAN];
         return limits.maxAiUsage;
       }
@@ -53,15 +57,17 @@ export class AiLimiterService {
     if (schoolId) {
       const school = await prisma.school.findUnique({ where: { id: schoolId } });
       if (school) {
-        if (school.maxAiUsageOverride !== null && school.maxAiUsageOverride !== undefined) {
+        const isExpired = school.subscriptionEnd && new Date(school.subscriptionEnd) < new Date();
+        
+        if (!isExpired && school.maxAiUsageOverride !== null && school.maxAiUsageOverride !== undefined) {
           return school.maxAiUsageOverride;
         }
         const activePlanId = (school as any).subscriptionPlanId || (school as any).planId;
-        if (activePlanId) {
+        if (!isExpired && activePlanId) {
           const plan = await prisma.subscriptionPlan.findUnique({ where: { id: activePlanId } });
           if (plan) return plan.maxAiUsage;
         }
-        const planName = (school.plan || DEFAULT_PLAN).toUpperCase();
+        const planName = isExpired ? DEFAULT_PLAN.toUpperCase() : (school.plan || DEFAULT_PLAN).toUpperCase();
         const limits = PLAN_LIMITS[planName] || PLAN_LIMITS[DEFAULT_PLAN];
         return limits.maxAiUsage;
       }

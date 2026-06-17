@@ -27,10 +27,11 @@ export default function PageHeading() {
       </div>
       
       <Button
+        variant="outline"
         onClick={() => setShowPending(true)}
-        className="h-14 px-8 rounded-2xl border-2 border-slate-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 group hover:border-orange-600 hover:text-orange-600"
+        className="h-14 px-8 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 backdrop-blur-xl font-black text-xs uppercase tracking-widest transition-all duration-300 active:scale-95 group hover:border-orange-500 hover:text-orange-600 dark:hover:border-orange-500/50 dark:hover:text-orange-400 dark:hover:bg-orange-500/10 shadow-sm"
       >
-        <Bell className="mr-3 group-hover:rotate-12 transition-transform" size={18} />
+        <Bell className="mr-3 text-slate-400 dark:text-slate-500 group-hover:text-orange-500 group-hover:rotate-12 transition-all duration-300" size={18} />
         Pending Requests
       </Button>
 

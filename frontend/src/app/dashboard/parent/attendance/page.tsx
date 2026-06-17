@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { ParentSidebar } from '../components/app-sidebar';
 import ParentHeader from './components/ParentHeader';
 import StudentProfile from './components/StudentProfile';
 import AttendanceAlert from './components/AttendanceAlert';
@@ -9,55 +8,74 @@ import AttendanceChart from './components/AttendanceChart';
 import MonthlyTrend from './components/MonthlyTrend';
 import RecentActivity from './components/RecentActivity';
 import QuickContact from './components/QuickContact';
+import { useParentStore } from '@/lib/api/hooks/useParentStore';
+import { useChildDetails } from '@/lib/api/hooks/useParentChildren';
+import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format, isToday, isYesterday } from 'date-fns';
 
 export default function ParentAttendancePage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const { selectedChildId } = useParentStore();
+    const { data: dashboard, isLoading: loadingDash } = useParentDashboard(selectedChildId);
+    const { data: child, isLoading: loadingChild } = useChildDetails(selectedChildId);
 
-    const student = {
-        name: 'Alex Johnson',
-        grade: 'Grade 10-B',
-        studentId: '123456',
-        imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVQd10aNGazGlrieVRlGmes4vdPNWe6P7TDC4sQVKQduE-IGhHstIiFtePSTktPy9JAL0c9QU6ZfvalNO7Pc2kWwGAyQdiu3LUPUkaSNR1nR3Ss_QXzZfO7mzucnTuqrxtHNcn38w4Ih6212qp9gWgjCEXJGKK0kmmOV4zSC44CbzrwhlracWZkIK-cXV4NzodcP8omj61o78ewSWsgzFuGpqe5qUhKhsVNSVbwGQZFPfY1EwUkINtZWLbh8zmQqZ80rZ71sIgTaE',
+    const isLoading = loadingDash || loadingChild;
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col flex-1 gap-6 p-4 md:p-8 lg:p-10">
+                <Skeleton className="h-32 w-full rounded-xl" />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                        <Skeleton className="h-64 w-full rounded-xl" />
+                        <Skeleton className="h-64 w-full rounded-xl" />
+                    </div>
+                    <div className="space-y-6">
+                        <Skeleton className="h-96 w-full rounded-xl" />
+                        <Skeleton className="h-40 w-full rounded-xl" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const studentData = {
+        name: child?.name || 'Student',
+        grade: child?.classes?.[0]?.class?.name || 'Unassigned',
+        studentId: child?.studentCode || 'N/A',
+        imageUrl: child?.profileImage || `https://ui-avatars.com/api/?name=${child?.name}&background=random`,
     };
 
-    const monthlyData = [
-        { month: 'Aug', attendance: 98, isCurrent: false },
-        { month: 'Sep', attendance: 100, isCurrent: false },
-        { month: 'Oct', attendance: 94, isCurrent: false },
-        { month: 'Nov', attendance: 96, isCurrent: true },
-        { month: 'Dec', attendance: 0, isCurrent: false },
-    ];
+    const attendanceRate = dashboard?.stats?.attendanceRate ?? 100;
+    
+    const attendances = child?.attendances || [];
+    const activities = attendances.slice(0, 5).map((a: any) => {
+        let dateStr = '';
+        const d = new Date(a.date);
+        if (isToday(d)) dateStr = 'Today, ' + format(d, 'MMM dd');
+        else if (isYesterday(d)) dateStr = 'Yesterday, ' + format(d, 'MMM dd');
+        else dateStr = format(d, 'EEE, MMM dd');
 
-    const activities = [
-        {
-            id: '1',
-            date: 'Today, Nov 14',
-            status: 'present' as const,
-            description: 'Present',
-            time: 'On Time',
-        },
-        {
-            id: '2',
-            date: 'Wed, Nov 13',
-            status: 'present' as const,
-            description: 'Present',
-            time: 'On Time',
-        },
-        {
-            id: '3',
-            date: 'Tue, Nov 12',
-            status: 'late' as const,
-            description: 'Late Arrival',
-            lateMinutes: 15,
-        },
-        {
-            id: '4',
-            date: 'Mon, Nov 11',
-            status: 'present' as const,
-            description: 'Present',
-            time: 'On Time',
-        },
-    ];
+        return {
+            id: a.id,
+            date: dateStr,
+            status: a.status.toLowerCase() as 'present' | 'late' | 'absent',
+            description: a.status.charAt(0).toUpperCase() + a.status.slice(1).toLowerCase(),
+            time: 'Recorded',
+        };
+    });
+
+    const breakdown = dashboard?.stats?.attendanceBreakdown || [];
+    const monthlyData = breakdown.slice(-5).map((b, i) => ({
+        month: format(new Date(b.date), 'MMM dd'),
+        attendance: b.present ? 100 : 0,
+        isCurrent: i === Math.min(breakdown.length, 5) - 1
+    }));
+    
+    const presentDays = attendances.filter((a: any) => a.status.toLowerCase() === 'present').length;
+    const lateDays = attendances.filter((a: any) => a.status.toLowerCase() === 'late').length;
+    const absentDays = attendances.filter((a: any) => a.status.toLowerCase() === 'absent').length;
 
     const handleViewDetails = () => {
         // console.log('View detailed breakdown');
@@ -83,14 +101,14 @@ export default function ParentAttendancePage() {
                 <div className="flex-1 w-full max-w-[1200px] mx-auto p-4 md:p-8 lg:p-10 flex flex-col gap-8">
                     {/* Student Profile */}
                     <StudentProfile
-                        student={student}
-                        lastUpdated="Today, 9:00 AM"
+                        student={studentData}
+                        lastUpdated={`Today, ${format(new Date(), 'h:mm a')}`}
                     />
 
                     {/* Attendance Alert */}
                     <AttendanceAlert
-                        attendanceRate={96}
-                        message="Alex has maintained a {rate} attendance record this semester. Keep it up!"
+                        attendanceRate={attendanceRate}
+                        message={`${studentData.name} has maintained a ${attendanceRate}% attendance record this semester.`}
                     />
 
                     {/* Main Dashboard Grid */}
@@ -99,13 +117,13 @@ export default function ParentAttendancePage() {
                         <div className="lg:col-span-2 flex flex-col gap-6">
                             {/* Attendance Chart */}
                             <AttendanceChart
-                                attendance={96}
+                                attendance={attendanceRate}
                                 stats={{
-                                    presentDays: 48,
-                                    lateDays: 2,
-                                    absentDays: 0,
+                                    presentDays: presentDays,
+                                    lateDays: lateDays,
+                                    absentDays: absentDays,
                                 }}
-                                status="excellent"
+                                status={attendanceRate >= 90 ? "excellent" : attendanceRate >= 75 ? "good" : "poor"}
                                 onViewDetails={handleViewDetails}
                             />
 

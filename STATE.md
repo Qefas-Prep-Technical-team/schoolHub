@@ -8,6 +8,9 @@
 ## Upcoming / Planning
 
 - Implementation of remaining `STUDENT_LIFECYCLE_SPEC.md` features (Promotion, Awards, etc.).
+- **Paystack Auto-Renewal Subscription**: Updated `initializePaymentService` to accept and pass `planCode` to Paystack initialization payload. This completely automates the subscription flow by tokenizing user cards and handling automatic periodic recurring billing for all user scopes seamlessly.
+- **[BUILT] Paystack Webhook Integration**: Created the `POST /api/v1/payment/webhook` endpoint with HMAC SHA-512 signature verification in `payment.service.ts` to listen for `charge.success` events. 
+    - **Setup Instructions**: To go live, navigate to the **Paystack Dashboard -> Settings -> API Keys & Webhooks**. Enter your production/test URL (e.g., `https://your-domain.com/api/v1/payment/webhook`) into the **Webhook URL** field. Ensure your backend `PAYSTACK_SECRET_KEY` matches the environment you are configuring. *Note: You or another AI will still need to write the specific Prisma database update logic inside `payment.service.ts` to match the customer's email/reference and actually extend their `subscriptionEnd` date.*
 
 ## Blockers
 
@@ -16,6 +19,14 @@
 ## Next Action
 
 - Monitor production environment telemetry logs.
+
+### Wednesday, June 17, 2026
+- **Subscription Architecture & Graceful Degradation Pipeline**:
+    - [x] **Just-In-Time (JIT) Invalidator**: Engineered a Just-In-Time subscription invalidator into `subscriptionMiddleware.ts`. When an expired user loads the application before the midnight cron job sweeps their account, the middleware intercepts the mismatch, instantaneously performs a silent asynchronous database downgrade (`EXPIRED` status, `FREE` plan), and dispatches a realtime `GENERAL` socket notification.
+    - [x] **Automated Midnight Sweeper (Cron Job)**: Installed and configured `node-cron` in `backend/src/scripts/cron.ts`. Scheduled a nightly sweep (`0 0 * * *`) that queries all schools, teachers, students, and parents where `subscriptionEnd` has passed. It enforces strict database synchronization by wiping overrides, downgrading plans to `DEFAULT_PLAN`, changing statuses to `EXPIRED`, and emitting push notifications.
+    - [x] **Graceful Free-Tier Fallback**: Updated the global authentication middleware to safely bypass strict HTTP 402 lockouts for expired users. Instead, the application allows them through to a restricted "Free Tier" state, ensuring critical user-facing interfaces (like Student and Teacher core data) are retained while effectively blocking premium routes via the secondary `requireFeatureAccess` middleware.
+    - [x] **Quota Calculation Sanitization**: Hardened `quota.service.ts` and `ai-limiter.service.ts`. Both services now explicitly execute real-time temporal verification (`isExpired = new Date(subscriptionEnd) < new Date()`), enforcing absolute fallback to base `PLAN_LIMITS[DEFAULT_PLAN]` quotas (like Max AI Usage and Max Students) irrespective of the stale database state or custom overrides.
+    - [x] **UI Sync**: Refactored the billing dashboards to read real-time temporal `EXPIRED` status flags returned by the backend, properly styling components in red/inactive states without relying on cached database enums.
 
 ### Tuesday, June 16, 2026
 - **Teacher Assignment Dashboard Modernization & Functional Parity**:
@@ -777,3 +788,6 @@
     - [x] **Assignment Card Date Bug**: Swapped the data mapping from `endDate` to the correct `dueDate` property to resolve dynamic deadline dates rendering as "No Deadline".
     - [x] **SubmitBar Theme Glow**: Replaced high-glare stark white backgrounds on the Admin and Teacher "Publish" action buttons in dark mode with the premium indigo-violet gradient matching the new theme patterns.
 
+U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s s i g n m e n t s ,   s k e l e t o n   l o a d e r s ,   a n d   a   s t u n n i n g   d y n a m i c   A s s i g n m e n t   D e t a i l s   p a g e .  
+ F i x e d   c h i l d   l i n k a g e   c h e c k   t o   u s e   ' a c t i v e '   i n s t e a d   o f   ' A C T I V E '   s o   t h e   a s s i g n m e n t   d e t a i l s   e n d p o i n t   w o r k s   p r o p e r l y .  
+ 

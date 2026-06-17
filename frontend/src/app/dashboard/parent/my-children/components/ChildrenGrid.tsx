@@ -51,23 +51,32 @@ export default function ChildrenGrid() {
   }
 
 
+  const getGradeLabel = (avg: number) => {
+    if (avg >= 70) return 'A'
+    if (avg >= 60) return 'B'
+    if (avg >= 50) return 'C'
+    if (avg >= 45) return 'D'
+    if (avg >= 40) return 'E'
+    return 'F'
+  }
+
   // Map backend children to frontend Child interface
   const mappedChildren: Child[] = children.map((c) => ({
     id: c.id,
     name: c.name,
     age: 0, // Age not returned from basic profile
-    grade: c.stats.averageGrade > 80 ? 'A' : c.stats.averageGrade > 60 ? 'B' : 'C',
+    grade: getGradeLabel(c.stats.averageGrade),
     class: c.currentClass ? `${c.currentClass.name} ${c.currentClass.section || ''}` : 'No Class Assigned',
     studentId: c.studentCode,
     imageUrl: c.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=ea580c&color=fff`,
     attendance: c.stats.attendanceRate,
-    gradeValue: c.stats.averageGrade > 80 ? 'A' : c.stats.averageGrade > 60 ? 'B' : 'C',
+    gradeValue: getGradeLabel(c.stats.averageGrade),
     gradePercentage: `${c.stats.averageGrade}%`,
     status: (c.linkStatus === 'ACCEPTED' || c.linkStatus === 'active') ? 'active' : 'inactive',
     badge: {
-      text: c.stats.averageGrade > 90 ? 'Top Performer' : 'Maintained',
-      color: c.stats.averageGrade > 90 ? 'green' : 'blue',
-      icon: c.stats.averageGrade > 90 ? 'stars' : 'trending_up',
+      text: c.stats.averageGrade >= 70 ? 'Top Performer' : 'Needs Improvement',
+      color: c.stats.averageGrade >= 70 ? 'green' : c.stats.averageGrade >= 50 ? 'blue' : 'purple',
+      icon: c.stats.averageGrade >= 70 ? 'stars' : 'trending_down',
     },
   }))
 

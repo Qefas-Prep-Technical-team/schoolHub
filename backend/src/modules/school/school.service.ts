@@ -766,16 +766,19 @@ export const getSchoolBillingService = async (
       })
     : null;
 
+  const isExpired = school.subscriptionEnd && new Date(school.subscriptionEnd) < new Date();
+
   return {
     subscription: {
-      plan:
+      plan: isExpired ? "FREE" : (
         school.isTrialActive && subscriptionPlan
           ? subscriptionPlan.type
-          : school.plan,
+          : school.plan
+      ),
       planId: school.planId,
       subscriptionStatus: school.isTrialActive
         ? "TRIAL"
-        : school.subscriptionStatus,
+        : (isExpired ? "EXPIRED" : school.subscriptionStatus),
       subscriptionEnd: school.subscriptionEnd,
       isTrialActive: school.isTrialActive,
       lastPaymentDate: school.lastPaymentDate,
@@ -785,11 +788,12 @@ export const getSchoolBillingService = async (
         school.billingCycle ||
         absoluteLatestTransaction?.billingCycle ||
         "monthly",
-      amount:
+      amount: isExpired ? 0 : (
         school.billingCycle === "yearly"
           ? subscriptionPlan?.yearlyPrice || 0
-          : subscriptionPlan?.monthlyPrice || 0,
-      features: subscriptionPlan?.features || [],
+          : subscriptionPlan?.monthlyPrice || 0
+      ),
+      features: isExpired ? [] : (subscriptionPlan?.features || []),
     },
     usage: {
       ...stats,

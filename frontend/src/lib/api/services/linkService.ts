@@ -80,6 +80,21 @@ export const linkService = {
     }
   },
 
+  getSentLinkRequests: async (
+    options: { page?: number; limit?: number; category?: string } = {},
+  ) => {
+    try {
+      const response = await apiClient.get<PaginatedLinkRequestsResponse>(
+        "/links/requests/sent",
+        { params: options },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching sent requests:", error);
+      throw error;
+    }
+  },
+
   // Initiate a new link request
   createLinkRequest: async (data: {
     targetCode?: string;

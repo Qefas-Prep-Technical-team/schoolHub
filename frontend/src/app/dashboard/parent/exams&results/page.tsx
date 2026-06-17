@@ -12,11 +12,10 @@ export default function ExamsResultsPage() {
       
       <main className="flex-1 flex flex-col h-full overflow-y-auto bg-background-light dark:bg-background-dark relative">
    
-        
-        <div className="p-6 md:p-8 max-w-7xl mx-auto w-full flex flex-col gap-8">
+        <div className="p-6 md:p-8 w-full flex flex-col gap-8">
           <StatCards />
           
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row gap-6 w-full">
             <ExamList />
             <SidebarRight />
           </div>

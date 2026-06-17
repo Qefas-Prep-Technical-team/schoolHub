@@ -69,6 +69,7 @@ export const parentMenuItems: ParentMenuItem[] = [
     // === CORE FEATURES ===
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/parent", featureKey: "dashboard", section: "core" },
     { icon: Users, label: "My Children", href: "/dashboard/parent/my-children", featureKey: "children", section: "core" },
+    { icon: School, label: "Class", href: "/dashboard/parent/class", featureKey: "classes" as ParentFeatureFlagKey, section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/parent/assignments", featureKey: "assignments", section: "core" },
     { icon: FileCheck2, label: "Exams & Results", href: "/dashboard/parent/exams&results", featureKey: "results", section: "core" },
     { icon: BarChart3, label: "Performance", href: "/dashboard/parent/performance", featureKey: "performance", section: "core" },

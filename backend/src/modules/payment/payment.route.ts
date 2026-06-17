@@ -28,7 +28,8 @@ import {
     getPaymentHistory,
     getPricingPlans,
     getPricingFAQ,
-    getUserBilling
+    getUserBilling,
+    paystackWebhook
 } from "./payment.controller";
 
 /**
@@ -62,6 +63,13 @@ router.post("/initialize", paymentInitLimiter, (req, res, next) => {
  * @access  Public (Guest support needed for checkout)
  */
 router.post("/verify", paymentVerifyLimiter, verifyPayment);
+
+/**
+ * @route   POST /api/v1/payment/webhook
+ * @desc    Handle Paystack Webhook events
+ * @access  Public (Verified via signature)
+ */
+router.post("/webhook", paystackWebhook);
 
 // Authentication required for the following routes
 router.use(authenticateToken);

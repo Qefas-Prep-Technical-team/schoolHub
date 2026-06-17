@@ -8,6 +8,7 @@ import {
   QuestionSource,
   QuestionType,
   SubjectPaperStatus,
+  GradeStatus,
 } from "@prisma/client";
 import { validateExamQuestionInput } from "./exam.validation";
 
@@ -1317,6 +1318,14 @@ export const updateExamService = async (
       deleteMany: {}, // Clear existing
       create: data.departmentIds.map((id) => ({ departmentId: id })), // Recreate
     };
+  }
+
+  if (data.allowImmediateResult !== undefined) {
+    const gradeStatus = data.allowImmediateResult ? GradeStatus.PUBLISHED : GradeStatus.DRAFT;
+    await prisma.grade.updateMany({
+      where: { examId },
+      data: { status: gradeStatus }
+    });
   }
 
   return prisma.exam.update({

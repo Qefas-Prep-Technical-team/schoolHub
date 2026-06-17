@@ -13,6 +13,8 @@ interface AssignmentCardProps {
   dueDate: string
   icon: string
   score?: string
+  index?: number
+  viewMode?: 'list' | 'grid'
 }
 
 const iconMap = {
@@ -82,6 +84,8 @@ export default function AssignmentCard({
   dueDate,
   icon,
   score,
+  index,
+  viewMode = 'list'
 }: AssignmentCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const config = statusConfig[status]
@@ -90,16 +94,24 @@ export default function AssignmentCard({
 
   return (
     <div
-      className={`group bg-white dark:bg-surface-dark rounded-2xl border-l-4 ${config.borderColor} border-y border-r border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row gap-6 items-start md:items-center ${
-        status === 'graded' ? 'opacity-80 hover:opacity-100' : ''
-      }`}
+      className={`group bg-white dark:bg-slate-800 rounded-2xl border-l-4 ${config.borderColor} border-y border-r border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition-all flex ${
+        viewMode === 'grid' ? 'flex-col gap-4' : 'flex-col md:flex-row gap-6 items-start md:items-center'
+      } ${status === 'graded' ? 'opacity-80 hover:opacity-100' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Icon */}
-      <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-3 shrink-0">
-        <div className="size-10 flex items-center justify-center">
-          {IconComponent && <IconComponent className="text-slate-600 dark:text-slate-300 size-8" />}
+      <div className={`flex items-center gap-4 ${viewMode === 'grid' ? 'w-full' : ''}`}>
+        {/* Index */}
+        {index !== undefined && (
+          <div className="flex-shrink-0 w-8 text-center text-slate-400 dark:text-slate-500 font-bold text-lg">
+            {index}.
+          </div>
+        )}
+        {/* Icon */}
+        <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-3 shrink-0">
+          <div className="size-10 flex items-center justify-center">
+            {IconComponent && <IconComponent className="text-slate-600 dark:text-slate-300 size-8" />}
+          </div>
         </div>
       </div>
 
@@ -145,9 +157,8 @@ export default function AssignmentCard({
           {config.badge.text}
         </span>
 
-        {/* Action Button */}
         <Link
-        href={`${score ===  'graded' ? "/dashboard/parent/assignments/details":"/dashboard/parent/assignments/upload"}`}
+        href={`/dashboard/parent/assignments/details/${id}`}
         >
         
         <button className={`text-sm font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors whitespace-nowrap ${config.button}`}>

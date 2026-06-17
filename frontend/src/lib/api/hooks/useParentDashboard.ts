@@ -16,6 +16,7 @@ export interface DashboardChild {
     assessmentType?: string;
     createdAt: string;
   }[];
+  assignments?: any[];
 }
 
 export interface AttendanceDay {

@@ -28,11 +28,19 @@ export const handleError = (res: Response, error: any, location: string) => {
   console.error(`======================================================\n`);
 
   // 3. Custom error message sent to the frontend for safety
-  // If it is a known validation error from our app (like a 400), we should ideally handle it earlier in the controller.
-  // By the time it reaches this 500 catch-all, we should mask the raw error entirely.
+  let statusCode = 500;
+  let errorMessage = "An unexpected error occurred. Please try again later.";
 
-  return res.status(500).json({
+  if (error instanceof Error) {
+    // Pass through business logic errors (not Prisma/DB errors)
+    if (!error.name.includes("Prisma") && !error.message.toLowerCase().includes("prisma")) {
+      statusCode = 400;
+      errorMessage = error.message;
+    }
+  }
+
+  return res.status(statusCode).json({
     success: false,
-    message: "An unexpected error occurred. Please try again later."
+    message: errorMessage
   });
 };

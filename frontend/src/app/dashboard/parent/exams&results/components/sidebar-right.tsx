@@ -66,12 +66,27 @@ export default function SidebarRight() {
   }, [childDetails])
 
   const chartData = useMemo(() => {
+    const labels = subjectPerformance.map(s => s.subject)
+    const data = subjectPerformance.map(s => s.score)
+
+    // A Radar chart needs at least 3 points to render a polygon correctly.
+    // If we have fewer than 3 subjects, we pad the arrays with placeholders.
+    while (labels.length < 3) {
+      labels.push("N/A")
+      data.push(0)
+    }
+
+    // If completely empty, just show a blank 0-filled radar.
+    if (subjectPerformance.length === 0) {
+      labels[0] = "Subject A"; labels[1] = "Subject B"; labels[2] = "Subject C";
+    }
+
     return {
-      labels: subjectPerformance.length > 0 ? subjectPerformance.map((s) => s.subject) : ["Math", "Science", "English"],
+      labels,
       datasets: [
         {
           label: "Performance",
-          data: subjectPerformance.length > 0 ? subjectPerformance.map((s) => s.score) : [80, 70, 90],
+          data,
           backgroundColor: "rgba(234, 88, 12, 0.2)", // orange-600/20
           borderColor: "rgba(234, 88, 12, 1)",      // orange-600
           borderWidth: 2,

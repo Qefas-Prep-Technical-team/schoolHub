@@ -45,7 +45,7 @@ export default function FeatureSection() {
   }[currentRole];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[90vh] px-6 py-12">
+    <div className="flex flex-col items-center justify-center w-full pt-4 pb-8">
       {/* Role Badge */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -63,12 +63,12 @@ export default function FeatureSection() {
           Ready to explore?
         </h2>
         <p className="text-lg text-slate-500 dark:text-zinc-400 max-w-lg mx-auto">
-          Here is how <span className="text-blue-600 dark:text-blue-400 font-semibold italic">Academix</span> transforms your experience.
+          Here is how <span className="text-blue-600 dark:text-blue-400 font-semibold italic">Qefas Hub</span> transforms your experience.
         </p>
       </div>
       
       {/* Feature Grid with Entrance Animation */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-3xl relative">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-4xl relative">
         {/* Subtle mesh accent behind grid */}
         <div className="absolute -inset-10 bg-blue-500/5 blur-3xl rounded-full pointer-events-none" />
         

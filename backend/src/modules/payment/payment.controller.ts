@@ -8,7 +8,7 @@ import { PRICING_PLANS, PRICING_FAQ } from "./plans.data";
 export const initializePayment = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { amount, email, plan, metadata } = req.body;
+    const { amount, email, plan, planCode, metadata } = req.body;
 
     if (!amount || !email || !plan) {
       return res.status(400).json({
@@ -22,6 +22,7 @@ export const initializePayment = async (req: Request, res: Response) => {
       amount,
       email,
       plan,
+      planCode,
       metadata
     });
 
@@ -140,4 +141,20 @@ export const getPricingPlans = async (req: Request, res: Response) => {
  */
 export const getPricingFAQ = async (req: Request, res: Response) => {
   return res.status(200).json(PRICING_FAQ);
+};
+
+/**
+ * Handle Paystack Webhook
+ */
+export const paystackWebhook = async (req: Request, res: Response) => {
+  try {
+    const signature = req.headers['x-paystack-signature'] as string;
+    
+    // Pass payload as an object, it handles JSON.stringify inside
+    await paymentService.paystackWebhookService(signature, req.body);
+    
+    return res.status(200).send('Webhook received successfully');
+  } catch (error) {
+    return handleError(res, error, "payment.paystackWebhook");
+  }
 };

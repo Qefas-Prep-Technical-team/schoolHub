@@ -113,7 +113,7 @@ export default function AdminBillingPage() {
 
     const subscriptionInfo = {
         plan: activePlanData?.name || (isTrial ? `${currentPlan} Plan` : null) || subscription?.plan || "Free Tier",
-        status: isTrial ? "TRIAL" : (subscription?.subscriptionStatus || "INACTIVE"),
+        status: subscription?.subscriptionStatus === 'EXPIRED' ? 'EXPIRED' : (isTrial ? "TRIAL" : (subscription?.subscriptionStatus || "INACTIVE")),
         renewalDate: subscription?.subscriptionEnd ? new Date(subscription.subscriptionEnd).toLocaleDateString() : "N/A",
         amount: dynamicAmount,
         billingCycle: cycle,
@@ -179,9 +179,9 @@ export default function AdminBillingPage() {
                                 <div className="space-y-2">
                                     <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Subscription Status</p>
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-3 h-3 rounded-full animate-pulse ${subscriptionInfo.status === 'ACTIVE' ? 'bg-green-500' : 'bg-blue-500'}`} />
-                                        <span className="text-xl font-bold text-slate-900 dark:text-white capitalize">
-                                            {subscriptionInfo.status === 'TRIAL' ? 'Free Trial' : 'Active'}
+                                        <div className={`w-3 h-3 rounded-full ${subscriptionInfo.status === 'ACTIVE' ? 'bg-green-500 animate-pulse' : subscriptionInfo.status === 'EXPIRED' ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`} />
+                                        <span className={`text-xl font-bold capitalize ${subscriptionInfo.status === 'EXPIRED' ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>
+                                            {subscriptionInfo.status === 'TRIAL' ? 'Free Trial' : subscriptionInfo.status === 'EXPIRED' ? 'Expired' : subscriptionInfo.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                                         </span>
                                     </div>
                                 </div>

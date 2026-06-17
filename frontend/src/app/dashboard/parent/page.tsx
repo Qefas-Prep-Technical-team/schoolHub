@@ -3,6 +3,7 @@ import InsightsGrid from './components/dashboard/InsightsGrid'
 import Announcements from './components/dashboard/Announcements'
 import FinancialSummaryCard from './components/dashboard/FinancialSummaryCard'
 import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
+import RecentPerformanceChart from './components/dashboard/RecentPerformanceChart';
 
 
 export default function Home() {
@@ -24,6 +25,7 @@ export default function Home() {
             </button>
           </div>
           <InsightsGrid />
+          <RecentPerformanceChart />
         </div>
         
         {/* Bottom Section: Feed & Financials */}

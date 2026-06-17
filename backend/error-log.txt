@@ -7892,4 +7892,1414 @@ Please make sure your database server is running at `aws-1-eu-west-1.pooler.supa
     at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
     at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2197:21)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2197:21)PrismaClientKnownRequestError: 
+Invalid `any)[table].findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:330:47
+
+  327 const userRole = role.toUpperCase();
+  328 
+  329 // Fetch user with subscription info
+→ 330 const user = await (prisma as any)[table].findUnique(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:330:18)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:95:18)Error: A pending request already exists between these users
+    at createLinkRequestService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.service.ts:329:11)
+    at createLinkRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:86:20)Error: A pending request already exists between these users
+    at createLinkRequestService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.service.ts:329:11)
+    at createLinkRequest (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\link\link.controller.ts:86:20)PrismaClientValidationError: 
+Invalid `prisma.parentChildLink.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:50
+
+  148 
+  149 export const getParentDashboardService = async (parentId: string, childId?: string) => {
+  150   // Find the selected child link (or the first active one if no childId provided)
+→ 151   const childLink = await prisma.parentChildLink.findFirst({
+          where: {
+            parentId: "f0cb7c38-1da3-43bc-be35-5877e97d12b1",
+            status: "active",
+            studentId: "44d90c45-2853-477c-b3d3-f07719d7ac76"
+          },
+          include: {
+            student: {
+              include: {
+                school: {
+                  select: {
+                    id: true,
+                    name: true,
+                    schoolCode: true,
+                    subscriptionStatus: true,
+                    isTrialActive: true,
+                    enforceSubscription: true,
+                    ~~~~~~~~~~~~~~~~~~~
+        ?           subdomain?: true,
+        ?           tenantId?: true,
+        ?           address?: true,
+        ?           phone?: true,
+        ?           schoolEmail?: true,
+        ?           motto?: true,
+        ?           logo?: true,
+        ?           foundedYear?: true,
+        ?           principal?: true,
+        ?           schoolType?: true,
+        ?           website?: true,
+        ?           description?: true,
+        ?           createdAt?: true,
+        ?           updatedAt?: true,
+        ?           bannerImage?: true,
+        ?           favicon?: true,
+        ?           mapLocation?: true,
+        ?           operatingHours?: true,
+        ?           socialLinks?: true,
+        ?           lastPaymentDate?: true,
+        ?           paystackCustomerCode?: true,
+        ?           plan?: true,
+        ?           subscriptionEnd?: true,
+        ?           trialEndsAt?: true,
+        ?           trialPlan?: true,
+        ?           trialUsed?: true,
+        ?           accountName?: true,
+        ?           accountNumber?: true,
+        ?           bankName?: true,
+        ?           billingCycle?: true,
+        ?           maxClassesOverride?: true,
+        ?           maxExamsOverride?: true,
+        ?           maxStorageGbOverride?: true,
+        ?           maxStudentsOverride?: true,
+        ?           paystackSubaccountCode?: true,
+        ?           paystackSubaccountStatus?: true,
+        ?           percentageCharge?: true,
+        ?           planId?: true,
+        ?           subscriptionPlanId?: true,
+        ?           profileCompleted?: true,
+        ?           registrationSource?: true,
+        ?           maxAiUsageOverride?: true,
+        ?           maxParentsOverride?: true,
+        ?           maxTeachersOverride?: true,
+        ?           levels?: true,
+        ?           storageUsedBytes?: true,
+        ?           subscriptionPlan?: true,
+        ?           settings?: true,
+        ?           originalStudents?: true,
+        ?           students?: true,
+        ?           activeTeachers?: true,
+        ?           currentTeachers?: true,
+        ?           primaryTeachers?: true,
+        ?           teachers?: true,
+        ?           classes?: true,
+        ?           emailLogs?: true,
+        ?           exams?: true,
+        ?           fileRecords?: true,
+        ?           grades?: true,
+        ?           gradeAuditLogs?: true,
+        ?           inquiries?: true,
+        ?           requesterLinkRequests?: true,
+        ?           linkRequests?: true,
+        ?           targetLinkRequests?: true,
+        ?           payments?: true,
+        ?           quizzes?: true,
+        ?           relationshipLinks?: true,
+        ?           admins?: true,
+        ?           landingPage?: true,
+        ?           schoolSubscriptions?: true,
+        ?           sessions?: true,
+        ?           settlementAccounts?: true,
+        ?           studentEnrollments?: true,
+        ?           studentHistories?: true,
+        ?           subjectExamPapers?: true,
+        ?           subjects?: true,
+        ?           teacherAttendances?: true,
+        ?           teacherSubjects?: true,
+        ?           transactionHistory?: true,
+        ?           transactions?: true,
+        ?           _count?: true
+                  }
+                },
+                classes: {
+                  orderBy: {
+                    enrolledAt: "desc"
+                  },
+                  take: 1,
+                  include: {
+                    class: {
+                      select: {
+                        id: true,
+                        name: true,
+                        section: true
+                      }
+                    }
+                  }
+                },
+                grades: {
+                  where: {
+                    status: "PUBLISHED"
+                  },
+                  orderBy: {
+                    createdAt: "desc"
+                  },
+                  select: {
+                    id: true,
+                    subject: true,
+                    score: true,
+                    maxMarks: true,
+                    assessmentType: true,
+                    createdAt: true,
+                    subjectPaper: {
+                      select: {
+                        subject: {
+                          select: {
+                            name: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                attendances: {
+                  orderBy: {
+                    date: "desc"
+                  },
+                  take: 30,
+                  select: {
+                    status: true,
+                    date: true
+                  }
+                }
+              }
+            }
+          }
+        })
+
+Unknown field `enforceSubscription` for select statement on model `School`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getParentDashboardService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:21)
+    at getParentDashboard (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.controller.ts:48:23)PrismaClientValidationError: 
+Invalid `prisma.parentChildLink.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:50
+
+  148 
+  149 export const getParentDashboardService = async (parentId: string, childId?: string) => {
+  150   // Find the selected child link (or the first active one if no childId provided)
+→ 151   const childLink = await prisma.parentChildLink.findFirst({
+          where: {
+            parentId: "f0cb7c38-1da3-43bc-be35-5877e97d12b1",
+            status: "active",
+            studentId: "44d90c45-2853-477c-b3d3-f07719d7ac76"
+          },
+          include: {
+            student: {
+              include: {
+                school: {
+                  select: {
+                    id: true,
+                    name: true,
+                    schoolCode: true,
+                    subscriptionStatus: true,
+                    isTrialActive: true,
+                    enforceSubscription: true,
+                    ~~~~~~~~~~~~~~~~~~~
+        ?           subdomain?: true,
+        ?           tenantId?: true,
+        ?           address?: true,
+        ?           phone?: true,
+        ?           schoolEmail?: true,
+        ?           motto?: true,
+        ?           logo?: true,
+        ?           foundedYear?: true,
+        ?           principal?: true,
+        ?           schoolType?: true,
+        ?           website?: true,
+        ?           description?: true,
+        ?           createdAt?: true,
+        ?           updatedAt?: true,
+        ?           bannerImage?: true,
+        ?           favicon?: true,
+        ?           mapLocation?: true,
+        ?           operatingHours?: true,
+        ?           socialLinks?: true,
+        ?           lastPaymentDate?: true,
+        ?           paystackCustomerCode?: true,
+        ?           plan?: true,
+        ?           subscriptionEnd?: true,
+        ?           trialEndsAt?: true,
+        ?           trialPlan?: true,
+        ?           trialUsed?: true,
+        ?           accountName?: true,
+        ?           accountNumber?: true,
+        ?           bankName?: true,
+        ?           billingCycle?: true,
+        ?           maxClassesOverride?: true,
+        ?           maxExamsOverride?: true,
+        ?           maxStorageGbOverride?: true,
+        ?           maxStudentsOverride?: true,
+        ?           paystackSubaccountCode?: true,
+        ?           paystackSubaccountStatus?: true,
+        ?           percentageCharge?: true,
+        ?           planId?: true,
+        ?           subscriptionPlanId?: true,
+        ?           profileCompleted?: true,
+        ?           registrationSource?: true,
+        ?           maxAiUsageOverride?: true,
+        ?           maxParentsOverride?: true,
+        ?           maxTeachersOverride?: true,
+        ?           levels?: true,
+        ?           storageUsedBytes?: true,
+        ?           subscriptionPlan?: true,
+        ?           settings?: true,
+        ?           originalStudents?: true,
+        ?           students?: true,
+        ?           activeTeachers?: true,
+        ?           currentTeachers?: true,
+        ?           primaryTeachers?: true,
+        ?           teachers?: true,
+        ?           classes?: true,
+        ?           emailLogs?: true,
+        ?           exams?: true,
+        ?           fileRecords?: true,
+        ?           grades?: true,
+        ?           gradeAuditLogs?: true,
+        ?           inquiries?: true,
+        ?           requesterLinkRequests?: true,
+        ?           linkRequests?: true,
+        ?           targetLinkRequests?: true,
+        ?           payments?: true,
+        ?           quizzes?: true,
+        ?           relationshipLinks?: true,
+        ?           admins?: true,
+        ?           landingPage?: true,
+        ?           schoolSubscriptions?: true,
+        ?           sessions?: true,
+        ?           settlementAccounts?: true,
+        ?           studentEnrollments?: true,
+        ?           studentHistories?: true,
+        ?           subjectExamPapers?: true,
+        ?           subjects?: true,
+        ?           teacherAttendances?: true,
+        ?           teacherSubjects?: true,
+        ?           transactionHistory?: true,
+        ?           transactions?: true,
+        ?           _count?: true
+                  }
+                },
+                classes: {
+                  orderBy: {
+                    enrolledAt: "desc"
+                  },
+                  take: 1,
+                  include: {
+                    class: {
+                      select: {
+                        id: true,
+                        name: true,
+                        section: true
+                      }
+                    }
+                  }
+                },
+                grades: {
+                  where: {
+                    status: "PUBLISHED"
+                  },
+                  orderBy: {
+                    createdAt: "desc"
+                  },
+                  select: {
+                    id: true,
+                    subject: true,
+                    score: true,
+                    maxMarks: true,
+                    assessmentType: true,
+                    createdAt: true,
+                    subjectPaper: {
+                      select: {
+                        subject: {
+                          select: {
+                            name: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                attendances: {
+                  orderBy: {
+                    date: "desc"
+                  },
+                  take: 30,
+                  select: {
+                    status: true,
+                    date: true
+                  }
+                }
+              }
+            }
+          }
+        })
+
+Unknown field `enforceSubscription` for select statement on model `School`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getParentDashboardService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:21)
+    at getParentDashboard (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.controller.ts:48:23)PrismaClientValidationError: 
+Invalid `prisma.parentChildLink.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:50
+
+  148 
+  149 export const getParentDashboardService = async (parentId: string, childId?: string) => {
+  150   // Find the selected child link (or the first active one if no childId provided)
+→ 151   const childLink = await prisma.parentChildLink.findFirst({
+          where: {
+            parentId: "f0cb7c38-1da3-43bc-be35-5877e97d12b1",
+            status: "active",
+            studentId: "44d90c45-2853-477c-b3d3-f07719d7ac76"
+          },
+          include: {
+            student: {
+              include: {
+                school: {
+                  select: {
+                    id: true,
+                    name: true,
+                    schoolCode: true,
+                    subscriptionStatus: true,
+                    isTrialActive: true,
+                    enforceSubscription: true,
+                    ~~~~~~~~~~~~~~~~~~~
+        ?           subdomain?: true,
+        ?           tenantId?: true,
+        ?           address?: true,
+        ?           phone?: true,
+        ?           schoolEmail?: true,
+        ?           motto?: true,
+        ?           logo?: true,
+        ?           foundedYear?: true,
+        ?           principal?: true,
+        ?           schoolType?: true,
+        ?           website?: true,
+        ?           description?: true,
+        ?           createdAt?: true,
+        ?           updatedAt?: true,
+        ?           bannerImage?: true,
+        ?           favicon?: true,
+        ?           mapLocation?: true,
+        ?           operatingHours?: true,
+        ?           socialLinks?: true,
+        ?           lastPaymentDate?: true,
+        ?           paystackCustomerCode?: true,
+        ?           plan?: true,
+        ?           subscriptionEnd?: true,
+        ?           trialEndsAt?: true,
+        ?           trialPlan?: true,
+        ?           trialUsed?: true,
+        ?           accountName?: true,
+        ?           accountNumber?: true,
+        ?           bankName?: true,
+        ?           billingCycle?: true,
+        ?           maxClassesOverride?: true,
+        ?           maxExamsOverride?: true,
+        ?           maxStorageGbOverride?: true,
+        ?           maxStudentsOverride?: true,
+        ?           paystackSubaccountCode?: true,
+        ?           paystackSubaccountStatus?: true,
+        ?           percentageCharge?: true,
+        ?           planId?: true,
+        ?           subscriptionPlanId?: true,
+        ?           profileCompleted?: true,
+        ?           registrationSource?: true,
+        ?           maxAiUsageOverride?: true,
+        ?           maxParentsOverride?: true,
+        ?           maxTeachersOverride?: true,
+        ?           levels?: true,
+        ?           storageUsedBytes?: true,
+        ?           subscriptionPlan?: true,
+        ?           settings?: true,
+        ?           originalStudents?: true,
+        ?           students?: true,
+        ?           activeTeachers?: true,
+        ?           currentTeachers?: true,
+        ?           primaryTeachers?: true,
+        ?           teachers?: true,
+        ?           classes?: true,
+        ?           emailLogs?: true,
+        ?           exams?: true,
+        ?           fileRecords?: true,
+        ?           grades?: true,
+        ?           gradeAuditLogs?: true,
+        ?           inquiries?: true,
+        ?           requesterLinkRequests?: true,
+        ?           linkRequests?: true,
+        ?           targetLinkRequests?: true,
+        ?           payments?: true,
+        ?           quizzes?: true,
+        ?           relationshipLinks?: true,
+        ?           admins?: true,
+        ?           landingPage?: true,
+        ?           schoolSubscriptions?: true,
+        ?           sessions?: true,
+        ?           settlementAccounts?: true,
+        ?           studentEnrollments?: true,
+        ?           studentHistories?: true,
+        ?           subjectExamPapers?: true,
+        ?           subjects?: true,
+        ?           teacherAttendances?: true,
+        ?           teacherSubjects?: true,
+        ?           transactionHistory?: true,
+        ?           transactions?: true,
+        ?           _count?: true
+                  }
+                },
+                classes: {
+                  orderBy: {
+                    enrolledAt: "desc"
+                  },
+                  take: 1,
+                  include: {
+                    class: {
+                      select: {
+                        id: true,
+                        name: true,
+                        section: true
+                      }
+                    }
+                  }
+                },
+                grades: {
+                  where: {
+                    status: "PUBLISHED"
+                  },
+                  orderBy: {
+                    createdAt: "desc"
+                  },
+                  select: {
+                    id: true,
+                    subject: true,
+                    score: true,
+                    maxMarks: true,
+                    assessmentType: true,
+                    createdAt: true,
+                    subjectPaper: {
+                      select: {
+                        subject: {
+                          select: {
+                            name: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                attendances: {
+                  orderBy: {
+                    date: "desc"
+                  },
+                  take: 30,
+                  select: {
+                    status: true,
+                    date: true
+                  }
+                }
+              }
+            }
+          }
+        })
+
+Unknown field `enforceSubscription` for select statement on model `School`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getParentDashboardService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:21)
+    at getParentDashboard (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.controller.ts:48:23)PrismaClientValidationError: 
+Invalid `prisma.parentChildLink.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:50
+
+  148 
+  149 export const getParentDashboardService = async (parentId: string, childId?: string) => {
+  150   // Find the selected child link (or the first active one if no childId provided)
+→ 151   const childLink = await prisma.parentChildLink.findFirst({
+          where: {
+            parentId: "f0cb7c38-1da3-43bc-be35-5877e97d12b1",
+            status: "active",
+            studentId: "44d90c45-2853-477c-b3d3-f07719d7ac76"
+          },
+          include: {
+            student: {
+              include: {
+                school: {
+                  select: {
+                    id: true,
+                    name: true,
+                    schoolCode: true,
+                    subscriptionStatus: true,
+                    isTrialActive: true,
+                    enforceSubscription: true,
+                    ~~~~~~~~~~~~~~~~~~~
+        ?           subdomain?: true,
+        ?           tenantId?: true,
+        ?           address?: true,
+        ?           phone?: true,
+        ?           schoolEmail?: true,
+        ?           motto?: true,
+        ?           logo?: true,
+        ?           foundedYear?: true,
+        ?           principal?: true,
+        ?           schoolType?: true,
+        ?           website?: true,
+        ?           description?: true,
+        ?           createdAt?: true,
+        ?           updatedAt?: true,
+        ?           bannerImage?: true,
+        ?           favicon?: true,
+        ?           mapLocation?: true,
+        ?           operatingHours?: true,
+        ?           socialLinks?: true,
+        ?           lastPaymentDate?: true,
+        ?           paystackCustomerCode?: true,
+        ?           plan?: true,
+        ?           subscriptionEnd?: true,
+        ?           trialEndsAt?: true,
+        ?           trialPlan?: true,
+        ?           trialUsed?: true,
+        ?           accountName?: true,
+        ?           accountNumber?: true,
+        ?           bankName?: true,
+        ?           billingCycle?: true,
+        ?           maxClassesOverride?: true,
+        ?           maxExamsOverride?: true,
+        ?           maxStorageGbOverride?: true,
+        ?           maxStudentsOverride?: true,
+        ?           paystackSubaccountCode?: true,
+        ?           paystackSubaccountStatus?: true,
+        ?           percentageCharge?: true,
+        ?           planId?: true,
+        ?           subscriptionPlanId?: true,
+        ?           profileCompleted?: true,
+        ?           registrationSource?: true,
+        ?           maxAiUsageOverride?: true,
+        ?           maxParentsOverride?: true,
+        ?           maxTeachersOverride?: true,
+        ?           levels?: true,
+        ?           storageUsedBytes?: true,
+        ?           subscriptionPlan?: true,
+        ?           settings?: true,
+        ?           originalStudents?: true,
+        ?           students?: true,
+        ?           activeTeachers?: true,
+        ?           currentTeachers?: true,
+        ?           primaryTeachers?: true,
+        ?           teachers?: true,
+        ?           classes?: true,
+        ?           emailLogs?: true,
+        ?           exams?: true,
+        ?           fileRecords?: true,
+        ?           grades?: true,
+        ?           gradeAuditLogs?: true,
+        ?           inquiries?: true,
+        ?           requesterLinkRequests?: true,
+        ?           linkRequests?: true,
+        ?           targetLinkRequests?: true,
+        ?           payments?: true,
+        ?           quizzes?: true,
+        ?           relationshipLinks?: true,
+        ?           admins?: true,
+        ?           landingPage?: true,
+        ?           schoolSubscriptions?: true,
+        ?           sessions?: true,
+        ?           settlementAccounts?: true,
+        ?           studentEnrollments?: true,
+        ?           studentHistories?: true,
+        ?           subjectExamPapers?: true,
+        ?           subjects?: true,
+        ?           teacherAttendances?: true,
+        ?           teacherSubjects?: true,
+        ?           transactionHistory?: true,
+        ?           transactions?: true,
+        ?           _count?: true
+                  }
+                },
+                classes: {
+                  orderBy: {
+                    enrolledAt: "desc"
+                  },
+                  take: 1,
+                  include: {
+                    class: {
+                      select: {
+                        id: true,
+                        name: true,
+                        section: true
+                      }
+                    }
+                  }
+                },
+                grades: {
+                  where: {
+                    status: "PUBLISHED"
+                  },
+                  orderBy: {
+                    createdAt: "desc"
+                  },
+                  select: {
+                    id: true,
+                    subject: true,
+                    score: true,
+                    maxMarks: true,
+                    assessmentType: true,
+                    createdAt: true,
+                    subjectPaper: {
+                      select: {
+                        subject: {
+                          select: {
+                            name: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                attendances: {
+                  orderBy: {
+                    date: "desc"
+                  },
+                  take: 30,
+                  select: {
+                    status: true,
+                    date: true
+                  }
+                }
+              }
+            }
+          }
+        })
+
+Unknown field `enforceSubscription` for select statement on model `School`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getParentDashboardService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:21)
+    at getParentDashboard (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.controller.ts:48:23)PrismaClientValidationError: 
+Invalid `prisma.parentChildLink.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:50
+
+  148 
+  149 export const getParentDashboardService = async (parentId: string, childId?: string) => {
+  150   // Find the selected child link (or the first active one if no childId provided)
+→ 151   const childLink = await prisma.parentChildLink.findFirst({
+          where: {
+            parentId: "f0cb7c38-1da3-43bc-be35-5877e97d12b1",
+            status: "active",
+            studentId: "44d90c45-2853-477c-b3d3-f07719d7ac76"
+          },
+          include: {
+            student: {
+              include: {
+                school: {
+                  select: {
+                    id: true,
+                    name: true,
+                    schoolCode: true,
+                    subscriptionStatus: true,
+                    isTrialActive: true,
+                    enforceSubscription: true,
+                    ~~~~~~~~~~~~~~~~~~~
+        ?           subdomain?: true,
+        ?           tenantId?: true,
+        ?           address?: true,
+        ?           phone?: true,
+        ?           schoolEmail?: true,
+        ?           motto?: true,
+        ?           logo?: true,
+        ?           foundedYear?: true,
+        ?           principal?: true,
+        ?           schoolType?: true,
+        ?           website?: true,
+        ?           description?: true,
+        ?           createdAt?: true,
+        ?           updatedAt?: true,
+        ?           bannerImage?: true,
+        ?           favicon?: true,
+        ?           mapLocation?: true,
+        ?           operatingHours?: true,
+        ?           socialLinks?: true,
+        ?           lastPaymentDate?: true,
+        ?           paystackCustomerCode?: true,
+        ?           plan?: true,
+        ?           subscriptionEnd?: true,
+        ?           trialEndsAt?: true,
+        ?           trialPlan?: true,
+        ?           trialUsed?: true,
+        ?           accountName?: true,
+        ?           accountNumber?: true,
+        ?           bankName?: true,
+        ?           billingCycle?: true,
+        ?           maxClassesOverride?: true,
+        ?           maxExamsOverride?: true,
+        ?           maxStorageGbOverride?: true,
+        ?           maxStudentsOverride?: true,
+        ?           paystackSubaccountCode?: true,
+        ?           paystackSubaccountStatus?: true,
+        ?           percentageCharge?: true,
+        ?           planId?: true,
+        ?           subscriptionPlanId?: true,
+        ?           profileCompleted?: true,
+        ?           registrationSource?: true,
+        ?           maxAiUsageOverride?: true,
+        ?           maxParentsOverride?: true,
+        ?           maxTeachersOverride?: true,
+        ?           levels?: true,
+        ?           storageUsedBytes?: true,
+        ?           subscriptionPlan?: true,
+        ?           settings?: true,
+        ?           originalStudents?: true,
+        ?           students?: true,
+        ?           activeTeachers?: true,
+        ?           currentTeachers?: true,
+        ?           primaryTeachers?: true,
+        ?           teachers?: true,
+        ?           classes?: true,
+        ?           emailLogs?: true,
+        ?           exams?: true,
+        ?           fileRecords?: true,
+        ?           grades?: true,
+        ?           gradeAuditLogs?: true,
+        ?           inquiries?: true,
+        ?           requesterLinkRequests?: true,
+        ?           linkRequests?: true,
+        ?           targetLinkRequests?: true,
+        ?           payments?: true,
+        ?           quizzes?: true,
+        ?           relationshipLinks?: true,
+        ?           admins?: true,
+        ?           landingPage?: true,
+        ?           schoolSubscriptions?: true,
+        ?           sessions?: true,
+        ?           settlementAccounts?: true,
+        ?           studentEnrollments?: true,
+        ?           studentHistories?: true,
+        ?           subjectExamPapers?: true,
+        ?           subjects?: true,
+        ?           teacherAttendances?: true,
+        ?           teacherSubjects?: true,
+        ?           transactionHistory?: true,
+        ?           transactions?: true,
+        ?           _count?: true
+                  }
+                },
+                classes: {
+                  orderBy: {
+                    enrolledAt: "desc"
+                  },
+                  take: 1,
+                  include: {
+                    class: {
+                      select: {
+                        id: true,
+                        name: true,
+                        section: true
+                      }
+                    }
+                  }
+                },
+                grades: {
+                  where: {
+                    status: "PUBLISHED"
+                  },
+                  orderBy: {
+                    createdAt: "desc"
+                  },
+                  select: {
+                    id: true,
+                    subject: true,
+                    score: true,
+                    maxMarks: true,
+                    assessmentType: true,
+                    createdAt: true,
+                    subjectPaper: {
+                      select: {
+                        subject: {
+                          select: {
+                            name: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                attendances: {
+                  orderBy: {
+                    date: "desc"
+                  },
+                  take: 30,
+                  select: {
+                    status: true,
+                    date: true
+                  }
+                }
+              }
+            }
+          }
+        })
+
+Unknown field `enforceSubscription` for select statement on model `School`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getParentDashboardService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:21)
+    at getParentDashboard (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.controller.ts:48:23)PrismaClientValidationError: 
+Invalid `prisma.parentChildLink.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:50
+
+  148 
+  149 export const getParentDashboardService = async (parentId: string, childId?: string) => {
+  150   // Find the selected child link (or the first active one if no childId provided)
+→ 151   const childLink = await prisma.parentChildLink.findFirst({
+          where: {
+            parentId: "f0cb7c38-1da3-43bc-be35-5877e97d12b1",
+            status: "active",
+            studentId: "44d90c45-2853-477c-b3d3-f07719d7ac76"
+          },
+          include: {
+            student: {
+              include: {
+                school: {
+                  select: {
+                    id: true,
+                    name: true,
+                    schoolCode: true,
+                    subscriptionStatus: true,
+                    isTrialActive: true,
+                    enforceSubscription: true,
+                    ~~~~~~~~~~~~~~~~~~~
+        ?           subdomain?: true,
+        ?           tenantId?: true,
+        ?           address?: true,
+        ?           phone?: true,
+        ?           schoolEmail?: true,
+        ?           motto?: true,
+        ?           logo?: true,
+        ?           foundedYear?: true,
+        ?           principal?: true,
+        ?           schoolType?: true,
+        ?           website?: true,
+        ?           description?: true,
+        ?           createdAt?: true,
+        ?           updatedAt?: true,
+        ?           bannerImage?: true,
+        ?           favicon?: true,
+        ?           mapLocation?: true,
+        ?           operatingHours?: true,
+        ?           socialLinks?: true,
+        ?           lastPaymentDate?: true,
+        ?           paystackCustomerCode?: true,
+        ?           plan?: true,
+        ?           subscriptionEnd?: true,
+        ?           trialEndsAt?: true,
+        ?           trialPlan?: true,
+        ?           trialUsed?: true,
+        ?           accountName?: true,
+        ?           accountNumber?: true,
+        ?           bankName?: true,
+        ?           billingCycle?: true,
+        ?           maxClassesOverride?: true,
+        ?           maxExamsOverride?: true,
+        ?           maxStorageGbOverride?: true,
+        ?           maxStudentsOverride?: true,
+        ?           paystackSubaccountCode?: true,
+        ?           paystackSubaccountStatus?: true,
+        ?           percentageCharge?: true,
+        ?           planId?: true,
+        ?           subscriptionPlanId?: true,
+        ?           profileCompleted?: true,
+        ?           registrationSource?: true,
+        ?           maxAiUsageOverride?: true,
+        ?           maxParentsOverride?: true,
+        ?           maxTeachersOverride?: true,
+        ?           levels?: true,
+        ?           storageUsedBytes?: true,
+        ?           subscriptionPlan?: true,
+        ?           settings?: true,
+        ?           originalStudents?: true,
+        ?           students?: true,
+        ?           activeTeachers?: true,
+        ?           currentTeachers?: true,
+        ?           primaryTeachers?: true,
+        ?           teachers?: true,
+        ?           classes?: true,
+        ?           emailLogs?: true,
+        ?           exams?: true,
+        ?           fileRecords?: true,
+        ?           grades?: true,
+        ?           gradeAuditLogs?: true,
+        ?           inquiries?: true,
+        ?           requesterLinkRequests?: true,
+        ?           linkRequests?: true,
+        ?           targetLinkRequests?: true,
+        ?           payments?: true,
+        ?           quizzes?: true,
+        ?           relationshipLinks?: true,
+        ?           admins?: true,
+        ?           landingPage?: true,
+        ?           schoolSubscriptions?: true,
+        ?           sessions?: true,
+        ?           settlementAccounts?: true,
+        ?           studentEnrollments?: true,
+        ?           studentHistories?: true,
+        ?           subjectExamPapers?: true,
+        ?           subjects?: true,
+        ?           teacherAttendances?: true,
+        ?           teacherSubjects?: true,
+        ?           transactionHistory?: true,
+        ?           transactions?: true,
+        ?           _count?: true
+                  }
+                },
+                classes: {
+                  orderBy: {
+                    enrolledAt: "desc"
+                  },
+                  take: 1,
+                  include: {
+                    class: {
+                      select: {
+                        id: true,
+                        name: true,
+                        section: true
+                      }
+                    }
+                  }
+                },
+                grades: {
+                  where: {
+                    status: "PUBLISHED"
+                  },
+                  orderBy: {
+                    createdAt: "desc"
+                  },
+                  select: {
+                    id: true,
+                    subject: true,
+                    score: true,
+                    maxMarks: true,
+                    assessmentType: true,
+                    createdAt: true,
+                    subjectPaper: {
+                      select: {
+                        subject: {
+                          select: {
+                            name: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                attendances: {
+                  orderBy: {
+                    date: "desc"
+                  },
+                  take: 30,
+                  select: {
+                    status: true,
+                    date: true
+                  }
+                }
+              }
+            }
+          }
+        })
+
+Unknown field `enforceSubscription` for select statement on model `School`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getParentDashboardService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:21)
+    at getParentDashboard (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.controller.ts:48:23)PrismaClientValidationError: 
+Invalid `prisma.parentChildLink.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:50
+
+  148 
+  149 export const getParentDashboardService = async (parentId: string, childId?: string) => {
+  150   // Find the selected child link (or the first active one if no childId provided)
+→ 151   const childLink = await prisma.parentChildLink.findFirst({
+          where: {
+            parentId: "f0cb7c38-1da3-43bc-be35-5877e97d12b1",
+            status: "active",
+            studentId: "44d90c45-2853-477c-b3d3-f07719d7ac76"
+          },
+          include: {
+            student: {
+              include: {
+                school: {
+                  select: {
+                    id: true,
+                    name: true,
+                    schoolCode: true,
+                    subscriptionStatus: true,
+                    isTrialActive: true,
+                    enforceSubscription: true,
+                    ~~~~~~~~~~~~~~~~~~~
+        ?           subdomain?: true,
+        ?           tenantId?: true,
+        ?           address?: true,
+        ?           phone?: true,
+        ?           schoolEmail?: true,
+        ?           motto?: true,
+        ?           logo?: true,
+        ?           foundedYear?: true,
+        ?           principal?: true,
+        ?           schoolType?: true,
+        ?           website?: true,
+        ?           description?: true,
+        ?           createdAt?: true,
+        ?           updatedAt?: true,
+        ?           bannerImage?: true,
+        ?           favicon?: true,
+        ?           mapLocation?: true,
+        ?           operatingHours?: true,
+        ?           socialLinks?: true,
+        ?           lastPaymentDate?: true,
+        ?           paystackCustomerCode?: true,
+        ?           plan?: true,
+        ?           subscriptionEnd?: true,
+        ?           trialEndsAt?: true,
+        ?           trialPlan?: true,
+        ?           trialUsed?: true,
+        ?           accountName?: true,
+        ?           accountNumber?: true,
+        ?           bankName?: true,
+        ?           billingCycle?: true,
+        ?           maxClassesOverride?: true,
+        ?           maxExamsOverride?: true,
+        ?           maxStorageGbOverride?: true,
+        ?           maxStudentsOverride?: true,
+        ?           paystackSubaccountCode?: true,
+        ?           paystackSubaccountStatus?: true,
+        ?           percentageCharge?: true,
+        ?           planId?: true,
+        ?           subscriptionPlanId?: true,
+        ?           profileCompleted?: true,
+        ?           registrationSource?: true,
+        ?           maxAiUsageOverride?: true,
+        ?           maxParentsOverride?: true,
+        ?           maxTeachersOverride?: true,
+        ?           levels?: true,
+        ?           storageUsedBytes?: true,
+        ?           subscriptionPlan?: true,
+        ?           settings?: true,
+        ?           originalStudents?: true,
+        ?           students?: true,
+        ?           activeTeachers?: true,
+        ?           currentTeachers?: true,
+        ?           primaryTeachers?: true,
+        ?           teachers?: true,
+        ?           classes?: true,
+        ?           emailLogs?: true,
+        ?           exams?: true,
+        ?           fileRecords?: true,
+        ?           grades?: true,
+        ?           gradeAuditLogs?: true,
+        ?           inquiries?: true,
+        ?           requesterLinkRequests?: true,
+        ?           linkRequests?: true,
+        ?           targetLinkRequests?: true,
+        ?           payments?: true,
+        ?           quizzes?: true,
+        ?           relationshipLinks?: true,
+        ?           admins?: true,
+        ?           landingPage?: true,
+        ?           schoolSubscriptions?: true,
+        ?           sessions?: true,
+        ?           settlementAccounts?: true,
+        ?           studentEnrollments?: true,
+        ?           studentHistories?: true,
+        ?           subjectExamPapers?: true,
+        ?           subjects?: true,
+        ?           teacherAttendances?: true,
+        ?           teacherSubjects?: true,
+        ?           transactionHistory?: true,
+        ?           transactions?: true,
+        ?           _count?: true
+                  }
+                },
+                classes: {
+                  orderBy: {
+                    enrolledAt: "desc"
+                  },
+                  take: 1,
+                  include: {
+                    class: {
+                      select: {
+                        id: true,
+                        name: true,
+                        section: true
+                      }
+                    }
+                  }
+                },
+                grades: {
+                  where: {
+                    status: "PUBLISHED"
+                  },
+                  orderBy: {
+                    createdAt: "desc"
+                  },
+                  select: {
+                    id: true,
+                    subject: true,
+                    score: true,
+                    maxMarks: true,
+                    assessmentType: true,
+                    createdAt: true,
+                    subjectPaper: {
+                      select: {
+                        subject: {
+                          select: {
+                            name: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                attendances: {
+                  orderBy: {
+                    date: "desc"
+                  },
+                  take: 30,
+                  select: {
+                    status: true,
+                    date: true
+                  }
+                }
+              }
+            }
+          }
+        })
+
+Unknown field `enforceSubscription` for select statement on model `School`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getParentDashboardService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:21)
+    at getParentDashboard (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.controller.ts:48:23)PrismaClientValidationError: 
+Invalid `prisma.parentChildLink.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:50
+
+  148 
+  149 export const getParentDashboardService = async (parentId: string, childId?: string) => {
+  150   // Find the selected child link (or the first active one if no childId provided)
+→ 151   const childLink = await prisma.parentChildLink.findFirst({
+          where: {
+            parentId: "f0cb7c38-1da3-43bc-be35-5877e97d12b1",
+            status: "active",
+            studentId: "44d90c45-2853-477c-b3d3-f07719d7ac76"
+          },
+          include: {
+            student: {
+              include: {
+                school: {
+                  select: {
+                    id: true,
+                    name: true,
+                    schoolCode: true,
+                    subscriptionStatus: true,
+                    isTrialActive: true,
+                    enforceSubscription: true,
+                    ~~~~~~~~~~~~~~~~~~~
+        ?           subdomain?: true,
+        ?           tenantId?: true,
+        ?           address?: true,
+        ?           phone?: true,
+        ?           schoolEmail?: true,
+        ?           motto?: true,
+        ?           logo?: true,
+        ?           foundedYear?: true,
+        ?           principal?: true,
+        ?           schoolType?: true,
+        ?           website?: true,
+        ?           description?: true,
+        ?           createdAt?: true,
+        ?           updatedAt?: true,
+        ?           bannerImage?: true,
+        ?           favicon?: true,
+        ?           mapLocation?: true,
+        ?           operatingHours?: true,
+        ?           socialLinks?: true,
+        ?           lastPaymentDate?: true,
+        ?           paystackCustomerCode?: true,
+        ?           plan?: true,
+        ?           subscriptionEnd?: true,
+        ?           trialEndsAt?: true,
+        ?           trialPlan?: true,
+        ?           trialUsed?: true,
+        ?           accountName?: true,
+        ?           accountNumber?: true,
+        ?           bankName?: true,
+        ?           billingCycle?: true,
+        ?           maxClassesOverride?: true,
+        ?           maxExamsOverride?: true,
+        ?           maxStorageGbOverride?: true,
+        ?           maxStudentsOverride?: true,
+        ?           paystackSubaccountCode?: true,
+        ?           paystackSubaccountStatus?: true,
+        ?           percentageCharge?: true,
+        ?           planId?: true,
+        ?           subscriptionPlanId?: true,
+        ?           profileCompleted?: true,
+        ?           registrationSource?: true,
+        ?           maxAiUsageOverride?: true,
+        ?           maxParentsOverride?: true,
+        ?           maxTeachersOverride?: true,
+        ?           levels?: true,
+        ?           storageUsedBytes?: true,
+        ?           subscriptionPlan?: true,
+        ?           settings?: true,
+        ?           originalStudents?: true,
+        ?           students?: true,
+        ?           activeTeachers?: true,
+        ?           currentTeachers?: true,
+        ?           primaryTeachers?: true,
+        ?           teachers?: true,
+        ?           classes?: true,
+        ?           emailLogs?: true,
+        ?           exams?: true,
+        ?           fileRecords?: true,
+        ?           grades?: true,
+        ?           gradeAuditLogs?: true,
+        ?           inquiries?: true,
+        ?           requesterLinkRequests?: true,
+        ?           linkRequests?: true,
+        ?           targetLinkRequests?: true,
+        ?           payments?: true,
+        ?           quizzes?: true,
+        ?           relationshipLinks?: true,
+        ?           admins?: true,
+        ?           landingPage?: true,
+        ?           schoolSubscriptions?: true,
+        ?           sessions?: true,
+        ?           settlementAccounts?: true,
+        ?           studentEnrollments?: true,
+        ?           studentHistories?: true,
+        ?           subjectExamPapers?: true,
+        ?           subjects?: true,
+        ?           teacherAttendances?: true,
+        ?           teacherSubjects?: true,
+        ?           transactionHistory?: true,
+        ?           transactions?: true,
+        ?           _count?: true
+                  }
+                },
+                classes: {
+                  orderBy: {
+                    enrolledAt: "desc"
+                  },
+                  take: 1,
+                  include: {
+                    class: {
+                      select: {
+                        id: true,
+                        name: true,
+                        section: true
+                      }
+                    }
+                  }
+                },
+                grades: {
+                  where: {
+                    status: "PUBLISHED"
+                  },
+                  orderBy: {
+                    createdAt: "desc"
+                  },
+                  select: {
+                    id: true,
+                    subject: true,
+                    score: true,
+                    maxMarks: true,
+                    assessmentType: true,
+                    createdAt: true,
+                    subjectPaper: {
+                      select: {
+                        subject: {
+                          select: {
+                            name: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                attendances: {
+                  orderBy: {
+                    date: "desc"
+                  },
+                  take: 30,
+                  select: {
+                    status: true,
+                    date: true
+                  }
+                }
+              }
+            }
+          }
+        })
+
+Unknown field `enforceSubscription` for select statement on model `School`. Available options are marked with ?.
+    at throwValidationException (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getParentDashboardService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.service.ts:151:21)
+    at getParentDashboard (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\parent\parent.controller.ts:48:23)PrismaClientKnownRequestError: 
+Invalid `prisma.notification.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:9:53
+
+  6 try {
+  7   const userId = req.user.id;
+  8 
+→ 9   const notifications = await prisma.notification.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getMyNotifications (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:9:27)PrismaClientKnownRequestError: 
+Invalid `prisma.notification.count()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:77:45
+
+  74 try {
+  75   const userId = req.user.id;
+  76 
+→ 77   const count = await prisma.notification.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getUnreadCount (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\notification\notification.controller.ts:77:19)

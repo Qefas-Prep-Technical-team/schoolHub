@@ -29,10 +29,14 @@ export default function PendingRequestsDialog({ isOpen, onOpenChange }: PendingR
   const fetchData = async () => {
     try {
       setIsLoading(true)
-      const [pendingData, activeData] = await Promise.all([
-        linkService.getPendingLinkRequests({ category: 'network' }),
-        linkService.getActiveLinks({ category: 'network' })
+      const [pendingRes, activeRes] = await Promise.all([
+        linkService.getSentLinkRequests({ status: 'PENDING', limit: 50 }),
+        linkService.getActiveLinks({ limit: 50 })
       ])
+      
+      const pendingData = (pendingRes as any).data || pendingRes;
+      const activeData = (activeRes as any).data || activeRes;
+
       setRequests(pendingData.items || [])
       setActiveLinks(activeData.items || [])
     } catch (error) {
@@ -106,7 +110,7 @@ export default function PendingRequestsDialog({ isOpen, onOpenChange }: PendingR
                   requests.map((request) => (
                     <RequestItem
                       key={request.id}
-                      request={request}
+                      request={request as any}
                       onCancel={() => handleCancel(request.id)}
                       isCancelling={isCancelling === request.id}
                     />
@@ -123,7 +127,7 @@ export default function PendingRequestsDialog({ isOpen, onOpenChange }: PendingR
                   activeLinks.map((link) => (
                     <RequestItem
                       key={link.id}
-                      request={link}
+                      request={link as any}
                       onCancel={() => handleCancel(link.id, true)}
                       isCancelling={isCancelling === link.id}
                       isActive
@@ -149,12 +153,14 @@ export default function PendingRequestsDialog({ isOpen, onOpenChange }: PendingR
   )
 }
 
-function getDisplayName(request: LinkRequest): string {
-  const target = (request.targetAdmin || request.targetTeacher || request.targetStudent || request.targetParent || request.targetSchool) as any;
-  const requester = (request.requesterAdmin || request.requesterTeacher || request.requesterStudent || request.requesterParent || request.requesterSchool) as any;
+function getDisplayName(item: any): string {
+  // If it's a RelationshipLink (active), it has approvedFromRequest nested
+  const request = item.approvedFromRequest || item;
+  
+  const target = request.targetAdmin || request.targetTeacher || request.targetStudent || request.targetParent || request.targetSchool;
+  const requester = request.requesterAdmin || request.requesterTeacher || request.requesterStudent || request.requesterParent || request.requesterSchool;
 
-  // If we have a target name, it's usually what we want to show for sent requests
-  // If we have a requester name, it's what we want to show for received requests
+  // We prioritize target name, and fallback to requester name
   const name = target?.name || target?.fullName || requester?.name || requester?.fullName || request.targetCode || 'Unknown';
   return String(name);
 }

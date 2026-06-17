@@ -14,7 +14,7 @@ export default function QuickContact({
     onButtonClick = () => console.log('Report absence'),
 }: QuickContactProps) {
     return (
-        <div className="bg-gradient-to-br from-[#356fe3] to-[#2557c0] rounded-xl p-6 shadow-md text-white">
+        <div className="bg-gradient-to-br from-[#356fe3] to-[#2557c0] dark:from-indigo-600 dark:to-indigo-900 rounded-xl p-6 shadow-md text-white">
             <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                     <h3 className="text-base font-bold mb-1">{title}</h3>

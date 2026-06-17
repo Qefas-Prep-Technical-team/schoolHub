@@ -17,8 +17,8 @@ import ButtonGroup from "../../_components/ButtonGroup";
 
 export default function ChildLink() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
-      <div className="w-full max-w-2xl space-y-10">
+    <div className="flex flex-col items-center justify-center w-full pt-4 pb-8">
+      <div className="w-full max-w-4xl space-y-10">
         {/* Connection Visual */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
@@ -59,7 +59,7 @@ export default function ChildLink() {
 
           <p className="text-sm md:text-base text-slate-500 dark:text-zinc-400 leading-relaxed">
             Parents don’t need to manage complex setups. The system securely connects you to your
-            child’s academic records — only after the school approves the relationship.
+            child’s academic records — only after the student approves the relationship.
           </p>
         </div>
 
@@ -95,9 +95,9 @@ export default function ChildLink() {
             <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-6 group-hover:scale-110 transition-transform">
               <Shield size={24} />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">School Approval Layer</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Student Approval Layer</h3>
             <p className="mt-3 text-sm text-slate-500 dark:text-zinc-400 leading-relaxed">
-              For privacy and safety, the school administrator must approve the link before grades,
+              For privacy and safety, the student must approve the link before grades,
               attendance, and reports become visible.
             </p>
           </motion.div>

@@ -39,9 +39,11 @@ export const getSchoolUsageService = async (schoolId: string) => {
       console.warn("[QuotaService] Failed to fetch subscriptionPlan by ID:", activePlanId, e);
     }
   }
+  const isExpired = school.subscriptionEnd && new Date(school.subscriptionEnd) < new Date();
+
   // 3. Resolve limits and descriptive plan name
-  const planName = subscriptionPlan?.name || (school.plan || DEFAULT_PLAN).toUpperCase();
-  const baseLimits = subscriptionPlan
+  const planName = isExpired ? DEFAULT_PLAN.toUpperCase() : (subscriptionPlan?.name || (school.plan || DEFAULT_PLAN).toUpperCase());
+  const baseLimits = (!isExpired && subscriptionPlan)
     ? {
       maxStudents: subscriptionPlan.maxStudents,
       maxExams: subscriptionPlan.maxExams,
@@ -53,22 +55,22 @@ export const getSchoolUsageService = async (schoolId: string) => {
     : (PLAN_LIMITS[planName.toUpperCase()] || PLAN_LIMITS[DEFAULT_PLAN]);
 
   const limits = {
-    students: school.maxStudentsOverride ?? baseLimits.maxStudents,
-    exams: school.maxExamsOverride ?? baseLimits.maxExams,
-    classes: school.maxClassesOverride ?? baseLimits.maxClasses,
-    teachers: school.maxTeachersOverride ?? baseLimits.maxTeachers,
-    storageGb: school.maxStorageGbOverride ?? baseLimits.maxStorageGb,
-    aiUsage: school.maxAiUsageOverride ?? baseLimits.maxAiUsage,
+    students: (isExpired ? undefined : school.maxStudentsOverride) ?? baseLimits.maxStudents,
+    exams: (isExpired ? undefined : school.maxExamsOverride) ?? baseLimits.maxExams,
+    classes: (isExpired ? undefined : school.maxClassesOverride) ?? baseLimits.maxClasses,
+    teachers: (isExpired ? undefined : school.maxTeachersOverride) ?? baseLimits.maxTeachers,
+    storageGb: (isExpired ? undefined : school.maxStorageGbOverride) ?? baseLimits.maxStorageGb,
+    aiUsage: (isExpired ? undefined : school.maxAiUsageOverride) ?? baseLimits.maxAiUsage,
   };
 
   // 4. Resolve Feature-Specific Access and Limits
-  const planFeatures = subscriptionPlan?.featureAccess?.filter((fa: any) => fa.enabled).map((fa: any) => ({
+  const planFeatures = isExpired ? [] : (subscriptionPlan?.featureAccess?.filter((fa: any) => fa.enabled).map((fa: any) => ({
     name: fa.feature.name,
     label: fa.feature.label,
     enabled: fa.enabled,
     limit: fa.limitValue,
     isUnlimited: fa.enabled && (fa.limitValue === null || fa.limitValue === undefined || fa.limitValue <= 0)
-  })) || [];
+  })) || []);
 
   // 3. Fetch robust real-time usage stats (Aligning with school.service.ts)
   const [studentLinks, studentEnrollments, teacherLinks, examCount, classCount, storageMetric] = await Promise.all([
@@ -219,9 +221,11 @@ export const getUserUsageService = async (userId: string, role: string) => {
     }
   }
 
+  const isExpired = user.subscriptionEnd && new Date(user.subscriptionEnd) < new Date();
+
   // 3. Resolve limits and descriptive plan name
-  const planName = subscriptionPlan?.name || (user.plan || DEFAULT_PLAN).toUpperCase();
-  const baseLimits = subscriptionPlan
+  const planName = isExpired ? DEFAULT_PLAN.toUpperCase() : (subscriptionPlan?.name || (user.plan || DEFAULT_PLAN).toUpperCase());
+  const baseLimits = (!isExpired && subscriptionPlan)
     ? {
       maxStudents: subscriptionPlan.maxStudents,
       maxExams: subscriptionPlan.maxExams,
@@ -233,22 +237,22 @@ export const getUserUsageService = async (userId: string, role: string) => {
     : (PLAN_LIMITS[planName.toUpperCase()] || PLAN_LIMITS[DEFAULT_PLAN]);
 
   const limits = {
-    students: user.maxStudentsOverride ?? baseLimits.maxStudents,
-    exams: user.maxExamsOverride ?? baseLimits.maxExams,
-    classes: user.maxClassesOverride ?? baseLimits.maxClasses,
-    teachers: user.maxTeachersOverride ?? baseLimits.maxTeachers,
-    storageGb: user.maxStorageGbOverride ?? baseLimits.maxStorageGb,
-    aiUsage: user.maxAiUsageOverride ?? baseLimits.maxAiUsage,
+    students: (isExpired ? undefined : user.maxStudentsOverride) ?? baseLimits.maxStudents,
+    exams: (isExpired ? undefined : user.maxExamsOverride) ?? baseLimits.maxExams,
+    classes: (isExpired ? undefined : user.maxClassesOverride) ?? baseLimits.maxClasses,
+    teachers: (isExpired ? undefined : user.maxTeachersOverride) ?? baseLimits.maxTeachers,
+    storageGb: (isExpired ? undefined : user.maxStorageGbOverride) ?? baseLimits.maxStorageGb,
+    aiUsage: (isExpired ? undefined : user.maxAiUsageOverride) ?? baseLimits.maxAiUsage,
   };
 
   // 4. Resolve Feature-Specific Access (Metrics vs Chips)
-  const planFeatures = subscriptionPlan?.featureAccess?.filter((fa: any) => fa.enabled).map((fa: any) => ({
+  const planFeatures = isExpired ? [] : (subscriptionPlan?.featureAccess?.filter((fa: any) => fa.enabled).map((fa: any) => ({
     name: fa.feature.name,
     label: fa.feature.label,
     enabled: fa.enabled,
     limit: fa.limitValue,
     isUnlimited: fa.enabled && (fa.limitValue === null || fa.limitValue === undefined || fa.limitValue <= 0)
-  })) || [];
+  })) || []);
 
   // 5. Fetch Role-Specific Usage
   let usage = {

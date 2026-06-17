@@ -13,7 +13,7 @@ export default function FilterToolbar() {
   const [selectedSort, setSelectedSort] = useState('Sort by: Due Date')
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+    <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
       {/* Subject Filters */}
       <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
         {subjects.map((subject) => (

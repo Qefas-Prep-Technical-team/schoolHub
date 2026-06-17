@@ -1,14 +1,31 @@
+'use client'
 
+import { useState } from 'react'
+import { useParentStore } from '@/lib/api/hooks/useParentStore'
+import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import OverviewWidgets from './components/OverviewWidgets'
 import FilterToolbar from './components/FilterToolbar'
 import AssignmentCard from './components/AssignmentCard'
 import Pagination from './components/Pagination'
+import DownloadReportButton from './components/DownloadReportButton'
+import { LayoutGrid, List } from 'lucide-react'
 
 export default function ParentAssignmentsPage() {
+  const { selectedChildId } = useParentStore()
+  const { data, isLoading } = useParentDashboard(selectedChildId)
+
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 9
+
+  // Use actual assignments from the backend
+  const assignments = data?.child?.assignments ?? []
+  
+  const totalPages = Math.ceil(assignments.length / itemsPerPage)
+  const currentAssignments = assignments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
   return (
-      <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-    
-        
+      <main className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-900 overflow-hidden relative">
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
           <div className="max-w-6xl mx-auto flex flex-col gap-8">
@@ -20,85 +37,114 @@ export default function ParentAssignmentsPage() {
                     Assignments Overview
                   </h2>
                   <p className="text-slate-500 dark:text-slate-400 mt-1">
-                    Manage and track Sarah&apos;s academic progress
+                    Manage and track academic progress
                   </p>
-                </div>
-                
-                {/* Child Selector */}
-                <div className="relative w-full sm:w-64">
-                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">
-                    Viewing Child
-                  </label>
-                  <div className="relative">
-                    <select className="w-full appearance-none bg-white dark:bg-surface-dark border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl py-3 pl-11 pr-10 focus:ring-primary focus:border-primary font-medium cursor-pointer shadow-sm">
-                      <option value="sarah">Sarah Ross (10th Grade)</option>
-                      <option value="mike">Mike Ross (8th Grade)</option>
-                    </select>
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none">
-                      face
-                    </span>
-                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xl">
-                      expand_more
-                    </span>
-                  </div>
                 </div>
               </div>
               
-              {/* Action Button */}
-              <button className="flex items-center gap-2 bg-white dark:bg-surface-dark hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl font-medium transition-colors shadow-sm ml-auto lg:ml-0">
-                <span className="material-symbols-outlined text-[20px]">download</span>
-                <span>Download Report</span>
-              </button>
+              <div className="flex items-center gap-3 w-full lg:w-auto">
+                {/* View Toggle */}
+                <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-lg transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                    }`}
+                    aria-label="List view"
+                  >
+                    <List className="size-5" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-lg transition-colors ${
+                      viewMode === 'grid'
+                        ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                    }`}
+                    aria-label="Grid view"
+                  >
+                    <LayoutGrid className="size-5" />
+                  </button>
+                </div>
+
+                {/* Action Button */}
+                <DownloadReportButton student={data?.child} stats={data?.stats} />
+              </div>
             </div>
 
-            <OverviewWidgets />
-            <FilterToolbar />
+            {/* Dynamic Widgets */}
+            <OverviewWidgets 
+              totalAssessments={assignments.length}
+              averageScore={data?.stats?.averageGrade ?? 0}
+              highestScore={
+                assignments.length > 0
+                  ? Math.round(Math.max(...assignments.map((a: any) => a.grade ? (parseFloat(a.grade.split('/')[0]) / a.totalMarks) * 100 : 0)))
+                  : 0
+              }
+            />
             
             {/* Assignments List */}
-            <div className="grid grid-cols-1 gap-4">
-              <AssignmentCard
-                id="1"
-                subject="Mathematics"
-                teacher="Mr. Anderson"
-                title="Algebra II: Quadratic Equations"
-                status="late"
-                dueDate="Oct 20 (2 days ago)"
-                icon="calculate"
-              />
-              
-              <AssignmentCard
-                id="2"
-                subject="Chemistry"
-                teacher="Ms. Frizzle"
-                title="Lab Report: Chemical Reactions"
-                status="urgent"
-                dueDate="Tomorrow, 11:59 PM"
-                icon="science"
-              />
-              
-              <AssignmentCard
-                id="3"
-                subject="English Lit"
-                teacher="Mr. Keating"
-                title='Essay: Themes in "The Great Gatsby"'
-                status="pending"
-                dueDate="Oct 28 (5 days left)"
-                icon="book_2"
-              />
-              
-              <AssignmentCard
-                id="4"
-                subject="History"
-                teacher="Mrs. Johnson"
-                title="World War II Timeline Project"
-                status="graded"
-                dueDate="Submitted Oct 15"
-                score="92/100"
-                icon="public"
-              />
-            </div>
+            <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+              {isLoading ? (
+                <>
+                  {[...Array(itemsPerPage)].map((_, i) => (
+                    <div key={i} className={`animate-pulse bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 flex ${viewMode === 'grid' ? 'flex-col gap-4' : 'flex-col md:flex-row gap-6 items-start md:items-center'}`}>
+                      <div className="bg-slate-200 dark:bg-slate-700 rounded-xl size-14 shrink-0"></div>
+                      <div className="flex-1 w-full space-y-3">
+                        <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+                        <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3 mt-2"></div>
+                      </div>
+                      <div className={`flex items-center gap-4 ${viewMode === 'grid' ? 'w-full justify-between' : 'w-full md:w-auto justify-end'}`}>
+                        <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-full w-20"></div>
+                        <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded-lg w-28"></div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : assignments.length === 0 ? (
+                <div className="p-10 text-center text-slate-400 dark:text-slate-500 font-medium bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 col-span-full">
+                  No assignments found for this child yet.
+                </div>
+              ) : (
+                currentAssignments.map((assignment: any, i: number) => {
+                  let cardStatus = assignment.status;
+                  if (cardStatus === "overdue") cardStatus = "late";
+                  if (cardStatus === "submitted") cardStatus = "urgent";
+                  if (!['late', 'urgent', 'pending', 'graded'].includes(cardStatus)) {
+                    cardStatus = "pending";
+                  }
 
-            <Pagination />
+                  const globalIndex = (currentPage - 1) * itemsPerPage + i + 1;
+
+                  return (
+                    <AssignmentCard
+                      key={assignment.id}
+                      id={assignment.id}
+                      subject={assignment.subject || 'Unknown Subject'}
+                      teacher="Course Instructor"
+                      title={assignment.title}
+                      status={cardStatus}
+                      dueDate={assignment.dueDate ? `Due ${new Date(assignment.dueDate).toLocaleDateString()}` : "No due date"}
+                      score={assignment.grade}
+                      icon={i % 2 === 0 ? "book_2" : "science"}
+                      index={globalIndex}
+                      viewMode={viewMode}
+                    />
+                  )
+                })
+              )}
+            </div>
+            
+            {totalPages > 1 && (
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                onPageChange={setCurrentPage} 
+              />
+            )}
           </div>
         </div>
       </main>

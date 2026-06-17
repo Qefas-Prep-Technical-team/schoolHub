@@ -118,6 +118,11 @@ export default function ExamPapersPage() {
     enabled: !!examId,
   });
 
+  const [attemptsPage, setAttemptsPage] = useState(1);
+  const ATTEMPTS_PER_PAGE = 10;
+  const totalAttemptsPages = Math.ceil(attempts.length / ATTEMPTS_PER_PAGE);
+  const paginatedAttempts = attempts.slice((attemptsPage - 1) * ATTEMPTS_PER_PAGE, attemptsPage * ATTEMPTS_PER_PAGE);
+
   const deleteAttemptMutation = useMutation({
     mutationFn: (studentId: string) => examService.deleteExamAttempt(examId, studentId),
     onSuccess: () => {
@@ -480,7 +485,7 @@ export default function ExamPapersPage() {
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="h-12 rounded-2xl font-bold flex gap-2 border-slate-200 hover:border-primary/50 hover:text-primary transition-all">
+                    <Button variant="outline" className="w-full h-12 rounded-2xl font-bold flex gap-2 border-slate-200 hover:border-primary/50 hover:text-primary transition-all">
                       <Settings2 size={16} /> Settings
                     </Button>
                   </DialogTrigger>
@@ -779,6 +784,35 @@ export default function ExamPapersPage() {
                   </DialogContent>
                 </Dialog>
 
+                <Button
+                  variant="outline"
+                  onClick={() => openConfirmDialog({
+                    title: exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades",
+                    description: exam?.allowImmediateResult 
+                      ? "Are you sure you want to hide grades? Students will no longer be able to see their results."
+                      : "Are you sure you want to publish grades? All students will immediately be able to see their results.",
+                    variant: exam?.allowImmediateResult ? "warning" : "warning",
+                    confirmText: exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades",
+                    onConfirm: () => updateExamMutation.mutate({ allowImmediateResult: !exam?.allowImmediateResult }, {
+                      onSuccess: () => {
+                        setConfirmDialog({ ...confirmDialog, isOpen: false });
+                      },
+                      onError: (error: any) => {
+                        toast.error(error.response?.data?.message || "Failed to update grades visibility");
+                      }
+                    })
+                  })}
+                  disabled={updateExamMutation.isPending}
+                  className={`w-full h-12 rounded-2xl font-bold flex gap-2 transition-all ${
+                    exam?.allowImmediateResult 
+                      ? "border-amber-100 text-amber-600 hover:bg-amber-50"
+                      : "border-emerald-100 text-emerald-600 hover:bg-emerald-50"
+                  }`}
+                >
+                  {exam?.allowImmediateResult ? <Lock size={16} /> : <Unlock size={16} />}
+                  {exam?.allowImmediateResult ? "Hide Grades" : "Publish Grades"}
+                </Button>
+
                 {user?.userType === "ADMIN" && (
                   <Button
                     variant="outline"
@@ -797,7 +831,7 @@ export default function ExamPapersPage() {
                       })
                     })}
                     disabled={deleteExamMutation.isPending}
-                    className="h-12 rounded-2xl font-bold flex gap-2 border-red-100 text-red-600 hover:bg-red-50 transition-all"
+                    className="col-span-2 w-full h-12 rounded-2xl font-bold flex gap-2 border-red-100 text-red-600 hover:bg-red-50 transition-all"
                   >
                     <Trash2 size={16} /> Delete
                   </Button>
@@ -994,7 +1028,7 @@ export default function ExamPapersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
-                  {attempts.map((attempt: any) => (
+                  {paginatedAttempts.map((attempt: any) => (
                     <tr key={attempt.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
                       <td className="px-8 py-4">
                         <div className="flex flex-col">
@@ -1014,7 +1048,7 @@ export default function ExamPapersPage() {
                       </td>
                       <td className="px-8 py-4 text-center">
                         <span className="text-xs font-bold text-gray-600">
-                          {attempt.subjectAttempts?.length || 0} / {papers.length} Papers
+                          {(attempt.subjectExamAttempts || attempt.subjectAttempts)?.length || 0} / {papers.length} Papers
                         </span>
                       </td>
                       <td className="px-8 py-4 text-center">
@@ -1042,6 +1076,31 @@ export default function ExamPapersPage() {
                   ))}
                 </tbody>
               </table>
+              {totalAttemptsPages > 1 && (
+                <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setAttemptsPage(prev => Math.max(prev - 1, 1))} 
+                    disabled={attemptsPage === 1}
+                    className="rounded-xl font-bold h-9 px-4"
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-xs font-bold text-slate-500">
+                    Page {attemptsPage} of {totalAttemptsPages}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setAttemptsPage(prev => Math.min(prev + 1, totalAttemptsPages))} 
+                    disabled={attemptsPage === totalAttemptsPages}
+                    className="rounded-xl font-bold h-9 px-4"
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1061,7 +1120,8 @@ export default function ExamPapersPage() {
           deleteExamMutation.isPending || 
           unpublishPaperMutation.isPending || 
           unlinkPaperMutation.isPending ||
-          deleteAttemptMutation.isPending
+          deleteAttemptMutation.isPending ||
+          updateExamMutation.isPending
         }
       />
     </div>

@@ -497,64 +497,16 @@ export default function ParentSettingsPage() {
         {/* SIGNALS TAB */}
         <TabsContent value="notifications" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
           <div className="px-2 max-w-4xl">
-            <Card className="rounded-[3rem] border-none shadow-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl overflow-hidden">
-              <CardHeader className="p-10 border-b border-slate-100 dark:border-white/5">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-orange-600/10 rounded-xl">
-                    <Bell className="text-orange-600" size={20} />
-                  </div>
-                  <div>
-                    <CardTitle className="text-2xl font-black uppercase tracking-tight">Signal Protocols</CardTitle>
-                    <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Configure your notification stream</CardDescription>
-                  </div>
+            <Card className="rounded-[3rem] border-none shadow-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl overflow-hidden flex flex-col items-center justify-center p-20 text-center min-h-[400px]">
+                <div className="w-20 h-20 bg-orange-100 dark:bg-orange-500/10 rounded-full flex items-center justify-center mb-6">
+                  <Bell size={40} className="text-orange-500" />
                 </div>
-              </CardHeader>
-              <CardContent className="p-10 space-y-10">
-                <div className="space-y-8">
-                  <NotificationToggle 
-                    icon={<Mail size={18} />}
-                    label="Email Transmissions"
-                    description="Receive administrative logs and reports via email"
-                    checked={notifications.emailAlerts}
-                    onCheckedChange={(checked) => setNotifications({...notifications, emailAlerts: checked})}
-                  />
-                  <NotificationToggle 
-                    icon={<Smartphone size={18} />}
-                    label="SMS Broadcasts"
-                    description="High-priority alerts sent directly to your mobile tether"
-                    checked={notifications.smsAlerts}
-                    onCheckedChange={(checked) => setNotifications({...notifications, smsAlerts: checked})}
-                  />
-                  <div className="h-px bg-slate-100 dark:bg-white/10" />
-                  <NotificationToggle 
-                    icon={<Layout size={18} />}
-                    label="Academic Updates"
-                    description="Signals when student nodes receive new grades or results"
-                    checked={notifications.academicUpdates}
-                    onCheckedChange={(checked) => setNotifications({...notifications, academicUpdates: checked})}
-                  />
-                  <NotificationToggle 
-                    icon={<UserCircle size={18} />}
-                    label="Attendance Alerts"
-                    description="Immediate notification of student terminal attendance state"
-                    checked={notifications.attendanceAlerts}
-                    onCheckedChange={(checked) => setNotifications({...notifications, attendanceAlerts: checked})}
-                  />
-                  <NotificationToggle 
-                    icon={<Smartphone size={18} />}
-                    label="Payment Reminders"
-                    description="Critical signals for financial protocol deadlines"
-                    checked={notifications.paymentReminders}
-                    onCheckedChange={(checked) => setNotifications({...notifications, paymentReminders: checked})}
-                  />
-                </div>
-                
-                <div className="pt-6">
-                  <Button className="h-14 px-8 rounded-2xl border-2 border-orange-600 text-orange-600 bg-transparent hover:bg-orange-600 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest active:scale-95">
-                    Reset Signal Parameters
-                  </Button>
-                </div>
-              </CardContent>
+                <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4">
+                  Coming Soon
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 max-w-md font-medium">
+                  We are working hard to bring you advanced notification settings. Check back later!
+                </p>
             </Card>
           </div>
         </TabsContent>

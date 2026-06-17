@@ -91,8 +91,13 @@ app.use(
 
 const server = http.createServer(app);
 
+import { startCronJobs } from "./scripts/cron";
+
 // Initialize Socket.io
 initSocket(server);
+
+// Start Background Cron Jobs
+startCronJobs();
 
 // 4. PRODUCTION-READY LISTENER
 // '0.0.0.0' is the secret sauce for Render/Cloud deployments

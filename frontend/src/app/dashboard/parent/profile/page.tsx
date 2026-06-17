@@ -54,7 +54,7 @@ export default function ParentProfilePage() {
       </div>
       <div className="text-center">
         <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Session Expired</h3>
-        <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-2">Please re-authenticate to access the management hub.</p>
+        <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-2">Please re-authenticate to view your profile.</p>
       </div>
     </div>
   );
@@ -119,20 +119,20 @@ export default function ParentProfilePage() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-2">
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-            <span>Management Hub</span>
+            <span>Parent Portal</span>
             <ChevronRight size={10} className="text-orange-500" />
-            <span className="text-orange-600">Parent Profile</span>
+            <span className="text-orange-600">Profile</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="p-3 bg-orange-600 rounded-2xl shadow-2xl shadow-orange-600/30">
               <User size={24} className="text-white fill-current" />
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 dark:text-white uppercase leading-none">
-              Guardian Console
+              My Profile
             </h1>
           </div>
           <p className="text-[13px] text-slate-500 dark:text-slate-400 font-bold tracking-tight max-w-xl leading-relaxed">
-            Administrative overview of your family identity, security protocols, and system access levels.
+            Overview of your personal details, security settings, and linked children.
           </p>
         </div>
 
@@ -220,11 +220,11 @@ export default function ParentProfilePage() {
               <div className="grid grid-cols-2 gap-4 w-full">
                 <div className="bg-white dark:bg-white/5 p-6 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Family Size</h4>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{user.children?.length || 0} Nodes</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{user.children?.length || 0} Children</p>
                 </div>
                 <div className="bg-white dark:bg-white/5 p-6 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Access</h4>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Level 4</p>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Account Status</h4>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Active</p>
                 </div>
               </div>
             </CardContent>
@@ -239,16 +239,16 @@ export default function ParentProfilePage() {
                   <Lock className="text-orange-500" size={28} />
                 </div>
                 <div>
-                  <h4 className="text-xl font-black uppercase tracking-tight">Security Core</h4>
-                  <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest mt-0.5">Two-Factor Enabled</p>
+                  <h4 className="text-xl font-black uppercase tracking-tight">Security Settings</h4>
+                  <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest mt-0.5">Account Protected</p>
                 </div>
               </div>
               <p className="text-xs text-white/60 font-bold leading-relaxed uppercase tracking-widest italic border-l-2 border-orange-600 pl-4">
-                High-level encryption active. All family terminal access is monitored through this administrative hub.
+                Your account is secure. Keep your password confidential and review your privacy settings.
               </p>
-              <Button className="w-full h-16 rounded-[1.5rem] bg-orange-600 text-white font-black uppercase tracking-widest text-[11px] hover:bg-orange-700 transition-all shadow-xl shadow-orange-600/20 active:scale-95 group cursor-pointer">
+              <Button onClick={() => window.location.href = '/dashboard/parent/settings'} className="w-full h-16 rounded-[1.5rem] bg-orange-600 text-white font-black uppercase tracking-widest text-[11px] hover:bg-orange-700 transition-all shadow-xl shadow-orange-600/20 active:scale-95 group cursor-pointer">
                 <Shield className="mr-3 group-hover:rotate-12 transition-transform" size={18} />
-                Privacy Dashboard
+                Manage Security
               </Button>
             </div>
           </Card>
@@ -263,8 +263,8 @@ export default function ParentProfilePage() {
                   <ShieldCheck size={24} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Identity Registry</h3>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Personnel Information Mapping</p>
+                  <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Personal Details</h3>
+                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Your Contact Information</p>
                 </div>
               </div>
             </CardHeader>
@@ -275,15 +275,15 @@ export default function ParentProfilePage() {
                 <div className="flex items-center gap-4">
                   <Mail className="text-orange-500" size={18} />
                   <h4 className="text-[12px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em]">
-                    Signal Credentials
+                    Contact Information
                   </h4>
                   <div className="h-px flex-1 bg-gradient-to-r from-slate-100 to-transparent dark:from-white/10" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <InfoRow icon={<Mail size={20} />} label="Communication Node" value={user.email} />
-                  <InfoRow icon={<Smartphone size={20} />} label="Mobile Tether" value={user.phone} />
-                  <InfoRow icon={<Globe size={20} />} label="Primary Protocol" value="English (Unified)" />
-                  <InfoRow icon={<MapPin size={20} />} label="Location Tag" value="Lagos, Nigeria" />
+                  <InfoRow icon={<Mail size={20} />} label="Email Address" value={user.email} />
+                  <InfoRow icon={<Smartphone size={20} />} label="Phone Number" value={user.phone} />
+                  <InfoRow icon={<Globe size={20} />} label="Language" value="English" />
+                  <InfoRow icon={<MapPin size={20} />} label="Location" value="Nigeria" />
                 </div>
               </div>
 
@@ -292,15 +292,15 @@ export default function ParentProfilePage() {
                 <div className="flex items-center gap-4">
                   <Wallet className="text-orange-500" size={18} />
                   <h4 className="text-[12px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em]">
-                    Financial Protocol
+                    Subscription Details
                   </h4>
                   <div className="h-px flex-1 bg-gradient-to-r from-slate-100 to-transparent dark:from-white/10" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <InfoRow icon={<CreditCard size={20} />} label="Service Tier" value={user.plan?.toUpperCase() || 'FREE TRIAL'} />
+                  <InfoRow icon={<CreditCard size={20} />} label="Current Plan" value={user.plan?.toUpperCase() || 'FREE TRIAL'} />
                   <InfoRow
                     icon={<History size={20} />}
-                    label="Protocol Renewal"
+                    label="Renewal Date"
                     value={user.trialEndsAt ? new Date(user.trialEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "N/A"}
                   />
                 </div>
@@ -316,10 +316,10 @@ export default function ParentProfilePage() {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                       <div className="space-y-3">
                         <Badge className="bg-orange-600 text-white font-black uppercase tracking-widest text-[9px] px-3 py-1 border-none">
-                          Family Linkages
+                          Family Members
                         </Badge>
-                        <h4 className="text-3xl font-black uppercase tracking-tight">Student Nodes Linked</h4>
-                        <p className="text-white/40 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Active child terminals associated with this hub</p>
+                        <h4 className="text-3xl font-black uppercase tracking-tight">Linked Children</h4>
+                        <p className="text-white/40 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Children currently linked to your account</p>
                       </div>
                       <div className="p-6 bg-orange-600 rounded-[2rem] shadow-2xl shadow-orange-600/30">
                         <Users size={32} className="text-white" />
@@ -338,7 +338,7 @@ export default function ParentProfilePage() {
                           </div>
                         </div>
                       )) || (
-                          <p className="text-white/30 font-bold uppercase tracking-[0.2em] text-xs italic">No child nodes detected in current sequence.</p>
+                          <p className="text-white/30 font-bold uppercase tracking-[0.2em] text-xs italic">No children linked to this account.</p>
                         )}
                     </div>
                   </div>

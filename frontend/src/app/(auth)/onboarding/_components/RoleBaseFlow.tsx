@@ -71,7 +71,7 @@ export default function RoleBaseFlow({
 
   return (
     <MotionConfig transition={{ duration: 0.6, type: "spring", bounce: 0.1 }}>
-      <div className="relative w-full min-h-[100dvh] bg-[#fafafa] dark:bg-[#050505] flex flex-col text-slate-900 dark:text-zinc-100 overflow-hidden font-sans selection:bg-blue-500/30">
+      <div className="relative w-full min-h-[100dvh] bg-transparent flex flex-col text-slate-900 dark:text-zinc-100 overflow-hidden font-sans selection:bg-blue-500/30">
         
         {/* Premium Background Accents */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -145,7 +145,7 @@ export default function RoleBaseFlow({
 
         {/* Header / Progress bar */}
         <header className="sticky top-0 z-20 transition-all duration-300">
-          <div className="max-w-2xl mx-auto px-6 pt-8 pb-4">
+          <div className="max-w-4xl mx-auto px-6 pt-8 pb-4">
             <div className="flex items-center justify-between mb-4 px-1">
               <div className="flex flex-col">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-500 mb-0.5">
@@ -177,7 +177,7 @@ export default function RoleBaseFlow({
         </header>
 
         {/* Step Content */}
-        <main className="flex-1 w-full max-w-2xl mx-auto px-6 py-12">
+        <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-12">
           <AnimatePresence mode="wait" custom={direction} initial={false}>
             <motion.div
               key={active}
@@ -196,9 +196,9 @@ export default function RoleBaseFlow({
         {/* Navigation Bar */}
         <footer className="sticky bottom-0 z-20 pb-10 pt-6 px-6">
           {/* Subtle gradient to mask content behind footer */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#fafafa] via-[#fafafa]/90 to-transparent dark:from-[#050505] dark:via-[#050505]/95 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-50/90 to-transparent dark:from-slate-950 dark:via-slate-950/95 pointer-events-none" />
           
-          <div className="max-w-2xl mx-auto flex gap-4 relative z-10">
+          <div className="max-w-4xl mx-auto flex gap-4 relative z-10">
             {active > 0 && (
               <motion.button
                 initial={{ opacity: 0, x: -10 }}

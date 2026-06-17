@@ -12,7 +12,7 @@ export const checkSchoolFeatureAccess = async (schoolId: string, featureKey: str
     // Inline resolution: accept UUID or tenantId (avoids circular import with school.service)
     const school = await prisma.school.findFirst({
       where: { OR: [{ id: schoolId }, { tenantId: schoolId }] },
-      select: { id: true }
+      select: { id: true, subscriptionEnd: true }
     });
     const canonicalId = school?.id;
 
@@ -20,6 +20,11 @@ export const checkSchoolFeatureAccess = async (schoolId: string, featureKey: str
       console.warn(`[SchoolChecker] Could not resolve schoolId: ${schoolId}`);
       return false;
     }
+    
+    if (school?.subscriptionEnd && new Date(school.subscriptionEnd) < new Date()) {
+      return false;
+    }
+
     // 1. Find the feature by featureKey
     const feature = await prisma.platformFeature.findUnique({
       where: { featureKey }
@@ -39,8 +44,10 @@ export const checkSchoolFeatureAccess = async (schoolId: string, featureKey: str
     });
 
     if (!schoolSubscription || schoolSubscription.status !== "ACTIVE") {
-      // No active subscription, perhaps default to false or check if there is a default FREE plan fallback.
-      // Usually, if they don't have an ACTIVE subscription, they have no premium access.
+      return false;
+    }
+    
+    if (schoolSubscription.expiresAt && schoolSubscription.expiresAt < new Date()) {
       return false;
     }
 

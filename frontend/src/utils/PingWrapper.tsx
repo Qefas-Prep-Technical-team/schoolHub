@@ -16,7 +16,7 @@ export const PingWrapper = ({ children }: { children: React.ReactNode }) => {
     }, []);
 
     return (
-        <div>
+        <div className="w-full h-full">
             {isWaking && (
                 <PingOverlay />
             )}

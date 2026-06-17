@@ -66,7 +66,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
                   onClick={() => onPageChange(num as number)}
                   className={`min-w-[40px] h-10 rounded-xl font-bold text-sm transition-all duration-200 ${
                     page === num
-                      ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105'
+                      ? 'bg-blue-600 dark:bg-indigo-600 text-white shadow-md shadow-blue-600/20 dark:shadow-indigo-600/20 scale-105'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >

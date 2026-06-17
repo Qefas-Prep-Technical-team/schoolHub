@@ -1,5 +1,19 @@
 import prisma from "../../config/database";
 import { GradeStatus, NotificationStatus } from "@prisma/client";
+import { getStudentAssignmentsService, getAssignmentByIdService } from "../assignment/assignment.service";
+
+export const getChildAssignmentDetailsService = async (parentId: string, studentId: string, assignmentId: string) => {
+  const childLink = await prisma.parentChildLink.findFirst({
+    where: { parentId, studentId, status: "active" },
+  });
+
+  if (!childLink) {
+    throw new Error("Child not found or not connected to this parent");
+  }
+
+  const assignmentDetails = await getAssignmentByIdService(studentId, assignmentId);
+  return assignmentDetails;
+};
 
 export const getParentChildrenService = async (parentId: string) => {
   const childrenLinks = await prisma.parentChildLink.findMany({
@@ -156,7 +170,7 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
     include: {
       student: {
         include: {
-          school: { select: { id: true, name: true, schoolCode: true } },
+          school: { select: { id: true, name: true, schoolCode: true, subscriptionStatus: true, isTrialActive: true, motto: true, address: true } },
           classes: {
             orderBy: { enrolledAt: "desc" },
             take: 1,
@@ -165,7 +179,6 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
           grades: {
             where: { status: GradeStatus.PUBLISHED },
             orderBy: { createdAt: "desc" },
-            take: 5,
             select: {
               id: true,
               subject: true,
@@ -173,6 +186,13 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
               maxMarks: true,
               assessmentType: true,
               createdAt: true,
+              subjectPaper: {
+                select: {
+                  subject: {
+                    select: { name: true }
+                  }
+                }
+              }
             },
           },
           attendances: {
@@ -259,6 +279,20 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
 
   const student = childLink?.student;
 
+  let assignmentsData: any[] = [];
+  if (student) {
+    try {
+      const assignmentRes = await getStudentAssignmentsService({
+        studentId: student.id,
+        page: 1,
+        limit: 50,
+      });
+      assignmentsData = assignmentRes.assignments;
+    } catch (err) {
+      console.error("Failed to fetch assignments for parent dashboard:", err);
+    }
+  }
+
   return {
     child: student
       ? {
@@ -268,7 +302,11 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
           profileImage: student.profileImage,
           school: student.school,
           currentClass: student.classes[0]?.class || null,
-          recentGrades: student.grades,
+          recentGrades: student.grades.slice(0, 5).map((g: any) => ({
+            ...g,
+            subject: g.subject || g.subjectPaper?.subject?.name || "Unknown Subject",
+          })),
+          assignments: assignmentsData,
         }
       : null,
     stats: {

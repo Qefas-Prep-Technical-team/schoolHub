@@ -34,7 +34,7 @@ export const checkUserFeatureAccess = async (
     });
 
     // 3. If they have a personal active subscription, check its feature access
-    if (userSubscription && userSubscription.status === "ACTIVE") {
+    if (userSubscription && userSubscription.status === "ACTIVE" && (!userSubscription.expiresAt || userSubscription.expiresAt >= new Date())) {
       const planFeatureAccess = await prisma.planFeatureAccess.findUnique({
         where: {
           planId_featureId: {

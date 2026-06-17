@@ -1,6 +1,6 @@
 import prisma from "../../config/database";
 import { generateStudentPerformanceInsight } from "./exam-ai.service";
-import { AssessmentStatus, ExamAttemptStatus, UserRole } from "@prisma/client";
+import { AssessmentStatus, ExamAttemptStatus, UserRole, GradeStatus } from "@prisma/client";
 import { createNotification } from "../notification/notification.service";
 import {
   computeExpiryTime,
@@ -496,6 +496,7 @@ export const scoreExamAttemptService = async ({
   // --- Grade Integration (Batched Transaction) ---
   try {
     const gradeTransactions: any[] = [];
+    const gradeStatus = updated.exam.allowImmediateResult ? GradeStatus.PUBLISHED : GradeStatus.DRAFT;
     
     for (const sa of updated.subjectExamAttempts) {
       const subjectName = sa.subjectPaper?.subject?.name || "Unknown Subject";
@@ -507,6 +508,7 @@ export const scoreExamAttemptService = async ({
             maxMarks: sa.totalMarks,
             subjectPaperId: sa.subjectPaperId, // Link to paper
             updatedAt: new Date(),
+            status: gradeStatus,
           },
           create: {
             id: `grade-sa-${sa.id}`,
@@ -523,6 +525,7 @@ export const scoreExamAttemptService = async ({
             subjectPaperId: sa.subjectPaperId, // Link to paper
             examAttemptId: updated.id,
             subjectExamAttemptId: sa.id,
+            status: gradeStatus,
           },
         })
       );
@@ -537,6 +540,7 @@ export const scoreExamAttemptService = async ({
             score: updated.totalScore,
             maxMarks: updated.totalMarks,
             updatedAt: new Date(),
+            status: gradeStatus,
           },
           create: {
             id: `grade-total-${updated.id}`,
@@ -551,6 +555,7 @@ export const scoreExamAttemptService = async ({
             remarks: `Overall total for combined exam`,
             examId: updated.examId,
             examAttemptId: updated.id,
+            status: gradeStatus,
           },
         })
       );
