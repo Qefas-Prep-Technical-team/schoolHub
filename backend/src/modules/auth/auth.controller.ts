@@ -23,6 +23,7 @@ import jwt from "jsonwebtoken";
 import { AdminRole, UserRole, PlanScope } from "@prisma/client";
 import { getIO } from "../../socket";
 import { createNotification } from "../notification/notification.service";
+import UAParser from "ua-parser-js";
 import {
   enforceStudentLimit,
   enforceTeacherLimit,
@@ -1490,13 +1491,12 @@ export const requestVerificationCode = async (req: Request, res: Response) => {
 // =========================
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password, userType } = req.body;
-    console.log("DEBUG: Login attempt started", { email, userType });
+    const { email, password, userType, preAuthToken } = req.body;
 
-    if (!email || !password || !userType) {
+    if (!email || (!password && !preAuthToken) || !userType) {
       return res.status(400).json({
         success: false,
-        message: "Email, password, and user type required",
+        message: "Email, password, and user type are required",
       });
     }
 
@@ -1583,11 +1583,22 @@ export const login = async (req: Request, res: Response) => {
         .json({ success: false, message: "Email not verified" });
     }
 
-    const validPassword = await comparePassword(password, user.password);
-    if (!validPassword) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid email or password" });
+    if (preAuthToken) {
+      try {
+        const payload = jwt.verify(preAuthToken, process.env.JWT_SECRET || "default_secret") as any;
+        if (payload.userId !== user.id) {
+          return res.status(401).json({ success: false, message: "Invalid preAuth token mismatch" });
+        }
+      } catch (err) {
+        return res.status(401).json({ success: false, message: "Invalid or expired preAuth token" });
+      }
+    } else {
+      const validPassword = await comparePassword(password, user.password);
+      if (!validPassword) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Invalid email or password" });
+      }
     }
 
     // Check if it's a student or teacher and if isClaimed is false
@@ -1610,7 +1621,65 @@ export const login = async (req: Request, res: Response) => {
     console.log("DEBUG: Generating tokens for user", user.id);
     const accessToken = generateAccessToken(user.id, actualRole);
     console.log("DEBUG: Access token generated");
-    const refreshToken = await generateRefreshToken(user.id, actualRole);
+
+    // Extract device information for tracking
+    const userAgent = req.headers["user-agent"] || "";
+    const parser = new UAParser(userAgent);
+    const result = parser.getResult();
+    
+    const deviceInfo = {
+      deviceType: result.device.type || "desktop",
+      deviceModel: result.device.model || result.browser.name || "Unknown Browser",
+      osVersion: result.os.name ? `${result.os.name} ${result.os.version || ""}`.trim() : "Unknown OS",
+      ipAddress: (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString().split(",")[0].trim() || "Unknown IP"
+    };
+
+    // Device Verification Check
+    const isDeviceVerified = req.cookies.deviceVerified === "true";
+    if (!isDeviceVerified) {
+      const validDevice = await prisma.refreshToken.findFirst({
+        where: {
+          userId: user.id,
+          deviceModel: deviceInfo.deviceModel,
+          isValid: true,
+        },
+      });
+
+      if (!validDevice) {
+        const generatedPreAuthToken = jwt.sign(
+          { userId: user.id, userType: actualRole },
+          process.env.JWT_SECRET || "default_secret",
+          { expiresIn: "15m" }
+        );
+        return res.status(403).json({
+          success: false,
+          message: "Unrecognized or revoked device detected. Verification required.",
+          requiresVerification: true,
+          preAuthToken: generatedPreAuthToken,
+        });
+      }
+    }
+
+    // Check if this device has ever been used by this user before
+    const existingDeviceCount = await prisma.refreshToken.count({
+      where: {
+        userId: user.id,
+        deviceModel: deviceInfo.deviceModel,
+        osVersion: deviceInfo.osVersion,
+      },
+    });
+
+    if (existingDeviceCount === 0) {
+      await createNotification({
+        recipientType: actualRole as any,
+        recipientId: user.id,
+        type: "GENERAL",
+        title: "New Device Login Detected",
+        message: `We detected a new login to your account from a ${deviceInfo.deviceModel} on ${deviceInfo.osVersion}. If this wasn't you, please secure your account immediately by changing your password.`,
+      });
+    }
+
+    const refreshToken = await generateRefreshToken(user.id, actualRole, deviceInfo);
     console.log("DEBUG: Refresh token generated and stored");
 
     res.cookie("token", accessToken, {
@@ -2045,6 +2114,14 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
 
     let user: any;
     let isSchoolOwner = false;
+    let isNewUser = false;
+
+    // Set cookie to remember this device was just verified
+    res.cookie("deviceVerified", "true", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
 
     switch (userType) {
       case UserRole.ADMIN:
@@ -2061,6 +2138,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         isSchoolOwner = user.schoolAdmins.some(
           (sa: any) => sa.role === AdminRole.SCHOOL_OWNER,
         );
+        isNewUser = !user.verified;
 
         user = await prisma.admin.update({
           where: { email },
@@ -2101,6 +2179,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         const schoolCode = ownerSchool?.school?.schoolCode || null;
         return res.status(200).json({
           success: true,
+          isNewUser,
           message: isSchoolOwner
             ? "School owner verified and account approved!"
             : "Admin verified! Waiting for school owner approval.",
@@ -2120,6 +2199,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         });
 
       case UserRole.TEACHER:
+        const oldTeacher = await prisma.teacher.findUnique({ where: { email } });
+        if (oldTeacher) isNewUser = !oldTeacher.verified;
         user = await prisma.teacher.update({
           where: { email },
           data: { verified: true },
@@ -2131,6 +2212,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         );
         return res.status(200).json({
           success: true,
+          isNewUser,
           message: "Teacher verified successfully!",
           userRole: userType,
           code: user.teacherCode,
@@ -2138,6 +2220,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         });
 
       case UserRole.STUDENT:
+        const oldStudent = await prisma.student.findUnique({ where: { email } });
+        if (oldStudent) isNewUser = !oldStudent.verified;
         user = await prisma.student.update({
           where: { email },
           data: { verified: true },
@@ -2149,6 +2233,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         );
         return res.status(200).json({
           success: true,
+          isNewUser,
           message: "Student verified successfully!",
           userRole: userType,
           code: user.studentCode,
@@ -2156,6 +2241,8 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         });
 
       case UserRole.PARENT:
+        const oldParent = await prisma.parent.findUnique({ where: { email } });
+        if (oldParent) isNewUser = !oldParent.verified;
         user = await prisma.parent.update({
           where: { email },
           data: { verified: true },
@@ -2167,6 +2254,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         );
         return res.status(200).json({
           success: true,
+          isNewUser,
           message: "Parent verified successfully!",
           userRole: userType,
           code: user.parentCode,
@@ -2199,14 +2287,15 @@ export const refreshToken = async (req: Request, res: Response) => {
         token,
         userId: payload.userId,
         userType: payload.userType,
+        isValid: true,
       },
     });
 
     if (!dbToken || dbToken.expiresAt < new Date()) {
-      console.error("LOG ERROR: [refreshToken] dbToken missing or expired for token", token);
+      console.error("LOG ERROR: [refreshToken] dbToken missing, invalid, or expired for token", token);
       return res.status(401).json({
         success: false,
-        message: "Invalid refresh token",
+        message: "Invalid or revoked refresh token",
       });
     }
 
@@ -3049,5 +3138,70 @@ export const changePassword = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return handleError(res, error, "auth.changePassword");
+  }
+};
+
+export const getUserSessions = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const sessions = await prisma.refreshToken.findMany({
+      where: { userId, isValid: true },
+      select: {
+        id: true,
+        deviceType: true,
+        deviceModel: true,
+        osVersion: true,
+        ipAddress: true,
+        lastActiveAt: true,
+        createdAt: true,
+      },
+      orderBy: { lastActiveAt: "desc" },
+    });
+
+    const currentToken = req.cookies.refreshToken;
+    const currentSession = currentToken ? await prisma.refreshToken.findFirst({ where: { token: currentToken, userId } }) : null;
+
+    const data = sessions.map(session => ({
+      ...session,
+      isCurrentDevice: currentSession?.id === session.id
+    }));
+
+    return res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    return handleError(res, error, "auth.getUserSessions");
+  }
+};
+
+export const revokeUserSession = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const { id } = req.params;
+    
+    if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const session = await prisma.refreshToken.findFirst({
+      where: { id, userId },
+    });
+
+    if (!session) {
+      return res.status(404).json({ success: false, message: "Session not found" });
+    }
+
+    await prisma.refreshToken.update({
+      where: { id },
+      data: { isValid: false },
+    });
+
+    const currentToken = req.cookies.refreshToken;
+    if (currentToken === session.token) {
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
+    }
+
+    return res.status(200).json({ success: true, message: "Session revoked successfully" });
+  } catch (error: any) {
+    return handleError(res, error, "auth.revokeUserSession");
   }
 };

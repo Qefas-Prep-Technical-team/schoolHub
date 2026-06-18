@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useRequestCode, useVerifyCode, useResendCode } from '../services/useVerificationMutations';
+import { useLoginMutation } from '../../login/services/use-auth-mutations';
 import CodeInputGroup from './CodeInputGroup';
 import VerifyButton from './VerifyButton';
 import MetaText from './MetaText';
@@ -22,6 +23,7 @@ export default function VerificationCard() {
   const { mutate: requestCode, isPending: isRequesting } = useRequestCode();
   const { mutate: verifyCode, isPending: isVerifying } = useVerifyCode();
   const { mutate: resendCode, isPending: isResending } = useResendCode();
+  const loginMutation = useLoginMutation();
 
   // Request verification code automatically when component mounts
   const hasRequested = React.useRef(false);
@@ -51,12 +53,27 @@ export default function VerificationCard() {
       verifyCode(
         { email, code: verificationCode, userType },
         {
-          onSuccess: () => {
+          onSuccess: (response: any) => {
             setIsSuccess(true);
-            // Redirect to onboarding after successful verification
-            setTimeout(() => {
-              router.push(`/onboarding?type=${userType}`);
-            }, 3000);
+            const isNewUser = response?.data?.isNewUser ?? false;
+            
+            const preAuthToken = sessionStorage.getItem("preAuthToken");
+            
+            if (preAuthToken) {
+              // Auto-login using secure preAuthToken
+              loginMutation.mutate({
+                email: email,
+                userType: userType as any,
+                isNewUser: isNewUser,
+                preAuthToken: preAuthToken
+              });
+              sessionStorage.removeItem("preAuthToken");
+            } else {
+              // Fallback to manual login redirect (e.g., brand new registration without login attempt)
+              setTimeout(() => {
+                router.push(`/login/${userType.toLowerCase()}?new=${isNewUser}`);
+              }, 3000);
+            }
           }
         }
       );

@@ -398,7 +398,7 @@ export default function ClassDetailsPage() {
               
               <button 
                 onClick={() => setIsManageModalOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95"
+                className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-indigo-600 dark:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/20 dark:shadow-none hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all active:scale-95 border border-transparent dark:border-indigo-400"
               >
                 <UserCog size={18} />
                 <span>Manage Class</span>

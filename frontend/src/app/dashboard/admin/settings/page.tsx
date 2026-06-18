@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useSchoolSettings, useUpdateSchoolSettings, useSchoolLandingPage, useUpdateSchoolLandingPage } from '@/lib/api/hooks/useSchool';
+import { useSessions } from '@/lib/api/hooks/useSessions';
 import { adminService } from '@/lib/api/services/adminService';
 import { 
   Settings, 
@@ -19,7 +20,8 @@ import {
   ShieldCheck,
   UserCheck,
   Paintbrush,
-  UserCircle
+  UserCircle,
+  Key
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -30,10 +32,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'react-toastify';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import DeviceSessions from '@/components/DeviceSessions';
+import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
 
 export default function SettingsPage() {
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  
+  const { data: sessionsResponse } = useSessions(schoolId);
+  const dbSessions = sessionsResponse?.data || [];
   
   const { data: settings, isLoading } = useSchoolSettings(schoolId);
   const updateMutation = useUpdateSchoolSettings();
@@ -45,6 +52,7 @@ export default function SettingsPage() {
   const [localLandingPage, setLocalLandingPage] = useState<any>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeTab, setActiveTab] = useState('General');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [personalProfile, setPersonalProfile] = useState<any>({
     name: user?.name || '',
     gender: (user as any)?.gender || '',
@@ -139,9 +147,12 @@ export default function SettingsPage() {
   const handleSave = async () => {
     try {
       if (activeTab === 'Profile') {
+        setIsSavingProfile(true);
         await adminService.updateProfile(personalProfile);
+        updateUser({ name: personalProfile.name, gender: personalProfile.gender } as any);
         toast.success('Profile updated successfully');
         setHasChanges(false);
+        setIsSavingProfile(false);
         return;
       }
 
@@ -168,6 +179,8 @@ export default function SettingsPage() {
       console.error('Update Error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to update settings';
       toast.error(errorMessage);
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -258,10 +271,10 @@ export default function SettingsPage() {
               </Button>
               <Button 
                 onClick={handleSave}
-                disabled={updateMutation.isPending}
+                disabled={updateMutation.isPending || updateLandingPageMutation.isPending || isSavingProfile}
                 className="rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-11 px-8 font-black uppercase tracking-widest text-[10px]"
               >
-                {updateMutation.isPending ? 'Saving...' : <><Save size={16} className="mr-2" /> Save Changes</>}
+                {updateMutation.isPending || updateLandingPageMutation.isPending || isSavingProfile ? 'Saving...' : <><Save size={16} className="mr-2" /> Save Changes</>}
               </Button>
             </motion.div>
           )}
@@ -349,8 +362,11 @@ export default function SettingsPage() {
                                              onChange={(e) => handleChange('defaultSession', e.target.value)}
                                             >
                                                 <option value="">Select Session</option>
-                                                <option value="2023/2024">2023/2024</option>
-                                                <option value="2024/2025">2024/2025</option>
+                                                {dbSessions.map((session: any) => (
+                                                  <option key={session.id} value={session.name}>
+                                                    {session.name}
+                                                  </option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div className="space-y-2">
@@ -452,6 +468,7 @@ export default function SettingsPage() {
 
 
                     {activeTab === 'Security' && (
+                        <div className="space-y-8">
                         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                             <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
                                 <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
@@ -489,6 +506,36 @@ export default function SettingsPage() {
                                 />
                             </CardContent>
                         </Card>
+
+                        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                            <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/30">
+                                <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                                    <Key size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-lg">Password & Authentication</h3>
+                                    <p className="text-xs text-slate-500">Manage your login credentials</p>
+                                </div>
+                            </div>
+                            <CardContent className="p-8">
+                                <div className="flex items-center justify-between p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
+                                    <div className="space-y-1">
+                                        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Account Password</h4>
+                                        <p className="text-xs text-slate-500">Change your password to ensure account security.</p>
+                                    </div>
+                                    <ChangePasswordModal>
+                                        <Button className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-[10px] tracking-widest px-6 h-12">
+                                            Change Password
+                                        </Button>
+                                    </ChangePasswordModal>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        
+                        <div className="mt-8">
+                            <DeviceSessions />
+                        </div>
+                        </div>
                     )}
 
                     {activeTab === 'Profile' && (

@@ -20,6 +20,8 @@ import {
   finalizeCheckoutSetup,
   claimAccount,
   changePassword,
+  getUserSessions,
+  revokeUserSession,
 } from "./auth.controller";
 import { validateRequest } from "../../middleware/validateRequest";
 import {
@@ -86,6 +88,8 @@ router.post("/verify-checkout-code", validateRequest(verifyCodeSchema), verifyCh
 router.post("/login", loginRateLimiter, validateRequest(loginSchema), login);
 router.post("/refresh", refreshToken);
 router.post("/logout", logout);
+router.get("/sessions", authenticateToken, getUserSessions);
+router.delete("/sessions/:id", authenticateToken, revokeUserSession);
 
 // Reset password routes
 router.post("/password/reset/request", authRateLimiter, requestPasswordReset);

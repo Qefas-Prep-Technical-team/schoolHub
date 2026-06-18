@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Users, BookOpen, Check, Search } from 'lucide-react';
+import { X, Users, BookOpen, Check, Search, Loader2 } from 'lucide-react';
 import { useUpdateClass, useAllTeachers } from '@/lib/api/hooks/useClasses';
 import { classService } from '../../services/classService';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { apiClient } from '@/lib/api/client';
-import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useSchoolProfile, useSchoolDepartments } from '@/lib/api/hooks/useSchool';
 import { useSessions } from '@/lib/api/hooks/useSessions';
 
 interface ManageClassModalProps {
@@ -25,6 +25,7 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
   const [term, setTerm] = useState(classData?.term || '');
   const [session, setSession] = useState(classData?.session || '');
   const [level, setLevel] = useState(classData?.level || '');
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
   const [selectedTeacherIds, setSelectedTeacherIds] = useState<string[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -38,8 +39,10 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const { data: schoolProfile } = useSchoolProfile(schoolId);
   const { data: sessionsResponse } = useSessions(schoolId);
+  const { data: departmentsResponse } = useSchoolDepartments(schoolId);
   const availableLevels = schoolProfile?.levels || [];
-  const schoolSessions = sessionsResponse?.data || [];
+  const schoolSessions = Array.isArray(sessionsResponse) ? sessionsResponse : (sessionsResponse?.data || []);
+  const schoolDepartments = Array.isArray(departmentsResponse) ? departmentsResponse : (departmentsResponse?.data || []);
 
   // Initialize from classData
   useEffect(() => {
@@ -49,6 +52,11 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
       setTerm(classData.term || '');
       setSession(classData.session || '');
       setLevel(classData.level || '');
+      if (classData.departments) {
+        setSelectedDepartmentIds((classData.departments || []).map((d: any) => d.departmentId || d.department?.id).filter(Boolean));
+      } else if (classData.departmentId) {
+        setSelectedDepartmentIds([classData.departmentId]);
+      }
       if (classData.teachers) {
         setSelectedTeacherIds((classData.teachers || []).map((t: any) => t.teacherId).filter(Boolean));
       }
@@ -94,6 +102,7 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
       term,
       session,
       level: level || undefined,
+      departmentIds: selectedDepartmentIds.filter(Boolean),
       teacherIds: selectedTeacherIds.filter(Boolean),
       studentIds: selectedStudentIds.filter(Boolean),
     });
@@ -232,6 +241,41 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
                   ))}
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Departments ({selectedDepartmentIds.length})
+                </label>
+                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar">
+                  {schoolDepartments.length === 0 ? (
+                    <p className="text-xs text-gray-500 italic">No departments available</p>
+                  ) : (
+                    schoolDepartments.map((dept: any) => {
+                      const isSelected = selectedDepartmentIds.includes(dept.id);
+                      return (
+                        <div 
+                          key={dept.id}
+                          onClick={() => {
+                            setSelectedDepartmentIds(prev => 
+                              isSelected ? prev.filter(id => id !== dept.id) : [...prev, dept.id]
+                            );
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition-all ${
+                            isSelected 
+                              ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400' 
+                              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-emerald-300'
+                          }`}
+                        >
+                          <div className={`w-3 h-3 rounded flex items-center justify-center border ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                            {isSelected && <Check size={10} className="text-white" strokeWidth={3} />}
+                          </div>
+                          {dept.name}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -363,10 +407,12 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+                className="px-6 py-2.5 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-600 font-medium transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2"
                 disabled={updateClassMutation.isPending}
               >
-                {updateClassMutation.isPending ? 'Saving...' : 'Save Changes'}
+                {updateClassMutation.isPending ? (
+                  <><Loader2 className="animate-spin" size={18} /> Saving...</>
+                ) : 'Save Changes'}
               </button>
             </div>
           </form>

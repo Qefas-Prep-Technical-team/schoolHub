@@ -32,12 +32,14 @@ import { Separator } from '@/components/ui/separator';
 import { useTeacherProfile, useTeacherSettings, useUpdateTeacherSettings } from '@/lib/api/hooks/useTeacher';
 import { cn } from '@/lib/utils';
 import { useLogoutMutation } from '@/app/(auth)/login/services/use-auth-mutations';
-import { useEffect } from 'react';
 import { useTheme } from 'next-themes';
+import { useEffect } from 'react';
 import Image from 'next/image';
 import { useMutation } from '@tanstack/react-query';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { toast } from 'react-toastify';
+import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
+import DeviceSessions from '@/components/DeviceSessions';
 
 export default function TeacherSettingsPage() {
     const { theme: currentTheme, setTheme } = useTheme();
@@ -46,36 +48,7 @@ export default function TeacherSettingsPage() {
     const updateSettings = useUpdateTeacherSettings();
     const { mutate: logout } = useLogoutMutation();
 
-    // Password Update State
-    const [currentPassword, setCurrentPassword] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
 
-    const changePasswordMutation = useMutation({
-        mutationFn: (data: any) => teacherService.updatePassword(data),
-        onSuccess: () => {
-            toast.success("Password updated successfully!");
-            setCurrentPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-        },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || "Failed to update password");
-        }
-    });
-
-    const handlePasswordSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            toast.error("Please fill in all password fields");
-            return;
-        }
-        if (newPassword !== confirmPassword) {
-            toast.error("New passwords do not match");
-            return;
-        }
-        changePasswordMutation.mutate({ currentPassword, newPassword });
-    };
 
     // Local state for settings
     const [settings, setSettings] = useState({
@@ -236,69 +209,65 @@ export default function TeacherSettingsPage() {
                     </div>
                 </TabsContent>
 
-
-
                 {/* Security Settings */}
                 <TabsContent value="security" className="focus-visible:outline-none">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
-                            <CardHeader className="p-8 pb-4">
-                                <CardTitle className="text-xl font-black italic uppercase flex items-center gap-3">
-                                    <Lock className="text-rose-500" /> Password
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-8 pt-0 space-y-6">
-                                <form className="space-y-4" onSubmit={handlePasswordSubmit}>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Current Password</Label>
-                                        <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-100 dark:ring-slate-800 focus:ring-primary/20" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">New Password</Label>
-                                        <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-100 dark:ring-slate-800 focus:ring-primary/20" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Confirm New Password</Label>
-                                        <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none ring-1 ring-slate-100 dark:ring-slate-800 focus:ring-primary/20" />
-                                    </div>
-                                    <Button type="submit" disabled={changePasswordMutation.isPending} className="w-full h-14 rounded-2xl font-black uppercase text-xs tracking-widest bg-rose-600 hover:bg-rose-700 text-white">
-                                        {changePasswordMutation.isPending ? "Updating..." : "Update Credentials"}
-                                    </Button>
-                                </form>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl relative">
-                            <CardHeader className="p-8 pb-4">
-                                <CardTitle className="text-xl font-black italic uppercase flex items-center justify-between gap-3">
-                                    <div className="flex items-center gap-3">
-                                        <Shield className="text-emerald-500" /> Two-Factor Auth
-                                    </div>
-                                    <Badge variant="outline" className="text-[9px] uppercase tracking-widest font-black text-emerald-500 bg-emerald-500/10 border-emerald-500/20">Coming Soon</Badge>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-8 pt-0 space-y-6 opacity-60 pointer-events-none">
-                                <div className="p-6 rounded-[2rem] bg-emerald-500/10 border border-emerald-500/20 space-y-4">
-                                    <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 italic leading-relaxed">
-                                        Extra layer of security. We&apos;ll ask for a code on your phone in addition to your password.
-                                    </p>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Enable 2FA Protection</span>
-                                        <Switch checked={false} disabled />
-                                    </div>
-                                </div>
-                                <Separator className="bg-slate-200/50 dark:bg-slate-800/50" />
-                                <div className="space-y-2">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Authentication Method</p>
-                                    <div className="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300">
-                                        <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
-                                            <Globe size={16} />
+                    <div className="space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
+                                <CardHeader className="p-8 pb-4">
+                                    <CardTitle className="text-xl font-black italic uppercase flex items-center gap-3">
+                                        <Lock className="text-rose-500" /> Password
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-8">
+                                    <div className="flex items-center justify-between p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
+                                        <div className="space-y-1">
+                                            <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Account Password</h4>
+                                            <p className="text-xs text-slate-500">Change your password to ensure account security.</p>
                                         </div>
-                                        {profile?.authProvider || 'Google Account'}
+                                        <ChangePasswordModal>
+                                            <Button className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black uppercase text-[10px] tracking-widest px-6 h-12 shadow-xl shadow-rose-900/40">
+                                                Change Password
+                                            </Button>
+                                        </ChangePasswordModal>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="rounded-[2.5rem] md:rounded-[3rem] border-slate-200/60 dark:border-slate-800/60 shadow-xl overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl relative">
+                                <CardHeader className="p-8 pb-4">
+                                    <CardTitle className="text-xl font-black italic uppercase flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <Shield className="text-emerald-500" /> Two-Factor Auth
+                                        </div>
+                                        <Badge variant="outline" className="text-[9px] uppercase tracking-widest font-black text-emerald-500 bg-emerald-500/10 border-emerald-500/20">Coming Soon</Badge>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-8 pt-0 space-y-6 opacity-60 pointer-events-none">
+                                    <div className="p-6 rounded-[2rem] bg-emerald-500/10 border border-emerald-500/20 space-y-4">
+                                        <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 italic leading-relaxed">
+                                            Extra layer of security. We&apos;ll ask for a code on your phone in addition to your password.
+                                        </p>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Enable 2FA Protection</span>
+                                            <Switch checked={false} disabled />
+                                        </div>
+                                    </div>
+                                    <Separator className="bg-slate-200/50 dark:bg-slate-800/50" />
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Authentication Method</p>
+                                        <div className="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300">
+                                            <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                                <Globe size={16} />
+                                            </div>
+                                            {profile?.authProvider || 'Google Account'}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <DeviceSessions />
                     </div>
                 </TabsContent>
 

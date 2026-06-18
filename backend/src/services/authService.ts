@@ -29,9 +29,17 @@ export const generateAccessToken = (userId: string, userType: UserType) => {
   return jwt.sign({ userId, userType }, getAccessSecret(), { expiresIn: "1h" });
 };
 
+interface DeviceTrackingInfo {
+  deviceType?: string;
+  deviceModel?: string;
+  osVersion?: string;
+  ipAddress?: string;
+}
+
 export const generateRefreshToken = async (
   userId: string,
-  userType: UserType
+  userType: UserType,
+  deviceInfo?: DeviceTrackingInfo
 ) => {
   console.log("DEBUG: jwt.sign refresh token for", userId);
   const token = jwt.sign({ userId, userType }, getRefreshSecret(), {
@@ -48,6 +56,10 @@ export const generateRefreshToken = async (
       userId,
       userType,
       expiresAt,
+      deviceType: deviceInfo?.deviceType,
+      deviceModel: deviceInfo?.deviceModel,
+      osVersion: deviceInfo?.osVersion,
+      ipAddress: deviceInfo?.ipAddress,
     },
   });
 

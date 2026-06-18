@@ -23,7 +23,7 @@ export default function RecentPerformanceChart() {
   
   // Format data for Recharts: calculate percentage
   // Reverse to show chronologically from left to right (if recentGrades is desc)
-  const chartData = [...grades].reverse().map((g) => {
+  const chartData = [...grades].slice(0, 5).reverse().map((g) => {
     const pct = g.maxMarks > 0 ? Math.round((g.score / g.maxMarks) * 100) : 0
     return {
       name: g.subject.length > 12 ? g.subject.substring(0, 12) + '...' : g.subject,

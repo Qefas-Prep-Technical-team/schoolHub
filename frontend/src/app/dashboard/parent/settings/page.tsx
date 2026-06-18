@@ -32,7 +32,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/lib/hooks/useToast';
-
+import DeviceSessions from '@/components/DeviceSessions';
+import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
 export default function ParentSettingsPage() {
   const { user } = useAuthStore();
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateParentProfile();
@@ -53,18 +54,6 @@ export default function ParentSettingsPage() {
     paymentReminders: true
   });
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  });
-
   useEffect(() => {
     if (user) {
       setFormData({
@@ -80,15 +69,6 @@ export default function ParentSettingsPage() {
     updateProfile(formData);
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error.validation("New passwords do not match");
-      return;
-    }
-    toast.success.show("Security core updated successfully");
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-  };
 
   if (!user) return null;
 
@@ -374,78 +354,17 @@ export default function ParentSettingsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="p-10">
-                  <form onSubmit={handlePasswordSubmit} className="space-y-10">
-                    <div className="space-y-6">
-                      <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Current Password</Label>
-                        <div className="relative group">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
-                          <Input 
-                            type={showPasswords.current ? "text" : "password"}
-                            value={passwordData.currentPassword}
-                            onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                            className="h-16 pl-12 pr-12 rounded-2xl bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 focus:ring-orange-500/20 focus:border-orange-500/50 transition-all font-bold text-sm"
-                          />
-                          <button 
-                            type="button"
-                            onClick={() => setShowPasswords({...showPasswords, current: !showPasswords.current})}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-600 transition-colors"
-                          >
-                            {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-3">
-                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">New Password</Label>
-                          <div className="relative group">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
-                            <Input 
-                              type={showPasswords.new ? "text" : "password"}
-                              value={passwordData.newPassword}
-                              onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                              className="h-16 pl-12 pr-12 rounded-2xl bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 focus:ring-orange-500/20 focus:border-orange-500/50 transition-all font-bold text-sm"
-                            />
-                            <button 
-                              type="button"
-                              onClick={() => setShowPasswords({...showPasswords, new: !showPasswords.new})}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-600 transition-colors"
-                            >
-                              {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Confirm New Password</Label>
-                          <div className="relative group">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
-                            <Input 
-                              type={showPasswords.confirm ? "text" : "password"}
-                              value={passwordData.confirmPassword}
-                              onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                              className="h-16 pl-12 pr-12 rounded-2xl bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 focus:ring-orange-500/20 focus:border-orange-500/50 transition-all font-bold text-sm"
-                            />
-                            <button 
-                              type="button"
-                              onClick={() => setShowPasswords({...showPasswords, confirm: !showPasswords.confirm})}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-600 transition-colors"
-                            >
-                              {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                  <div className="flex items-center justify-between p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Account Password</h4>
+                      <p className="text-xs text-slate-500">Change your password to ensure account security.</p>
                     </div>
-                    <div className="pt-4">
-                      <Button 
-                        className="h-16 px-10 rounded-2xl bg-slate-900 dark:bg-orange-600 text-white shadow-xl shadow-slate-900/20 dark:shadow-orange-600/20 font-black text-xs uppercase tracking-widest transition-all active:scale-95 group"
-                      >
-                        <Shield size={18} className="mr-3 group-hover:rotate-12 transition-transform" />
-                        Update Security Protocol
+                    <ChangePasswordModal>
+                      <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black uppercase text-[10px] tracking-widest px-6 h-12">
+                        Change Password
                       </Button>
-                    </div>
-                  </form>
+                    </ChangePasswordModal>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -467,28 +386,8 @@ export default function ParentSettingsPage() {
                   </div>
                </Card>
                
-               <div className="bg-white/50 dark:bg-white/5 rounded-[2.5rem] p-8 border border-slate-200 dark:border-white/5 space-y-6">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Trusted Devices</h4>
-                  <div className="space-y-4">
-                     <div className="flex items-center gap-4">
-                        <div className="size-10 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500">
-                           <Monitor size={18} />
-                        </div>
-                        <div className="flex-1">
-                           <p className="text-[11px] font-black uppercase tracking-tight text-slate-900 dark:text-white">Windows Terminal</p>
-                           <p className="text-[9px] text-slate-500 font-bold uppercase">Active Now • Lagos, NG</p>
-                        </div>
-                     </div>
-                     <div className="flex items-center gap-4 opacity-50">
-                        <div className="size-10 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500">
-                           <Smartphone size={18} />
-                        </div>
-                        <div className="flex-1">
-                           <p className="text-[11px] font-black uppercase tracking-tight text-slate-900 dark:text-white">Mobile Device</p>
-                           <p className="text-[9px] text-slate-500 font-bold uppercase">2 days ago • Abuja, NG</p>
-                        </div>
-                     </div>
-                  </div>
+               <div className="mt-8">
+                  <DeviceSessions />
                </div>
             </div>
           </div>

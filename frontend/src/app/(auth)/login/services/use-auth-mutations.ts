@@ -12,13 +12,19 @@ export const useLoginMutation = () => {
   const { info } = useToast();
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const setHasCompletedOnboarding = useAuthStore((state) => state.setHasCompletedOnboarding);
 
   return useMutation({
     mutationFn: (credentials: {
       email: string;
-      password: string;
+      password?: string;
       userType: UserType; // Use UserType instead of string
-    }) => authAPI.login({ ...credentials }),
+      isNewUser?: boolean;
+      preAuthToken?: string;
+    }) => {
+      const { isNewUser, ...rest } = credentials;
+      return authAPI.login(rest);
+    },
     // useLoginMutation logic
     onSuccess: (response: any, variables) => {
       // Clear previous session data from storage and cache
@@ -34,15 +40,23 @@ export const useLoginMutation = () => {
       };
 
       setAuth(userWithType, response.data.accessToken);
-
-      // Use the name for the toast!
+      // Check if they came from verification with new=true or via variables
+      const isNewUser = variables.isNewUser ?? (typeof window !== 'undefined' 
+        ? new URLSearchParams(window.location.search).get("new") === "true" 
+        : false);
+        
       authToast.loginSuccess(userWithType.name);
 
       const actualRole = response.data.userRole || variables.userType;
       const userDash = actualRole.toLowerCase().replace('_', '-');
 
-      // Use replace immediately to prevent aborted fetch race conditions
-      router.replace(`/dashboard/${userDash}`);
+      if (isNewUser) {
+        setHasCompletedOnboarding(false);
+        router.replace(`/onboarding?type=${variables.userType}`);
+      } else {
+        setHasCompletedOnboarding(true); // Skip onboarding for returning users
+        router.replace(`/dashboard/${userDash}`);
+      }
     },
     onError: (error: any, variables) => {
       const errorMessage = error.response?.data?.message || "Login failed";
@@ -54,6 +68,12 @@ export const useLoginMutation = () => {
           errorMessage.toLowerCase().includes("verification"))
       ) {
         info("Redirection to verification page for account verification.");
+        
+        const preAuthToken = error.response?.data?.preAuthToken;
+        if (preAuthToken) {
+           sessionStorage.setItem("preAuthToken", preAuthToken);
+        }
+        
         router.push(
           `/verification?email=${encodeURIComponent(variables.email)}&userType=${variables.userType}&requestCode=true`,
         );

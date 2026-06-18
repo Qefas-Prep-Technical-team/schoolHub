@@ -39,6 +39,10 @@ export default function ExamList() {
 
   const isLoading = isDashboardLoading || isDetailsLoading
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, selectedSubject, selectedTerm, selectedStatus])
+
   if (isLoading) {
     return (
       <div className="flex flex-col flex-1 gap-6">
@@ -98,9 +102,7 @@ export default function ExamList() {
     return matchesSearch && matchesSubject && matchesStatus
   })
 
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [search, selectedSubject, selectedTerm, selectedStatus])
+
 
   const totalPages = Math.ceil(filteredExams.length / itemsPerPage) || 1
   const paginatedExams = filteredExams.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)

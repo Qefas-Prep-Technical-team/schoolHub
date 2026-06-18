@@ -47,7 +47,7 @@ export default function Header() {
                         </Link>
 
                         <Link href="/dashboard/admin/exams/new/paper" className="flex-1 sm:flex-none">
-                            <Button className="w-full sm:w-auto whitespace-nowrap font-bold h-11 px-6 flex items-center justify-center gap-2 rounded-xl shadow-lg ring-1 ring-primary/20 hover:scale-[1.02] active:scale-95 transition-transform duration-200">
+                            <Button variant="secondary" className="w-full sm:w-auto whitespace-nowrap font-bold h-11 px-6 flex items-center justify-center gap-2 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 text-blue-600 rounded-xl shadow-sm hover:bg-blue-100 dark:hover:bg-blue-900/20 hover:scale-[1.02] active:scale-95 transition-transform duration-200">
                                 <Plus size={20} />
                                 <span>Create Subject Paper</span>
                             </Button>

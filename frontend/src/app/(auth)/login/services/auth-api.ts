@@ -2,8 +2,9 @@ import { apiClient } from "@/lib/api/client";
 
 interface LoginCredentials {
   email: string;
-  password: string;
-  userType: string; // Always "PARENT"
+  password?: string;
+  userType: string;
+  preAuthToken?: string;
 }
 
 interface LoginResponse {

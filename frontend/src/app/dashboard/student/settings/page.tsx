@@ -49,17 +49,13 @@ import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import DeviceSessions from "@/components/DeviceSessions";
+import ChangePasswordModal from "@/components/auth/ChangePasswordModal";
 
 export default function StudentSettingsPage() {
   const queryClient = useQueryClient();
   const [selectedDept, setSelectedDept] = useState<string>("");
   const [selectedLevel, setSelectedLevel] = useState<string>("");
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [passwordStep, setPasswordStep] = useState(1);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
   const router = useRouter();
 
   // 1. Fetch Student Profile
@@ -130,29 +126,6 @@ export default function StudentSettingsPage() {
     levelMutation.mutate(selectedLevel);
   };
 
-  const changePasswordMutation = useMutation({
-    mutationFn: (data: any) => studentService.updatePassword(data),
-    onSuccess: () => {
-      toast.success("Password updated successfully!");
-      setIsPasswordModalOpen(false);
-      setPasswordStep(1);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to update password");
-    }
-  });
-
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
-    changePasswordMutation.mutate({ currentPassword, newPassword });
-  };
 
   const handleUpdate = () => {
     if (!selectedDept) {
@@ -578,12 +551,13 @@ export default function StudentSettingsPage() {
                                  <p className="text-xs text-slate-500 font-medium">Password and Two-Factor Authentication</p>
                                </div>
                              </div>
-                             <Button 
-                               onClick={() => setIsPasswordModalOpen(true)}
-                               variant="outline" size="sm" className="rounded-xl font-bold text-[10px] uppercase tracking-widest border-2"
-                             >
-                               Change
-                             </Button>
+                             <ChangePasswordModal>
+                               <Button 
+                                 variant="outline" size="sm" className="rounded-xl font-bold text-[10px] uppercase tracking-widest border-2"
+                               >
+                                 Change
+                               </Button>
+                             </ChangePasswordModal>
                           </div>
                           <Separator className="opacity-50" />
                           <div className="flex items-center justify-between opacity-60 pointer-events-none">
@@ -638,112 +612,13 @@ export default function StudentSettingsPage() {
                     </div>
                   </CardContent>
                </Card>
+
+               <div className="mt-8">
+                 <DeviceSessions />
+               </div>
             </TabsContent>
           </div>
         </Tabs>
-
-        <Dialog open={isPasswordModalOpen} onOpenChange={(open) => {
-          setIsPasswordModalOpen(open);
-          if (!open) {
-            setPasswordStep(1);
-            setCurrentPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-          }
-        }}>
-          <DialogContent className="sm:max-w-[425px] rounded-3xl p-6 border-0 shadow-2xl">
-            <DialogHeader className="mb-4">
-              <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">
-                {passwordStep === 1 ? "Verify Current Password" : "Set New Password"}
-              </DialogTitle>
-              <DialogDescription className="text-slate-500 font-medium">
-                {passwordStep === 1 
-                  ? "Please enter your current password to proceed securely." 
-                  : "Ensure your account is using a long, random password to stay secure."}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              if (passwordStep === 1) {
-                if (currentPassword.length > 0) {
-                  setPasswordStep(2);
-                } else {
-                  toast.error("Please enter your current password");
-                }
-              } else {
-                handlePasswordSubmit(e);
-              }
-            }} className="space-y-4">
-              
-              {passwordStep === 1 && (
-                <div className="space-y-2 animate-in slide-in-from-right-4">
-                  <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Current Password</Label>
-                  <Input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="rounded-xl h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-violet-500 font-medium"
-                    required
-                  />
-                </div>
-              )}
-
-              {passwordStep === 2 && (
-                <div className="space-y-4 animate-in slide-in-from-right-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">New Password</Label>
-                    <Input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="rounded-xl h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-violet-500 font-medium"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Confirm Password</Label>
-                    <Input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="rounded-xl h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-violet-500 font-medium"
-                      required
-                    />
-                  </div>
-                </div>
-              )}
-
-              <DialogFooter className="mt-6 flex justify-between sm:justify-between items-center w-full">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    if (passwordStep === 2) {
-                      setPasswordStep(1);
-                    } else {
-                      setIsPasswordModalOpen(false);
-                      setCurrentPassword("");
-                      setNewPassword("");
-                      setConfirmPassword("");
-                    }
-                  }}
-                  className="rounded-xl font-bold uppercase tracking-widest text-[10px]"
-                >
-                  {passwordStep === 2 ? "Back" : "Cancel"}
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={changePasswordMutation.isPending}
-                  className="rounded-xl font-bold uppercase tracking-widest text-[10px] bg-violet-600 hover:bg-violet-700 text-white ml-auto"
-                >
-                  {passwordStep === 1 
-                    ? "Next Step" 
-                    : (changePasswordMutation.isPending ? "Saving..." : "Save Password")}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
