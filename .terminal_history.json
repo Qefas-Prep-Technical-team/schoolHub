@@ -3,56 +3,6 @@
   "workspacePath": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub",
   "entries": [
     {
-      "command": "Set-Location -Path 'c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend'; $output = npx tsc --noEmit --pretty false 2>&1; $output | Select-String -Pattern 'parents\\\\page.tsx','planBreakdown','p.name'",
-      "timestamp": 1778614579871,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "npm run build",
-      "timestamp": 1778614869944,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "cd \"c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend\"; npx tsc --noEmit \"src/app/(internal-console)/console/students/[id]/page.tsx\"",
-      "timestamp": 1778614977052,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "Set-Location -Path 'c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend'; npx tsc --noEmit \"src/app/(internal-console)/console/students/[id]/page.tsx\" 2>&1 | Out-String -Width 4096",
-      "timestamp": 1778615007540,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "npm run build",
-      "timestamp": 1778615434565,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "Set-Location -Path 'c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend'; npx tsc --noEmit --pretty false --project tsconfig.json 2>&1 | Select-String -Pattern 'console\\\\students\\\\\\[id\\]\\\\page.tsx'",
-      "timestamp": 1778641846747,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "npm run build",
-      "timestamp": 1778642121120,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "cd \"c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend\"; npm run build",
-      "timestamp": 1778642694505,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "Set-Location -Path 'c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend'; npx tsc --noEmit --pretty false 2>&1 | findstr \"teachers.*page.tsx\"",
-      "timestamp": 1778642797142,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "Set-Location -Path 'c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend'; npx tsc --noEmit --pretty false 2>&1 | findstr \"students.*page.tsx\"",
-      "timestamp": 1778642838220,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
       "command": "Set-Location -Path 'c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend'; npx tsc --noEmit --pretty false 2>&1 | findstr \"teachers.*page.tsx\"",
       "timestamp": 1778642889525,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
@@ -2501,7 +2451,57 @@
       "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_r99k4.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_r99k4.ps1\" -ErrorAction SilentlyContinue",
       "timestamp": 1781784888703,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git add .",
+      "timestamp": 1781787581200,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git commit -m \"fixed few errors\"",
+      "timestamp": 1781787596389,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git push origin",
+      "timestamp": 1781787609672,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_v02q7.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_v02q7.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1781787636729,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd mobile",
+      "timestamp": 1781787642003,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd backend",
+      "timestamp": 1781787660892,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "npx expo start -c",
+      "timestamp": 1781787719405,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
+    },
+    {
+      "command": "npm run dev",
+      "timestamp": 1781797856968,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
+    },
+    {
+      "command": "npx expo start -c",
+      "timestamp": 1781798087761,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
+    },
+    {
+      "command": "cd ../",
+      "timestamp": 1781798169921,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\mobile"
     }
   ],
-  "lastUpdated": 1781784888703
+  "lastUpdated": 1781798169921
 }

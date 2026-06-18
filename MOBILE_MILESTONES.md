@@ -13,16 +13,16 @@ This document outlines the structured milestone breakdown to successfully set up
 ## Milestone 2: Theming & UI Consistency
 *Goal: Mirror the premium web aesthetic, including dark mode and glassmorphism, natively.*
 
-- [ ] **Theme Porting:** Extract the `primaryColor`, gradients, and custom extended colors from the Next.js `tailwind.config.ts` and port them to the mobile `tailwind.config.js`.
-- [ ] **Typography:** Load the primary project fonts (e.g., Inter or Outfit) using `expo-font` and apply them globally.
-- [ ] **Foundational UI Library:** Build the core reusable UI components (Buttons, Input Fields, Glassmorphic Cards, Modals) using NativeWind, ensuring they adapt perfectly to both Light and Dark modes.
+- [x] **Theme Porting:** Extract the `primaryColor`, gradients, and custom extended colors from the Next.js `tailwind.config.ts` and port them to the mobile `tailwind.config.js`.
+- [x] **Typography:** Load the primary project fonts (e.g., Inter or Outfit) using `expo-font` and apply them globally.
+- [x] **Foundational UI Library:** Build the core reusable UI components (Buttons, Input Fields, Glassmorphic Cards, Modals) using NativeWind, ensuring they adapt perfectly to both Light and Dark modes.
 
 ## Milestone 3: Authentication & Security
 *Goal: Connect the mobile app to the Node.js backend securely.*
 
-- [ ] **Secure Storage:** Implement `expo-secure-store` to safely store JWT access and refresh tokens on the device.
-- [ ] **Axios Interceptors:** Set up global Axios interceptors to automatically attach the JWT token to requests and handle 401 unauthorized errors via a refresh token flow.
-- [ ] **Login Flow:** Build the unified Login screen supporting all roles (Student, Teacher, Parent, Admin) utilizing the exact same Zod schemas used on the web.
+- [x] **Secure Storage:** Implement `expo-secure-store` to safely store JWT access and refresh tokens on the device.
+- [x] **Axios Interceptors:** Set up global Axios interceptors to automatically attach the JWT token to requests and handle 401 unauthorized errors via a refresh token flow.
+- [x] **Login Flow:** Build the unified Login screen supporting all roles (Student, Teacher, Parent, Admin) utilizing the exact same Zod schemas used on the web.
 
 ## Milestone 4: Core Role-Based Dashboards
 *Goal: Translate the web dashboard experiences to touch-friendly mobile interfaces.*
