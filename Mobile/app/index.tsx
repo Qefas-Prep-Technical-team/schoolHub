@@ -7,11 +7,11 @@ export default function AppEntry() {
   const [authState, setAuthState] = useState<{
     isLoading: boolean;
     hasToken: boolean;
-    hasRole: boolean;
+    role: string | null;
   }>({
     isLoading: true,
     hasToken: false,
-    hasRole: false,
+    role: null,
   });
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function AppEntry() {
       setAuthState({
         isLoading: false,
         hasToken: !!token,
-        hasRole: !!role,
+        role: role,
       });
     }
     checkAuth();
@@ -36,10 +36,16 @@ export default function AppEntry() {
     );
   }
 
-  if (authState.hasToken) {
-    // Authenticated user, go straight to the dashboard!
-    return <Redirect href="/(tabs)" />;
-  } else if (authState.hasRole) {
+  if (authState.hasToken && authState.role) {
+    // Authenticated user, redirect to their specific dashboard
+    switch (authState.role.toUpperCase()) {
+      case 'STUDENT': return <Redirect href="/(student-tabs)" />;
+      case 'TEACHER': return <Redirect href="/(teacher-tabs)" />;
+      case 'PARENT': return <Redirect href="/(parent-tabs)" />;
+      case 'ADMIN': return <Redirect href="/(admin-tabs)" />;
+      default: return <Redirect href="/(student-tabs)" />;
+    }
+  } else if (authState.role) {
     // Has chosen a role but not logged in, go to welcome screen
     return <Redirect href="/(auth)/welcome" />;
   } else {

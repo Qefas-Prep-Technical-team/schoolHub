@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { apiClient } from '../../lib/api/client';
@@ -32,8 +33,9 @@ export default function ForgotPasswordScreen() {
       await apiClient.post('/auth/password/reset/request', { email });
       setStep(2); // Move to token entry step
     } catch (error: any) {
-      console.error('Request reset error:', error);
-      setApiError(error.response?.data?.message || 'Failed to send reset email. Please check the email address.');
+      const errorMessage = error.response?.data?.message || 'Failed to send reset email. Please check the email address.';
+      console.log('Request reset error:', errorMessage);
+      setApiError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -66,8 +68,9 @@ export default function ForgotPasswordScreen() {
         router.replace('/(auth)/login');
       }, 3000);
     } catch (error: any) {
-      console.error('Reset password error:', error);
-      setApiError(error.response?.data?.message || 'Failed to reset password. Token may be invalid or expired.');
+      const errorMessage = error.response?.data?.message || 'Failed to reset password. Token may be invalid or expired.';
+      console.log('Reset password error:', errorMessage);
+      setApiError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -75,8 +78,14 @@ export default function ForgotPasswordScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+      <KeyboardAwareScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={20}
+      >
           <View className="px-6 pt-4 pb-8 flex-1">
             <View className="flex-row items-center justify-between mb-8">
               <TouchableOpacity 
@@ -183,8 +192,7 @@ export default function ForgotPasswordScreen() {
               </View>
             )}
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

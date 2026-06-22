@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, ActivityIndicator, Image } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { getUserRole, setTokens } from '../../lib/auth/secure-store';
@@ -72,8 +73,8 @@ export default function LoginScreen() {
         Toast.show({ type: 'error', text1: 'Login Failed', text2: 'Invalid credentials or no token received.' });
       }
     } catch (error: any) {
-      console.error('Login error:', error);
       const errorMessage = error.response?.data?.message || 'Failed to sign in. Please check your credentials.';
+      console.log('Login error:', errorMessage);
       
       if (
         error.response?.status === 403 &&
@@ -110,11 +111,14 @@ export default function LoginScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
       <LoadingOverlay visible={isLoading} message="Authenticating..." />
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+      <KeyboardAwareScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={20}
       >
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           <View className="px-6 pt-4 pb-8">
             <View className="flex-row items-center justify-between mb-8">
               <TouchableOpacity 
@@ -200,8 +204,7 @@ export default function LoginScreen() {
               </Button>
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

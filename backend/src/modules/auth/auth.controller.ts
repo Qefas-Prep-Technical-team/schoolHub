@@ -1628,9 +1628,9 @@ export const login = async (req: Request, res: Response) => {
     const result = parser.getResult();
     
     const deviceInfo = {
-      deviceType: result.device.type || "desktop",
-      deviceModel: result.device.model || result.browser.name || "Unknown Browser",
-      osVersion: result.os.name ? `${result.os.name} ${result.os.version || ""}`.trim() : "Unknown OS",
+      deviceType: (req.headers["x-device-type"] as string) || result.device.type || "desktop",
+      deviceModel: (req.headers["x-device-model"] as string) || result.device.model || result.browser.name || "Unknown Browser",
+      osVersion: (req.headers["x-os-version"] as string) || (result.os.name ? `${result.os.name} ${result.os.version || ""}`.trim() : "Unknown OS"),
       ipAddress: (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString().split(",")[0].trim() || "Unknown IP"
     };
 

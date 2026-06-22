@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 
 // Set the base API URL (could be injected via environment variable EXPO_PUBLIC_API_URL)
 // Remember: For physical devices and Emulators, using the precise Wi-Fi IPv4 address is the most reliable method.
-const fallbackUrl = 'http://192.168.0.171:5000/api';
+const fallbackUrl = 'http://192.168.0.182:5000/api';
 const API_URL = process.env.EXPO_PUBLIC_API_URL || fallbackUrl;
 
 export const apiClient = axios.create({
@@ -38,6 +38,13 @@ apiClient.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (config.headers) {
+      config.headers['x-device-type'] = 'mobile';
+      config.headers['x-device-model'] = Platform.OS === 'ios' ? 'iPhone' : 'Android Device';
+      config.headers['x-os-version'] = `${Platform.OS === 'ios' ? 'iOS' : 'Android'} ${Platform.Version}`;
+    }
+
     return config;
   },
   (error) => {
@@ -52,6 +59,16 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+
+    const isAuthRoute = originalRequest.url?.includes('/auth/login') || 
+                        originalRequest.url?.includes('/auth/register') || 
+                        originalRequest.url?.includes('/auth/password');
+
+    if (isAuthRoute) {
+      // Silently clear any stale session data when auth requests fail
+      await clearTokens();
+      return Promise.reject(error);
+    }
 
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
