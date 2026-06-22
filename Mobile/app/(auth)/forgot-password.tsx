@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { apiClient } from '../../lib/api/client';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, KeyRound, CheckCircle2 } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useColorScheme } from 'nativewind';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -19,6 +21,8 @@ export default function ForgotPasswordScreen() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const handleRequestReset = async () => {
     if (!email || !email.includes('@')) {
@@ -74,18 +78,15 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
+    <LinearGradient
+      colors={isDark ? ['#0f172a', '#020617'] : ['#bae6fd', '#f0f9ff', '#ffffff']}
+      style={{ flex: 1 }}
+    >
+      <SafeAreaView className="flex-1">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           <View className="px-6 pt-4 pb-8 flex-1">
-            <View className="flex-row items-center justify-between mb-8">
-              <TouchableOpacity 
-                onPress={() => step === 2 ? setStep(1) : router.back()}
-                className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 items-center justify-center"
-              >
-                <ArrowLeft size={20} className="text-slate-900 dark:text-white" />
-              </TouchableOpacity>
-            </View>
+
 
             {step === 3 ? (
               <View className="flex-1 items-center justify-center mt-10">
@@ -100,14 +101,30 @@ export default function ForgotPasswordScreen() {
             ) : (
               <View className="flex-1">
                 <View className="mb-8">
-                  <Text className="font-lexend-bold text-4xl text-slate-900 dark:text-white mb-2 tracking-tight">
-                    {step === 1 ? 'Reset Password' : 'Create New Password'}
-                  </Text>
-                  <Text className="font-lexend text-base text-slate-500 dark:text-slate-400 leading-relaxed">
+                  <View className="flex-row items-center mb-2">
+                    <TouchableOpacity 
+                      onPress={() => step === 2 ? setStep(1) : router.back()}
+                      className="w-10 h-10 rounded-full bg-slate-100/60 dark:bg-slate-900/60 items-center justify-center mr-3"
+                    >
+                      <ArrowLeft size={20} className="text-slate-900 dark:text-white" />
+                    </TouchableOpacity>
+                    <Text className="font-lexend-bold text-3xl text-slate-900 dark:text-white tracking-tight flex-1">
+                      {step === 1 ? 'Reset Password' : 'Create New Password'}
+                    </Text>
+                  </View>
+                  <Text className="font-lexend text-base text-slate-500 dark:text-slate-400 leading-relaxed ml-[52px]">
                     {step === 1 
                       ? "Enter the email associated with your account and we'll send you a reset token."
                       : "Enter the reset token sent to your email along with your new password."}
                   </Text>
+                </View>
+
+                <View className="items-center mb-6 mt-[-10px]">
+                  <Image 
+                    source={require('../../assets/login/student.png')} 
+                    className="w-48 h-48"
+                    resizeMode="contain"
+                  />
                 </View>
 
                 {apiError && (
@@ -185,6 +202,7 @@ export default function ForgotPasswordScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }

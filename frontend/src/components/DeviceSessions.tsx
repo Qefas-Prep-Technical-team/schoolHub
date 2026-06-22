@@ -75,7 +75,15 @@ export default function DeviceSessions() {
     }
 
     if (isError) {
-        return null;
+        return (
+            <Card className="rounded-[2.5rem] md:rounded-[3rem] border-red-200/60 dark:border-red-800/60 shadow-xl overflow-hidden bg-red-50/50 dark:bg-red-950/50 backdrop-blur-xl">
+                <CardContent className="p-10 flex flex-col items-center justify-center text-center">
+                    <LogOut className="h-10 w-10 text-red-400 mb-4" />
+                    <p className="text-red-600 dark:text-red-400 font-medium">Failed to load device sessions.</p>
+                    <p className="text-sm text-red-500/80 dark:text-red-400/80 mt-2">Please try again later or check your connection.</p>
+                </CardContent>
+            </Card>
+        );
     }
 
     const getDeviceIcon = (deviceType: string) => {

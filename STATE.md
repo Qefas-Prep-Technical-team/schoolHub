@@ -629,6 +629,13 @@
 
 ## Recent Accomplishments
 
+### Friday, June 19, 2026
+- **Device Tracking System & Dashboard Fixes**:
+    - [x] **Phantom Registrations Resolved**: Updated `generateRefreshToken` in `authService.ts` to check for and update an existing device session (matching `deviceModel` and `osVersion`) rather than creating a new `RefreshToken` record on every login. This prevents duplicate device buildup for the same physical device.
+    - [x] **Dashboard 'No Show' Fix**: Fixed a bug in `DeviceSessions.tsx` where an API error (often caused by large payloads of thousands of duplicate sessions) caused the component to silently return `null`. It now renders a premium error card explaining the issue gracefully.
+    - [x] **Backend Query Payload Limiting**: Added `take: 50` to the `getUserSessions` controller to safely limit the payload, protecting the frontend and live server from crashing or timing out if a user has accumulated a massive history of duplicate device sessions.
+
+
 ### May 19, 2026 — Tenant Subdomain Routing & Custom Landing Pages
 - **Tenant Subdomain Routing System**:
   - [x] Implemented Next.js middleware in `middleware.ts` to rewrite requests for custom tenant subdomains to `/[tenant]/...` dynamically.

@@ -1500,7 +1500,9 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    if (!Object.values(UserRole).includes(userType as UserRole)) {
+    const normalizedUserType = (userType as string).toUpperCase().trim();
+
+    if (!Object.values(UserRole).includes(normalizedUserType as UserRole)) {
       return res.status(400).json({
         success: false,
         message: "Invalid user type",
@@ -1508,7 +1510,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     let user: any;
-    let actualRole: UserRole = userType as UserRole;
+    let actualRole: UserRole = normalizedUserType as UserRole;
 
     const fetchUserWithRelations = async (role: UserRole, email: string) => {
       console.log(`Fetching user for role: ${role}, email: [${email}]`);
@@ -3158,6 +3160,7 @@ export const getUserSessions = async (req: Request, res: Response) => {
         createdAt: true,
       },
       orderBy: { lastActiveAt: "desc" },
+      take: 50,
     });
 
     const currentToken = req.cookies.refreshToken;

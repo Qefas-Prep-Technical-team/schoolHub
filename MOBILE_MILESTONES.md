@@ -26,6 +26,7 @@ This document outlines the structured milestone breakdown to successfully set up
 
 ## Milestone 4: Core Role-Based Dashboards
 *Goal: Translate the web dashboard experiences to touch-friendly mobile interfaces.*
+*Architecture Decision: Use separate Route Groups (`/(student)`, `/(teacher)`, `/(parent)`) to cleanly separate distinct bottom tabs and layouts for each role.*
 
 - [ ] **Student Hub:** Implement the Student Dashboard (Classes, Grades, Timetable, and Academic Analytics) using native bottom tabs and swipeable carousels.
 - [ ] **Teacher Portal:** Implement the Teacher Dashboard (Taking Attendance, Managing Assignments, and viewing Class grids).

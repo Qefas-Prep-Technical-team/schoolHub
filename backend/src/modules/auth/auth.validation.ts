@@ -231,9 +231,11 @@ export const loginSchema = yup.object({
       .lowercase()
       .email("Invalid email format")
       .required("Email is required"),
-    password: yup.string().required("Password is required"),
+    password: yup.string().optional(),
+    preAuthToken: yup.string().optional(),
     userType: yup
       .string()
+      .transform((val) => (val ? val.toUpperCase().trim() : val))
       .oneOf(["ADMIN", "TEACHER", "STUDENT", "PARENT"], "Invalid user type")
       .required("User type is required"),
   }),

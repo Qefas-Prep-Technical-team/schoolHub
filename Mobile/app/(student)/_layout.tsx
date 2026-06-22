@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Platform, View } from 'react-native';
-import { Home, Calendar, BookOpen, GraduationCap, User } from 'lucide-react-native';
+import { Home, Calendar, BookOpen, GraduationCap, User, Target } from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
@@ -79,12 +79,12 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="profile"
+        name="exams"
         options={{
-          title: 'Profile',
+          title: 'Exams',
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center">
-              <User size={26} color={color} strokeWidth={focused ? 2.5 : 2} />
+              <Target size={26} color={color} strokeWidth={focused ? 2.5 : 2} />
               {focused && <View className="w-1 h-1 bg-primary mt-1 rounded-full absolute -bottom-3" />}
             </View>
           ),

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { setUserRole } from '../lib/auth/secure-store';
 import { cn } from '../lib/utils';
@@ -22,79 +23,81 @@ export default function RolePicker() {
   const handleContinue = async () => {
     if (selectedRole) {
       await setUserRole(selectedRole);
-      // Navigate to the welcome screen for the selected role
       router.replace('/(auth)/welcome');
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
-      <View className="flex-1 px-6 pt-12 pb-8">
-        <View className="items-center mb-10 mt-6">
-          <Image 
-            source={require('../assets/images/icon.png')} 
-            className="w-20 h-20 mb-6" 
-            resizeMode="contain" 
-          />
-          <Text className="font-lexend-bold text-3xl text-slate-900 dark:text-white mb-2 text-center">
-            Welcome to Qefas Hub
-          </Text>
-          <Text className="font-lexend text-slate-500 dark:text-slate-400 text-center text-base">
-            How will you be using the application today?
-          </Text>
-        </View>
+    <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-white dark:bg-slate-950">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+        <View className="flex-1 px-6 pt-8 pb-8">
+          <View className="items-center mb-8 mt-2">
+            <Image 
+              source={require('../assets/images/icon.png')} 
+              className="w-20 h-20 mb-4" 
+              resizeMode="contain" 
+            />
+            <Text className="font-lexend-bold text-3xl text-slate-900 dark:text-white mb-2 text-center">
+              Welcome to QefasHub
+            </Text>
+            <Text className="font-lexend text-slate-500 dark:text-slate-400 text-center text-base px-4">
+              How will you be using the application today?
+            </Text>
+          </View>
 
-        <View className="flex-1 gap-4">
-          {roles.map((role) => {
-            const Icon = role.icon;
-            const isSelected = selectedRole === role.id;
-            
-            return (
-              <TouchableOpacity
-                key={role.id}
-                activeOpacity={0.7}
-                onPress={() => setSelectedRole(role.id)}
-                className={cn(
-                  "flex-row items-center p-5 rounded-[24px] border-2 transition-all",
-                  isSelected 
-                    ? "border-primary bg-primary/5 dark:border-primary-container dark:bg-primary-container/10" 
-                    : "border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900",
-                )}
-              >
-                <View className={cn("w-14 h-14 rounded-2xl items-center justify-center mr-4", role.color)}>
-                  <Icon size={28} className={role.textColor} />
-                </View>
-                <View className="flex-1">
-                  <Text className={cn(
-                    "font-lexend-bold text-lg mb-1", 
-                    isSelected ? "text-primary dark:text-primary-container" : "text-slate-900 dark:text-white"
+          <View className="flex-1">
+            {roles.map((role, index) => {
+              const Icon = role.icon;
+              const isSelected = selectedRole === role.id;
+              
+              return (
+                <TouchableOpacity
+                  key={role.id}
+                  activeOpacity={0.7}
+                  onPress={() => setSelectedRole(role.id)}
+                  className={cn(
+                    "flex-row items-center p-5 rounded-[24px] border-2 transition-all",
+                    index !== roles.length - 1 ? "mb-4" : "mb-0",
+                    isSelected 
+                      ? "border-primary bg-primary/5 dark:border-primary-container dark:bg-primary-container/10" 
+                      : "border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900",
+                  )}
+                >
+                  <View className={cn("w-14 h-14 rounded-2xl items-center justify-center mr-4", role.color)}>
+                    <Icon size={28} className={role.textColor} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className={cn(
+                      "font-lexend-bold text-lg mb-1", 
+                      isSelected ? "text-primary dark:text-primary-container" : "text-slate-900 dark:text-white"
+                    )}>
+                      {role.title}
+                    </Text>
+                    <Text className="font-lexend text-sm text-slate-500 dark:text-slate-400">
+                      Sign in as a {role.title.toLowerCase()}
+                    </Text>
+                  </View>
+                  <View className={cn(
+                    "w-6 h-6 rounded-full border-2 items-center justify-center",
+                    isSelected ? "border-primary bg-primary dark:border-primary-container dark:bg-primary-container" : "border-slate-300 dark:border-slate-600 bg-transparent"
                   )}>
-                    {role.title}
-                  </Text>
-                  <Text className="font-lexend text-sm text-slate-500 dark:text-slate-400">
-                    Sign in as a {role.title.toLowerCase()}
-                  </Text>
-                </View>
-                <View className={cn(
-                  "w-6 h-6 rounded-full border-2 items-center justify-center",
-                  isSelected ? "border-primary bg-primary dark:border-primary-container dark:bg-primary-container" : "border-slate-300 dark:border-slate-600 bg-transparent"
-                )}>
-                  {isSelected && <View className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900" />}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                    {isSelected && <View className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900" />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
-        <Button 
-          onPress={handleContinue}
-          disabled={!selectedRole}
-          className={cn("mt-6 mb-4 shadow-md", selectedRole ? "bg-primary dark:bg-primary-container opacity-100" : "opacity-50")}
-          size="lg"
-        >
-          Continue
-        </Button>
-      </View>
+          <Button 
+            onPress={handleContinue}
+            disabled={!selectedRole}
+            className={cn("mt-8 shadow-md", selectedRole ? "bg-primary dark:bg-primary-container opacity-100" : "opacity-50")}
+            size="lg"
+          >
+            Continue
+          </Button>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -12,6 +12,8 @@ import Toast from 'react-native-toast-message';
 import { LoadingOverlay } from '../../components/ui/loading-overlay';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useColorScheme } from 'nativewind';
 
 const illustrationConfig: Record<string, any> = {
   student: require('../../assets/login/student.png'),
@@ -77,6 +79,8 @@ export default function SignupScreen() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   useEffect(() => {
     async function loadRole() {
@@ -161,8 +165,32 @@ export default function SignupScreen() {
     }
   };
 
+  const getGradientColors = () => {
+    if (isDark) {
+      switch(role) {
+        case 'student': return ['#831843', '#020617']; // pink-900 to slate-950
+        case 'teacher': return ['#064e3b', '#020617']; // emerald-900 to slate-950
+        case 'parent': return ['#7c2d12', '#020617']; // orange-900 to slate-950
+        case 'admin': return ['#1e3a8a', '#020617']; // blue-900 to slate-950
+        default: return ['#0f172a', '#020617'];
+      }
+    } else {
+      switch(role) {
+        case 'student': return ['#fbcfe8', '#fdf2f8', '#ffffff']; // pink
+        case 'teacher': return ['#a7f3d0', '#f0fdf4', '#ffffff']; // emerald
+        case 'parent': return ['#fed7aa', '#fff7ed', '#ffffff']; // orange
+        case 'admin': return ['#bae6fd', '#f0f9ff', '#ffffff']; // blue
+        default: return ['#bae6fd', '#f0f9ff', '#ffffff'];
+      }
+    }
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
+    <LinearGradient
+      colors={getGradientColors()}
+      style={{ flex: 1 }}
+    >
+      <SafeAreaView className="flex-1">
       <LoadingOverlay visible={isLoading} message="Creating account..." />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -432,6 +460,7 @@ export default function SignupScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }

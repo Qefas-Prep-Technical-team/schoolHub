@@ -5,6 +5,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { apiClient } from '../../lib/api/client';
 import { Button } from '../../components/ui/button';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useColorScheme } from 'nativewind';
 
 export default function VerificationScreen() {
   const router = useRouter();
@@ -18,6 +20,8 @@ export default function VerificationScreen() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const hasRequested = useRef(false);
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   useEffect(() => {
     if (requestCode && !hasRequested.current && email && userType) {
@@ -46,6 +50,36 @@ export default function VerificationScreen() {
     try {
       await apiClient.post('/auth/verify-code', { email, code, userType });
       setIsSuccess(true);
+      
+      const preAuthToken = params.preAuthToken as string | undefined;
+      
+      if (preAuthToken) {
+        // Auto-login using secure preAuthToken
+        try {
+          const loginResponse = await apiClient.post('/auth/login', {
+            email,
+            userType,
+            preAuthToken
+          });
+          
+          const accessToken = loginResponse.data?.data?.accessToken || loginResponse.data?.accessToken;
+          const refreshToken = loginResponse.data?.data?.refreshToken || loginResponse.data?.refreshToken;
+          
+          if (accessToken) {
+            import('../../lib/auth/secure-store').then(async ({ setTokens }) => {
+              await setTokens(accessToken, refreshToken || '');
+              setTimeout(() => {
+                router.replace('/');
+              }, 1000);
+            });
+            return;
+          }
+        } catch (loginErr) {
+          console.error('Auto-login failed after verification:', loginErr);
+          // Fallback to manual login
+        }
+      }
+      
       setTimeout(() => {
         router.replace('/(auth)/login');
       }, 2000);
@@ -57,19 +91,49 @@ export default function VerificationScreen() {
     }
   };
 
+  const getGradientColors = () => {
+    const role = userType?.toLowerCase() || 'student';
+    if (isDark) {
+      switch(role) {
+        case 'student': return ['#831843', '#020617']; // pink-900 to slate-950
+        case 'teacher': return ['#064e3b', '#020617']; // emerald-900 to slate-950
+        case 'parent': return ['#7c2d12', '#020617']; // orange-900 to slate-950
+        case 'admin': return ['#1e3a8a', '#020617']; // blue-900 to slate-950
+        default: return ['#0f172a', '#020617'];
+      }
+    } else {
+      switch(role) {
+        case 'student': return ['#fbcfe8', '#fdf2f8', '#ffffff']; // pink
+        case 'teacher': return ['#a7f3d0', '#f0fdf4', '#ffffff']; // emerald
+        case 'parent': return ['#fed7aa', '#fff7ed', '#ffffff']; // orange
+        case 'admin': return ['#bae6fd', '#f0f9ff', '#ffffff']; // blue
+        default: return ['#bae6fd', '#f0f9ff', '#ffffff'];
+      }
+    }
+  };
+
   if (!email) {
     return (
-      <SafeAreaView className="flex-1 bg-white dark:bg-slate-950 items-center justify-center p-6">
-        <Text className="font-lexend text-slate-600 dark:text-slate-400 text-center mb-4">
-          No email provided for verification.
-        </Text>
-        <Button onPress={() => router.replace('/(auth)/signup')}>Go to Registration</Button>
-      </SafeAreaView>
+      <LinearGradient
+        colors={getGradientColors()}
+        style={{ flex: 1 }}
+      >
+        <SafeAreaView className="flex-1 items-center justify-center p-6">
+          <Text className="font-lexend text-slate-600 dark:text-slate-400 text-center mb-4">
+            No email provided for verification.
+          </Text>
+          <Button onPress={() => router.replace('/(auth)/signup')}>Go to Registration</Button>
+        </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
+    <LinearGradient
+      colors={getGradientColors()}
+      style={{ flex: 1 }}
+    >
+      <SafeAreaView className="flex-1">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           <View className="px-6 pt-4 pb-8 flex-1">
@@ -152,6 +216,7 @@ export default function VerificationScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }

@@ -9,10 +9,10 @@ import { cn } from '../../lib/utils';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const roleConfig: Record<string, any> = {
-  student: { title: 'Student', icon: GraduationCap, color: 'text-blue-500', bg: 'bg-white/10', image: require('../../assets/images/student-bg.png') },
+  student: { title: 'Student', icon: GraduationCap, color: 'text-pink-500', bg: 'bg-white/10', image: require('../../assets/images/student-bg.png') },
   teacher: { title: 'Teacher', icon: BookOpen, color: 'text-emerald-500', bg: 'bg-white/10', image: require('../../assets/images/teacher-bg.jpg') },
-  parent: { title: 'Parent', icon: Users, color: 'text-amber-500', bg: 'bg-white/10', image: require('../../assets/images/parent-bg.jpg') },
-  admin: { title: 'Admin', icon: ShieldCheck, color: 'text-purple-500', bg: 'bg-white/10', image: require('../../assets/images/admin-bg.jpg') },
+  parent: { title: 'Parent', icon: Users, color: 'text-orange-500', bg: 'bg-white/10', image: require('../../assets/images/parent-bg.jpg') },
+  admin: { title: 'Admin', icon: ShieldCheck, color: 'text-blue-500', bg: 'bg-white/10', image: require('../../assets/images/admin-bg.jpg') },
 };
 
 export default function WelcomeGatewayScreen() {

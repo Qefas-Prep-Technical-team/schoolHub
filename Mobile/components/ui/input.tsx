@@ -30,7 +30,8 @@ export const Input = forwardRef<TextInput, InputProps>(
           <TextInput
             ref={ref}
             className={cn(
-              "h-14 rounded-2xl bg-slate-50 px-4 font-lexend text-base text-slate-900 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-white focus:border-primary",
+              "h-14 rounded-2xl bg-slate-50 px-4 text-base text-slate-900 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-white focus:border-primary",
+              !props.secureTextEntry && "font-lexend",
               Icon && "pl-12",
               RightIcon && "pr-12",
               error && "border-error focus:border-error dark:border-error-container dark:focus:border-error-container",

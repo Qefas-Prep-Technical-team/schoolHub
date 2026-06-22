@@ -49,6 +49,31 @@ export const generateRefreshToken = async (
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
+  if (deviceInfo && deviceInfo.deviceModel) {
+    const existingSession = await prisma.refreshToken.findFirst({
+      where: {
+        userId,
+        deviceModel: deviceInfo.deviceModel,
+        osVersion: deviceInfo.osVersion,
+        isValid: true,
+      },
+    });
+
+    if (existingSession) {
+      console.log("DEBUG: prisma.refreshToken.update for", userId);
+      await prisma.refreshToken.update({
+        where: { id: existingSession.id },
+        data: {
+          token,
+          expiresAt,
+          ipAddress: deviceInfo.ipAddress || existingSession.ipAddress,
+          lastActiveAt: new Date(),
+        },
+      });
+      return token;
+    }
+  }
+
   console.log("DEBUG: prisma.refreshToken.create for", userId);
   await prisma.refreshToken.create({
     data: {
