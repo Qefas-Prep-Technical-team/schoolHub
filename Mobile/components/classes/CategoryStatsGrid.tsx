@@ -2,21 +2,20 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
-interface ClassStatsGridProps {
-  attendance: number;
-  assignments: {
-    completed: number;
-    total: number;
-  };
-  grade: string;
-  gradeScore?: number;
-  lastActivity: string;
+interface CircularProgressProps {
+  value: number | string;
+  maxValue: number;
+  label: string;
+  color: string;
+  size?: number;
+  strokeWidth?: number;
+  isPercentage?: boolean;
 }
 
-const CircularProgress = ({ value, maxValue, label, color, size = 72, strokeWidth = 5 }: any) => {
+const CircularProgress = ({ value, maxValue, label, color, size = 72, strokeWidth = 5, isPercentage = false }: CircularProgressProps) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const safeValue = isNaN(value) ? 0 : value;
+  const safeValue = typeof value === 'number' && !isNaN(value) ? value : 0;
   const percentage = maxValue > 0 ? (safeValue / maxValue) * 100 : 0;
   const strokeDashoffset = circumference - (circumference * percentage) / 100;
 
@@ -51,18 +50,10 @@ const CircularProgress = ({ value, maxValue, label, color, size = 72, strokeWidt
         </Svg>
         {/* Inner Text */}
         <View className="items-center justify-center absolute">
-          {label === 'Attendance' ? (
-            <Text className="text-[18px] font-black text-slate-800 dark:text-white">
-              {safeValue}<Text className="text-[10px] font-bold">%</Text>
-            </Text>
-          ) : label === 'Tasks Done' ? (
-            <Text className="text-[20px] font-black text-slate-800 dark:text-white">
-              {safeValue}
-            </Text>
-          ) : label === 'Current Grade' ? (
+          {isPercentage ? (
             <View className="items-center">
               <Text className="text-[20px] font-black text-slate-800 dark:text-white">
-                {safeValue === 0 && isNaN(parseInt(value as any)) ? value : safeValue + '%'}
+                {safeValue === 0 && typeof value === 'string' ? value : safeValue + '%'}
               </Text>
             </View>
           ) : (
@@ -72,12 +63,23 @@ const CircularProgress = ({ value, maxValue, label, color, size = 72, strokeWidt
           )}
         </View>
       </View>
-      <Text className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">{label}</Text>
+      <Text className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 text-center px-1 leading-tight">{label}</Text>
     </View>
   );
 };
 
-export function ClassStatsGrid({ attendance, assignments, grade, gradeScore = 0 }: ClassStatsGridProps) {
+interface CategoryStatsGridProps {
+  stats: {
+    label: string;
+    value: number | string;
+    maxValue: number;
+    color: string;
+    isPercentage?: boolean;
+  }[];
+  gradeScore?: number;
+}
+
+export function CategoryStatsGrid({ stats, gradeScore = 0 }: CategoryStatsGridProps) {
   // Compute how much is left to the next grade
   let nextGradeThreshold = 100;
   if (gradeScore < 45) nextGradeThreshold = 45; // To D
@@ -87,43 +89,35 @@ export function ClassStatsGrid({ attendance, assignments, grade, gradeScore = 0 
   
   const pointsToNext = gradeScore >= 75 ? 0 : nextGradeThreshold - gradeScore;
 
+  if (!stats || stats.length === 0) return null;
+
   return (
     <View 
-      className="bg-white dark:bg-slate-900 rounded-3xl p-6 mb-6"
+      className="bg-white dark:bg-slate-900 rounded-3xl p-6 mb-4"
       style={{ elevation: 4, shadowColor: '#6366f1', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 }}
     >
-      <View className="flex-row justify-between items-center mb-4">
-        <CircularProgress 
-          value={attendance} 
-          maxValue={100} 
-          label="Attendance" 
-          color="#4f46e5" 
-        />
-        
-        <CircularProgress 
-          value={assignments.completed} 
-          maxValue={assignments.total || 1} 
-          label="Tasks Done" 
-          color="#4f46e5" 
-        />
-        
-        <CircularProgress 
-          value={gradeScore > 0 ? gradeScore : grade} 
-          maxValue={100} 
-          label="Current Grade" 
-          color="#4f46e5" 
-        />
+      <View className="flex-row justify-between items-center mb-2">
+        {stats.map((stat, idx) => (
+          <CircularProgress 
+            key={idx}
+            value={stat.value} 
+            maxValue={stat.maxValue} 
+            label={stat.label} 
+            color={stat.color}
+            isPercentage={stat.isPercentage}
+          />
+        ))}
       </View>
       
       {gradeScore > 0 && pointsToNext > 0 && (
-        <View className="bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-xl self-center mt-2 border border-indigo-100 dark:border-indigo-800/50">
+        <View className="bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-xl self-center mt-4 border border-indigo-100 dark:border-indigo-800/50">
           <Text className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
             {pointsToNext}% away from a higher grade! 🚀
           </Text>
         </View>
       )}
       {gradeScore >= 75 && (
-        <View className="bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-xl self-center mt-2 border border-emerald-100 dark:border-emerald-800/50">
+        <View className="bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-xl self-center mt-4 border border-emerald-100 dark:border-emerald-800/50">
           <Text className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
             You're currently getting an A! Keep it up! 🏆
           </Text>

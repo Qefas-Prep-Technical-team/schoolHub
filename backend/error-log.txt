@@ -9827,4 +9827,192 @@ Please make sure your database server is running at `aws-1-eu-west-1.pooler.supa
     at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
     at async Promise.all (index 0)
     at getStudentGradesService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:33:25)
-    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)
+    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:216:11)
+    at getExamAttempt (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:49:18)Error: This exam is not available
+    at startExamAttemptService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:36:11)
+    at startExamAttempt (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:25:18)Error: This exam is not available
+    at startExamAttemptService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:36:11)
+    at startExamAttempt (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:25:18)PrismaClientKnownRequestError: 
+Invalid `prisma.examAttempt.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1009:24
+
+  1006 };
+  1007 
+  1008 const [data, total] = await Promise.all([
+→ 1009   prisma.examAttempt.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getStudentExamAttemptsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1008:25)
+    at getMyExamAttempts (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:199:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:216:11)
+    at getExamAttempt (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:49:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:216:11)
+    at getExamAttempt (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:49:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:216:11)
+    at getExamAttempt (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:49:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:216:11)
+    at getExamAttempt (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:49:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:216:11)
+    at getExamAttempt (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:49:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:216:11)
+    at getExamAttempt (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:49:18)PrismaClientKnownRequestError: 
+Invalid `prisma.exam.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:340:34
+
+  337 };
+  338 
+  339 export const getExamByIdService = async (id: string, excludeCorrectAnswers: boolean = false) => {
+→ 340   const exam = await prisma.exam.findUnique(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getExamByIdService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.service.ts:340:16)
+    at getExamById (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam.controller.ts:86:18)Error: Review data for this exam is not yet released.
+    at getExamReviewDataService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:934:13)
+    at getExamReviewData (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:174:18)Error: Review data for this exam is not yet released.
+    at getExamReviewDataService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:934:13)
+    at getExamReviewData (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:174:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: This exam attempt is already submitted
+    at ensureAttemptStillActive (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:153:11)
+    at saveExamAnswerService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:345:3)
+    at saveExamAnswer (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:75:18)Error: Review data for this exam is not yet released.
+    at getExamReviewDataService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:934:13)
+    at getExamReviewData (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:174:18)Error: Review data for this exam is not yet released.
+    at getExamReviewDataService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:934:13)
+    at getExamReviewData (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:174:18)Error: Review data for this exam is not yet released.
+    at getExamReviewDataService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:934:13)
+    at getExamReviewData (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:174:18)Error: Review data for this exam is not yet released.
+    at getExamReviewDataService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:934:13)
+    at getExamReviewData (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:174:18)Error: Review data for this exam is not yet released.
+    at getExamReviewDataService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:934:13)
+    at getExamReviewData (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:174:18)Error: Review data for this exam is not yet released.
+    at getExamReviewDataService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:934:13)
+    at getExamReviewData (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:174:18)Error: Exam attempt not found
+    at getExamAttemptService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:236:11)
+    at getExamAttempt (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:50:18)Error: Review data for this exam is not yet released.
+    at getExamReviewDataService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:946:13)
+    at getExamReviewData (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:174:18)Error: Review data for this exam is not yet released.
+    at getExamReviewDataService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:946:13)
+    at getExamReviewData (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:174:18)

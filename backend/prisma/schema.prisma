@@ -973,6 +973,7 @@ model ExamAttempt {
   id                  String               @id @default(uuid())
   examId              String
   studentId           String
+  deviceId            String?
   startedAt           DateTime             @default(now())
   submittedAt         DateTime?
   expiresAt           DateTime?

@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image, Modal, TextInput } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStudentProfile, useUpdateDepartment, useUpdateLevel, useSchoolDepartments, useUpdatePassword, useDeviceSessions, useRevokeSession } from '@/lib/api/hooks/useStudent';
-import { useColorScheme as useNativeWindColorScheme } from 'nativewind';
+import { useColorScheme, useThemeControls } from '@/hooks/use-color-scheme';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 import { User, Mail, Fingerprint, Settings, Bell, SunMoon, Lock, ArrowLeft, Building2, GraduationCap, School, ShieldAlert, CheckCircle2, Eye, EyeOff, Smartphone, Monitor, Globe, LogOut } from 'lucide-react-native';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import { clearTokens, clearUserRole } from '@/lib/auth/secure-store';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function SettingsScreen() {
   const { data: profile, isLoading } = useStudentProfile();
@@ -17,12 +19,15 @@ export default function SettingsScreen() {
   const { data: sessions, isLoading: isSessionsLoading } = useDeviceSessions();
   const revokeSession = useRevokeSession();
 
-  const { colorScheme, toggleColorScheme } = useNativeWindColorScheme();
+  const colorScheme = useColorScheme();
+  const { toggleColorScheme } = useThemeControls();
   const isDark = colorScheme === 'dark';
 
   const [activeTab, setActiveTab] = useState<'general' | 'academic' | 'account'>('general');
   const [selectedDept, setSelectedDept] = useState<string>('');
   const [selectedLevel, setSelectedLevel] = useState<string>('');
+
+  const queryClient = useQueryClient();
 
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
@@ -41,9 +46,36 @@ export default function SettingsScreen() {
 
   if (isLoading || !profile) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <ActivityIndicator size="large" color="#e11d48" />
-      </View>
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+        {/* Header Skeleton */}
+        <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+          <View className="ml-4 flex-1">
+            <View className="h-6 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+          </View>
+        </View>
+
+        <ScrollView className="flex-1 p-6" showsVerticalScrollIndicator={false}>
+          {/* Tabs Skeleton */}
+          <View className="flex-row mb-8">
+            <View className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-full mr-3 animate-pulse" />
+            <View className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-full mr-3 animate-pulse" />
+            <View className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+          </View>
+
+          {/* Cards Skeleton */}
+          {[1, 2, 3].map((item) => (
+            <View key={item} className="mb-6 p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 animate-pulse">
+              <View className="flex-row items-center mb-6">
+                <View className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 mr-4" />
+                <View className="h-5 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full" />
+              </View>
+              <View className="h-14 w-full bg-slate-50 dark:bg-slate-800 rounded-2xl mb-4" />
+              <View className="h-14 w-full bg-slate-50 dark:bg-slate-800 rounded-2xl" />
+            </View>
+          ))}
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -90,6 +122,19 @@ export default function SettingsScreen() {
     if (type.includes('mobile') || type.includes('tablet')) return <Smartphone size={20} />;
     if (type.includes('desktop') || type.includes('mac') || type.includes('windows')) return <Monitor size={20} />;
     return <Globe size={20} />;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await clearTokens();
+      queryClient.clear();
+      
+      // Explicitly redirect to the welcome/login screen, 
+      // avoiding '/' which can sometimes fail in nested layouts
+      router.replace('/(auth)/welcome');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -417,6 +462,18 @@ export default function SettingsScreen() {
                 )}
               </View>
             </View>
+
+            {/* FULL SYSTEM LOGOUT */}
+            <TouchableOpacity
+              onPress={handleLogout}
+              className="mt-2 flex-row items-center justify-center py-5 bg-rose-50 dark:bg-rose-900/20 rounded-[2rem] border border-rose-200 dark:border-rose-900/50"
+            >
+              <LogOut size={20} color="#e11d48" className="mr-2" />
+              <Text className="text-sm font-black uppercase tracking-widest text-rose-600">
+                Log Out Completely
+              </Text>
+            </TouchableOpacity>
+
           </View>
         )}
       </ScrollView>

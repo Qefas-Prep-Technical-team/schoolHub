@@ -175,7 +175,10 @@ export const useExamAttempts = (examId: string) => {
 export const useStartExamAttempt = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (examId: string) => examService.startExamAttempt(examId),
+    mutationFn: (examId: string) => {
+      const { getDeviceId } = require('@/lib/utils/device');
+      return examService.startExamAttempt(examId, { deviceId: getDeviceId() });
+    },
     onSuccess: (_, examId) => {
       queryClient.invalidateQueries({ queryKey: [...examKeys.detail(examId), "attempt"] });
       toast.success("Exam started! Good luck.");

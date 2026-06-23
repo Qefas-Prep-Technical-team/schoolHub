@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { ArrowLeft, PenTool, ChevronRight, Clock, CheckCircle2, AlertCircle, Search } from 'lucide-react-native';
+import { ArrowLeft, Edit3, ChevronRight, Clock, CheckCircle2, AlertCircle, Search } from 'lucide-react-native';
 import { useSingleClass } from '@/lib/api/hooks/useClasses';
-import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
+import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
+import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { CategoryStatsGrid } from '@/components/classes/CategoryStatsGrid';
 
-export default function ClassAssignmentScreen() {
+export default function ClassTestScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const classId = Array.isArray(id) ? id[0] : id;
 
   const { data: classData, isLoading: isClassLoading, refetch: refetchClass } = useSingleClass(classId || '');
-  const { data: assignmentsData, isLoading: isAssignmentsLoading, refetch: refetchAssignments } = useStudentAssignments({ limit: 100 });
+  const { data: attemptsData, isLoading: isAttemptsLoading, refetch: refetchAttempts } = useStudentExamAttempts({ limit: 100 });
+  const { data: profile, isLoading: isProfileLoading } = useStudentProfile();
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = React.useCallback(async () => {
@@ -21,62 +23,109 @@ export default function ClassAssignmentScreen() {
     try {
       await Promise.all([
         refetchClass?.(),
-        refetchAssignments?.()
+        refetchAttempts?.()
       ]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetchClass, refetchAssignments]);
+  }, [refetchClass, refetchAttempts]);
 
   const className = classData?.name || 'Class';
+  const classExams = classData?.exams || [];
+  const attempts = attemptsData?.attempts || [];
   
-  const studentAssignments = assignmentsData?.assignments || [];
-  const classAssignments = studentAssignments.filter((a: any) => a.classId === classId);
+  const studentDepartmentId = profile?.departmentId;
+  const hasDepartment = !!studentDepartmentId;
+
+  // Filter exams by scope and category === 'QUIZ'
+  const filteredTests = classExams.filter((exam: any) => {
+    if (exam.category !== 'QUIZ') return false;
+
+    const scope: string = exam.scope || 'CLASS';
+    if (scope === 'SCHOOL') return true;
+    if (scope === 'CLASS') return true;
+    if (scope === 'DEPARTMENT') {
+      if (!hasDepartment) return false;
+      const examDeptIds: string[] = (exam.departments || []).map((d: any) =>
+        d.departmentId || d.department?.id || d.id
+      );
+      return examDeptIds.includes(studentDepartmentId!);
+    }
+    return false;
+  });
+
+  // Map to status and sort
+  const mappedTests = filteredTests.map((exam: any) => {
+    const now = new Date();
+    const end = exam.endDate ? new Date(exam.endDate) : null;
+    const attempted = attempts.some((a: any) => a.examId === exam.id);
+
+    let status: 'graded' | 'submitted' | 'upcoming' | 'overdue' = 'upcoming';
+    let gradeStr = '--';
+    
+    if (attempted) {
+      const a = attempts.find((a: any) => a.examId === exam.id);
+      status = a?.status === 'SCORED' ? 'graded' : 'submitted';
+      if (a?.totalScore != null && a?.totalMarks) {
+        gradeStr = `${a.totalScore} / ${a.totalMarks}`;
+      }
+    } else if (end && now > end) {
+      status = 'overdue';
+    }
+
+    return {
+      ...exam,
+      status,
+      gradeStr,
+      dueDateObj: end,
+    };
+  }).sort((a, b) => {
+    // Sort upcoming first, then graded
+    if (a.status === 'upcoming' && b.status !== 'upcoming') return -1;
+    if (a.status !== 'upcoming' && b.status === 'upcoming') return 1;
+    return (b.dueDateObj?.getTime() || 0) - (a.dueDateObj?.getTime() || 0);
+  });
 
   // Search & Pagination Logic
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
 
-  const searchedAssignments = classAssignments.filter((a: any) => 
-    !searchQuery || a.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  const searchedTests = mappedTests.filter((t: any) => 
+    !searchQuery || t.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const pageSize = 8;
-  const totalPages = Math.max(1, Math.ceil(searchedAssignments.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(searchedTests.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const startIdx = (safePage - 1) * pageSize;
-  const paginatedAssignments = searchedAssignments.slice(startIdx, startIdx + pageSize);
+  const paginatedTests = searchedTests.slice(startIdx, startIdx + pageSize);
 
   // Stats calculation
-  const completedAssignments = classAssignments.filter((a: any) => a.status === 'graded' || a.status === 'submitted');
+  const completedTests = mappedTests.filter((t: any) => t.status === 'graded' || t.status === 'submitted');
   let totalScoreSum = 0;
   let gradedCount = 0;
-  
-  classAssignments.forEach((a: any) => {
-    if (a.status === 'graded' && a.grade) {
-      let score = 0;
-      let max = 100;
-      if (a.grade.includes('/')) {
-        const [sPart, mPart] = a.grade.split('/');
-        score = parseFloat(sPart);
-        max = parseFloat(mPart);
-      } else {
-        score = parseFloat(a.grade.replace(/[^0-9.]/g, ''));
-      }
-      if (!isNaN(score) && max > 0) {
-        totalScoreSum += (score / max) * 100;
-        gradedCount++;
+
+  mappedTests.forEach((t: any) => {
+    if (t.status === 'graded' && t.gradeStr !== '--') {
+      const parts = t.gradeStr.split(' / ');
+      if (parts.length === 2) {
+        const score = parseFloat(parts[0]);
+        const max = parseFloat(parts[1]);
+        if (!isNaN(score) && max > 0) {
+          totalScoreSum += (score / max) * 100;
+          gradedCount++;
+        }
       }
     }
   });
 
   const averageGrade = gradedCount > 0 ? Math.round(totalScoreSum / gradedCount) : 0;
-  const completionRate = classAssignments.length > 0 ? Math.round((completedAssignments.length / classAssignments.length) * 100) : 0;
-  
+  const completionRate = mappedTests.length > 0 ? Math.round((completedTests.length / mappedTests.length) * 100) : 0;
+
   const statsConfig = [
     { label: 'Completion Rate', value: completionRate, maxValue: 100, color: '#3b82f6', isPercentage: true },
-    { label: 'Assignments Done', value: completedAssignments.length, maxValue: Math.max(1, classAssignments.length), color: '#8b5cf6', isPercentage: false },
-    { label: 'Average Grade', value: gradedCount > 0 ? averageGrade : 'N/A', maxValue: 100, color: '#10b981', isPercentage: true },
+    { label: 'Tests Taken', value: completedTests.length, maxValue: Math.max(1, mappedTests.length), color: '#8b5cf6', isPercentage: false },
+    { label: 'Average Score', value: gradedCount > 0 ? averageGrade : 'N/A', maxValue: 100, color: '#10b981', isPercentage: true },
   ];
 
   const getStatusInfo = (status: string) => {
@@ -120,14 +169,14 @@ export default function ClassAssignmentScreen() {
     });
   };
 
-  if (isClassLoading || isAssignmentsLoading) {
+  if (isClassLoading || isAttemptsLoading || isProfileLoading) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
         <Stack.Screen options={{ headerShown: false }} />
         {/* Header Skeleton */}
         <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 items-center justify-center animate-pulse" />
-          <View className="ml-4 flex-1">
+          <View className="ml-5 flex-1">
             <View className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-1 animate-pulse" />
             <View className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
           </View>
@@ -182,7 +231,7 @@ export default function ClassAssignmentScreen() {
           </TouchableOpacity>
           <View className="ml-5 flex-1">
             <Text className="text-lg font-black text-slate-900 dark:text-white" numberOfLines={1}>
-              Assignments
+              Tests & Quizzes
             </Text>
             <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400" numberOfLines={1}>
               {className}
@@ -202,13 +251,13 @@ export default function ClassAssignmentScreen() {
           <CategoryStatsGrid stats={statsConfig} gradeScore={averageGrade} />
         </View>
 
-        {/* Search Bar */}
-        <View className="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      {/* Search Bar */}
+      <View className="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <View className="flex-row items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-4 h-12">
           <Search size={18} className="text-slate-400 mr-3" />
           <TextInput
             className="flex-1 text-slate-900 dark:text-white text-base font-medium h-full"
-            placeholder="Search assignments..."
+            placeholder="Search quizzes & tests..."
             placeholderTextColor="#94a3b8"
             value={searchQuery}
             onChangeText={(t) => { setSearchQuery(t); setPage(1); }}
@@ -218,48 +267,48 @@ export default function ClassAssignmentScreen() {
       </View>
 
       <View className="px-4 pb-4">
-        {searchedAssignments.length === 0 ? (
+        {searchedTests.length === 0 ? (
           <View className="py-16 items-center px-4">
             <View className="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900/30 items-center justify-center mb-6">
-              <PenTool size={36} className="text-indigo-500" />
+              <Edit3 size={36} className="text-indigo-500" />
             </View>
             <Text className="text-xl font-bold text-slate-800 dark:text-slate-200 text-center mb-2">
-              No Assignments Yet
+              No Tests Scheduled
             </Text>
             <Text className="text-sm text-slate-500 dark:text-slate-400 text-center leading-relaxed">
-              You're all caught up! There are currently no assignments scheduled for this class.
+              There are currently no quizzes or tests scheduled for this class.
             </Text>
           </View>
         ) : (
           <View className="mb-4">
             <Text className="text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase mb-4 px-2">
-              Class Assignments ({searchedAssignments.length})
+              Class Tests ({searchedTests.length})
             </Text>
             
-            {paginatedAssignments.map((assignment: any, index: number) => {
-              const statusInfo = getStatusInfo(assignment.status);
+            {paginatedTests.map((test: any, index: number) => {
+              const statusInfo = getStatusInfo(test.status);
               const StatusIcon = statusInfo.icon;
-              const dueDateObj = assignment.dueDate ? new Date(assignment.dueDate) : null;
-              const assignmentNumber = startIdx + index + 1;
+              const testNumber = startIdx + index + 1;
+              const subjectName = test.subject?.name || 'General';
               
               return (
                 <TouchableOpacity
-                  key={assignment.id || index}
+                  key={test.id || index}
                   activeOpacity={0.7}
-                  onPress={() => router.push(`/assignments/${assignment.id}` as any)}
+                  onPress={() => router.push(`/exams/${test.id}` as any)}
                   className="bg-white dark:bg-slate-900 rounded-3xl p-5 mb-4 border border-slate-100 dark:border-slate-800"
                   style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
                 >
                   <View className="flex-row items-center mb-3">
                     <View className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 items-center justify-center mr-4">
                       <Text className="text-sm font-black text-indigo-600 dark:text-indigo-400">
-                        {assignmentNumber}
+                        {testNumber}
                       </Text>
                     </View>
                     
                     <View className="flex-1 mr-2">
                       <Text className="text-base font-bold text-slate-900 dark:text-white mb-1" numberOfLines={2}>
-                        {assignment.title}
+                        {test.title}
                       </Text>
                       <View className="flex-row items-center mt-1">
                         <View className="mr-2">
@@ -278,14 +327,14 @@ export default function ClassAssignmentScreen() {
                     <View>
                       <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Due Date</Text>
                       <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        {dueDateObj ? formatDate(dueDateObj) : 'No Due Date'}
+                        {test.dueDateObj ? formatDate(test.dueDateObj) : 'No Due Date'}
                       </Text>
                     </View>
                     
                     <View className="items-end">
-                      <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Grade</Text>
+                      <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Score</Text>
                       <Text className="text-xs font-black text-slate-700 dark:text-slate-300">
-                        {assignment.grade || '--'} / {assignment.totalMarks || 100}
+                        {test.gradeStr}
                       </Text>
                     </View>
                   </View>
@@ -319,7 +368,7 @@ export default function ClassAssignmentScreen() {
             )}
           </View>
         )}
-      </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

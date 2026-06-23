@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useExam, useExamAttempt, useStartExamAttempt } from "@/lib/api/hooks/useExams";
-import { Loader2, AlertCircle, Clock, FileText, Calendar, Info, PlayCircle, ChevronLeft } from "lucide-react";
+import { Loader2, AlertCircle, Clock, FileText, Calendar, Info, PlayCircle, ChevronLeft, Lock } from "lucide-react";
 import { format, isAfter } from "date-fns";
 import { Button as ShcnButton } from "@/components/ui/button";
 import ExamDetails from '@/app/Exams&Quizzes/exam/[examId]/start/components/ExamDetails';
@@ -77,6 +77,13 @@ export default function ExamDetailsPage() {
   }
 
   const isTaken = attempt?.status === "SUBMITTED" || attempt?.status === "SCORED" || attempt?.status === "EXPIRED";
+  const resultsReleased = attempt?.status === "SCORED" && (
+    exam?.allowImmediateResult 
+      ? true 
+      : exam?.resultReleaseAt 
+        ? new Date() >= new Date(exam.resultReleaseAt) 
+        : false
+  );
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark p-6 lg:p-12 animate-in fade-in duration-500">
@@ -183,14 +190,35 @@ export default function ExamDetailsPage() {
                    Examination Completed
                 </div>
                 <p className="text-slate-500">You have already submitted this exam.</p>
-                <ShcnButton 
-                  size="lg" 
-                  onClick={handleViewResult} 
-                  disabled={isViewingResult}
-                  className="rounded-xl font-bold min-w-[160px]"
-                >
-                  {isViewingResult ? <Loader2 className="animate-spin h-5 w-5" /> : "View Results"}
-                </ShcnButton>
+                
+                {attempt?.status === "SUBMITTED" ? (
+                  <div className="mt-6 flex flex-col items-center justify-center p-6 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-200 dark:border-amber-800">
+                    <Clock className="text-amber-500 mb-3" size={32} />
+                    <h3 className="font-bold text-lg mb-1 text-amber-900 dark:text-amber-100">Grading in Progress</h3>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 text-center max-w-sm">
+                      Your submission has been received and is waiting to be graded by the instructor.
+                    </p>
+                  </div>
+                ) : resultsReleased ? (
+                  <ShcnButton 
+                    size="lg" 
+                    onClick={handleViewResult} 
+                    disabled={isViewingResult}
+                    className="rounded-xl font-bold min-w-[160px]"
+                  >
+                    {isViewingResult ? <Loader2 className="animate-spin h-5 w-5" /> : "View Results"}
+                  </ShcnButton>
+                ) : (
+                  <div className="mt-6 flex flex-col items-center justify-center p-6 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center mb-3">
+                      <Lock className="text-slate-500" size={24} />
+                    </div>
+                    <h3 className="font-bold text-lg mb-1 text-slate-900 dark:text-slate-100">Results Locked</h3>
+                    <p className="text-sm text-slate-500 text-center max-w-sm">
+                      Your exam has been graded, but the instructor has set the results to be released {exam.resultReleaseAt ? `on ${format(new Date(exam.resultReleaseAt), 'PPP')}` : 'later'}.
+                    </p>
+                  </div>
+                )}
              </div>
            ) : (
              <>

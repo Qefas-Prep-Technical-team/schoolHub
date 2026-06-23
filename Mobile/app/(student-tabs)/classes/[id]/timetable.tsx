@@ -7,12 +7,17 @@ import { ArrowLeft, Clock, MapPin, User, Coffee, Calendar } from 'lucide-react-n
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
+const getCurrentDayName = () => {
+  const day = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  return DAYS.includes(day) ? day : 'Monday';
+};
+
 export default function ClassTimetableScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const classId = Array.isArray(id) ? id[0] : id;
 
-  const [selectedDay, setSelectedDay] = useState('Monday');
+  const [selectedDay, setSelectedDay] = useState(getCurrentDayName());
 
   const { data: classData } = useSingleClass(classId || '');
   const { data: rawPeriods = [], isLoading } = useClassTimetable(classId || '');
@@ -53,11 +58,31 @@ export default function ClassTimetableScreen() {
 
   const activeIndex = getCurrentTimeSlotIndex();
 
-  if (isLoading) {
+  if (isClassLoading || isTimetableLoading) {
     return (
-      <View className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center">
-        <ActivityIndicator size="large" color="#4f46e5" />
-      </View>
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+        {/* Header Skeleton */}
+        <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+          <View className="ml-4 flex-1">
+            <View className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-1 animate-pulse" />
+            <View className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+          </View>
+        </View>
+        
+        {/* Timetable List Skeleton */}
+        <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
+          <View className="flex-row mb-6 mt-2">
+            {[1, 2, 3, 4, 5].map((item) => (
+              <View key={item} className="h-10 w-16 bg-slate-200 dark:bg-slate-800 rounded-xl mr-2 animate-pulse" />
+            ))}
+          </View>
+          
+          {[1, 2, 3, 4].map((item) => (
+            <View key={item} className="h-24 w-full bg-white dark:bg-slate-900 rounded-3xl mb-4 border border-slate-100 dark:border-slate-800 animate-pulse" />
+          ))}
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 

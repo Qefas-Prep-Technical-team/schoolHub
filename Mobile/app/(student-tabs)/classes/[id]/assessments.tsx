@@ -12,6 +12,7 @@ import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
 
 import { AssessmentsList } from '@/components/classes/tabs/AssessmentsList';
+import { CategoryStatsGrid } from '@/components/classes/CategoryStatsGrid';
 
 const formatDateLocal = (date: Date) => {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
@@ -141,6 +142,34 @@ export default function ClassAssessmentsScreen() {
     return a.type === activeTab;
   });
 
+  // Calculate dynamic stats based on filtered list
+  const completedAssessments = filteredAssessments.filter(a => a.status === 'graded' || a.status === 'submitted');
+  let totalScoreSum = 0;
+  let gradedCount = 0;
+
+  filteredAssessments.forEach(a => {
+    if (a.status === 'graded' && a.grade) {
+      const parts = a.grade.split('/');
+      if (parts.length === 2) {
+        const score = parseFloat(parts[0]);
+        const max = parseFloat(parts[1]);
+        if (!isNaN(score) && max > 0) {
+          totalScoreSum += (score / max) * 100;
+          gradedCount++;
+        }
+      }
+    }
+  });
+
+  const averageGrade = gradedCount > 0 ? Math.round(totalScoreSum / gradedCount) : 0;
+  const completionRate = filteredAssessments.length > 0 ? Math.round((completedAssessments.length / filteredAssessments.length) * 100) : 0;
+
+  const statsConfig = [
+    { label: 'Completion Rate', value: completionRate, maxValue: 100, color: '#3b82f6', isPercentage: true },
+    { label: 'Tasks Done', value: completedAssessments.length, maxValue: Math.max(1, filteredAssessments.length), color: '#8b5cf6', isPercentage: false },
+    { label: 'Average Score', value: gradedCount > 0 ? averageGrade : 'N/A', maxValue: 100, color: '#10b981', isPercentage: true },
+  ];
+
   return (
     <View className="flex-1 bg-slate-100 dark:bg-slate-950">
       <View className="absolute top-0 left-0 right-0 h-[140px] bg-indigo-600 rounded-b-[40px]" />
@@ -184,6 +213,7 @@ export default function ClassAssessmentsScreen() {
                   );
                 })}
               </View>
+              <CategoryStatsGrid stats={statsConfig} gradeScore={averageGrade} />
             </View>
 
             <View className="px-6">

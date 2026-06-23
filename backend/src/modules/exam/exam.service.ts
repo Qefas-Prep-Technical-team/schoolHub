@@ -143,6 +143,20 @@ export const getExamsService = async (filters: {
       }
     ];
 
+    if (classIds.length > 0) {
+      orConditions.push({
+        classId: { in: classIds },
+        departments: { none: {} },
+      });
+    }
+
+    if (student.departmentId) {
+      orConditions.push({
+        classId: null,
+        departments: { some: { departmentId: student.departmentId } } 
+      });
+    }
+
     if (classIds.length > 0 && student.departmentId) {
       orConditions.push({
         classId: { in: classIds },

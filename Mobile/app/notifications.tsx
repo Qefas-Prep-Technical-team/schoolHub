@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { X, Bell, CheckCheck, Link2, AlertTriangle, Info, BookOpen, Trash2 } from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNotifications, useMarkAllAsRead, useMarkAsRead, useDeleteNotification } from '@/lib/api/hooks/useNotifications';
@@ -15,6 +15,7 @@ export default function NotificationsScreen() {
   const isDark = colorScheme === 'dark';
   const insets = useSafeAreaInsets();
 
+  const { classId, className } = useLocalSearchParams();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data: notificationsData, isLoading } = useNotifications();
@@ -22,7 +23,17 @@ export default function NotificationsScreen() {
   const markAsReadMutation = useMarkAsRead();
   const deleteMutation = useDeleteNotification();
 
-  const notifications = (notificationsData as unknown as Notification[]) || [];
+  const notifications = useMemo(() => {
+    let list = (notificationsData as unknown as Notification[]) || [];
+    if (classId) {
+      list = list.filter(n => 
+        (n.data as any)?.classId === classId || 
+        (n.meta as any)?.classId === classId
+      );
+    }
+    return list;
+  }, [notificationsData, classId]);
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const getIconForType = (type: string) => {
@@ -76,7 +87,12 @@ export default function NotificationsScreen() {
         >
           <X size={20} color={isDark ? '#fff' : '#000'} />
         </TouchableOpacity>
-        <Text className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Notifications</Text>
+        <Text 
+          className="flex-1 px-4 text-center text-lg font-black text-slate-900 dark:text-white tracking-tight" 
+          numberOfLines={1}
+        >
+          {className ? `${className} Notifications` : 'Notifications'}
+        </Text>
 
         {unreadCount > 0 ? (
           <TouchableOpacity

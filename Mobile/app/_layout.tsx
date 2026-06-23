@@ -3,13 +3,14 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme, useThemeControls } from '@/hooks/use-color-scheme';
 import { useFonts, Lexend_400Regular, Lexend_700Bold, Lexend_900Black } from '@expo-google-fonts/lexend';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { AnimatedSplashScreen } from '../components/AnimatedSplashScreen';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../lib/api/client';
+import { registerForPushNotificationsAsync } from '../lib/utils/notifications';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,6 +27,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  useThemeControls(); // Run theme restoration on app boot
   const [splashFinished, setSplashFinished] = useState(false);
   const [isBackendAwake, setIsBackendAwake] = useState(false);
 
@@ -36,6 +38,9 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    // Request notification permissions
+    registerForPushNotificationsAsync();
+
     // Ping backend to wake it up (similar to frontend PingWrapper)
     let isMounted = true;
     const wakeBackend = async () => {

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Platform, ActivityIndicator, Image } from
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { getUserRole, setTokens } from '../../lib/auth/secure-store';
+import { getUserRole, setTokens, getAccessToken, setUserRole } from '../../lib/auth/secure-store';
 import { apiClient } from '../../lib/api/client';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
@@ -44,6 +44,19 @@ export default function LoginScreen() {
       if (storedRole) {
         setRole(storedRole);
       }
+      
+      const token = await getAccessToken();
+      if (token && storedRole) {
+        // We have a session, let's verify if it's still valid by hitting a health endpoint
+        // that requires auth or just relying on the fact we have a token.
+        try {
+          // If we want to be safe, we can just let index.tsx handle the deep routing
+          router.replace('/');
+        } catch (e) {
+          // If something fails, clear token and stay on login
+          await setTokens('', '');
+        }
+      }
     }
     loadRole();
   }, []);
@@ -71,6 +84,7 @@ export default function LoginScreen() {
 
       if (accessToken) {
         await setTokens(accessToken, refreshToken || '');
+        await setUserRole(role.toUpperCase());
         // Navigate to the main app layout
         router.replace('/');
       } else {
@@ -78,8 +92,15 @@ export default function LoginScreen() {
       }
     } catch (error: any) {
       const responseData = error.response?.data || {};
-      const errorMessage = responseData.message || 'Failed to sign in. Please check your credentials.';
-      console.log('Login error:', errorMessage);
+      
+      let errorMessage = responseData.message || 'Failed to sign in. Please check your credentials.';
+      
+      if (!error.response) {
+         // This means the server didn't respond (Network error, CORS, Timeout)
+         errorMessage = `Network Error: Could not connect to the server. Please check your API URL and internet connection. Details: ${error.message}`;
+      }
+      
+      console.log('Login error:', errorMessage, error);
       const requiresVerification = responseData.requiresVerification;
       const preAuthToken = responseData.preAuthToken;
 

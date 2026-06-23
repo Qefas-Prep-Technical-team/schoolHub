@@ -372,6 +372,18 @@ export const getSingleClassService = async (classId: string) => {
               name: true,
             }
           },
+          subjectExamPapers: {
+            include: {
+              subjectPaper: {
+                include: {
+                  subject: true,
+                  questions: {
+                    select: { id: true }
+                  }
+                }
+              }
+            }
+          },
           examAttempts: {
             select: {
               id: true,

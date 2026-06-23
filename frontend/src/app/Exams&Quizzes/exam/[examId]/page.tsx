@@ -435,7 +435,16 @@ export default function UnifiedExamPage() {
                     <><PlayCircle /> {attempt?.status === "IN_PROGRESS" ? "Continue Exam" : "Start Examination"}</>
                   )}
                </ShcnButton>
-               <p className="text-slate-500 text-sm italic">Clicking start will begin your official attempt.</p>
+               <div className="text-center space-y-2">
+                 <p className="text-slate-500 text-sm italic">Clicking start will begin your official attempt.</p>
+                 <div className="flex items-start gap-2 max-w-sm mx-auto text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200 dark:border-amber-900/50">
+                   <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                   <p className="text-xs font-medium leading-relaxed">
+                     <strong>Important:</strong> You must start and end this exam on the <strong>same device</strong>. 
+                     If the system detects you attempting to resume this exam on a different device, your session will be automatically submitted.
+                   </p>
+                 </div>
+               </div>
             </div>
           ) : (
             <div className="pt-12 text-center space-y-6">

@@ -1732,6 +1732,7 @@ export const login = async (req: Request, res: Response) => {
         },
         userRole: user.role,
         accessToken,
+        refreshToken,
       };
     } else if (actualRole === UserRole.TEACHER) {
       responseData = {
@@ -1750,6 +1751,7 @@ export const login = async (req: Request, res: Response) => {
         },
         userRole: user.role,
         accessToken,
+        refreshToken,
       };
     } else if (actualRole === UserRole.STUDENT) {
       responseData = {
@@ -1768,6 +1770,7 @@ export const login = async (req: Request, res: Response) => {
         },
         userRole: user.role,
         accessToken,
+        refreshToken,
       };
     } else if (actualRole === UserRole.PARENT) {
       responseData = {
@@ -1792,6 +1795,7 @@ export const login = async (req: Request, res: Response) => {
         })),
         userRole: user.role,
         accessToken,
+        refreshToken,
       };
     }
 

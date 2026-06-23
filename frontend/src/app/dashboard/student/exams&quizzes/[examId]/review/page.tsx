@@ -185,7 +185,7 @@ export default function ExamReviewPage() {
                                         </span>
                                     </div>
                                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800">
-                                        Value: {q.marks} Pts
+                                        Value: {q.maxMarks || 0} Pts
                                     </div>
                                 </div>
 

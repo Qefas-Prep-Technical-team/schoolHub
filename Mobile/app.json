@@ -11,6 +11,10 @@
     "ios": {
       "supportsTablet": true
     },
+    "notification": {
+      "icon": "./assets/images/icon.png",
+      "color": "#10b981"
+    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -39,7 +43,8 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,

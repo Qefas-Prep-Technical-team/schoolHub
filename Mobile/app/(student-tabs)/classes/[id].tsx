@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Bell } from 'lucide-react-native';
@@ -45,14 +45,31 @@ export default function ClassDetailsScreen() {
   const router = useRouter();
   const classId = id as string;
 
-  const { data: classData, isLoading: isLoadingClass } = useSingleClass(classId);
-  const { data: attemptsData, isLoading: isLoadingAttempts } = useStudentExamAttempts();
-  const { data: standaloneGradesData, isLoading: isLoadingGrades } = useGrades();
-  const { data: studentProfile, isLoading: isLoadingProfile } = useStudentProfile();
+  const { data: classData, isLoading: isLoadingClass, refetch: refetchClass } = useSingleClass(classId);
+  const { data: attemptsData, isLoading: isLoadingAttempts, refetch: refetchAttempts } = useStudentExamAttempts();
+  const { data: standaloneGradesData, isLoading: isLoadingGrades, refetch: refetchGrades } = useGrades();
+  const { data: studentProfile, isLoading: isLoadingProfile, refetch: refetchProfile } = useStudentProfile();
   
   const studentId = (studentProfile as any)?.id || '';
-  const { data: attendanceData, isLoading: isLoadingAttendance } = useStudentAttendance(studentId);
-  const { data: assignmentsData, isLoading: isLoadingAssignments } = useStudentAssignments({ limit: 100 });
+  const { data: attendanceData, isLoading: isLoadingAttendance, refetch: refetchAttendance } = useStudentAttendance(studentId);
+  const { data: assignmentsData, isLoading: isLoadingAssignments, refetch: refetchAssignments } = useStudentAssignments({ limit: 100 });
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchClass?.(),
+        refetchAttempts?.(),
+        refetchGrades?.(),
+        refetchProfile?.(),
+        refetchAttendance?.(),
+        refetchAssignments?.()
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchClass, refetchAttempts, refetchGrades, refetchProfile, refetchAttendance, refetchAssignments]);
 
   const isLoading = isLoadingClass || isLoadingProfile;
 
@@ -129,8 +146,10 @@ export default function ClassDetailsScreen() {
     });
 
     let gradeLabel = 'N/A';
+    let gradeScore = 0;
     if (gradedCount > 0) {
       const avg = totalScoreSum / gradedCount;
+      gradeScore = Math.round(avg);
       if (avg >= 75) gradeLabel = 'A';
       else if (avg >= 60) gradeLabel = 'B';
       else if (avg >= 50) gradeLabel = 'C';
@@ -203,6 +222,7 @@ export default function ClassDetailsScreen() {
         attendance: attendanceRate,
         assignments: { completed: assignmentsCompleted, total: assignmentsTotal },
         grade: gradeLabel,
+        gradeScore,
         lastActivity,
       },
     };
@@ -267,12 +287,22 @@ export default function ClassDetailsScreen() {
               <Text className="text-xl font-bold text-white" numberOfLines={1}>{classItem.title}</Text>
             </View>
           </View>
-          <TouchableOpacity className="p-2 rounded-full bg-white/20">
+          <TouchableOpacity 
+            onPress={() => router.push(`/notifications?classId=${classId}&className=${encodeURIComponent(classItem.title)}`)}
+            className="p-2 rounded-full bg-white/20"
+          >
             <Bell size={20} color="#ffffff" />
           </TouchableOpacity>
         </View>
 
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          className="flex-1" 
+          contentContainerStyle={{ paddingTop: 20, paddingBottom: 100 }} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />
+          }
+        >
           <View className="px-6">
             <ClassOverviewCard 
               title={classItem.title}
@@ -289,6 +319,7 @@ export default function ClassDetailsScreen() {
               attendance={classItem.stats.attendance}
               assignments={classItem.stats.assignments}
               grade={classItem.stats.grade}
+              gradeScore={classItem.stats.gradeScore}
               lastActivity={classItem.stats.lastActivity}
             />
             

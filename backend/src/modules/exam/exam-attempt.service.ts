@@ -11,9 +11,11 @@ import {
 export const startExamAttemptService = async ({
   examId,
   studentId,
+  deviceId,
 }: {
   examId: string;
   studentId: string;
+  deviceId?: string;
 }) => {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
@@ -71,7 +73,24 @@ export const startExamAttemptService = async ({
         where: { id: existing.id },
       });
     } else {
-      // Still in progress, return the existing attempt to allow continuation
+      // Still in progress, check deviceId
+      if (existing.deviceId && deviceId && existing.deviceId !== deviceId) {
+        // Multi-device violation!
+        await submitExamAttemptService({ examId, studentId });
+        
+        // Notify admin
+        const adminUsers = await prisma.user.findMany({ where: { userType: UserRole.SUPER_ADMIN } });
+        const studentInfo = await prisma.student.findUnique({ where: { id: studentId }, include: { user: true } });
+        for (const admin of adminUsers) {
+          await createNotification({
+            userId: admin.id,
+            title: "Exam Violation Detected",
+            message: `Student ${studentInfo?.user?.firstName || studentId} attempted to resume exam "${exam.title}" from a different device. The exam attempt was automatically submitted.`,
+          });
+        }
+        
+        throw new Error("Exam violation detected: You cannot resume this exam on a different device. Your exam has been automatically submitted.");
+      }
       return existing;
     }
   }
@@ -93,6 +112,7 @@ export const startExamAttemptService = async ({
     data: {
       examId,
       studentId,
+      deviceId,
       totalMarks,
       startedAt,
       expiresAt,
@@ -255,8 +275,15 @@ export const getExamAttemptService = async ({
     remainingSeconds: getRemainingSeconds({ expiresAt: attempt.expiresAt }),
   };
 
-  // Scrub correct answers if exam is still in progress
-  if (attempt.status === "IN_PROGRESS") {
+  // Check if results should be visible
+  const isResultsReleased = attempt.exam?.allowImmediateResult 
+    ? true 
+    : attempt.exam?.resultReleaseAt 
+      ? new Date() >= new Date(attempt.exam.resultReleaseAt) 
+      : false;
+
+  // Scrub correct answers if exam is still in progress OR if results are not released yet
+  if (attempt.status === "IN_PROGRESS" || !isResultsReleased) {
     result.subjectExamAttempts.forEach((sa: any) => {
       // Deterministic shuffle if enabled
       if ((attempt as any).exam?.shuffleQuestions) {
@@ -284,11 +311,21 @@ export const getExamAttemptService = async ({
         sa.subjectPaper.questions = questions;
       }
 
-      sa.subjectPaper.questions = sa.subjectPaper.questions.map((q: any) => ({
-        ...q,
-        correctAnswer: "",
-        explanation: ""
-      })) as any;
+      if (sa.subjectPaper?.questions) {
+        sa.subjectPaper.questions = sa.subjectPaper.questions.map((q: any) => ({
+          ...q,
+          correctAnswer: "",
+          explanation: ""
+        })) as any;
+      }
+    });
+  }
+
+  // Scrub scores if results are not released yet
+  if (!isResultsReleased && result.status === "SCORED") {
+    result.totalScore = null;
+    result.subjectExamAttempts.forEach((sa: any) => {
+      sa.score = null;
     });
   }
 
@@ -645,22 +682,21 @@ export const getExamResultService = async ({
     throw new Error("Result not found");
   }
 
-  if (requestingUserRole === UserRole.STUDENT) {
-    const isReleased = 
-      attempt.exam.allowImmediateResult || 
-      !attempt.exam.resultReleaseAt || 
-      new Date() >= new Date(attempt.exam.resultReleaseAt);
+  const isReleased = attempt.exam.allowImmediateResult 
+    ? true 
+    : attempt.exam.resultReleaseAt 
+      ? new Date() >= new Date(attempt.exam.resultReleaseAt) 
+      : false;
 
-    if (!isReleased) {
-      throw new Error("Results for this exam are not yet released.");
-    }
+  if (requestingUserRole === UserRole.STUDENT && !isReleased) {
+    throw new Error("Results for this exam are not yet released.");
   }
 
   const subjectBreakdown = attempt.subjectExamAttempts.map((subjectAttempt: any) => ({
     subjectPaperId: subjectAttempt.subjectPaperId,
     subjectId: subjectAttempt.subjectPaper.subjectId,
     subjectName: subjectAttempt.subjectPaper.subject?.name || "Unknown",
-    score: subjectAttempt.score,
+    score: isReleased ? subjectAttempt.score : null,
     totalMarks: subjectAttempt.totalMarks,
     passMark: subjectAttempt.subjectPaper.passMark || 40,
     submittedAt: subjectAttempt.submittedAt,
@@ -677,7 +713,7 @@ export const getExamResultService = async ({
     className: attempt.exam.class?.name || "N/A",
     title: attempt.exam.title,
     durationMinutes: attempt.exam.durationMinutes,
-    totalScore: attempt.totalScore,
+    totalScore: isReleased ? attempt.totalScore : null,
     totalMarks: attempt.totalMarks,
     overallPassMark: attempt.exam.mode === 'SINGLE_SUBJECT' 
       ? (attempt.subjectExamAttempts[0]?.subjectPaper?.passMark || 40)
@@ -685,6 +721,7 @@ export const getExamResultService = async ({
     submittedAt: attempt.submittedAt,
     subjects: subjectBreakdown,
     startedAt: attempt.startedAt,
+    isReleased
   };
 
   // Fetch class-wide statistics & All participants for ranking
@@ -842,11 +879,6 @@ export const getExamResultService = async ({
       performanceInsight = "Premium AI insights are available to help you understand your performance and how to improve. Upgrade to a premium plan to unlock.";
   }
 
-  const isReleased = 
-    attempt.exam.allowImmediateResult || 
-    !attempt.exam.resultReleaseAt || 
-    new Date() >= new Date(attempt.exam.resultReleaseAt);
-
   const finalResponse = {
     ...baseData,
     grade: isReleased ? grade : null,
@@ -999,8 +1031,13 @@ export const getStudentExamAttemptsService = async (studentId: string, page: num
     exam: {
       OR: [
         { allowImmediateResult: true },
-        { resultReleaseAt: null },
-        { resultReleaseAt: { lte: now } }
+        {
+          AND: [
+            { allowImmediateResult: false },
+            { resultReleaseAt: { not: null } },
+            { resultReleaseAt: { lte: now } }
+          ]
+        }
       ]
     }
   };

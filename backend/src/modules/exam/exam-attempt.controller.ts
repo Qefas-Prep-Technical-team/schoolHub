@@ -25,6 +25,7 @@ export const startExamAttempt = async (req: Request, res: Response) => {
     const data = await startExamAttemptService({
       examId: req.params.id as string,
       studentId: req.user.id,
+      deviceId: req.body.deviceId,
     });
 
     return res.status(200).json({

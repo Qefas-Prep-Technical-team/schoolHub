@@ -314,8 +314,8 @@ export const examService = {
     return response.data.data || [];
   },
 
-  startExamAttempt: async (examId: string) => {
-    const response = await apiClient.post(`/exams/${examId}/start`);
+  startExamAttempt: async (examId: string, options?: { deviceId?: string }) => {
+    const response = await apiClient.post(`/exams/${examId}/start`, options);
     return response.data.data;
   },
 

@@ -88,9 +88,9 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="exams"
+        name="profile"
         options={{
-          title: 'Exams',
+          title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center mt-1">
               <View className={`h-[28px] w-[28px] rounded-full overflow-hidden border-[2px] items-center justify-center bg-slate-100 dark:bg-slate-800 ${focused ? 'border-slate-900 dark:border-white' : 'border-transparent'}`}>
@@ -110,6 +110,7 @@ export default function TabLayout() {
         name="settings"
         options={{
           href: null,
+          tabBarItemStyle: { display: 'none' },
           headerShown: false,
         }}
       />
