@@ -61,15 +61,20 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
+        <Stack screenOptions={{ contentStyle: { backgroundColor: colorScheme === 'dark' ? '#000000' : '#ffffff' } }}>
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="role-picker" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(student)" options={{ headerShown: false }} />
+          <Stack.Screen name="(student-tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(teacher-tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(parent-tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(admin-tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="linking-hub" options={{ headerShown: false, presentation: 'modal' }} />
+          <Stack.Screen name="notifications" options={{ headerShown: false, presentation: 'transparentModal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
         <StatusBar style="auto" />
-        
+
         {/* Render Splash Screen on top until fonts load and backend wakes up */}
         {!splashFinished && (
           <AnimatedSplashScreen isAppReady={isReady} onFinish={() => setSplashFinished(true)} />

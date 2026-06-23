@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, ActivityIndicator, Image } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { getUserRole, setTokens } from '../../lib/auth/secure-store';
@@ -76,12 +77,12 @@ export default function LoginScreen() {
         Toast.show({ type: 'error', text1: 'Login Failed', text2: 'Invalid credentials or no token received.' });
       }
     } catch (error: any) {
-      console.error('Login error:', error);
       const responseData = error.response?.data || {};
       const errorMessage = responseData.message || 'Failed to sign in. Please check your credentials.';
+      console.log('Login error:', errorMessage);
       const requiresVerification = responseData.requiresVerification;
       const preAuthToken = responseData.preAuthToken;
-      
+
       if (
         error.response?.status === 403 &&
         (requiresVerification || errorMessage.toLowerCase().includes('verified') || errorMessage.toLowerCase().includes('verification'))
@@ -106,7 +107,7 @@ export default function LoginScreen() {
   };
 
   const getRoleTitle = () => {
-    switch(role) {
+    switch (role) {
       case 'student': return 'Student Portal';
       case 'teacher': return 'Teacher Portal';
       case 'parent': return 'Parent Portal';
@@ -117,7 +118,7 @@ export default function LoginScreen() {
 
   const getGradientColors = () => {
     if (isDark) {
-      switch(role) {
+      switch (role) {
         case 'student': return ['#831843', '#020617']; // pink-900 to slate-950
         case 'teacher': return ['#064e3b', '#020617']; // emerald-900 to slate-950
         case 'parent': return ['#7c2d12', '#020617']; // orange-900 to slate-950
@@ -125,7 +126,7 @@ export default function LoginScreen() {
         default: return ['#0f172a', '#020617'];
       }
     } else {
-      switch(role) {
+      switch (role) {
         case 'student': return ['#fbcfe8', '#fdf2f8', '#ffffff']; // pink
         case 'teacher': return ['#a7f3d0', '#f0fdf4', '#ffffff']; // emerald
         case 'parent': return ['#fed7aa', '#fff7ed', '#ffffff']; // orange
@@ -141,15 +142,18 @@ export default function LoginScreen() {
       style={{ flex: 1 }}
     >
       <SafeAreaView className="flex-1">
-      <LoadingOverlay visible={isLoading} message="Authenticating..." />
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+        <LoadingOverlay visible={isLoading} message="Authenticating..." />
+        <KeyboardAwareScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          enableOnAndroid={true}
+          extraScrollHeight={20}
+        >
           <View className="px-6 pt-4 pb-8">
             <View className="flex-row items-center justify-between mb-8">
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => router.back()}
                 className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 items-center justify-center"
               >
@@ -167,8 +171,8 @@ export default function LoginScreen() {
             </View>
 
             <View className="items-center mb-8 mt-2">
-              <Image 
-                source={illustrationConfig[role] || illustrationConfig.student} 
+              <Image
+                source={illustrationConfig[role] || illustrationConfig.student}
                 className="w-64 h-64"
                 resizeMode="contain"
               />
@@ -222,8 +226,8 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 onPress={handleSubmit(onSubmit)}
                 isLoading={isLoading}
                 className="mt-4 shadow-lg shadow-primary/30"
@@ -232,8 +236,7 @@ export default function LoginScreen() {
               </Button>
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
     </LinearGradient>
   );

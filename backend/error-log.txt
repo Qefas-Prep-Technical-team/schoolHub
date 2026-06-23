@@ -9478,128 +9478,353 @@ Please make sure your database server is running at `aws-1-eu-west-1.pooler.supa
     at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
     at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1545:18)
     at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1569:12)PrismaClientKnownRequestError: 
-Invalid `prisma.examAttempt.count()` invocation in
-C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1029:24
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:1545:39
 
-  1026   skip,
-  1027   take: limit,
-  1028 }),
-→ 1029 prisma.examAttempt.count(
+  1542   return teacher;
+  1543 }
+  1544 case UserRole.STUDENT:
+→ 1545   return await prisma.student.findUnique(
 Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
 
 Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
-    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
-    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
-    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
-    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:1545:18)
+    at login (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:1569:12)PrismaClientKnownRequestError: 
+Invalid `prisma.relationshipLink.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\link\link.query.service.ts:336:29
+
+  333   skip,
+  334   take: limit,
+  335 }),
+→ 336 prisma.relationshipLink.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
     at async Promise.all (index 1)
-    at getStudentExamAttemptsService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1008:25)
-    at getMyExamAttempts (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:199:18)PrismaClientKnownRequestError: 
+    at getActiveLinksService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\link\link.query.service.ts:311:26)
+    at getMyActiveLinks (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\link\link.controller.ts:372:20)PrismaClientKnownRequestError: 
 Invalid `prisma.student.findUnique()` invocation in
-C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1545:39
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.service.ts:153:25
 
-  1542   return teacher;
-  1543 }
-  1544 case UserRole.STUDENT:
-→ 1545   return await prisma.student.findUnique(
-Timed out fetching a new connection from the connection pool. More info: http://pris.ly/d/connection-pool (Current connection pool timeout: 10, connection limit: 9)
-    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
-    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
-    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
-    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1545:18)
-    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1569:12)PrismaClientInitializationError: 
+  150 };
+  151 
+  152 export const getStudentProfileService = async (studentId: string) => {
+→ 153   return prisma.student.findUnique(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getStudentProfile (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.controller.ts:159:21)PrismaClientKnownRequestError: 
 Invalid `prisma.student.findUnique()` invocation in
-C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1545:39
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.service.ts:153:25
 
-  1542   return teacher;
-  1543 }
-  1544 case UserRole.STUDENT:
-→ 1545   return await prisma.student.findUnique(
-Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+  150 };
+  151 
+  152 export const getStudentProfileService = async (studentId: string) => {
+→ 153   return prisma.student.findUnique(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getStudentProfile (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.controller.ts:159:21)PrismaClientKnownRequestError: 
+Invalid `prisma.examAttempt.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1009:24
 
-Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
-    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
-    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
-    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
-    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1545:18)
-    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1569:12)PrismaClientInitializationError: 
+  1006 };
+  1007 
+  1008 const [data, total] = await Promise.all([
+→ 1009   prisma.examAttempt.findMany(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getStudentExamAttemptsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1008:25)
+    at getMyExamAttempts (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:199:18)PrismaClientKnownRequestError: 
+Invalid `prisma.grade.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:34:18
+
+  31 }
+  32 
+  33 const [data, total] = await Promise.all([
+→ 34   prisma.grade.findMany(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getStudentGradesService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:33:25)
+    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)PrismaClientKnownRequestError: 
+Invalid `prisma.grade.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:34:18
+
+  31 }
+  32 
+  33 const [data, total] = await Promise.all([
+→ 34   prisma.grade.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getStudentGradesService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:33:25)
+    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)PrismaClientKnownRequestError: 
+Invalid `prisma.grade.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:48:18
+
+  45   skip,
+  46   take: limit,
+  47 }),
+→ 48 prisma.grade.count(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 1)
+    at getStudentGradesService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:33:25)
+    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)PrismaClientKnownRequestError: 
 Invalid `prisma.student.findUnique()` invocation in
-C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1547:39
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.service.ts:153:25
 
-  1544   return teacher;
-  1545 }
-  1546 case UserRole.STUDENT:
-→ 1547   return await prisma.student.findUnique(
-Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+  150 };
+  151 
+  152 export const getStudentProfileService = async (studentId: string) => {
+→ 153   return prisma.student.findUnique(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getStudentProfile (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.controller.ts:159:21)PrismaClientKnownRequestError: 
+Invalid `prisma.examAttempt.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1009:24
 
-Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
-    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
-    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
-    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
-    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1547:18)
-    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1571:12)PrismaClientInitializationError: 
+  1006 };
+  1007 
+  1008 const [data, total] = await Promise.all([
+→ 1009   prisma.examAttempt.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getStudentExamAttemptsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1008:25)
+    at getMyExamAttempts (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:199:18)PrismaClientKnownRequestError: 
+Invalid `prisma.grade.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:34:18
+
+  31 }
+  32 
+  33 const [data, total] = await Promise.all([
+→ 34   prisma.grade.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getStudentGradesService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:33:25)
+    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)PrismaClientKnownRequestError: 
+Invalid `prisma.examAttempt.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1009:24
+
+  1006 };
+  1007 
+  1008 const [data, total] = await Promise.all([
+→ 1009   prisma.examAttempt.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getStudentExamAttemptsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1008:25)
+    at getMyExamAttempts (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:199:18)PrismaClientKnownRequestError: 
+Invalid `prisma.examAttempt.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1009:24
+
+  1006 };
+  1007 
+  1008 const [data, total] = await Promise.all([
+→ 1009   prisma.examAttempt.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getStudentExamAttemptsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.service.ts:1008:25)
+    at getMyExamAttempts (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\exam\exam-attempt.controller.ts:199:18)PrismaClientKnownRequestError: 
 Invalid `prisma.student.findUnique()` invocation in
-C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1547:39
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.service.ts:153:25
 
-  1544   return teacher;
-  1545 }
-  1546 case UserRole.STUDENT:
-→ 1547   return await prisma.student.findUnique(
-Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
-
-Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
-    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
-    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
-    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
-    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1547:18)
-    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1571:12)PrismaClientInitializationError: 
+  150 };
+  151 
+  152 export const getStudentProfileService = async (studentId: string) => {
+→ 153   return prisma.student.findUnique(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getStudentProfile (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.controller.ts:159:21)PrismaClientKnownRequestError: 
 Invalid `prisma.student.findUnique()` invocation in
-C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1547:39
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.service.ts:153:25
 
-  1544   return teacher;
-  1545 }
-  1546 case UserRole.STUDENT:
-→ 1547   return await prisma.student.findUnique(
-Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+  150 };
+  151 
+  152 export const getStudentProfileService = async (studentId: string) => {
+→ 153   return prisma.student.findUnique(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getStudentProfile (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.controller.ts:159:21)PrismaClientKnownRequestError: 
+Invalid `prisma.grade.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:48:18
 
-Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
-    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
-    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
-    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
-    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1547:18)
-    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1571:12)PrismaClientKnownRequestError: 
+  45   skip,
+  46   take: limit,
+  47 }),
+→ 48 prisma.grade.count(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 1)
+    at getStudentGradesService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:33:25)
+    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)PrismaClientKnownRequestError: 
+Invalid `prisma.grade.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:34:18
+
+  31 }
+  32 
+  33 const [data, total] = await Promise.all([
+→ 34   prisma.grade.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getStudentGradesService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:33:25)
+    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)Error: The configured free plan ID (d0a35697-d893-4bc1-b5cd-dcdc909d841c) for STUDENT was not found in the database.
+    at Function.initializeFreePlan (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\user-subscription.service.ts:42:13)
+    at verifyEmailCode (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2230:9)Error: The configured free plan ID (d0a35697-d893-4bc1-b5cd-dcdc909d841c) for STUDENT was not found in the database.
+    at Function.initializeFreePlan (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\subscription\user-subscription.service.ts:42:13)
+    at verifyEmailCode (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\auth\auth.controller.ts:2230:9)PrismaClientKnownRequestError: 
+Invalid `prisma.grade.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:34:18
+
+  31 }
+  32 
+  33 const [data, total] = await Promise.all([
+→ 34   prisma.grade.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getStudentGradesService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:33:25)
+    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)PrismaClientKnownRequestError: 
+Invalid `prisma.notification.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\notification\notification.controller.ts:77:45
+
+  74 try {
+  75   const userId = req.user.id;
+  76 
+→ 77   const count = await prisma.notification.count(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getUnreadCount (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\notification\notification.controller.ts:77:19)PrismaClientKnownRequestError: 
+Invalid `prisma.classEnrollment.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.service.ts:317:35
+
+  314 }
+  315 
+  316 if (currentUserType === UserRole.STUDENT) {
+→ 317   return prisma.classEnrollment.findMany(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getClasses (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\class\class.controller.ts:196:18)PrismaClientKnownRequestError: 
 Invalid `prisma.student.findUnique()` invocation in
-C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1547:39
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.service.ts:153:25
 
-  1544   return teacher;
-  1545 }
-  1546 case UserRole.STUDENT:
-→ 1547   return await prisma.student.findUnique(
-Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:6543`
+  150 };
+  151 
+  152 export const getStudentProfileService = async (studentId: string) => {
+→ 153   return prisma.student.findUnique(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getStudentProfile (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\student\student.controller.ts:159:21)PrismaClientKnownRequestError: 
+Invalid `prisma.notification.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\notification\notification.controller.ts:77:45
 
-Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:6543`.
-    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
-    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
-    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
-    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1547:18)
-    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1571:12)PrismaClientKnownRequestError: 
-Invalid `prisma.student.findUnique()` invocation in
-C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1547:39
+  74 try {
+  75   const userId = req.user.id;
+  76 
+→ 77   const count = await prisma.notification.count(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getUnreadCount (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\notification\notification.controller.ts:77:19)PrismaClientKnownRequestError: 
+Invalid `prisma.grade.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:34:18
 
-  1544   return teacher;
-  1545 }
-  1546 case UserRole.STUDENT:
-→ 1547   return await prisma.student.findUnique(
-Timed out fetching a new connection from the connection pool. More info: http://pris.ly/d/connection-pool (Current connection pool timeout: 10, connection limit: 9)
-    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
-    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
-    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
-    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1547:18)
-    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1571:12)
+  31 }
+  32 
+  33 const [data, total] = await Promise.all([
+→ 34   prisma.grade.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 0)
+    at getStudentGradesService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.service.ts:33:25)
+    at getStudentGrades (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\academic\grade.controller.ts:23:18)

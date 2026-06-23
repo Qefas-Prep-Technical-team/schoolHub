@@ -1,23 +1,31 @@
-import axios from 'axios';
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '../auth/secure-store';
+import axios from "axios";
+import {
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+  clearTokens,
+} from "../auth/secure-store";
 
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
 
 // Set the base API URL (could be injected via environment variable EXPO_PUBLIC_API_URL)
 // Remember: For physical devices and Emulators, using the precise Wi-Fi IPv4 address is the most reliable method.
-const fallbackUrl = 'http://10.0.2.2:5000/api';
-const API_URL = fallbackUrl; // Forced to ignore process.env just in case
+const fallbackUrl = "http://192.168.0.182:5000/api";
+const API_URL = process.env.EXPO_PUBLIC_API_URL || fallbackUrl;
 
 export const apiClient = axios.create({
   baseURL: API_URL,
   timeout: 60000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: any) => void }> = [];
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: any) => void;
+}> = [];
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((prom) => {
@@ -38,11 +46,20 @@ apiClient.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (config.headers) {
+      config.headers["x-device-type"] = "mobile";
+      config.headers["x-device-model"] =
+        Platform.OS === "ios" ? "iPhone" : "Android Device";
+      config.headers["x-os-version"] =
+        `${Platform.OS === "ios" ? "iOS" : "Android"} ${Platform.Version}`;
+    }
+
     return config;
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response Interceptor
@@ -53,6 +70,17 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    const isAuthRoute =
+      originalRequest.url?.includes("/auth/login") ||
+      originalRequest.url?.includes("/auth/register") ||
+      originalRequest.url?.includes("/auth/password");
+
+    if (isAuthRoute) {
+      // Silently clear any stale session data when auth requests fail
+      await clearTokens();
+      return Promise.reject(error);
+    }
+
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
@@ -60,7 +88,7 @@ apiClient.interceptors.response.use(
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            originalRequest.headers['Authorization'] = 'Bearer ' + token;
+            originalRequest.headers["Authorization"] = "Bearer " + token;
             return apiClient(originalRequest);
           })
           .catch((err) => {
@@ -73,9 +101,9 @@ apiClient.interceptors.response.use(
 
       try {
         const refreshToken = await getRefreshToken();
-        
+
         if (!refreshToken) {
-          throw new Error('No refresh token available');
+          throw new Error("No refresh token available");
         }
 
         // Use base axios to bypass the interceptors so we don't end up in an infinite loop
@@ -84,19 +112,20 @@ apiClient.interceptors.response.use(
         });
 
         // The exact structure depends on our API response formatting
-        const newAccessToken = response.data?.data?.accessToken || response.data?.accessToken;
-        const newRefreshToken = response.data?.data?.refreshToken || response.data?.refreshToken;
+        const newAccessToken =
+          response.data?.data?.accessToken || response.data?.accessToken;
+        const newRefreshToken =
+          response.data?.data?.refreshToken || response.data?.refreshToken;
 
         if (!newAccessToken) {
-          throw new Error('Failed to get new access token');
+          throw new Error("Failed to get new access token");
         }
 
         await setTokens(newAccessToken, newRefreshToken);
         processQueue(null, newAccessToken);
-        
-        originalRequest.headers['Authorization'] = 'Bearer ' + newAccessToken;
+
+        originalRequest.headers["Authorization"] = "Bearer " + newAccessToken;
         return apiClient(originalRequest);
-        
       } catch (refreshError) {
         processQueue(refreshError, null);
         await clearTokens();
@@ -108,5 +137,5 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );

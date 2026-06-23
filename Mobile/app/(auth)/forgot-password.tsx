@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { KeyboardAwareScrollView, Image } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { apiClient } from '../../lib/api/client';
@@ -11,14 +12,14 @@ import { useColorScheme } from 'nativewind';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  
+
   const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Email, 2: Token & New Password, 3: Success
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const { colorScheme } = useColorScheme();
@@ -36,8 +37,9 @@ export default function ForgotPasswordScreen() {
       await apiClient.post('/auth/password/reset/request', { email });
       setStep(2); // Move to token entry step
     } catch (error: any) {
-      console.error('Request reset error:', error);
-      setApiError(error.response?.data?.message || 'Failed to send reset email. Please check the email address.');
+      const errorMessage = error.response?.data?.message || 'Failed to send reset email. Please check the email address.';
+      console.log('Request reset error:', errorMessage);
+      setApiError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -60,18 +62,19 @@ export default function ForgotPasswordScreen() {
     setIsLoading(true);
     setApiError(null);
     try {
-      await apiClient.post('/auth/password/reset/complete', { 
-        token, 
+      await apiClient.post('/auth/password/reset/complete', {
+        token,
         newPassword,
-        confirmPassword 
+        confirmPassword
       });
       setStep(3); // Success
       setTimeout(() => {
         router.replace('/(auth)/login');
       }, 3000);
     } catch (error: any) {
-      console.error('Reset password error:', error);
-      setApiError(error.response?.data?.message || 'Failed to reset password. Token may be invalid or expired.');
+      const errorMessage = error.response?.data?.message || 'Failed to reset password. Token may be invalid or expired.';
+      console.log('Reset password error:', errorMessage);
+      setApiError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -83,8 +86,14 @@ export default function ForgotPasswordScreen() {
       style={{ flex: 1 }}
     >
       <SafeAreaView className="flex-1">
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+        <KeyboardAwareScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          enableOnAndroid={true}
+          extraScrollHeight={20}
+        >
           <View className="px-6 pt-4 pb-8 flex-1">
 
 
@@ -102,7 +111,7 @@ export default function ForgotPasswordScreen() {
               <View className="flex-1">
                 <View className="mb-8">
                   <View className="flex-row items-center mb-2">
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={() => step === 2 ? setStep(1) : router.back()}
                       className="w-10 h-10 rounded-full bg-slate-100/60 dark:bg-slate-900/60 items-center justify-center mr-3"
                     >
@@ -113,15 +122,15 @@ export default function ForgotPasswordScreen() {
                     </Text>
                   </View>
                   <Text className="font-lexend text-base text-slate-500 dark:text-slate-400 leading-relaxed ml-[52px]">
-                    {step === 1 
+                    {step === 1
                       ? "Enter the email associated with your account and we'll send you a reset token."
                       : "Enter the reset token sent to your email along with your new password."}
                   </Text>
                 </View>
 
                 <View className="items-center mb-6 mt-[-10px]">
-                  <Image 
-                    source={require('../../assets/login/student.png')} 
+                  <Image
+                    source={require('../../assets/login/student.png')}
                     className="w-48 h-48"
                     resizeMode="contain"
                   />
@@ -147,8 +156,8 @@ export default function ForgotPasswordScreen() {
                         value={email}
                         onChangeText={setEmail}
                       />
-                      <Button 
-                        size="lg" 
+                      <Button
+                        size="lg"
                         onPress={handleRequestReset}
                         isLoading={isLoading}
                         className="mt-4 shadow-lg shadow-primary/30"
@@ -186,8 +195,8 @@ export default function ForgotPasswordScreen() {
                         value={confirmPassword}
                         onChangeText={setConfirmPassword}
                       />
-                      <Button 
-                        size="lg" 
+                      <Button
+                        size="lg"
                         onPress={handleResetPassword}
                         isLoading={isLoading}
                         className="mt-4 shadow-lg shadow-primary/30"
@@ -200,8 +209,7 @@ export default function ForgotPasswordScreen() {
               </View>
             )}
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
     </LinearGradient>
   );

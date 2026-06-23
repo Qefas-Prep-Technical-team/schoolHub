@@ -23,6 +23,20 @@ export default function VerificationScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [countdown]);
+
   useEffect(() => {
     if (requestCode && !hasRequested.current && email && userType) {
       hasRequested.current = true;
@@ -32,7 +46,8 @@ export default function VerificationScreen() {
 
   const requestVerificationCode = async () => {
     try {
-      await apiClient.post('/auth/request-code', { email, userType });
+      await apiClient.post('/auth/request-code', { email, userType: userType?.toUpperCase() });
+      setCountdown(60); // Start 60-second countdown on success
     } catch (error: any) {
       console.error('Request code error:', error);
       setApiError(error.response?.data?.message || 'Failed to send verification code.');
@@ -48,7 +63,7 @@ export default function VerificationScreen() {
     setIsLoading(true);
     setApiError(null);
     try {
-      await apiClient.post('/auth/verify-code', { email, code, userType });
+      await apiClient.post('/auth/verify-code', { email, code, userType: userType?.toUpperCase() });
       setIsSuccess(true);
       
       const preAuthToken = params.preAuthToken as string | undefined;
@@ -202,12 +217,17 @@ export default function VerificationScreen() {
                     Verify Account
                   </Button>
 
-                  <View className="flex-row justify-center mt-4">
+                  <View className="flex-row justify-center mt-4 items-center">
                     <Text className="font-lexend text-slate-500 dark:text-slate-400 text-sm">
                       Didn't receive the code?{' '}
                     </Text>
-                    <TouchableOpacity onPress={requestVerificationCode}>
-                      <Text className="font-lexend-bold text-primary text-sm">Resend Code</Text>
+                    <TouchableOpacity 
+                      onPress={requestVerificationCode}
+                      disabled={countdown > 0}
+                    >
+                      <Text className={`font-lexend-bold text-sm ${countdown > 0 ? 'text-slate-400 dark:text-slate-500' : 'text-primary'}`}>
+                        {countdown > 0 ? `Resend in ${countdown}s` : 'Resend Code'}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </View>

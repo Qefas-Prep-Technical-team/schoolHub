@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, Image, Modal } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { getUserRole } from '../../lib/auth/secure-store';
@@ -157,8 +158,8 @@ export default function SignupScreen() {
         }
       });
     } catch (error: any) {
-      console.error('Signup error:', error);
       const errorMessage = error.response?.data?.message || 'Failed to create account. Please try again.';
+      console.log('Signup error:', errorMessage);
       setApiError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -192,11 +193,14 @@ export default function SignupScreen() {
     >
       <SafeAreaView className="flex-1">
       <LoadingOverlay visible={isLoading} message="Creating account..." />
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+      <KeyboardAwareScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={20}
       >
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           <View className="px-6 pt-4 pb-8">
             <View className="flex-row items-center justify-between mb-6">
               <TouchableOpacity 
@@ -399,8 +403,7 @@ export default function SignupScreen() {
               
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
 
       <Modal visible={showTerms} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowTerms(false)}>
         <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">

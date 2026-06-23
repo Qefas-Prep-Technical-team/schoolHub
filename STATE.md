@@ -20,6 +20,13 @@
 
 - Monitor production environment telemetry logs.
 
+### Monday, June 22, 2026
+- **Mobile Authentication & Network Stabilization**:
+    - [x] **Network Connectivity Fix**: Resolved "Address already in use" port conflicts for the backend and updated the Expo mobile app's `fallbackUrl` in `client.ts` to correctly map to the local Wi-Fi IPv4 address (`192.168.0.182`) to allow physical device testing.
+    - [x] **Cross-Platform Keyboard Overlap Fix**: Replaced native React Native `KeyboardAvoidingView` and `ScrollView` components with the robust `react-native-keyboard-aware-scroll-view` library across `login.tsx`, `signup.tsx`, and `forgot-password.tsx` to flawlessly handle Android edge-to-edge keyboard layout issues.
+    - [x] **Refresh Token Interceptor Bug Fix**: Hardened the Axios response interceptor in `Mobile/lib/api/client.ts` to intelligently bypass token refresh flows on authentication endpoints (`/auth/login`, `/auth/register`, `/auth/password`), preventing the confusing "No refresh token available" error from masking genuine 401 Unauthorized errors (like invalid passwords).
+    - [x] **Clean Error Logging**: Converted raw `console.error` logs to clean `console.log` statements for expected authentication API failures across all mobile auth screens, eliminating intrusive Expo developer red-box overlays while still preserving error visibility.
+
 ### Wednesday, June 17, 2026
 - **Subscription Architecture & Graceful Degradation Pipeline**:
     - [x] **Just-In-Time (JIT) Invalidator**: Engineered a Just-In-Time subscription invalidator into `subscriptionMiddleware.ts`. When an expired user loads the application before the midnight cron job sweeps their account, the middleware intercepts the mismatch, instantaneously performs a silent asynchronous database downgrade (`EXPIRED` status, `FREE` plan), and dispatches a realtime `GENERAL` socket notification.
