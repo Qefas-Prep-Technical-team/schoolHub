@@ -116,7 +116,7 @@ export default function LoginScreen() {
     }
   };
 
-  const getGradientColors = () => {
+  const getGradientColors = (): readonly [string, string, ...string[]] => {
     if (isDark) {
       switch (role) {
         case 'student': return ['#831843', '#020617']; // pink-900 to slate-950

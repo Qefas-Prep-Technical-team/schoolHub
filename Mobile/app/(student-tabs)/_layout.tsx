@@ -1,11 +1,6 @@
 import { Tabs } from 'expo-router';
-<<<<<<<< HEAD:Mobile/app/(student)/_layout.tsx
-import { Platform, View } from 'react-native';
-import { Home, Calendar, BookOpen, GraduationCap, User, Target } from 'lucide-react-native';
-========
 import { Platform, View, Text } from 'react-native';
 import { Home, Calendar, BookOpen, GraduationCap } from 'lucide-react-native';
->>>>>>>> 34379d511baf8c57c258d561fc47401375662d2e:Mobile/app/(student-tabs)/_layout.tsx
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { Image } from 'expo-image';
@@ -14,7 +9,7 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { data: studentProfile } = useStudentProfile();
-  
+
   const profileImage = studentProfile?.data?.profileImage || studentProfile?.profileImage;
 
   return (
@@ -34,12 +29,12 @@ export default function TabLayout() {
           paddingBottom: Platform.OS === 'ios' ? 28 : 12,
           paddingTop: 12,
           borderTopColor: isDark ? '#1e293b' : 'transparent',
-          borderTopWidth: isDark ? 1 : 0,
+
         },
         tabBarActiveTintColor: isDark ? '#818cf8' : '#4f46e5',
         tabBarInactiveTintColor: isDark ? '#475569' : '#94a3b8',
       }}>
-      
+
       <Tabs.Screen
         name="index"
         options={{
@@ -97,26 +92,20 @@ export default function TabLayout() {
         options={{
           title: 'Exams',
           tabBarIcon: ({ color, focused }) => (
-<<<<<<<< HEAD:Mobile/app/(student)/_layout.tsx
-            <View className="items-center justify-center">
-              <Target size={26} color={color} strokeWidth={focused ? 2.5 : 2} />
-              {focused && <View className="w-1 h-1 bg-primary mt-1 rounded-full absolute -bottom-3" />}
-========
             <View className="items-center justify-center mt-1">
               <View className={`h-[28px] w-[28px] rounded-full overflow-hidden border-[2px] items-center justify-center bg-slate-100 dark:bg-slate-800 ${focused ? 'border-slate-900 dark:border-white' : 'border-transparent'}`}>
                 {profileImage ? (
-                   <Image source={{ uri: profileImage }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                  <Image source={{ uri: profileImage }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                 ) : (
-                   <Text className="text-[12px] font-black text-pink-600">S</Text>
+                  <Text className="text-[12px] font-black text-pink-600">S</Text>
                 )}
               </View>
               {focused && <View className="w-1 h-1 bg-primary mt-1 rounded-full absolute -bottom-3 opacity-0" />}
->>>>>>>> 34379d511baf8c57c258d561fc47401375662d2e:Mobile/app/(student-tabs)/_layout.tsx
             </View>
           ),
         }}
       />
-      
+
       <Tabs.Screen
         name="settings"
         options={{
