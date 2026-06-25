@@ -10,7 +10,7 @@ import { Platform } from "react-native";
 
 // Set the base API URL (could be injected via environment variable EXPO_PUBLIC_API_URL)
 // Remember: For physical devices and Emulators, using the precise Wi-Fi IPv4 address is the most reliable method.
-const fallbackUrl = "http://192.168.0.182:5000/api";
+const fallbackUrl = Platform.OS === "android" ? "http://10.0.2.2:5000/api" : "http://192.168.0.171:5000/api";
 const API_URL = process.env.EXPO_PUBLIC_API_URL || fallbackUrl;
 
 export const apiClient = axios.create({

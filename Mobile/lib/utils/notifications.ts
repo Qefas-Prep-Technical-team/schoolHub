@@ -1,6 +1,7 @@
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -34,9 +35,12 @@ export async function registerForPushNotificationsAsync() {
       return;
     }
     try {
-      token = (await Notifications.getExpoPushTokenAsync({
-        projectId: "your-project-id", // Replace with your Expo project ID if needed
-      })).data;
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+        
+      token = (await Notifications.getExpoPushTokenAsync(
+        projectId ? { projectId } : undefined
+      )).data;
       console.log('Push Token:', token);
     } catch (e) {
       console.log('Error getting push token:', e);
