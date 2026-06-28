@@ -97,28 +97,28 @@ export default function ProfileScreen() {
     return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-950">
         {/* HERO SECTION SKELETON */}
-        <View className="h-64 bg-slate-200 dark:bg-slate-800 w-full animate-pulse" />
+        <View className="h-64 bg-slate-200 dark:bg-slate-800 w-full opacity-50" />
         
         {/* PROFILE OVERLAP SKELETON */}
         <View className="px-6 -mt-16 mb-8 items-center z-20">
-          <View className="h-32 w-32 rounded-[2rem] bg-slate-300 dark:bg-slate-700 border-4 border-slate-50 dark:border-slate-950 animate-pulse" />
+          <View className="h-32 w-32 rounded-[2rem] bg-slate-300 dark:bg-slate-700 border-4 border-slate-50 dark:border-slate-950 opacity-50" />
           <View className="items-center mt-4 space-y-2">
-            <View className="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
-            <View className="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
-            <View className="h-3 w-36 bg-slate-200 dark:bg-slate-800 rounded-full mt-2 animate-pulse" />
+            <View className="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
+            <View className="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded-lg opacity-50" />
+            <View className="h-3 w-36 bg-slate-200 dark:bg-slate-800 rounded-full mt-2 opacity-50" />
           </View>
         </View>
 
         {/* QUICK STATS SKELETON */}
         <View className="flex-row px-6 mb-8 gap-3">
           {[1, 2, 3].map((item) => (
-            <View key={item} className="flex-1 h-20 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 animate-pulse" />
+            <View key={item} className="flex-1 h-20 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 opacity-50" />
           ))}
         </View>
 
         {/* PERSONAL DATA SKELETON */}
         <View className="px-6">
-          <View className="h-64 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 animate-pulse" />
+          <View className="h-64 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 opacity-50" />
         </View>
       </View>
     );

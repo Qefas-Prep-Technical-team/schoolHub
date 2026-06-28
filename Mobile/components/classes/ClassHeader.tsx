@@ -40,7 +40,7 @@ export function ClassHeader({ searchQuery, setSearchQuery, viewMode, setViewMode
           onChangeText={setSearchQuery}
           placeholder="Search classes or subjects..."
           placeholderTextColor="#94A3B8"
-          className="flex-1 text-slate-900 dark:text-white font-medium text-base h-10"
+          className="flex-1 text-slate-900 dark:text-white font-medium text-base py-0 ml-1"
         />
       </View>
     </View>

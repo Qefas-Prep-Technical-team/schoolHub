@@ -63,10 +63,10 @@ export default function ClassTimetableScreen() {
       <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
         {/* Header Skeleton */}
         <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 opacity-50" />
           <View className="ml-4 flex-1">
-            <View className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-1 animate-pulse" />
-            <View className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+            <View className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-1 opacity-50" />
+            <View className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
           </View>
         </View>
         
@@ -74,12 +74,12 @@ export default function ClassTimetableScreen() {
         <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
           <View className="flex-row mb-6 mt-2">
             {[1, 2, 3, 4, 5].map((item) => (
-              <View key={item} className="h-10 w-16 bg-slate-200 dark:bg-slate-800 rounded-xl mr-2 animate-pulse" />
+              <View key={item} className="h-10 w-16 bg-slate-200 dark:bg-slate-800 rounded-xl mr-2 opacity-50" />
             ))}
           </View>
           
           {[1, 2, 3, 4].map((item) => (
-            <View key={item} className="h-24 w-full bg-white dark:bg-slate-900 rounded-3xl mb-4 border border-slate-100 dark:border-slate-800 animate-pulse" />
+            <View key={item} className="h-24 w-full bg-white dark:bg-slate-900 rounded-3xl mb-4 border border-slate-100 dark:border-slate-800 opacity-50" />
           ))}
         </ScrollView>
       </SafeAreaView>

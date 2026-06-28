@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import { ArrowLeft, BookOpen, ChevronRight, ChevronDown, Clock, CheckCircle2, AlertCircle, Search, PlayCircle } from 'lucide-react-native';
+import { ArrowLeft, Award, ChevronRight, ChevronDown, Clock, CheckCircle2, AlertCircle, Search, PlayCircle } from 'lucide-react-native';
 import { useSingleClass } from '@/lib/api/hooks/useClasses';
 import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
@@ -43,7 +43,7 @@ const getStatusInfo = (exam: any, attemptStatus?: string) => {
   return { key: 'available', label: 'Available', color: 'text-emerald-500', icon: PlayCircle };
 };
 
-const ExamCard = ({ exam, index, attempts }: { exam: any; index: number; attempts: any[] }) => {
+const CACard = ({ exam, index, attempts }: { exam: any; index: number; attempts: any[] }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const heightValue = useSharedValue(0);
   const rotationValue = useSharedValue(0);
@@ -72,9 +72,7 @@ const ExamCard = ({ exam, index, attempts }: { exam: any; index: number; attempt
 
   const classLabel = exam?.class?.name ? `${exam.class.name} ${exam.class.section || ''}`.trim() : '';
   const deptLabels = exam?.departments?.map((d: any) => d.department?.name).join(', ') || '';
-  const displaySubtitle = [classLabel, deptLabels].filter(Boolean).join(' • ') || exam?.description || 'General Examination';
-
-
+  const displaySubtitle = [classLabel, deptLabels].filter(Boolean).join(' • ') || exam?.description || 'General CA';
 
   const totalMarks = exam.totalMarks > 0 ? exam.totalMarks : safePapers.reduce((sum: number, p: any) => sum + (p.totalMarks || 0), 0) || 0;
   
@@ -238,7 +236,7 @@ const ExamCard = ({ exam, index, attempts }: { exam: any; index: number; attempt
   );
 };
 
-export default function ClassExamScreen() {
+export default function ClassCAScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const classId = Array.isArray(id) ? id[0] : id;
@@ -267,9 +265,9 @@ export default function ClassExamScreen() {
   const studentDepartmentId = profile?.departmentId;
   const hasDepartment = !!studentDepartmentId;
 
-  // Filter exams by scope and category (exclude QUIZ and CA)
+  // Filter exams by scope and category (ONLY include CA)
   const filteredExams = classExams.filter((exam: any) => {
-    if (exam.category === 'QUIZ' || exam.category === 'CA') return false;
+    if (exam.category !== 'CA') return false;
 
     const scope: string = exam.scope || 'CLASS';
     if (scope === 'SCHOOL') return true;
@@ -349,7 +347,7 @@ export default function ClassExamScreen() {
 
   const statsConfig = [
     { label: 'Completion Rate', value: completionRate, maxValue: 100, color: '#3b82f6', isPercentage: true },
-    { label: 'Exams Taken', value: completedExams.length, maxValue: Math.max(1, mappedExams.length), color: '#8b5cf6', isPercentage: false },
+    { label: 'CAs Taken', value: completedExams.length, maxValue: Math.max(1, mappedExams.length), color: '#8b5cf6', isPercentage: false },
     { label: 'Average Score', value: gradedCount > 0 ? averageGrade : 'N/A', maxValue: 100, color: '#10b981', isPercentage: true },
   ];
 
@@ -402,8 +400,10 @@ export default function ClassExamScreen() {
 
   if (isClassLoading || isAttemptsLoading || isProfileLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
-        {/* Header Skeleton */}
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+          {/* Header Skeleton */}
         <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 items-center justify-center opacity-50" />
           <View className="ml-5 flex-1">
@@ -443,14 +443,15 @@ export default function ClassExamScreen() {
           ))}
         </ScrollView>
       </SafeAreaView>
+      </>
     );
   }
 
-    return (
-      <>
-        <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
-          {/* Header */}
+  return (
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+        {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <View className="flex-row items-center flex-1">
           <TouchableOpacity 
@@ -462,7 +463,7 @@ export default function ClassExamScreen() {
           </TouchableOpacity>
           <View className="ml-5 flex-1">
             <Text className="text-lg font-black text-slate-900 dark:text-white" numberOfLines={1}>
-              Examinations
+              Continuous Assessments
             </Text>
             <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400" numberOfLines={1}>
               {className}
@@ -477,7 +478,7 @@ export default function ClassExamScreen() {
           <Search size={18} className="text-slate-400 mr-3" />
           <TextInput
             className="flex-1 text-slate-900 dark:text-white text-base font-medium h-full"
-            placeholder="Search exams & subject papers..."
+            placeholder="Search CAs & subject papers..."
             placeholderTextColor="#94a3b8"
             value={searchQuery}
             onChangeText={(t) => { setSearchQuery(t); setVisibleCount(8); }}
@@ -501,7 +502,7 @@ export default function ClassExamScreen() {
             <CategoryStatsGrid stats={statsConfig} gradeScore={averageGrade} />
             {searchedExams.length > 0 && (
               <Text className="text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase mt-2 px-2">
-                Class Exams ({searchedExams.length})
+                Class CAs ({searchedExams.length})
               </Text>
             )}
           </View>
@@ -509,18 +510,18 @@ export default function ClassExamScreen() {
         ListEmptyComponent={
           <View className="py-16 items-center px-4">
             <View className="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900/30 items-center justify-center mb-6">
-              <BookOpen size={36} className="text-indigo-500" />
+              <Award size={36} className="text-indigo-500" />
             </View>
             <Text className="text-xl font-bold text-slate-800 dark:text-slate-200 text-center mb-2">
-              No Exams Scheduled
+              No CAs Scheduled
             </Text>
             <Text className="text-sm text-slate-500 dark:text-slate-400 text-center leading-relaxed">
-              There are currently no examinations scheduled for this class.
+              There are currently no continuous assessments scheduled for this class.
             </Text>
           </View>
         }
         renderItem={({ item, index }) => (
-          <ExamCard exam={item} index={index} attempts={attempts} />
+          <CACard exam={item} index={index} attempts={attempts} />
         )}
         ListFooterComponent={
           searchedExams.length > 0 ? (

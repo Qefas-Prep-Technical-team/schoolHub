@@ -171,20 +171,21 @@ export default function ClassTestScreen() {
 
   if (isClassLoading || isAttemptsLoading || isProfileLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+      <>
         <Stack.Screen options={{ headerShown: false }} />
-        {/* Header Skeleton */}
+        <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+          {/* Header Skeleton */}
         <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 items-center justify-center animate-pulse" />
+          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 items-center justify-center opacity-50" />
           <View className="ml-5 flex-1">
-            <View className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-1 animate-pulse" />
-            <View className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+            <View className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-1 opacity-50" />
+            <View className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
           </View>
         </View>
 
         {/* Skeleton Cards */}
         <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
-          <View className="w-1/3 h-3 bg-slate-200 dark:bg-slate-800 rounded-full mb-6 mt-2 animate-pulse" />
+          <View className="w-1/3 h-3 bg-slate-200 dark:bg-slate-800 rounded-full mb-6 mt-2 opacity-50" />
           
           {[1, 2, 3, 4].map((item) => (
             <View 
@@ -192,34 +193,36 @@ export default function ClassTestScreen() {
               className="bg-white dark:bg-slate-900 rounded-3xl p-5 mb-4 border border-slate-100 dark:border-slate-800"
             >
               <View className="flex-row items-center mb-3">
-                <View className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 mr-4 animate-pulse" />
+                <View className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 mr-4 opacity-50" />
                 <View className="flex-1 mr-2">
-                  <View className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-2 animate-pulse" />
-                  <View className="h-3 w-1/3 bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse" />
+                  <View className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-2 opacity-50" />
+                  <View className="h-3 w-1/3 bg-slate-100 dark:bg-slate-800 rounded-full opacity-50" />
                 </View>
               </View>
 
               <View className="flex-row items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
                 <View className="w-1/4">
-                  <View className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full mb-2 animate-pulse" />
-                  <View className="h-3 w-3/4 bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse" />
+                  <View className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full mb-2 opacity-50" />
+                  <View className="h-3 w-3/4 bg-slate-100 dark:bg-slate-800 rounded-full opacity-50" />
                 </View>
                 <View className="w-1/4 items-end">
-                  <View className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full mb-2 animate-pulse" />
-                  <View className="h-3 w-1/2 bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse" />
+                  <View className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full mb-2 opacity-50" />
+                  <View className="h-3 w-1/2 bg-slate-100 dark:bg-slate-800 rounded-full opacity-50" />
                 </View>
               </View>
             </View>
           ))}
         </ScrollView>
       </SafeAreaView>
+      </>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+    <>
       <Stack.Screen options={{ headerShown: false }} />
-      {/* Header */}
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+        {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <View className="flex-row items-center flex-1">
           <TouchableOpacity 
@@ -371,5 +374,6 @@ export default function ClassTestScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+    </>
   );
 }

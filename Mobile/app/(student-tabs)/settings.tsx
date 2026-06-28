@@ -49,23 +49,23 @@ export default function SettingsScreen() {
       <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
         {/* Header Skeleton */}
         <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 opacity-50" />
           <View className="ml-4 flex-1">
-            <View className="h-6 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+            <View className="h-6 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
           </View>
         </View>
 
         <ScrollView className="flex-1 p-6" showsVerticalScrollIndicator={false}>
           {/* Tabs Skeleton */}
           <View className="flex-row mb-8">
-            <View className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-full mr-3 animate-pulse" />
-            <View className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-full mr-3 animate-pulse" />
-            <View className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+            <View className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-full mr-3 opacity-50" />
+            <View className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-full mr-3 opacity-50" />
+            <View className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
           </View>
 
           {/* Cards Skeleton */}
           {[1, 2, 3].map((item) => (
-            <View key={item} className="mb-6 p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 animate-pulse">
+            <View key={item} className="mb-6 p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 opacity-50">
               <View className="flex-row items-center mb-6">
                 <View className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 mr-4" />
                 <View className="h-5 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full" />
@@ -412,7 +412,7 @@ export default function SettingsScreen() {
                                   <View className="px-2 py-0.5 bg-indigo-500 rounded"><Text className="text-[8px] font-black uppercase text-white tracking-widest">Current</Text></View>
                                 )}
                               </View>
-                              <Text className="text-xs font-bold text-slate-500">{session.osVersion} • {session.ipAddress}</Text>
+                              <Text className="text-xs font-bold text-slate-500">{session.osVersion} â€¢ {session.ipAddress}</Text>
                             </View>
                           </View>
                         </View>

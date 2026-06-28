@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, BookOpen, ChevronRight, User, X, FileText, Award, Calendar, ListChecks } from 'lucide-react-native';
 import { useSingleClass } from '@/lib/api/hooks/useClasses';
 import { useSubjectScheme } from '@/lib/api/hooks/useSubjects';
+import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
 
 export default function ClassSubjectsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const classId = Array.isArray(id) ? id[0] : id;
 
-  const { data: classData, isLoading: isClassLoading } = useSingleClass(classId || '');
+  const { data: classData, isLoading: isClassLoading, refetch: refetchClass } = useSingleClass(classId || '');
+  
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetchClass?.();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchClass]);
   
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -32,16 +43,16 @@ export default function ClassSubjectsScreen() {
       <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
         {/* Header Skeleton */}
         <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 opacity-50" />
           <View className="ml-4 flex-1">
-            <View className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-1 animate-pulse" />
-            <View className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+            <View className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-1 opacity-50" />
+            <View className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
           </View>
         </View>
 
         <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
           {[1, 2, 3, 4, 5].map((item) => (
-            <View key={item} className="bg-white dark:bg-slate-900 rounded-3xl p-5 mb-4 border border-slate-100 dark:border-slate-800 animate-pulse">
+            <View key={item} className="bg-white dark:bg-slate-900 rounded-3xl p-5 mb-4 border border-slate-100 dark:border-slate-800 opacity-50">
               <View className="flex-row items-center">
                 <View className="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-slate-800 mr-4" />
                 <View className="flex-1">
@@ -79,7 +90,13 @@ export default function ClassSubjectsScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1 p-4" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />
+        }
+      >
         {classSubjects.length === 0 ? (
           <View className="py-16 items-center px-4">
             <View className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/30 items-center justify-center mb-6">
@@ -249,9 +266,9 @@ export default function ClassSubjectsScreen() {
                             </View>
                           </View>
                           {scheme.objectives && (
-                            <Text className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-2">
-                              {scheme.objectives}
-                            </Text>
+                            <View className="mb-2">
+                              <LaTeXRenderer content={scheme.objectives} />
+                            </View>
                           )}
                           <View className="flex-row items-center mt-2">
                             <View className={`w-2 h-2 rounded-full mr-2 ${scheme.status === 'COMPLETED' ? 'bg-emerald-500' : scheme.status === 'IN_PROGRESS' ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'}`} />
