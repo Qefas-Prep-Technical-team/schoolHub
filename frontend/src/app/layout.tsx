@@ -85,6 +85,24 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/npm/katex@0.16.44/dist/katex.min.css"
           crossOrigin="anonymous"
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Qefas Hub",
+              url: "https://qefashub.com",
+              logo: "https://qefashub.com/logo.png",
+              sameAs: [
+                "https://www.facebook.com/qefashub",
+                "https://www.instagram.com/qefashub",
+                "https://www.linkedin.com/company/qefashub",
+                "https://twitter.com/qefashub"
+              ]
+            })
+          }}
+        />
       </head>
       <body
         className={`

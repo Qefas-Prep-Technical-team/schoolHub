@@ -3,66 +3,6 @@
   "workspacePath": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub",
   "entries": [
     {
-      "command": "np prisma generate",
-      "timestamp": 1778870624070,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npx prisma generate",
-      "timestamp": 1778870668799,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npx prisma db push",
-      "timestamp": 1778870726573,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npm run build",
-      "timestamp": 1778870888730,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npm run dev",
-      "timestamp": 1778901855469,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "npm run build",
-      "timestamp": 1778902096734,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "cd ../",
-      "timestamp": 1778902099737,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
-      "command": "git add .",
-      "timestamp": 1778902107875,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "git commit -m \"update the ui and fixed errors \"",
-      "timestamp": 1778902127120,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "git push origin",
-      "timestamp": 1778902152725,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "cd frontend",
-      "timestamp": 1778903664086,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
-    },
-    {
-      "command": "npm run dve",
-      "timestamp": 1778903669556,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\frontend"
-    },
-    {
       "command": "npm run dev",
       "timestamp": 1778903849605,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
@@ -2501,7 +2441,67 @@
       "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_tb1pqi.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_tb1pqi.ps1\" -ErrorAction SilentlyContinue",
       "timestamp": 1782646523115,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git add .",
+      "timestamp": 1782647547500,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git commit  -m \"ai training data \"",
+      "timestamp": 1782647626653,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git push origin",
+      "timestamp": 1782647745457,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_0sgn0s.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_0sgn0s.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1782729054620,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_yxkc5m.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_yxkc5m.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1782729054637,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "& \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_mz2jaz.ps1\"; Remove-Item \"C:\\Users\\HP\\AppData\\Local\\Temp\\wshist_mz2jaz.ps1\" -ErrorAction SilentlyContinue",
+      "timestamp": 1782729246833,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "Set-Location -Path \"C:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\"; Get-ChildItem -Recurse -File | Where-Object { $_.Extension -ne '.png' -and $_.Extension -ne '.jpg' -and $_.Extension -ne '.jpeg' -and $_.Extension -ne '.ico' -and $_.Extension -ne '.svg' -and $_.FullName -notmatch '\\\\.git\\\\' } | ForEach-Object { $path = $_.FullName; try { Select-String -Path $path -Pattern 'school hub|School Hub|schoolHub|SchoolHub' -SimpleMatch | ForEach-Object { [PSCustomObject]@{File=$path; Line=$_.LineNumber; Text=$_.Line.Trim()} } } catch {} } | Format-Table -AutoSize",
+      "timestamp": 1782729423642,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "Set-Location -Path \"C:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\"; Get-ChildItem -Recurse -File | Where-Object { $_.Extension -notin '.png','.jpg','.jpeg','.ico','.svg','.psd','.exe','.dll' } | ForEach-Object { try { Select-String -Path $_.FullName -Pattern 'school hub|School Hub|schoolHub|SchoolHub' -SimpleMatch } catch {} } | Select-Object Path,LineNumber,Line | Format-Table -AutoSize",
+      "timestamp": 1782729733866,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "Get-ChildItem -Recurse -File | Select-Object -First 5 | Format-List FullName",
+      "timestamp": 1782730589934,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "Get-ChildItem -Recurse -File | Where-Object { @('.png','.jpg','.jpeg','.ico','.svg','.psd','.exe','.dll') -notcontains $_.Extension } | ForEach-Object { try { Select-String -Path $_.FullName -Pattern 'school hub' -SimpleMatch } catch {} } | Select-Object Path,LineNumber,Line",
+      "timestamp": 1782731049508,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd \"C:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\"; cmd /c \"findstr /spin /c:\"school hub\" * > \"%TEMP%\\schoolhub_findstr.txt\" 2>nul\"; Get-Content \"$env:TEMP\\schoolhub_findstr.txt\" | Select-Object -First 200",
+      "timestamp": 1782731390769,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "cd \"C:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\"; cmd /c \"findstr /spin /c:\"schoolHub\" * > \"%TEMP%\\schoolhub_findstr.txt\" 2>nul\"; if (Test-Path \"$env:TEMP\\schoolhub_findstr.txt\") { Get-Content \"$env:TEMP\\schoolhub_findstr.txt\" | Select-Object -First 200 }",
+      "timestamp": 1782732166044,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
     }
   ],
-  "lastUpdated": 1782646523115
+  "lastUpdated": 1782732166044
 }
