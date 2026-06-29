@@ -11,6 +11,7 @@ import FinalCTA from "@/components/Home/FinalCTA";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from "react";
 import { motion, useScroll } from "framer-motion";
+import AIChatWidget from "@/components/Home/AIChatWidget";
 
 export default function Home() {
   const [queryClient] = useState(() => new QueryClient());
@@ -50,6 +51,9 @@ export default function Home() {
 
         {/* Final dark CTA */}
         <FinalCTA />
+
+        {/* Qefas Hub Support AI Chat */}
+        <AIChatWidget />
       </main>
     </QueryClientProvider>
   );

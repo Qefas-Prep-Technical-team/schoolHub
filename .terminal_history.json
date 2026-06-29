@@ -4,21 +4,6 @@
   "entries": [
     {
       "command": "npm run dev",
-      "timestamp": 1778903849605,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npx prisma generate",
-      "timestamp": 1778903866745,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npx prisma db push",
-      "timestamp": 1778903891562,
-      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
-    },
-    {
-      "command": "npm run dev",
       "timestamp": 1778916523770,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\\backend"
     },
@@ -2501,7 +2486,22 @@
       "command": "cd \"C:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub\"; cmd /c \"findstr /spin /c:\"schoolHub\" * > \"%TEMP%\\schoolhub_findstr.txt\" 2>nul\"; if (Test-Path \"$env:TEMP\\schoolhub_findstr.txt\") { Get-Content \"$env:TEMP\\schoolhub_findstr.txt\" | Select-Object -First 200 }",
       "timestamp": 1782732166044,
       "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git add .",
+      "timestamp": 1782736630372,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git commit -m \"index\"",
+      "timestamp": 1782736641237,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
+    },
+    {
+      "command": "git push origin",
+      "timestamp": 1782736653614,
+      "cwd": "c:\\Users\\HP\\Documents\\GitHub\\Qefas Project\\schoolHub"
     }
   ],
-  "lastUpdated": 1782732166044
+  "lastUpdated": 1782736653615
 }
