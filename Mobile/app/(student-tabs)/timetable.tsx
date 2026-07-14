@@ -59,28 +59,30 @@ export default function TimetableScreen() {
 
   const activeIndex = getCurrentTimeSlotIndex();
 
-  if (isProfileLoading || isClassLoading || isTimetableLoading) {
+  const isDataLoading = isProfileLoading || (!!activeClassId && (isClassLoading || isTimetableLoading));
+
+  if (isDataLoading) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
         {/* Header Skeleton */}
-        <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+        <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 opacity-50">
+          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800" />
           <View className="ml-4 flex-1">
-            <View className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-1 animate-pulse" />
-            <View className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+            <View className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-1" />
+            <View className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full" />
           </View>
         </View>
         
         {/* Timetable List Skeleton */}
-        <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
+        <ScrollView className="flex-1 p-4 opacity-50" showsVerticalScrollIndicator={false}>
           <View className="flex-row mb-6 mt-2">
             {[1, 2, 3, 4, 5].map((item) => (
-              <View key={item} className="h-10 w-16 bg-slate-200 dark:bg-slate-800 rounded-xl mr-2 animate-pulse" />
+              <View key={item} className="h-10 w-16 bg-slate-200 dark:bg-slate-800 rounded-xl mr-2" />
             ))}
           </View>
           
           {[1, 2, 3, 4].map((item) => (
-            <View key={item} className="h-24 w-full bg-white dark:bg-slate-900 rounded-3xl mb-4 border border-slate-100 dark:border-slate-800 animate-pulse" />
+            <View key={item} className="h-24 w-full bg-white dark:bg-slate-900 rounded-3xl mb-4 border border-slate-100 dark:border-slate-800" />
           ))}
         </ScrollView>
       </SafeAreaView>
@@ -126,13 +128,17 @@ export default function TimetableScreen() {
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         {!activeClassId ? (
           <View className="items-center justify-center py-20">
-            <Calendar size={48} color="#cbd5e1" style={{ marginBottom: 16 }} />
+            <View className="mb-4">
+              <Calendar size={48} color="#cbd5e1" />
+            </View>
             <Text className="text-lg font-bold text-slate-400 dark:text-slate-500">No active class</Text>
             <Text className="text-sm text-slate-400 dark:text-slate-600 mt-2">You haven't been assigned to a class yet.</Text>
           </View>
         ) : dailyPeriods.length === 0 ? (
           <View className="items-center justify-center py-20">
-            <Calendar size={48} color="#cbd5e1" style={{ marginBottom: 16 }} />
+            <View className="mb-4">
+              <Calendar size={48} color="#cbd5e1" />
+            </View>
             <Text className="text-lg font-bold text-slate-400 dark:text-slate-500">No classes scheduled</Text>
             <Text className="text-sm text-slate-400 dark:text-slate-600 mt-2">Enjoy your free day!</Text>
           </View>
@@ -187,7 +193,9 @@ export default function TimetableScreen() {
                           <View className="flex-col gap-2">
                             {period.teacher?.name && (
                               <View className="flex-row items-center">
-                                <User size={14} color="#94a3b8" style={{ marginRight: 8 }} />
+                                <View className="mr-2">
+                                  <User size={14} color="#94a3b8" />
+                                </View>
                                 <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                                   {period.teacher.name}
                                 </Text>
@@ -195,7 +203,9 @@ export default function TimetableScreen() {
                             )}
                             {period.room && (
                               <View className="flex-row items-center">
-                                <MapPin size={14} color="#94a3b8" style={{ marginRight: 8 }} />
+                                <View className="mr-2">
+                                  <MapPin size={14} color="#94a3b8" />
+                                </View>
                                 <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                                   {period.room}
                                 </Text>

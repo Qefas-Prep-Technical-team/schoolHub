@@ -20,6 +20,10 @@
 
 - Monitor production environment telemetry logs.
 
+### Tuesday, June 23, 2026
+- **Mobile Authentication & Network Stabilization**:
+    - [x] **Network Connectivity Fix**: Dynamically updated the `fallbackUrl` in `client.ts` to map Android platform emulators to `10.0.2.2` and physical devices to the current Wi-Fi IPv4 address (`192.168.236.248`) to ensure reliable network connection for the mobile application.
+
 ### Monday, June 22, 2026
 - **Mobile Authentication & Network Stabilization**:
     - [x] **Network Connectivity Fix**: Resolved "Address already in use" port conflicts for the backend and updated the Expo mobile app's `fallbackUrl` in `client.ts` to correctly map to the local Wi-Fi IPv4 address (`192.168.0.182`) to allow physical device testing.

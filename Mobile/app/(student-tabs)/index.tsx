@@ -94,7 +94,7 @@ export default function StudentHomeScreen() {
   }, [attempts, standaloneGrades]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
       <TopNavBar />
       
       <ScrollView 

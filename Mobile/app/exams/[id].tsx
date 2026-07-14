@@ -103,15 +103,16 @@ export default function ExamDetailsScreen() {
   
   if (isExamLoading || isAttemptLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+      <>
         <Stack.Screen options={{ headerShown: false }} />
-        {/* Header Skeleton */}
+        <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+          {/* Header Skeleton */}
         <View className="flex-row items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <View className="flex-row items-center flex-1">
-            <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+            <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 opacity-50" />
             <View className="ml-5 flex-1 space-y-2">
-              <View className="h-5 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
-              <View className="h-3 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+              <View className="h-5 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
+              <View className="h-3 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
             </View>
           </View>
         </View>
@@ -120,39 +121,42 @@ export default function ExamDetailsScreen() {
           {/* Main Card Skeleton */}
           <View className="bg-white dark:bg-slate-900 p-6 rounded-b-[2.5rem] shadow-sm mb-6 border-b border-slate-100 dark:border-slate-800">
             <View className="flex-row justify-between mb-6">
-              <View className="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
-              <View className="h-5 w-20 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+              <View className="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
+              <View className="h-5 w-20 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
             </View>
-            <View className="h-8 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse mb-4" />
-            <View className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse mb-2" />
-            <View className="h-4 w-5/6 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse mb-6" />
+            <View className="h-8 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50 mb-4" />
+            <View className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded-full opacity-50 mb-2" />
+            <View className="h-4 w-5/6 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50 mb-6" />
             <View className="flex-row items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-6">
-              <View className="h-10 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
-              <View className="h-10 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
-              <View className="h-10 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+              <View className="h-10 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg opacity-50" />
+              <View className="h-10 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg opacity-50" />
+              <View className="h-10 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg opacity-50" />
             </View>
           </View>
 
           {/* Exam Structure Skeleton */}
           <View className="px-6">
-            <View className="h-4 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse mb-4" />
-            <View className="h-16 w-full bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse mb-3" />
-            <View className="h-16 w-full bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse mb-3" />
+            <View className="h-4 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50 mb-4" />
+            <View className="h-16 w-full bg-slate-200 dark:bg-slate-800 rounded-2xl opacity-50 mb-3" />
+            <View className="h-16 w-full bg-slate-200 dark:bg-slate-800 rounded-2xl opacity-50 mb-3" />
           </View>
         </ScrollView>
       </SafeAreaView>
+      </>
     );
   }
 
   if (!exam) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center">
+      <>
         <Stack.Screen options={{ headerShown: false }} />
-        <Text className="text-xl font-bold text-slate-800 dark:text-slate-200">Exam not found</Text>
+        <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center" edges={['top']}>
+          <Text className="text-xl font-bold text-slate-800 dark:text-slate-200">Exam not found</Text>
         <TouchableOpacity onPress={() => router.back()} className="mt-4 px-6 py-3 bg-indigo-600 rounded-full">
           <Text className="text-white font-bold">Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
+      </>
     );
   }
 
@@ -216,9 +220,10 @@ export default function ExamDetailsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+    <>
       <Stack.Screen options={{ headerShown: false }} />
-      {/* Header */}
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+        {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <View className="flex-row items-center flex-1">
           <TouchableOpacity 
@@ -513,5 +518,6 @@ export default function ExamDetailsScreen() {
       </View>
 
     </SafeAreaView>
+    </>
   );
 }

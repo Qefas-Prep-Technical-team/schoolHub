@@ -8,15 +8,16 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "postinstall": "npx patch-package"
   },
   "dependencies": {
     "@expo-google-fonts/lexend": "^0.4.1",
     "@expo/vector-icons": "^15.0.3",
     "@hookform/resolvers": "^5.4.0",
-    "@react-navigation/bottom-tabs": "^7.4.0",
-    "@react-navigation/elements": "^2.6.3",
-    "@react-navigation/native": "^7.1.8",
+    "@react-navigation/bottom-tabs": "^7.18.3",
+    "@react-navigation/elements": "^2.9.26",
+    "@react-navigation/native": "^7.3.4",
     "@tanstack/react-query": "^5.101.0",
     "axios": "^1.18.0",
     "clsx": "^2.1.1",
@@ -62,6 +63,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "@types/react-native": "^0.72.8",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"

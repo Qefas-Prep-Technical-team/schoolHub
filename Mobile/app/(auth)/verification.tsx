@@ -168,7 +168,7 @@ export default function VerificationScreen() {
                   Verification Successful!
                 </Text>
                 <Text className="font-lexend text-base text-slate-500 dark:text-slate-400 text-center">
-                  Redirecting you to login...
+                  {params.preAuthToken ? 'Redirecting to dashboard...' : 'Redirecting you to login...'}
                 </Text>
               </View>
             ) : (

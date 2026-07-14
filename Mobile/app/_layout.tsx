@@ -75,6 +75,8 @@ export default function RootLayout() {
           <Stack.Screen name="(parent-tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="(admin-tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="linking-hub" options={{ headerShown: false, presentation: 'modal' }} />
+          <Stack.Screen name="assignments" options={{ headerShown: false }} />
+          <Stack.Screen name="exams" options={{ headerShown: false }} />
           <Stack.Screen name="notifications" options={{ headerShown: false, presentation: 'transparentModal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
