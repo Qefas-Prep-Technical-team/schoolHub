@@ -79,14 +79,14 @@ export const startExamAttemptService = async ({
         await submitExamAttemptService({ examId, studentId });
         
         // Notify admin
-        const adminUsers = await prisma.user.findMany({ where: { userType: UserRole.SUPER_ADMIN } });
-        const studentInfo = await prisma.student.findUnique({ where: { id: studentId }, include: { user: true } });
+        const adminUsers = await prisma.admin.findMany({ where: { role: 'SUPER_ADMIN' as UserRole } });
+        const studentInfo = await prisma.student.findUnique({ where: { id: studentId } });
         for (const admin of adminUsers) {
           await createNotification({
             userId: admin.id,
             title: "Exam Violation Detected",
-            message: `Student ${studentInfo?.user?.firstName || studentId} attempted to resume exam "${exam.title}" from a different device. The exam attempt was automatically submitted.`,
-          });
+            message: `Student ${studentInfo?.name || studentId} attempted to resume exam "${exam.title}" from a different device. The exam attempt was automatically submitted.`,
+          } as any);
         }
         
         throw new Error("Exam violation detected: You cannot resume this exam on a different device. Your exam has been automatically submitted.");
@@ -323,9 +323,9 @@ export const getExamAttemptService = async ({
 
   // Scrub scores if results are not released yet
   if (!isResultsReleased && result.status === "SCORED") {
-    result.totalScore = null;
+    result.totalScore = null as any;
     result.subjectExamAttempts.forEach((sa: any) => {
-      sa.score = null;
+      sa.score = null as any;
     });
   }
 

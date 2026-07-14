@@ -3,7 +3,8 @@ import { getSchoolUsageService, getUserUsageService } from "./quota.service";
 import { hasFeatureAccess } from "../subscription-checkers";
 import { handleError } from "../../utils/error-handler";
 import { AiLimiterService } from "./ai-limiter.service";
-
+import { SchoolSubscriptionService } from "./school-subscription.service";
+import { UserSubscriptionService } from "./user-subscription.service";
 export const getSubscriptionUsage = async (req: Request, res: Response) => {
   try {
     // Current schoolId is usually added to req by auth middleware or resolved from user token
@@ -92,5 +93,36 @@ export const getAiUsage = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return handleError(res, error, "subscription.getAiUsage");
+  }
+};
+
+export const activateFreePlan = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || user.userType !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: "Only admins can activate a free plan for the school.",
+      });
+    }
+
+    const schoolId = user.schoolId || user.tenantId; // Or however school is associated
+    if (!schoolId) {
+       return res.status(400).json({
+         success: false,
+         message: "No school associated with this admin.",
+       });
+    }
+
+    // Call the exact logic that used to be in registerSchool
+    await SchoolSubscriptionService.initializeFreePlan(schoolId);
+    await UserSubscriptionService.initializeFreePlan(user.id, user.userType);
+
+    return res.status(200).json({
+      success: true,
+      message: "Free plan activated successfully.",
+    });
+  } catch (error: any) {
+    return handleError(res, error, "subscription.activateFreePlan");
   }
 };

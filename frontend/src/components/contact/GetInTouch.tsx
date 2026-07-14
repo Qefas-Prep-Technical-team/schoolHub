@@ -1,6 +1,41 @@
-import React, { FC } from 'react';
+"use client";
+
+import React, { FC, useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { useToast } from '@/lib/hooks/useToast';
 
 const GetInTouch: FC = () => {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { success, error } = useToast();
+
+    const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        setIsSubmitting(true);
+        
+        const formData = new FormData(form);
+        formData.append("access_key", "7cea7f38-a2cb-44a3-97de-eb15b294e1e0");
+
+        try {
+            const response = await fetch("https://api.web3forms.com/submit", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                success.show("Message sent successfully!");
+                form.reset();
+            } else {
+                error.show(data.message || "Failed to send message.");
+            }
+        } catch (err) {
+            error.show("An error occurred. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
     return (
         <section className="py-16 sm:py-24">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -32,7 +67,7 @@ const GetInTouch: FC = () => {
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-400">Phone</h3>
                                     <p className="text-gray-600 dark:text-gray-200">Mon-Fri from 8am to 5pm.</p>
-                                    <a className="font-medium text-blue-500 hover:underline" href="tel:+15551234567">+1 (555) 123-4567</a>
+                                    <a className="font-medium text-blue-500 hover:underline" href="tel:+2348165246864">+234 816 524 6864</a>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">
@@ -44,28 +79,35 @@ const GetInTouch: FC = () => {
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-400">WhatsApp</h3>
                                     <p className="text-gray-600 dark:text-gray-200">Chat with us live for instant support.</p>
-                                    <a className="font-medium text-blue-500 hover:underline" href="#">Start a chat</a>
+                                    <a className="font-medium text-blue-500 hover:underline" href="https://wa.me/2348165246864">Start a chat</a>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div className="rounded-2xl bg-white dark:bg-[var(--primary-foreground)]  p-8 shadow-2xl lg:p-12">
-                        <form action="#" className="space-y-6" method="POST">
+                        <form onSubmit={onSubmit} className="space-y-6">
                             <div>
                                 <label className="sr-only" htmlFor="name">Your Name</label>
-                                <input autoComplete="name" className="dark:shadow-[0_1px_3px_0_rgba(255,255,255,0.08)] form-input block w-full rounded-md border-gray-300  dark:border-[var(--primary-foreground)]  py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500" id="name" name="name" placeholder="Your Name" type="text" />
+                                <input autoComplete="name" className="dark:shadow-[0_1px_3px_0_rgba(255,255,255,0.08)] form-input block w-full rounded-md border-gray-300  dark:border-[var(--primary-foreground)]  py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500" id="name" name="name" placeholder="Your Name" type="text" required />
                             </div>
                             <div>
                                 <label className="sr-only" htmlFor="email">Your Email</label>
-                                <input autoComplete="email" className=" dark:shadow-[0_1px_3px_0_rgba(255,255,255,0.08)] form-input block w-full rounded-md border-gray-300 py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500" id="email" name="email" placeholder="Your Email" type="email" />
+                                <input autoComplete="email" className=" dark:shadow-[0_1px_3px_0_rgba(255,255,255,0.08)] form-input block w-full rounded-md border-gray-300 py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500" id="email" name="email" placeholder="Your Email" type="email" required />
                             </div>
                             <div>
                                 <label className="sr-only" htmlFor="message">Your Message</label>
-                                <textarea className=" dark:shadow-[0_1px_3px_0_rgba(255,255,255,0.08)] form-textarea block w-full rounded-md border-gray-300 py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500" id="message" name="message" placeholder="Your Message" rows={6}></textarea>
+                                <textarea className=" dark:shadow-[0_1px_3px_0_rgba(255,255,255,0.08)] form-textarea block w-full rounded-md border-gray-300 py-3 px-4 shadow-sm focus:border-blue-500 focus:ring-blue-500" id="message" name="message" placeholder="Your Message" rows={6} required></textarea>
                             </div>
                             <div>
-                                <button className="flex w-full justify-center rounded-md border border-transparent bg-blue-500 py-3 px-4 text-base font-medium text-white shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer" type="submit">
-                                    Send Message
+                                <button className="flex w-full items-center justify-center gap-2 rounded-md border border-transparent bg-blue-500 py-3 px-4 text-base font-medium text-white shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed" type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="h-5 w-5 animate-spin" />
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        "Send Message"
+                                    )}
                                 </button>
                             </div>
                         </form>

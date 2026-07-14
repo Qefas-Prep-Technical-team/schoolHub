@@ -1,6 +1,7 @@
 "use client"
 import React from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 const AboutCTA: React.FC = () => {
     return (
@@ -37,20 +38,24 @@ const AboutCTA: React.FC = () => {
                         </motion.p>
                         
                         <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
-                            <motion.button 
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="bg-white text-blue-600 px-10 py-5 rounded-2xl font-black text-lg hover:bg-slate-100 transition-all shadow-xl"
-                            >
-                                Get Started Now
-                            </motion.button>
-                            <motion.button 
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="border-2 border-white/30 text-white px-10 py-5 rounded-2xl font-black text-lg hover:bg-white/10 transition-all backdrop-blur-sm"
-                            >
-                                Schedule a Demo
-                            </motion.button>
+                            <Link href="/signup">
+                                <motion.button 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="bg-white text-blue-600 px-10 py-5 rounded-2xl font-black text-lg hover:bg-slate-100 transition-all shadow-xl"
+                                >
+                                    Get Started Now
+                                </motion.button>
+                            </Link>
+                            <Link href="/contact">
+                                <motion.button 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="border-2 border-white/30 text-white px-10 py-5 rounded-2xl font-black text-lg hover:bg-white/10 transition-all backdrop-blur-sm"
+                                >
+                                    Schedule a Demo
+                                </motion.button>
+                            </Link>
                         </div>
                         
                         <motion.p 

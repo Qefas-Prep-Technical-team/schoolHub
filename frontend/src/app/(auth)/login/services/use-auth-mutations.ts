@@ -50,9 +50,15 @@ export const useLoginMutation = () => {
       const actualRole = response.data.userRole || variables.userType;
       const userDash = actualRole.toLowerCase().replace('_', '-');
 
-      if (isNewUser) {
+      const isAdminWithoutPlan = actualRole === 'ADMIN' && !response.data.user.plan;
+
+      if (isNewUser || isAdminWithoutPlan) {
         setHasCompletedOnboarding(false);
-        router.replace(`/onboarding?type=${variables.userType}`);
+        if (actualRole === 'ADMIN') {
+          router.replace(`/select-plan`);
+        } else {
+          router.replace(`/onboarding?type=${variables.userType}`);
+        }
       } else {
         setHasCompletedOnboarding(true); // Skip onboarding for returning users
         router.replace(`/dashboard/${userDash}`);

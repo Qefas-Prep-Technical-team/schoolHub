@@ -20,6 +20,14 @@
 
 - Monitor production environment telemetry logs.
 
+### Tuesday, July 14, 2026
+- **Subscription Selection Flow (Admin)**:
+    - [x] **Backend Plan Override**: Disabled automatic "Free Plan" initialization on school registration in `auth.controller.ts`.
+    - [x] **Manual Free Plan Endpoint**: Created `activateFreePlan` in `subscription.controller.ts` allowing unassigned admins to select the free tier manually.
+    - [x] **Frontend Redirection Logic**: Hardened `use-auth-mutations.ts` (login) and `useProtectedRoute.ts` to strictly route admins without an active plan to the new `/select-plan` portal, guaranteeing 100% plan enrollment.
+    - [x] **Select Plan Portal**: Built a premium `/select-plan` page wrapping the existing Pricing UI, providing a seamless "Continue with Free" or "Get Started" upgrade flow.
+    - [x] **Onboarding Redirection Guard**: Modified the `/checkout` completion logic to automatically detect incomplete onboarding (`!hasCompletedOnboarding`) and redirect newly subscribed admins directly to `/onboarding?type=ADMIN` rather than the main billing dashboard.
+
 ### Tuesday, June 23, 2026
 - **Mobile Authentication & Network Stabilization**:
     - [x] **Network Connectivity Fix**: Dynamically updated the `fallbackUrl` in `client.ts` to map Android platform emulators to `10.0.2.2` and physical devices to the current Wi-Fi IPv4 address (`192.168.236.248`) to ensure reliable network connection for the mobile application.

@@ -2,8 +2,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, PlayCircle, TrendingUp } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const FeaturesHero: React.FC = () => {
+    const router = useRouter();
     return (
         <section className="relative min-h-[90vh] flex items-center py-20 lg:py-32 overflow-hidden bg-white dark:bg-slate-950 font-['Lexend'] border-b border-slate-100 dark:border-slate-800/50">
             {/* Ambient Backgrounds */}
@@ -50,11 +52,11 @@ const FeaturesHero: React.FC = () => {
                         transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
                         className="flex flex-col sm:flex-row gap-4"
                     >
-                        <button className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full font-bold text-lg shadow-[0_8px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.5)] hover:-translate-y-1 active:translate-y-0 transition-all flex items-center justify-center gap-3 group">
+                        <button onClick={() => router.push('#features-list')} className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full font-bold text-lg shadow-[0_8px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.5)] hover:-translate-y-1 active:translate-y-0 transition-all flex items-center justify-center gap-3 group cursor-pointer">
                             Explore Features 
                             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </button>
-                        <button className="px-8 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-full font-bold text-lg hover:bg-slate-50 dark:hover:bg-slate-800 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
+                        <button onClick={() => router.push('/contact')} className="px-8 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-full font-bold text-lg hover:bg-slate-50 dark:hover:bg-slate-800 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 cursor-pointer">
                             <PlayCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                             View Demo
                         </button>

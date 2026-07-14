@@ -20,8 +20,7 @@ type CheckoutState = 'EMAIL_ENTRY' | 'VERIFY_OTP' | 'PASSWORD_SETUP' | 'PAYMENT_
 export default function CheckoutPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { user, isAuthenticated } = useAuthStore();
-    const updateUser = useAuthStore((s) => s.updateUser);
+    const { user, isAuthenticated, updateUser, hasCompletedOnboarding } = useAuthStore();
     const { plan, billing, role, discountedAmount, isUpgrade, redirectBackUrl, clearCheckout } = useCheckoutStore();
     const queryClient = useQueryClient();
 
@@ -29,6 +28,7 @@ export default function CheckoutPage() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+
     const [otp, setOtp] = useState('');
     const [step, setStep] = useState<CheckoutState>('EMAIL_ENTRY');
     const [isLoading, setIsLoading] = useState(false);
@@ -132,15 +132,17 @@ export default function CheckoutPage() {
                 queryClient.invalidateQueries({ queryKey: ['user-profile'] });
             }
             const timer = setTimeout(() => {
-                // Determine target URL: Go to their respective billing/subscription page
                 let targetUrl = `/dashboard/${role?.toLowerCase() || 'admin'}/billing`;
+                if (isAuthenticated && !hasCompletedOnboarding) {
+                    targetUrl = `/onboarding?type=${role}`;
+                }
 
                 clearCheckout();
                 router.push(targetUrl);
             }, 3000);
             return () => clearTimeout(timer);
         }
-    }, [step, router, clearCheckout, queryClient, user, role]);
+    }, [step, router, clearCheckout, queryClient, user, role, isAuthenticated, hasCompletedOnboarding]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;

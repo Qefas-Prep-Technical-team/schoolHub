@@ -37,7 +37,11 @@ const Footer: FC = () => {
                         pathname.startsWith("/console") || 
                         pathname.startsWith("/platform");
 
-    const shouldShow = !isDashboard && !isSubdomain;
+    const isSetupFlow = pathname.startsWith("/select-plan") || 
+                        pathname.startsWith("/checkout") || 
+                        pathname.startsWith("/onboarding");
+
+    const shouldShow = !isDashboard && !isSetupFlow && !isSubdomain;
 
     if (!mounted) return null;
 

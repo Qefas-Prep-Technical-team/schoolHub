@@ -177,18 +177,10 @@ export const registerSchool = async (req: Request, res: Response) => {
           },
         });
 
-        // 6. Initialize subscriptions using the EXACT same plan
-        await SchoolSubscriptionService.initializeFreePlan(
-          school.id,
-          tx,
-          freePlan.id,
-        );
-        await UserSubscriptionService.initializeFreePlan(
-          admin.id,
-          UserRole.ADMIN,
-          tx,
-          freePlan.id,
-        );
+        // 6. Subscription initialization is now deferred to the frontend /select-plan step
+        // where the admin can choose between the FREE plan or a PAID plan.
+        // await SchoolSubscriptionService.initializeFreePlan(school.id, tx, freePlan.id);
+        // await UserSubscriptionService.initializeFreePlan(admin.id, UserRole.ADMIN, tx, freePlan.id);
 
         return { school, admin };
       },
@@ -1626,7 +1618,8 @@ export const login = async (req: Request, res: Response) => {
 
     // Extract device information for tracking
     const userAgent = req.headers["user-agent"] || "";
-    const parser = new UAParser(userAgent);
+    const UAParserClass = UAParser as any;
+    const parser = new UAParserClass(userAgent);
     const result = parser.getResult();
     
     const deviceInfo = {
@@ -3184,7 +3177,7 @@ export const getUserSessions = async (req: Request, res: Response) => {
 export const revokeUserSession = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { id } = req.params;
+    const id = req.params.id as string;
     
     if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
 

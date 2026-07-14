@@ -37,6 +37,17 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
         return;
       }
 
+      // Check if user is an ADMIN without a plan
+      if (requireAuth && isAuthenticated && user?.userType === 'ADMIN') {
+        const hasPlan = !!user.plan;
+        const isExcludedPath = pathname.includes('/select-plan') || pathname.includes('/checkout');
+        
+        if (!hasPlan && !isExcludedPath) {
+          router.replace('/select-plan');
+          return;
+        }
+      }
+
       // Check user type restrictions
       if (requireAuth && isAuthenticated && userTypes.length > 0) {
         const userRole = user?.role?.toUpperCase();

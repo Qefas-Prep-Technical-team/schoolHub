@@ -14,11 +14,12 @@ import { useCheckoutStore } from '@/utils/CheckoutStore';
 interface EachPriceCardProps extends PricingTab {
     category?: string;
     index?: number;
+    isSetupMode?: boolean;
 }
 
 const EachPriceCard: FC<EachPriceCardProps> = ({
     name, description, pricing, type, trialDays, features, hasTrial,
-    isPopular, category, index = 0, storage
+    isPopular, category, index = 0, storage, isSetupMode = false
 }) => {
     const { billingType } = useBillingStore();
     const { user, isAuthenticated } = useAuthStore();
@@ -61,6 +62,24 @@ const EachPriceCard: FC<EachPriceCardProps> = ({
             
             setIsLoading(true);
             router.push(signupPath);
+            return;
+        }
+
+        if (lowerType === 'free' && isSetupMode && isAuthenticated) {
+            setIsLoading(true);
+            // Hit the activate free plan API
+            import('@/lib/api/client').then(({ apiClient }) => {
+                apiClient.post('/subscription/activate-free-plan')
+                    .then(() => {
+                        const { updateUser } = useAuthStore.getState();
+                        updateUser({ plan: 'FREE' }); // Update local state so it proceeds to onboarding
+                        router.replace(`/onboarding?type=${role}`);
+                    })
+                    .catch((err: any) => {
+                        console.error('Failed to activate free plan', err);
+                        setIsLoading(false);
+                    });
+            });
             return;
         }
 
@@ -215,9 +234,9 @@ const EachPriceCard: FC<EachPriceCardProps> = ({
                 {/* CTA Button */}
                 <button
                     onClick={handleAction}
-                    disabled={isLoading || isCurrentPlan || isDeactivated || (isAuthenticated && type.toLowerCase() === 'free')}
+                    disabled={isLoading || isCurrentPlan || isDeactivated || (!isSetupMode && isAuthenticated && type.toLowerCase() === 'free')}
                     className={`relative w-full py-4 rounded-2xl font-black text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden
-                        ${(isCurrentPlan || isDeactivated || (isAuthenticated && type.toLowerCase() === 'free'))
+                        ${(isCurrentPlan || isDeactivated || (!isSetupMode && isAuthenticated && type.toLowerCase() === 'free'))
                             ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 cursor-not-allowed'
                             : isHighlighted
                             ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/30 active:scale-[0.98]'
@@ -228,25 +247,27 @@ const EachPriceCard: FC<EachPriceCardProps> = ({
                         <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
                         <>
-                            {(isCurrentPlan || (isAuthenticated && type.toLowerCase() === 'free')) && <CheckCircle2 className="w-4 h-4" />}
+                            {(isCurrentPlan || (!isSetupMode && isAuthenticated && type.toLowerCase() === 'free')) && <CheckCircle2 className="w-4 h-4" />}
                             <span>
                                 {isCurrentPlan
                                     ? (isTrialPlan ? 'Trial Active' : 'Current Plan')
                                     : isDeactivated
                                     ? 'Existing Subscriber'
-                                    : (isAuthenticated && type.toLowerCase() === 'free')
+                                    : (!isSetupMode && isAuthenticated && type.toLowerCase() === 'free')
                                     ? 'Plan Unavailable'
+                                    : (isSetupMode && isAuthenticated && type.toLowerCase() === 'free')
+                                    ? 'Continue with Free'
                                     : canUseTrial
                                     ? `Start ${trialDays}-Day Free Trial`
                                     : amount === 0
                                     ? 'Get Started Free'
                                     : 'Get Started'}
                             </span>
-                            {(!isCurrentPlan && !isDeactivated && !(isAuthenticated && type.toLowerCase() === 'free')) && <ArrowRight className="w-4 h-4" />}
+                            {(!isCurrentPlan && !isDeactivated && !(!isSetupMode && isAuthenticated && type.toLowerCase() === 'free')) && <ArrowRight className="w-4 h-4" />}
                         </>
                     )}
                     {/* Shine sweep on hover for non-current non-disabled */}
-                    {!(isCurrentPlan || isDeactivated || (isAuthenticated && type.toLowerCase() === 'free')) && (
+                    {!isCurrentPlan && !isDeactivated && !(!isSetupMode && isAuthenticated && type.toLowerCase() === 'free') && (
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
                     )}
                 </button>

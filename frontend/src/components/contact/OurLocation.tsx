@@ -9,9 +9,9 @@ const OurLocation: FC = () => {
                     <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-400">Our Location</h2>
                     <p className="mt-3 text-lg text-gray-600 dark:text-gray-200">Come visit our offices or find us on the map.</p>
                     <div className="mt-8 space-y-4 text-base text-gray-600 dark:text-gray-200">
-                        <p>123 Qefas Hub Avenue,</p>
-                        <p>Education City, EC 54321</p>
-                        <p>United States</p>
+                        <p>19 Oke St, Akowonjo,</p>
+                        <p>Lagos 102213,</p>
+                        <p>Lagos, Nigeria</p>
                     </div>
                 </div>
                 <div>

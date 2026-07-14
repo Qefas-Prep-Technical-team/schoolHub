@@ -16,9 +16,10 @@ interface PricingTabProps {
     isUpgradeFlow?: boolean;
     currentPlanPrice?: number;
     lastPaymentDate?: string | Date | null;
+    isSetupMode?: boolean;
 }
 
-export default function PricingTab({}: PricingTabProps) {
+export default function PricingTab({ isSetupMode = false }: PricingTabProps) {
     const queryClient = useQueryClient();
     const { data: rawData, isLoading } = useFetchPricing();
     const { data: settings, isLoading: isSettingsLoading } = usePublicPlatformSettings();
@@ -158,6 +159,7 @@ export default function PricingTab({}: PricingTabProps) {
                                     {...tab}
                                     category={filteredData.category}
                                     index={index}
+                                    isSetupMode={isSetupMode}
                                 />
                             ))}
                         </div>

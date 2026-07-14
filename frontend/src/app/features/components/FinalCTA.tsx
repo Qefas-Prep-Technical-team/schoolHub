@@ -1,8 +1,10 @@
 "use client"
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 const FinalCTA: React.FC = () => {
+    const router = useRouter();
     return (
         <section className="py-24 bg-white dark:bg-slate-950 font-['Lexend'] overflow-hidden">
             <div className="max-w-5xl mx-auto px-6 text-center relative">
@@ -25,16 +27,18 @@ const FinalCTA: React.FC = () => {
                     
                     <div className="flex flex-col sm:flex-row justify-center gap-6">
                         <motion.button 
+                            onClick={() => router.push('/contact')}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-blue-600/30 hover:bg-blue-700 transition-all"
+                            className="px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-blue-600/30 hover:bg-blue-700 transition-all cursor-pointer"
                         >
                             Request a Private Demo
                         </motion.button>
                         <motion.button 
+                            onClick={() => router.push('/contact')}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="px-10 py-5 bg-slate-900 dark:bg-slate-800 text-white rounded-[2rem] font-black text-lg hover:bg-slate-800 dark:hover:bg-slate-700 transition-all border border-slate-800"
+                            className="px-10 py-5 bg-slate-900 dark:bg-slate-800 text-white rounded-[2rem] font-black text-lg hover:bg-slate-800 dark:hover:bg-slate-700 transition-all border border-slate-800 cursor-pointer"
                         >
                             Contact Sales
                         </motion.button>
