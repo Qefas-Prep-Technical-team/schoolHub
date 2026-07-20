@@ -6,9 +6,13 @@ import { useRouter } from 'expo-router';
 import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
 import { useGrades } from '@/lib/api/hooks/useGrades';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function GradesScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const screenBg = isDark ? '#020617' : '#f8fafc';
 
   const [activeTab, setActiveTab] = useState<'exams' | 'standalone'>('exams');
   const [caTab, setCaTab] = useState<'ALL' | 'CA' | 'QUIZ' | 'ASSIGNMENT'>('ALL');
@@ -53,17 +57,17 @@ export default function GradesScreen() {
 
   if (isProfileLoading && !refreshing) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: screenBg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator size="large" color="#4f46e5" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: screenBg }} edges={['top']}>
       {/* HEADER */}
       <View className="px-6 py-4 flex-row items-center border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm z-10">
-        <View className="h-10 w-10 bg-indigo-100 dark:bg-indigo-900/50 rounded-full items-center justify-center mr-4 border border-indigo-200 dark:border-indigo-800">
+        <View className="h-10 w-10 bg-indigo-100 dark:bg-indigo-950 rounded-full items-center justify-center mr-4 border border-indigo-200 dark:border-indigo-800">
           <BookOpen size={20} color="#4f46e5" />
         </View>
         <View>
@@ -76,7 +80,7 @@ export default function GradesScreen() {
 
       <ScrollView 
         className="flex-1" 
-        contentContainerClassName="p-5 pb-24"
+        contentContainerStyle={{ padding: 20, paddingBottom: 96 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4f46e5" />}
       >
@@ -144,14 +148,14 @@ export default function GradesScreen() {
             ) : (
               attempts.map((attempt: any) => {
                 const scorePercent = Math.round((attempt.totalScore / (attempt.totalMarks || 1)) * 100);
-                let grade = "C"; let color = "text-indigo-600 dark:text-indigo-400"; let bg = "bg-indigo-100 dark:bg-indigo-900/30"; let barColor = "bg-indigo-600";
+                let grade = "C"; let color = "text-indigo-600 dark:text-indigo-400"; let bg = "bg-indigo-100 dark:bg-indigo-900"; let barColor = "bg-indigo-600";
                 
                 if (scorePercent >= 75) grade = "A";
                 else if (scorePercent >= 65) grade = "B";
                 else if (scorePercent < 50) { 
                   grade = "F"; 
                   color = "text-rose-600 dark:text-rose-400"; 
-                  bg = "bg-rose-100 dark:bg-rose-900/30";
+                  bg = "bg-rose-100 dark:bg-rose-900";
                   barColor = "bg-rose-600";
                 }
 
@@ -226,10 +230,10 @@ export default function GradesScreen() {
                   const percent = Math.round((grade.score / (grade.maxMarks || 1)) * 100);
                   const isQuiz = grade.assessmentType === 'QUIZ';
                   
-                  let badgeBg = "bg-amber-100 dark:bg-amber-900/30";
+                  let badgeBg = "bg-amber-100 dark:bg-amber-900";
                   let badgeColor = "text-amber-700 dark:text-amber-400";
-                  if (isQuiz) { badgeBg = "bg-indigo-100 dark:bg-indigo-900/30"; badgeColor = "text-indigo-600 dark:text-indigo-400"; }
-                  else if (grade.assessmentType === 'ASSIGNMENT') { badgeBg = "bg-pink-100 dark:bg-pink-900/30"; badgeColor = "text-pink-600 dark:text-pink-400"; }
+                  if (isQuiz) { badgeBg = "bg-indigo-100 dark:bg-indigo-900"; badgeColor = "text-indigo-600 dark:text-indigo-400"; }
+                  else if (grade.assessmentType === 'ASSIGNMENT') { badgeBg = "bg-pink-100 dark:bg-pink-900"; badgeColor = "text-pink-600 dark:text-pink-400"; }
 
                   return (
                     <View 

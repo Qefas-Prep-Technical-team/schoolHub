@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
+import LottieView from 'lottie-react-native';
 
 export default function VerificationScreen() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function VerificationScreen() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const hasRequested = useRef(false);
+  const isSubmitting = useRef(false);
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -55,11 +57,12 @@ export default function VerificationScreen() {
   };
 
   const handleVerify = async () => {
-    if (code.length !== 6) {
-      setApiError('Please enter a valid 6-digit code.');
+    if (code.length !== 6 || isSubmitting.current) {
+      if (code.length !== 6) setApiError('Please enter a valid 6-digit code.');
       return;
     }
 
+    isSubmitting.current = true;
     setIsLoading(true);
     setApiError(null);
     try {
@@ -103,6 +106,7 @@ export default function VerificationScreen() {
       setApiError(error.response?.data?.message || 'Failed to verify code.');
     } finally {
       setIsLoading(false);
+      isSubmitting.current = false;
     }
   };
 
@@ -163,7 +167,12 @@ export default function VerificationScreen() {
 
             {isSuccess ? (
               <View className="flex-1 items-center justify-center mt-20">
-                <CheckCircle2 size={80} className="text-green-500 mb-6" />
+                <LottieView
+                  source={require('../../assets/lottie/success.json')}
+                  autoPlay
+                  loop={false}
+                  style={{ width: 150, height: 150, marginBottom: 16 }}
+                />
                 <Text className="font-lexend-bold text-3xl text-slate-900 dark:text-white mb-2 text-center">
                   Verification Successful!
                 </Text>

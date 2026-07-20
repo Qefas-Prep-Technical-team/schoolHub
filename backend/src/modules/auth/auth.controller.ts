@@ -1804,19 +1804,18 @@ export const login = async (req: Request, res: Response) => {
 // =========================
 export const verifyCheckoutCode = async (req: Request, res: Response) => {
   try {
-    const rawEmail = req.body.email;
-    const email = rawEmail?.toLowerCase().trim();
     const { code, userType } = req.body;
-    console.log("Verifying checkout code for:", { email, userType, code });
+    const rawEmail = req.body.email;
+    const normalizedEmail = rawEmail?.toLowerCase().trim();
+    const email = normalizedEmail;
 
-    if (!email || !code || !userType) {
-      return res.status(400).json({
-        success: false,
-        message: "Email, code, and user type are required",
-      });
+    if (!email || !code) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email and code are required" });
     }
 
-    const normalizedRole = (userType as string)
+    const normalizedRole = userType
       ?.toUpperCase()
       .trim() as UserRole;
 
@@ -1827,7 +1826,7 @@ export const verifyCheckoutCode = async (req: Request, res: Response) => {
     }
 
     const found = await prisma.verificationCode.findFirst({
-      where: { email, code, userType: normalizedRole, used: false },
+      where: { email: normalizedEmail, code, userType: normalizedRole, used: false },
     });
 
     if (!found)
@@ -2079,7 +2078,8 @@ export const checkEmail = async (req: Request, res: Response) => {
 export const verifyEmailCode = async (req: Request, res: Response) => {
   try {
     const { email, code, userType } = req.body;
-    console.log("Verifying code for:", { email, userType, code });
+    const normalizedEmail = email?.trim().toLowerCase();
+    console.log("Verifying code for:", { email: normalizedEmail, userType, code });
 
     if (!email || !code || !userType) {
       return res.status(400).json({
@@ -2094,11 +2094,11 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         .json({ success: false, message: "Invalid user type" });
     }
     const check = await prisma.verificationCode.findMany({
-      where: { email },
+      where: { email: normalizedEmail },
     });
     console.log("Existing codes for this email and type:", check);
     const found = await prisma.verificationCode.findFirst({
-      where: { email, code, userType: userType as UserRole, used: false },
+      where: { email: normalizedEmail, code, userType: userType as UserRole, used: false },
     });
 
     if (!found)
@@ -2125,7 +2125,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
     switch (userType) {
       case UserRole.ADMIN:
         user = await prisma.admin.findUnique({
-          where: { email },
+          where: { email: normalizedEmail },
           include: { schoolAdmins: { include: { school: true } } },
         });
 
@@ -2140,7 +2140,7 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         isNewUser = !user.verified;
 
         user = await prisma.admin.update({
-          where: { email },
+          where: { email: normalizedEmail },
           data: {
             verified: true,
             status: isSchoolOwner ? "APPROVED" : "PENDING",
@@ -2198,10 +2198,10 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         });
 
       case UserRole.TEACHER:
-        const oldTeacher = await prisma.teacher.findUnique({ where: { email } });
+        const oldTeacher = await prisma.teacher.findUnique({ where: { email: normalizedEmail } });
         if (oldTeacher) isNewUser = !oldTeacher.verified;
         user = await prisma.teacher.update({
-          where: { email },
+          where: { email: normalizedEmail },
           data: { verified: true },
         });
         // Initialize Teacher Subscription upon verification
@@ -2219,10 +2219,10 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         });
 
       case UserRole.STUDENT:
-        const oldStudent = await prisma.student.findUnique({ where: { email } });
+        const oldStudent = await prisma.student.findUnique({ where: { email: normalizedEmail } });
         if (oldStudent) isNewUser = !oldStudent.verified;
         user = await prisma.student.update({
-          where: { email },
+          where: { email: normalizedEmail },
           data: { verified: true },
         });
         // Initialize Student Subscription upon verification
@@ -2240,10 +2240,10 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
         });
 
       case UserRole.PARENT:
-        const oldParent = await prisma.parent.findUnique({ where: { email } });
+        const oldParent = await prisma.parent.findUnique({ where: { email: normalizedEmail } });
         if (oldParent) isNewUser = !oldParent.verified;
         user = await prisma.parent.update({
-          where: { email },
+          where: { email: normalizedEmail },
           data: { verified: true },
         });
         // Initialize Parent Subscription upon verification

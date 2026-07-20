@@ -5,6 +5,7 @@ import {
   getSchoolTeachers,
   getSchoolStudents,
   getSchoolStats,
+  getMySchoolStats,
   getSchoolPerformanceAnalysis,
   getSchoolProfile,
   updateSchoolProfile,
@@ -44,6 +45,13 @@ router.get("/:schoolId/teachers", getSchoolTeachers);
  * @access  Private
  */
 router.get("/:schoolId/students", getSchoolStudents);
+
+/**
+ * @route   GET /api/v1/schools/my-stats
+ * @desc    Get high-level statistics for the authenticated user's school
+ * @access  Private
+ */
+router.get("/my/stats", getMySchoolStats);
 
 /**
  * @route   GET /api/v1/schools/:schoolId/stats

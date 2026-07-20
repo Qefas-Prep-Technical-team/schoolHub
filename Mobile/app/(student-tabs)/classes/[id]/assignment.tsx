@@ -84,28 +84,28 @@ export default function ClassAssignmentScreen() {
       case 'graded':
         return { 
           color: 'text-emerald-600 dark:text-emerald-400', 
-          bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+          bg: 'bg-emerald-100 dark:bg-emerald-900',
           label: 'Graded',
           icon: CheckCircle2
         };
       case 'submitted':
         return { 
           color: 'text-blue-600 dark:text-blue-400', 
-          bg: 'bg-blue-100 dark:bg-blue-900/30',
+          bg: 'bg-blue-100 dark:bg-blue-900',
           label: 'Submitted',
           icon: CheckCircle2
         };
       case 'overdue':
         return { 
           color: 'text-rose-600 dark:text-rose-400', 
-          bg: 'bg-rose-100 dark:bg-rose-900/30',
+          bg: 'bg-rose-100 dark:bg-rose-900',
           label: 'Overdue',
           icon: AlertCircle
         };
       default:
         return { 
           color: 'text-amber-600 dark:text-amber-400', 
-          bg: 'bg-amber-100 dark:bg-amber-900/30',
+          bg: 'bg-amber-100 dark:bg-amber-900',
           label: 'Upcoming',
           icon: Clock
         };
@@ -181,7 +181,7 @@ export default function ClassAssignmentScreen() {
             className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center"
             activeOpacity={0.7}
           >
-            <ArrowLeft size={20} className="text-slate-700 dark:text-slate-300" />
+            <ArrowLeft size={20} color="#64748b" />
           </TouchableOpacity>
           <View className="ml-5 flex-1">
             <Text className="text-lg font-black text-slate-900 dark:text-white" numberOfLines={1}>
@@ -208,7 +208,7 @@ export default function ClassAssignmentScreen() {
         {/* Search Bar */}
         <View className="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <View className="flex-row items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-4 h-12">
-          <Search size={18} className="text-slate-400 mr-3" />
+          <Search size={18} color="#94a3b8" />
           <TextInput
             className="flex-1 text-slate-900 dark:text-white text-base font-medium h-full"
             placeholder="Search assignments..."
@@ -223,8 +223,8 @@ export default function ClassAssignmentScreen() {
       <View className="px-4 pb-4">
         {searchedAssignments.length === 0 ? (
           <View className="py-16 items-center px-4">
-            <View className="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900/30 items-center justify-center mb-6">
-              <PenTool size={36} className="text-indigo-500" />
+            <View className="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900 items-center justify-center mb-6">
+              <PenTool size={36} color="#6366f1" />
             </View>
             <Text className="text-xl font-bold text-slate-800 dark:text-slate-200 text-center mb-2">
               No Assignments Yet
@@ -254,7 +254,7 @@ export default function ClassAssignmentScreen() {
                   style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
                 >
                   <View className="flex-row items-center mb-3">
-                    <View className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 items-center justify-center mr-4">
+                    <View className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900 items-center justify-center mr-4">
                       <Text className="text-sm font-black text-indigo-600 dark:text-indigo-400">
                         {assignmentNumber}
                       </Text>
@@ -266,7 +266,7 @@ export default function ClassAssignmentScreen() {
                       </Text>
                       <View className="flex-row items-center mt-1">
                         <View className="mr-2">
-                          <StatusIcon size={14} className={statusInfo.color} />
+                          <StatusIcon size={14} color="#64748b" />
                         </View>
                         <Text className={`text-xs font-bold ${statusInfo.color}`}>
                           {statusInfo.label}
@@ -274,7 +274,7 @@ export default function ClassAssignmentScreen() {
                       </View>
                     </View>
                     
-                    <ChevronRight size={20} className="text-slate-300 dark:text-slate-600" />
+                    <ChevronRight size={20} color="#cbd5e1" />
                   </View>
 
                   <View className="flex-row items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
