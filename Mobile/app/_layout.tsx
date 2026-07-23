@@ -45,15 +45,12 @@ export default function RootLayout() {
     let isMounted = true;
     const wakeBackend = async () => {
       try {
-        await apiClient.get('/health', { timeout: 60000 });
+        await apiClient.get('/health', { timeout: 3000 });
         if (isMounted) setIsBackendAwake(true);
       } catch (error) {
-        console.log("Backend wake ping failed, retrying...", error);
+        console.log("Backend wake ping failed, skipping wait...", error);
         if (isMounted) {
-          // If it fails, we still let them in after 5 seconds so they aren't trapped forever
-          setTimeout(() => {
-            if (isMounted) setIsBackendAwake(true);
-          }, 5000);
+          setIsBackendAwake(true);
         }
       }
     };
@@ -79,6 +76,13 @@ export default function RootLayout() {
           <Stack.Screen name="exams" options={{ headerShown: false }} />
           <Stack.Screen name="notifications" options={{ headerShown: false, presentation: 'transparentModal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          <Stack.Screen name="admin-quick-actions" options={{ headerShown: false }} />
+          <Stack.Screen name="admin-profile" options={{ headerShown: false }} />
+          <Stack.Screen name="admin-add-student" options={{ headerShown: false }} />
+          <Stack.Screen name="admin-add-class" options={{ headerShown: false }} />
+          <Stack.Screen name="admin-subscription" options={{ headerShown: false }} />
+          <Stack.Screen name="admin-calendar" options={{ headerShown: false }} />
+          <Stack.Screen name="admin-messages" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
 

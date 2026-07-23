@@ -6,6 +6,7 @@ import { ArrowLeft, Clock, CheckCircle, FileText, Upload, Link as LinkIcon, Play
 import { useAssignmentById, useSubmitAssignment } from '@/lib/api/hooks/useAssignments';
 import Toast from 'react-native-toast-message';
 import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const DeferredTab = ({ isActive, children }: { isActive: boolean, children: React.ReactNode }) => {
   const [hasRendered, setHasRendered] = useState(isActive);
@@ -40,6 +41,9 @@ export default function AssignmentDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const assignmentId = Array.isArray(id) ? id[0] : id;
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const screenBg = isDark ? '#020617' : '#f8fafc';
 
   const { data: assignmentData, isLoading, isPending, refetch, isRefetching } = useAssignmentById(assignmentId || '');
   const submitAssignmentMutation = useSubmitAssignment();
@@ -150,7 +154,7 @@ export default function AssignmentDetailsScreen() {
 
   if (isLoading || isPending) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: screenBg }} edges={['top']}>
         {/* Header Skeleton */}
         <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 opacity-50" />
@@ -190,7 +194,7 @@ export default function AssignmentDetailsScreen() {
 
   if (!assignment) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center" edges={['top']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: screenBg, alignItems: 'center', justifyContent: 'center' }} edges={['top']}>
         <Text className="text-xl font-bold text-slate-800 dark:text-slate-200">Assignment not found</Text>
         <TouchableOpacity onPress={() => router.back()} className="mt-4 px-6 py-3 bg-indigo-600 rounded-full">
           <Text className="text-white font-bold">Go Back</Text>
@@ -218,7 +222,7 @@ export default function AssignmentDetailsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: screenBg }} edges={['top']}>
       {/* Header */}
         <View className="flex-row items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <View className="flex-row items-center flex-1">
@@ -258,28 +262,28 @@ export default function AssignmentDetailsScreen() {
             resizeMode="cover"
           />
           <View className="flex-row items-center justify-between mb-4">
-            <View className="px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800">
+            <View className="px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 border border-indigo-100 dark:border-indigo-800">
               <Text className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
                 Assignment
               </Text>
             </View>
 
             {isGraded ? (
-              <View className="flex-row items-center bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800">
+              <View className="flex-row items-center bg-emerald-50 dark:bg-emerald-950 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800">
                 <View className="mr-1"><CheckCircle size={12} color="#10b981" /></View>
                 <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Graded</Text>
               </View>
             ) : isSubmitted ? (
-              <View className="flex-row items-center bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800">
+              <View className="flex-row items-center bg-blue-50 dark:bg-blue-950 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800">
                 <View className="mr-1"><CheckCircle size={12} color="#3b82f6" /></View>
                 <Text className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">Submitted</Text>
               </View>
             ) : isOverdue ? (
-              <View className="flex-row items-center bg-rose-50 dark:bg-rose-900/20 px-3 py-1 rounded-full border border-rose-100 dark:border-rose-800">
+              <View className="flex-row items-center bg-rose-50 dark:bg-rose-950 px-3 py-1 rounded-full border border-rose-100 dark:border-rose-800">
                 <Text className="text-[10px] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400">Overdue</Text>
               </View>
             ) : (
-              <View className="flex-row items-center bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full border border-amber-100 dark:border-amber-800">
+              <View className="flex-row items-center bg-amber-50 dark:bg-amber-950 px-3 py-1 rounded-full border border-amber-100 dark:border-amber-800">
                 <View className="mr-1"><Clock size={12} color="#f59e0b" /></View>
                 <Text className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Pending</Text>
               </View>
@@ -310,261 +314,219 @@ export default function AssignmentDetailsScreen() {
           </View>
         </View>
 
-        {/* Tabs */}
-        <View className="px-6 mb-6">
-          <View className="flex-row bg-slate-200/50 dark:bg-slate-800/50 rounded-xl p-1">
-            <TouchableOpacity 
-              onPress={() => handleTabPress('instructions')}
-              className={`flex-1 py-2 items-center rounded-lg ${activeTab === 'instructions' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
-            >
-              <Text className={`text-xs font-bold ${activeTab === 'instructions' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>Instructions</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={() => handleTabPress('materials')}
-              className={`flex-1 py-2 items-center rounded-lg ${activeTab === 'materials' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
-            >
-              <Text className={`text-xs font-bold ${activeTab === 'materials' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>Materials</Text>
-            </TouchableOpacity>
 
-            {assignment?.questions && assignment.questions.length > 0 ? (
-              <TouchableOpacity 
-                onPress={() => handleTabPress('quiz')}
-                className={`flex-1 py-2 items-center rounded-lg ${activeTab === 'quiz' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
-              >
-                <Text className={`text-xs font-bold ${activeTab === 'quiz' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>Quiz</Text>
-              </TouchableOpacity>
-            ) : null}
+        {/* ── INSTRUCTIONS ── */}
+        <View className="px-6 mb-6">
+          <Text className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Instructions</Text>
+          <View className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800">
+            {assignment.instructions ? (
+              <LaTeXRenderer content={assignment.instructions} />
+            ) : (
+              <Text className="text-sm text-slate-500 dark:text-slate-400 italic">No instructions provided.</Text>
+            )}
           </View>
         </View>
 
-        {/* Tab Content */}
-        <View style={{ flex: 1, minHeight: 600 }}>
-          <DeferredTab isActive={activeTab === 'instructions'}>
-            <View className="px-6">
+        {/* ── MATERIALS ── */}
+        <View className="px-6 mb-6">
+          <Text className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Materials</Text>
+
+          {assignment.attachmentUrl ? (
+            <View className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 mb-3">
+              <Text className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Attachment</Text>
+              <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: isDark ? '#1e1b4b' : '#eef2ff', borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#3730a3' : '#c7d2fe' }}
+                onPress={() => Linking.openURL(assignment.attachmentUrl!)}
+              >
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? '#3730a3' : '#e0e7ff', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                  <Paperclip size={18} color="#4f46e5" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text className="text-sm font-bold text-slate-900 dark:text-white">View Attachment</Text>
+                  <Text className="text-xs text-slate-500 dark:text-slate-400">Tap to open file</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          {assignment.videoUrl ? (
+            <View className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 mb-3">
+              <Text className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Video Reference</Text>
+              <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: isDark ? '#4c0519' : '#fff1f2', borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#9f1239' : '#fecdd3' }}
+                onPress={() => Linking.openURL(assignment.videoUrl!)}
+              >
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? '#9f1239' : '#ffe4e6', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                  <Video size={18} color="#e11d48" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text className="text-sm font-bold text-slate-900 dark:text-white">Watch Video</Text>
+                  <Text className="text-xs text-slate-500 dark:text-slate-400">Tap to open video link</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          {assignment.referenceUrl ? (
+            <View className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 mb-3">
+              <Text className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">External Reference</Text>
+              <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: isDark ? '#052e16' : '#f0fdf4', borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#166534' : '#bbf7d0' }}
+                onPress={() => Linking.openURL(assignment.referenceUrl!)}
+              >
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? '#166534' : '#dcfce7', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                  <LinkIcon size={18} color="#059669" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text className="text-sm font-bold text-slate-900 dark:text-white">Open Link</Text>
+                  <Text className="text-xs text-slate-500 dark:text-slate-400">Tap to open reference</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          {!assignment.attachmentUrl && !assignment.videoUrl && !assignment.referenceUrl ? (
             <View className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800">
-              <Text className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4">Instructions</Text>
-              {assignment.instructions ? (
-                <LaTeXRenderer content={assignment.instructions} />
-              ) : (
-                <Text className="text-sm text-slate-500 dark:text-slate-400 italic">No instructions provided.</Text>
-              )}
+              <Text className="text-sm text-slate-500 dark:text-slate-400 italic">No additional materials provided.</Text>
             </View>
-            </View>
-          </DeferredTab>
-
-          <DeferredTab isActive={activeTab === 'materials'}>
-            <View className="px-6 gap-4">
-            {assignment.attachmentUrl ? (
-              <View className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800">
-                <Text className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4">Attachment</Text>
-                <TouchableOpacity 
-                  className="flex-row items-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800"
-                  onPress={() => Linking.openURL(assignment.attachmentUrl!)}
-                >
-                  <View className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-800 items-center justify-center mr-4">
-                    <Paperclip size={18} color="#4f46e5" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-sm font-bold text-slate-900 dark:text-white">View Attachment</Text>
-                    <Text className="text-xs text-slate-500 dark:text-slate-400">Tap to open file</Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-
-            {assignment.videoUrl ? (
-              <View className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800">
-                <Text className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4">Video Reference</Text>
-                <TouchableOpacity 
-                  className="flex-row items-center p-4 bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-100 dark:border-rose-800"
-                  onPress={() => Linking.openURL(assignment.videoUrl!)}
-                >
-                  <View className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-800 items-center justify-center mr-4">
-                    <Video size={18} color="#e11d48" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-sm font-bold text-slate-900 dark:text-white">Watch Video</Text>
-                    <Text className="text-xs text-slate-500 dark:text-slate-400">Tap to open video link</Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-
-            {assignment.referenceUrl ? (
-              <View className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800">
-                <Text className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4">External Reference</Text>
-                <TouchableOpacity 
-                  className="flex-row items-center p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800"
-                  onPress={() => Linking.openURL(assignment.referenceUrl!)}
-                >
-                  <View className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-800 items-center justify-center mr-4">
-                    <LinkIcon size={18} color="#059669" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-sm font-bold text-slate-900 dark:text-white">Open Link</Text>
-                    <Text className="text-xs text-slate-500 dark:text-slate-400">Tap to open reference</Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-
-            {!assignment.attachmentUrl && !assignment.videoUrl && !assignment.referenceUrl ? (
-              <View className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800">
-                <Text className="text-sm text-slate-500 dark:text-slate-400 italic">No additional materials provided.</Text>
-              </View>
-            ) : null}
-            </View>
-          </DeferredTab>
-
-          {assignment.questions ? (
-            <DeferredTab isActive={activeTab === 'quiz'}>
-              <View className="px-6 gap-4">
-              {isLocked && !isGraded ? (
-                <View className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl mb-2 border border-blue-100 dark:border-blue-800">
-                  <Text className="text-xs text-blue-700 dark:text-blue-400 font-medium">Your submission is currently locked for review.</Text>
-                </View>
-              ) : null}
-              
-              {assignment.questions.map((q: any, idx: number) => (
-                <View key={q.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <View className="flex-row items-start justify-between mb-4 gap-2">
-                    <Text className="flex-1 text-sm font-semibold text-slate-900 dark:text-white leading-relaxed">
-                      {idx + 1}. {q.question}
-                    </Text>
-                    <View className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                      <Text className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{q.marks} Marks</Text>
-                    </View>
-                  </View>
-
-                  {q.type === 'MULTIPLE_CHOICE' && (
-                    <View className="gap-2">
-                      {['optionA', 'optionB', 'optionC', 'optionD'].map((optKey) => {
-                        const optionVal = q[optKey];
-                        if (!optionVal) return null;
-                        const optionLetter = optKey.replace('option', '');
-                        const isSelected = quizAnswers[q.id] === optionLetter;
-                        const isCorrectAnswer = isGraded && q.correctAnswer === optionLetter;
-                        
-                        let labelClass = 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50';
-                        if (isGraded) {
-                          if (isCorrectAnswer) {
-                            labelClass = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20';
-                          } else if (isSelected && !isCorrectAnswer) {
-                            labelClass = 'border-rose-500 bg-rose-50 dark:bg-rose-900/20';
-                          } else {
-                            labelClass = 'border-slate-200 dark:border-slate-800 opacity-50';
-                          }
-                        } else if (isSelected) {
-                          labelClass = 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20';
-                        }
-
-                        return (
-                          <TouchableOpacity
-                            key={optKey}
-                            activeOpacity={0.7}
-                            disabled={isLocked}
-                            onPress={() => handleAnswerChange(q.id, optionLetter)}
-                            className={`flex-row items-center p-4 rounded-xl border ${labelClass}`}
-                          >
-                            <View className={`w-5 h-5 rounded-full border items-center justify-center mr-3 
-                              ${isSelected ? 'border-indigo-500' : 'border-slate-300 dark:border-slate-600'}
-                              ${isGraded && isCorrectAnswer ? 'border-emerald-500 bg-emerald-500' : ''}
-                              ${isGraded && isSelected && !isCorrectAnswer ? 'border-rose-500 bg-rose-500' : ''}
-                              ${!isGraded && isSelected ? 'bg-indigo-500' : ''}
-                            `}>
-                              {(isSelected || (isGraded && isCorrectAnswer)) && (
-                                <View className={`w-2 h-2 rounded-full bg-white`} />
-                              )}
-                            </View>
-                            <Text className={`flex-1 text-sm ${isSelected ? 'font-medium text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
-                              {optionVal}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  )}
-
-                  {q.type === 'TRUE_FALSE' && (
-                    <View className="flex-row gap-3">
-                      {['True', 'False'].map((val) => {
-                        const isSelected = quizAnswers[q.id] === val;
-                        const isCorrectAnswer = isGraded && q.correctAnswer === val;
-                        
-                        let labelClass = 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50';
-                        if (isGraded) {
-                          if (isCorrectAnswer) {
-                            labelClass = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20';
-                          } else if (isSelected && !isCorrectAnswer) {
-                            labelClass = 'border-rose-500 bg-rose-50 dark:bg-rose-900/20';
-                          } else {
-                            labelClass = 'border-slate-200 dark:border-slate-800 opacity-50';
-                          }
-                        } else if (isSelected) {
-                          labelClass = 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20';
-                        }
-
-                        return (
-                          <TouchableOpacity
-                            key={val}
-                            activeOpacity={0.7}
-                            disabled={isLocked}
-                            onPress={() => handleAnswerChange(q.id, val)}
-                            className={`flex-1 flex-row items-center justify-center p-4 rounded-xl border ${labelClass}`}
-                          >
-                            <Text className={`text-sm ${isSelected ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
-                              {val}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  )}
-
-                  {q.type === 'SHORT_ANSWER' && (
-                    <View>
-                      <TextInput
-                        value={quizAnswers[q.id] || ''}
-                        onChangeText={(text) => handleAnswerChange(q.id, text)}
-                        placeholder="Type your answer here..."
-                        placeholderTextColor="#94a3b8"
-                        editable={!isLocked}
-                        multiline
-                        numberOfLines={3}
-                        className={`w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm text-slate-900 dark:text-white ${isLocked ? 'opacity-70' : ''}`}
-                        style={{ textAlignVertical: 'top' }}
-                      />
-                      {isGraded && q.correctAnswer && (
-                        <View className="mt-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-100 dark:border-emerald-800">
-                          <Text className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">Correct Answer:</Text>
-                          <Text className="text-sm text-emerald-600 dark:text-emerald-300">{q.correctAnswer}</Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
-
-                  {q.type === 'FILE_UPLOAD' && (
-                    <View>
-                      <Text className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                        File uploads are handled separately. Please leave any related notes below.
-                      </Text>
-                      <TextInput
-                        value={quizAnswers[q.id] || ''}
-                        onChangeText={(text) => handleAnswerChange(q.id, text)}
-                        placeholder="Type reference notes or file name..."
-                        placeholderTextColor="#94a3b8"
-                        editable={!isLocked}
-                        className={`w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm text-slate-900 dark:text-white ${isLocked ? 'opacity-70' : ''}`}
-                      />
-                    </View>
-                  )}
-                </View>
-              ))}
-            </View>
-            </DeferredTab>
           ) : null}
         </View>
+
+        {/* ── QUIZ ── */}
+        {assignment.questions && assignment.questions.length > 0 ? (
+          <View className="px-6 mb-6">
+            <Text className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Quiz</Text>
+
+            {isLocked && !isGraded ? (
+              <View className="bg-blue-50 dark:bg-blue-950 p-4 rounded-xl mb-4 border border-blue-100 dark:border-blue-800">
+                <Text className="text-xs text-blue-700 dark:text-blue-400 font-medium">Your submission is currently locked for review.</Text>
+              </View>
+            ) : null}
+
+            {assignment.questions.map((q: any, idx: number) => (
+              <View key={q.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 mb-4">
+                <View className="flex-row items-start justify-between mb-4">
+                  <Text className="flex-1 text-sm font-semibold text-slate-900 dark:text-white leading-relaxed pr-3">
+                    {idx + 1}. {q.question}
+                  </Text>
+                  <View className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                    <Text className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{q.marks} Marks</Text>
+                  </View>
+                </View>
+
+                {q.type === 'MULTIPLE_CHOICE' && (
+                  <View style={{ gap: 8 }}>
+                    {['optionA', 'optionB', 'optionC', 'optionD'].map((optKey) => {
+                      const optionVal = q[optKey];
+                      if (!optionVal) return null;
+                      const optionLetter = optKey.replace('option', '');
+                      const isSelected = quizAnswers[q.id] === optionLetter;
+                      const isCorrectAnswer = isGraded && q.correctAnswer === optionLetter;
+
+                      let labelClass = 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800';
+                      if (isGraded) {
+                        if (isCorrectAnswer) labelClass = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950';
+                        else if (isSelected && !isCorrectAnswer) labelClass = 'border-rose-500 bg-rose-50 dark:bg-rose-950';
+                        else labelClass = 'border-slate-200 dark:border-slate-800 opacity-50';
+                      } else if (isSelected) {
+                        labelClass = 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950';
+                      }
+
+                      return (
+                        <TouchableOpacity
+                          key={optKey}
+                          activeOpacity={0.7}
+                          disabled={isLocked}
+                          onPress={() => handleAnswerChange(q.id, optionLetter)}
+                          className={`flex-row items-center p-4 rounded-xl border ${labelClass}`}
+                        >
+                          <View className={`w-5 h-5 rounded-full border items-center justify-center mr-3 ${isSelected ? 'border-indigo-500' : 'border-slate-300 dark:border-slate-600'} ${isGraded && isCorrectAnswer ? 'border-emerald-500 bg-emerald-500' : ''} ${isGraded && isSelected && !isCorrectAnswer ? 'border-rose-500 bg-rose-500' : ''} ${!isGraded && isSelected ? 'bg-indigo-500' : ''}`}>
+                            {(isSelected || (isGraded && isCorrectAnswer)) && (
+                              <View className="w-2 h-2 rounded-full bg-white" />
+                            )}
+                          </View>
+                          <Text className={`flex-1 text-sm ${isSelected ? 'font-medium text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+                            {optionVal}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+
+                {q.type === 'TRUE_FALSE' && (
+                  <View style={{ flexDirection: 'row', gap: 12 }}>
+                    {['True', 'False'].map((val) => {
+                      const isSelected = quizAnswers[q.id] === val;
+                      const isCorrectAnswer = isGraded && q.correctAnswer === val;
+
+                      let labelClass = 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800';
+                      if (isGraded) {
+                        if (isCorrectAnswer) labelClass = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950';
+                        else if (isSelected && !isCorrectAnswer) labelClass = 'border-rose-500 bg-rose-50 dark:bg-rose-950';
+                        else labelClass = 'border-slate-200 dark:border-slate-800 opacity-50';
+                      } else if (isSelected) {
+                        labelClass = 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950';
+                      }
+
+                      return (
+                        <TouchableOpacity
+                          key={val}
+                          activeOpacity={0.7}
+                          disabled={isLocked}
+                          onPress={() => handleAnswerChange(q.id, val)}
+                          className={`flex-1 flex-row items-center justify-center p-4 rounded-xl border ${labelClass}`}
+                        >
+                          <Text className={`text-sm ${isSelected ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+                            {val}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+
+                {q.type === 'SHORT_ANSWER' && (
+                  <View>
+                    <TextInput
+                      value={quizAnswers[q.id] || ''}
+                      onChangeText={(text) => handleAnswerChange(q.id, text)}
+                      placeholder="Type your answer here..."
+                      placeholderTextColor="#94a3b8"
+                      editable={!isLocked}
+                      multiline
+                      numberOfLines={3}
+                      className={`w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm text-slate-900 dark:text-white ${isLocked ? 'opacity-70' : ''}`}
+                      style={{ textAlignVertical: 'top' }}
+                    />
+                    {isGraded && q.correctAnswer && (
+                      <View className="mt-3 p-3 bg-emerald-50 dark:bg-emerald-950 rounded-lg border border-emerald-100 dark:border-emerald-800">
+                        <Text className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">Correct Answer:</Text>
+                        <Text className="text-sm text-emerald-600 dark:text-emerald-300">{q.correctAnswer}</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {q.type === 'FILE_UPLOAD' && (
+                  <View>
+                    <Text className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                      File uploads are handled separately. Please leave any related notes below.
+                    </Text>
+                    <TextInput
+                      value={quizAnswers[q.id] || ''}
+                      onChangeText={(text) => handleAnswerChange(q.id, text)}
+                      placeholder="Type reference notes or file name..."
+                      placeholderTextColor="#94a3b8"
+                      editable={!isLocked}
+                      className={`w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm text-slate-900 dark:text-white ${isLocked ? 'opacity-70' : ''}`}
+                    />
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        ) : null}
 
       </ScrollView>
 
@@ -572,7 +534,7 @@ export default function AssignmentDetailsScreen() {
       {!isLocked && (
         <View className="absolute bottom-0 w-full px-6 py-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800" style={{ elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20 }}>
           <TouchableOpacity 
-            className={`w-full h-14 rounded-2xl flex-row items-center justify-center shadow-md ${submitAssignmentMutation.isPending ? 'bg-slate-400 dark:bg-slate-700 shadow-none' : 'bg-indigo-600 shadow-indigo-600/30'}`}
+            className={`w-full h-14 rounded-2xl flex-row items-center justify-center ${submitAssignmentMutation.isPending ? 'bg-slate-400 dark:bg-slate-700' : 'bg-indigo-600'}`}
             activeOpacity={0.8}
             onPress={handleFinalSubmit}
             disabled={submitAssignmentMutation.isPending}

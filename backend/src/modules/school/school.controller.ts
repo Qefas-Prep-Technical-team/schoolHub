@@ -138,6 +138,29 @@ export const getSchoolStats = async (req: Request, res: Response) => {
 };
 
 /**
+ * Handle fetching school stats (for the logged in user)
+ */
+export const getMySchoolStats = async (req: Request, res: Response) => {
+  try {
+    const schoolId = (req.user as any)?.schoolId || (req.user as any)?.tenantId;
+    if (!schoolId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "schoolId not found in user token" });
+    }
+
+    if (!validateSchoolAccess(req, schoolId)) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const data = await getSchoolStatsService(schoolId);
+    return res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    return handleError(res, error, "school.getMySchoolStats");
+  }
+};
+
+/**
  * Handle fetching school performance analysis
  */
 export const getSchoolPerformanceAnalysis = async (
