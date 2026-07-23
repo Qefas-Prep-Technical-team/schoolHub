@@ -1,19 +1,74 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+
+import { io, Socket } from 'socket.io-client';
 
 type Message = {
-  role: 'ai' | 'user';
+  role: 'ai' | 'user' | 'agent';
   content: string;
+  senderName?: string;
+  timestamp?: number;
+};
+
+const renderMessageContent = (content: string, role: 'ai' | 'user' | 'agent') => {
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  
+  if (!linkRegex.test(content)) {
+    return content;
+  }
+  
+  linkRegex.lastIndex = 0;
+  
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = linkRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(content.substring(lastIndex, match.index));
+    }
+    
+    parts.push(
+      <a 
+        key={`link-${match.index}`} 
+        href={match[2]} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className={`underline font-medium ${
+          role === 'user' 
+            ? 'text-white hover:text-gray-200' 
+            : 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'
+        }`}
+      >
+        {match[1]}
+      </a>
+    );
+    
+    lastIndex = linkRegex.lastIndex;
+  }
+  
+  if (lastIndex < content.length) {
+    parts.push(content.substring(lastIndex));
+  }
+  
+  return <>{parts}</>;
 };
 
 export default function AIChatWidget() {
+  const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  const [isSubdomain, setIsSubdomain] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'ai', content: "Hello! I'm the Qefas Hub AI Assistant. How can I help you today?" }
+    { role: 'ai', content: "Hello! I'm the Qefas Hub AI Assistant. How can I help you today?", timestamp: Date.now() }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [ticketId, setTicketId] = useState<string | null>(null);
+  const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when messages change
@@ -22,26 +77,142 @@ export default function AIChatWidget() {
   };
 
   useEffect(() => {
+    setMounted(true);
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      let hasSub = false;
+      
+      const rootDomains = ["schoolhub.flexitistudio.com", "qefashub.com", "localhost", "127.0.0.1"];
+      const isRoot = rootDomains.some(domain => 
+          host === domain || host === `www.${domain}`
+      );
+      
+      if (!isRoot) {
+          if (host.includes("localhost") || host.includes("127.0.0.1")) {
+              const parts = host.split(".");
+              hasSub = parts.length > 1 && parts[0] !== "localhost" && parts[0] !== "www";
+          } else {
+              hasSub = true;
+          }
+      }
+      setIsSubdomain(hasSub);
+      
+      // Load history from localStorage
+      try {
+        const stored = localStorage.getItem('qefas_chat_history');
+        const storedTicketId = localStorage.getItem('qefas_ticket_id');
+        const storedTime = localStorage.getItem('qefas_chat_time');
+        
+        // Clear if older than 24 hours
+        if (storedTime && Date.now() - parseInt(storedTime) > 24 * 60 * 60 * 1000) {
+          localStorage.removeItem('qefas_chat_history');
+          localStorage.removeItem('qefas_ticket_id');
+          localStorage.removeItem('qefas_chat_time');
+        } else if (stored) {
+          setMessages(JSON.parse(stored));
+          if (storedTicketId) setTicketId(storedTicketId);
+        }
+      } catch (e) {}
+    }
+  }, []);
+
+  // Save to localStorage whenever messages change
+  useEffect(() => {
+    if (mounted && messages.length > 1) {
+      localStorage.setItem('qefas_chat_history', JSON.stringify(messages));
+      localStorage.setItem('qefas_chat_time', Date.now().toString());
+    }
+  }, [messages, mounted]);
+
+  // Setup Socket.io if we have a ticketId
+  useEffect(() => {
+    if (!ticketId) {
+      console.log("[AIChatWidget] No ticketId yet, not connecting socket.");
+      return;
+    }
+
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:5000";
+    console.log("[AIChatWidget] Connecting to socket at:", socketUrl, "for ticket:", ticketId);
+    const socket = io(socketUrl, { withCredentials: true });
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("[AIChatWidget] Socket connected! Joining room ticket:", ticketId);
+      socket.emit("join:ticket", ticketId);
+    });
+
+    socket.on("new_message", (msg: any) => {
+      console.log("[AIChatWidget] Received new_message:", msg);
+      // If it's from the agent, append to UI
+      if (msg.senderRole === "SUPPORT_AGENT") {
+        setMessages(prev => {
+          // Avoid duplicates
+          if (prev.some(p => p.timestamp === msg.createdAt)) return prev;
+          return [...prev, { 
+            role: 'agent', 
+            content: msg.content, 
+            senderName: msg.senderName, 
+            timestamp: msg.createdAt 
+          }];
+        });
+      }
+    });
+
+    socket.on("session_ended", () => {
+      console.log("[AIChatWidget] Received session_ended, returning to AI");
+      handleEndSession();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [ticketId]);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading, isOpen]);
 
   const toggleChat = () => setIsOpen(!isOpen);
+
+  const handleEndSession = () => {
+    localStorage.removeItem('qefas_ticket_id');
+    setTicketId(null);
+    setMessages(prev => [...prev, { role: 'ai', content: "Your live support session has ended. I am the AI Assistant. How can I help you next?", timestamp: Date.now() }]);
+  };
 
   const sendMessage = async () => {
     const text = inputValue.trim();
     if (!text) return;
 
     // Add user message to UI
-    const newMessages = [...messages, { role: 'user' as const, content: text }];
+    const newUserMsg: Message = { role: 'user', content: text, timestamp: Date.now() };
+    const newMessages = [...messages, newUserMsg];
     setMessages(newMessages);
     setInputValue('');
     setIsLoading(true);
 
     try {
+      // If we already have a ticket, POST direct to guest API
+      if (ticketId) {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        const res = await fetch(`${apiUrl}/support/guest-tickets/${ticketId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: text, name: "Guest" })
+        });
+        
+        if (res.ok) {
+           // We don't add the AI response because the Agent will reply
+           setIsLoading(false);
+           return;
+        }
+      }
+
       // Create history array for the API (up to last 10 messages)
       const chatHistory = newMessages.slice(-10);
 
-      const response = await fetch('https://tracker.qefashub.com/api/chat', {
+      const chatApiUrl = process.env.NEXT_PUBLIC_CHAT_API_URL || 'https://tracker.qefashub.com/api/chat';
+      const response = await fetch(chatApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -53,8 +224,13 @@ export default function AIChatWidget() {
 
       const data = await response.json();
       const aiText = data.answer || "Sorry, I couldn't process that.";
+      
+      if (data.ticketId) {
+         setTicketId(data.ticketId);
+         localStorage.setItem('qefas_ticket_id', data.ticketId);
+      }
 
-      setMessages((prev) => [...prev, { role: 'ai', content: aiText }]);
+      setMessages((prev) => [...prev, { role: 'ai', content: aiText, timestamp: Date.now() }]);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -71,6 +247,18 @@ export default function AIChatWidget() {
     }
   };
 
+  const isDashboard = pathname?.startsWith("/dashboard") || 
+                      pathname?.startsWith("/console") || 
+                      pathname?.startsWith("/platform");
+
+  const isSetupFlow = pathname?.startsWith("/select-plan") || 
+                      pathname?.startsWith("/checkout") || 
+                      pathname?.startsWith("/onboarding");
+
+  const shouldShow = !isDashboard && !isSetupFlow && !isSubdomain;
+
+  if (!mounted || !shouldShow) return null;
+
   return (
     <div className="fixed bottom-5 right-5 z-[9999] font-sans">
       {/* Chat Window */}
@@ -81,6 +269,14 @@ export default function AIChatWidget() {
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               <span>Qefas Hub Support</span>
+              {ticketId && (
+                <button 
+                  onClick={handleEndSession}
+                  className="ml-2 text-[10px] bg-red-500/20 text-red-100 px-2 py-0.5 rounded-full hover:bg-red-500/40 transition-colors border border-red-500/30"
+                >
+                  End Session
+                </button>
+              )}
             </div>
             <button
               onClick={toggleChat}
@@ -95,13 +291,24 @@ export default function AIChatWidget() {
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`max-w-[85%] p-3 rounded-lg text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
-                  msg.role === 'ai'
-                    ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-600 self-start rounded-tl-none'
-                    : 'bg-blue-600 text-white self-end ml-auto rounded-tr-none'
-                }`}
+                className={`max-w-[85%] flex flex-col gap-1 ${msg.role !== 'ai' && msg.role !== 'agent' ? 'self-end ml-auto' : 'self-start'}`}
               >
-                {msg.content}
+                {(msg.role === 'agent') && (
+                  <span className="text-[10px] font-bold text-gray-500 uppercase px-1">
+                    👨‍💻 {msg.senderName ? msg.senderName.split(' ').pop() : 'Representative'}
+                  </span>
+                )}
+                <div
+                  className={`p-3 rounded-lg text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
+                    msg.role === 'ai'
+                      ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-600 rounded-tl-none'
+                      : msg.role === 'agent'
+                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-800/50 rounded-tl-none'
+                      : 'bg-blue-600 text-white rounded-tr-none'
+                  }`}
+                >
+                  {renderMessageContent(msg.content, msg.role)}
+                </div>
               </div>
             ))}
             {isLoading && (

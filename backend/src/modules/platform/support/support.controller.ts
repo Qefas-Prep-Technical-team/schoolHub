@@ -8,6 +8,10 @@ import { getSchoolUsageService } from "../../subscription/quota.service";
 import { PricingService } from "../billing/pricing.service";
 import { getIO } from "../../../socket";
 import { handleError } from "../../../utils/error-handler";
+import { createNotification } from "../../notification/notification.service";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Search schools for support purposes
@@ -270,6 +274,59 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
     
     // Broadcast status change 
     getIO().to(`ticket:${id}`).emit("ticket_updated", ticket);
+
+    // If marked as RESOLVED or CLOSED, emit session ended to return control to AI
+    if (status === "RESOLVED" || status === "CLOSED") {
+      getIO().to(`ticket:${id}`).emit("session_ended");
+    }
+
+    // If marked as RESOLVED, send notifications
+    if (status === "RESOLVED") {
+      try {
+        if (ticket.userId && ticket.userType && ticket.userType !== "GUEST") {
+          await createNotification({
+            recipientType: ticket.userType as any,
+            recipientId: ticket.userId,
+            type: "GENERAL",
+            title: "Support Ticket Resolved",
+            message: `Your support ticket "${ticket.subject}" has been marked as resolved.`
+          });
+        }
+        
+        if (ticket.userEmail) {
+          const isTest = process.env.RESEND_TEST?.trim() === 'true';
+          const recipient = isTest ? process.env.TEST_EMAIL as string : ticket.userEmail;
+          
+          await resend.emails.send({
+            from: process.env.MAIL_FROM as string,
+            to: recipient,
+            subject: "Your Support Ticket has been Resolved",
+            html: `
+              <div style="font-family: 'Inter', Arial, sans-serif; padding: 30px; max-width: 600px; margin: auto; background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <h2 style="color: #4f46e5; margin: 0; font-size: 24px;">Support Ticket Resolved</h2>
+                </div>
+                <div style="background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                  <p style="color: #334155; font-size: 16px; margin-top: 0;">Hello <strong>${ticket.userName || "Guest"}</strong>,</p>
+                  <p style="color: #475569; font-size: 15px; line-height: 1.6;">We are writing to let you know that your support request regarding:</p>
+                  <div style="background-color: #f1f5f9; padding: 15px; border-left: 4px solid #4f46e5; border-radius: 4px; margin: 15px 0;">
+                    <p style="margin: 0; color: #1e293b; font-weight: 500; font-style: italic;">"${ticket.subject}"</p>
+                  </div>
+                  <p style="color: #475569; font-size: 15px; line-height: 1.6;">has been fully resolved by our support team.</p>
+                  <p style="color: #475569; font-size: 15px; line-height: 1.6;">If you have any further questions or if the issue persists, please feel free to reach out to us again at any time.</p>
+                </div>
+                <div style="margin-top: 20px; text-align: center; color: #64748b; font-size: 13px;">
+                  <p style="margin: 0;">Best regards,</p>
+                  <p style="margin: 5px 0 0 0; font-weight: 600;">The Qefas Hub Support Team</p>
+                </div>
+              </div>
+            `
+          });
+        }
+      } catch (err) {
+        console.error("[SupportController] Error sending resolution notifications:", err);
+      }
+    }
     
     return res.status(200).json({ success: true, data: ticket });
   } catch (error) {

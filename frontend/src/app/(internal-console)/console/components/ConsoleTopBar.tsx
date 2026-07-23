@@ -7,6 +7,15 @@ import { ThemeToggle } from "@/app/theme-toggle"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
 import { usePlatformSupportNotifications } from "@/lib/hooks/usePlatformSupportNotifications"
 import { useRouter } from "next/navigation"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { formatDistanceToNow } from "date-fns"
 
 interface ConsoleTopBarProps {
     onToggleSidebar: () => void;
@@ -15,7 +24,7 @@ interface ConsoleTopBarProps {
 
 export default function ConsoleTopBar({ onToggleSidebar, isCollapsed }: ConsoleTopBarProps) {
     const { staff } = usePlatformStaffStore()
-    const { unreadCount, clearUnread } = usePlatformSupportNotifications()
+    const { unreadCount, recentTickets, clearUnread } = usePlatformSupportNotifications()
     const router = useRouter()
 
     return (
@@ -52,19 +61,65 @@ export default function ConsoleTopBar({ onToggleSidebar, isCollapsed }: ConsoleT
             <div className="flex items-center justify-end gap-4 flex-1">
                 <ThemeToggle />
                 
-                <button 
-                    onClick={() => { clearUnread(); router.push('/console/support') }}
-                    className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
-                >
-                    <Bell size={20} />
-                    {unreadCount > 0 ? (
-                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[9px] font-black rounded-full px-1 border-2 border-white dark:border-slate-950 animate-bounce">
-                            {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                    ) : (
-                        <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full border-2 border-white dark:border-slate-950"></span>
-                    )}
-                </button>
+                <DropdownMenu onOpenChange={(open) => {
+                    if (open) {
+                        clearUnread();
+                    }
+                }}>
+                    <DropdownMenuTrigger asChild>
+                        <button 
+                            className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all outline-none"
+                        >
+                            <Bell size={20} />
+                            {unreadCount > 0 ? (
+                                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[9px] font-black rounded-full px-1 border-2 border-white dark:border-slate-950 animate-bounce">
+                                    {unreadCount > 99 ? '99+' : unreadCount}
+                                </span>
+                            ) : (
+                                <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full border-2 border-white dark:border-slate-950"></span>
+                            )}
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-80 p-0 rounded-2xl overflow-hidden shadow-2xl border-slate-200 dark:border-white/10 dark:bg-slate-900">
+                        <div className="p-4 bg-slate-50 dark:bg-slate-950/50 flex items-center justify-between">
+                            <DropdownMenuLabel className="p-0 font-bold text-slate-900 dark:text-white">Recent Notifications</DropdownMenuLabel>
+                            <span className="text-xs text-indigo-500 font-medium cursor-pointer hover:underline" onClick={() => router.push('/console/support')}>View all</span>
+                        </div>
+                        <DropdownMenuSeparator className="m-0 bg-slate-100 dark:bg-white/5" />
+                        <div className="max-h-[300px] overflow-y-auto p-2 flex flex-col gap-1">
+                            {recentTickets.length === 0 ? (
+                                <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">
+                                    No recent notifications.
+                                </div>
+                            ) : (
+                                recentTickets.map((ticket, i) => (
+                                    <DropdownMenuItem 
+                                        key={ticket.id + i} 
+                                        className="flex flex-col items-start gap-1 p-3 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-colors focus:bg-slate-50 dark:focus:bg-white/5"
+                                        onClick={() => router.push('/console/support')}
+                                    >
+                                        <div className="flex items-start justify-between w-full gap-2">
+                                            <span className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">{ticket.subject}</span>
+                                            <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                                                {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}
+                                            </span>
+                                        </div>
+                                        <span className="text-xs text-slate-500 line-clamp-1">From: {ticket.userName} {ticket.schoolName && `(${ticket.schoolName})`}</span>
+                                    </DropdownMenuItem>
+                                ))
+                            )}
+                        </div>
+                        <div className="p-2 bg-slate-50 dark:bg-slate-950/50">
+                            <Button 
+                                variant="outline" 
+                                className="w-full rounded-xl text-xs" 
+                                onClick={() => router.push('/console/support')}
+                            >
+                                Open Support Inbox
+                            </Button>
+                        </div>
+                    </DropdownMenuContent>
+                </DropdownMenu>
 
                 <div className="h-6 w-[1px] bg-slate-200 dark:bg-white/10 mx-2" />
 
