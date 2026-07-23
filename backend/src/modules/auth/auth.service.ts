@@ -113,34 +113,34 @@ export const sendEmailUpdateVerification = async (email: string, code: string) =
     to: recipient,
     subject: `[ACTION REQUIRED] Verify Your New Email Address ${isTest ? `(Original: ${email})` : ''}`,
     html: `
-      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub <span style="color: #2563eb;">Identity</span></h2>
-            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub <span style="color: #2563eb;">Identity</span></h2>
+            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Institutional Protocol</p>
           </div>
         </div>
         
-        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">Verify Your New Email</h3>
-        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">To complete the update of your institutional contact records, please use the secure verification code below.</p>
+        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 12px; letter-spacing: -0.3px;">Verify Your New Email</h3>
+        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">To complete the update of your institutional contact records, please use the secure verification code below.</p>
         
-        <div style="margin: 32px 0; padding: 40px; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 24px; text-align: center;">
-          <p style="margin: 0 0 12px 0; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Verification Code</p>
-          <div style="font-size: 48px; font-weight: 900; letter-spacing: 12px; color: #1e293b; font-family: monospace;">
+        <div style="margin: 24px 0; padding: 24px 16px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 16px; text-align: center;">
+          <p style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Verification Code</p>
+          <div style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #1e293b; font-family: 'Courier New', Courier, monospace; word-break: break-all;">
             ${code}
           </div>
         </div>
         
-        <div style="padding: 24px; background: #fffcf0; border-radius: 16px; border-left: 4px solid #f59e0b; margin-bottom: 32px;">
-          <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5; font-weight: 500;">
+        <div style="padding: 16px; background: #fffcf0; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 24px;">
+          <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5; font-weight: 500;">
             <b>Security Note:</b> This code will expire in <b>10 minutes</b>. If you did not initiate this request, please contact your system administrator immediately.
           </p>
         </div>
         
-        <div style="border-top: 1px solid #f1f5f9; pt-32; padding-top: 24px; text-align: center;">
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
           <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
-          ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
+          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
         </div>
       </div>
     `,
@@ -165,28 +165,28 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
     to: recipient,
     subject: subject,
     html: `
-      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #f1f5f9; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
-          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 40px; height: 40px; border-radius: 10px;" />
           <div>
-            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
-            <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Academic Management System</p>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Qefas Hub</h2>
+            <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Academic Management System</p>
           </div>
         </div>
         
-        <h3 style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 16px; letter-spacing: -0.5px;">${title}</h3>
-        <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">${description}</p>
+        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 12px; letter-spacing: -0.3px;">${title}</h3>
+        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">${description}</p>
         
-        <div style="margin: 32px 0; padding: 40px; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 24px; text-align: center;">
-          <p style="margin: 0 0 12px 0; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Verification Code</p>
-          <div style="font-size: 48px; font-weight: 900; letter-spacing: 12px; color: #1e293b; font-family: monospace;">
+        <div style="margin: 24px 0; padding: 24px 16px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 16px; text-align: center;">
+          <p style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Verification Code</p>
+          <div style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #1e293b; font-family: 'Courier New', Courier, monospace; word-break: break-all;">
             ${code}
           </div>
         </div>
         
-        <div style="border-top: 1px solid #f1f5f9; pt-32; padding-top: 24px; text-align: center;">
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
           <p style="color: #94a3b8; font-size: 12px;">This is an automated institutional message. Please do not reply.</p>
-          ${isTest ? `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
+          ${isTest ? `<div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 11px; font-weight: 700;">[TEST MODE] Original Recipient: ${email}</div>` : ''}
         </div>
       </div>
     `,

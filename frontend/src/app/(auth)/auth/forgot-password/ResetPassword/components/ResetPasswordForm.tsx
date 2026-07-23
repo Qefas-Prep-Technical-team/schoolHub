@@ -188,16 +188,19 @@ export default function ResetPasswordForm() {
           <button
             type="submit"
             disabled={isPending || !isValid}
-             className="flex items-center justify-center cursor-pointer gap-2 h-12 px-6 text-base font-semibold text-white rounded-lg bg-primary hover:bg-primary/90 focus:ring-2 focus:ring-primary/50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed w-full transition-colors duration-200"
+            className="group relative flex h-14 w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 dark:from-indigo-500 dark:via-blue-500 dark:to-indigo-600 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none overflow-hidden"
           >
-            {isPending ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Resetting Password...
-              </>
-            ) : (
-              "Reset Password"
-            )}
+            <div className="absolute inset-0 w-full h-full bg-white/10 group-hover:bg-white/20 transition-colors duration-300" />
+            <div className="relative z-10 flex items-center justify-center">
+              {isPending ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Resetting Password...
+                </>
+              ) : (
+                "Reset Password"
+              )}
+            </div>
           </button>
           <Link
             href="/login"

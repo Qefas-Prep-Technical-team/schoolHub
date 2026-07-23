@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useRequestCode, useVerifyCode, useResendCode } from '../services/useVerificationMutations';
 import { useLoginMutation } from '../../login/services/use-auth-mutations';
+import { ROUTES } from '@/lib/constants/routes';
 import CodeInputGroup from './CodeInputGroup';
 import VerifyButton from './VerifyButton';
 import MetaText from './MetaText';
@@ -70,8 +71,20 @@ export default function VerificationCard() {
               sessionStorage.removeItem("preAuthToken");
             } else {
               // Fallback to manual login redirect (e.g., brand new registration without login attempt)
+              const normalized = userType.toUpperCase();
+              let loginPath = `/login/${userType.toLowerCase()}`;
+              if (normalized === 'ADMIN' || normalized === 'SCHOOL_ADMIN' || normalized === 'SCHOOL') {
+                loginPath = ROUTES.AUTH.LOGIN.ADMIN;
+              } else if (normalized === 'TEACHER') {
+                loginPath = ROUTES.AUTH.LOGIN.TEACHER;
+              } else if (normalized === 'STUDENT') {
+                loginPath = ROUTES.AUTH.LOGIN.STUDENT;
+              } else if (normalized === 'PARENT') {
+                loginPath = ROUTES.AUTH.LOGIN.PARENT;
+              }
+
               setTimeout(() => {
-                router.push(`/login/${userType.toLowerCase()}?new=${isNewUser}`);
+                router.push(`${loginPath}?new=${isNewUser}`);
               }, 3000);
             }
           }
@@ -94,7 +107,7 @@ export default function VerificationCard() {
   // Redirect if no email provided
   useEffect(() => {
     if (!email) {
-      router.push('/register/parent');
+      router.push('/login');
     }
   }, [email, router]);
 
@@ -105,10 +118,10 @@ export default function VerificationCard() {
           No email provided for verification.
         </p>
         <button
-          onClick={() => router.push('/register/parent')}
-          className="mt-4 text-primary hover:underline"
+          onClick={() => router.push('/login')}
+          className="mt-4 font-medium text-primary hover:underline"
         >
-          Go to Registration
+          Go to Login
         </button>
       </div>
     );
@@ -169,15 +182,6 @@ export default function VerificationCard() {
             {email}
           </strong>
           .
-        </p>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Wrong email?{' '}
-          <a
-            className="font-medium text-primary hover:underline"
-            href="/register/parent"
-          >
-            Go back to registration
-          </a>
         </p>
       </div>
 

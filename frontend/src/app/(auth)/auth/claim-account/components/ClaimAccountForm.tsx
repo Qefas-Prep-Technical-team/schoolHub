@@ -73,7 +73,10 @@ export default function ClaimAccountForm() {
         setIsSuccess(true);
         toast.success.show("Account claimed successfully! You can now log in.");
         setTimeout(() => {
-          router.push(`/login/${type}`);
+          const rolePath = type.toUpperCase() === 'ADMIN' || type.toUpperCase() === 'SCHOOL_ADMIN'
+            ? 'school-admin'
+            : type.toLowerCase();
+          router.push(`/login/${rolePath}`);
         }, 3000);
       } else {
         toast.error.show(res.message || "Failed to claim account.");
