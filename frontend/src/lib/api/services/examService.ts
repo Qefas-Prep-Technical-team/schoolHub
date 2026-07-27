@@ -332,6 +332,11 @@ export const examService = {
     return response.data.data;
   },
 
+  submitSubjectPaperAttempt: async (examId: string, paperId: string) => {
+    const response = await apiClient.post(`/exams/${examId}/papers/${paperId}/submit`);
+    return response.data.data;
+  },
+
   deleteExamAttempt: async (examId: string, studentId: string) => {
     const response = await apiClient.delete(
       `/exams/${examId}/attempts/${studentId}`,

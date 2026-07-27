@@ -44,7 +44,7 @@ export const useSubscriptionUsage = (enabled: boolean = true) => {
     queryFn: async () => {
       // Use apiClient to ensure the correct base URL and Authorization headers are applied
       const { data } = await apiClient.get<{ success: boolean, data: SubscriptionUsageData }>('/subscription/usage');
-      return data.data;
+      return data?.data ?? null;
     },
     enabled: enabled,
     // Always consider data stale — re-fetch on every mount

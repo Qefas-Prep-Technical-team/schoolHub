@@ -10,20 +10,23 @@ import MetaText from './MetaText';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
+import { getRoleTheme } from '@/lib/theme/roleTheme';
+
 export default function VerificationCard() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const email = searchParams.get('email');
   const userType = searchParams.get('userType');
+  const roleTheme = getRoleTheme(userType);
 
   const [verificationCode, setVerificationCode] = useState('');
   const [isCodeComplete, setIsCodeComplete] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const { mutate: requestCode, isPending: isRequesting } = useRequestCode();
+  const { mutate: requestCode } = useRequestCode();
   const { mutate: verifyCode, isPending: isVerifying } = useVerifyCode();
-  const { mutate: resendCode, isPending: isResending } = useResendCode();
+  const { mutateAsync: resendCode } = useResendCode();
   const loginMutation = useLoginMutation();
 
   // Request verification code automatically when component mounts
@@ -40,13 +43,21 @@ export default function VerificationCard() {
       const newParams = new URLSearchParams(searchParams.toString());
       newParams.delete('requestCode');
       const newUrl = `${window.location.pathname}?${newParams.toString()}`;
-      router.replace(newUrl);
     }
   }, [email, userType, searchParams, router, requestCode]);
 
   const handleCodeComplete = (code: string) => {
     setVerificationCode(code);
     setIsCodeComplete(code.length === 6);
+  };
+
+  const getDashboardPath = (type: string) => {
+    const norm = type.toLowerCase().replace(/_/g, '-');
+    if (norm.includes('admin') || norm.includes('school')) return '/dashboard/school-admin';
+    if (norm.includes('teacher')) return '/dashboard/teacher';
+    if (norm.includes('student')) return '/dashboard/student';
+    if (norm.includes('parent')) return '/dashboard/parent';
+    return `/dashboard/${norm}`;
   };
 
   const handleVerify = () => {
@@ -57,37 +68,39 @@ export default function VerificationCard() {
           onSuccess: (response: any) => {
             setIsSuccess(true);
             const isNewUser = response?.data?.isNewUser ?? false;
-            
             const preAuthToken = sessionStorage.getItem("preAuthToken");
-            
-            if (preAuthToken) {
-              // Auto-login using secure preAuthToken
-              loginMutation.mutate({
-                email: email,
-                userType: userType as any,
-                isNewUser: isNewUser,
-                preAuthToken: preAuthToken
-              });
-              sessionStorage.removeItem("preAuthToken");
-            } else {
-              // Fallback to manual login redirect (e.g., brand new registration without login attempt)
-              const normalized = userType.toUpperCase();
-              let loginPath = `/login/${userType.toLowerCase()}`;
-              if (normalized === 'ADMIN' || normalized === 'SCHOOL_ADMIN' || normalized === 'SCHOOL') {
-                loginPath = ROUTES.AUTH.LOGIN.ADMIN;
-              } else if (normalized === 'TEACHER') {
-                loginPath = ROUTES.AUTH.LOGIN.TEACHER;
-              } else if (normalized === 'STUDENT') {
-                loginPath = ROUTES.AUTH.LOGIN.STUDENT;
-              } else if (normalized === 'PARENT') {
-                loginPath = ROUTES.AUTH.LOGIN.PARENT;
-              }
 
+            if (preAuthToken) {
+              // We have a token from registration — use it to fully authenticate
+              loginMutation.mutate(
+                {
+                  email: email,
+                  userType: userType as any,
+                  isNewUser: isNewUser,
+                  preAuthToken: preAuthToken,
+                },
+                {
+                  onSuccess: () => {
+                    sessionStorage.removeItem("preAuthToken");
+                  },
+                  onError: () => {
+                    // Auto-login failed — just route to dashboard, user can re-login
+                    sessionStorage.removeItem("preAuthToken");
+                    setTimeout(() => {
+                      router.push(getDashboardPath(userType));
+                    }, 1200);
+                  },
+                }
+              );
+            } else {
+              // Verification from login flow — identity already confirmed.
+              // Route directly to the dashboard without another login call.
               setTimeout(() => {
-                router.push(`${loginPath}?new=${isNewUser}`);
-              }, 3000);
+                router.push(getDashboardPath(userType));
+              }, 1200);
             }
-          }
+          },
+
         }
       );
     }
@@ -98,7 +111,6 @@ export default function VerificationCard() {
       try {
         await resendCode({ email, userType });
       } catch (error) {
-        // Error is handled in the mutation
         console.error('Resend failed:', error);
       }
     }
@@ -113,13 +125,13 @@ export default function VerificationCard() {
 
   if (!email) {
     return (
-      <div className="w-full rounded-xl bg-white dark:bg-gray-800 p-8 shadow-lg text-center">
-        <p className="text-gray-600 dark:text-gray-300">
+      <div className="w-full rounded-3xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-2xl text-center">
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
           No email provided for verification.
         </p>
         <button
           onClick={() => router.push('/login')}
-          className="mt-4 font-medium text-primary hover:underline"
+          className="mt-4 text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:underline"
         >
           Go to Login
         </button>
@@ -128,26 +140,27 @@ export default function VerificationCard() {
   }
 
   return (
-    <div className="relative overflow-hidden w-full rounded-xl bg-white dark:bg-gray-800 p-8 shadow-lg dark:shadow-2xl dark:shadow-black/20">
+    <div className="relative overflow-hidden w-full rounded-3xl bg-white/90 dark:bg-slate-900/80 backdrop-blur-2xl p-8 sm:p-10 border border-slate-200/80 dark:border-slate-800/80 shadow-2xl shadow-slate-200/50 dark:shadow-none">
       <AnimatePresence>
         {isSuccess && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-800/95 backdrop-blur-sm p-8 text-center"
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/95 dark:bg-slate-950/95 backdrop-blur-md p-8 text-center"
           >
             <motion.div
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", damping: 15 }}
+              className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 mb-4"
             >
-              <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
+              <CheckCircle2 className="h-10 w-10 text-emerald-500" />
             </motion.div>
             <motion.h2
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className="text-2xl font-bold text-gray-900 dark:text-white"
+              className="text-2xl font-black text-slate-900 dark:text-white"
             >
               Verification Successful!
             </motion.h2>
@@ -155,37 +168,44 @@ export default function VerificationCard() {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="mt-2 text-gray-600 dark:text-gray-300"
+              className="mt-2 text-sm text-slate-500 dark:text-slate-400 font-medium"
             >
-              Redirecting you to onboarding...
+              Signing you into your workspace...
             </motion.p>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="mt-6 flex items-center gap-2 text-primary font-medium"
+              className="mt-6 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400"
             >
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
               <span>Please wait</span>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-          Verify Your Email Address
+      <div className="text-center space-y-3">
+        {userType && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            <span className={`h-2 w-2 rounded-full ${roleTheme.accentBg}`}></span>
+            <span className={`text-[10px] font-black uppercase tracking-widest ${roleTheme.activeNavText}`}>
+              {roleTheme.label} Portal
+            </span>
+          </div>
+        )}
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+          Verify Email Address
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-          We&apos;ve sent a 6-digit confirmation code to your email address at{' '}
-          <strong className="font-medium text-gray-800 dark:text-gray-100">
+        <p className="text-xs sm:text-sm leading-relaxed text-slate-500 dark:text-slate-400 font-medium">
+          We&apos;ve sent a 6-digit confirmation code to{' '}
+          <span className="font-bold text-slate-900 dark:text-slate-100 underline decoration-indigo-500/30">
             {email}
-          </strong>
-          .
+          </span>
         </p>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 flex justify-center">
         <CodeInputGroup
           email={email}
           onCodeComplete={handleCodeComplete}
@@ -194,7 +214,8 @@ export default function VerificationCard() {
 
       <div className="mt-8">
         <VerifyButton
-          label={isVerifying ? "Verifying..." : "Verify Account"}
+          label={isVerifying ? "Verifying Code..." : "Verify & Continue"}
+          userType={userType}
           disabled={!isCodeComplete || isVerifying || isSuccess}
           onClick={handleVerify}
         />

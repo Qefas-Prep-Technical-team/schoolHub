@@ -10,6 +10,7 @@ import {
   saveExamAnswerService,
   startExamAttemptService,
   submitExamAttemptService,
+  submitSubjectPaperAttemptService,
 } from "./exam-attempt.service";
 import { handleError } from "../../utils/error-handler";
 
@@ -220,6 +221,31 @@ export const getExamAttempts = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return handleError(res, error, "exam.getExamAttempts");
+  }
+};
+
+export const submitSubjectPaper = async (req: Request, res: Response) => {
+  try {
+    if (!req.user || req.user.userType !== UserRole.STUDENT) {
+      return res.status(403).json({
+        success: false,
+        message: "Only students can submit subject papers",
+      });
+    }
+
+    const data = await submitSubjectPaperAttemptService({
+      examId: req.params.id as string,
+      studentId: req.user.id,
+      subjectPaperId: req.params.paperId as string,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Subject paper submitted successfully",
+      data,
+    });
+  } catch (error: any) {
+    return handleError(res, error, "exam.submitSubjectPaper");
   }
 };
 

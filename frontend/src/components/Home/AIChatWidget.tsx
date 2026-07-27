@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
 import { io, Socket } from 'socket.io-client';
+import { motion } from 'framer-motion';
 
 type Message = {
   role: 'ai' | 'user' | 'agent';
@@ -260,7 +261,7 @@ export default function AIChatWidget() {
   if (!mounted || !shouldShow) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-[9999] font-sans">
+    <motion.div drag dragMomentum={false} className="fixed bottom-5 right-5 z-[9999] font-sans">
       {/* Chat Window */}
       {isOpen && (
         <div className="w-[350px] h-[500px] bg-white dark:bg-gray-900 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden mb-4 border border-gray-200 dark:border-gray-800 transition-all duration-300 transform origin-bottom-right">
@@ -361,6 +362,6 @@ export default function AIChatWidget() {
           </svg>
         )}
       </button>
-    </div>
+    </motion.div>
   );
 }

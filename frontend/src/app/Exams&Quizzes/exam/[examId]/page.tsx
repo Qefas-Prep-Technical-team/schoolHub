@@ -6,7 +6,8 @@ import {
   useExamAttempt, 
   useStartExamAttempt,
   useSaveAnswer, 
-  useSubmitAttempt 
+  useSubmitAttempt,
+  useSubmitSubjectPaper,
 } from "@/lib/api/hooks/useExams";
 import { Loader2, AlertCircle, Clock, FileText, Calendar, Info, PlayCircle, ChevronLeft, BookOpen, Lock as LockIcon, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -16,15 +17,16 @@ import { Button as ShcnButton } from "@/components/ui/button";
 import StudentReadingModal from "./components/StudentReadingModal";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 import ImageLightbox from "@/components/ui/ImageLightbox";
+import SubmissionProgressModal, { PaperSubmitState } from "./components/SubmissionProgressModal";
 
 // UI Components from the "start" directory
 import PageHeader from './start/components/PageHeader';
 import ExamDetails from './start/components/ExamDetails';
 import QuestionCard from './start/components/QuestionCard';
 import QuestionNavigation from './start/components/QuestionNavigation';
-import ConfirmationModal from "@/app/dashboard/admin/exams/components/ui/ConfirmationModal";
 import { SubjectPaper, SubjectAttempt } from "@/lib/api/services/examService";
 import { AxiosError } from "axios";
+
 
 /**
  * Unified Exam Page
@@ -40,6 +42,7 @@ export default function UnifiedExamPage() {
   const startAttemptMutation = useStartExamAttempt();
   const saveAnswerMutation = useSaveAnswer();
   const submitAttemptMutation = useSubmitAttempt();
+  const submitSubjectPaperMutation = useSubmitSubjectPaper();
 
   // Mode State
   const [showDetails, setShowDetails] = useState(false);
@@ -48,7 +51,6 @@ export default function UnifiedExamPage() {
   // Navigation State
   const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
-  const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<{ src: string, alt?: string } | null>(null);
   
   // Timer State
@@ -62,6 +64,13 @@ export default function UnifiedExamPage() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const isSubmittingRef = useRef(false);
   const initialAnswersRestoredRef = useRef(false);
+
+  // Sequential submission progress state
+  const [paperSubmitStates, setPaperSubmitStates] = useState<PaperSubmitState[]>([]);
+  const [finaliseStatus, setFinaliseStatus] = useState<"idle" | "finalising" | "done" | "error">("idle");
+  const [finaliseError, setFinaliseError] = useState<string | undefined>(undefined);
+  const isSubmissionModalOpen = paperSubmitStates.length > 0;
+
 
   // Define basic memos first
   const totalDuration = useMemo(() => {
@@ -186,44 +195,139 @@ export default function UnifiedExamPage() {
     }
   };
 
-  const handleTimerExpire = useCallback(async () => {
+  /**
+   * Flushes all local answers for a given subject paper to the backend.
+   * Processes them in chunks of 100 to avoid oversized payloads.
+   * Each chunk is submitted sequentially — the next chunk only starts
+   * when the previous one completes successfully.
+   */
+  const flushAnswersForPaper = useCallback(async (
+    paperId: string,
+    questionIds: string[]
+  ) => {
+    const CHUNK_SIZE = 100;
+    const answersToFlush = questionIds
+      .filter((qId) => localAnswers[qId] !== undefined)
+      .map((qId) => ({ questionId: qId, answer: localAnswers[qId] }));
+
+    if (answersToFlush.length === 0) return;
+
+    for (let i = 0; i < answersToFlush.length; i += CHUNK_SIZE) {
+      const chunk = answersToFlush.slice(i, i + CHUNK_SIZE);
+      // Submit each answer in the chunk sequentially
+      for (const { questionId, answer } of chunk) {
+        await saveAnswerMutation.mutateAsync({
+          examId: examId as string,
+          data: { subjectPaperId: paperId, questionId, answer },
+        });
+      }
+    }
+  }, [examId, localAnswers, saveAnswerMutation]);
+
+  /**
+   * Core sequential submission flow:
+   * 1. For each subject paper:
+   *    a. Flush all local answers in batches of 100 (sequentially)
+   *    b. Mark the paper as submitted on the backend (idempotent)
+   * 2. Finalise the entire exam attempt (scoring)
+   * 3. Redirect to result page
+   *
+   * Guards against double-execution via isSubmittingRef.
+   */
+  const handleSequentialSubmit = useCallback(async () => {
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
-    
-    setIsAutoSubmitting(true);
-    toast.warning("Time is up! Submitting your exam automatically...", { toastId: "timer-expire" });
-    
+
+    const papers = currentSubjectPapers;
+    if (!papers || papers.length === 0) {
+      isSubmittingRef.current = false;
+      return;
+    }
+
+    // Initialise all papers as pending in the progress modal
+    setPaperSubmitStates(
+      papers.map((p: SubjectPaper) => ({
+        paperId: p.id,
+        paperName: p.title || (p as { subject?: { name?: string } }).subject?.name || "Unnamed Paper",
+        questionCount: p.questions?.length || 0,
+        status: "pending",
+      }))
+    );
+    setFinaliseStatus("idle");
+    setFinaliseError(undefined);
+
+    // Process each paper sequentially
+    for (let i = 0; i < papers.length; i++) {
+      const paper = papers[i];
+      const questionIds = (paper.questions || []).map((q: { id: string }) => q.id);
+
+      // Mark this paper as submitting
+      setPaperSubmitStates((prev) =>
+        prev.map((s) => (s.paperId === paper.id ? { ...s, status: "submitting" } : s))
+      );
+
+      try {
+        // Step 1: Flush all local answers for this paper in chunks of 100
+        await flushAnswersForPaper(paper.id, questionIds);
+
+        // Step 2: Mark this subject paper as submitted on the backend (idempotent)
+        await submitSubjectPaperMutation.mutateAsync({
+          examId: examId as string,
+          paperId: paper.id,
+        });
+
+        // Mark done
+        setPaperSubmitStates((prev) =>
+          prev.map((s) => (s.paperId === paper.id ? { ...s, status: "done" } : s))
+        );
+      } catch (err) {
+        const axiosErr = err as AxiosError<{ message?: string }>;
+        const msg = axiosErr.response?.data?.message || axiosErr.message || "Unknown error";
+        setPaperSubmitStates((prev) =>
+          prev.map((s) =>
+            s.paperId === paper.id ? { ...s, status: "error", errorMessage: msg } : s
+          )
+        );
+        // Stop — don't proceed to the next paper or finalise
+        isSubmittingRef.current = false;
+        toast.error(`Failed to submit "${paper.title || "paper"}": ${msg}`, { toastId: "paper-submit-fail" });
+        return;
+      }
+    }
+
+    // All papers done — now finalise the entire attempt
+    setFinaliseStatus("finalising");
     try {
       await submitAttemptMutation.mutateAsync(examId as string);
-      // Short delay to ensure user sees the "Submitting" state before redirect
+      setFinaliseStatus("done");
+      // Brief delay so user sees the "done" state before redirect
       setTimeout(() => {
         router.push(`/dashboard/student/exams&quizzes/${examId}/result`);
-      }, 1000);
+      }, 1200);
     } catch (err) {
-      console.error("Auto-submit failed:", err);
-      setIsAutoSubmitting(false);
+      const axiosErr = err as AxiosError<{ message?: string }>;
+      const msg = axiosErr.response?.data?.message || axiosErr.message || "Finalisation failed";
+      setFinaliseStatus("error");
+      setFinaliseError(msg);
       isSubmittingRef.current = false;
-      toast.error("Auto-submit failed. Please try manual submission.", { toastId: "auto-submit-fail" });
+      toast.error(`Finalisation failed: ${msg}`, { toastId: "finalise-fail" });
     }
-  }, [examId, router, submitAttemptMutation]);
+  }, [currentSubjectPapers, examId, flushAnswersForPaper, submitSubjectPaperMutation, submitAttemptMutation, router]);
+
+
+  const handleTimerExpire = useCallback(async () => {
+    if (isSubmittingRef.current) return;
+    setIsAutoSubmitting(true);
+    toast.warning("Time is up! Submitting your exam automatically...", { toastId: "timer-expire" });
+    // Delegate to the sequential flow for reliability
+    await handleSequentialSubmit();
+  }, [handleSequentialSubmit]);
 
   const handleZoom = useCallback((src: string, alt?: string) => {
     setLightboxImage({ src, alt });
   }, []);
 
-  const handleManualSubmit = async () => {
-    if (isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
 
-    try {
-      await submitAttemptMutation.mutateAsync(examId as string);
-      setShowSubmitModal(false);
-      router.push(`/dashboard/student/exams&quizzes/${examId}/result`);
-    } catch {
-      isSubmittingRef.current = false;
-      toast.error("Failed to submit exam");
-    }
-  };
 
   // --- Effects (Moved after memos and callbacks to avoid ReferenceError) ---
 
@@ -582,7 +686,7 @@ export default function UnifiedExamPage() {
                   ).filter(Boolean) || []}
                   onQuestionSelect={setActiveQuestionIndex}
                   onNextQuestion={handleNextQuestion}
-                  onSubmit={() => setShowSubmitModal(true)}
+                  onSubmit={handleSequentialSubmit}
                   onTimerExpire={handleTimerExpire}
                 />
                 
@@ -615,15 +719,11 @@ export default function UnifiedExamPage() {
         </main>
       </div>
 
-      <ConfirmationModal
-        isOpen={showSubmitModal}
-        onClose={() => setShowSubmitModal(false)}
-        onConfirm={handleManualSubmit}
-        title="Submit Examination?"
-        description="Are you sure you want to finish the exam? You will not be able to change your answers once submitted."
-        variant="warning"
-        confirmText="Yes, Submit it"
-        isLoading={submitAttemptMutation.isPending}
+      <SubmissionProgressModal
+        isOpen={isSubmissionModalOpen}
+        papers={paperSubmitStates}
+        finaliseStatus={finaliseStatus}
+        finaliseError={finaliseError}
       />
 
       <StudentReadingModal
@@ -635,28 +735,6 @@ export default function UnifiedExamPage() {
         subjectName={activeSubject?.title || activeSubject?.subject?.name || "Subject"}
         onZoom={handleZoom}
       />
-
-      {/* Auto-submission Overlay */}
-      {isAutoSubmitting && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="flex flex-col items-center space-y-6 text-center max-w-md px-6">
-            <div className="relative">
-              <div className="h-24 w-24 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Clock className="text-primary h-8 w-8 animate-pulse" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-3xl font-black tracking-tight text-[#111827] dark:text-white uppercase italic">Time Is Up!</h2>
-              <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Your examination is being finalized and submitted...</p>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span className="text-xs font-black text-primary uppercase">Encrypted Submission in Progress</span>
-            </div>
-          </div>
-        </div>
-      )}
 
       <ImageLightbox 
         isOpen={!!lightboxImage}

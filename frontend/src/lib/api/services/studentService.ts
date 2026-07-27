@@ -82,27 +82,27 @@ export const studentService = {
 
   getProfile: async () => {
     const response = await apiClient.get<{ data: StudentProfile }>("/students/profile");
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   getStudentById: async (id: string) => {
     const response = await apiClient.get<{ data: StudentProfile }>(`/students/${id}`);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   updateDepartment: async (departmentId: string) => {
     const response = await apiClient.patch<{ data: Student }>("/students/profile/department", { departmentId });
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   updateLevel: async (level: string) => {
     const response = await apiClient.patch<{ data: Student }>("/students/profile/level", { level });
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   updateDepartmentByAdmin: async (studentId: string, departmentId: string) => {
     const response = await apiClient.patch<{ data: Student }>(`/students/${studentId}/department`, { departmentId });
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   updateProfile: async (data: { 
@@ -120,7 +120,7 @@ export const studentService = {
     guardianPhone?: string;
   }) => {
     const response = await apiClient.patch<{ data: StudentProfile }>("/students/profile", data);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   requestEmailUpdate: async (newEmail: string) => {
@@ -135,12 +135,12 @@ export const studentService = {
 
   getBehaviourProfile: async (studentId: string) => {
     const response = await apiClient.get<{ data: StudentBehaviourProfile }>(`/students/${studentId}/behaviour-profile`);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   updateBehaviourProfile: async (studentId: string, data: { conductScore?: number; strengths?: { name: string; description: string; icon: string }[] }) => {
     const response = await apiClient.put<{ data: StudentBehaviourProfile }>(`/students/${studentId}/behaviour-profile`, data);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   getAttendance: async (studentId: string, filters?: { startDate?: string; endDate?: string }) => {
@@ -150,12 +150,12 @@ export const studentService = {
     const queryString = params.toString() ? `?${params.toString()}` : '';
     
     const response = await apiClient.get<{ data: any[] }>(`/students/${studentId}/attendance${queryString}`);
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   updateAttendance: async (studentId: string, data: { date: string; status: string; note?: string }) => {
     const response = await apiClient.post<{ data: any }>(`/students/${studentId}/attendance`, data);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   updatePassword: async (data: any): Promise<any> => {
@@ -170,7 +170,7 @@ export const studentService = {
 
   getStudentHistory: async (studentId: string): Promise<any[]> => {
     const response = await apiClient.get<{ data: any[] }>(`/students/${studentId}/history`);
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   assignPrefectRole: async (studentId: string, role: string) => {

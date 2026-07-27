@@ -11,17 +11,43 @@ export class SchoolSubscriptionService {
    */
   static async initializeFreePlan(schoolId: string, tx?: Prisma.TransactionClient, planId?: string) {
     const effectivePlanId = planId || process.env.SCHOOL_FREE_PLAN;
-    
-    if (!effectivePlanId) {
-      throw new Error("The SCHOOL_FREE_PLAN environment variable is missing.");
+    const client = tx || prisma;
+    let freePlan: any = null;
+
+    if (effectivePlanId) {
+      freePlan = await client.subscriptionPlan.findUnique({
+        where: { id: effectivePlanId },
+      });
     }
 
-    const freePlan = await (tx || prisma).subscriptionPlan.findUnique({
-      where: { id: effectivePlanId },
-    });
+    if (!freePlan) {
+      freePlan = await client.subscriptionPlan.findFirst({
+        where: {
+          planScope: PlanScope.SCHOOL,
+          OR: [
+            { type: "FREE" },
+            { monthlyPrice: 0 },
+            { name: { contains: "Free", mode: "insensitive" } }
+          ]
+        }
+      });
+    }
 
     if (!freePlan) {
-      throw new Error(`The configured institutional free plan ID (${effectivePlanId}) was not found in the database.`);
+      freePlan = await client.subscriptionPlan.findFirst({
+        where: {
+          OR: [
+            { type: "FREE" },
+            { monthlyPrice: 0 },
+            { name: { contains: "Free", mode: "insensitive" } }
+          ]
+        }
+      });
+    }
+
+    if (!freePlan) {
+      console.warn(`[SchoolSubscriptionService] No free subscription plan found in database for school ${schoolId}. Skipping initial assignment.`);
+      return null;
     }
 
     const execute = async (t: Prisma.TransactionClient) => {

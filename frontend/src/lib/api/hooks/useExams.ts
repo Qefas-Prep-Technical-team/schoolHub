@@ -218,6 +218,16 @@ export const useSubmitAttempt = () => {
   });
 };
 
+// Submits a single subject paper attempt (idempotent).
+// No global toasts — the SubmissionProgressModal handles all visual feedback.
+export const useSubmitSubjectPaper = () => {
+  return useMutation({
+    mutationFn: (params: { examId: string; paperId: string }) =>
+      examService.submitSubjectPaperAttempt(params.examId, params.paperId),
+  });
+};
+
+
 export const useExamResult = (examId: string, studentId?: string) => {
   return useQuery({
     queryKey: [...examKeys.detail(examId), "result", studentId || "me"],

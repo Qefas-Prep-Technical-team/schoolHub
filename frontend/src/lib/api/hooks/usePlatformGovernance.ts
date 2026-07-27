@@ -61,7 +61,7 @@ export const usePublicPlatformSettings = () => {
         queryKey: ["public-platform-settings"],
         queryFn: async () => {
             const { data } = await platformClient.get<{ data: Record<string, unknown> }>("/platform/settings/public");
-            return data.data;
+            return data?.data ?? data ?? null;
         }
     })
 }

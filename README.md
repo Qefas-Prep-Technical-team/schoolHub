@@ -94,15 +94,44 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 4️⃣ Run Development Servers
 
-Open two terminals to run both services simultaneously.
+Open multiple terminals to run the required services.
 
 ▶ Run Backend
 cd backend
 npm run dev
 
-▶ Run Frontend
+▶ Run Web Frontend (Next.js)
 cd frontend
 npm run dev
+
+▶ Run Desktop App (Tauri + Vite)
+cd desktop
+npm install
+npm run tauri dev
+
+▶ Run Mobile App (Expo)
+cd Mobile
+npm install
+npm start
+
+5️⃣ Clear Errors and Cache (Troubleshooting)
+
+If you encounter unexpected errors, caching issues, or dependency conflicts, follow these steps to reset the project state:
+
+🔹 Clear Next.js Cache (Web Frontend)
+cd frontend
+rm -rf .next
+npm run dev
+
+🔹 Clear Expo Cache (Mobile App)
+cd Mobile
+npx expo start -c
+
+🔹 Clear Global npm Cache & Reinstall Dependencies (Any Project)
+# Run this in the specific project directory (e.g., frontend, backend, desktop, Mobile)
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
 
 📖 Folder Breakdown
 frontend/

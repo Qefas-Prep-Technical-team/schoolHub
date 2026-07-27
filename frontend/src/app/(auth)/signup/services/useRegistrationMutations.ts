@@ -10,10 +10,13 @@ export const useParentRegistration = () => {
 
   return useMutation({
     mutationFn: registrationAPI.registerParent,
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       authToast.registrationSuccess("Parent");
-      // console.log("Parent registration successful:", response.data);
+      const preAuthToken = response?.data?.preAuthToken || response?.data?.data?.preAuthToken || response?.preAuthToken;
+      if (preAuthToken) {
+        sessionStorage.setItem("preAuthToken", preAuthToken);
+      }
     },
     onError: (error: any) => {
       const errorMessage =
@@ -32,10 +35,13 @@ export const useTeacherRegistration = () => {
 
   return useMutation({
     mutationFn: registrationAPI.registerTeacher,
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       authToast.registrationSuccess("Teacher");
-      // console.log("Teacher registration successful:", response.data);
+      const preAuthToken = response?.data?.preAuthToken || response?.data?.data?.preAuthToken || response?.preAuthToken;
+      if (preAuthToken) {
+        sessionStorage.setItem("preAuthToken", preAuthToken);
+      }
     },
     onError: (error: any) => {
       const errorMessage =
@@ -54,11 +60,13 @@ export const useStudentRegistration = () => {
 
   return useMutation({
     mutationFn: registrationAPI.registerStudent,
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       authToast.registrationSuccess("Student");
-      // console.log("Student registration successful:", response.data);
-      // Redirect logic can be handled in the component if needed
+      const preAuthToken = response?.data?.preAuthToken || response?.data?.data?.preAuthToken || response?.preAuthToken;
+      if (preAuthToken) {
+        sessionStorage.setItem("preAuthToken", preAuthToken);
+      }
     },
     onError: (error: any) => {
       const errorMessage =
@@ -77,10 +85,13 @@ export const useSchoolRegistration = () => {
 
   return useMutation({
     mutationFn: registrationAPI.registerSchool,
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       authToast.registrationSuccess("School");
-      // console.log("School registration successful:", response.data);
+      const preAuthToken = response?.data?.preAuthToken || response?.data?.data?.preAuthToken || response?.preAuthToken;
+      if (preAuthToken) {
+        sessionStorage.setItem("preAuthToken", preAuthToken);
+      }
     },
     onError: (error: any) => {
       const errorMessage =

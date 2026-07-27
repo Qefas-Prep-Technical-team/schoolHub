@@ -37,6 +37,7 @@ import {
   saveExamAnswer,
   startExamAttempt,
   submitExamAttempt,
+  submitSubjectPaper,
 } from "./exam-attempt.controller";
 import {
   generateExamQuestions,
@@ -106,6 +107,7 @@ router.get("/:id/attempt", authenticateToken, getExamAttempt);
 router.get("/:id/attempts", authenticateToken, getExamAttempts);
 router.delete("/:id/attempts/:studentId", authenticateToken, deleteExamAttempt);
 router.post("/:id/answers", authenticateToken, saveExamAnswer);
+router.post("/:id/papers/:paperId/submit", authenticateToken, submitSubjectPaper);
 router.post("/:id/submit", authenticateToken, submitExamAttempt);
 router.get("/:id/review", authenticateToken, getExamReviewData);
 router.get("/:id/result", authenticateToken, getExamResult);

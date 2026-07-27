@@ -9,7 +9,7 @@ export const teacherService = {
     const response = await apiClient.get("/teacher/dashboard-stats", {
       params: { schoolId },
     });
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   /**
@@ -17,7 +17,7 @@ export const teacherService = {
    */
   getLinkedSchools: async () => {
     const response = await apiClient.get("/teacher/linked-schools");
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   /**
@@ -27,7 +27,7 @@ export const teacherService = {
     const response = await apiClient.get("/teacher/students", {
       params: options,
     });
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   /**
@@ -37,12 +37,12 @@ export const teacherService = {
     const response = await apiClient.get("/teacher/classes", {
       params: options,
     });
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   getClassDetail: async (classId: string) => {
     const response = await apiClient.get(`/teacher/classes/${classId}`);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   /**
@@ -52,7 +52,7 @@ export const teacherService = {
     const response = await apiClient.get(`/teacher/classes/${classId}/assignments`, {
       params: { category }
     });
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   /**
@@ -60,7 +60,7 @@ export const teacherService = {
    */
   getClassGrades: async (classId: string) => {
     const response = await apiClient.get(`/teacher/classes/${classId}/grades`);
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   /**
@@ -102,7 +102,7 @@ export const teacherService = {
     const response = await apiClient.get("/teacher/performance-trends", {
       params: { schoolId, range }
     });
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   /**
@@ -112,7 +112,7 @@ export const teacherService = {
     const response = await apiClient.get("/exams", {
       params: options,
     });
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   /**
@@ -122,7 +122,7 @@ export const teacherService = {
     const response = await apiClient.get("/exams/papers/all", {
       params: options,
     });
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   /**
@@ -132,7 +132,7 @@ export const teacherService = {
     const response = await apiClient.get("/teacher/subjects", {
       params: options,
     });
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   /**
@@ -140,7 +140,7 @@ export const teacherService = {
    */
   getProfile: async () => {
     const response = await apiClient.get("/teacher/profile");
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   /**
@@ -178,7 +178,7 @@ export const teacherService = {
    */
   getSettings: async () => {
     const response = await apiClient.get("/teacher/settings");
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   /**
@@ -186,7 +186,7 @@ export const teacherService = {
    */
   updateSettings: async (settings: Record<string, unknown>) => {
     const response = await apiClient.patch("/teacher/settings", settings);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   /**
