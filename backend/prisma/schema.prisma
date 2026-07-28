@@ -1139,6 +1139,7 @@ model Transaction {
   reference          String    @unique
   authorizationToken String?
   paymentMethod      String?
+  paymentReusable    Boolean?  // true = card token stored (auto-renewal eligible), false = transfer/USSD
   paidAt             DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt

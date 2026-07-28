@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, CheckCircle2, Lock, ShieldCheck, Mail, KeyRound, Loader2, Zap, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Lock, ShieldCheck, Mail, KeyRound, Loader2, Zap, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { usePaystackPayment } from 'react-paystack';
 import { paymentService } from '@/lib/api/services/paymentService';
@@ -253,7 +253,7 @@ export default function CheckoutPage() {
 
     const handleSavePassword = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (password.length < 6) return toast.error("Password must be at least 6 characters");
+        if (password.length < 8) return toast.error("Password must be at least 8 characters");
         if (password !== confirmPassword) return toast.error("Passwords do not match");
 
         setIsLoading(true);
@@ -685,9 +685,16 @@ export default function CheckoutPage() {
                                             <span className="text-5xl font-black tracking-tighter text-white">₦0</span>
                                             <span className="text-blue-400 text-sm font-bold uppercase">({trialDaysCount} Days Free)</span>
                                         </div>
-                                        <p className="text-[10px] text-slate-500 mt-2 flex items-center gap-1 italic">
-                                            <Lock className="w-3 h-3" /> ₦100 nominal card verification fee applies
-                                        </p>
+                                        {/* ── ₦100 Card Validation Notice ── */}
+                                        <div className="mt-4 flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3">
+                                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                                            <div className="text-xs leading-relaxed text-amber-200">
+                                                <span className="font-bold text-amber-300">₦100 card validation charge applies.</span>
+                                                {" "}This is a one-time, non-refundable fee used solely to verify and securely store your card details for
+                                                {" "}auto-renewal at the end of your free trial. You will <span className="font-semibold">not</span> be
+                                                {" "}charged your subscription fee today.
+                                            </div>
+                                        </div>
                                     </div>
                                 ) : (
                                     <p className="text-5xl font-black tracking-tighter">₦{checkoutAmount.toLocaleString()}</p>
