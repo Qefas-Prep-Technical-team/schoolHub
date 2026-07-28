@@ -21,6 +21,7 @@ import subscriptionRoutes from "../modules/subscription/subscription.route";
 import platformRoutes from "../modules/platform";
 import parentRoutes from "../modules/parent/parent.route";
 import supportRoutes from "../modules/support/support.route";
+import aiComplaintRoutes from "../modules/ai-complaint/ai-complaint.route";
 
 const router = Router();
 
@@ -45,5 +46,6 @@ router.use("/parents", authenticateToken, parentRoutes);
 router.use("/finance", financeRoutes);
 router.use("/payment", paymentRoutes);
 router.use("/support", supportRoutes);
+router.use("/ai-complaints", aiComplaintRoutes);
 
 export default router;

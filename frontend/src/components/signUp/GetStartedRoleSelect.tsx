@@ -11,8 +11,8 @@ const roles = [
         title: 'Institutional',
         subtitle: 'School Admin',
         description: 'Command center for school operations, staff, and institutional metrics.',
-        accent: 'from-indigo-600 to-blue-500',
-        shadow: 'shadow-indigo-500/20'
+        accent: 'from-blue-600 to-indigo-600',
+        shadow: 'shadow-blue-500/20'
     },
     {
         key: 'teacher',
@@ -20,8 +20,8 @@ const roles = [
         title: 'Academic',
         subtitle: 'Teachers',
         description: 'Orchestrate classes, assessments, and drive student success.',
-        accent: 'from-blue-600 to-cyan-500',
-        shadow: 'shadow-blue-500/20'
+        accent: 'from-emerald-600 to-teal-500',
+        shadow: 'shadow-emerald-500/20'
     },
     {
         key: 'student',
@@ -29,8 +29,8 @@ const roles = [
         title: 'Learning',
         subtitle: 'Student',
         description: 'Your personal portal for courses, performance tracking, and exams.',
-        accent: 'from-violet-600 to-indigo-500',
-        shadow: 'shadow-violet-500/20'
+        accent: 'from-pink-600 to-rose-500',
+        shadow: 'shadow-pink-500/20'
     },
     {
         key: 'parent',
@@ -38,8 +38,8 @@ const roles = [
         title: 'Support',
         subtitle: 'Guardian & Parent',
         description: 'Stay connected with your child’s academic journey and growth.',
-        accent: 'from-fuchsia-600 to-pink-500',
-        shadow: 'shadow-fuchsia-500/20'
+        accent: 'from-orange-600 to-amber-500',
+        shadow: 'shadow-orange-500/20'
     },
 ];
 

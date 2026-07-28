@@ -1998,3 +1998,16 @@ model GradeAuditLog {
   @@index([changedById])
   @@map("grade_audit_logs")
 }
+
+model AIComplaint {
+  id             String        @id @default(uuid())
+  complaintText  String
+  email          String
+  whatsappNumber String
+  status         SupportStatus @default(OPEN)
+  resolutionText String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@map("ai_complaints")
+}

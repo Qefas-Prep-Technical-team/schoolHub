@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { format } from "date-fns"
 import { usePlatformSchools, useImpersonateAdmin } from "@/lib/api/hooks/usePlatformSchools"
 import { usePlatformTickets, usePlatformTicketDetails, usePlatformUpdateTicket, usePlatformReplyTicket } from "@/lib/api/hooks/usePlatformSupport"
 import { useSupportSocket } from "@/lib/hooks/useSupportSocket"
-import { Search, MessageCircle, ShieldCheck, Zap, Mail, Phone, Clock, Send, Globe, CheckCircle2 } from "lucide-react"
+import { Search, MessageCircle, ShieldCheck, Zap, Mail, Phone, Clock, Send, Globe, CheckCircle2, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,21 +16,63 @@ export default function SupportCenterPage() {
     const [search, setSearch] = useState("")
     const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
     const [newMessage, setNewMessage] = useState("")
+    const [ticketSearch, setTicketSearch] = useState("")
+    const [dateFilter, setDateFilter] = useState("")
 
     const { data: schoolsResponse, isLoading: schoolsLoading } = usePlatformSchools(search)
     const { data: tickets, isLoading: ticketsLoading } = usePlatformTickets()
     
     const schools = schoolsResponse?.data || [];
     
-    // Ticket handling
     const { data: ticketDetails } = usePlatformTicketDetails(activeTicketId || undefined)
     const updateTicket = usePlatformUpdateTicket()
     const replyTicket = usePlatformReplyTicket()
     useSupportSocket(activeTicketId || undefined)
 
+    const messagesEndRef = useRef<HTMLDivElement>(null)
+    const prevMessagesLengthRef = useRef(0)
+
+    useEffect(() => {
+        if (ticketDetails?.messages) {
+            // Auto scroll to bottom
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+            
+            const newLength = ticketDetails.messages.length;
+            if (prevMessagesLengthRef.current > 0 && newLength > prevMessagesLengthRef.current) {
+                const lastMsg = ticketDetails.messages[newLength - 1];
+                // Play sound if the message is from the user or AI (not us)
+                if (lastMsg && lastMsg.senderRole !== "SUPPORT_AGENT") {
+                    try {
+                        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                        const playNote = (freq: number, startTime: number, duration: number) => {
+                            const oscillator = audioCtx.createOscillator();
+                            const gainNode = audioCtx.createGain();
+                            oscillator.type = "sine";
+                            oscillator.frequency.value = freq;
+                            gainNode.gain.setValueAtTime(0, startTime);
+                            gainNode.gain.linearRampToValueAtTime(0.5, startTime + 0.02);
+                            gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioCtx.destination);
+                            oscillator.start(startTime);
+                            oscillator.stop(startTime + duration);
+                        };
+                        const now = audioCtx.currentTime;
+                        playNote(784, now, 0.2); // G5
+                        playNote(1046.5, now + 0.1, 0.4); // C6
+                    } catch (e) {
+                        console.error("Audio API not supported");
+                    }
+                }
+            }
+            prevMessagesLengthRef.current = newLength;
+        }
+    }, [ticketDetails?.messages]);
+
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault()
         if (!newMessage.trim() || !activeTicketId) return
+        console.log("[SupportConsole] Sending message for ticket:", activeTicketId, "Content:", newMessage);
         replyTicket.mutate(
             { ticketId: activeTicketId, content: newMessage },
             { onSuccess: () => setNewMessage("") }
@@ -101,12 +143,22 @@ export default function SupportCenterPage() {
                 <Card className="lg:col-span-1 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-0 shadow-xl dark:shadow-2xl flex flex-col overflow-hidden">
                     <div className="p-6 border-b border-slate-100 dark:border-slate-800">
                         <CardTitle className="text-lg font-black text-slate-900 dark:text-white mb-4">Tickets Inbox</CardTitle>
-                        <div className="relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={16} />
-                            <input
-                                type="search"
-                                placeholder="Search subject..."
-                                className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5 text-sm outline-none focus:border-indigo-500 transition-all font-medium"
+                        <div className="flex gap-2">
+                            <div className="relative group flex-1">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={16} />
+                                <input
+                                    type="search"
+                                    value={ticketSearch}
+                                    onChange={(e) => setTicketSearch(e.target.value)}
+                                    placeholder="Search subject..."
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5 text-sm outline-none focus:border-indigo-500 transition-all font-medium"
+                                />
+                            </div>
+                            <input 
+                                type="date"
+                                value={dateFilter}
+                                onChange={(e) => setDateFilter(e.target.value)}
+                                className="w-[140px] px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5 text-sm outline-none focus:border-indigo-500 transition-all font-medium text-slate-500"
                             />
                         </div>
                     </div>
@@ -118,7 +170,15 @@ export default function SupportCenterPage() {
                         ) : tickets?.length === 0 ? (
                             <div className="text-center py-10 text-slate-400">Box is empty</div>
                         ) : (
-                            tickets?.map((ticket: any) => (
+                            tickets?.filter((t: any) => {
+                                const searchLower = ticketSearch.toLowerCase();
+                                const matchesSearch = 
+                                    t.subject?.toLowerCase().includes(searchLower) || 
+                                    t.userName?.toLowerCase().includes(searchLower) ||
+                                    t.userEmail?.toLowerCase().includes(searchLower);
+                                const matchesDate = dateFilter ? t.createdAt.startsWith(dateFilter) : true;
+                                return matchesSearch && matchesDate;
+                            }).map((ticket: any) => (
                                 <button
                                     key={ticket.id}
                                     onClick={() => setActiveTicketId(ticket.id)}
@@ -164,12 +224,15 @@ export default function SupportCenterPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    {updateTicket.isPending && <Loader2 className="animate-spin text-indigo-500" size={16} />}
                                     <select 
                                         value={ticketDetails.status}
                                         onChange={(e) => handleUpdateStatus(e.target.value)}
+                                        disabled={updateTicket.isPending}
                                         className={cn(
                                             "text-xs font-bold px-3 py-1.5 rounded-lg border outline-none appearance-none cursor-pointer",
-                                            statusColors[ticketDetails.status]
+                                            statusColors[ticketDetails.status],
+                                            updateTicket.isPending && "opacity-50 cursor-not-allowed"
                                         )}
                                     >
                                         <option value="OPEN">Open</option>
@@ -193,25 +256,45 @@ export default function SupportCenterPage() {
 
                                 {ticketDetails.messages?.map((msg: any) => {
                                     const isAgent = msg.senderRole === "SUPPORT_AGENT"
+                                    const isAI = msg.senderRole === "SYSTEM" || msg.senderRole === "AI_SYSTEM" || msg.senderRole === "AI"
+                                    const isUser = !isAgent && !isAI;
+
+                                    let bubbleAlign = "items-start"
+                                    let nameStyle = "text-slate-400 ml-4"
+                                    let bubbleStyle = "rounded-2xl rounded-tl-sm bg-slate-100 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
+                                    
+                                    if (isAgent) {
+                                       bubbleAlign = "items-end ml-auto"
+                                       nameStyle = "text-indigo-500 dark:text-indigo-400 mr-4"
+                                       bubbleStyle = "rounded-2xl rounded-tr-sm bg-indigo-600 text-white border border-indigo-500 shadow-indigo-600/20"
+                                    } else if (isUser) {
+                                       bubbleAlign = "items-start"
+                                       nameStyle = "text-blue-500 dark:text-blue-400 ml-4"
+                                       bubbleStyle = "rounded-2xl rounded-tl-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm"
+                                    } else if (isAI) {
+                                       bubbleAlign = "items-end ml-auto"
+                                       nameStyle = "text-emerald-500 dark:text-emerald-400 mr-4"
+                                       bubbleStyle = "rounded-2xl rounded-tr-sm bg-emerald-50 dark:bg-emerald-900/20 text-emerald-900 dark:text-emerald-100 border border-emerald-200 dark:border-emerald-800/30 shadow-sm"
+                                    }
+
                                     return (
-                                    <div key={msg.id} className={cn("flex flex-col w-full max-w-[85%]", isAgent ? "items-end ml-auto" : "items-start")}>
+                                    <div key={msg.id} className={cn("flex flex-col w-full max-w-[85%]", bubbleAlign)}>
                                         <span className={cn(
                                             "text-[10px] font-bold uppercase tracking-wider mb-1", 
-                                            isAgent ? "text-indigo-500 dark:text-indigo-400 mr-4" : "text-slate-400 ml-4"
+                                            nameStyle
                                         )}>
-                                            {isAgent ? `Agent (${msg.senderName})` : msg.senderName} • {format(new Date(msg.createdAt), "h:mm a")}
+                                            {isAgent ? `Agent (${msg.senderName})` : isAI ? `🤖 AI (${msg.senderName})` : `👤 User (${msg.senderName})`} • {format(new Date(msg.createdAt), "h:mm a")}
                                         </span>
                                         <div className={cn(
-                                            "px-5 py-4 text-sm shadow-sm",
-                                            isAgent 
-                                                ? "rounded-2xl rounded-tr-sm bg-indigo-600 text-white border border-indigo-500 shadow-indigo-600/20" 
-                                                : "rounded-2xl rounded-tl-sm bg-slate-100 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
+                                            "px-5 py-4 text-sm shadow-sm whitespace-pre-wrap",
+                                            bubbleStyle
                                         )}>
                                         {msg.content}
                                         </div>
                                     </div>
                                     )
                                 })}
+                                <div ref={messagesEndRef} />
                             </div>
 
                             <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
@@ -228,7 +311,7 @@ export default function SupportCenterPage() {
                                         size="icon" 
                                         className="absolute right-2 h-10 w-10 shrink-0 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white"
                                     >
-                                        <Send size={16} />
+                                        {replyTicket.isPending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                                     </Button>
                                 </form>
                             </div>

@@ -403,6 +403,52 @@ export const saveExamAnswerService = async ({
   });
 };
 
+export const submitSubjectPaperAttemptService = async ({
+  examId,
+  studentId,
+  subjectPaperId,
+}: {
+  examId: string;
+  studentId: string;
+  subjectPaperId: string;
+}) => {
+  const attempt = await prisma.examAttempt.findUnique({
+    where: {
+      examId_studentId: {
+        examId,
+        studentId,
+      },
+    },
+  });
+
+  if (!attempt) {
+    throw new Error("Exam attempt not found. Start the exam first.");
+  }
+
+  await ensureAttemptStillActive(attempt.id);
+
+  const subjectAttempt = await prisma.subjectExamAttempt.findFirst({
+    where: {
+      examAttemptId: attempt.id,
+      subjectPaperId,
+    },
+  });
+
+  if (!subjectAttempt) {
+    throw new Error("Subject exam attempt not found for the given paper.");
+  }
+
+  // Idempotent — if already marked as submitted, return early without error
+  if (subjectAttempt.submittedAt) {
+    return subjectAttempt;
+  }
+
+  return prisma.subjectExamAttempt.update({
+    where: { id: subjectAttempt.id },
+    data: { submittedAt: new Date() },
+  });
+};
+
 export const scoreExamAttemptService = async ({
   examId,
   studentId,

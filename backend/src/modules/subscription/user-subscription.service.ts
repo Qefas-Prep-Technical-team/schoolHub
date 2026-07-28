@@ -10,7 +10,7 @@ export class UserSubscriptionService {
    * Used during user registration.
    */
   static async initializeFreePlan(userId: string, userType: UserRole, tx?: Prisma.TransactionClient, planId?: string) {
-    // Resolve the environment-based plan ID with no fallbacks
+    // Resolve the environment-based plan ID with fallbacks
     let effectivePlanId = planId;
 
     if (!effectivePlanId) {
@@ -30,16 +30,51 @@ export class UserSubscriptionService {
       }
     }
 
-    if (!effectivePlanId) {
-      throw new Error(`Required FREE plan environment variable is missing for role: ${userType}.`);
+    const client = tx || prisma;
+    let freePlan: any = null;
+
+    if (effectivePlanId) {
+      freePlan = await client.subscriptionPlan.findUnique({
+        where: { id: effectivePlanId },
+      });
     }
 
-    const freePlan = await (tx || prisma).subscriptionPlan.findUnique({
-      where: { id: effectivePlanId },
-    });
+    if (!freePlan) {
+      const scopeMap: Record<UserRole, PlanScope> = {
+        [UserRole.ADMIN]: PlanScope.SCHOOL,
+        [UserRole.TEACHER]: PlanScope.TEACHER,
+        [UserRole.STUDENT]: PlanScope.STUDENT,
+        [UserRole.PARENT]: PlanScope.PARENT,
+      };
+      const targetScope = scopeMap[userType] || PlanScope.SCHOOL;
+
+      freePlan = await client.subscriptionPlan.findFirst({
+        where: {
+          planScope: targetScope,
+          OR: [
+            { type: "FREE" },
+            { monthlyPrice: 0 },
+            { name: { contains: "Free", mode: "insensitive" } }
+          ]
+        }
+      });
+    }
 
     if (!freePlan) {
-      throw new Error(`The configured free plan ID (${effectivePlanId}) for ${userType} was not found in the database.`);
+      freePlan = await client.subscriptionPlan.findFirst({
+        where: {
+          OR: [
+            { type: "FREE" },
+            { monthlyPrice: 0 },
+            { name: { contains: "Free", mode: "insensitive" } }
+          ]
+        }
+      });
+    }
+
+    if (!freePlan) {
+      console.warn(`[UserSubscriptionService] No free subscription plan found in database for role ${userType}. Skipping initial assignment.`);
+      return null;
     }
 
     const execute = async (t: Prisma.TransactionClient) => {

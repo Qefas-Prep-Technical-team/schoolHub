@@ -5,12 +5,11 @@ import "./globals.css";
 import NavBar from "@/components/reusable/NavBar";
 import { ThemeClientProvider } from "@/context/ThemeClientProvider";
 import Footer from "@/components/reusable/Footer";
-import 'leaflet/dist/leaflet.css';
-import 'leaflet/dist/leaflet.css';
 import Providers from "@/utils/providers";
 import NextTopLoader from 'nextjs-toploader';
 import AppInitializer from "@/utils/AppInitializer";
 import AuthModal from "@/components/reusable/AuthModal";
+import AIChatWidget from "@/components/Home/AIChatWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -126,6 +125,7 @@ export default function RootLayout({
               <NextTopLoader showSpinner={false} />
               {children}
               <Footer />
+              <AIChatWidget />
             </AppInitializer>
 
 

@@ -6,24 +6,28 @@ import PortalCard from "./components/PortalCard";
 export default function SignInPage() {
   const portals = [
     {
+      role: "ADMIN",
       icon: "admin_panel_settings",
       title: "School Admin",
       description: "Oversee entire school operations, staff, and analytics.",
       href: "/login/school-admin",
     },
     {
+      role: "TEACHER",
       icon: "school",
       title: "Teacher",
       description: "Manage classes, assignments, grades, and student progress.",
       href: "/login/teacher",
     },
     {
+      role: "STUDENT",
       icon: "person",
       title: "Student",
       description: "Access courses, submit assignments, and track your performance.",
       href: "/login/student",
     },
     {
+      role: "PARENT",
       icon: "family_restroom",
       title: "Parent",
       description: "Stay updated on your child's academic journey and school news.",
@@ -40,6 +44,7 @@ export default function SignInPage() {
           {portals.map((portal, idx) => (
             <PortalCard
               key={portal.title}
+              role={portal.role}
               icon={portal.icon}
               title={portal.title}
               description={portal.description}

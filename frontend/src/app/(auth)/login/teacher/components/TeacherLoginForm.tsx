@@ -120,7 +120,7 @@ export default function TeacherLoginForm() {
             <div className="flex justify-end -mt-2">
                 <Link 
                     href={ROUTES.AUTH.FORGOT_PASSWORD} 
-                    className="text-[10px] font-black text-indigo-500 hover:text-indigo-400 uppercase tracking-widest transition-colors duration-200"
+                    className="text-[10px] font-black text-emerald-500 hover:text-emerald-400 uppercase tracking-widest transition-colors duration-200"
                 >
                     Forgot Password?
                 </Link>
@@ -131,7 +131,7 @@ export default function TeacherLoginForm() {
                 <button
                     type="submit"
                     disabled={isSubmitDisabled}
-                    className="flex h-14 w-full cursor-pointer items-center justify-center rounded-2xl bg-indigo-600 dark:bg-indigo-500 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-indigo-500/25 transition-all duration-300 hover:bg-indigo-500 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex h-14 w-full cursor-pointer items-center justify-center rounded-2xl bg-emerald-600 dark:bg-emerald-500 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-emerald-500/25 transition-all duration-300 hover:bg-emerald-500 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isPending ? (
                         <div className="flex items-center">

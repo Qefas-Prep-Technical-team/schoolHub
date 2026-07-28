@@ -75,92 +75,92 @@ export interface ClassTodayAttendance {
 export const schoolService = {
   getStats: async (schoolId: string): Promise<SchoolStats> => {
     const response = await apiClient.get(`/schools/${schoolId}/stats`);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   getPerformanceAnalysis: async (schoolId: string): Promise<PerformanceAnalysis> => {
     const response = await apiClient.get(`/schools/${schoolId}/performance-analysis`);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   getTeachers: async (schoolId: string) => {
     const response = await apiClient.get(`/schools/${schoolId}/teachers`);
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   getStudents: async (schoolId: string, params?: Record<string, unknown>) => {
     const response = await apiClient.get(`/schools/${schoolId}/students`, { params });
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   getProfile: async (schoolId: string) => {
     const response = await apiClient.get(`/schools/${schoolId}/profile`);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   updateProfile: async (schoolId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/schools/${schoolId}/profile`, data);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   getSettings: async (schoolId: string) => {
     const response = await apiClient.get(`/schools/${schoolId}/settings`);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   updateSettings: async (schoolId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/schools/${schoolId}/settings`, data);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   getDashboardSummary: async (schoolId: string): Promise<DashboardSummary> => {
     const response = await apiClient.get(`/schools/${schoolId}/dashboard-summary`);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   getBilling: async (schoolId: string, params?: { page?: number; limit?: number }): Promise<SchoolBilling> => {
     const response = await apiClient.get(`/schools/${schoolId}/billing`, { params });
-    return response.data.data;
+    return response.data.data ?? null;
   },
   
   getLandingPage: async (schoolId: string) => {
     const response = await apiClient.get(`/schools/${schoolId}/landing-page`);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   getLandingPageBySubdomain: async (subdomain: string) => {
     const response = await apiClient.get(`/schools/subdomain/${subdomain}/landing-page`);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   updateLandingPage: async (schoolId: string, data: Record<string, unknown>) => {
     const response = await apiClient.patch(`/schools/${schoolId}/landing-page`, data);
-    return response.data.data;
+    return response.data.data ?? null;
   },
 
   getTodayAttendance: async (schoolId: string, date?: string): Promise<ClassTodayAttendance[]> => {
     const params = date ? { date } : undefined;
     const response = await apiClient.get(`/schools/${schoolId}/today-attendance`, { params });
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   getSubjects: async (schoolId: string) => {
     const response = await apiClient.get(`/academic/subjects`, { params: { schoolId } });
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   getDepartments: async (schoolId: string) => {
     const response = await apiClient.get(`/academic/departments`, { params: { schoolId } });
-    return response.data.data;
+    return response.data.data ?? [];
   },
 
   submitInquiry: async (subdomain: string, data: Record<string, unknown>) => {
     const response = await apiClient.post(`/schools/subdomain/${subdomain}/inquiry`, data);
-    return response.data;
+    return response.data ?? null;
   },
 
   getInquiries: async (schoolId: string, params?: { page?: number; limit?: number }) => {
     const response = await apiClient.get(`/schools/${schoolId}/inquiries`, { params });
-    return response.data;
+    return response.data ?? null;
   },
 };

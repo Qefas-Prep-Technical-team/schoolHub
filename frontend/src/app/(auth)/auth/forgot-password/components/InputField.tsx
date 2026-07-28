@@ -1,6 +1,4 @@
-// components/InputField.tsx
-"use client";
-import { useState } from "react";
+import { Mail } from "lucide-react";
 
 interface InputFieldProps {
   label: string;
@@ -20,38 +18,30 @@ export default function InputField({
   onChange, 
   onBlur, 
   error, 
-  type = "text",
+  type = "email",
   disabled = false 
 }: InputFieldProps) {
-  const [isFocused, setIsFocused] = useState(false);
-
   return (
-    <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-text-light dark:text-text-dark">
+    <div className="space-y-1.5">
+      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">
         {label}
       </label>
-      <div className={`relative transition-all duration-200 ${
-        error ? 'animate-shake' : ''
-      }`}>
+      <div className="relative">
+        <Mail className="absolute left-4 top-4 h-5 w-5 text-slate-400 dark:text-slate-500" />
         <input
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
-          onFocus={() => setIsFocused(true)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors duration-200 ${
-            error 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-200 dark:border-red-600 dark:focus:border-red-400' 
-              : 'border-gray-300 focus:border-primary focus:ring-primary/20 dark:border-gray-600 dark:focus:border-primary'
-          } ${
-            disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : 'bg-white dark:bg-gray-900'
-          } text-text-light dark:text-text-dark placeholder-gray-400 dark:placeholder-gray-500`}
+          className={`flex w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-slate-900 dark:text-white h-14 pl-12 pr-5 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all duration-300 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-600 ${
+            error ? 'border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/10' : ''
+          } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         />
       </div>
       {error && (
-        <p className="text-red-500 text-xs mt-1 animate-fadeIn">
+        <p className="text-rose-500 text-[10px] font-bold mt-1.5 ml-2 uppercase tracking-wide animate-fadeIn">
           {error}
         </p>
       )}

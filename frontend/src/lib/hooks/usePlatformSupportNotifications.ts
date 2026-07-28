@@ -32,7 +32,7 @@ export const usePlatformSupportNotifications = () => {
   const socketRef = useRef<Socket | null>(null)
   const queryClient = useQueryClient()
   const [unreadCount, setUnreadCount] = useState(0)
-  const [lastTicket, setLastTicket] = useState<NewTicketNotification | null>(null)
+  const [recentTickets, setRecentTickets] = useState<NewTicketNotification[]>([])
 
   const clearUnread = useCallback(() => setUnreadCount(0), [])
 
@@ -46,7 +46,7 @@ export const usePlatformSupportNotifications = () => {
 
     socketRef.current.on("new_ticket", (ticket: NewTicketNotification) => {
       setUnreadCount((c) => c + 1)
-      setLastTicket(ticket)
+      setRecentTickets((prev) => [ticket, ...prev].slice(0, 5))
 
       // Invalidate the tickets list so the inbox auto-updates
       queryClient.invalidateQueries({ queryKey: ["platform-tickets"] })
@@ -67,5 +67,5 @@ export const usePlatformSupportNotifications = () => {
     }
   }, [queryClient])
 
-  return { unreadCount, lastTicket, clearUnread }
+  return { unreadCount, recentTickets, clearUnread }
 }

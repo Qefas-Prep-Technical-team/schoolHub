@@ -92,7 +92,7 @@ export default function NotificationCenter() {
 
   // Filter for Messages, Announcements, Link Requests & more
   const filteredNotifications = notifications.filter((n: Notification) => 
-    ['MESSAGE', 'ANNOUNCEMENT', 'LINK_REQUEST', 'LINK_RESPONSE', 'LINK_ACCEPTED', 'LINK_REJECTED', 'SYSTEM', 'ACADEMIC'].includes(n.type)
+    ['MESSAGE', 'ANNOUNCEMENT', 'LINK_REQUEST', 'LINK_RESPONSE', 'LINK_ACCEPTED', 'LINK_REJECTED', 'SYSTEM', 'ACADEMIC', 'GENERAL'].includes(n.type)
   );
 
   const getTypeIcon = (type: string) => {

@@ -14,7 +14,7 @@ export const useFeatureAccess = (featureKey: string, schoolId?: string) => {
       try {
         const queryParams = schoolId ? `?schoolId=${schoolId}` : '';
         const { data } = await apiClient.get<FeatureAccessResponse>(`/subscription/check-feature/${featureKey}${queryParams}`);
-        return data.hasAccess;
+        return data?.hasAccess ?? (data as any)?.data?.hasAccess ?? false;
       } catch (error: any) {
         // If 403 or 401 or network error, assume false
         console.error(`[useFeatureAccess] Failed to check feature ${featureKey}:`, error);

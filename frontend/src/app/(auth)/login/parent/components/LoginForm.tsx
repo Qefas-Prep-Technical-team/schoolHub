@@ -125,7 +125,7 @@ export default function LoginForm() {
                 <div className="flex justify-end mt-2">
                     <Link 
                         href={ROUTES.AUTH.FORGOT_PASSWORD} 
-                        className="text-[10px] font-black text-indigo-500 hover:text-indigo-400 uppercase tracking-widest transition-colors duration-200"
+                        className="text-[10px] font-black text-orange-500 hover:text-orange-400 uppercase tracking-widest transition-colors duration-200"
                     >
                         Forgot Password?
                     </Link>
