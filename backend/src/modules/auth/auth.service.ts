@@ -757,3 +757,97 @@ export const googleAuthService = async (
   return { user, token };
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Payment Failure Email
+// Sent when a Paystack charge.failed webhook is received for a subscription
+// auto-renewal. Non-blocking — caller wraps in try/catch.
+// ─────────────────────────────────────────────────────────────────────────────
+export const sendPaymentFailureEmail = async (params: {
+  email: string;
+  plan: string;
+  amount: number;
+  date: Date;
+  method: string;
+  reason?: string;
+}) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? process.env.TEST_EMAIL as string : params.email;
+
+  const formattedAmount = new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+  }).format(params.amount);
+
+  const formattedDate = params.date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const dashboardUrl = `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard/billing`;
+
+  return await resend.emails.send({
+    from: process.env.MAIL_FROM as string,
+    to: recipient,
+    subject: `Action Required: Payment Failed for ${params.plan} Plan — Qefas Hub${isTest ? ` (Original: ${params.email})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #fca5a5; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.08);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
+          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
+            <p style="margin: 0; color: #ef4444; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Payment Alert</p>
+          </div>
+        </div>
+
+        <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 20px; padding: 24px; margin-bottom: 28px; text-align: center;">
+          <p style="margin: 0 0 8px 0; font-size: 32px;">⚠️</p>
+          <h3 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #b91c1c; letter-spacing: -0.5px;">Payment Failed</h3>
+          <p style="margin: 0; color: #dc2626; font-size: 15px; font-weight: 600;">We were unable to renew your <strong>${params.plan}</strong> plan subscription.</p>
+        </div>
+
+        <div style="background: #f8fafc; border-radius: 20px; padding: 28px; margin-bottom: 28px; border: 1px solid #e2e8f0;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Plan</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 700; text-align: right;">${params.plan}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Amount</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 700; text-align: right;">${formattedAmount}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Date</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 700; text-align: right;">${formattedDate}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Method</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 700; text-align: right;">${params.method}</td>
+            </tr>
+            ${params.reason ? `<tr>
+              <td style="padding: 10px 0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Reason</td>
+              <td style="padding: 10px 0; color: #dc2626; font-size: 14px; font-weight: 700; text-align: right;">${params.reason}</td>
+            </tr>` : ''}
+          </table>
+        </div>
+
+        <p style="color: #475569; font-size: 15px; line-height: 1.7; margin-bottom: 24px;">
+          To keep your subscription active and avoid losing access to premium features, please update your payment method in your billing dashboard as soon as possible.
+        </p>
+
+        <div style="text-align: center; margin-bottom: 32px;">
+          <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 16px 40px; border-radius: 16px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">
+            Update Payment Method →
+          </a>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0; line-height: 1.6;">
+          If you believe this is an error or need help, please contact our support team.<br/>
+          <strong style="color: #64748b;">Qefas Hub</strong> — Your Institutional Management Platform
+        </p>
+      </div>
+    `,
+  });
+};

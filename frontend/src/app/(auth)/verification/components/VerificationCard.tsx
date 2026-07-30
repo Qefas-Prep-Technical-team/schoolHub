@@ -2,8 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useRequestCode, useVerifyCode, useResendCode } from '../services/useVerificationMutations';
-import { useLoginMutation } from '../../login/services/use-auth-mutations';
-import { ROUTES } from '@/lib/constants/routes';
 import CodeInputGroup from './CodeInputGroup';
 import VerifyButton from './VerifyButton';
 import MetaText from './MetaText';
@@ -27,7 +25,6 @@ export default function VerificationCard() {
   const { mutate: requestCode } = useRequestCode();
   const { mutate: verifyCode, isPending: isVerifying } = useVerifyCode();
   const { mutateAsync: resendCode } = useResendCode();
-  const loginMutation = useLoginMutation();
 
   // Request verification code automatically when component mounts
   const hasRequested = React.useRef(false);
@@ -51,56 +48,21 @@ export default function VerificationCard() {
     setIsCodeComplete(code.length === 6);
   };
 
-  const getDashboardPath = (type: string) => {
-    const norm = type.toLowerCase().replace(/_/g, '-');
-    if (norm.includes('admin') || norm.includes('school')) return '/dashboard/school-admin';
-    if (norm.includes('teacher')) return '/dashboard/teacher';
-    if (norm.includes('student')) return '/dashboard/student';
-    if (norm.includes('parent')) return '/dashboard/parent';
-    return `/dashboard/${norm}`;
-  };
 
   const handleVerify = () => {
     if (email && verificationCode.length === 6 && userType) {
       verifyCode(
         { email, code: verificationCode, userType },
         {
-          onSuccess: (response: any) => {
+          onSuccess: () => {
             setIsSuccess(true);
-            const isNewUser = response?.data?.isNewUser ?? false;
-            const preAuthToken = sessionStorage.getItem("preAuthToken");
-
-            if (preAuthToken) {
-              // We have a token from registration — use it to fully authenticate
-              loginMutation.mutate(
-                {
-                  email: email,
-                  userType: userType as any,
-                  isNewUser: isNewUser,
-                  preAuthToken: preAuthToken,
-                },
-                {
-                  onSuccess: () => {
-                    sessionStorage.removeItem("preAuthToken");
-                  },
-                  onError: () => {
-                    // Auto-login failed — just route to dashboard, user can re-login
-                    sessionStorage.removeItem("preAuthToken");
-                    setTimeout(() => {
-                      router.push(getDashboardPath(userType));
-                    }, 1200);
-                  },
-                }
-              );
-            } else {
-              // Verification from login flow — identity already confirmed.
-              // Route directly to the dashboard without another login call.
-              setTimeout(() => {
-                router.push(getDashboardPath(userType));
-              }, 1200);
-            }
+            // Clear any pre-auth token from registration flow
+            sessionStorage.removeItem("preAuthToken");
+            // Always redirect to sign-in after verification
+            setTimeout(() => {
+              router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}`);
+            }, 1500);
           },
-
         }
       );
     }
@@ -170,7 +132,7 @@ export default function VerificationCard() {
               transition={{ delay: 0.2 }}
               className="mt-2 text-sm text-slate-500 dark:text-slate-400 font-medium"
             >
-              Signing you into your workspace...
+              Redirecting you to sign in...
             </motion.p>
             <motion.div
               initial={{ opacity: 0 }}

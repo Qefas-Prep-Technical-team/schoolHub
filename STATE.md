@@ -2,22 +2,33 @@
 
 ## Current Focus
 
+- Payment system is code-complete and pre-launch audit is resolved.
+- Remaining launch blockers are **manual only**: swap test → live Paystack keys, register production webhook URL in Paystack Dashboard.
 - Exam submission redesign — chunked, sequential per-paper submission with progress modal.
 - Monitor production environment telemetry logs.
 
 ## Upcoming / Planning
 
 - Implementation of remaining `STUDENT_LIFECYCLE_SPEC.md` features (Promotion, Awards, etc.).
-- **Paystack Auto-Renewal Subscription**: Updated `initializePaymentService` to accept and pass `planCode` to Paystack initialization payload. This completely automates the subscription flow by tokenizing user cards and handling automatic periodic recurring billing for all user scopes seamlessly.
-- **[BUILT] Paystack Webhook Integration**: Created the `POST /api/v1/payment/webhook` endpoint with HMAC SHA-512 signature verification in `payment.service.ts` to listen for `charge.success` events. 
-    - **Setup Instructions**: To go live, navigate to the **Paystack Dashboard -> Settings -> API Keys & Webhooks**. Enter your production/test URL (e.g., `https://your-domain.com/api/v1/payment/webhook`) into the **Webhook URL** field. Ensure your backend `PAYSTACK_SECRET_KEY` matches the environment you are configuring. *Note: You or another AI will still need to write the specific Prisma database update logic inside `payment.service.ts` to match the customer's email/reference and actually extend their `subscriptionEnd` date.*
+- Production deployment: swap `sk_test_` → `sk_live_` (Render/Railway secrets) and `pk_test_` → `pk_live_` (Vercel env vars).
+- Register `https://your-domain.com/api/v1/payment/webhook` in Paystack Dashboard → Settings → API Keys & Webhooks.
 
 ## Blockers
 
-- None.
+- None (code). Manual key swap and webhook registration required before go-live.
 
 ## Next Action
 
+- Swap Paystack test keys to live keys in deployment environments.
+
+### Monday, July 28, 2026
+- **Payment System Pre-Launch Audit — Full Resolution**:
+    - [x] **Unified Webhook Handler**: Merged the two separate Paystack webhook handlers (`/api/v1/payment/webhook` and `/api/v1/finance/webhook`) into one unified entry point in `payment.service.ts`. The subscription webhook now delegates `SCHOOL_FEES` charges to `FinanceService.verifyPayment()` and `subaccount.update` events to `FinanceService.updateSubaccountStatusByCode()`. Added `@deprecated` notice to `finance/paystack.webhook.ts`.
+    - [x] **Password Minimum Raised**: Updated `checkout/page.tsx` password minimum from 6 → 8 characters per security standards.
+    - [x] **₦100 Trial Notice Upgraded**: Replaced the barely-visible 10px italic text with a prominent amber alert banner (`AlertTriangle` icon, amber border/background) clearly explaining the card validation charge vs. subscription fee.
+    - [x] **Zod v4 Migration (payment.controller.ts)**: Fixed pre-existing Zod v3→v4 API incompatibilities: removed `required_error`/`invalid_type_error` params, fixed `z.record()` to require 2 args, updated `z.enum()` to use `as const`, replaced `.errors` with `.issues`.
+    - [x] **Prisma Cast Hardening (payment.service.ts)**: Fixed 5 instances of `prisma as Record<...>` to `prisma as unknown as Record<...>` required by newer Prisma Client. Fixed `pastTx.userType!` non-null assertion.
+    - [x] **100% Compile Verification**: `npx tsc --noEmit` returns exit code 0 on both backend and frontend workspaces.
 - Test the new sequential exam submission flow end-to-end with a multi-paper exam.
 
 ### Sunday, July 26, 2026
@@ -896,6 +907,8 @@
     - [x] **Assignment Card Date Bug**: Swapped the data mapping from `endDate` to the correct `dueDate` property to resolve dynamic deadline dates rendering as "No Deadline".
     - [x] **SubmitBar Theme Glow**: Replaced high-glare stark white backgrounds on the Admin and Teacher "Publish" action buttons in dark mode with the premium indigo-violet gradient matching the new theme patterns.
 
-U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s s i g n m e n t s ,   s k e l e t o n   l o a d e r s ,   a n d   a   s t u n n i n g   d y n a m i c   A s s i g n m e n t   D e t a i l s   p a g e .  
- F i x e d   c h i l d   l i n k a g e   c h e c k   t o   u s e   ' a c t i v e '   i n s t e a d   o f   ' A C T I V E '   s o   t h e   a s s i g n m e n t   d e t a i l s   e n d p o i n t   w o r k s   p r o p e r l y .  
+U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s s i g n m e n t s ,   s k e l e t o n   l o a d e r s ,   a n d   a   s t u n n i n g   d y n a m i c   A s s i g n m e n t   D e t a i l s   p a g e . 
+ 
+ F i x e d   c h i l d   l i n k a g e   c h e c k   t o   u s e   ' a c t i v e '   i n s t e a d   o f   ' A C T I V E '   s o   t h e   a s s i g n m e n t   d e t a i l s   e n d p o i n t   w o r k s   p r o p e r l y . 
+ 
  

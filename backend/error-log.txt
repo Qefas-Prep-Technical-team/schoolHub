@@ -10915,4 +10915,48 @@ Please make sure your database server is running at `aws-1-eu-west-3.pooler.supa
     at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
     at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at logout (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2327:7)
+    at logout (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2327:7)PrismaClientKnownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Can't reach database server at `aws-1-eu-west-3.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-3.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientKnownRequestError: 
+Invalid `prisma.verificationCode.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2096:49
+
+  2093     .status(400)
+  2094     .json({ success: false, message: "Invalid user type" });
+  2095 }
+→ 2096 const check = await prisma.verificationCode.findMany(
+Can't reach database server at `aws-1-eu-west-3.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-3.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at verifyEmailCode (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2096:19)PrismaClientKnownRequestError: 
+Invalid `prisma.verificationCode.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2096:49
+
+  2093     .status(400)
+  2094     .json({ success: false, message: "Invalid user type" });
+  2095 }
+→ 2096 const check = await prisma.verificationCode.findMany(
+Server has closed the connection.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at verifyEmailCode (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2096:19)
