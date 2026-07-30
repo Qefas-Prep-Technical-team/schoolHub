@@ -205,29 +205,48 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return false;
     }
 
-    // Auto-login with preAuthToken after successful verification
-    const loginRes = await AuthService.login({
-      email: pending.email,
-      userType: pending.userType,
-      preAuthToken: pending.preAuthToken,
-    });
+    // Code verified successfully — attempt auto-login with up to 3 retries.
+    // The server needs a brief moment to propagate the device-verified state
+    // after the verify-code call, so a transient network blip here is common.
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY_MS = 1000;
 
-    if (loginRes.success && loginRes.user) {
-      set({
-        user: loginRes.user,
-        isAuthenticated: true,
-        isLoading: false,
-        authError: null,
-        verificationPending: null,
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      if (attempt > 1) {
+        // Wait before retrying to let the server settle
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      }
+
+      const loginRes = await AuthService.login({
+        email: pending.email,
+        userType: pending.userType,
+        preAuthToken: pending.preAuthToken,
       });
-      return true;
+
+      if (loginRes.success && loginRes.user) {
+        set({
+          user: loginRes.user,
+          isAuthenticated: true,
+          isLoading: false,
+          authError: null,
+          verificationPending: null,
+          isOfflineMode: !!loginRes.isOfflineLogin,
+        });
+        return true;
+      }
+
+      console.warn(`[verifyCode] Auto-login attempt ${attempt}/${MAX_RETRIES} failed:`, loginRes.error);
     }
 
-    set({ 
-      isLoading: false, 
-      authError: loginRes.error || "Failed to complete login after verification"
+    // All retries exhausted. The code was valid and is consumed on the server.
+    // Do NOT return false — that would trap the user with an unusable code.
+    // Clear pending state and advance; ProtectedRoute will redirect to sign-in.
+    set({
+      isLoading: false,
+      authError: null,
+      verificationPending: null,
     });
-    return false;
+    return true;
   },
 
   resendCode: async () => {

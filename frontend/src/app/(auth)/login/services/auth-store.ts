@@ -45,7 +45,13 @@ interface AuthState {
   hasCompletedOnboarding: boolean;
   isInitialized: boolean;
   userType: UserType | null;
+  isTransitioning: boolean;
+  transitionRole: string | null;
+  transitionUserName: string | null;
+  isLogoutModalOpen: boolean;
   setAuth: (user: User, token: string) => void;
+  setTransitioning: (isTransitioning: boolean, role?: string | null, userName?: string | null) => void;
+  setLogoutModalOpen: (isOpen: boolean) => void;
   setHasCompletedOnboarding: (value: boolean) => void;
   updateUser: (updates: Partial<User>) => void;
 
@@ -68,6 +74,10 @@ export const useAuthStore = create<AuthState>()(
       hasCompletedOnboarding: false,
       isInitialized: false,
       userType: null,
+      isTransitioning: false,
+      transitionRole: null,
+      transitionUserName: null,
+      isLogoutModalOpen: false,
 
       setAuth: (user: User, token: string) => {
         Cookies.set("token", token, {
@@ -86,6 +96,18 @@ export const useAuthStore = create<AuthState>()(
       },
       setHasCompletedOnboarding: (value: boolean) => {
         set({ hasCompletedOnboarding: value });
+      },
+
+      setTransitioning: (isTransitioning: boolean, role?: string | null, userName?: string | null) => {
+        set({ 
+          isTransitioning, 
+          transitionRole: role ?? null, 
+          transitionUserName: userName ?? null 
+        });
+      },
+
+      setLogoutModalOpen: (isOpen: boolean) => {
+        set({ isLogoutModalOpen: isOpen });
       },
 
       updateUser: (updates: Partial<User>) => {

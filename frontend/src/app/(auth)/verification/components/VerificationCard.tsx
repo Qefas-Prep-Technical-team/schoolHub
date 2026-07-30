@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useRequestCode, useVerifyCode, useResendCode } from '../services/useVerificationMutations';
+import { useLoginMutation } from '../../login/services/use-auth-mutations';
 import CodeInputGroup from './CodeInputGroup';
 import VerifyButton from './VerifyButton';
 import MetaText from './MetaText';
@@ -25,6 +26,7 @@ export default function VerificationCard() {
   const { mutate: requestCode } = useRequestCode();
   const { mutate: verifyCode, isPending: isVerifying } = useVerifyCode();
   const { mutateAsync: resendCode } = useResendCode();
+  const loginMutation = useLoginMutation();
 
   // Request verification code automatically when component mounts
   const hasRequested = React.useRef(false);
@@ -54,14 +56,40 @@ export default function VerificationCard() {
       verifyCode(
         { email, code: verificationCode, userType },
         {
-          onSuccess: () => {
-            setIsSuccess(true);
-            // Clear any pre-auth token from registration flow
-            sessionStorage.removeItem("preAuthToken");
-            // Always redirect to sign-in after verification
-            setTimeout(() => {
-              router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}`);
-            }, 1500);
+          onSuccess: (response: any) => {
+            const isNewUser = response?.data?.isNewUser ?? false;
+            const preAuthToken = sessionStorage.getItem("preAuthToken");
+
+            if (preAuthToken) {
+              // Auto-login with the preAuthToken
+              loginMutation.mutate(
+                {
+                  email: email,
+                  userType: userType as any,
+                  isNewUser: isNewUser,
+                  preAuthToken: preAuthToken,
+                },
+                {
+                  onSuccess: () => {
+                    sessionStorage.removeItem("preAuthToken");
+                  },
+                  onError: () => {
+                    // If auto-login fails, redirect to sign in
+                    sessionStorage.removeItem("preAuthToken");
+                    setIsSuccess(true);
+                    setTimeout(() => {
+                      router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}`);
+                    }, 1500);
+                  },
+                }
+              );
+            } else {
+              // No token found, fallback to manual login
+              setIsSuccess(true);
+              setTimeout(() => {
+                router.push(`/login?email=${encodeURIComponent(email)}&userType=${encodeURIComponent(userType)}`);
+              }, 1500);
+            }
           },
         }
       );
@@ -176,9 +204,9 @@ export default function VerificationCard() {
 
       <div className="mt-8">
         <VerifyButton
-          label={isVerifying ? "Verifying Code..." : "Verify & Continue"}
+          label={isVerifying || loginMutation.isPending ? "Verifying Code..." : "Verify & Continue"}
           userType={userType}
-          disabled={!isCodeComplete || isVerifying || isSuccess}
+          disabled={!isCodeComplete || isVerifying || loginMutation.isPending || isSuccess}
           onClick={handleVerify}
         />
       </div>

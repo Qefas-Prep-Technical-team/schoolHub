@@ -6,10 +6,11 @@ import { useAuthStore } from "./login/services/auth-store";
 import GenericLoader from "@/components/reuseables/GenericLoader";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import { ShieldCheck, GraduationCap, Users, UserCog, Lock } from "lucide-react";
+import { DashboardTransitionScreen } from "./components/DashboardTransitionScreen";
 import { PingWrapper } from "@/utils/PingWrapper";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  const { userType, isInitialized, isAuthenticated, hasCompletedOnboarding } =
+  const { userType, isInitialized, isAuthenticated, hasCompletedOnboarding, isTransitioning, transitionRole, transitionUserName } =
     useAuthStore() as any; // remove `as any` once you add the property properly
 
   const safeType = (userType ?? "").toLowerCase();
@@ -56,6 +57,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 animate-in fade-in duration-500">
       <PingWrapper>
+        {isTransitioning && transitionRole ? (
+          <DashboardTransitionScreen role={transitionRole} userName={transitionUserName || undefined} />
+        ) : null}
         {children}
       </PingWrapper>
     </main>

@@ -13,6 +13,7 @@ export const useLoginMutation = () => {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
   const setHasCompletedOnboarding = useAuthStore((state) => state.setHasCompletedOnboarding);
+  const setTransitioning = useAuthStore((state) => state.setTransitioning);
 
   return useMutation({
     mutationFn: (credentials: {
@@ -61,7 +62,12 @@ export const useLoginMutation = () => {
         }
       } else {
         setHasCompletedOnboarding(true); // Skip onboarding for returning users
-        router.replace(`/dashboard/${userDash}`);
+        setTransitioning(true, actualRole, userWithType.name);
+
+        setTimeout(() => {
+          setTransitioning(false);
+          router.replace(`/dashboard/${userDash}`);
+        }, 2500);
       }
     },
     onError: (error: any, variables) => {
@@ -93,7 +99,7 @@ export const useLoginMutation = () => {
   });
 };
 
-export const useLogoutMutation = () => {
+export const useActualLogoutMutation = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
   const clearAuth = useAuthStore((state) => state.clearAuth);
@@ -118,4 +124,14 @@ export const useLogoutMutation = () => {
       router.push("/login");
     },
   });
+};
+
+export const useLogoutMutation = () => {
+  const setLogoutModalOpen = useAuthStore((state) => state.setLogoutModalOpen);
+
+  return {
+    mutate: () => setLogoutModalOpen(true),
+    mutateAsync: async () => setLogoutModalOpen(true),
+    isPending: false,
+  };
 };

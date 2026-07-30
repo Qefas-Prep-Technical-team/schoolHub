@@ -10,6 +10,7 @@ import NextTopLoader from 'nextjs-toploader';
 import AppInitializer from "@/utils/AppInitializer";
 import AuthModal from "@/components/reusable/AuthModal";
 import AIChatWidget from "@/components/Home/AIChatWidget";
+import { GlobalLogoutModal } from "@/components/ui/GlobalLogoutModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -122,6 +123,7 @@ export default function RootLayout({
 
               <NavBar />
               <AuthModal />
+              <GlobalLogoutModal />
               <NextTopLoader showSpinner={false} />
               {children}
               <Footer />
