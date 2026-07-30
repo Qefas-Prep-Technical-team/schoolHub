@@ -1630,7 +1630,7 @@ export const login = async (req: Request, res: Response) => {
     };
 
     // Device Verification Check
-    const isDeviceVerified = req.cookies.deviceVerified === "true";
+    const isDeviceVerified = req.cookies?.deviceVerified === "true" || !!preAuthToken;
     if (!isDeviceVerified) {
       const validDevice = await prisma.refreshToken.findFirst({
         where: {

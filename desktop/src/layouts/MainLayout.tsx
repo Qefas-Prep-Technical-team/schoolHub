@@ -20,6 +20,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { getRoleTheme } from "../theme/roleTheme";
 import { SyncService } from "../services/SyncService";
+import { LogoutModal } from "../components/auth/LogoutModal";
 
 export const MainLayout: React.FC = () => {
   const location = useLocation();
@@ -29,13 +30,15 @@ export const MainLayout: React.FC = () => {
   const { user, logout, isOfflineMode } = useAuthStore();
   const isOnline = useNetworkStatus();
   const roleTheme = getRoleTheme(user?.role);
+  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
 
   useEffect(() => {
     initSyncStore();
   }, [initSyncStore]);
 
-  const handleLogout = async () => {
+  const handleLogoutConfirm = async () => {
     await logout();
+    setShowLogoutModal(false);
     navigate("/auth", { replace: true });
   };
 
@@ -94,7 +97,7 @@ export const MainLayout: React.FC = () => {
               </div>
 
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutModal(true)}
                 className="p-1.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition flex-shrink-0"
                 title="Sign Out"
               >
@@ -191,6 +194,13 @@ export const MainLayout: React.FC = () => {
           <span>Pending Queue: {pendingCount}</span>
         </div>
       </footer>
+      {/* Logout Confirmation & Progress Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        user={user}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogoutConfirm}
+      />
     </div>
   );
 };

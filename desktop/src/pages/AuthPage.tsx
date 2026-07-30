@@ -6,6 +6,7 @@ import { AuthChoiceScreen } from "../components/auth/AuthChoiceScreen";
 import { AuthLoginForm } from "../components/auth/AuthLoginForm";
 import { RegisterForm } from "../components/auth/RegisterForm";
 import { DesktopVerificationScreen } from "../components/auth/DesktopVerificationScreen";
+import { DashboardTransitionScreen } from "../components/auth/DashboardTransitionScreen";
 import { UserRole } from "../services/AuthService";
 import { ArrowLeft } from "lucide-react";
 
@@ -13,8 +14,9 @@ type AuthStep = "CHOICE" | "LOGIN" | "REGISTER";
 
 export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
-  const { selectedUserType, selectUserType, clearSelectedUserType, verificationPending, clearVerificationPending } = useAuthStore();
+  const { selectedUserType, selectUserType, clearSelectedUserType, verificationPending, clearVerificationPending, user } = useAuthStore();
   const [activeStep, setActiveStep] = useState<AuthStep>("CHOICE");
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const handleSelectRole = async (role: UserRole) => {
     await selectUserType(role);
@@ -22,8 +24,19 @@ export const AuthPage: React.FC = () => {
   };
 
   const handleSuccess = () => {
-    navigate("/", { replace: true });
+    // Show the themed loading transition for 2.5s before navigating
+    setIsTransitioning(true);
+    setTimeout(() => {
+      navigate("/", { replace: true });
+    }, 2500);
   };
+
+  // Transition overlay – shown after login/verification success
+  if (isTransitioning) {
+    const role = (user?.role ?? selectedUserType ?? "ADMIN") as UserRole;
+    const userName = user?.name ?? undefined;
+    return <DashboardTransitionScreen role={role} userName={userName} />;
+  }
 
   // Step 0: Verification Pending (6-digit OTP code input)
   if (verificationPending) {
