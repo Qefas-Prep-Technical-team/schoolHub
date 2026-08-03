@@ -1,11 +1,9 @@
-import Header from "./components/Header";
 import LeftPanel from "./components/LeftPanel";
 import RightPanel from "./components/RightPanel";
 
 export default function TeacherLoginPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-slate-50 dark:bg-slate-950 transition-colors duration-500">
-      <Header />
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 mt-12 md:mt-16">
         <div className="w-[95vw] lg:w-[65vw] max-w-[1200px] bg-white dark:bg-slate-900 md:rounded-[2.5rem] rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col md:flex-row min-h-[650px] animate-in fade-in zoom-in-95 duration-700">
           <RightPanel />

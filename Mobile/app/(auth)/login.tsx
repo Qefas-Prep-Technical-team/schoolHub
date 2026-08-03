@@ -69,38 +69,62 @@ export default function LoginScreen() {
     },
   });
 
+  const attemptLogin = async (data: LoginFormData) => {
+    const response = await apiClient.post('/auth/login', {
+      email: data.email,
+      password: data.password,
+      userType: role.toUpperCase(),
+    });
+
+    const accessToken = response.data?.data?.accessToken || response.data?.accessToken;
+    const refreshToken = response.data?.data?.refreshToken || response.data?.refreshToken;
+
+    if (accessToken) {
+      await setTokens(accessToken, refreshToken || '');
+      await setUserRole(role.toLowerCase());
+      router.replace('/');
+    } else {
+      Toast.show({ type: 'error', text1: 'Login Failed', text2: 'Invalid credentials or no token received.' });
+    }
+  };
+
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
 
     try {
-      const response = await apiClient.post('/auth/login', {
-        email: data.email,
-        password: data.password,
-        userType: role.toUpperCase(),
-      });
+      await attemptLogin(data);
+    } catch (firstError: any) {
+      // If it's a network error (no response received), retry once after a brief delay.
+      // This handles Android emulator virtual network hiccups where 10.0.2.2 drops momentarily.
+      const isNetworkError = !firstError.response && !!firstError.request;
 
-      const accessToken = response.data?.data?.accessToken || response.data?.accessToken;
-      const refreshToken = response.data?.data?.refreshToken || response.data?.refreshToken;
-
-      if (accessToken) {
-        await setTokens(accessToken, refreshToken || '');
-        await setUserRole(role.toUpperCase());
-        // Navigate to the main app layout
-        router.replace('/');
-      } else {
-        Toast.show({ type: 'error', text1: 'Login Failed', text2: 'Invalid credentials or no token received.' });
+      if (isNetworkError) {
+        console.warn('[Login] Network error on first attempt, retrying in 2s...');
+        try {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          await attemptLogin(data);
+          return; // Retry succeeded — exit early
+        } catch (retryError: any) {
+          // Retry also failed — fall through to handle the error below
+          console.error('[Login] Retry also failed:', retryError?.message);
+        }
       }
-    } catch (error: any) {
+
+      // Handle the original (or retry) error
+      const error = firstError;
       const responseData = error.response?.data || {};
-      
-      let errorMessage = responseData.message || 'Failed to sign in. Please check your credentials.';
-      
-      if (!error.response) {
-         // This means the server didn't respond (Network error, CORS, Timeout)
-         errorMessage = `Network Error: Could not connect to the server. Please check your API URL and internet connection. Details: ${error.message}`;
+
+      let errorMessage: string;
+      if (error.response) {
+        errorMessage = error.response.data?.message || 'Login failed';
+      } else if (error.request) {
+        errorMessage = 'Network error — could not reach the server. Please check your connection and try again.';
+      } else {
+        errorMessage = error.message || 'An unexpected error occurred.';
       }
-      
-      console.log('Login error:', errorMessage, error);
+
+      console.log('[Login] Final error:', errorMessage);
+
       const requiresVerification = responseData.requiresVerification;
       const preAuthToken = responseData.preAuthToken;
 
@@ -108,7 +132,6 @@ export default function LoginScreen() {
         error.response?.status === 403 &&
         (requiresVerification || errorMessage.toLowerCase().includes('verified') || errorMessage.toLowerCase().includes('verification'))
       ) {
-        // Unverified users or unverified devices get redirected to verification
         router.replace({
           pathname: '/(auth)/verification',
           params: {

@@ -256,9 +256,9 @@ export default function AssignmentDetailsScreen() {
         <View 
           className="bg-white dark:bg-slate-900 p-6 rounded-b-[2.5rem] shadow-sm border-b border-slate-100 dark:border-slate-800 mb-6 overflow-hidden"
         >
-          <Image 
-            source={require('@/assets/images/student-bg.png')}
-            style={[StyleSheet.absoluteFillObject, { opacity: 0.15 }]}
+          <Image
+            source={require('@/assets/images/student-bg.jpg')}
+            className="absolute right-0 top-0 w-32 h-32 opacity-20"
             resizeMode="cover"
           />
           <View className="flex-row items-center justify-between mb-4">

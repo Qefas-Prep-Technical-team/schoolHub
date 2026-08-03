@@ -127,25 +127,18 @@ export function ParentMobileDrawer() {
 
         {/* Footer */}
         <div className="px-4 py-4 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
-          <div className="flex items-center gap-3 px-3 py-3 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-white/10">
-            <div className="h-10 w-10 rounded-xl bg-orange-600/10 flex items-center justify-center">
-              <User2 className="h-5 w-5 text-orange-600" />
+          <button 
+            onClick={() => logout()}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-white/10 hover:border-rose-200 dark:hover:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all text-left cursor-pointer group"
+          >
+            <div className="h-10 w-10 rounded-xl bg-rose-600 flex items-center justify-center group-hover:scale-105 transition-transform ring-2 ring-rose-500/10 group-hover:ring-rose-500/30">
+              <LogOut className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1">
               <div className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">Parent Account</div>
-              <div className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-0.5">Management Hub</div>
+              <div className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-0.5">Sign Out</div>
             </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition-all"
-              onClick={() => logout()}
-              aria-label="Sign out"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
+          </button>
         </div>
       </SheetContent>
     </Sheet>

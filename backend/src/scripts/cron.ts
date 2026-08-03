@@ -110,4 +110,17 @@ export const startCronJobs = () => {
       console.error('[CRON] Error running subscription sweeper:', error);
     }
   });
+
+  // ─── Database Keep-Alive Ping ────────────────────────────────────────────────
+  // Supabase PgBouncer drops idle connections after ~5 minutes. This lightweight
+  // ping every 4 minutes keeps the connection pool alive, preventing the
+  // "Can't reach database server" error that causes Network Errors on mobile.
+  cron.schedule('*/4 * * * *', async () => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('[CRON] DB keep-alive ping OK');
+    } catch (err) {
+      console.warn('[CRON] DB keep-alive ping failed — connection may have dropped:', err);
+    }
+  });
 };

@@ -180,21 +180,21 @@ export default function ExamList() {
           <select
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
-            className="bg-slate-100 dark:bg-white/5 border-none text-slate-600 dark:text-slate-300 text-[11px] font-black uppercase tracking-widest rounded-xl py-2.5 pl-4 pr-10 focus:ring-4 focus:ring-orange-500/10 cursor-pointer transition-all"
+            className="bg-slate-100 dark:bg-slate-800 border-none text-slate-600 dark:text-slate-300 text-[11px] font-black uppercase tracking-widest rounded-xl py-2.5 pl-4 pr-10 focus:ring-4 focus:ring-orange-500/10 cursor-pointer transition-all"
           >
-            <option value="all">All Subjects</option>
+            <option value="all" className="bg-white dark:bg-slate-800">All Subjects</option>
             {Array.from(new Set(allExams.map(e => e.subject))).map(sub => (
-              <option key={sub} value={sub.toLowerCase()}>{sub}</option>
+              <option key={sub} value={sub.toLowerCase()} className="bg-white dark:bg-slate-800">{sub}</option>
             ))}
           </select>
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="bg-slate-100 dark:bg-white/5 border-none text-slate-600 dark:text-slate-300 text-[11px] font-black uppercase tracking-widest rounded-xl py-2.5 pl-4 pr-10 focus:ring-4 focus:ring-orange-500/10 cursor-pointer transition-all"
+            className="bg-slate-100 dark:bg-slate-800 border-none text-slate-600 dark:text-slate-300 text-[11px] font-black uppercase tracking-widest rounded-xl py-2.5 pl-4 pr-10 focus:ring-4 focus:ring-orange-500/10 cursor-pointer transition-all"
           >
-            <option value="all">All Status</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
+            <option value="all" className="bg-white dark:bg-slate-800">All Status</option>
+            <option value="completed" className="bg-white dark:bg-slate-800">Completed</option>
+            <option value="pending" className="bg-white dark:bg-slate-800">Pending</option>
           </select>
         </div>
       </div>

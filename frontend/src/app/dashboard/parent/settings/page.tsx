@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Settings, 
-  Shield, 
   Bell, 
   Palette, 
   Smartphone, 
@@ -12,14 +11,11 @@ import {
   Lock, 
   Save, 
   UserCircle,
-  Eye,
-  EyeOff,
   CheckCircle2,
   ChevronRight,
   Monitor,
   Moon,
-  Sun,
-  Layout
+  Sun
 } from 'lucide-react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useUpdateParentProfile } from '@/lib/api/hooks/useParent';
@@ -34,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/lib/hooks/useToast';
 import DeviceSessions from '@/components/DeviceSessions';
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
+
 export default function ParentSettingsPage() {
   const { user } = useAuthStore();
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateParentProfile();
@@ -44,14 +41,6 @@ export default function ParentSettingsPage() {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-  });
-
-  const [notifications, setNotifications] = useState({
-    emailAlerts: true,
-    smsAlerts: false,
-    academicUpdates: true,
-    attendanceAlerts: true,
-    paymentReminders: true
   });
 
   useEffect(() => {
@@ -69,113 +58,113 @@ export default function ParentSettingsPage() {
     updateProfile(formData);
   };
 
-
   if (!user) return null;
 
   return (
-    <div className="space-y-12 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      {/* Console Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-2">
+    <div className="max-w-5xl mx-auto space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500 px-4 md:px-8 mt-6">
+      {/* Header */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-            <span>Management Hub</span>
-            <ChevronRight size={10} className="text-orange-500" />
-            <span className="text-orange-600">System Settings</span>
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-500 mb-1">
+            <span>Settings</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-orange-600 rounded-2xl shadow-2xl shadow-orange-600/30">
-              <Settings size={24} className="text-white animate-spin-slow" />
+            <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-2xl shadow-sm">
+              <Settings size={28} className="text-orange-600 dark:text-orange-500" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 dark:text-white uppercase leading-none">
-              Control Panel
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Account Settings
             </h1>
           </div>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 font-bold tracking-tight max-w-xl leading-relaxed">
-            Configure your terminal preferences, security protocols, and communication signals for the Guardian Console.
+          <p className="text-slate-500 dark:text-slate-400 max-w-xl">
+            Manage your personal information, security preferences, and visual appearance.
           </p>
         </div>
       </header>
 
       <Tabs defaultValue="profile" className="w-full">
-        <div className="px-2 mb-8 overflow-x-auto no-scrollbar">
-          <TabsList className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200 dark:border-white/5 p-1.5 rounded-[2rem] h-auto flex flex-nowrap w-fit md:w-full">
+        <div className="mb-10 w-full overflow-x-auto no-scrollbar pb-2">
+          <TabsList className="inline-flex h-14 items-center justify-start rounded-full bg-slate-100 dark:bg-slate-900/50 p-1.5 border border-slate-200 dark:border-slate-800 w-full sm:w-auto">
             <TabsTrigger 
               value="profile" 
-              className="rounded-[1.5rem] px-8 py-4 font-black text-[11px] uppercase tracking-widest data-[state=active]:bg-orange-600 data-[state=active]:text-white transition-all gap-3"
+              className="rounded-full px-6 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-orange-500"
             >
-              <UserCircle size={16} /> Identity
+              Profile
             </TabsTrigger>
+            
             <TabsTrigger 
               value="appearance" 
-              className="rounded-[1.5rem] px-8 py-4 font-black text-[11px] uppercase tracking-widest data-[state=active]:bg-orange-600 data-[state=active]:text-white transition-all gap-3"
+              className="rounded-full px-6 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-orange-500"
             >
-              <Palette size={16} /> Visual
+              Appearance
             </TabsTrigger>
+
             <TabsTrigger 
               value="security" 
-              className="rounded-[1.5rem] px-8 py-4 font-black text-[11px] uppercase tracking-widest data-[state=active]:bg-orange-600 data-[state=active]:text-white transition-all gap-3"
+              className="rounded-full px-6 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-orange-500"
             >
-              <Shield size={16} /> Security
+              Security
             </TabsTrigger>
+
             <TabsTrigger 
               value="notifications" 
-              className="rounded-[1.5rem] px-8 py-4 font-black text-[11px] uppercase tracking-widest data-[state=active]:bg-orange-600 data-[state=active]:text-white transition-all gap-3"
+              className="rounded-full px-6 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-orange-500"
             >
-              <Bell size={16} /> Signals
+              Notifications
             </TabsTrigger>
           </TabsList>
         </div>
 
-        {/* IDENTITY TAB */}
+        {/* PROFILE TAB */}
         <TabsContent value="profile" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
-              <Card className="rounded-[3rem] border-none shadow-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl overflow-hidden h-full">
-                <CardHeader className="p-10 border-b border-slate-100 dark:border-white/5">
+              <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 h-full">
+                <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-orange-600/10 rounded-xl">
-                      <User className="text-orange-600" size={20} />
+                    <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                      <User className="text-orange-600 dark:text-orange-500" size={24} />
                     </div>
                     <div>
-                      <CardTitle className="text-2xl font-black uppercase tracking-tight">Identity Registry</CardTitle>
-                      <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Manage your personnel data mapping</CardDescription>
+                      <CardTitle className="text-xl font-bold">Personal Information</CardTitle>
+                      <CardDescription className="text-sm text-slate-500 mt-1">Update your contact details and basic info</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-10">
-                  <form onSubmit={handleProfileSubmit} className="space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Guardian Name</Label>
-                        <div className="relative group">
-                          <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
+                <CardContent className="p-8">
+                  <form onSubmit={handleProfileSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Full Name</Label>
+                        <div className="relative">
+                          <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                           <Input 
                             value={formData.name}
                             onChange={(e) => setFormData({...formData, name: e.target.value})}
-                            className="h-16 pl-12 rounded-2xl bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 focus:ring-orange-500/20 focus:border-orange-500/50 transition-all font-bold text-sm"
+                            className="h-12 pl-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:ring-orange-500"
                           />
                         </div>
                       </div>
-                      <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Communication Node (Email)</Label>
-                        <div className="relative group">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Email Address</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                           <Input 
                             value={formData.email}
                             onChange={(e) => setFormData({...formData, email: e.target.value})}
                             type="email"
-                            className="h-16 pl-12 rounded-2xl bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 focus:ring-orange-500/20 focus:border-orange-500/50 transition-all font-bold text-sm"
+                            className="h-12 pl-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:ring-orange-500"
                           />
                         </div>
                       </div>
-                      <div className="space-y-3 md:col-span-2">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Mobile Tether (Phone)</Label>
-                        <div className="relative group">
-                          <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
+                      <div className="space-y-2 md:col-span-2">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Phone Number</Label>
+                        <div className="relative">
+                          <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                           <Input 
                             value={formData.phone}
                             onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                            className="h-16 pl-12 rounded-2xl bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 focus:ring-orange-500/20 focus:border-orange-500/50 transition-all font-bold text-sm"
+                            className="h-12 pl-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:ring-orange-500"
                           />
                         </div>
                       </div>
@@ -183,12 +172,12 @@ export default function ParentSettingsPage() {
                     <div className="pt-4">
                       <Button 
                         disabled={isUpdating}
-                        className="h-16 px-10 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-600/20 font-black text-xs uppercase tracking-widest transition-all active:scale-95 group"
+                        className="h-12 px-8 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold transition-all"
                       >
                         {isUpdating ? (
-                          <span className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Updating Hub</span>
+                          <span className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving...</span>
                         ) : (
-                          <span className="flex items-center gap-2"><Save size={18} className="group-hover:translate-y-[-2px] transition-transform" /> Synchronize Data</span>
+                          <span className="flex items-center gap-2"><Save size={18} /> Save Changes</span>
                         )}
                       </Button>
                     </div>
@@ -197,139 +186,114 @@ export default function ParentSettingsPage() {
               </Card>
             </div>
             
-            <div className="space-y-8">
-              <Card className="rounded-[3rem] border-none shadow-2xl bg-slate-900 text-white p-10 relative overflow-hidden group">
-                <div className="absolute -right-10 -top-10 w-40 h-40 bg-orange-600/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
-                <div className="relative z-10 space-y-6">
-                  <div className="p-4 bg-white/10 rounded-2xl w-fit border border-white/10 backdrop-blur-md">
-                    <CheckCircle2 className="text-orange-500" size={32} />
+            <div className="space-y-6">
+              <Card className="rounded-3xl border border-green-200 dark:border-green-900/50 shadow-sm bg-green-50 dark:bg-green-900/10 p-8 relative overflow-hidden">
+                <div className="relative z-10 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="text-green-600 dark:text-green-500" size={28} />
+                    <h4 className="text-xl font-bold text-green-800 dark:text-green-400">Account Verified</h4>
                   </div>
-                  <h4 className="text-2xl font-black uppercase tracking-tight">Status: Verified</h4>
-                  <p className="text-[11px] text-white/50 font-bold uppercase tracking-widest leading-relaxed">
-                    Your account identity has been validated through the secure institutional mapping.
+                  <p className="text-sm text-green-700 dark:text-green-500/80 leading-relaxed">
+                    Your account has been successfully verified by the school administration.
                   </p>
-                  <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full w-full bg-orange-600" />
-                  </div>
-                  <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest">Trust Level: High Precision</p>
                 </div>
               </Card>
               
-              <div className="p-8 rounded-[2.5rem] bg-orange-600/5 border border-orange-500/10 flex items-center gap-5 group cursor-default hover:bg-orange-600/10 transition-all">
-                <div className="size-14 rounded-2xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/20 group-hover:rotate-6 transition-all">
+              <div 
+                className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-4 cursor-pointer hover:border-orange-200 dark:hover:border-orange-900/50 transition-all shadow-sm group" 
+                onClick={() => window.location.href = '/dashboard/parent/profile'}
+              >
+                <div className="size-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-500 group-hover:scale-110 transition-transform">
                   <UserCircle size={24} />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-sm">Public Identity</h4>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Manage your public avatar and family mapping</p>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-base">Public Profile</h4>
+                  <p className="text-sm text-slate-500 mt-0.5">View how others see you</p>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="rounded-xl hover:bg-orange-600 hover:text-white transition-all"
-                  onClick={() => window.location.href = '/dashboard/parent/profile'}
-                >
-                  <ChevronRight size={18} />
-                </Button>
+                <ChevronRight size={20} className="text-slate-400 group-hover:translate-x-1 transition-transform" />
               </div>
 
-              <div className="p-8 rounded-[2.5rem] bg-slate-900 dark:bg-white/5 border border-white/5 space-y-6 relative overflow-hidden group">
-                <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-700">
-                  <Layout size={80} className="text-orange-500" />
-                </div>
+              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Service Subscription</h4>
-                  <span className="text-[9px] font-black uppercase tracking-widest bg-orange-600 text-white px-2 py-0.5 rounded-full">Active</span>
+                  <h4 className="text-sm font-semibold text-slate-500">Subscription</h4>
+                  <span className="text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-3 py-1 rounded-full">Active</span>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-2xl font-black text-white uppercase tracking-tight">{user.plan || 'Free Trial'}</p>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                    Expires: {user.trialEndsAt ? new Date(user.trialEndsAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                <div>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{user.plan || 'Free Plan'}</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Expires: {user.trialEndsAt ? new Date(user.trialEndsAt).toLocaleDateString() : 'N/A'}
                   </p>
-                </div>
-                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                   <div className="h-full w-2/3 bg-orange-600" />
                 </div>
               </div>
             </div>
           </div>
         </TabsContent>
 
-        {/* VISUAL TAB */}
+        {/* APPEARANCE TAB */}
         <TabsContent value="appearance" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="px-2 max-w-4xl">
-            <Card className="rounded-[3rem] border-none shadow-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl overflow-hidden">
-              <CardHeader className="p-10 border-b border-slate-100 dark:border-white/5">
+          <div className="max-w-4xl mx-auto">
+            <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+              <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-orange-600/10 rounded-xl">
-                    <Palette className="text-orange-600" size={20} />
+                  <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                    <Palette className="text-orange-600 dark:text-orange-500" size={24} />
                   </div>
                   <div>
-                    <CardTitle className="text-2xl font-black uppercase tracking-tight">Visual Configuration</CardTitle>
-                    <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Terminal interface aesthetics</CardDescription>
+                    <CardTitle className="text-xl font-bold">Appearance</CardTitle>
+                    <CardDescription className="text-sm text-slate-500 mt-1">Customize how the app looks on your device</CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-10 space-y-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <CardContent className="p-8 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div 
                     onClick={() => setTheme('light')}
                     className={cn(
-                      "p-8 rounded-[2.5rem] border-4 transition-all cursor-pointer group relative overflow-hidden",
-                      theme === 'light' ? "border-orange-600 bg-white shadow-2xl" : "border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
+                      "p-6 rounded-2xl border-2 transition-all cursor-pointer relative",
+                      theme === 'light' ? "border-orange-600 bg-orange-50 dark:bg-orange-900/10 shadow-md" : "border-slate-200 dark:border-slate-800 hover:border-orange-300"
                     )}
                   >
-                    <div className="flex items-center justify-between mb-8">
-                      <div className="size-12 rounded-xl bg-orange-500 flex items-center justify-center text-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="size-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600">
                         <Sun size={24} />
                       </div>
                       {theme === 'light' && <CheckCircle2 className="text-orange-600" size={24} />}
                     </div>
-                    <h4 className="text-xl font-black uppercase tracking-tight text-slate-900">High Altitude</h4>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">Standard Light Mode Protocol</p>
-                    
-                    <div className="mt-8 space-y-3">
-                       <div className="h-2 w-full bg-slate-200 rounded-full" />
-                       <div className="h-2 w-2/3 bg-slate-200 rounded-full" />
-                    </div>
+                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">Light Mode</h4>
+                    <p className="text-sm text-slate-500 mt-1">Bright and clear for daytime use</p>
                   </div>
 
                   <div 
                     onClick={() => setTheme('dark')}
                     className={cn(
-                      "p-8 rounded-[2.5rem] border-4 transition-all cursor-pointer group relative overflow-hidden",
-                      theme === 'dark' ? "border-orange-600 bg-slate-900 shadow-2xl" : "border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
+                      "p-6 rounded-2xl border-2 transition-all cursor-pointer relative",
+                      theme === 'dark' ? "border-orange-600 bg-slate-800 shadow-md" : "border-slate-200 dark:border-slate-800 hover:border-orange-300"
                     )}
                   >
-                    <div className="flex items-center justify-between mb-8">
-                      <div className="size-12 rounded-xl bg-orange-500 flex items-center justify-center text-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="size-12 rounded-xl bg-slate-700 flex items-center justify-center text-slate-200">
                         <Moon size={24} />
                       </div>
                       {theme === 'dark' && <CheckCircle2 className="text-orange-600" size={24} />}
                     </div>
-                    <h4 className="text-xl font-black uppercase tracking-tight text-white">Stealth Protocol</h4>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">Immersive Dark Mode Engine</p>
-                    
-                    <div className="mt-8 space-y-3">
-                       <div className="h-2 w-full bg-white/10 rounded-full" />
-                       <div className="h-2 w-2/3 bg-white/10 rounded-full" />
-                    </div>
+                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">Dark Mode</h4>
+                    <p className="text-sm text-slate-500 mt-1">Easy on the eyes in low light</p>
                   </div>
                 </div>
 
-                <div className="p-8 rounded-[2rem] bg-slate-900 dark:bg-white/5 border border-white/5 flex items-center justify-between gap-6">
+                <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4">
                    <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-xl bg-white/10 flex items-center justify-center text-white">
+                      <div className="size-12 rounded-xl bg-white dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
                         <Monitor size={24} />
                       </div>
                       <div>
-                        <h4 className="font-black text-white uppercase tracking-tight text-sm">System Override</h4>
-                        <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Synchronize with device OS settings</p>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-base">System Default</h4>
+                        <p className="text-sm text-slate-500 mt-0.5">Automatically match your device's theme</p>
                       </div>
                    </div>
                    <Switch 
                      checked={theme === 'system'} 
-                     onCheckedChange={(checked) => setTheme(checked ? 'system' : theme || 'light')}
+                     onCheckedChange={(checked) => setTheme(checked ? 'system' : 'light')}
                    />
                 </div>
               </CardContent>
@@ -339,106 +303,55 @@ export default function ParentSettingsPage() {
 
         {/* SECURITY TAB */}
         <TabsContent value="security" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="px-2 grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <Card className="rounded-[3rem] border-none shadow-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl overflow-hidden h-full">
-                <CardHeader className="p-10 border-b border-slate-100 dark:border-white/5">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-orange-600/10 rounded-xl">
-                      <Lock className="text-orange-600" size={20} />
-                    </div>
-                    <div>
-                      <CardTitle className="text-2xl font-black uppercase tracking-tight">Security Core</CardTitle>
-                      <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Manage system access credentials</CardDescription>
-                    </div>
+          <div className="max-w-4xl mx-auto space-y-8">
+            <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+              <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                    <Lock className="text-orange-600 dark:text-orange-500" size={24} />
                   </div>
-                </CardHeader>
-                <CardContent className="p-10">
-                  <div className="flex items-center justify-between p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
-                    <div className="space-y-1">
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Account Password</h4>
-                      <p className="text-xs text-slate-500">Change your password to ensure account security.</p>
-                    </div>
-                    <ChangePasswordModal>
-                      <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black uppercase text-[10px] tracking-widest px-6 h-12">
-                        Change Password
-                      </Button>
-                    </ChangePasswordModal>
+                  <div>
+                    <CardTitle className="text-xl font-bold">Security Settings</CardTitle>
+                    <CardDescription className="text-sm text-slate-500 mt-1">Manage your password and security</CardDescription>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 gap-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+                  <div className="space-y-1">
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white">Account Password</h4>
+                    <p className="text-sm text-slate-500">Update your password to keep your account secure.</p>
+                  </div>
+                  <ChangePasswordModal>
+                    <Button className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 h-12 w-full sm:w-auto">
+                      Change Password
+                    </Button>
+                  </ChangePasswordModal>
+                </div>
+              </CardContent>
+            </Card>
             
-            <div className="space-y-8">
-               <Card className="rounded-[3rem] border-none shadow-2xl bg-orange-600 text-white p-10 relative overflow-hidden">
-                  <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-white/20 rounded-full blur-3xl" />
-                  <div className="relative z-10 space-y-6">
-                    <h4 className="text-xl font-black uppercase tracking-tight">Security Strength</h4>
-                    <div className="flex gap-2">
-                       <div className="h-2 flex-1 bg-white rounded-full" />
-                       <div className="h-2 flex-1 bg-white rounded-full" />
-                       <div className="h-2 flex-1 bg-white rounded-full" />
-                       <div className="h-2 flex-1 bg-white/30 rounded-full" />
-                    </div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-relaxed">
-                      Your system access is protected by high-level encryption. Keep your password confidential.
-                    </p>
-                  </div>
-               </Card>
-               
-               <div className="mt-8">
-                  <DeviceSessions />
-               </div>
-            </div>
+            <DeviceSessions />
           </div>
         </TabsContent>
 
-        {/* SIGNALS TAB */}
+        {/* NOTIFICATIONS TAB */}
         <TabsContent value="notifications" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
-          <div className="px-2 max-w-4xl">
-            <Card className="rounded-[3rem] border-none shadow-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl overflow-hidden flex flex-col items-center justify-center p-20 text-center min-h-[400px]">
-                <div className="w-20 h-20 bg-orange-100 dark:bg-orange-500/10 rounded-full flex items-center justify-center mb-6">
-                  <Bell size={40} className="text-orange-500" />
+          <div className="max-w-4xl mx-auto">
+            <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-16 text-center min-h-[400px]">
+                <div className="size-24 bg-orange-50 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-6">
+                  <Bell size={48} className="text-orange-400 dark:text-orange-500" />
                 </div>
-                <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
                   Coming Soon
                 </h2>
-                <p className="text-slate-500 dark:text-slate-400 max-w-md font-medium">
+                <p className="text-slate-500 dark:text-slate-400 max-w-md text-base">
                   We are working hard to bring you advanced notification settings. Check back later!
                 </p>
             </Card>
           </div>
         </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-function NotificationToggle({ 
-  icon, 
-  label, 
-  description, 
-  checked, 
-  onCheckedChange 
-}: { 
-  icon: React.ReactNode, 
-  label: string, 
-  description: string, 
-  checked: boolean, 
-  onCheckedChange: (checked: boolean) => void 
-}) {
-  return (
-    <div className="flex items-center justify-between gap-6 group">
-      <div className="flex items-center gap-5">
-        <div className="size-12 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-orange-500 group-hover:bg-orange-500/10 transition-all border border-slate-100 dark:border-white/5 shadow-sm">
-          {icon}
-        </div>
-        <div className="space-y-1">
-          <h5 className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-sm">{label}</h5>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{description}</p>
-        </div>
-      </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </div>
   );
 }

@@ -6,9 +6,11 @@ import { TopNavBar } from '../../components/student-dashboard/TopNavBar';
 import { StudentHero } from '../../components/student-dashboard/StudentHero';
 import { ConsoleInsights } from '../../components/student-dashboard/ConsoleInsights';
 import { QuickActions } from '../../components/student-dashboard/QuickActions';
-import { MasteryRadarChart } from '../../components/student-dashboard/MasteryRadarChart';
+import { AcademicProgressWidget } from '../../components/student-dashboard/AcademicProgressWidget';
 import { PerformanceTrend } from '../../components/student-dashboard/PerformanceTrend';
 import { AcademicHistory } from '../../components/student-dashboard/AcademicHistory';
+import { ActiveSubjectsWidget } from '../../components/student-dashboard/ActiveSubjectsWidget';
+import { StudentQuotaCard } from '../../components/student-dashboard/StudentQuotaCard';
 import { DashboardSkeleton } from '../../components/student-dashboard/DashboardSkeleton';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
@@ -87,10 +89,38 @@ export default function StudentHomeScreen() {
       fullMark: 100,
     }));
 
+    let weakest = null;
+    let strongest = null;
+    let advice = "";
+
+    if (chartData.length > 0) {
+      const sortedSubjects = [...chartData].sort((a, b) => a.A - b.A);
+      weakest = sortedSubjects[0];
+      strongest = sortedSubjects[sortedSubjects.length - 1];
+
+      if (weakest.A < 40) {
+        advice = `You need to put more effort into ${weakest.subject} (F9 standing). We recommend getting a tutor and practicing well before the next exam.`;
+      } else if (weakest.A < 50) {
+        advice = `Your performance in ${weakest.subject} is at a Pass level (D7/E8). Try practicing more past questions so you can hit Credit (C6) or higher.`;
+      } else if (weakest.A < 75) {
+        advice = `You are doing well in ${weakest.subject} (Credit range). If you push a bit more, you can secure a Distinction (A1/B2) for the next one.`;
+      } else {
+        advice = `Excellent! You have mastered ${weakest.subject} well at ${weakest.A}% (A1 level). Keep it up and help your peers who are struggling.`;
+      }
+    }
+
     const gpaRaw = totalMaxMarks > 0 ? (totalScore / totalMaxMarks) * 5 : 0;
     const gpaFormatted = gpaRaw.toFixed(2);
 
-    return { chartData, gpa: gpaFormatted, totalExams: attempts.length + standaloneGrades.length, subjectsCount: Object.keys(subjectsMap).length };
+    return { 
+      chartData, 
+      gpa: gpaFormatted, 
+      totalExams: attempts.length + standaloneGrades.length, 
+      subjectsCount: Object.keys(subjectsMap).length,
+      weakest,
+      strongest,
+      advice
+    };
   }, [attempts, standaloneGrades]);
 
   return (
@@ -118,13 +148,22 @@ export default function StudentHomeScreen() {
               credits={`${analysis?.subjectsCount || 0} Subjects`}
             />
 
-            <QuickActions />
-
-            <MasteryRadarChart data={analysis?.chartData || []} />
+            <AcademicProgressWidget 
+              advice={analysis?.advice || ""} 
+              strongest={analysis?.strongest || null}
+              weakest={analysis?.weakest || null}
+              chartData={analysis?.chartData || []} 
+            />
 
             <PerformanceTrend attempts={attempts} standaloneGrades={standaloneGrades} />
 
             <AcademicHistory attempts={attempts} />
+
+            <StudentQuotaCard />
+
+            <QuickActions />
+
+            <ActiveSubjectsWidget subjectsCount={analysis?.subjectsCount || 0} />
           </>
         )}
 

@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Platform, View } from 'react-native';
-import { Home, Users, CreditCard, Settings } from 'lucide-react-native';
+import { Home, Users, ClipboardList, CalendarCheck, FileText } from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function ParentTabLayout() {
@@ -15,9 +15,8 @@ export default function ParentTabLayout() {
         tabBarStyle: {
           position: 'absolute',
           bottom: Platform.OS === 'ios' ? 24 : 16,
-          left: 20,
-          right: 20,
-          backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+          marginHorizontal: 40,
+          backgroundColor: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
           borderTopWidth: 0,
           borderRadius: 40,
           height: 64,
@@ -56,24 +55,36 @@ export default function ParentTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="billing"
+        name="assignments"
         options={{
-          title: 'Billing',
+          title: 'Assignments',
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center">
-              <CreditCard size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+              <ClipboardList size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
               {focused && <View className="w-1.5 h-1.5 bg-primary mt-1.5 rounded-full absolute -bottom-4" />}
             </View>
           ),
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="attendance"
         options={{
-          title: 'Settings',
+          title: 'Attendance',
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center">
-              <Settings size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+              <CalendarCheck size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+              {focused && <View className="w-1.5 h-1.5 bg-primary mt-1.5 rounded-full absolute -bottom-4" />}
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="exams"
+        options={{
+          title: 'Exams',
+          tabBarIcon: ({ color, focused }) => (
+            <View className="items-center justify-center">
+              <FileText size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
               {focused && <View className="w-1.5 h-1.5 bg-primary mt-1.5 rounded-full absolute -bottom-4" />}
             </View>
           ),

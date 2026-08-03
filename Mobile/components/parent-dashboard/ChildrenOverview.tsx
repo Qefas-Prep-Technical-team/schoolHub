@@ -9,8 +9,8 @@ export const ChildrenOverview = () => {
   ];
 
   return (
-    <View className="mb-6">
-      <View className="flex-row items-center justify-between px-2 mb-4">
+    <View className="mb-6 px-2">
+      <View className="flex-row items-center justify-between mb-4">
         <Text className="text-lg font-LexendBold text-slate-900 dark:text-white">
           My Children
         </Text>

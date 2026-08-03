@@ -59,11 +59,7 @@ export function MasteryRadarChart({ data }: RadarChartProps) {
   }).join(' ');
 
   return (
-    <View className="mx-6 mt-6 p-4 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm items-center">
-      <Text className="text-xl font-black text-slate-900 dark:text-white self-start ml-2 mb-2 italic tracking-tight">
-        Subject <Text className="text-pink-600">Mastery</Text>
-      </Text>
-      
+    <View className="items-center w-full">
       <View className="items-center justify-center mb-2">
         <Svg width={size} height={size}>
           {/* Concentric Grid Polygons */}

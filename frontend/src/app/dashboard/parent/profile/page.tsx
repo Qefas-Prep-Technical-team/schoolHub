@@ -138,14 +138,6 @@ export default function ParentProfilePage() {
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           <Button
-            variant="outline"
-            className="h-14 px-8 rounded-2xl border-2 border-slate-200 dark:border-white/10 font-black text-xs uppercase tracking-widest active:scale-95 transition-all cursor-pointer"
-            onClick={() => logout()}
-          >
-            <LogOut className="mr-3" size={18} />
-            Sign Out
-          </Button>
-          <Button
             className="h-14 px-8 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-600/20 transition-all font-black text-xs uppercase tracking-widest active:scale-95 group cursor-pointer"
             onClick={() => setIsEditModalOpen(true)}
           >

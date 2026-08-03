@@ -28,7 +28,7 @@ app.use(
       // Allow requests with no origin (like mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
 
-      const allowedPattern = /^(https?:\/\/)?(([a-zA-Z0-9-]+\.)*localhost(:\d+)?|([a-zA-Z0-9-]+\.)*lvh\.me(:\d+)?|([a-zA-Z0-9-]+\.)*qefashub\.com|([a-zA-Z0-9-]+\.)*qefas\.com|([a-zA-Z0-9-]+\.)*flexitistudio\.com)$/i;
+      const allowedPattern = /^(https?:\/\/)?(([a-zA-Z0-9-]+\.)*localhost(:\d+)?|([a-zA-Z0-9-]+\.)*lvh\.me(:\d+)?|192\.168\.\d+\.\d+(:\d+)?|10\.0\.2\.2(:\d+)?|127\.0\.0\.1(:\d+)?|([a-zA-Z0-9-]+\.)*qefashub\.com|([a-zA-Z0-9-]+\.)*qefas\.com|([a-zA-Z0-9-]+\.)*flexitistudio\.com)$/i;
 
       if (allowedPattern.test(origin)) {
         callback(null, true);
@@ -92,17 +92,33 @@ app.use(
 const server = http.createServer(app);
 
 import { startCronJobs } from "./scripts/cron";
+import prisma from "./config/database";
 
 // Initialize Socket.io
 initSocket(server);
 
-// Start Background Cron Jobs
-startCronJobs();
-
 // 4. PRODUCTION-READY LISTENER
-// '0.0.0.0' is the secret sauce for Render/Cloud deployments
-server.listen(Number(PORT), "0.0.0.0", () => {
-  console.log(`🚀 Server is live!`);
-  console.log(`📡 Internal Port: ${PORT}`);
-  console.log(`🌐 Interface: 0.0.0.0 (Publicly Accessible)`);
-});
+// Explicitly connect Prisma before accepting traffic so the first request
+// never hits a cold/dead connection pool (which caused mobile "Network Error").
+async function bootstrap() {
+  try {
+    console.log("[DB] Connecting to database...");
+    await prisma.$connect();
+    console.log("[DB] ✅ Database connected successfully.");
+  } catch (err) {
+    console.error("[DB] ❌ Failed to connect to database on startup:", err);
+    // Don't crash — withRetry will handle reconnects per-request
+  }
+
+  // Start Background Cron Jobs (includes keep-alive ping)
+  startCronJobs();
+
+  // '0.0.0.0' is the secret sauce for Render/Cloud deployments
+  server.listen(Number(PORT), "0.0.0.0", () => {
+    console.log(`🚀 Server is live!`);
+    console.log(`📡 Internal Port: ${PORT}`);
+    console.log(`🌐 Interface: 0.0.0.0 (Publicly Accessible)`);
+  });
+}
+
+bootstrap();

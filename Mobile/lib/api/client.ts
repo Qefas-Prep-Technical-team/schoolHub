@@ -9,13 +9,12 @@ import {
 import { Platform } from "react-native";
 
 // Set the base API URL (could be injected via environment variable EXPO_PUBLIC_API_URL)
-// Remember: For physical devices and Emulators, using the precise Wi-Fi IPv4 address is the most reliable method.
-const fallbackUrl = "http://192.168.0.182:5000/api";
+const fallbackUrl = "https://api.qefashub.com/api";
 const API_URL = process.env.EXPO_PUBLIC_API_URL || fallbackUrl;
 
 export const apiClient = axios.create({
   baseURL: API_URL,
-  timeout: 60000,
+  timeout: 90000, // 90s — allows backend reconnect+retry to complete
   headers: {
     "Content-Type": "application/json",
   },
@@ -76,8 +75,8 @@ apiClient.interceptors.response.use(
       originalRequest.url?.includes("/auth/password");
 
     if (isAuthRoute) {
-      // Silently clear any stale session data when auth requests fail
-      await clearTokens();
+      // Do NOT clear tokens here — clearing on a failed login attempt would
+      // erase a valid session if the user has one and just mis-typed their password.
       return Promise.reject(error);
     }
 

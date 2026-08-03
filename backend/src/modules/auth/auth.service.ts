@@ -107,11 +107,11 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export const sendEmailUpdateVerification = async (email: string, code: string) => {
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? process.env.TEST_EMAIL as string : email;
-  
+
   return await resend.emails.send({
     from: process.env.MAIL_FROM as string,
     to: recipient,
-    subject: `[ACTION REQUIRED] Verify Your New Email Address ${isTest ? `(Original: ${email})` : ''}`,
+    subject: `ACTION REQUIRED: Verify Your New Email Address ${isTest ? `(Original: ${email})` : ''}`,
     html: `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 20px auto; padding: 28px 20px; border: 1px solid #f1f5f9; border-radius: 20px; background: #ffffff; color: #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
@@ -151,9 +151,9 @@ export const sendVerificationEmail = async (email: string, code: string, type: '
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? process.env.TEST_EMAIL as string : email;
 
-  const subject = type === 'welcome' 
-    ? `Welcome to Qefas Hub - Verify Your Account ${isTest ? `(Original: ${email})` : ''}` 
-    : `[Qefas Hub] Identity Verification ${isTest ? `(Original: ${email})` : ''}`;
+  const subject = type === 'welcome'
+    ? `Welcome to Qefas Hub - Verify Your Account ${isTest ? `(Original: ${email})` : ''}`
+    : `Qefas Hub Identity Verification ${isTest ? `(Original: ${email})` : ''}`;
 
   const title = type === 'welcome' ? "Welcome to Qefas Hub" : "Verify Your Identity";
   const description = type === 'welcome'
@@ -358,7 +358,7 @@ export const loginUser = async (email: string, password: string) => {
   }
 
   // Check admin
-  const admin = await prisma.admin.findUnique({ 
+  const admin = await prisma.admin.findUnique({
     where: { email },
     include: { schoolAdmins: true }
   });
@@ -371,8 +371,8 @@ export const loginUser = async (email: string, password: string) => {
     if (!match) throw new Error("Invalid credentials");
 
     const token = generateAccessToken(admin.id, "ADMIN");
-    await SubscriptionComplianceService.verifyAndSyncStatus({ 
-      userId: admin.id, 
+    await SubscriptionComplianceService.verifyAndSyncStatus({
+      userId: admin.id,
       userType: UserRole.ADMIN,
       schoolId: (admin as any).schoolAdmins?.[0]?.schoolId || null
     });
@@ -403,7 +403,7 @@ export const sendPasswordResetEmail = async (email: string, code: string) => {
     baseUrl = baseUrl.includes('localhost') ? `http://${baseUrl}` : `https://${baseUrl}`;
   }
   const resetLink = `${baseUrl}/auth/forgot-password/ResetPassword?token=${code}`;
-  
+
   if (!email) {
     throw new Error("Email is required to send reset link");
   }
@@ -462,7 +462,7 @@ export const sendTeacherInvitationEmail = async (email: string, token: string, s
     baseUrl = baseUrl.includes('localhost') ? `http://${baseUrl}` : `https://${baseUrl}`;
   }
   const claimLink = `${baseUrl}/auth/claim-account?token=${token}&type=teacher`;
-  
+
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? process.env.TEST_EMAIL as string : email;
 
@@ -515,7 +515,7 @@ export const sendStudentInvitationEmail = async (email: string, token: string, s
     baseUrl = baseUrl.includes('localhost') ? `http://${baseUrl}` : `https://${baseUrl}`;
   }
   const claimLink = `${baseUrl}/auth/claim-account?token=${token}&type=student`;
-  
+
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? process.env.TEST_EMAIL as string : email;
 
@@ -569,7 +569,7 @@ export const googleAuthService = async (
   const googleAuthSetting = await prisma.platformSettings.findUnique({
     where: { key: "google_auth_enabled" }
   });
-  
+
   if (googleAuthSetting && googleAuthSetting.value === "false") {
     throw new Error("Google Authentication is currently deactivated by the platform administrator.");
   }
@@ -579,7 +579,7 @@ export const googleAuthService = async (
     const googleAuthFeature = await prisma.platformFeature.findUnique({
       where: { featureKey: "googleLogin" }
     });
-    
+
     if (googleAuthFeature) {
       const roleKey = `${userRole.toLowerCase()}Enabled` as keyof typeof googleAuthFeature;
       if (googleAuthFeature[roleKey] === false) {
@@ -603,7 +603,7 @@ export const googleAuthService = async (
       const header = JSON.parse(Buffer.from(parts[0], 'base64').toString());
       console.log("Token Header:", header);
     }
-    
+
     // Support both HS256 (standard) and ES256 (asymmetric)
     decoded = jwt.verify(supabaseToken, process.env.SUPABASE_JWT_SECRET!, {
       algorithms: ['HS256', 'ES256']
@@ -746,10 +746,10 @@ export const googleAuthService = async (
   }
 
   const token = generateAccessToken(user.id, actualRole);
-  
+
   // Real-time subscription compliance check
-  await SubscriptionComplianceService.verifyAndSyncStatus({ 
-    userId: user.id, 
+  await SubscriptionComplianceService.verifyAndSyncStatus({
+    userId: user.id,
     userType: actualRole,
     schoolId: user.schoolId || (user as any).schoolAdmins?.[0]?.schoolId || null
   });

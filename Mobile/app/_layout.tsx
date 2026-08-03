@@ -83,6 +83,8 @@ export default function RootLayout() {
           <Stack.Screen name="admin-subscription" options={{ headerShown: false }} />
           <Stack.Screen name="admin-calendar" options={{ headerShown: false }} />
           <Stack.Screen name="admin-messages" options={{ headerShown: false }} />
+          <Stack.Screen name="parent-profile" options={{ headerShown: false }} />
+          <Stack.Screen name="settings" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
 

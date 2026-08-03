@@ -8,6 +8,7 @@ import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import LottieView from 'lottie-react-native';
+import { setTokens, setUserRole } from '../../lib/auth/secure-store';
 
 export default function VerificationScreen() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function VerificationScreen() {
   const [isSuccess, setIsSuccess] = useState(false);
   const hasRequested = useRef(false);
   const isSubmitting = useRef(false);
+  const lottieRef = useRef<any>(null);
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -45,6 +47,14 @@ export default function VerificationScreen() {
       requestVerificationCode();
     }
   }, [requestCode, email, userType]);
+
+  useEffect(() => {
+    if (isSuccess) {
+      setTimeout(() => {
+        lottieRef.current?.play();
+      }, 100);
+    }
+  }, [isSuccess]);
 
   const requestVerificationCode = async () => {
     try {
@@ -84,12 +94,11 @@ export default function VerificationScreen() {
           const refreshToken = loginResponse.data?.data?.refreshToken || loginResponse.data?.refreshToken;
           
           if (accessToken) {
-            import('../../lib/auth/secure-store').then(async ({ setTokens }) => {
-              await setTokens(accessToken, refreshToken || '');
-              setTimeout(() => {
-                router.replace('/');
-              }, 1000);
-            });
+            await setTokens(accessToken, refreshToken || '');
+            await setUserRole(userType.toLowerCase());
+            setTimeout(() => {
+              router.replace('/');
+            }, 1000);
             return;
           }
         } catch (loginErr) {
@@ -168,8 +177,9 @@ export default function VerificationScreen() {
             {isSuccess ? (
               <View className="flex-1 items-center justify-center mt-20">
                 <LottieView
+                  ref={lottieRef}
                   source={require('../../assets/lottie/success.json')}
-                  autoPlay
+                  autoPlay={true}
                   loop={false}
                   style={{ width: 150, height: 150, marginBottom: 16 }}
                 />

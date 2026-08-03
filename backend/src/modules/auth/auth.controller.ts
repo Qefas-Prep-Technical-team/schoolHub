@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import prisma from "../../config/database";
+import prisma, { withRetry } from "../../config/database";
 import {
   generateUniqueCode,
   generateRandomSixDigit,
@@ -1560,7 +1560,10 @@ export const login = async (req: Request, res: Response) => {
     const normalizedEmail = email.toLowerCase().trim();
 
     // 1. Try fetching based on provided type
-    user = await fetchUserWithRelations(userType as UserRole, normalizedEmail);
+    user = await withRetry(
+      () => fetchUserWithRelations(userType as UserRole, normalizedEmail),
+      `auth.login.fetchUser[${userType}]`
+    );
 
     if (!user) {
       console.error(
@@ -1793,6 +1796,12 @@ export const login = async (req: Request, res: Response) => {
     }
 
     console.log("DEBUG: Login successful, sending response");
+    try {
+      const responseString = JSON.stringify({ success: true, message, data: responseData });
+      console.log("DEBUG: Response serialized successfully. Size:", responseString.length);
+    } catch (serializeErr) {
+      console.error("DEBUG: Failed to serialize response:", serializeErr);
+    }
     return res.status(200).json({ success: true, message, data: responseData });
   } catch (error) {
     return handleError(res, error, "auth.login");

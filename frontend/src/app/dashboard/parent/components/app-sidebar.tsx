@@ -265,55 +265,26 @@ export function ParentSidebar() {
             <SidebarFooter className="p-3 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <DropdownMenu onOpenChange={setIsUserOpen}>
-                            <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton className={cn(
-                                    "flex items-center gap-2.5 h-14 w-full rounded-2xl transition-all duration-300 px-2 py-2 group cursor-pointer",
-                                    isUserOpen ? "bg-white dark:bg-slate-900 shadow-lg ring-1 ring-orange-500/20" : "hover:bg-white dark:hover:bg-white/5 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-white/10"
-                                )}>
-                                    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl ring-2 ring-orange-500/10 group-hover:ring-orange-500/30 transition-all duration-500">
-                                        <div className="h-full w-full bg-orange-600 flex items-center justify-center text-white">
-                                            <User2 className="h-5 w-5" />
-                                        </div>
+                        <SidebarMenuButton 
+                            onClick={() => logout()}
+                            className="flex items-center gap-3 h-14 w-full rounded-2xl transition-all duration-300 px-2 py-2 group cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-sm border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50"
+                        >
+                            <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl ring-2 ring-slate-200 dark:ring-white/10 group-hover:ring-rose-500/30 transition-all duration-500 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                <UserCircle className="h-5 w-5 text-slate-500 group-hover:text-rose-500 transition-colors" />
+                            </div>
+
+                            {!isCollapsed && (
+                                <>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-xs text-slate-900 dark:text-white leading-none truncate w-full group-hover:text-rose-600 transition-colors">Parent Account</span>
+                                        <span className="text-[9px] text-slate-500 group-hover:text-rose-500 font-bold uppercase tracking-widest mt-1 transition-colors">Sign Out</span>
                                     </div>
-
-                                    {!isCollapsed && (
-                                        <div className="flex flex-col items-start min-w-0 flex-1">
-                                            <span className="font-bold text-xs text-slate-900 dark:text-white leading-none truncate w-full">Parent Account</span>
-                                            <span className="text-[9px] text-orange-500 font-bold uppercase tracking-widest mt-1">Management Hub</span>
-                                        </div>
-                                    )}
-
-                                    {!isCollapsed && (
-                                        <div className={cn("transition-transform duration-500 ml-auto mr-1", isUserOpen ? "rotate-180" : "")}>
-                                            <ChevronDown className="h-3.5 w-3.5 text-slate-400 group-hover:text-orange-500" />
-                                        </div>
-                                    )}
-                                </SidebarMenuButton>
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent
-                                side="top"
-                                align="end"
-                                sideOffset={12}
-                                className="w-[240px] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl p-2 animate-in slide-in-from-bottom-2 duration-300"
-                            >
-                                <DropdownMenuItem className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 focus:bg-orange-500/10 focus:text-orange-600 transition-all font-medium">
-                                    <Settings className="h-4 w-4" />
-                                    <span>Notifications</span>
-                                </DropdownMenuItem>
-
-                                <div className="h-px bg-slate-100 dark:bg-white/5 my-1.5" />
-
-                                <DropdownMenuItem
-                                    onClick={() => logout()}
-                                    className="flex items-center gap-2 rounded-lg py-2.5 px-3 cursor-pointer text-rose-500 focus:bg-rose-500/10 focus:text-rose-600 transition-all font-bold"
-                                >
-                                    <LogOut className="h-4 w-4" />
-                                    <span>Sign Out</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                    <div className="shrink-0 text-slate-400 group-hover:text-rose-600 transition-all pr-2 group-hover:translate-x-1">
+                                        <LogOut className="h-4 w-4" />
+                                    </div>
+                                </>
+                            )}
+                        </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>

@@ -11015,4 +11015,433 @@ Please make sure your database server is running at `aws-1-eu-west-3.pooler.supa
     at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
     at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
     at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
-    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)PrismaClientInitializationError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Can't reach database server at `aws-1-eu-west-3.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-3.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientInitializationError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Can't reach database server at `aws-1-eu-west-3.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-3.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientInitializationError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Can't reach database server at `aws-1-eu-west-3.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-3.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientInitializationError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Timed out fetching a new connection from the connection pool. More info: http://pris.ly/d/connection-pool (Current connection pool timeout: 10, connection limit: 10)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientInitializationError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Can't reach database server at `aws-1-eu-west-3.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-3.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientKnownRequestError: Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+    at Qr.transaction (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\engines\library\LibraryEngine.ts:217:13)
+    at Proxy._transactionWithCallback (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:725:9)
+    at verifyEmailCode (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2229:9)PrismaClientKnownRequestError: 
+Invalid `prisma.verificationCode.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2096:49
+
+  2093     .status(400)
+  2094     .json({ success: false, message: "Invalid user type" });
+  2095 }
+→ 2096 const check = await prisma.verificationCode.findMany(
+Can't reach database server at `aws-1-eu-west-3.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-3.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at verifyEmailCode (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2096:19)PrismaClientInitializationError: 
+Invalid `prisma.parent.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1544:38
+
+  1541     include: { school: true },
+  1542   });
+  1543 case UserRole.PARENT:
+→ 1544   return await prisma.parent.findUnique(
+Can't reach database server at `aws-1-eu-west-3.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-3.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1544:18)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientInitializationError: 
+Invalid `prisma.parent.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1544:38
+
+  1541     include: { school: true },
+  1542   });
+  1543 case UserRole.PARENT:
+→ 1544   return await prisma.parent.findUnique(
+Can't reach database server at `aws-1-eu-west-3.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-3.pooler.supabase.com:6543`.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1544:18)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientInitializationError: Can't reach database server at `aws-1-eu-west-3.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-3.pooler.supabase.com:6543`.
+    at r (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\engines\library\LibraryEngine.ts:440:17)PrismaClientInitializationError: Can't reach database server at `aws-1-eu-west-3.pooler.supabase.com:6543`
+
+Please make sure your database server is running at `aws-1-eu-west-3.pooler.supabase.com:6543`.
+    at r (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\core\engines\library\LibraryEngine.ts:440:17)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:70:9)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:51:20)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:51:20)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:51:20)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:51:20)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:51:20)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:51:20)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)PrismaClientUnknownRequestError: 
+Invalid `prisma.student.findUnique()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:39
+
+  1536   return teacher;
+  1537 }
+  1538 case UserRole.STUDENT:
+→ 1539   return await prisma.student.findUnique(
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }]
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at fetchUserWithRelations (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1539:18)
+    at withRetry (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\config\database.ts:51:20)
+    at login (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:1563:12)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)Error: School not found for ID: default-tenant-id
+    at getSchoolUsageService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\quota.service.ts:20:11)
+    at getSubscriptionUsage (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\subscription\subscription.controller.ts:27:14)PrismaClientKnownRequestError: 
+Invalid `prisma.refreshToken.findFirst()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2293:47
+
+  2290 
+  2291 const payload: any = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
+  2292 
+→ 2293 const dbToken = await prisma.refreshToken.findFirst(
+Timed out fetching a new connection from the connection pool. More info: http://pris.ly/d/connection-pool (Current connection pool timeout: 10, connection limit: 10)
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at refreshToken (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\auth\auth.controller.ts:2293:21)
