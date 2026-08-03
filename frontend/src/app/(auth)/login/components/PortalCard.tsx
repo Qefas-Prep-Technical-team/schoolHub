@@ -36,7 +36,7 @@ const PortalCard: React.FC<PortalCardProps> = ({ role, icon, title, description,
       </p>
       <Link 
         href={href}
-        className={`w-full flex items-center justify-between group bg-slate-50 dark:bg-slate-800 hover:${roleTheme.accentBg} text-slate-900 dark:text-white hover:text-white px-6 py-4 rounded-2xl transition-all text-[11px] font-black uppercase tracking-widest shadow-sm`}
+        className={`w-full flex items-center justify-between group bg-slate-50 dark:bg-slate-800 ${roleTheme.hoverBg} text-slate-900 dark:text-white hover:text-white px-6 py-4 rounded-2xl transition-all text-[11px] font-black uppercase tracking-widest shadow-sm`}
       >
         Access Portal
         <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">

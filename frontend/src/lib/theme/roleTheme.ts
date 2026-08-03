@@ -14,6 +14,7 @@ export interface RoleTheme {
   activeNavBorder: string;
   activeNavIcon: string;
   accentBg: string;
+  hoverBg: string;
   glowShadow: string;
   gradientHeader: string;
 }
@@ -33,6 +34,7 @@ export const ROLE_THEMES: Record<string, RoleTheme> = {
     activeNavBorder: "border-blue-500/30 dark:border-blue-500/30",
     activeNavIcon: "text-blue-600 dark:text-blue-400",
     accentBg: "bg-blue-600",
+    hoverBg: "hover:bg-blue-600",
     glowShadow: "shadow-[0_0_20px_rgba(37,99,235,0.3)]",
     gradientHeader: "from-blue-600 to-indigo-600"
   },
@@ -50,6 +52,7 @@ export const ROLE_THEMES: Record<string, RoleTheme> = {
     activeNavBorder: "border-emerald-500/30 dark:border-emerald-500/30",
     activeNavIcon: "text-emerald-600 dark:text-emerald-400",
     accentBg: "bg-emerald-600",
+    hoverBg: "hover:bg-emerald-600",
     glowShadow: "shadow-[0_0_20px_rgba(16,185,129,0.3)]",
     gradientHeader: "from-emerald-600 to-teal-600"
   },
@@ -67,6 +70,7 @@ export const ROLE_THEMES: Record<string, RoleTheme> = {
     activeNavBorder: "border-pink-500/30 dark:border-pink-500/30",
     activeNavIcon: "text-pink-600 dark:text-pink-400",
     accentBg: "bg-pink-600",
+    hoverBg: "hover:bg-pink-600",
     glowShadow: "shadow-[0_0_20px_rgba(236,72,153,0.3)]",
     gradientHeader: "from-pink-600 to-rose-500"
   },
@@ -84,6 +88,7 @@ export const ROLE_THEMES: Record<string, RoleTheme> = {
     activeNavBorder: "border-orange-500/30 dark:border-orange-500/30",
     activeNavIcon: "text-orange-600 dark:text-orange-400",
     accentBg: "bg-orange-600",
+    hoverBg: "hover:bg-orange-600",
     glowShadow: "shadow-[0_0_20px_rgba(249,115,22,0.3)]",
     gradientHeader: "from-orange-600 to-amber-500"
   }

@@ -38,7 +38,7 @@ export const ADMIN_FEATURE_FLAGS = {
 
   // === SETTINGS ===
   settings: true,
-  support: true,
+  support: false,
 };
 
 export type AdminFeatureFlagKey = keyof typeof ADMIN_FEATURE_FLAGS;
