@@ -178,7 +178,7 @@ export default function SchoolCard() {
             <p className="text-base font-medium text-gray-800 dark:text-gray-200">School Name *</p>
             <input
               {...register('schoolName')}
-              className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.schoolName
+              className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.schoolName
                 ? 'border-red-500 dark:border-red-400'
                 : 'border-gray-300 dark:border-gray-600'
                 }`}
@@ -199,7 +199,7 @@ export default function SchoolCard() {
             <p className="text-base font-medium text-gray-800 dark:text-gray-200">Admin Name *</p>
             <input
               {...register('adminName')}
-              className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.adminName
+              className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.adminName
                 ? 'border-red-500 dark:border-red-400'
                 : 'border-gray-300 dark:border-gray-600'
                 }`}
@@ -217,7 +217,7 @@ export default function SchoolCard() {
             <input
               type="email"
               {...register('email')}
-              className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.email
+              className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.email
                 ? 'border-red-500 dark:border-red-400'
                 : 'border-gray-300 dark:border-gray-600'
                 }`}
@@ -236,7 +236,7 @@ export default function SchoolCard() {
               <input
                 type={showPassword ? "text" : "password"}
                 {...register('password')}
-                className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 pr-12 ${errors.password
+                className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border bg-white dark:bg-gray-800 h-12 px-4 pr-12 ${errors.password
                   ? 'border-red-500 dark:border-red-400'
                   : 'border-gray-300 dark:border-gray-600'
                   }`}
@@ -304,7 +304,7 @@ export default function SchoolCard() {
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 {...register('confirmPassword')}
-                className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 pr-12 ${errors.confirmPassword
+                className={`form-input flex w-full rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border bg-white dark:bg-gray-800 h-12 px-4 pr-12 ${errors.confirmPassword
                   ? 'border-red-500 dark:border-red-400'
                   : 'border-gray-300 dark:border-gray-600'
                   }`}
@@ -338,7 +338,7 @@ export default function SchoolCard() {
             <div className="flex items-center">
               <input
                 {...register('subdomain')}
-                className={`form-input flex-1 w-full rounded-l-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.subdomain
+                className={`form-input flex-1 w-full rounded-l-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border bg-white dark:bg-gray-800 h-12 px-4 ${errors.subdomain
                   ? 'border-red-500 dark:border-red-400'
                   : 'border-gray-300 dark:border-gray-600'
                   }`}
@@ -362,7 +362,7 @@ export default function SchoolCard() {
                   id="privacy-policy-checkbox"
                   type="checkbox"
                   {...register('acceptTerms')}
-                  className={`h-5 w-5 rounded border bg-white dark:bg-gray-800 text-primary focus:ring-primary/50 transition-all cursor-pointer ${errors.acceptTerms ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  className={`h-5 w-5 rounded border bg-white dark:bg-gray-800 text-blue-600 focus:ring-blue-500/50 transition-all cursor-pointer ${errors.acceptTerms ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                   disabled={isPending}
                 />
               </div>
@@ -374,7 +374,7 @@ export default function SchoolCard() {
                 <button
                   type="button"
                   onClick={() => setShowTermsModal(true)}
-                  className="text-primary font-semibold hover:underline"
+                  className="text-blue-600 font-semibold hover:underline"
                 >
                   Terms of Service
                 </button>{" "}
@@ -382,7 +382,7 @@ export default function SchoolCard() {
                 <button
                   type="button"
                   onClick={() => setShowPrivacyModal(true)}
-                  className="text-primary font-semibold hover:underline"
+                  className="text-blue-600 font-semibold hover:underline"
                 >
                   Privacy Policy
                 </button>
@@ -398,7 +398,7 @@ export default function SchoolCard() {
             <button
               type="submit"
               disabled={isPending}
-              className="group relative flex h-14 w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 dark:from-indigo-500 dark:via-blue-500 dark:to-indigo-600 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none overflow-hidden"
+              className="group relative flex h-14 w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 via-sky-600 to-blue-700 dark:from-blue-500 dark:via-sky-500 dark:to-blue-600 text-base font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-blue-500/30 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none overflow-hidden"
             >
               <div className="absolute inset-0 w-full h-full bg-white/10 group-hover:bg-white/20 transition-colors duration-300" />
               <div className="relative z-10 flex items-center justify-center">
@@ -419,7 +419,7 @@ export default function SchoolCard() {
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               Already have a school account?{' '}
               <a
-                className="font-medium text-primary hover:underline"
+                className="font-medium text-blue-600 hover:underline"
                 href="/login"
                 onClick={(e) => {
                   if (isPending) e.preventDefault();
@@ -452,7 +452,7 @@ const PrivacyModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform animate-in zoom-in duration-300">
         <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
           <h3 className="text-xl font-bold text-[#0d171b] dark:text-white flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">security</span>
+            <span className="material-symbols-outlined text-blue-600">security</span>
             Privacy Policy
           </h3>
           <button 
@@ -479,7 +479,7 @@ const PrivacyModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
         <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/50">
           <button
             onClick={onClose}
-            className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+            className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-600/90 transition-all shadow-lg shadow-primary/20"
           >
             I Understand
           </button>
@@ -497,7 +497,7 @@ const TermsModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform animate-in zoom-in duration-300">
         <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
           <h3 className="text-xl font-bold text-[#0d171b] dark:text-white flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">gavel</span>
+            <span className="material-symbols-outlined text-blue-600">gavel</span>
             Terms of Service
           </h3>
           <button 
@@ -518,7 +518,7 @@ const TermsModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
         <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/50">
           <button
             onClick={onClose}
-            className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+            className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-600/90 transition-all shadow-lg shadow-primary/20"
           >
             Accept Terms
           </button>

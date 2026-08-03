@@ -123,23 +123,22 @@ export default function StudentRegisterForm() {
     <>
       <RedirectOverlay isVisible={showOverlay} />
       <div className="flex-1 flex flex-col justify-center p-6 sm:p-10 lg:p-12 xl:p-16">
-        <div className="max-w-md mx-auto w-full">
-          <div className="mb-8">
-            <h1 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-white">
-              Join Qefas Hub as a Student
-            </h1>
-            <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
-              Access your lessons, assignments, and teachers all in one place.
-            </p>
-          </div>
+        <div className="flex flex-col gap-3 p-4">
+          <h1 className="text-4xl font-black leading-tight tracking-[-0.033em] text-[#0d171b] dark:text-white">
+            Join Qefas Hub as a Student
+          </h1>
+          <p className="text-lg font-normal leading-normal text-[#4c809a] dark:text-gray-400">
+            Access your lessons, assignments, and teachers all in one place.
+          </p>
+        </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6 p-4">
 
 
             {/* Full Name */}
             <label className="flex flex-col">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
+                <p className="text-base font-medium pb-2 text-[#0d171b] dark:text-gray-300">
                   Full Name *
                 </p>
               </div>
@@ -147,7 +146,7 @@ export default function StudentRegisterForm() {
                 type="text"
                 {...register('fullName')}
                 placeholder="Enter your full name"
-                className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.fullName
+                className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-14 p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-pink-500/50 ${errors.fullName
                   ? 'border-red-500 dark:border-red-400'
                   : 'border-gray-300 dark:border-gray-700'
                   }`}
@@ -161,7 +160,7 @@ export default function StudentRegisterForm() {
             {/* Email */}
             <label className="flex flex-col">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
+                <p className="text-base font-medium pb-2 text-[#0d171b] dark:text-gray-300">
                   Email *
                 </p>
               </div>
@@ -169,7 +168,7 @@ export default function StudentRegisterForm() {
                 type="email"
                 {...register('email')}
                 placeholder="Enter your email"
-                className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.email
+                className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-14 p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-pink-500/50 ${errors.email
                   ? 'border-red-500 dark:border-red-400'
                   : 'border-gray-300 dark:border-gray-700'
                   }`}
@@ -182,7 +181,7 @@ export default function StudentRegisterForm() {
 
             {/* Password */}
             <label className="flex flex-col">
-              <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
+              <p className="text-base font-medium pb-2 text-[#0d171b] dark:text-gray-300">
                 Password *
               </p>
               <div className="relative w-full">
@@ -190,7 +189,7 @@ export default function StudentRegisterForm() {
                   type={showPassword ? "text" : "password"}
                   {...register('password')}
                   placeholder="Enter your password (must contain letters and numbers)"
-                  className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 pr-12 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.password
+                  className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-14 p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-pink-500/50 ${errors.password
                     ? 'border-red-500 dark:border-red-400'
                     : 'border-gray-300 dark:border-gray-700'
                     }`}
@@ -252,7 +251,7 @@ export default function StudentRegisterForm() {
 
             {/* Confirm Password */}
             <label className="flex flex-col">
-              <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
+              <p className="text-base font-medium pb-2 text-[#0d171b] dark:text-gray-300">
                 Confirm Password *
               </p>
               <div className="relative w-full">
@@ -260,7 +259,7 @@ export default function StudentRegisterForm() {
                   type={showConfirmPassword ? "text" : "password"}
                   {...register('confirmPassword')}
                   placeholder="Confirm your password"
-                  className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 pr-12 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.confirmPassword
+                  className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-14 p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-pink-500/50 ${errors.confirmPassword
                     ? 'border-red-500 dark:border-red-400'
                     : 'border-gray-300 dark:border-gray-700'
                     }`}
@@ -289,7 +288,7 @@ export default function StudentRegisterForm() {
                 <button
                   type="button"
                   onClick={() => setShowOptional(!showOptional)}
-                  className="flex items-center gap-2 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-primary transition-all duration-300 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-full shadow-sm hover:shadow-md z-10"
+                  className="flex items-center gap-2 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-pink-600 transition-all duration-300 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-full shadow-sm hover:shadow-md z-10"
                 >
                   {showOptional ? 'Hide Referral Codes' : 'Have a Referral Code?'}
                   <motion.div
@@ -315,7 +314,7 @@ export default function StudentRegisterForm() {
                   {/* School Code */}
                   <label className="flex flex-col">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
+                      <p className="text-base font-medium pb-2 text-[#0d171b] dark:text-gray-300">
                         School Code (optional)
                       </p>
                       <div className="relative group">
@@ -331,7 +330,7 @@ export default function StudentRegisterForm() {
                       type="text"
                       {...register('schoolCode')}
                       placeholder="Enter your School Code"
-                      className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.schoolCode
+                      className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-14 p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-pink-500/50 ${errors.schoolCode
                         ? 'border-red-500 dark:border-red-400'
                         : 'border-gray-300 dark:border-gray-700'
                         }`}
@@ -345,7 +344,7 @@ export default function StudentRegisterForm() {
                   {/* Teacher Code */}
                   <label className="flex flex-col">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
+                      <p className="text-base font-medium pb-2 text-[#0d171b] dark:text-gray-300">
                         Teacher Code (optional)
                       </p>
                       <div className="relative group">
@@ -361,7 +360,7 @@ export default function StudentRegisterForm() {
                       type="text"
                       {...register('teacherCode')}
                       placeholder="Enter your Teacher Code (format: tch-123456)"
-                      className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.teacherCode
+                      className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-14 p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-pink-500/50 ${errors.teacherCode
                         ? 'border-red-500 dark:border-red-400'
                         : 'border-gray-300 dark:border-gray-700'
                         }`}
@@ -375,7 +374,7 @@ export default function StudentRegisterForm() {
                   {/* Parent Code */}
                   <label className="flex flex-col">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium pb-2 text-gray-700 dark:text-gray-300">
+                      <p className="text-base font-medium pb-2 text-[#0d171b] dark:text-gray-300">
                         Parent Code (optional)
                       </p>
                       <div className="relative group">
@@ -391,7 +390,7 @@ export default function StudentRegisterForm() {
                       type="text"
                       {...register('parentCode')}
                       placeholder="Enter your Parent Code"
-                      className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-12 px-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.parentCode
+                      className={`form-input w-full rounded-lg border bg-background-light dark:bg-background-dark h-14 p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-pink-500/50 ${errors.parentCode
                         ? 'border-red-500 dark:border-red-400'
                         : 'border-gray-300 dark:border-gray-700'
                         }`}
@@ -413,7 +412,7 @@ export default function StudentRegisterForm() {
                     id="privacy-policy-checkbox"
                     type="checkbox"
                     {...register('acceptTerms')}
-                    className={`h-5 w-5 rounded border bg-background-light dark:bg-background-dark text-primary focus:ring-primary/50 transition-all cursor-pointer ${errors.acceptTerms ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
+                    className={`h-5 w-5 rounded border bg-background-light dark:bg-background-dark text-pink-600 focus:ring-pink-500/50 transition-all cursor-pointer ${errors.acceptTerms ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
                     disabled={isPending}
                   />
                 </div>
@@ -425,7 +424,7 @@ export default function StudentRegisterForm() {
                   <button
                     type="button"
                     onClick={() => setShowTermsModal(true)}
-                    className="text-primary font-semibold hover:underline"
+                    className="text-pink-600 font-semibold hover:underline"
                   >
                     Terms of Service
                   </button>{" "}
@@ -433,7 +432,7 @@ export default function StudentRegisterForm() {
                   <button
                     type="button"
                     onClick={() => setShowPrivacyModal(true)}
-                    className="text-primary font-semibold hover:underline"
+                    className="text-pink-600 font-semibold hover:underline"
                   >
                     Privacy Policy
                   </button>
@@ -448,7 +447,7 @@ export default function StudentRegisterForm() {
             <button
               type="submit"
               disabled={isPending}
-              className="group relative flex h-14 w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 dark:from-indigo-500 dark:via-blue-500 dark:to-indigo-600 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none overflow-hidden"
+              className="group relative flex h-14 w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-pink-700 dark:from-pink-500 dark:via-rose-500 dark:to-pink-600 text-base font-bold text-white shadow-lg shadow-pink-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-pink-500/40 hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-pink-500/30 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none overflow-hidden"
             >
               <div className="absolute inset-0 w-full h-full bg-white/10 group-hover:bg-white/20 transition-colors duration-300" />
               <div className="relative z-10 flex items-center justify-center">
@@ -468,11 +467,11 @@ export default function StudentRegisterForm() {
             )}
           </form>
 
-          <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-center text-sm text-[#4c809a] dark:text-gray-400">
             Already have an account?{" "}
             <a
               href="/login"
-              className="font-medium text-primary hover:text-primary/80 hover:underline"
+              className="font-medium text-pink-600 hover:text-pink-600/80 hover:underline"
               onClick={(e) => {
                 if (isPending) e.preventDefault();
               }}
@@ -480,7 +479,6 @@ export default function StudentRegisterForm() {
               Log in
             </a>
           </p>
-        </div>
       </div>
 
       {/* Privacy Policy Modal */}
@@ -489,7 +487,7 @@ export default function StudentRegisterForm() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform animate-in zoom-in duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
               <h3 className="text-xl font-bold text-[#0d171b] dark:text-white flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">security</span>
+                <span className="material-symbols-outlined text-pink-600">security</span>
                 Privacy Policy
               </h3>
               <button
@@ -516,7 +514,7 @@ export default function StudentRegisterForm() {
             <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/50">
               <button
                 onClick={() => setShowPrivacyModal(false)}
-                className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+                className="w-full py-3 bg-pink-600 text-white font-bold rounded-xl hover:bg-pink-600/90 transition-all shadow-lg shadow-primary/20"
               >
                 I Understand
               </button>
@@ -531,7 +529,7 @@ export default function StudentRegisterForm() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform animate-in zoom-in duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
               <h3 className="text-xl font-bold text-[#0d171b] dark:text-white flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">gavel</span>
+                <span className="material-symbols-outlined text-pink-600">gavel</span>
                 Terms of Service
               </h3>
               <button
@@ -552,7 +550,7 @@ export default function StudentRegisterForm() {
             <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/50">
               <button
                 onClick={() => setShowTermsModal(false)}
-                className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+                className="w-full py-3 bg-pink-600 text-white font-bold rounded-xl hover:bg-pink-600/90 transition-all shadow-lg shadow-primary/20"
               >
                 Accept Terms
               </button>

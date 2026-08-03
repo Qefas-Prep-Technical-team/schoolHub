@@ -153,7 +153,7 @@ export default function TeacherRegisterForm() {
             type="text"
             {...register('fullName')}
             placeholder="Enter your full name"
-            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.fullName
+            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${errors.fullName
               ? 'border-red-500 dark:border-red-400'
               : 'border-input-border-light dark:border-input-border-dark'
               }`}
@@ -171,7 +171,7 @@ export default function TeacherRegisterForm() {
             type="email"
             {...register('email')}
             placeholder="Enter your email address"
-            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.email
+            className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${errors.email
               ? 'border-red-500 dark:border-red-400'
               : 'border-input-border-light dark:border-input-border-dark'
               }`}
@@ -190,7 +190,7 @@ export default function TeacherRegisterForm() {
               type={showPassword ? "text" : "password"}
               {...register('password')}
               placeholder="Enter your password (must contain letters and numbers)"
-              className={`form-input h-14 w-full rounded-lg border bg-background-light dark:bg-background-dark p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.password
+              className={`form-input h-14 w-full rounded-lg border bg-background-light dark:bg-background-dark p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${errors.password
                 ? 'border-red-500 dark:border-red-400'
                 : 'border-input-border-light dark:border-input-border-dark'
                 }`}
@@ -258,7 +258,7 @@ export default function TeacherRegisterForm() {
               type={showConfirmPassword ? "text" : "password"}
               {...register('confirmPassword')}
               placeholder="Confirm your password"
-              className={`form-input h-14 w-full rounded-lg border bg-background-light dark:bg-background-dark p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.confirmPassword
+              className={`form-input h-14 w-full rounded-lg border bg-background-light dark:bg-background-dark p-4 pr-12 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${errors.confirmPassword
                 ? 'border-red-500 dark:border-red-400'
                 : 'border-input-border-light dark:border-input-border-dark'
                 }`}
@@ -314,7 +314,7 @@ export default function TeacherRegisterForm() {
                 type="text"
                 {...register('schoolCode')}
                 placeholder="Enter your school's Code"
-                className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.schoolCode
+                className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${errors.schoolCode
                   ? 'border-red-500 dark:border-red-400'
                   : 'border-input-border-light dark:border-input-border-dark'
                   }`}
@@ -334,7 +334,7 @@ export default function TeacherRegisterForm() {
                 type="text"
                 {...register('studentCode')}
                 placeholder="Enter student code (format: stu-123456)"
-                className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.studentCode
+                className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${errors.studentCode
                   ? 'border-red-500 dark:border-red-400'
                   : 'border-input-border-light dark:border-input-border-dark'
                   }`}
@@ -357,7 +357,7 @@ export default function TeacherRegisterForm() {
                 type="text"
                 {...register('classCode')}
                 placeholder="Enter Class code (format: cls-123456)"
-                className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-primary/50 ${errors.classCode
+                className={`form-input h-14 rounded-lg border bg-background-light dark:bg-background-dark p-4 text-base font-normal text-[#0d171b] dark:text-white placeholder:text-[#4c809a] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${errors.classCode
                   ? 'border-red-500 dark:border-red-400'
                   : 'border-input-border-light dark:border-input-border-dark'
                   }`}
@@ -372,14 +372,14 @@ export default function TeacherRegisterForm() {
 
 
         {/* Independent Teacher Checkbox */}
-        <div className="flex items-center p-2 rounded-lg border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-300">
+        <div className="flex items-center p-2 rounded-lg border border-transparent hover:border-emerald-600/20 hover:bg-emerald-600/5 transition-all duration-300">
           <div className="flex items-center h-5">
             <input
               id="independent-teacher-checkbox"
               type="checkbox"
               {...register('isIndependent')}
               className="h-5 w-5 rounded border-input-border-light dark:border-input-border-dark 
-              bg-background-light dark:bg-background-dark text-primary focus:ring-primary/50 transition-all cursor-pointer"
+              bg-background-light dark:bg-background-dark text-emerald-600 focus:ring-emerald-500/50 transition-all cursor-pointer"
               disabled={isPending}
             />
           </div>
@@ -399,7 +399,7 @@ export default function TeacherRegisterForm() {
                 id="privacy-policy-checkbox"
                 type="checkbox"
                 {...register('acceptTerms')}
-                className={`h-5 w-5 rounded border bg-background-light dark:bg-background-dark text-primary focus:ring-primary/50 transition-all cursor-pointer ${errors.acceptTerms ? 'border-red-500' : 'border-input-border-light dark:border-input-border-dark'}`}
+                className={`h-5 w-5 rounded border bg-background-light dark:bg-background-dark text-emerald-600 focus:ring-emerald-500/50 transition-all cursor-pointer ${errors.acceptTerms ? 'border-red-500' : 'border-input-border-light dark:border-input-border-dark'}`}
                 disabled={isPending}
               />
             </div>
@@ -411,7 +411,7 @@ export default function TeacherRegisterForm() {
               <button
                 type="button"
                 onClick={() => setShowTermsModal(true)}
-                className="text-primary font-semibold hover:underline"
+                className="text-emerald-600 font-semibold hover:underline"
               >
                 Terms of Service
               </button>{" "}
@@ -419,7 +419,7 @@ export default function TeacherRegisterForm() {
               <button
                 type="button"
                 onClick={() => setShowPrivacyModal(true)}
-                className="text-primary font-semibold hover:underline"
+                className="text-emerald-600 font-semibold hover:underline"
               >
                 Privacy Policy
               </button>
@@ -434,7 +434,7 @@ export default function TeacherRegisterForm() {
         <button
           type="submit"
           disabled={isPending}
-          className="group relative flex h-14 w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 dark:from-indigo-500 dark:via-blue-500 dark:to-indigo-600 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none overflow-hidden"
+          className="group relative flex h-14 w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-700 dark:from-emerald-500 dark:via-green-500 dark:to-emerald-600 text-base font-bold text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none overflow-hidden"
         >
           <div className="absolute inset-0 w-full h-full bg-white/10 group-hover:bg-white/20 transition-colors duration-300" />
           <div className="relative z-10 flex items-center justify-center">
@@ -456,7 +456,7 @@ export default function TeacherRegisterForm() {
         <p className="text-center text-sm text-[#4c809a] dark:text-gray-400">
           Already have an account?{" "}
           <a
-            className="font-medium text-primary hover:underline"
+            className="font-medium text-emerald-600 hover:underline"
             href="/login"
             onClick={(e) => {
               if (isPending) e.preventDefault();
@@ -474,7 +474,7 @@ export default function TeacherRegisterForm() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform animate-in zoom-in duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
               <h3 className="text-xl font-bold text-[#0d171b] dark:text-white flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">security</span>
+                <span className="material-symbols-outlined text-emerald-600">security</span>
                 Privacy Policy
               </h3>
               <button 
@@ -501,7 +501,7 @@ export default function TeacherRegisterForm() {
             <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/50">
               <button
                 onClick={() => setShowPrivacyModal(false)}
-                className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+                className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-600/90 transition-all shadow-lg shadow-primary/20"
               >
                 I Understand
               </button>
@@ -516,7 +516,7 @@ export default function TeacherRegisterForm() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform animate-in zoom-in duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
               <h3 className="text-xl font-bold text-[#0d171b] dark:text-white flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">gavel</span>
+                <span className="material-symbols-outlined text-emerald-600">gavel</span>
                 Terms of Service
               </h3>
               <button 
@@ -537,7 +537,7 @@ export default function TeacherRegisterForm() {
             <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/50">
               <button
                 onClick={() => setShowTermsModal(false)}
-                className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+                className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-600/90 transition-all shadow-lg shadow-primary/20"
               >
                 Accept Terms
               </button>

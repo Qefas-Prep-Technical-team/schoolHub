@@ -44,7 +44,7 @@ export default function TeacherRegisterImageSlider() {
         {/* Floating Modern Information Card */}
         <div className="absolute bottom-10 left-6 right-6 lg:left-10 lg:right-10 z-20 bg-white/10 dark:bg-black/20 backdrop-blur-xl border border-white/20 p-6 rounded-2xl shadow-2xl">
           <div className="flex items-center gap-4 mb-3">
-            <div className="w-12 h-12 rounded-full bg-primary/20 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/10">
+            <div className="w-12 h-12 rounded-full bg-emerald-600/20 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/10">
               <span className="material-symbols-outlined text-white text-2xl">person_play</span>
             </div>
             <div>
