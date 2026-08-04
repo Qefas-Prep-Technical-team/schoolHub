@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Platform, Image, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, Image, Modal, ScrollView } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,11 +16,13 @@ import * as z from 'zod';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 
-const illustrationConfig: Record<string, any> = {
-  student: require('../../assets/login/student.png'),
-  teacher: require('../../assets/login/teacher.png'),
-  parent: require('../../assets/login/parent.png'),
-  admin: require('../../assets/login/admin.png'),
+const getIllustration = (role: string) => {
+  switch (role) {
+    case 'teacher': return require('../../assets/login/teacher.png');
+    case 'parent': return require('../../assets/login/parent.png');
+    case 'admin': return require('../../assets/login/admin.png');
+    default: return require('../../assets/login/student.png');
+  }
 };
 
 // We build a schema generator so it adapts to the role
@@ -166,7 +168,7 @@ export default function SignupScreen() {
     }
   };
 
-  const getGradientColors = () => {
+  const getGradientColors = (): readonly [string, string, ...string[]] => {
     if (isDark) {
       switch(role) {
         case 'student': return ['#831843', '#020617']; // pink-900 to slate-950
@@ -222,7 +224,7 @@ export default function SignupScreen() {
 
             <View className="items-center mb-6 mt-2">
               <Image 
-                source={illustrationConfig[role] || illustrationConfig.student} 
+                source={getIllustration(role)} 
                 className="w-56 h-56"
                 resizeMode="contain"
               />

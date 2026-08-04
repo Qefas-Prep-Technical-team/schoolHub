@@ -1,5 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
@@ -11,16 +11,24 @@ import { AnimatedSplashScreen } from '../components/AnimatedSplashScreen';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../lib/api/client';
 import { registerForPushNotificationsAsync } from '../lib/utils/notifications';
+import { authEvents } from '../lib/auth/authEvents';
+import { clearTokens, clearUserRole } from '../lib/auth/secure-store';
 
 SplashScreen.preventAutoHideAsync();
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { asyncStoragePersister, DEFAULT_STALE_TIME, DEFAULT_GC_TIME } from '../lib/utils/queryPersister';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      // Data is fresh for 5 minutes — won't refetch if within this window
+      staleTime: DEFAULT_STALE_TIME,
+      // Keep data in cache (and persisted to disk) for 24 hours
+      gcTime: DEFAULT_GC_TIME,
     },
   },
 });
@@ -58,10 +66,37 @@ export default function RootLayout() {
     return () => { isMounted = false; };
   }, []);
 
+  // Listen for forced logout events from the API client
+  useEffect(() => {
+    const unsubscribe = authEvents.subscribe(async () => {
+      try {
+        await clearTokens();
+        await clearUserRole();
+        queryClient.clear();
+      } catch (e) {
+        console.warn('Error during forced logout cleanup:', e);
+      } finally {
+        // Navigate to root — index.tsx re-reads token state and
+        // routes to /(auth)/welcome since tokens are now cleared.
+        router.replace('/');
+      }
+    });
+    return unsubscribe;
+  }, []);
+
   const isReady = loaded && isBackendAwake;
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: asyncStoragePersister,
+        // Keep the cache valid for 24 hours — matches gcTime above
+        maxAge: DEFAULT_GC_TIME,
+        // Don't clear cache on a new session; let data show while refetching
+        buster: '',
+      }}
+    >
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ contentStyle: { backgroundColor: colorScheme === 'dark' ? '#000000' : '#ffffff' } }}>
           <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -94,6 +129,6 @@ export default function RootLayout() {
         )}
         <Toast />
       </ThemeProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

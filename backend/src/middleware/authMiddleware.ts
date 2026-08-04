@@ -83,6 +83,33 @@ export const authenticateToken = async (
       });
     }
 
+    // Require schoolId for Teachers and Students
+    if ((decoded.userType === "TEACHER" || decoded.userType === "STUDENT") && !schoolId) {
+      console.warn(`[authMiddleware] User ID "${decoded.userId}" (${decoded.userType}) has no schoolId.`);
+      return res.status(401).json({
+        success: false,
+        message: "User account no longer exists in the database. Please log in again.", // Using this so the frontend immediately logs out
+      });
+    }
+
+    // Check if the session/device is still authorized
+    const deviceModel = req.header("x-device-model");
+    const activeSession = await prisma.refreshToken.findFirst({
+      where: {
+        userId: decoded.userId,
+        isValid: true,
+        ...(deviceModel ? { deviceModel: deviceModel as string } : {})
+      }
+    });
+
+    if (!activeSession) {
+      console.warn(`[authMiddleware] User ID "${decoded.userId}" session not found or no longer valid.`);
+      return res.status(401).json({
+        success: false,
+        message: "Device no longer authorized",
+      });
+    }
+
     req.user = {
       id: decoded.userId,
       userType: decoded.userType,

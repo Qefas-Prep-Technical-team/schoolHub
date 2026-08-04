@@ -4,18 +4,22 @@ import { LogOut } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { clearTokens, clearUserRole } from '@/lib/auth/secure-store';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function LogoutButton() {
   const [isLoading, setIsLoading] = useState(false);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
     setIsLoading(true);
     try {
       await clearTokens();
-      // Use replace to prevent going back to the protected screens
-      router.replace('/(auth)/welcome');
+      await clearUserRole();
+      queryClient.clear();
+      // Route to '/' so index.tsx re-evaluates auth state
+      router.replace('/');
     } catch (error) {
       console.error('Logout error:', error);
       setIsLoading(false);

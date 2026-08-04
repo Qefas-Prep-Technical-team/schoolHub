@@ -1,0 +1,7 @@
+frontend/
+backend/
+desktop/
+tmp/
+node_modules/
+.expo/
+*.log

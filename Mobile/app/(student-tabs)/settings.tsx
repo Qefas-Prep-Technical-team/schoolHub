@@ -127,11 +127,10 @@ export default function SettingsScreen() {
   const handleLogout = async () => {
     try {
       await clearTokens();
+      await clearUserRole();
       queryClient.clear();
-      
-      // Explicitly redirect to the welcome/login screen, 
-      // avoiding '/' which can sometimes fail in nested layouts
-      router.replace('/(auth)/welcome');
+      // Route to '/' so index.tsx re-evaluates auth state
+      router.replace('/');
     } catch (error) {
       console.error('Logout error:', error);
     }

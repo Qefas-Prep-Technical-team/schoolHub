@@ -1,0 +1,32 @@
+# EAS Build ignore file for QefasHub Mobile
+# This file lives in /Mobile and tells EAS what to exclude from the build archive
+
+# Dependencies (will be installed fresh during build)
+node_modules/
+
+# Expo cache
+.expo/
+
+# Build output
+dist/
+web-build/
+android/
+ios/
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Environment files (use EAS secrets instead)
+.env*.local
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Mac
+.DS_Store
+
+# Editor
+.vscode/

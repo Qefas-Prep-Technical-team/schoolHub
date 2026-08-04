@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, Text, TouchableOpacity, ImageBackground, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { clearUserRole, getUserRole } from '../../lib/auth/secure-store';
@@ -41,7 +41,13 @@ export default function WelcomeGatewayScreen() {
     router.push('/(auth)/signup');
   };
 
-  if (!role) return null;
+  if (!role) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#020617' }}>
+        <ActivityIndicator size="large" color="#818cf8" />
+      </View>
+    );
+  }
 
   const config = roleConfig[role] || roleConfig.student;
   const Icon = config.icon;

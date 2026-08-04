@@ -5,11 +5,12 @@ import {
   setTokens,
   clearTokens,
 } from "../auth/secure-store";
+import { authEvents } from "../auth/authEvents";
 
 import { Platform } from "react-native";
 
 // Set the base API URL (could be injected via environment variable EXPO_PUBLIC_API_URL)
-const fallbackUrl = "https://api.qefashub.com/api";
+const fallbackUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
 const API_URL = process.env.EXPO_PUBLIC_API_URL || fallbackUrl;
 
 export const apiClient = axios.create({
@@ -82,6 +83,20 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
+      const errorMessage = error.response?.data?.message || "";
+      const shouldLogoutImmediately = 
+        errorMessage.toLowerCase().includes("user account no longer exists") ||
+        errorMessage.toLowerCase().includes("session expired") ||
+        errorMessage.toLowerCase().includes("device no longer authorized") ||
+        errorMessage.toLowerCase().includes("invalid token");
+
+      if (shouldLogoutImmediately) {
+        processQueue(error, null);
+        await clearTokens();
+        authEvents.emit();
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
@@ -128,7 +143,8 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         await clearTokens();
-        // Future: Trigger app state reset/navigation to Login screen
+        // Token refresh failed — force logout
+        authEvents.emit();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

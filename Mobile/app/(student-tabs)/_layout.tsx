@@ -29,9 +29,26 @@ export default function TabLayout() {
           shadowOffset: { width: 0, height: 10 },
           shadowOpacity: isDark ? 0 : 0.15,
           shadowRadius: 20,
-          height: 72,
+          height: 64,
           paddingBottom: 0,
+          paddingTop: 0,
           borderTopColor: 'transparent',
+          overflow: 'hidden',
+        },
+        tabBarItemStyle: {
+          flex: 1,
+          height: 64,
+          paddingTop: 0,
+          paddingBottom: 0,
+          marginTop: 0,
+          marginBottom: 0,
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
+        tabBarIconStyle: {
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
         },
         tabBarActiveTintColor: isDark ? '#818cf8' : '#4f46e5',
         tabBarInactiveTintColor: isDark ? '#475569' : '#94a3b8',
@@ -44,7 +61,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center">
               <Home size={26} color={color} strokeWidth={focused ? 2.5 : 2} />
-              {focused && <View className="w-1 h-1 bg-primary mt-1 rounded-full absolute -bottom-3" />}
             </View>
           ),
         }}
@@ -57,7 +73,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center">
               <Calendar size={26} color={color} strokeWidth={focused ? 2.5 : 2} />
-              {focused && <View className="w-1 h-1 bg-primary mt-1 rounded-full absolute -bottom-3" />}
             </View>
           ),
         }}
@@ -70,7 +85,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center">
               <BookOpen size={26} color={color} strokeWidth={focused ? 2.5 : 2} />
-              {focused && <View className="w-1 h-1 bg-primary mt-1 rounded-full absolute -bottom-3" />}
             </View>
           ),
         }}
@@ -83,7 +97,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center">
               <GraduationCap size={26} color={color} strokeWidth={focused ? 2.5 : 2} />
-              {focused && <View className="w-1 h-1 bg-primary mt-1 rounded-full absolute -bottom-3" />}
             </View>
           ),
         }}
@@ -94,7 +107,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center mt-1">
+            <View className="items-center justify-center">
               <View className={`h-[28px] w-[28px] rounded-full overflow-hidden border-[2px] items-center justify-center bg-slate-100 dark:bg-slate-800 ${focused ? 'border-slate-900 dark:border-white' : 'border-transparent'}`}>
                 {profileImage ? (
                   <Image source={{ uri: profileImage }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
@@ -102,7 +115,6 @@ export default function TabLayout() {
                   <Text className="text-[12px] font-black text-pink-600">S</Text>
                 )}
               </View>
-              {focused && <View className="w-1 h-1 bg-primary mt-1 rounded-full absolute -bottom-3 opacity-0" />}
             </View>
           ),
         }}
