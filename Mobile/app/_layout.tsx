@@ -9,6 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { AnimatedSplashScreen } from '../components/AnimatedSplashScreen';
 import Toast from 'react-native-toast-message';
+import { toastConfig } from '../components/toast/CustomToast';
 import { apiClient } from '../lib/api/client';
 import { registerForPushNotificationsAsync } from '../lib/utils/notifications';
 import { authEvents } from '../lib/auth/authEvents';
@@ -76,9 +77,16 @@ export default function RootLayout() {
       } catch (e) {
         console.warn('Error during forced logout cleanup:', e);
       } finally {
-        // Navigate to root — index.tsx re-reads token state and
-        // routes to /(auth)/welcome since tokens are now cleared.
-        router.replace('/');
+        // Defer navigation to ensure the Root Layout navigator is fully mounted
+        // before we attempt to redirect. Without this, a fast/cached auth event
+        // can trigger before expo-router's navigator is ready, causing a crash.
+        setTimeout(() => {
+          try {
+            router.replace('/');
+          } catch (navError) {
+            console.warn('Navigation error during forced logout:', navError);
+          }
+        }, 0);
       }
     });
     return unsubscribe;
@@ -127,7 +135,7 @@ export default function RootLayout() {
         {!splashFinished && (
           <AnimatedSplashScreen isAppReady={isReady} onFinish={() => setSplashFinished(true)} />
         )}
-        <Toast />
+        <Toast config={toastConfig} />
       </ThemeProvider>
     </PersistQueryClientProvider>
   );

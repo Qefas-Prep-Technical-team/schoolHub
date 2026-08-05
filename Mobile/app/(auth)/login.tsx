@@ -9,7 +9,7 @@ import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react-native';
 import { useForm, Controller } from 'react-hook-form';
-import Toast from 'react-native-toast-message';
+import { showErrorToast } from '@/lib/utils/toast';
 import { LoadingOverlay } from '../../components/ui/loading-overlay';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -47,15 +47,14 @@ export default function LoginScreen() {
       
       const token = await getAccessToken();
       if (token && storedRole) {
-        // We have a session, let's verify if it's still valid by hitting a health endpoint
-        // that requires auth or just relying on the fact we have a token.
-        try {
-          // If we want to be safe, we can just let index.tsx handle the deep routing
-          router.replace('/');
-        } catch (e) {
-          // If something fails, clear token and stay on login
-          await setTokens('', '');
-        }
+        // Navigate after a tiny delay so Expo Router is fully mounted
+        setTimeout(() => {
+          try {
+            router.replace('/');
+          } catch (e) {
+            console.warn('Navigation not ready:', e);
+          }
+        }, 100);
       }
     }
     loadRole();
@@ -82,9 +81,12 @@ export default function LoginScreen() {
     if (accessToken) {
       await setTokens(accessToken, refreshToken || '');
       await setUserRole(role.toLowerCase());
-      router.replace('/');
+      // Defer navigation — calling router.replace() synchronously here can
+      // throw a navigation error that gets caught by onSubmit's catch block,
+      // causing a false "Login Failed" toast even though login succeeded.
+      setTimeout(() => { router.replace('/'); }, 100);
     } else {
-      Toast.show({ type: 'error', text1: 'Login Failed', text2: 'Invalid credentials or no token received.' });
+      showErrorToast({ title: 'Login Failed', message: 'Invalid credentials or no token received.' });
     }
   };
 
@@ -106,7 +108,7 @@ export default function LoginScreen() {
           return; // Retry succeeded — exit early
         } catch (retryError: any) {
           // Retry also failed — fall through to handle the error below
-          console.error('[Login] Retry also failed:', retryError?.message);
+          console.log('[Login] Retry also failed:', retryError?.message);
         }
       }
 
@@ -144,7 +146,7 @@ export default function LoginScreen() {
         return;
       }
 
-      Toast.show({ type: 'error', text1: 'Login Failed', text2: errorMessage });
+      showErrorToast({ title: 'Login Failed', message: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -180,13 +182,35 @@ export default function LoginScreen() {
     }
   };
 
+  // Per-role button gradient: always vibrant regardless of light/dark mode
+  const getRoleButtonColors = (): readonly [string, string] => {
+    switch (role) {
+      case 'student': return ['#ec4899', '#9d174d']; // pink
+      case 'teacher': return ['#10b981', '#065f46']; // emerald
+      case 'parent':  return ['#f97316', '#9a3412']; // orange
+      case 'admin':   return ['#3b82f6', '#1e3a8a']; // blue
+      default:        return ['#3b82f6', '#1e3a8a'];
+    }
+  };
+
+  // Matching accent for links, forgot password etc.
+  const getRoleLinkColor = (): string => {
+    switch (role) {
+      case 'student': return '#db2777';
+      case 'teacher': return '#059669';
+      case 'parent':  return '#ea580c';
+      case 'admin':   return '#2563eb';
+      default:        return '#2563eb';
+    }
+  };
+
   return (
     <LinearGradient
       colors={getGradientColors()}
       style={{ flex: 1 }}
     >
       <SafeAreaView className="flex-1">
-        <LoadingOverlay visible={isLoading} message="Authenticating..." />
+
         <KeyboardAwareScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
@@ -264,20 +288,33 @@ export default function LoginScreen() {
 
               <View className="flex-row justify-end mt-[-10px]">
                 <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')}>
-                  <Text className="font-lexend-bold text-xs text-primary dark:text-primary-container uppercase tracking-widest">
+                  <Text style={{ fontFamily: 'LexendBold', fontSize: 12, color: getRoleLinkColor(), textTransform: 'uppercase', letterSpacing: 2 }}>
                     Forgot Password?
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              <Button
-                size="lg"
+              <TouchableOpacity
                 onPress={handleSubmit(onSubmit)}
-                isLoading={isLoading}
-                className="mt-4 shadow-lg shadow-primary/30"
+                disabled={isLoading}
+                activeOpacity={0.85}
+                style={{ marginTop: 16, borderRadius: 16, overflow: 'hidden', opacity: isLoading ? 0.7 : 1 }}
               >
-                Sign In
-              </Button>
+                <LinearGradient
+                  colors={getRoleButtonColors()}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ height: 56, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', paddingHorizontal: 32, borderRadius: 16 }}
+                >
+                  {isLoading
+                    ? <ActivityIndicator color="#ffffff" style={{ marginRight: 8 }} />
+                    : null
+                  }
+                  <Text style={{ fontFamily: 'LexendBold', fontSize: 15, color: '#ffffff', textTransform: 'uppercase', letterSpacing: 2 }}>
+                    Sign In
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
           </View>
         </KeyboardAwareScrollView>

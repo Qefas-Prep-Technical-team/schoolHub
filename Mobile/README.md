@@ -48,3 +48,62 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Deploying to EAS (Expo Application Services)
+
+To build and deploy your app to Android or iOS using EAS, follow these steps:
+
+1. **Install EAS CLI** (if you haven't already):
+
+   ```bash
+   npm install -g eas-cli
+   ```
+
+2. **Log in to your Expo account**:
+
+   ```bash
+   eas login
+   ```
+
+3. **Configure your project for EAS** (first time only):
+
+   ```bash
+   eas build:configure
+   ```
+
+4. **Create a Build**:
+   - For an Android APK (Preview):
+     ```bash
+     eas build -p android --profile preview
+     ```
+   - For an Android App Bundle (AAB for Google Play):
+     ```bash
+     eas build -p android --profile production
+     ```
+   - For iOS:
+     ```bash
+     eas build -p ios
+     ```
+
+## Troubleshooting: Rebuilding Native Directories
+
+If you ever run into deep native cache issues or need to regenerate the `android` or `ios` folders after changing `app.json` or installing native modules, you can delete and recreate them.
+
+**To delete the android folder:**
+(Run this in your PowerShell terminal from the `Mobile` directory)
+
+```powershell
+Remove-Item -Recurse -Force android
+```
+
+**To regenerate the native folders:**
+
+```bash
+npx expo prebuild
+```
+
+**running the app on emulator for full test**
+
+```bash
+npx expo run:android
+```

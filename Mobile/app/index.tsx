@@ -23,9 +23,9 @@ export default function AppEntry() {
       
       setAuthState({
         isLoading: false,
-        hasToken: !!token,
+        // Treat empty/whitespace tokens the same as no token
+        hasToken: !!(token && token.trim().length > 0),
         role: role,
-    
       });
     }
     checkAuth();

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Platform, Image, Modal, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, ActivityIndicator, Image, Modal, ScrollView } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -185,6 +185,28 @@ export default function SignupScreen() {
         case 'admin': return ['#bae6fd', '#f0f9ff', '#ffffff']; // blue
         default: return ['#bae6fd', '#f0f9ff', '#ffffff'];
       }
+    }
+  };
+
+  // Per-role button gradient: always vibrant regardless of light/dark mode
+  const getRoleButtonColors = (): readonly [string, string] => {
+    switch (role) {
+      case 'student': return ['#ec4899', '#9d174d']; // pink
+      case 'teacher': return ['#10b981', '#065f46']; // emerald
+      case 'parent':  return ['#f97316', '#9a3412']; // orange
+      case 'admin':   return ['#3b82f6', '#1e3a8a']; // blue
+      default:        return ['#3b82f6', '#1e3a8a'];
+    }
+  };
+
+  // Matching accent for links
+  const getRoleLinkColor = (): string => {
+    switch (role) {
+      case 'student': return '#db2777';
+      case 'teacher': return '#059669';
+      case 'parent':  return '#ea580c';
+      case 'admin':   return '#2563eb';
+      default:        return '#2563eb';
     }
   };
 
@@ -387,19 +409,32 @@ export default function SignupScreen() {
                 )}
               />
 
-              <Button 
-                size="lg" 
+              <TouchableOpacity
                 onPress={handleSubmit(onSubmit)}
-                isLoading={isLoading}
-                className="mt-6 shadow-lg shadow-primary/30"
+                disabled={isLoading}
+                activeOpacity={0.85}
+                style={{ marginTop: 24, borderRadius: 16, overflow: 'hidden', opacity: isLoading ? 0.7 : 1 }}
               >
-                Create Account
-              </Button>
+                <LinearGradient
+                  colors={getRoleButtonColors()}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ height: 56, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', paddingHorizontal: 32, borderRadius: 16 }}
+                >
+                  {isLoading
+                    ? <ActivityIndicator color="#ffffff" style={{ marginRight: 8 }} />
+                    : null
+                  }
+                  <Text style={{ fontFamily: 'LexendBold', fontSize: 15, color: '#ffffff', textTransform: 'uppercase', letterSpacing: 2 }}>
+                    Create Account
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
               
               <View className="flex-row justify-center mt-6">
                 <Text className="font-lexend text-slate-500 dark:text-slate-400">Already have an account? </Text>
                 <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
-                  <Text className="font-lexend-bold text-primary dark:text-primary-container">Sign In</Text>
+                  <Text style={{ fontFamily: 'LexendBold', color: getRoleLinkColor() }}>Sign In</Text>
                 </TouchableOpacity>
               </View>
               

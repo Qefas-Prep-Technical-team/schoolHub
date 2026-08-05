@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Check, BookOpen } from 'lucide-react-native';
 import { useSingleExam, useExamAttempt, useSubmitAttempt, useSaveAnswer } from '@/lib/api/hooks/useExams';
-import Toast from 'react-native-toast-message';
+import { showInfoToast, showErrorToast } from '@/lib/utils/toast';
 import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
 import { scheduleLocalNotification } from '@/lib/utils/notifications';
 
@@ -51,7 +51,7 @@ export default function ExamTakeScreen() {
   // Prevent hardware back button on Android
   useEffect(() => {
     const onBackPress = () => {
-      Toast.show({ type: 'error', text1: 'Action Blocked', text2: 'You cannot leave an ongoing exam.' });
+      showErrorToast({ title: 'Action Blocked', message: 'You cannot leave an ongoing exam.' });
       return true; // Return true to stop default back action
     };
 
@@ -73,9 +73,9 @@ export default function ExamTakeScreen() {
     setIsSubmitting(true);
     
     if (isAutoSubmit) {
-      Toast.show({ type: 'info', text1: 'Time up!', text2: 'Submitting exam automatically...' });
+      showInfoToast({ title: 'Time Up!', message: 'Submitting exam automatically...' });
     } else {
-      Toast.show({ type: 'info', text1: 'Submitting...', text2: 'Please wait while we save your exam.' });
+      showInfoToast({ title: 'Submitting...', message: 'Please wait while we save your exam.' });
     }
     
     try {
@@ -88,7 +88,7 @@ export default function ExamTakeScreen() {
     } catch (err) {
       console.error(err);
       setIsSubmitting(false);
-      Toast.show({ type: 'error', text1: 'Submission failed' });
+      showErrorToast({ title: 'Submission Failed', message: 'An error occurred. Please try again.' });
     }
   }, [examId, isSubmitting, router, submitAttemptMutation]);
 

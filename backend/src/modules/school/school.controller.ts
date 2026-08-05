@@ -27,6 +27,10 @@ const validateSchoolAccess = (req: Request, schoolId: string): boolean => {
   const user = req.user;
   if (!user) return false;
 
+  // SUPER_ADMIN and ADMIN can access any school
+  if (user.userType === 'SUPER_ADMIN' || user.role === 'SUPER_ADMIN' ||
+      user.userType === 'ADMIN' || user.role === 'ADMIN') return true;
+
   // Direct match with authorized schoolId from session
   if (user.schoolId === schoolId) return true;
 
@@ -338,6 +342,28 @@ export const getSchoolBilling = async (req: Request, res: Response) => {
       return res
         .status(400)
         .json({ success: false, message: "schoolId is required" });
+    }
+
+    // SUPER_ADMINs use "default-tenant-id" — return a platform-level placeholder
+    if (schoolId === "default-tenant-id" || !schoolId) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          subscription: {
+            status: "ACTIVE",
+            plan: "PLATFORM",
+            billingCycle: "yearly",
+            amount: 0,
+            features: []
+          },
+          usage: {
+            studentCount: 0, teacherCount: 0, classCount: 0,
+            examCount: 0, storageBytes: 0,
+          },
+          transactions: [],
+          totalTransactions: 0
+        }
+      });
     }
 
     if (!validateSchoolAccess(req, schoolId as string)) {

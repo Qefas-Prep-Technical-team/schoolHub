@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter, Stack, useFocusEffect } from 'expo-rou
 import { ArrowLeft, Clock, CheckCircle, Eye, FileText, PlayCircle, BarChart2, Lock } from 'lucide-react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useSingleExam, useExamAttempt, useStartExamAttempt } from '@/lib/api/hooks/useExams';
-import Toast from 'react-native-toast-message';
+import { showInfoToast, showErrorToast } from '@/lib/utils/toast';
 import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
 
 const PaperRingChart = ({ score, totalMarks, label }: { score: number, totalMarks: number, label: string }) => {
@@ -82,7 +82,7 @@ export default function ExamDetailsScreen() {
 
   const handleStartAction = () => {
     if (!isStarted) {
-      Toast.show({ type: 'info', text1: 'Not Started', text2: "The exam hasn't started yet!" });
+      showInfoToast({ title: 'Not Started', message: "The exam hasn't started yet!" });
       return;
     }
 
@@ -96,7 +96,7 @@ export default function ExamDetailsScreen() {
         router.push(`/exams/${exam.id}/take`);
       },
       onError: (error: any) => {
-        Toast.show({ type: 'error', text1: 'Error', text2: error?.response?.data?.message || 'Failed to start exam' });
+        showErrorToast({ title: 'Start Failed', message: error?.response?.data?.message || 'Failed to start exam' });
       }
     });
   };

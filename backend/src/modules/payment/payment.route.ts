@@ -29,7 +29,9 @@ import {
     getPricingPlans,
     getPricingFAQ,
     getUserBilling,
-    paystackWebhook
+    paystackWebhook,
+    scheduleDowngrade,
+    cancelDowngrade
 } from "./payment.controller";
 
 /**
@@ -80,6 +82,20 @@ router.use(authenticateToken);
  * @access  Private
  */
 router.get("/billing", getUserBilling);
+
+/**
+ * @route   POST /api/v1/payment/schedule-downgrade
+ * @desc    Schedule a plan downgrade at end of billing period (no charge)
+ * @access  Private
+ */
+router.post("/schedule-downgrade", scheduleDowngrade);
+
+/**
+ * @route   DELETE /api/v1/payment/schedule-downgrade
+ * @desc    Cancel a previously scheduled downgrade
+ * @access  Private
+ */
+router.delete("/schedule-downgrade", cancelDowngrade);
 
 /**
  * @route   GET /api/v1/payment/history

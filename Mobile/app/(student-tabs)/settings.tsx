@@ -6,7 +6,7 @@ import { useColorScheme, useThemeControls } from '@/hooks/use-color-scheme';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 import { User, Mail, Fingerprint, Settings, Bell, SunMoon, Lock, ArrowLeft, Building2, GraduationCap, School, ShieldAlert, CheckCircle2, Eye, EyeOff, Smartphone, Monitor, Globe, LogOut } from 'lucide-react-native';
 import { router } from 'expo-router';
-import Toast from 'react-native-toast-message';
+import { showInfoToast, showErrorToast } from '@/lib/utils/toast';
 import { clearTokens, clearUserRole } from '@/lib/auth/secure-store';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -86,7 +86,7 @@ export default function SettingsScreen() {
 
   const handleUpdateDept = () => {
     if (!selectedDept) {
-      Toast.show({ type: 'info', text1: 'Missing Selection', text2: 'Please select a department first.' });
+      showInfoToast({ title: 'Missing Selection', message: 'Please select a department first.' });
       return;
     }
     updateDepartment.mutate(selectedDept, {
@@ -96,7 +96,7 @@ export default function SettingsScreen() {
 
   const handleUpdateLevel = () => {
     if (!selectedLevel) {
-      Toast.show({ type: 'info', text1: 'Missing Selection', text2: 'Please select a level first.' });
+      showInfoToast({ title: 'Missing Selection', message: 'Please select a level first.' });
       return;
     }
     updateLevel.mutate(selectedLevel, {
@@ -106,7 +106,7 @@ export default function SettingsScreen() {
 
   const handleUpdatePassword = () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      Toast.show({ type: 'error', text1: 'Mismatch', text2: 'New passwords do not match.' });
+      showErrorToast({ title: 'Password Mismatch', message: 'New passwords do not match.' });
       return;
     }
     updatePassword.mutate(passwordData, {

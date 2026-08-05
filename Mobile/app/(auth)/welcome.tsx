@@ -3,22 +3,72 @@ import { View, Text, TouchableOpacity, ImageBackground, ActivityIndicator } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { clearUserRole, getUserRole } from '../../lib/auth/secure-store';
-import { Button } from '../../components/ui/button';
 import { GraduationCap, BookOpen, Users, ShieldCheck, ArrowRight, ArrowLeftRight } from 'lucide-react-native';
-import { cn } from '../../lib/utils';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const roleConfig: Record<string, any> = {
-  student: { title: 'Student', icon: GraduationCap, color: 'text-pink-500', bg: 'bg-white/10', image: require('../../assets/images/student-bg.jpg') },
-  teacher: { title: 'Teacher', icon: BookOpen, color: 'text-emerald-500', bg: 'bg-white/10', image: require('../../assets/images/teacher-bg.jpg') },
-  parent: { title: 'Parent', icon: Users, color: 'text-orange-500', bg: 'bg-white/10', image: require('../../assets/images/parent-bg.jpg') },
-  admin: { title: 'Admin', icon: ShieldCheck, color: 'text-blue-500', bg: 'bg-white/10', image: require('../../assets/images/admin-bg.jpg') },
+// ─── Role config ──────────────────────────────────────────────────────────────
+
+const roleConfig: Record<string, {
+  title: string;
+  subtitle: string;
+  icon: React.ComponentType<{ size: number; color: string }>;
+  image: any;
+  // Button gradient (left → right)
+  btnColors: readonly [string, string];
+  // Outline button border/text colour
+  outlineColor: string;
+  // Icon ring glow colour (semi-transparent)
+  ringColor: string;
+  // Solid icon colour
+  iconColor: string;
+}> = {
+  student: {
+    title: 'Student Portal',
+    subtitle: 'Access your dashboard, track assignments, and stay on top of your academics.',
+    icon: GraduationCap,
+    image: require('../../assets/images/student-bg.jpg'),
+    btnColors: ['#ec4899', '#9d174d'],
+    outlineColor: '#ec4899',
+    ringColor: 'rgba(236,72,153,0.25)',
+    iconColor: '#f9a8d4',
+  },
+  teacher: {
+    title: 'Teacher Portal',
+    subtitle: 'Manage your classes, assignments, and monitor student progress.',
+    icon: BookOpen,
+    image: require('../../assets/images/teacher-bg.jpg'),
+    btnColors: ['#10b981', '#065f46'],
+    outlineColor: '#10b981',
+    ringColor: 'rgba(16,185,129,0.25)',
+    iconColor: '#6ee7b7',
+  },
+  parent: {
+    title: 'Parent Portal',
+    subtitle: "Stay connected with your child's school life and track their progress.",
+    icon: Users,
+    image: require('../../assets/images/parent-bg.jpg'),
+    btnColors: ['#f97316', '#9a3412'],
+    outlineColor: '#f97316',
+    ringColor: 'rgba(249,115,22,0.25)',
+    iconColor: '#fdba74',
+  },
+  admin: {
+    title: 'Admin Portal',
+    subtitle: 'Manage your school, configure settings, and oversee all operations.',
+    icon: ShieldCheck,
+    image: require('../../assets/images/admin-bg.jpg'),
+    btnColors: ['#3b82f6', '#1e3a8a'],
+    outlineColor: '#3b82f6',
+    ringColor: 'rgba(59,130,246,0.25)',
+    iconColor: '#93c5fd',
+  },
 };
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function WelcomeGatewayScreen() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
-  const colorScheme = useColorScheme();
 
   useEffect(() => {
     async function fetchRole() {
@@ -33,14 +83,6 @@ export default function WelcomeGatewayScreen() {
     router.replace('/role-picker');
   };
 
-  const handleLogin = () => {
-    router.push('/(auth)/login');
-  };
-
-  const handleSignup = () => {
-    router.push('/(auth)/signup');
-  };
-
   if (!role) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#020617' }}>
@@ -53,53 +95,128 @@ export default function WelcomeGatewayScreen() {
   const Icon = config.icon;
 
   return (
-    <ImageBackground 
-      source={config.image} 
+    <ImageBackground
+      source={config.image}
       style={{ flex: 1 }}
-      imageStyle={{ opacity: 0.5 }}
-      className="bg-slate-950"
+      imageStyle={{ opacity: 0.35 }}
     >
-      <SafeAreaView className="flex-1">
-        {/* Header */}
-        <View className="flex-row justify-end px-6 pt-4 z-10">
-          <TouchableOpacity 
+      {/* Dark scrim overlay so text pops */}
+      <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(2,6,23,0.55)' }} />
+
+      <SafeAreaView style={{ flex: 1 }}>
+
+        {/* ── Header ── */}
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 24, paddingTop: 12 }}>
+          <TouchableOpacity
             onPress={handleSwitchUser}
-            className="flex-row items-center bg-slate-900/80 px-4 py-2.5 rounded-full border border-slate-800 shadow-sm"
+            style={{
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: 'rgba(15,23,42,0.85)',
+              paddingHorizontal: 14, paddingVertical: 10,
+              borderRadius: 999,
+              borderWidth: 1, borderColor: 'rgba(148,163,184,0.25)',
+            }}
           >
-            <ArrowLeftRight size={14} className="text-slate-300 mr-2" />
-            <Text className="font-lexend-bold text-xs text-slate-300 uppercase tracking-wider">Switch User Type</Text>
+            <ArrowLeftRight size={13} color="#cbd5e1" style={{ marginRight: 6 }} />
+            <Text style={{ fontFamily: 'LexendBold', fontSize: 11, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: 1.5 }}>
+              Switch Role
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Main Content */}
-        <View className="flex-1 justify-center items-center px-6 z-10">
-          <View className={cn("w-40 h-40 rounded-full items-center justify-center mb-10 shadow-lg shadow-black/40 border border-slate-700/50 backdrop-blur-md", config.bg)}>
-            <Icon size={72} className={config.color} />
+        {/* ── Hero ── */}
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+
+          {/* Glowing icon ring */}
+          <View style={{
+            width: 160, height: 160, borderRadius: 80,
+            backgroundColor: config.ringColor,
+            borderWidth: 2, borderColor: config.outlineColor + '55',
+            alignItems: 'center', justifyContent: 'center',
+            marginBottom: 36,
+            // Outer soft glow via shadow
+            shadowColor: config.outlineColor,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.6,
+            shadowRadius: 32,
+            elevation: 16,
+          }}>
+            <Icon size={72} color={config.iconColor} />
           </View>
-          
-          <Text className="font-lexend-bold text-4xl text-white mb-4 text-center tracking-tight">
-            {config.title} Portal
+
+          <Text style={{
+            fontFamily: 'LexendBold',
+            fontSize: 34,
+            color: '#ffffff',
+            textAlign: 'center',
+            letterSpacing: -0.5,
+            marginBottom: 12,
+          }}>
+            {config.title}
           </Text>
-          <Text className="font-lexend text-base text-slate-300 text-center px-6 leading-relaxed">
-            Access your {config.title.toLowerCase()} dashboard, manage your activities, and stay connected with Qefas Hub.
+
+          <Text style={{
+            fontFamily: 'Lexend',
+            fontSize: 15,
+            color: 'rgba(203,213,225,0.9)',
+            textAlign: 'center',
+            lineHeight: 24,
+          }}>
+            {config.subtitle}
           </Text>
         </View>
 
-        {/* Bottom Actions */}
-        <View className="px-6 pb-12 pt-6 gap-4 z-10">
-          <Button 
-            size="lg" 
-            onPress={handleLogin} 
-            className="w-full shadow-lg shadow-black/50"
-            rightIcon={<ArrowRight size={20} color="#ffffff" />}
+        {/* ── Bottom Buttons ── */}
+        <View style={{ paddingHorizontal: 24, paddingBottom: 48, gap: 12 }}>
+
+          {/* Primary — gradient "Log In" button */}
+          <TouchableOpacity
+            onPress={() => router.push('/(auth)/login')}
+            activeOpacity={0.85}
+            style={{ borderRadius: 18, overflow: 'hidden', shadowColor: config.outlineColor, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.5, shadowRadius: 16, elevation: 8 }}
           >
-            Log In
-          </Button>
-          <Button size="lg" variant="outline" onPress={handleSignup} className="w-full border-slate-600 bg-slate-900/80" textClassName="text-white">
-            Create an Account
-          </Button>
+            <LinearGradient
+              colors={config.btnColors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ height: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 18 }}
+            >
+              <Text style={{ fontFamily: 'LexendBold', fontSize: 15, color: '#ffffff', textTransform: 'uppercase', letterSpacing: 2, marginRight: 8 }}>
+                Log In
+              </Text>
+              <ArrowRight size={18} color="#ffffff" />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Secondary — outline "Create Account" button */}
+          <TouchableOpacity
+            onPress={() => router.push('/(auth)/signup')}
+            activeOpacity={0.85}
+            style={{
+              height: 58,
+              borderRadius: 18,
+              borderWidth: 2,
+              borderColor: config.outlineColor + 'aa',
+              backgroundColor: 'rgba(15,23,42,0.7)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ fontFamily: 'LexendBold', fontSize: 15, color: config.outlineColor, textTransform: 'uppercase', letterSpacing: 2 }}>
+              Create Account
+            </Text>
+          </TouchableOpacity>
+
         </View>
       </SafeAreaView>
     </ImageBackground>
   );
 }
+
+// StyleSheet shim for absoluteFillObject
+const StyleSheet = {
+  absoluteFillObject: {
+    position: 'absolute' as const,
+    top: 0, left: 0, right: 0, bottom: 0,
+  },
+};

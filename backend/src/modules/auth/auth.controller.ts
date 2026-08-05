@@ -2307,6 +2307,29 @@ export const refreshToken = async (req: Request, res: Response) => {
       });
     }
 
+    // --- ROTATE REFRESH TOKEN ---
+    // Invalidate the old token and issue a brand-new one.
+    // This prevents replay attacks and detects stolen tokens.
+    await prisma.refreshToken.update({
+      where: { id: dbToken.id },
+      data: { isValid: false }
+    });
+
+    const newRefreshToken = await generateRefreshToken(payload.userId, payload.userType, {
+      deviceType: dbToken.deviceType || undefined,
+      deviceModel: dbToken.deviceModel || undefined,
+      osVersion: dbToken.osVersion || undefined,
+      ipAddress: req.ip || undefined,
+    });
+
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     const newAccessToken = generateAccessToken(
       payload.userId,
       payload.userType,

@@ -23,7 +23,7 @@ export const getSubscriptionUsage = async (req: Request, res: Response) => {
       } catch (e) {
         return handleError(res, e, "subscription.getSubscriptionUsage");
       }
-    } else if (schoolId) {
+    } else if (schoolId && schoolId !== 'default-tenant-id') {
       data = await getSchoolUsageService(schoolId);
     } else {
       // Gracefully handle missing context without 400 error to avoid console noise

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Settings, User, SunMoon, ShieldAlert, ChevronRight, School, Bell, Lock, Smartphone, Monitor, Eye, EyeOff } from 'lucide-react-native';
 import { useColorScheme, useThemeControls } from '@/hooks/use-color-scheme';
 import { LogoutButton } from '../../components/ui/LogoutButton';
-import Toast from 'react-native-toast-message';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toast';
 import { useLocalSearchParams } from 'expo-router';
 
 type Tab = 'general' | 'school' | 'account';
@@ -32,14 +32,14 @@ export default function AdminSettingsScreen() {
 
   const handleUpdatePassword = () => {
     if (!passwordData.currentPassword || !passwordData.newPassword) {
-      Toast.show({ type: 'error', text1: 'Missing Fields', text2: 'Please fill in all password fields.' });
+      showErrorToast({ title: 'Missing Fields', message: 'Please fill in all password fields.' });
       return;
     }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      Toast.show({ type: 'error', text1: 'Mismatch', text2: 'New passwords do not match.' });
+      showErrorToast({ title: 'Password Mismatch', message: 'New passwords do not match.' });
       return;
     }
-    Toast.show({ type: 'success', text1: 'Success', text2: 'Password updated successfully!' });
+    showSuccessToast({ title: 'Password Updated', message: 'Password updated successfully!' });
     setIsPasswordModalOpen(false);
     setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
   };

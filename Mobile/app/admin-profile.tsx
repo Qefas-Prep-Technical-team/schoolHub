@@ -5,7 +5,7 @@ import { User, Mail, Hash, Briefcase, Fingerprint, ShieldCheck, Phone, CheckCirc
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LogoutButton } from '../components/ui/LogoutButton';
 import { useRouter } from 'expo-router';
-import Toast from 'react-native-toast-message';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toast';
 
 export default function AdminProfileScreen() {
   const colorScheme = useColorScheme();
@@ -21,14 +21,14 @@ export default function AdminProfileScreen() {
 
   const handleUpdatePassword = () => {
     if (!passwordData.currentPassword || !passwordData.newPassword) {
-      Toast.show({ type: 'error', text1: 'Missing Fields', text2: 'Please fill in all password fields.' });
+      showErrorToast({ title: 'Missing Fields', message: 'Please fill in all password fields.' });
       return;
     }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      Toast.show({ type: 'error', text1: 'Mismatch', text2: 'New passwords do not match.' });
+      showErrorToast({ title: 'Password Mismatch', message: 'New passwords do not match.' });
       return;
     }
-    Toast.show({ type: 'success', text1: 'Success', text2: 'Password updated successfully!' });
+    showSuccessToast({ title: 'Password Updated', message: 'Password updated successfully!' });
     setIsPasswordModalOpen(false);
     setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
   };

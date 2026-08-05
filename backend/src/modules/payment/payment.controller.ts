@@ -4,6 +4,7 @@ import * as paymentService from "./payment.service";
 import { PRICING_PLANS, PRICING_FAQ } from "./plans.data";
 import { PricingService } from "../platform/billing/pricing.service";
 import { handleError } from "../../utils/error-handler";
+import prisma from "../../config/database";
 
 // ─── Zod Schemas ───────────────────────────────────────────────────────────────
 
@@ -104,6 +105,63 @@ export const verifyPayment = async (req: Request, res: Response) => {
     });
   } catch (error: unknown) {
     return handleError(res, error, "payment.verifyPayment");
+  }
+};
+
+/**
+ * Schedule a plan downgrade (takes effect at period end, no charge)
+ */
+export const scheduleDowngrade = async (req: Request, res: Response) => {
+  try {
+    const user = (req as Request & { user?: { id: string; userType?: string } }).user;
+    if (!user) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+    const schema = z.object({
+      plan: z.string().min(1, 'Plan is required'),
+      billingType: z.enum(['monthly', 'yearly'] as const).default('monthly'),
+    });
+
+    const validation = schema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ success: false, message: validation.error.issues[0]?.message });
+    }
+
+    const { plan, billingType } = validation.data;
+    const data = await paymentService.scheduleDowngradeService(user.id, user.userType!, plan, billingType);
+
+    return res.status(200).json({
+      success: true,
+      message: `Downgrade to ${plan} scheduled. Your current plan remains active until the billing period ends.`,
+      data,
+    });
+  } catch (error: unknown) {
+    return handleError(res, error, 'payment.scheduleDowngrade');
+  }
+};
+
+/**
+ * Cancel a scheduled plan downgrade
+ */
+export const cancelDowngrade = async (req: Request, res: Response) => {
+  try {
+    const user = (req as Request & { user?: { id: string; userType?: string } }).user;
+    if (!user) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+    // Mark the PENDING_DOWNGRADE transaction as CANCELLED
+    await prisma.transaction.updateMany({
+      where: {
+        userId: user.id,
+        status: 'PENDING_DOWNGRADE',
+      },
+      data: { status: 'CANCELLED' }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Scheduled downgrade has been cancelled. Your current plan will continue.',
+    });
+  } catch (error: unknown) {
+    return handleError(res, error, 'payment.cancelDowngrade');
   }
 };
 

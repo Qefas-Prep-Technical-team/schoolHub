@@ -17,9 +17,9 @@ import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
 import { useGrades } from '@/lib/api/hooks/useGrades';
 
 export default function StudentHomeScreen() {
-  const { data: studentProfile, isLoading: isProfileLoading, refetch: refetchProfile } = useStudentProfile();
-  const { data: attemptsData, isLoading: isExamsLoading, refetch: refetchExams } = useStudentExamAttempts();
-  const { data: standaloneGradesData, isLoading: isGradesLoading, refetch: refetchGrades } = useGrades();
+  const { data: studentProfile, isLoading: isProfileLoading, isError: isProfileError, refetch: refetchProfile } = useStudentProfile();
+  const { data: attemptsData, isLoading: isExamsLoading, isError: isExamsError, refetch: refetchExams } = useStudentExamAttempts();
+  const { data: standaloneGradesData, isLoading: isGradesLoading, isError: isGradesError, refetch: refetchGrades } = useGrades();
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -38,7 +38,8 @@ export default function StudentHomeScreen() {
     }, [refetchProfile, refetchExams, refetchGrades])
   );
 
-  const isLoading = isProfileLoading || isExamsLoading || isGradesLoading;
+  const isLoading = isProfileLoading;
+  const isError = !isProfileLoading && (isProfileError || isExamsError || isGradesError);
 
   // Accurately map from the StudentProfile response model
   const username = studentProfile?.name || 'Scholar';

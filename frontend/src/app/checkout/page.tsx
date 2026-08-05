@@ -14,6 +14,7 @@ import { useCheckoutStore } from '@/utils/CheckoutStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { schoolQueryKeys } from '@/lib/api/hooks/useSchool';
 import Link from 'next/link';
+import { Player } from '@lottiefiles/react-lottie-player';
 
 type CheckoutState = 'EMAIL_ENTRY' | 'VERIFY_OTP' | 'PASSWORD_SETUP' | 'PAYMENT_READY' | 'VERIFYING_PAYMENT' | 'POST_PAYMENT_SETUP' | 'SUCCESS';
 
@@ -94,14 +95,13 @@ export default function CheckoutPage() {
     const planDisplayName = selectedPlanName || (plan ? `${plan.charAt(0).toUpperCase() + plan.slice(1)}` : 'Standard');
 
     // Secure re-verification of trial eligibility
-    // Allow trials if:
-    // 1. Plan supports trials (hasPlanTrial)
-    // 2. Not an upgrade flow (isUpgrade)
-    // 3. User is NOT authenticated (New registration) OR User is authenticated but on FREE plan and hasn't used trial
     const canUseTrial = hasPlanTrial && !isUpgrade && (
         !isAuthenticated ||
         (user?.plan?.toUpperCase() === 'FREE' && !user?.trialUsed)
     );
+
+    // Detect downgrade: no payment, schedule for period end
+    const isDowngrade = !isUpgrade && discountedAmount === 0 && !!plan;
 
     // Apply pro-rated discount if this is an upgrade
     const finalAmount = (isUpgrade && discountedAmount !== undefined) ? discountedAmount : amount;
@@ -329,6 +329,7 @@ export default function CheckoutPage() {
             }
         },
         onClose: () => {
+            isPaymentInFlight.current = false;
             setIsLoading(false);
             toast.info("Payment cancelled");
         },
@@ -336,12 +337,20 @@ export default function CheckoutPage() {
 
     const initializePaystack = usePaystackPayment(paystackProps as any);
 
+    const isPaymentInFlight = React.useRef(false);
+
     const handlePayment = () => {
         if (!email) return toast.error("Please provide an email");
+        if (isPaymentInFlight.current) {
+            toast.info("Payment is already in progress. Please wait.");
+            return;
+        }
+        isPaymentInFlight.current = true;
         setIsLoading(true);
         try {
             initializePaystack(paystackProps as any);
         } catch (error: any) {
+            isPaymentInFlight.current = false;
             setIsLoading(false);
             toast.error("Payment initialization failed");
             console.error("Paystack Init Error:", error);
@@ -515,31 +524,89 @@ export default function CheckoutPage() {
                         )}
                         {step === 'PAYMENT_READY' && (
                             <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                                <div className="mb-8">
-                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white font-lexend mb-2">Complete Purchase</h2>
-                                    <p className="text-slate-500">Billing to <span className="font-bold">{email}</span></p>
-                                </div>
-                                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 mb-8 border border-blue-100 dark:border-blue-800/50 flex items-center gap-4">
-                                    <ShieldCheck className="w-8 h-8 text-blue-600" />
+                                {isDowngrade ? (
+                                    /* ── Downgrade Confirmation (no payment) ── */
                                     <div>
-                                        <p className="font-bold text-slate-900 dark:text-white text-sm">Secure Payment</p>
-                                        <p className="text-slate-500 text-xs">Protected by Secure Gateway</p>
+                                        <div className="mb-8">
+                                            <h2 className="text-3xl font-black text-slate-900 dark:text-white font-lexend mb-2">Confirm Downgrade</h2>
+                                            <p className="text-slate-500">Switching from your current plan to <span className="font-bold capitalize text-amber-600">{planDisplayName}</span></p>
+                                        </div>
+                                        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-6 mb-8 border border-amber-200 dark:border-amber-800/50 space-y-3">
+                                            <div className="flex items-start gap-3">
+                                                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                                <div>
+                                                    <p className="font-black text-amber-800 dark:text-amber-300 text-sm">What happens when you downgrade?</p>
+                                                    <ul className="mt-2 space-y-1.5 text-amber-700 dark:text-amber-400 text-xs font-medium">
+                                                        <li>✓ Your current plan stays active until the billing period ends</li>
+                                                        <li>✓ No charge today — the new lower price applies at renewal</li>
+                                                        <li>✓ You can cancel or reverse this before the period ends</li>
+                                                        <li className="text-red-600 dark:text-red-400">✗ You will lose access to higher-tier features at renewal</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <Button
+                                                onClick={async () => {
+                                                    setIsLoading(true);
+                                                    try {
+                                                        await apiClient.post('/payment/schedule-downgrade', {
+                                                            plan,
+                                                            billingType: billing,
+                                                        });
+                                                        queryClient.invalidateQueries({ queryKey: ['school'] });
+                                                        queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+                                                        setStep('SUCCESS');
+                                                    } catch (err: any) {
+                                                        toast.error(err?.response?.data?.message || 'Failed to schedule downgrade. Please try again.');
+                                                    } finally {
+                                                        setIsLoading(false);
+                                                    }
+                                                }}
+                                                disabled={isLoading}
+                                                className="w-full py-6 text-lg rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black shadow-lg shadow-amber-500/30 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Confirm Downgrade <ArrowRight className="w-5 h-5" /></>}
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                onClick={() => router.back()}
+                                                className="w-full py-4 rounded-2xl text-slate-500 hover:text-slate-700 font-bold"
+                                            >
+                                                Cancel — Keep Current Plan
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
-                                <Button
-                                    onClick={handlePayment}
-                                    disabled={isLoading}
-                                    className="w-full py-8 text-xl rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 font-black shadow-xl transition-all flex items-center justify-center gap-2"
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <Loader2 className="w-6 h-6 animate-spin" />
-                                            Initializing...
-                                        </>
-                                    ) : (
-                                        canUseTrial ? "Initialize Free Trial" : `Pay ₦${checkoutAmount.toLocaleString()}`
-                                    )}
-                                </Button>
+                                ) : (
+                                    /* ── Normal Payment Flow ── */
+                                    <div>
+                                        <div className="mb-8">
+                                            <h2 className="text-3xl font-black text-slate-900 dark:text-white font-lexend mb-2">Complete Purchase</h2>
+                                            <p className="text-slate-500">Billing to <span className="font-bold">{email}</span></p>
+                                        </div>
+                                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 mb-8 border border-blue-100 dark:border-blue-800/50 flex items-center gap-4">
+                                            <ShieldCheck className="w-8 h-8 text-blue-600" />
+                                            <div>
+                                                <p className="font-bold text-slate-900 dark:text-white text-sm">Secure Payment</p>
+                                                <p className="text-slate-500 text-xs">Protected by Secure Gateway</p>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            onClick={handlePayment}
+                                            disabled={isLoading}
+                                            className="w-full py-8 text-xl rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 font-black shadow-xl transition-all flex items-center justify-center gap-2"
+                                        >
+                                            {isLoading ? (
+                                                <>
+                                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                                    Initializing...
+                                                </>
+                                            ) : (
+                                                canUseTrial ? "Initialize Free Trial" : `Pay ₦${checkoutAmount.toLocaleString()}`
+                                            )}
+                                        </Button>
+                                    </div>
+                                )}
                             </motion.div>
                         )}
 
@@ -580,19 +647,52 @@ export default function CheckoutPage() {
                         )}
 
                         {step === 'SUCCESS' && (
-                            <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-12">
-                                <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-500/20">
-                                    <CheckCircle2 className="w-12 h-12" />
+                            <motion.div
+                                key="success"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="flex flex-col items-center justify-center text-center py-8 min-h-[480px]"
+                            >
+                                {/* Lottie Checkmark Animation */}
+                                <div className="w-56 h-56 -mb-4">
+                                    <Player
+                                        autoplay
+                                        keepLastFrame
+                                        src="https://lottie.host/a2960c47-4b7b-4c47-ad8f-01cc9d174e63/Mfm99mhpXR.json"
+                                        style={{ width: '100%', height: '100%' }}
+                                    />
                                 </div>
-                                <h2 className="text-4xl font-black text-slate-900 dark:text-white font-lexend mb-4">You're all set!</h2>
-                                <p className="text-slate-500 mb-10 text-lg">
-                                    Redirecting you to your billing dashboard...
-                                </p>
-                                <Link href={`/dashboard/${role?.toLowerCase() || 'admin'}/billing`}>
-                                    <Button className="px-10 py-6 text-lg rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black shadow-xl">
-                                        Go to Billing page
-                                    </Button>
-                                </Link>
+
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.6 }}
+                                    className="space-y-3"
+                                >
+                                    <h2 className="text-4xl font-black text-slate-900 dark:text-white font-lexend tracking-tight">
+                                        Payment Successful! 🎉
+                                    </h2>
+                                    <p className="text-slate-500 text-base">
+                                        Your <span className="font-bold text-blue-600 capitalize">{planDisplayName}</span> plan is now active.
+                                    </p>
+                                </motion.div>
+
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 1.0 }}
+                                    className="mt-8 w-full space-y-3"
+                                >
+                                    <div className="flex items-center justify-center gap-2 text-xs text-slate-400 font-medium">
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        <span>Redirecting to billing dashboard in 3 seconds...</span>
+                                    </div>
+                                    <Link href={`/dashboard/${role?.toLowerCase() || 'admin'}/billing`}>
+                                        <Button className="w-full py-5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black shadow-xl hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                                            Go to Billing Now <ArrowRight className="w-5 h-5" />
+                                        </Button>
+                                    </Link>
+                                </motion.div>
                             </motion.div>
                         )}
                     </AnimatePresence>

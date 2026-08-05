@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Clock, CheckCircle, FileText, Upload, Link as LinkIcon, PlayCircle, Eye, Paperclip, Video } from 'lucide-react-native';
 import { useAssignmentById, useSubmitAssignment } from '@/lib/api/hooks/useAssignments';
-import Toast from 'react-native-toast-message';
+import { showSuccessToast, showErrorToast } from '@/lib/utils/toast';
 import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -143,11 +143,11 @@ export default function AssignmentDetailsScreen() {
       }
     }, {
       onSuccess: () => {
-        Toast.show({ type: 'success', text1: 'Success', text2: 'Assignment submitted successfully!' });
+        showSuccessToast({ title: 'Submitted!', message: 'Assignment submitted successfully!' });
         refetch();
       },
       onError: (err: any) => {
-        Toast.show({ type: 'error', text1: 'Error', text2: err?.response?.data?.message || 'Failed to submit assignment' });
+        showErrorToast({ title: 'Submission Failed', message: err?.response?.data?.message || 'Failed to submit assignment' });
       }
     });
   };

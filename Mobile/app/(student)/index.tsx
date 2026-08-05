@@ -95,7 +95,8 @@ export default function StudentDashboard() {
     refetchInterval: 30000,
   });
 
-  const isLoading = loadingProfile || loadingAttempts || loadingGrades;
+  const isLoading = loadingProfile;
+  const isError = !loadingProfile && (errorProfile || errorAttempts || errorGrades);
 
   const getImageUrl = (url: string | null | undefined) => {
     if (!url) return null;

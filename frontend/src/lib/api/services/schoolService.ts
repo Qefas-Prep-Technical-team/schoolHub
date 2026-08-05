@@ -60,6 +60,11 @@ export interface SchoolBilling {
     createdAt: string;
   }[];
   totalTransactions: number;
+  pendingDowngrade: {
+    plan: string | null;
+    billingCycle: string | null;
+    scheduledAt: string;
+  } | null;
 }
 
 export interface ClassTodayAttendance {

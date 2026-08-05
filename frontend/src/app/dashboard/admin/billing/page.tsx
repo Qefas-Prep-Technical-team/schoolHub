@@ -9,7 +9,9 @@ import {
     AlertCircle,
     CheckCircle2,
     Plus,
-    Landmark
+    Landmark,
+    TrendingDown,
+    X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,7 +34,10 @@ export default function AdminBillingPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const { user } = useAuthStore();
-    const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId;
+    const rawSchoolId = user?.schools?.[0]?.schoolId || user?.tenantId;
+    const isSuperAdmin = (user as any)?.userType === 'SUPER_ADMIN' || (user as any)?.role === 'SUPER_ADMIN';
+    // Only pass a real schoolId (not the platform placeholder)
+    const schoolId = (rawSchoolId && rawSchoolId !== 'default-tenant-id') ? rawSchoolId : undefined;
 
     const [currentPage, setCurrentPage] = React.useState(1);
     const ITEMS_PER_PAGE = 5;
@@ -85,7 +90,7 @@ export default function AdminBillingPage() {
         );
     }
 
-    if (isError || !billingData) {
+    if (isError || (!billingData && !isSuperAdmin && !!schoolId)) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
                 <AlertCircle className="w-16 h-16 text-red-500" />
@@ -96,7 +101,21 @@ export default function AdminBillingPage() {
         );
     }
 
-    const { subscription, transactions } = billingData || {};
+    // For SUPER_ADMINs with no school, show a platform-level placeholder
+    if (isSuperAdmin && !schoolId) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 p-8">
+                <ShieldCheck className="w-16 h-16 text-blue-500" />
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Platform Administrator</h3>
+                <p className="text-slate-500 text-center max-w-md">
+                    As a Super Admin, your account operates at the platform level and is not associated with a specific school billing plan.
+                    Manage individual school subscriptions through the Schools management section.
+                </p>
+            </div>
+        );
+    }
+
+    const { subscription, transactions } = billingData ?? {};
 
     // Prioritize the plan name from subscription metadata if available (covers trials of higher plans)
     const currentPlan = (subscription?.plan || "FREE").toUpperCase();
@@ -149,6 +168,47 @@ export default function AdminBillingPage() {
                     </Button>
                 </div>
             </motion.div>
+
+            {/* Pending Downgrade Banner */}
+            {billingData?.pendingDowngrade && (
+                <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-start gap-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-5"
+                >
+                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <TrendingDown className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="font-black text-amber-800 dark:text-amber-300 text-sm">
+                            Downgrade Scheduled
+                        </p>
+                        <p className="text-amber-700 dark:text-amber-400 text-xs font-medium mt-1">
+                            Your plan will downgrade to{' '}
+                            <span className="font-black capitalize">{billingData.pendingDowngrade.plan}</span>{' '}
+                            ({billingData.pendingDowngrade.billingCycle}) at the end of your current billing period on{' '}
+                            <span className="font-black">{subscriptionInfo.renewalDate}</span>.
+                            You keep all current features until then.
+                        </p>
+                    </div>
+                    <button
+                        onClick={async () => {
+                            try {
+                                const { apiClient } = await import('@/lib/api/client');
+                                await apiClient.delete('/payment/schedule-downgrade');
+                                queryClient.invalidateQueries({ queryKey: ['school'] });
+                                toast.success('Downgrade cancelled. Your current plan will continue.');
+                            } catch {
+                                toast.error('Failed to cancel downgrade. Please try again.');
+                            }
+                        }}
+                        className="flex-shrink-0 w-8 h-8 rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/40 flex items-center justify-center text-amber-600 transition-colors"
+                        title="Cancel scheduled downgrade"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </motion.div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-2 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden bg-white dark:bg-slate-900 flex flex-col">
@@ -286,8 +346,8 @@ export default function AdminBillingPage() {
                     </div>
                 </div>
                 <TransactionHistory
-                    items={transactions}
-                    totalItems={billingData.totalTransactions}
+                    items={transactions ?? []}
+                    totalItems={billingData?.totalTransactions ?? 0}
                     currentPage={currentPage}
                     itemsPerPage={ITEMS_PER_PAGE}
                     onPageChange={setCurrentPage}

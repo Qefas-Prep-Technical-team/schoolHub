@@ -739,24 +739,31 @@ export const getSchoolBillingService = async (
     totalTransactions,
     storageMetric,
     absoluteLatestTransaction,
+    pendingDowngrade,
   ] = await Promise.all([
     getSchoolStatsService(resolvedId),
     prisma.transaction.findMany({
-      where: { schoolId: resolvedId },
+      where: { schoolId: resolvedId, NOT: { status: 'PENDING_DOWNGRADE' } },
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
     }),
     prisma.transaction.count({
-      where: { schoolId: resolvedId },
+      where: { schoolId: resolvedId, NOT: { status: 'PENDING_DOWNGRADE' } },
     }),
     prisma.fileMetric.aggregate({
       where: { schoolId: resolvedId },
       _sum: { fileSize: true },
     }),
     prisma.transaction.findFirst({
-      where: { schoolId: resolvedId },
+      where: { schoolId: resolvedId, NOT: { status: 'PENDING_DOWNGRADE' } },
       orderBy: { createdAt: "desc" },
+    }),
+    // Check for a pending downgrade
+    prisma.transaction.findFirst({
+      where: { schoolId: resolvedId, status: 'PENDING_DOWNGRADE' },
+      orderBy: { createdAt: "desc" },
+      select: { plan: true, billingCycle: true, createdAt: true },
     }),
   ]);
 
@@ -803,6 +810,9 @@ export const getSchoolBillingService = async (
     },
     transactions,
     totalTransactions,
+    pendingDowngrade: pendingDowngrade
+      ? { plan: pendingDowngrade.plan, billingCycle: pendingDowngrade.billingCycle, scheduledAt: pendingDowngrade.createdAt }
+      : null,
   };
 };
 

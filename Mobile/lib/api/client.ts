@@ -15,7 +15,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || fallbackUrl;
 
 export const apiClient = axios.create({
   baseURL: API_URL,
-  timeout: 90000, // 90s — allows backend reconnect+retry to complete
+  timeout: 15000, // 15s — allows backend reconnect+retry to complete
   headers: {
     "Content-Type": "application/json",
   },
