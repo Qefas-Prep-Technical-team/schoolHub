@@ -19884,4 +19884,172 @@ Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" },
     at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
     at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
     at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
-    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)
+    at getPublicRoleFeatures (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:51
+
+  395 }
+  396 
+  397 // Fetch transactions and usage sequentially to save connections
+→ 398 const transactions = await prisma.transaction.findMany(
+The column `transactions.paymentReusable` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at Object.getUserBillingService (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.service.ts:398:26)
+    at getUserBilling (C:\Users\HP\Documents\GitHub\Qefas Project\schoolHub\backend\src\modules\payment\payment.controller.ts:188:18)

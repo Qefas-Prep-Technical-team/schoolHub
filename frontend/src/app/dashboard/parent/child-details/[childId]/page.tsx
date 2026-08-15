@@ -696,37 +696,46 @@ export default function StudentProfilePage() {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <a
-                                    href={`mailto:${email}`}
-                                    className="h-12 w-full sm:w-auto px-8 rounded-2xl border-2 border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 font-black uppercase tracking-widest text-[10px] text-slate-700 dark:text-slate-300 flex items-center justify-center gap-3 hover:bg-slate-50 dark:hover:bg-white/10 transition-all shadow-xl"
-                                >
-                                    <Mail size={16} /> Send Email
-                                </a>
-                            </div>
+
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* ── Tabs ────────────────────────────────────────────────────── */}
+            {/* ── Tabs (Grid View) ────────────────────────────────────────────────────── */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 mt-10 md:mt-12">
-                <div className="flex gap-1 overflow-x-auto scrollbar-hide bg-white dark:bg-slate-900 rounded-none md:rounded-[2rem] border-y md:border border-slate-100 dark:border-white/5 p-2 shadow-2xl">
-                    {TABS.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={cn(
-                                "flex-shrink-0 px-6 md:px-10 py-3.5 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                                activeTab === tab.id
-                                    ? "text-white shadow-xl scale-105"
-                                    : "text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
-                            )}
-                            style={activeTab === tab.id ? { backgroundColor: primaryColor } : {}}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+                <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-4 sm:p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
+                        {TABS.map((tab, idx) => {
+                            const icons = [BarChart3, BookOpen, Activity, Clock, GraduationCap, Calendar, Users, FileText]
+                            const colors = ["#6366f1", "#ea580c", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#f97316"]
+                            const Icon = icons[idx] || BarChart3
+                            const iconColor = colors[idx % colors.length]
+                            
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={cn(
+                                        "flex flex-col items-center justify-center p-4 sm:p-5 rounded-[1.5rem] transition-all duration-300 gap-3 border shadow-sm",
+                                        activeTab === tab.id
+                                            ? "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-md scale-[1.02]"
+                                            : "bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-md"
+                                    )}
+                                >
+                                    <div className="p-3 rounded-2xl" style={{ backgroundColor: `${iconColor}15` }}>
+                                        <Icon size={24} style={{ color: iconColor }} />
+                                    </div>
+                                    <span className={cn(
+                                        "text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-center leading-tight",
+                                        activeTab === tab.id ? "text-slate-900 dark:text-white" : "text-slate-500"
+                                    )}>
+                                        {tab.label}
+                                    </span>
+                                </button>
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
 
