@@ -5,6 +5,15 @@ export const useStudentExamAttempts = (params?: { page?: number; limit?: number 
   return useQuery({
     queryKey: ["my-attempts", params],
     queryFn: () => examService.getMyExamAttempts(params),
+    staleTime: 1000 * 60 * 2, // 2 minutes — prevents double-refetch from useFocusEffect + implicit stale
+  });
+};
+
+export const useExams = (params?: Record<string, unknown>) => {
+  return useQuery({
+    queryKey: ["exams", params],
+    queryFn: () => examService.getExams(params),
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
 

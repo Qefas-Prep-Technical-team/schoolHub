@@ -1,93 +1,155 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, InteractionManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { User as UserIcon, Bell } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { Bell } from 'lucide-react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useUnreadCount } from '@/lib/api/hooks/useNotifications';
+import { useNetwork } from '@/hooks/use-network';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
+import { useAuthUser } from '@/lib/api/hooks/useAuth';
+import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
 
-import { ParentHero } from '../../components/parent-dashboard/ParentHero';
+import { ParentDashboardCarousel } from '../../components/parent-dashboard/ParentDashboardCarousel';
+import { QuickAccess } from '../../components/parent-dashboard/QuickAccess';
+import { AcademicOverview } from '../../components/parent-dashboard/AcademicOverview';
 import { InsightsGrid } from '../../components/parent-dashboard/InsightsGrid';
-import { PerformanceWidget } from '../../components/parent-dashboard/PerformanceWidget';
-import { ChildrenOverview } from '../../components/parent-dashboard/ChildrenOverview';
-import { FinancialSummary } from '../../components/parent-dashboard/FinancialSummary';
-import { AnnouncementsFeed } from '../../components/parent-dashboard/AnnouncementsFeed';
-import { SupportCard } from '../../components/parent-dashboard/SupportCard';
+import { PerformanceChart } from '../../components/parent-dashboard/PerformanceChart';
+import { UpcomingExams } from '../../components/parent-dashboard/UpcomingExams';
+import { NotificationsFeed } from '../../components/parent-dashboard/NotificationsFeed';
+import { FeeSummary } from '../../components/parent-dashboard/FeeSummary';
 
 export default function ParentHomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const { data: unreadData } = useUnreadCount();
+  const { data: unreadData, refetch: refetchUnread } = useUnreadCount();
+  const router = useRouter();
   const unreadCount = unreadData?.count || 0;
 
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeChildId, setActiveChildId] = useState<string | undefined>();
+
+  const { isConnected } = useNetwork();
+
+  const { data: user } = useAuthUser();
+  const { data: children, refetch: refetchChildren } = useParentChildren();
+  
+  const activeChild = children?.find(c => c.id === activeChildId) || children?.[0];
+  const activeChildClass = activeChild?.currentClass 
+    ? `${activeChild.currentClass.name} - ${activeChild.currentClass.section}`
+    : 'No Class Assigned';
+
+  const { data: dashboardData, isError, error, refetch: refetchDashboard } = useParentDashboard(activeChildId);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isConnected) return;
+      const task = InteractionManager.runAfterInteractions(() => {
+        refetchChildren();
+        refetchDashboard();
+        refetchUnread();
+      });
+      return () => task.cancel();
+    }, [isConnected, refetchChildren, refetchDashboard, refetchUnread])
+  );
+
+  const queryClient = useQueryClient();
+
+  const onRefresh = useCallback(async () => {
+    if (!isConnected) return;
+    setRefreshing(true);
+    await Promise.all([
+      refetchUnread(),
+      refetchDashboard(),
+      refetchChildren()
+    ]);
+    setRefreshing(false);
+  }, [isConnected, refetchUnread, refetchDashboard, refetchChildren]);
+
+  // Orange theme gradients
+  const gradientColors = isDark 
+    ? (['#431407', '#1e293b', '#0f172a'] as const) // Dark orange to dark slate
+    : (['#ffedd5', '#fff7ed', '#ffffff'] as const); // Light orange to white
+
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
-      <ScrollView 
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100, paddingTop: 16 }}
-      >
-        {/* Top Navigation */}
-        <View className="flex-row items-center justify-between px-6 py-4 bg-transparent mt-2 mb-2">
-          <TouchableOpacity 
-            onPress={() => router.push('/parent-profile')}
-            className="h-10 w-10 items-center justify-center"
-          >
-            <View className="h-9 w-9 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 items-center justify-center bg-slate-100 dark:bg-slate-800">
-              <Text className="text-sm font-LexendBlack text-pink-600 dark:text-pink-500">
-                P
-              </Text>
+    <LinearGradient
+      colors={gradientColors}
+      locations={[0, 0.4, 1]}
+      className="flex-1"
+    >
+      <SafeAreaView className="flex-1" edges={['top']}>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100, paddingTop: 16 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={isDark ? '#f97316' : '#ea580c'} // iOS spinner color
+              colors={['#ea580c']} // Android spinner color
+            />
+          }
+        >
+          {/* Top Navigation */}
+          <View className="flex-row items-center justify-between px-6 py-2 mb-6">
+            <View className="flex-row items-center flex-1">
+              <TouchableOpacity
+                onPress={() => router.push('/parent-profile')}
+                className="h-12 w-12 rounded-full overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm mr-3"
+              >
+                <Image 
+                  source={{ uri: user?.profileImage || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Neutral%20Face.png' }} 
+                  placeholder={{ uri: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Neutral%20Face.png' }}
+                  style={{ width: '100%', height: '100%' }}
+                  contentFit="cover"
+                  transition={500}
+                />
+              </TouchableOpacity>
+              <View>
+                <Text className="text-lg font-LexendBold text-slate-800 dark:text-white">Hello, {user?.name?.split(' ')[0] || 'Parent'}</Text>
+                <Text className="text-xs font-Lexend text-slate-500 dark:text-slate-400">
+                  {activeChildClass}
+                </Text>
+              </View>
             </View>
-          </TouchableOpacity>
 
-          <View className="items-center">
-            <Text className="text-xl font-black text-slate-900 dark:text-white italic tracking-tight">
-              Qefas <Text className="text-pink-600">Hub</Text>
-            </Text>
+            <View className="flex-row items-center gap-3">
+
+              <TouchableOpacity
+                onPress={() => router.push('/notifications')}
+                className="h-10 w-10 bg-white dark:bg-slate-800 rounded-full items-center justify-center relative shadow-sm"
+              >
+                <Bell size={20} color={isDark ? '#94a3b8' : '#475569'} />
+                {unreadCount > 0 && (
+                  <View className="absolute top-0 right-0 h-3 min-w-[12px] px-0.5 bg-orange-500 rounded-full items-center justify-center border-2 border-white dark:border-slate-800">
+                    <Text className="text-[8px] font-black text-white">{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View className="flex-row items-center gap-4">
-            <TouchableOpacity 
-              onPress={() => router.push('/notifications')}
-              className="h-10 w-10 items-center justify-center relative"
-            >
-              <Bell size={24} color={isDark ? '#ffffff' : '#0f172a'} strokeWidth={2.5} />
-              {unreadCount > 0 && (
-                <View className="absolute top-1 right-1 h-4 min-w-[16px] px-1 bg-red-500 rounded-full items-center justify-center border-2 border-slate-50 dark:border-black">
-                  <Text className="text-[8px] font-black text-white">{unreadCount > 9 ? '9+' : unreadCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+          <View className="px-6">
+            <ParentDashboardCarousel 
+              childrenData={children || []} 
+              isLoading={!children} 
+              onChildChange={setActiveChildId} 
+            />
+            <QuickAccess />
+            <InsightsGrid activeChildId={activeChildId} />
+            <AcademicOverview activeChildId={activeChildId} />
+            <PerformanceChart activeChildId={activeChildId} />
+            <UpcomingExams activeChildId={activeChildId} />
+            <NotificationsFeed activeChildId={activeChildId} />
+            <FeeSummary activeChildId={activeChildId} />
           </View>
-        </View>
 
-        <View className="px-4">
-          <ParentHero />
-        </View>
-
-        <View className="mt-4">
-          <View className="px-6 mb-4">
-            <Text className="text-xl font-LexendBold text-slate-900 dark:text-white uppercase tracking-tight">Academic Insights</Text>
-            <Text className="text-[11px] text-orange-500 font-LexendBold uppercase tracking-widest mt-1">Real-time performance monitoring</Text>
-          </View>
-          <InsightsGrid />
-          <PerformanceWidget />
-        </View>
-
-        <View className="mt-4">
-          <ChildrenOverview />
-          <FinancialSummary />
-        </View>
-
-        <View className="mt-4">
-          <AnnouncementsFeed />
-        </View>
-
-        <View className="mt-4">
-          <SupportCard />
-        </View>
-
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }

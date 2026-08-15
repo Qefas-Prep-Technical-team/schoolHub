@@ -48,6 +48,7 @@ export interface ParentDashboardData {
     attendanceRate: number;
     averageGrade: number;
     attendanceBreakdown: AttendanceDay[];
+    todayAttendance?: string;
   };
   upcomingExams: UpcomingExam[];
   notifications: DashboardNotification[];
@@ -63,12 +64,12 @@ export const useParentDashboard = (childId?: string | null) => {
     queryKey: ["parent-dashboard", childId],
     queryFn: async () => {
       const { data } = await apiClient.get("/parents/dashboard", {
-        params: { childId }
+        params: { childId },
       });
+      console.log("API response data: ", data);
       return data.data as ParentDashboardData;
     },
     staleTime: 60_000,
     refetchInterval: 60_000,
   });
 };
-

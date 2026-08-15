@@ -20,6 +20,7 @@ import { Gem, Lock, UserPlus, Loader2, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 import { useUserBilling } from '@/lib/api/hooks/useSchool'
+import { usePublicPlatformSettings } from '@/lib/api/hooks/usePlatformGovernance'
 
 interface AddChildCardProps {
   childrenCount: number
@@ -31,6 +32,10 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const toast = useToast()
+
+  // Fetch platform settings to check if subscription is enforced for parents
+  const { data: settings } = usePublicPlatformSettings()
+  const isSubscriptionEnforced = settings?.sub_enforced_parents !== "false"
 
   // Fetch real-time billing data to get the accurate plan and limit
   const { data: billingData } = useUserBilling(user?.id || '', { limit: 1 })
@@ -49,7 +54,8 @@ export default function AddChildCard({ childrenCount }: AddChildCardProps) {
     'TRIAL': 3,
   }
 
-  const limit = planLimits[plan] || 1
+  // If subscription is not enforced, allow unlimited children
+  const limit = !isSubscriptionEnforced ? Infinity : (planLimits[plan] || 1)
   const isLimitReached = childrenCount >= limit
 
   // console.log('AddChildCard Debug:', { plan, isTrial, limit, childrenCount, isLimitReached });

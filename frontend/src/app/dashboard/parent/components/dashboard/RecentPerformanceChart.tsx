@@ -18,9 +18,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 export default function RecentPerformanceChart() {
   const { selectedChildId } = useParentStore()
   const { data, isLoading } = useParentDashboard(selectedChildId)
+  console.log("main data ", data)
 
   const grades = data?.child?.recentGrades ?? []
-  
+
   // Format data for Recharts: calculate percentage
   // Reverse to show chronologically from left to right (if recentGrades is desc)
   const chartData = [...grades].slice(0, 5).reverse().map((g) => {
@@ -59,17 +60,17 @@ export default function RecentPerformanceChart() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800 opacity-50" />
-              <XAxis 
-                dataKey="name" 
-                tickLine={false} 
-                axisLine={false} 
+              <XAxis
+                dataKey="name"
+                tickLine={false}
+                axisLine={false}
                 tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }}
                 dy={10}
               />
-              <YAxis 
-                tickLine={false} 
-                axisLine={false} 
-                tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }} 
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }}
                 domain={[0, 100]}
                 ticks={[0, 25, 50, 75, 100]}
               />
@@ -83,8 +84,8 @@ export default function RecentPerformanceChart() {
                         <p className="mb-1 opacity-70 font-medium">{data.date}</p>
                         <p className="uppercase tracking-widest mb-1.5">{data.fullSubject}</p>
                         <div className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: payload[0].color }} />
-                            <span className="text-slate-100 dark:text-slate-900 font-black">{data.score}% Score</span>
+                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: payload[0].color }} />
+                          <span className="text-slate-100 dark:text-slate-900 font-black">{data.score}% Score</span>
                         </div>
                       </div>
                     )
@@ -94,9 +95,9 @@ export default function RecentPerformanceChart() {
               />
               <Bar dataKey="score" radius={[6, 6, 6, 6]} maxBarSize={48}>
                 {chartData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.score >= 70 ? '#10b981' : entry.score >= 50 ? '#f59e0b' : '#ef4444'} 
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.score >= 70 ? '#10b981' : entry.score >= 50 ? '#f59e0b' : '#ef4444'}
                   />
                 ))}
               </Bar>

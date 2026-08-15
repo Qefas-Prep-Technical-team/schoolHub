@@ -1633,7 +1633,11 @@ export const login = async (req: Request, res: Response) => {
     };
 
     // Device Verification Check
-    const isDeviceVerified = req.cookies?.deviceVerified === "true" || !!preAuthToken;
+    // Mobile clients (React Native) cannot set/read cookies, so we skip the cookie-based
+    // device check for them. They are trusted via the x-device-type header.
+    // Web clients still go through the full device cookie + refreshToken validation.
+    const isMobileClient = req.headers["x-device-type"] === "mobile";
+    const isDeviceVerified = isMobileClient || req.cookies?.deviceVerified === "true" || !!preAuthToken;
     if (!isDeviceVerified) {
       const validDevice = await prisma.refreshToken.findFirst({
         where: {
@@ -3235,5 +3239,127 @@ export const revokeUserSession = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, message: "Session revoked successfully" });
   } catch (error: any) {
     return handleError(res, error, "auth.revokeUserSession");
+  }
+};
+
+/**
+ * @desc Get current authenticated user profile
+ */
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const userType = req.user?.userType;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    let responseData: any = {};
+
+    if (userType === UserRole.ADMIN || userType === "SUPER_ADMIN") {
+      const user = await prisma.admin.findUnique({
+        where: { id: userId },
+        include: {
+          schoolAdmins: {
+            where: { active: true },
+            include: { school: true }
+          }
+        }
+      });
+      if (user) {
+        const schools = user.schoolAdmins.map((sa: any) => ({
+          schoolId: sa.school?.id,
+          schoolName: sa.school?.name,
+          schoolCode: sa.school?.schoolCode,
+          adminRole: sa.role,
+          approved: sa.role === AdminRole.SCHOOL_OWNER || user.status === "APPROVED",
+        }));
+        const primarySchool = user.schoolAdmins[0]?.school || null;
+
+        responseData = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          adminCode: user.adminCode,
+          schoolCode: primarySchool?.schoolCode || null,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
+          schools,
+          plan: primarySchool?.plan || user.plan,
+          trialUsed: primarySchool?.trialUsed ?? user.trialUsed,
+          tenantId: user.tenantId
+        };
+      }
+    } else if (userType === UserRole.TEACHER) {
+      const user = await prisma.teacher.findUnique({
+        where: { id: userId },
+      });
+      if (user) {
+        responseData = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          teacherCode: user.teacherCode,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
+          primarySchoolId: user.primarySchoolId,
+          activeSchoolId: user.activeSchoolId,
+          isClaimed: user.isClaimed,
+          tenantId: user.tenantId
+        };
+      }
+    } else if (userType === UserRole.STUDENT) {
+      const user = await prisma.student.findUnique({
+        where: { id: userId }
+      });
+      if (user) {
+        responseData = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          studentCode: user.studentCode,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
+          schoolId: user.schoolId,
+          tenantId: user.tenantId
+        };
+      }
+    } else if (userType === UserRole.PARENT) {
+      const user = await prisma.parent.findUnique({
+        where: { id: userId }
+      });
+      if (user) {
+        responseData = {
+          id: user.id,
+          name: user.fullName,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          parentCode: user.parentCode,
+          profileImage: user.profileImage,
+          bannerImage: user.bannerImage,
+          gender: user.gender,
+          tenantId: user.tenantId
+        };
+      }
+    }
+
+    if (!responseData.id) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: responseData
+    });
+
+  } catch (error) {
+    return handleError(res, error, "auth.getMe");
   }
 };

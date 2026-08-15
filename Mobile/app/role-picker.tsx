@@ -126,7 +126,7 @@ export default function RolePicker() {
           {/* ── Header ── */}
           <View style={{ alignItems: 'center', marginBottom: 36 }}>
             <Image
-              source={require('../assets/images/icon.png')}
+              source={require('../assets/images/welcome.png')}
               style={{ width: 72, height: 72, marginBottom: 20 }}
               resizeMode="contain"
             />

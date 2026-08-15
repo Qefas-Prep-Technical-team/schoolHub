@@ -36,3 +36,17 @@ export const useClassTimetable = (classId: string, termPeriodId?: string) => {
     enabled: !!classId,
   });
 };
+
+export const useClassBehaviourAlerts = (classId: string, studentId?: string) => {
+  return useQuery({
+    queryKey: ['class', classId, 'behaviour-alerts', { studentId }],
+    queryFn: async () => {
+      const response = await apiClient.get(`/classes/${classId}/behaviour-alerts`, { params: { studentId } });
+      return response.data.data;
+    },
+    enabled: !!classId,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+};
+

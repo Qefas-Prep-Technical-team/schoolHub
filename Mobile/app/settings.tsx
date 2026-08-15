@@ -1,15 +1,26 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Switch, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Switch, Modal, TextInput, Alert, ActivityIndicator, RefreshControl, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme, useThemeControls } from '@/hooks/use-color-scheme';
 import { ArrowLeft, Bell, Moon, LogOut, Shield, CircleHelp, Smartphone, Monitor, KeyRound, X, CheckCircle2 } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { clearTokens } from '@/lib/auth/secure-store';
+import { useDeviceSessions, useRevokeSession, useUpdatePassword } from '@/lib/api/hooks/useStudent';
 
 export default function SettingsScreen() {
   const { colorScheme, toggleColorScheme } = useThemeControls();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    // Simulate a network refresh request
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
+  }, []);
 
   // Password Modal State
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
@@ -18,15 +29,13 @@ export default function SettingsScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordChanged, setPasswordChanged] = useState(false);
 
-  const mockDevices = [
-    { id: 1, name: 'iPhone 15 Pro', os: 'iOS 17.2', location: 'Lagos, Nigeria', lastActive: 'Active Now', icon: Smartphone, current: true },
-    { id: 2, name: 'MacBook Air', os: 'macOS Sonoma', location: 'Lagos, Nigeria', lastActive: '2 hours ago', icon: Monitor, current: false },
-    { id: 3, name: 'Chrome on Windows', os: 'Windows 11', location: 'Abuja, Nigeria', lastActive: 'Yesterday', icon: Monitor, current: false },
-  ];
+  const { data: sessions = [], isLoading: isSessionsLoading } = useDeviceSessions();
+  const { mutate: revokeSession } = useRevokeSession();
+  const { mutateAsync: updatePassword, isPending: isUpdatingPassword } = useUpdatePassword();
 
-  const handleChangePassword = () => {
-    // Mock API call
-    setTimeout(() => {
+  const handleChangePassword = async () => {
+    try {
+      await updatePassword({ oldPassword, newPassword });
       setPasswordChanged(true);
       setTimeout(() => {
         setPasswordModalVisible(false);
@@ -35,7 +44,9 @@ export default function SettingsScreen() {
         setNewPassword('');
         setConfirmPassword('');
       }, 2000);
-    }, 1000);
+    } catch (e) {
+      // Toast notification handles the error
+    }
   };
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -61,7 +72,7 @@ export default function SettingsScreen() {
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
       {/* Header */}
       <View className="flex-row items-center px-4 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => router.back()}
           className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"
         >
@@ -72,14 +83,25 @@ export default function SettingsScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24 }}>
-        
+      <ScrollView 
+        className="flex-1" 
+        contentContainerStyle={{ padding: 24 }}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh} 
+            tintColor="#ea580c"
+            colors={['#ea580c']}
+          />
+        }
+      >
+
         {/* Preferences */}
         <Text className="text-sm font-LexendBold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
           Preferences
         </Text>
         <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-sm border border-slate-100 dark:border-slate-800 mb-8">
-          
+
           <View className="flex-row items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
             <View className="flex-row items-center gap-3">
               <View className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
@@ -87,9 +109,9 @@ export default function SettingsScreen() {
               </View>
               <Text className="text-sm font-LexendMedium text-slate-900 dark:text-white">Push Notifications</Text>
             </View>
-            <Switch 
-              value={notificationsEnabled} 
-              onValueChange={setNotificationsEnabled} 
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={setNotificationsEnabled}
               trackColor={{ false: '#cbd5e1', true: '#3b82f6' }}
               thumbColor={'#ffffff'}
             />
@@ -102,9 +124,9 @@ export default function SettingsScreen() {
               </View>
               <Text className="text-sm font-LexendMedium text-slate-900 dark:text-white">Dark Mode</Text>
             </View>
-            <Switch 
-              value={isDark} 
-              onValueChange={toggleColorScheme} 
+            <Switch
+              value={isDark}
+              onValueChange={toggleColorScheme}
               trackColor={{ false: '#cbd5e1', true: '#3b82f6' }}
               thumbColor={'#ffffff'}
             />
@@ -116,10 +138,10 @@ export default function SettingsScreen() {
           Security
         </Text>
         <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-sm border border-slate-100 dark:border-slate-800 mb-8">
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             onPress={() => setPasswordModalVisible(true)}
-            className="flex-row items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800"
+            className="flex-row items-center justify-between p-4"
           >
             <View className="flex-row items-center gap-3">
               <View className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
@@ -131,18 +153,6 @@ export default function SettingsScreen() {
               </View>
             </View>
           </TouchableOpacity>
-
-          <TouchableOpacity className="flex-row items-center justify-between p-4">
-            <View className="flex-row items-center gap-3">
-              <View className="p-2 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                <Shield size={20} color="#10b981" />
-              </View>
-              <View>
-                <Text className="text-sm font-LexendMedium text-slate-900 dark:text-white">Privacy Settings</Text>
-                <Text className="text-xs font-Lexend text-slate-500 dark:text-slate-400">Manage your data</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
         </View>
 
         {/* Login Devices */}
@@ -150,26 +160,34 @@ export default function SettingsScreen() {
           Active Sessions
         </Text>
         <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-sm border border-slate-100 dark:border-slate-800 mb-8">
-          {mockDevices.map((device, index) => {
-            const Icon = device.icon;
-            const isLast = index === mockDevices.length - 1;
+          {isSessionsLoading ? (
+            <View className="p-4 items-center">
+              <ActivityIndicator color="#ea580c" />
+            </View>
+          ) : sessions.map((session: any, index: number) => {
+            const Icon = session.deviceType === 'Mobile' ? Smartphone : Monitor;
+            const isLast = index === sessions.length - 1;
+            const deviceName = session.deviceModel || session.deviceType || 'Unknown Device';
+            const location = session.ipAddress || 'Unknown Location';
+            const date = new Date(session.lastActiveAt).toLocaleDateString();
+            
             return (
-              <View key={device.id} className={`flex-row items-center justify-between p-4 ${!isLast ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}>
+              <View key={session.id} className={`flex-row items-center justify-between p-4 ${!isLast ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}>
                 <View className="flex-row items-center gap-3 flex-1">
                   <View className="p-2 bg-slate-50 dark:bg-slate-800 rounded-xl">
                     <Icon size={20} color={isDark ? '#cbd5e1' : '#64748b'} />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-sm font-LexendMedium text-slate-900 dark:text-white">{device.name}</Text>
-                    <Text className="text-xs font-Lexend text-slate-500 dark:text-slate-400">{device.os} • {device.location}</Text>
+                    <Text className="text-sm font-LexendMedium text-slate-900 dark:text-white">{deviceName}</Text>
+                    <Text className="text-xs font-Lexend text-slate-500 dark:text-slate-400">{session.osVersion || 'Unknown OS'} • {location}</Text>
                   </View>
                 </View>
                 <View className="items-end ml-2">
-                  <Text className={`text-[10px] font-LexendBold ${device.current ? 'text-green-500' : 'text-slate-400 dark:text-slate-500'}`}>
-                    {device.lastActive}
+                  <Text className={`text-[10px] font-LexendBold ${session.isCurrentDevice ? 'text-green-500' : 'text-slate-400 dark:text-slate-500'}`}>
+                    {session.isCurrentDevice ? 'Active Now' : date}
                   </Text>
-                  {!device.current && (
-                    <TouchableOpacity className="mt-1">
+                  {!session.isCurrentDevice && (
+                    <TouchableOpacity onPress={() => revokeSession(session.id)} className="mt-1 p-1">
                       <Text className="text-[10px] font-LexendMedium text-red-500">Revoke</Text>
                     </TouchableOpacity>
                   )}
@@ -184,7 +202,10 @@ export default function SettingsScreen() {
           Support
         </Text>
         <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-sm border border-slate-100 dark:border-slate-800 mb-8">
-          <TouchableOpacity className="flex-row items-center justify-between p-4">
+          <TouchableOpacity 
+            onPress={() => Linking.openURL('mailto:support@qefashub.com')}
+            className="flex-row items-center justify-between p-4"
+          >
             <View className="flex-row items-center gap-3">
               <View className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
                 <CircleHelp size={20} color="#f97316" />
@@ -195,7 +216,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Log Out */}
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleLogout}
           disabled={isLoggingOut}
           className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-2xl p-4 flex-row items-center justify-center gap-2 shadow-sm mb-12"
@@ -268,12 +289,16 @@ export default function SettingsScreen() {
                   placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
                 />
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={handleChangePassword}
-                  className="bg-blue-600 rounded-2xl p-4 items-center mb-6"
-                  disabled={!oldPassword || !newPassword || newPassword !== confirmPassword}
+                  className="bg-blue-600 rounded-2xl p-4 items-center mb-6 flex-row justify-center"
+                  disabled={!oldPassword || !newPassword || newPassword !== confirmPassword || isUpdatingPassword}
                 >
-                  <Text className="text-white font-LexendBold text-base">Update Password</Text>
+                  {isUpdatingPassword ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text className="text-white font-LexendBold text-base">Update Password</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             )}
@@ -301,15 +326,15 @@ export default function SettingsScreen() {
             </Text>
 
             <View className="flex-row items-center gap-4 w-full">
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setLogoutModalVisible(false)}
                 className="flex-1 py-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 items-center justify-center"
                 disabled={isLoggingOut}
               >
                 <Text className="text-slate-700 dark:text-slate-300 font-LexendBold text-sm">Cancel</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 onPress={confirmLogout}
                 className="flex-1 py-3.5 rounded-2xl bg-red-500 items-center justify-center flex-row gap-2"
                 disabled={isLoggingOut}

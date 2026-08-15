@@ -5,6 +5,10 @@ export const examService = {
     const { data } = await apiClient.get("/exams/my/attempts", { params });
     return data;
   },
+  getExams: async (params?: Record<string, unknown>) => {
+    const { data } = await apiClient.get("/exams", { params });
+    return data?.data || data;
+  },
   getExam: async (id: string) => {
     const { data } = await apiClient.get(`/exams/${id}`);
     return data;

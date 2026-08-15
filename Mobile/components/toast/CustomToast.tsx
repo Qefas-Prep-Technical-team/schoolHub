@@ -56,7 +56,6 @@ const ToastBase = ({
   bgDark,
   borderLight,
   borderDark,
-  onHide,
 }: ToastBaseProps) => {
   const isDark = Appearance.getColorScheme() === 'dark';
   const bg = isDark ? bgDark : bgLight;

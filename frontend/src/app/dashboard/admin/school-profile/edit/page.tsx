@@ -184,6 +184,7 @@ export default function EditSchoolProfilePage() {
                         description="Professional emblem (Square, min 500x500px)"
                         value={schoolData.logo} 
                         onChange={(url) => handleChange('logo', url)} 
+                        schoolId={schoolId}
                       />
                       <ImageUpload 
                         label="Browser Favicon" 
@@ -191,6 +192,7 @@ export default function EditSchoolProfilePage() {
                         description="Small tab icon (ICO/PNG, 32x32px)"
                         value={schoolData.favicon} 
                         onChange={(url) => handleChange('favicon', url)} 
+                        schoolId={schoolId}
                       />
                     </div>
 
@@ -200,6 +202,7 @@ export default function EditSchoolProfilePage() {
                       description="Hero background for your public portal (Wide, 1920x1080px recommended)"
                       value={schoolData.bannerImage} 
                       onChange={(url) => handleChange('bannerImage', url)} 
+                      schoolId={schoolId}
                     />
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

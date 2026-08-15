@@ -79,11 +79,13 @@ export default function RootLayout({
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
+          suppressHydrationWarning
         />
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/katex@0.16.44/dist/katex.min.css"
           crossOrigin="anonymous"
+          suppressHydrationWarning
         />
         <script
           type="application/ld+json"

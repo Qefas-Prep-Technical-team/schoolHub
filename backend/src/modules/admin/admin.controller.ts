@@ -595,8 +595,10 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
     }
 
     // Get count and students
-    const [total, students] = await Promise.all([
+    const [total, verifiedCount, pendingCount, students] = await Promise.all([
       prisma.student.count({ where }),
+      prisma.student.count({ where: { ...where, verified: true } }),
+      prisma.student.count({ where: { ...where, verified: false } }),
       prisma.student.findMany({
         where,
         skip,
@@ -625,6 +627,8 @@ export const getSchoolStudents = async (req: Request, res: Response) => {
       success: true,
       count: students.length,
       total,
+      verifiedCount,
+      pendingCount,
       page: Number(page),
       totalPages: Math.ceil(total / take),
       data: students,

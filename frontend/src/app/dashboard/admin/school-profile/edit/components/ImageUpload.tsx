@@ -12,6 +12,7 @@ interface ImageUploadProps {
   description?: string;
   aspectRatio?: 'square' | 'video' | 'favicon';
   className?: string;
+  schoolId?: string;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({ 
@@ -20,7 +21,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   label,
   description,
   aspectRatio = 'square',
-  className = ""
+  className = "",
+  schoolId
 }) => {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -39,7 +41,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       setIsUploading(true);
       
       // 1. Proxy upload through backend (to Bunny.net)
-      const { publicUrl } = await imageService.proxyUploadToBunny(file);
+      const { publicUrl } = await imageService.proxyUploadToBunny(file, schoolId);
       
       // 2. Callback to update parent state with the public URL
       onChange(publicUrl);

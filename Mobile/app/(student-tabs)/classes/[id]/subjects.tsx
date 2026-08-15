@@ -9,7 +9,8 @@ import LaTeXRenderer from '@/components/ui/LaTeXRenderer';
 
 export default function ClassSubjectsScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const id = params.id;
   const classId = Array.isArray(id) ? id[0] : id;
 
   const { data: classData, isLoading: isClassLoading, refetch: refetchClass } = useSingleClass(classId || '');
@@ -32,6 +33,16 @@ export default function ClassSubjectsScreen() {
 
   const className = classData?.name || 'Class';
   const classSubjects = classData?.subjects || [];
+
+  React.useEffect(() => {
+    if (params.openSubjectId && classSubjects.length > 0) {
+      const subjectToOpen = classSubjects.find((cs: any) => cs.subject?.id === params.openSubjectId)?.subject;
+      if (subjectToOpen) {
+        setSelectedSubject(subjectToOpen);
+        setModalVisible(true);
+      }
+    }
+  }, [params.openSubjectId, classSubjects.length]);
 
   const handleSubjectPress = (subject: any) => {
     setSelectedSubject(subject);

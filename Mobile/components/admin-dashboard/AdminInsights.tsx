@@ -1,78 +1,300 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import { Users, BookOpen, Building, CalendarCheck2 } from 'lucide-react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import {
+  Users,
+  GraduationCap,
+  Building2,
+  BookOpen,
+  CalendarCheck,
+  FileText,
+} from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface StatsProps {
-  students: number;
-  teachers: number;
-  classes: number;
-  exams: number;
+  students?: number;
+  teachers?: number;
+  classes?: number;
+  exams?: number;
+  subjects?: number;
 }
 
 interface AdminInsightsProps {
   stats?: StatsProps | null;
   isLoading: boolean;
+  primaryColor?: string;
 }
 
-export const AdminInsights = ({ stats, isLoading }: AdminInsightsProps) => {
+export const AdminInsights = ({
+  stats,
+  isLoading,
+  primaryColor = '#2563eb',
+}: AdminInsightsProps) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const items = [
-    { label: 'Students', value: stats?.students || 0, icon: Users, color: '#f43f5e', bg: isDark ? '#881337' : '#ffe4e6' },
-    { label: 'Teachers', value: stats?.teachers || 0, icon: BookOpen, color: '#f97316', bg: isDark ? '#7c2d12' : '#ffedd5' },
-    { label: 'Classes', value: stats?.classes || 0, icon: Building, color: '#8b5cf6', bg: isDark ? '#4c1d95' : '#ede9fe' },
-    { label: 'Exams', value: stats?.exams || 0, icon: CalendarCheck2, color: '#0ea5e9', bg: isDark ? '#082f49' : '#e0f2fe' },
+  const metrics = [
+    {
+      label: 'Students',
+      value: stats?.students?.toLocaleString() ?? '0',
+      icon: Users,
+      color: '#2563eb',
+      bg: 'rgba(37, 99, 235, 0.12)',
+      border: 'rgba(37, 99, 235, 0.25)',
+      trend: '+12%',
+      trendUp: true,
+    },
+    {
+      label: 'Teachers',
+      value: stats?.teachers?.toLocaleString() ?? '0',
+      icon: GraduationCap,
+      color: primaryColor,
+      bg: `${primaryColor}18`,
+      border: `${primaryColor}30`,
+      trend: 'Stable',
+      trendUp: true,
+    },
+    {
+      label: 'Classes',
+      value: stats?.classes?.toLocaleString() ?? '0',
+      icon: Building2,
+      color: '#d97706',
+      bg: 'rgba(217, 119, 6, 0.12)',
+      border: 'rgba(217, 119, 6, 0.25)',
+      trend: 'Active',
+      trendUp: true,
+    },
+    {
+      label: 'Subjects',
+      value: stats?.subjects?.toLocaleString() ?? '0',
+      icon: BookOpen,
+      color: '#059669',
+      bg: 'rgba(5, 150, 105, 0.12)',
+      border: 'rgba(5, 150, 105, 0.25)',
+      trend: 'Live',
+      trendUp: true,
+    },
+    {
+      label: 'Attendance',
+      value: '98%',
+      icon: CalendarCheck,
+      color: '#e11d48',
+      bg: 'rgba(225, 29, 72, 0.12)',
+      border: 'rgba(225, 29, 72, 0.25)',
+      trend: '↑ Good',
+      trendUp: true,
+    },
+    {
+      label: 'Exams',
+      value: stats?.exams?.toLocaleString() ?? '0',
+      icon: FileText,
+      color: '#9333ea',
+      bg: 'rgba(147, 51, 234, 0.12)',
+      border: 'rgba(147, 51, 234, 0.25)',
+      trend: 'Scheduled',
+      trendUp: false,
+    },
   ];
 
   if (isLoading) {
     return (
-      <View key="skeleton-loader" className="mb-6">
-        <Text className="text-lg font-LexendBold text-slate-900 dark:text-white mb-4 px-2">
-          Overview
-        </Text>
-        <View className="flex-row justify-between px-2">
-          {[1, 2, 3, 4].map((i) => (
-            <View key={i} className="w-[22%] bg-slate-200 dark:bg-slate-800 rounded-full h-32 animate-pulse" />
-          ))}
-        </View>
+      <View style={{ marginBottom: 28 }}>
+        {/* Section header skeleton */}
+        <View
+          style={{
+            width: 120,
+            height: 14,
+            borderRadius: 8,
+            backgroundColor: isDark ? '#1e293b' : '#e2e8f0',
+            marginBottom: 16,
+            marginHorizontal: 4,
+          }}
+        />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 4 }}>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <View
+                key={i}
+                style={{
+                  width: 130,
+                  height: 128,
+                  borderRadius: 28,
+                  backgroundColor: isDark ? '#1e293b' : '#e2e8f0',
+                }}
+              />
+            ))}
+          </View>
+        </ScrollView>
       </View>
     );
   }
 
   return (
-    <View key="content-loaded" className="mb-8">
-      <View className="flex-row justify-between items-center mb-4 px-2">
-        <Text className="text-lg font-LexendBold text-slate-900 dark:text-white">
-          Overview
-        </Text>
-        <Text className="text-sm font-Lexend text-blue-600 dark:text-blue-400">
-          View All
+    <View style={{ marginBottom: 28 }}>
+      {/* Section header */}
+      <View style={styles.sectionHeader}>
+        <View style={[styles.sectionDot, { backgroundColor: primaryColor }]} />
+        <Text style={[styles.sectionLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          School Metrics
         </Text>
       </View>
-      
-      <View className="flex-row justify-between px-1">
-        {items.map((item, index) => (
-          <View 
-            key={index} 
-            className="w-[23%] items-center"
-          >
-            <View 
-              className="w-full aspect-[4/5] rounded-[2rem] items-center justify-center mb-2 shadow-sm border border-slate-50 dark:border-slate-800"
-              style={{ backgroundColor: item.bg }}
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingLeft: 4, paddingRight: 16, gap: 12 }}
+      >
+        {metrics.map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <Pressable
+              key={i}
+              style={({ pressed }) => [
+                styles.card,
+                {
+                  backgroundColor: isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.9)',
+                  borderColor: isDark ? 'rgba(30,41,59,0.7)' : stat.border,
+                  opacity: pressed ? 0.85 : 1,
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                },
+              ]}
             >
-              <item.icon size={28} color={item.color} className="mb-2" />
-              <Text className="text-lg font-LexendBold text-slate-900 dark:text-white">
-                {item.value}
+              {/* Glow */}
+              <View style={[styles.cardGlow, { backgroundColor: stat.color }]} />
+
+              {/* Icon pill */}
+              <View
+                style={[
+                  styles.iconPill,
+                  {
+                    backgroundColor: stat.bg,
+                    borderColor: stat.border,
+                  },
+                ]}
+              >
+                <Icon size={20} color={stat.color} strokeWidth={2} />
+              </View>
+
+              {/* Value */}
+              <Text
+                style={[
+                  styles.cardValue,
+                  { color: isDark ? '#f1f5f9' : '#0f172a' },
+                ]}
+              >
+                {stat.value}
               </Text>
-            </View>
-            <Text className="text-xs font-Lexend text-slate-600 dark:text-slate-400 text-center">
-              {item.label}
-            </Text>
-          </View>
-        ))}
-      </View>
+
+              {/* Label */}
+              <Text
+                style={[
+                  styles.cardLabel,
+                  { color: isDark ? '#64748b' : '#94a3b8' },
+                ]}
+              >
+                {stat.label}
+              </Text>
+
+              {/* Trend chip */}
+              <View
+                style={[
+                  styles.trendChip,
+                  {
+                    backgroundColor: stat.trendUp
+                      ? 'rgba(16, 185, 129, 0.12)'
+                      : 'rgba(99, 102, 241, 0.12)',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.trendText,
+                    { color: stat.trendUp ? '#10b981' : '#6366f1' },
+                  ]}
+                >
+                  {stat.trend}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 14,
+    paddingHorizontal: 4,
+  },
+  sectionDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  sectionLabel: {
+    fontFamily: 'LexendBlack',
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  card: {
+    width: 130,
+    borderRadius: 28,
+    padding: 16,
+    borderWidth: 1,
+    gap: 6,
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  cardGlow: {
+    position: 'absolute',
+    right: -20,
+    top: -20,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    opacity: 0.07,
+  },
+  iconPill: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    marginBottom: 4,
+  },
+  cardValue: {
+    fontFamily: 'LexendBlack',
+    fontSize: 24,
+    letterSpacing: -0.5,
+    lineHeight: 28,
+  },
+  cardLabel: {
+    fontFamily: 'LexendBold',
+    fontSize: 10,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  trendChip: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 100,
+    marginTop: 4,
+  },
+  trendText: {
+    fontFamily: 'LexendBold',
+    fontSize: 9,
+    letterSpacing: 0.3,
+  },
+});

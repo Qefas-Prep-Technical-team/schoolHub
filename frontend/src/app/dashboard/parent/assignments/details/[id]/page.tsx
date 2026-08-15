@@ -1,9 +1,10 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
 import { useParentAssignmentDetails } from '@/lib/api/hooks/useAssignments'
-import { ArrowLeft, BookOpen, Calendar, CheckCircle, FileText, MessageSquare, Award, HelpCircle } from 'lucide-react'
+import { ArrowLeft, BookOpen, Calendar, CheckCircle, FileText, MessageSquare, Award, HelpCircle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
 export default function AssignmentDetailPage() {
@@ -16,13 +17,23 @@ export default function AssignmentDetailPage() {
     // Fetch the full details including questions and answers
     const { data: detailedAssignment, isLoading: isDetailsLoading, isFetching: isDetailsFetching } = useParentAssignmentDetails(selectedChildId, assignmentId)
 
+    const [currentPage, setCurrentPage] = useState(1);
+
     const isLoading = isDetailsLoading || isDetailsFetching || !selectedChildId
 
     if (isLoading) {
         return (
-            <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-900 p-8 justify-center items-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                <p className="mt-4 text-slate-500 font-medium">Loading assignment details...</p>
+            <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 h-full scroll-smooth">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 animate-pulse">
+                    <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl h-48 border border-slate-200 dark:border-slate-700"></div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="bg-white dark:bg-slate-800 rounded-3xl h-64 border border-slate-200 dark:border-slate-700"></div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 rounded-3xl h-96 border border-slate-200 dark:border-slate-700"></div>
+                    </div>
+                </div>
             </div>
         )
     }
@@ -47,6 +58,7 @@ export default function AssignmentDetailPage() {
     const submission = detailedAssignment.submissions?.[0];
     const answers = submission?.answers || [];
     const status = submission?.status?.toLowerCase() || detailedAssignment.status?.toLowerCase() || 'pending';
+    const isSubmitted = status === 'submitted' || status === 'graded';
     const isGraded = status === 'graded';
     
     let scoreNum = 0;
@@ -55,6 +67,11 @@ export default function AssignmentDetailPage() {
         scoreNum = submission.score;
         percentage = detailedAssignment.totalMarks > 0 ? Math.round((scoreNum / detailedAssignment.totalMarks) * 100) : 0;
     }
+
+    const questionsPerPage = 5;
+    const totalQuestions = detailedAssignment?.questions?.length || 0;
+    const totalPages = Math.ceil(totalQuestions / questionsPerPage);
+    const paginatedQuestions = detailedAssignment?.questions?.slice((currentPage - 1) * questionsPerPage, currentPage * questionsPerPage);
 
     return (
         <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 h-full scroll-smooth">
@@ -115,6 +132,21 @@ export default function AssignmentDetailPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left Column: Details & Instructions */}
                     <div className="lg:col-span-2 flex flex-col gap-8">
+                        {/* Assignment Details (Moved to top) */}
+                        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-8">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+                                <FileText className="size-5 text-primary" />
+                                Instructions & Details
+                            </h3>
+                            <div className="prose prose-slate dark:prose-invert max-w-none">
+                                {detailedAssignment.instructions ? (
+                                    <div dangerouslySetInnerHTML={{ __html: detailedAssignment.instructions }} />
+                                ) : (
+                                    <p className="text-slate-500">No specific instructions were provided for this assignment.</p>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Teacher Feedback (Only show if graded) */}
                         {isGraded && submission?.feedback && (
                             <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-3xl border border-indigo-100 dark:border-indigo-800/50 p-8 relative overflow-hidden">
@@ -136,69 +168,123 @@ export default function AssignmentDetailPage() {
                         )}
 
                         {/* Question and Answers Section */}
-                        {detailedAssignment?.questions?.length > 0 && (
-                            <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-8">
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
-                                    <HelpCircle className="size-5 text-primary" />
-                                    Student's Answers
-                                </h3>
-                                <div className="space-y-6">
-                                    {detailedAssignment.questions.map((question: any, idx: number) => {
-                                        const studentAnswer = answers.find((ans: any) => ans.questionId === question.id);
-                                        const isCorrect = studentAnswer?.isCorrect;
-                                        
-                                        return (
-                                            <div key={question.id} className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                                                <div className="flex gap-4">
-                                                    <div className="shrink-0 size-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
-                                                        {idx + 1}
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <div className="font-medium text-slate-800 dark:text-slate-200 mb-3" dangerouslySetInnerHTML={{ __html: question.question }} />
-                                                        
-                                                        {/* What the student answered */}
-                                                        <div className="mb-2">
-                                                            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Your Child's Answer</span>
-                                                            {studentAnswer ? (
-                                                                <div className={`px-4 py-3 rounded-xl border ${isCorrect === true ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300' : isCorrect === false ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300' : 'bg-white border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300'}`}>
-                                                                    {studentAnswer.answer || 'No text provided'}
+                        {isSubmitted ? (
+                            detailedAssignment?.questions?.length > 0 && (
+                                <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-8">
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+                                        <HelpCircle className="size-5 text-primary" />
+                                        Quiz Questions & Answers
+                                    </h3>
+                                    <div className="space-y-6">
+                                        {paginatedQuestions.map((question: any, idx: number) => {
+                                            const globalIdx = (currentPage - 1) * questionsPerPage + idx + 1;
+                                            const studentAnswer = answers.find((ans: any) => ans.questionId === question.id);
+                                            const isCorrect = studentAnswer?.isCorrect;
+                                            
+                                            return (
+                                                <div key={question.id} className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                                                    <div className="flex gap-4">
+                                                        <div className="shrink-0 size-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
+                                                            {globalIdx}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="font-medium text-slate-800 dark:text-slate-200 mb-4" dangerouslySetInnerHTML={{ __html: question.question }} />
+                                                            
+                                                            {/* Options (if multiple choice) */}
+                                                            {question.type === 'MULTIPLE_CHOICE' && (
+                                                                <div className="flex flex-col gap-2 mb-4">
+                                                                    {['optionA', 'optionB', 'optionC', 'optionD'].map((opt) => {
+                                                                        const optVal = question[opt];
+                                                                        if (!optVal) return null;
+                                                                        const optLetter = opt.replace('option', '');
+                                                                        
+                                                                        const isSelected = studentAnswer?.answer === optLetter;
+                                                                        const isRight = isGraded && question.correctAnswer === optLetter;
+                                                                        
+                                                                        let borderCls = "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/50";
+                                                                        if (isGraded) {
+                                                                            if (isRight) borderCls = "border-green-500 bg-green-50 dark:bg-green-900/20";
+                                                                            else if (isSelected && !isRight) borderCls = "border-red-500 bg-red-50 dark:bg-red-900/20";
+                                                                        } else if (isSelected) {
+                                                                            borderCls = "border-blue-500 bg-blue-50 dark:bg-blue-900/20";
+                                                                        }
+
+                                                                        return (
+                                                                            <div key={opt} className={`p-3 rounded-xl border ${borderCls} flex items-center gap-3`}>
+                                                                                <div className={`size-5 rounded-full border flex items-center justify-center ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-slate-300 dark:border-slate-600'} ${isGraded && isRight ? '!border-green-500 !bg-green-500' : ''} ${isGraded && isSelected && !isRight ? '!border-red-500 !bg-red-500' : ''}`}>
+                                                                                    {(isSelected || (isGraded && isRight)) && <div className="size-2 bg-white rounded-full" />}
+                                                                                </div>
+                                                                                <span className={`text-sm ${isSelected ? 'font-medium text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>{optVal}</span>
+                                                                            </div>
+                                                                        )
+                                                                    })}
                                                                 </div>
-                                                            ) : (
-                                                                <div className="px-4 py-3 rounded-xl border bg-slate-100 border-slate-200 text-slate-500 italic dark:bg-slate-800/50 dark:border-slate-700">
-                                                                    Skipped / No Answer
+                                                            )}
+                                                            
+                                                            {/* Text Answer */}
+                                                            {question.type !== 'MULTIPLE_CHOICE' && (
+                                                                <div className="mb-4">
+                                                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Student's Answer</span>
+                                                                    <div className="px-4 py-3 rounded-xl border bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 min-h-[60px]">
+                                                                        {studentAnswer?.answer || <span className="text-slate-400 italic">No answer provided</span>}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Marks Breakdown */}
+                                                            {isGraded && (
+                                                                <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2 text-sm font-medium">
+                                                                    {isCorrect === true && <span className="text-green-600 dark:text-green-400 flex items-center gap-1"><CheckCircle className="size-4" /> Correct</span>}
+                                                                    {isCorrect === false && <span className="text-red-600 dark:text-red-400">Incorrect</span>}
+                                                                    <span className="text-slate-500 dark:text-slate-400">
+                                                                        ({isCorrect === true ? question.marks : isCorrect === false ? 0 : Math.min(Number(studentAnswer?.score) || 0, question.marks)} / {question.marks} points)
+                                                                    </span>
                                                                 </div>
                                                             )}
                                                         </div>
-
-                                                        {/* Marks */}
-                                                        <div className="mt-3 flex items-center gap-2 text-sm font-medium">
-                                                            {isCorrect === true && <span className="text-green-600 dark:text-green-400 flex items-center gap-1"><CheckCircle className="size-4" /> Correct</span>}
-                                                            {isCorrect === false && <span className="text-red-600 dark:text-red-400">Incorrect</span>}
-                                                            <span className="text-slate-400">({studentAnswer?.score || 0} / {question.marks} marks)</span>
-                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })}
+                                    </div>
+                                    
+                                    {/* Pagination Controls */}
+                                    {totalPages > 1 && (
+                                        <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                                            <button 
+                                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                                disabled={currentPage === 1}
+                                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            >
+                                                <ChevronLeft className="size-4" /> Previous
+                                            </button>
+                                            <span className="text-sm font-medium text-slate-500">
+                                                Page {currentPage} of {totalPages}
+                                            </span>
+                                            <button 
+                                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                                disabled={currentPage === totalPages}
+                                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            >
+                                                Next <ChevronRight className="size-4" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        ) : (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-3xl border border-blue-100 dark:border-blue-800/50 p-8 flex items-start gap-4">
+                                <AlertCircle className="size-6 text-blue-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <h3 className="text-lg font-bold text-blue-900 dark:text-blue-300 mb-1">Questions Hidden</h3>
+                                    <p className="text-blue-800/80 dark:text-blue-400 leading-relaxed">
+                                        The quiz questions and options are currently hidden because your child has not yet submitted this assignment.
+                                    </p>
                                 </div>
                             </div>
                         )}
 
-                        {/* Assignment Details */}
-                        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-8">
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
-                                <FileText className="size-5 text-primary" />
-                                Instructions & Details
-                            </h3>
-                            <div className="prose prose-slate dark:prose-invert max-w-none">
-                                {detailedAssignment.instructions ? (
-                                    <div dangerouslySetInnerHTML={{ __html: detailedAssignment.instructions }} />
-                                ) : (
-                                    <p className="text-slate-500">No specific instructions were provided for this assignment.</p>
-                                )}
-                            </div>
-                        </div>
+                        {/* (Instructions originally here, moved to top) */}
                     </div>
 
                     {/* Right Column: Context & Resources */}
@@ -230,11 +316,9 @@ export default function AssignmentDetailPage() {
                             <p className="text-blue-100 text-sm leading-relaxed mb-4">
                                 Review the teacher's feedback together. Focus on the positive remarks first, then discuss how they can improve on the constructive criticism.
                             </p>
-                            <Link href="/dashboard/parent/messages">
-                                <button className="w-full bg-white/20 hover:bg-white/30 transition-colors text-white font-bold py-2 rounded-xl text-sm backdrop-blur-sm">
-                                    Message Teacher
-                                </button>
-                            </Link>
+                            <button disabled className="w-full bg-white/20 text-white/80 font-bold py-2 rounded-xl text-sm backdrop-blur-sm cursor-not-allowed">
+                                Message Teacher (Coming Soon)
+                            </button>
                         </div>
                     </div>
                 </div>

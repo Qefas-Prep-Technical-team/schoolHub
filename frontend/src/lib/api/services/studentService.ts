@@ -17,6 +17,7 @@ export interface Student {
       session?: string;
       term?: string;
       subjects?: any[];
+      teachers?: any[];
     };
   }[];
   department?: {
@@ -65,6 +66,11 @@ export interface StudentProfile extends Student {
   }[];
   prefectRole?: string;
   hasSeenPrefectCelebration?: boolean;
+  attendances?: {
+    id: string;
+    date: string;
+    status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+  }[];
 }
 
 export const studentService = {
@@ -88,6 +94,11 @@ export const studentService = {
   getStudentById: async (id: string) => {
     const response = await apiClient.get<{ data: StudentProfile }>(`/students/${id}`);
     return response.data.data ?? null;
+  },
+
+  getStudentAssignments: async (id: string, page = 1, limit = 10) => {
+    const response = await apiClient.get(`/students/${id}/assignments?page=${page}&limit=${limit}`);
+    return response.data.data;
   },
 
   updateDepartment: async (departmentId: string) => {

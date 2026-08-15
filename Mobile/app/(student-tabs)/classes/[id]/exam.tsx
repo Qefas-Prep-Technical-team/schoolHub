@@ -309,7 +309,7 @@ export default function ClassExamScreen() {
       gradeStr,
       dueDateObj: end,
     };
-  }).sort((a, b) => {
+  }).sort((a: any, b: any) => {
     if (a.status === 'upcoming' && b.status !== 'upcoming') return -1;
     if (a.status !== 'upcoming' && b.status === 'upcoming') return 1;
     return (b.dueDateObj?.getTime() || 0) - (a.dueDateObj?.getTime() || 0);

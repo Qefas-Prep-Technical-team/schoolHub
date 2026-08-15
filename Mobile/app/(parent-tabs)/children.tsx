@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useNetwork } from '@/hooks/use-network';
 import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
 import { ChildCard } from '../../components/parent-children/ChildCard';
 import { AddChildCard } from '../../components/parent-children/AddChildCard';
@@ -10,9 +11,15 @@ export default function ParentChildrenScreen() {
   const router = useRouter();
   const { data: children = [], isLoading, isError, refetch } = useParentChildren();
 
-  const onRefresh = useCallback(() => {
-    refetch();
-  }, [refetch]);
+  const { isConnected } = useNetwork();
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = useCallback(async () => {
+    if (!isConnected) return;
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [isConnected, refetch]);
 
   const getGradeLabel = (avg: number) => {
     if (avg >= 70) return 'A';
@@ -32,6 +39,7 @@ export default function ParentChildrenScreen() {
     studentId: c.studentCode,
     imageUrl: c.profileImage || '',
     attendance: c.stats?.attendanceRate || 0,
+    todayAttendance: c.stats?.todayAttendance,
     gradeValue: getGradeLabel(c.stats?.averageGrade || 0),
     gradePercentage: `${c.stats?.averageGrade || 0}%`,
     status: (c.linkStatus === 'ACCEPTED' || c.linkStatus === 'active') ? 'active' as const : 'inactive' as const,
@@ -39,19 +47,19 @@ export default function ParentChildrenScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
-      <View className="px-6 pt-4 pb-4">
-        <Text className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">
-          My <Text className="text-orange-600">Children</Text>
+      <View className="px-6 pt-6 pb-6">
+        <Text className="text-[11px] font-LexendBold text-orange-500 uppercase tracking-widest mb-1">
+          Parent Dashboard
         </Text>
-        <Text className="text-[11px] font-Lexend text-slate-500 mt-1">
-          Manage your linked student profiles
+        <Text className="text-3xl font-LexendBlack text-slate-900 dark:text-white tracking-tight">
+          My Linked Children
         </Text>
       </View>
 
       <ScrollView 
         contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor="#ea580c" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ea580c" />}
       >
         {isError && (
           <View className="p-4 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/20 mb-6">
@@ -59,13 +67,20 @@ export default function ParentChildrenScreen() {
           </View>
         )}
 
-        {mappedChildren.map((child) => (
-          <ChildCard 
-            key={child.id} 
-            child={child} 
-            onPress={() => router.push('/(parent-tabs)')}
-          />
-        ))}
+        {isLoading ? (
+          <View className="py-12 items-center justify-center">
+            <ActivityIndicator size="large" color="#ea580c" />
+            <Text className="text-slate-500 dark:text-slate-400 mt-4 font-Lexend">Loading your linked children...</Text>
+          </View>
+        ) : (
+          mappedChildren.map((child) => (
+            <ChildCard 
+              key={child.id} 
+              child={child} 
+              onPress={() => router.push({ pathname: '/child-details', params: { childId: child.id } })}
+            />
+          ))
+        )}
 
         <AddChildCard />
       </ScrollView>

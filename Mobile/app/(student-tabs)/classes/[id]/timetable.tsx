@@ -19,8 +19,8 @@ export default function ClassTimetableScreen() {
 
   const [selectedDay, setSelectedDay] = useState(getCurrentDayName());
 
-  const { data: classData } = useSingleClass(classId || '');
-  const { data: rawPeriods = [], isLoading } = useClassTimetable(classId || '');
+  const { data: classData, isLoading: isClassLoading } = useSingleClass(classId || '');
+  const { data: rawPeriods = [], isLoading: isTimetableLoading } = useClassTimetable(classId || '');
 
   // Group periods by selected day
   const dailyPeriods = useMemo(() => {

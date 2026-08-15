@@ -34,3 +34,27 @@ export const useChildDetails = (childId: string | null) => {
         staleTime: 2 * 60 * 1000, // 2 minutes
     });
 };
+
+export const useChildAssignments = (childId: string | null) => {
+    return useQuery({
+        queryKey: ["student-assignments", childId],
+        queryFn: async () => {
+            if (!childId) return null;
+            return await parentService.getChildAssignments(childId);
+        },
+        enabled: !!childId,
+        staleTime: 2 * 60 * 1000, // 2 minutes
+    });
+};
+
+export const useChildAssignmentDetails = (childId: string | null, assignmentId: string | null) => {
+    return useQuery({
+        queryKey: ["childAssignmentDetails", childId, assignmentId],
+        queryFn: async () => {
+            if (!childId || !assignmentId) return null;
+            return await parentService.getChildAssignmentDetails(childId, assignmentId);
+        },
+        enabled: !!childId && !!assignmentId,
+        staleTime: 2 * 60 * 1000, // 2 minutes
+    });
+};

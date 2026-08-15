@@ -6,11 +6,12 @@ import {
   clearTokens,
 } from "../auth/secure-store";
 import { authEvents } from "../auth/authEvents";
+import { networkEvents } from "./networkEvents";
 
 import { Platform } from "react-native";
 
 // Set the base API URL (could be injected via environment variable EXPO_PUBLIC_API_URL)
-const fallbackUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
+const fallbackUrl = 'http://192.168.93.248:5000/api';
 const API_URL = process.env.EXPO_PUBLIC_API_URL || fallbackUrl;
 
 export const apiClient = axios.create({
@@ -70,14 +71,20 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Detect network-level errors (backend unreachable)
+    if (!error.response || error.code === 'ECONNABORTED' || error.message === 'Network Error') {
+      networkEvents.emitOffline();
+    }
+
     const isAuthRoute =
       originalRequest.url?.includes("/auth/login") ||
       originalRequest.url?.includes("/auth/register") ||
-      originalRequest.url?.includes("/auth/password");
+      originalRequest.url?.includes("/auth/password") ||
+      originalRequest.url?.includes("/health");
 
     if (isAuthRoute) {
-      // Do NOT clear tokens here — clearing on a failed login attempt would
-      // erase a valid session if the user has one and just mis-typed their password.
+      // Do NOT clear tokens here — clearing on a failed login attempt or health check would
+      // erase a valid session.
       return Promise.reject(error);
     }
 

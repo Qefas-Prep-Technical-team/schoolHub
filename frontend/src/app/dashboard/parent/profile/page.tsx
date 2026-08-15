@@ -35,17 +35,25 @@ import { imageService } from '@/lib/api/services/imageService';
 import { useUpdateParentProfile } from '@/lib/api/hooks/useParent';
 import { useToast } from '@/lib/hooks/useToast';
 import EditProfileModal from './components/EditProfileModal';
+import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
+import { usePublicPlatformSettings } from '@/lib/api/hooks/usePlatformGovernance';
 
 export default function ParentProfilePage() {
   const { user } = useAuthStore();
   const { mutate: logout } = useLogoutMutation();
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateParentProfile();
   const toast = useToast();
+  const { data: settings } = usePublicPlatformSettings();
+
+  // Check if subscription enforcement is enabled for parents
+  const isSubscriptionEnforced = settings?.sub_enforced_parents !== "false"
 
   const [imgError, setImgError] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: children = [], isLoading: isLoadingChildren } = useParentChildren();
 
   if (!user) return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-8 animate-in fade-in duration-1000">
@@ -212,7 +220,7 @@ export default function ParentProfilePage() {
               <div className="grid grid-cols-2 gap-4 w-full">
                 <div className="bg-white dark:bg-white/5 p-6 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Family Size</h4>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{user.children?.length || 0} Children</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{children.length} {children.length === 1 ? 'Child' : 'Children'}</p>
                 </div>
                 <div className="bg-white dark:bg-white/5 p-6 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Account Status</h4>
@@ -279,24 +287,26 @@ export default function ParentProfilePage() {
                 </div>
               </div>
 
-              {/* Subscription mapping */}
-              <div className="space-y-10">
-                <div className="flex items-center gap-4">
-                  <Wallet className="text-orange-500" size={18} />
-                  <h4 className="text-[12px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em]">
-                    Subscription Details
-                  </h4>
-                  <div className="h-px flex-1 bg-gradient-to-r from-slate-100 to-transparent dark:from-white/10" />
+              {/* Subscription Details - Only show if subscription is enforced */}
+              {isSubscriptionEnforced && (
+                <div className="space-y-10">
+                  <div className="flex items-center gap-4">
+                    <Wallet className="text-orange-500" size={18} />
+                    <h4 className="text-[12px] font-black text-slate-900 dark:text-white uppercase tracking-[0.3em]">
+                      Subscription Details
+                    </h4>
+                    <div className="h-px flex-1 bg-gradient-to-r from-slate-100 to-transparent dark:from-white/10" />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <InfoRow icon={<CreditCard size={20} />} label="Current Plan" value={user.plan?.toUpperCase() || 'FREE TRIAL'} />
+                    <InfoRow
+                      icon={<History size={20} />}
+                      label="Renewal Date"
+                      value={user.trialEndsAt ? new Date(user.trialEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "N/A"}
+                    />
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <InfoRow icon={<CreditCard size={20} />} label="Current Plan" value={user.plan?.toUpperCase() || 'FREE TRIAL'} />
-                  <InfoRow
-                    icon={<History size={20} />}
-                    label="Renewal Date"
-                    value={user.trialEndsAt ? new Date(user.trialEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "N/A"}
-                  />
-                </div>
-              </div>
+              )}
 
               {/* Family Summary Highlight */}
               <div className="pt-4">
@@ -319,19 +329,19 @@ export default function ParentProfilePage() {
                     </div>
 
                     <div className="flex flex-wrap gap-8">
-                      {user.children?.map((child, i) => (
+                      {children.length > 0 ? children.map((child, i) => (
                         <div key={i} className="flex items-center gap-3 bg-white/10 dark:bg-white/5 p-3 pr-6 rounded-2xl backdrop-blur-md border border-white/5">
                           <div className="size-10 rounded-xl overflow-hidden relative border-2 border-white/10">
-                            <Image src={child.studentImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(child.studentName)}&background=ea580c&color=fff`} alt={child.studentName} fill className="object-cover" />
+                            <Image src={child.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(child.name)}&background=ea580c&color=fff`} alt={child.name} fill className="object-cover" />
                           </div>
                           <div>
-                            <p className="text-[11px] font-black uppercase tracking-tight">{child.studentName || 'N/A'}</p>
+                            <p className="text-[11px] font-black uppercase tracking-tight">{child.name || 'N/A'}</p>
                             <p className="text-[9px] text-orange-500 font-black uppercase tracking-widest">{child.studentCode || 'N/A'}</p>
                           </div>
                         </div>
-                      )) || (
-                          <p className="text-white/30 font-bold uppercase tracking-[0.2em] text-xs italic">No children linked to this account.</p>
-                        )}
+                      )) : (
+                        <p className="text-white/30 font-bold uppercase tracking-[0.2em] text-xs italic">No children linked to this account.</p>
+                      )}
                     </div>
                   </div>
                 </div>

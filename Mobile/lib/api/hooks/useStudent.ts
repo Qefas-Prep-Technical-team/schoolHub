@@ -70,6 +70,8 @@ export const useSchoolDepartments = (schoolId?: string) => {
       return response.data.data;
     },
     enabled: !!schoolId,
+    staleTime: 1000 * 60 * 10, // 10 minutes — department list changes rarely
+    retry: 1, // Default retry:3 causes 3 retries on offline; 1 is sufficient
   });
 };
 
@@ -129,6 +131,7 @@ export const useDeviceSessions = () => {
       const response = await apiClient.get('/auth/sessions');
       return response.data.data;
     },
+    staleTime: 1000 * 60 * 10, // 10 minutes — session list changes infrequently
   });
 };
 
@@ -157,5 +160,18 @@ export const useStudentAttendance = (studentId: string, filters?: { startDate?: 
       return response.data.data;
     },
     enabled: !!studentId,
+  });
+};
+
+export const useStudentBehaviourProfile = (studentId: string) => {
+  return useQuery({
+    queryKey: ['student', studentId, 'behaviour-profile'],
+    queryFn: async () => {
+      const response = await apiClient.get(`/students/${studentId}/behaviour-profile`);
+      return response.data.data;
+    },
+    enabled: !!studentId,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 };

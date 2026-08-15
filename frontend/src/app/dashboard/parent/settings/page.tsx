@@ -15,10 +15,18 @@ import {
   ChevronRight,
   Monitor,
   Moon,
-  Sun
+  Sun,
+  Info,
+  AlertCircle,
+  Check,
+  X,
+  Activity,
+  Megaphone
 } from 'lucide-react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useUpdateParentProfile } from '@/lib/api/hooks/useParent';
+import { useNotifications, useMarkAsRead } from '@/lib/api/hooks/useNotifications';
+import { Notification } from '@/lib/api/services/notificationService';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,6 +50,34 @@ export default function ParentSettingsPage() {
     email: user?.email || '',
     phone: user?.phone || '',
   });
+
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+  
+  const { data: notifications = [] } = useNotifications({ 
+    limit: ITEMS_PER_PAGE, 
+    offset: (page - 1) * ITEMS_PER_PAGE 
+  });
+  
+  const markAsReadMutation = useMarkAsRead();
+
+  const handleMarkAsRead = (id: string) => {
+    markAsReadMutation.mutate(id);
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'LINK_REQUEST': return <Info className="h-4 w-4 text-blue-500" />;
+      case 'SYSTEM': return <AlertCircle className="h-4 w-4 text-orange-500" />;
+      case 'LINK_ACCEPTED': return <Check className="h-4 w-4 text-green-500" />;
+      case 'LINK_REJECTED': return <X className="h-4 w-4 text-red-500" />;
+      case 'LINK_RESPONSE': return <Activity className="h-4 w-4 text-orange-600" />;
+      case 'MESSAGE': return <Mail className="h-4 w-4 text-orange-600" />;
+      case 'ANNOUNCEMENT': return <Megaphone className="h-4 w-4 text-purple-500" />;
+      case 'ACADEMIC': return <Activity className="h-4 w-4 text-green-500" />;
+      default: return <Bell className="h-4 w-4 text-slate-500" />;
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -338,16 +374,94 @@ export default function ParentSettingsPage() {
         {/* NOTIFICATIONS TAB */}
         <TabsContent value="notifications" className="animate-in fade-in slide-in-from-left-4 duration-500 outline-none">
           <div className="max-w-4xl mx-auto">
-            <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-16 text-center min-h-[400px]">
-                <div className="size-24 bg-orange-50 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-6">
-                  <Bell size={48} className="text-orange-400 dark:text-orange-500" />
+            <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+              <CardHeader className="p-8 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                      <Bell className="text-orange-600 dark:text-orange-500" size={24} />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-bold">All Notifications</CardTitle>
+                      <CardDescription className="text-sm text-slate-500 mt-1">Stay updated with messages and announcements</CardDescription>
+                    </div>
+                  </div>
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
-                  Coming Soon
-                </h2>
-                <p className="text-slate-500 dark:text-slate-400 max-w-md text-base">
-                  We are working hard to bring you advanced notification settings. Check back later!
-                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                {notifications.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-16 text-center min-h-[300px]">
+                    <div className="size-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                      <Bell size={32} className="text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                      No Notifications Yet
+                    </h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">
+                      When you receive new alerts, they will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col">
+                    <div className="max-h-[600px] overflow-y-auto no-scrollbar">
+                      {notifications.map((n: Notification) => (
+                        <div 
+                          key={n.id} 
+                          className={cn(
+                            "p-6 border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors flex gap-4 cursor-pointer",
+                            !n.isRead && "bg-orange-50/50 dark:bg-orange-900/10"
+                          )}
+                          onClick={() => {
+                            if (!n.isRead) handleMarkAsRead(n.id);
+                          }}
+                        >
+                          <div className="mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full p-2 shrink-0 h-10 w-10 flex items-center justify-center shadow-sm">
+                            {getTypeIcon(n.type)}
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-start mb-1">
+                              <p className={cn("text-[15px] leading-tight truncate pr-4 text-slate-900 dark:text-white", !n.isRead ? "font-bold" : "font-semibold")}>
+                                {n.title}
+                              </p>
+                              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">
+                                {new Date(n.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            
+                            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-1">
+                              {n.message}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Pagination Controls */}
+                    <div className="flex items-center justify-between p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        disabled={page === 1}
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        className="rounded-xl border-slate-200 dark:border-slate-700"
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-sm font-medium text-slate-500">Page {page}</span>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        disabled={notifications.length < ITEMS_PER_PAGE}
+                        onClick={() => setPage(p => p + 1)}
+                        className="rounded-xl border-slate-200 dark:border-slate-700"
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
             </Card>
           </div>
         </TabsContent>

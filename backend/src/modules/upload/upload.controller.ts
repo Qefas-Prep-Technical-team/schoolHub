@@ -87,8 +87,18 @@ export const confirmS3Upload = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "fileName, fileUrl, and fileSize are required" });
     }
 
+    const finalSchoolId = schoolId || user.schoolId;
+
+    if (!finalSchoolId) {
+      // Bypass quota tracking if no schoolId is found (e.g., system admin uploading global asset)
+      return res.status(200).json({ 
+        success: true, 
+        data: { fileUrl, note: "Quota tracking bypassed (no schoolId)" } 
+      });
+    }
+
     const record = await confirmS3UploadService({
-      schoolId: schoolId || user.schoolId,
+      schoolId: finalSchoolId,
       fileName,
       fileUrl,
       fileSize: Number(fileSize),

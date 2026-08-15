@@ -61,18 +61,20 @@ export async function withRetry<T>(
     } catch (error) {
       lastError = error;
 
+      const errorMessage = error instanceof Error ? error.message : String(error);
       const isConnectionError =
         error instanceof Prisma.PrismaClientInitializationError ||
         (error instanceof Prisma.PrismaClientKnownRequestError &&
-          (error.code === "P1001" ||
-            error.code === "P1002" ||
-            error.code === "P1008" ||
-            error.code === "P1017")) ||
-        (error instanceof Prisma.PrismaClientUnknownRequestError &&
-          error.message.includes("Engine is not yet connected"));
+          ["P1001", "P1002", "P1008", "P1017"].includes(error.code)) ||
+        errorMessage.includes("Engine is not yet connected") ||
+        errorMessage.includes("Connection terminated unexpectedly") ||
+        errorMessage.includes("terminating connection") ||
+        (error as any)?.name === "PrismaClientInitializationError" ||
+        (error as any)?.name === "PrismaClientUnknownRequestError";
 
       if (!isConnectionError || attempt === maxAttempts) {
         // Non-connection error, or we've exhausted all retries
+        console.error(`[DB] Operation "${label}" failed on attempt ${attempt}. isConnectionError: ${isConnectionError}`, error);
         throw error;
       }
 

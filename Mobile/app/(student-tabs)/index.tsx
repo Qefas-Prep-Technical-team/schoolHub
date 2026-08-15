@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { ScrollView, View, RefreshControl } from 'react-native';
+import { ScrollView, View, RefreshControl, InteractionManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { TopNavBar } from '../../components/student-dashboard/TopNavBar';
@@ -10,36 +10,49 @@ import { AcademicProgressWidget } from '../../components/student-dashboard/Acade
 import { PerformanceTrend } from '../../components/student-dashboard/PerformanceTrend';
 import { AcademicHistory } from '../../components/student-dashboard/AcademicHistory';
 import { ActiveSubjectsWidget } from '../../components/student-dashboard/ActiveSubjectsWidget';
-import { StudentQuotaCard } from '../../components/student-dashboard/StudentQuotaCard';
 import { DashboardSkeleton } from '../../components/student-dashboard/DashboardSkeleton';
 import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { useStudentExamAttempts } from '@/lib/api/hooks/useExams';
 import { useGrades } from '@/lib/api/hooks/useGrades';
+import { useSingleClass } from '@/lib/api/hooks/useClasses';
+import { useNetwork } from '@/hooks/use-network';
 
 export default function StudentHomeScreen() {
   const { data: studentProfile, isLoading: isProfileLoading, isError: isProfileError, refetch: refetchProfile } = useStudentProfile();
   const { data: attemptsData, isLoading: isExamsLoading, isError: isExamsError, refetch: refetchExams } = useStudentExamAttempts();
   const { data: standaloneGradesData, isLoading: isGradesLoading, isError: isGradesError, refetch: refetchGrades } = useGrades();
+  
+  const activeClassId = studentProfile?.classes?.[0]?.class?.id;
+  const { data: classData, isLoading: isClassLoading, refetch: refetchClass } = useSingleClass(activeClassId || '');
 
   const [refreshing, setRefreshing] = useState(false);
+  const { isConnected } = useNetwork();
 
   const onRefresh = useCallback(async () => {
+    if (!isConnected) return; // block refresh when offline
     setRefreshing(true);
-    await Promise.all([refetchProfile(), refetchExams(), refetchGrades()]);
+    await Promise.all([refetchProfile(), refetchExams(), refetchGrades(), refetchClass()]);
     setRefreshing(false);
-  }, [refetchProfile, refetchExams, refetchGrades]);
+  }, [refetchProfile, refetchExams, refetchGrades, refetchClass, isConnected]);
 
-  // Silently refetch data every time the screen comes into focus so it's never stale
+  // Defer refetches until after navigation animations settle — prevents JS thread
+  // freeze during tab switch. Same pattern as the admin dashboard (fixed Aug 12).
   useFocusEffect(
     useCallback(() => {
-      refetchProfile();
-      refetchExams();
-      refetchGrades();
-    }, [refetchProfile, refetchExams, refetchGrades])
+      if (!isConnected) return;
+      const task = InteractionManager.runAfterInteractions(() => {
+        refetchProfile();
+        refetchExams();
+        refetchGrades();
+        refetchClass();
+      });
+      return () => task.cancel();
+    }, [refetchProfile, refetchExams, refetchGrades, refetchClass, isConnected])
   );
 
-  const isLoading = isProfileLoading;
-  const isError = !isProfileLoading && (isProfileError || isExamsError || isGradesError);
+  // Only show the skeleton loading overlay on initial boot when we have absolutely no cached data
+  const isLoading = isProfileLoading && !studentProfile;
+  const isError = !isProfileLoading && !studentProfile && (isProfileError || isExamsError || isGradesError);
 
   // Accurately map from the StudentProfile response model
   const username = studentProfile?.name || 'Scholar';
@@ -125,13 +138,20 @@ export default function StudentHomeScreen() {
   }, [attempts, standaloneGrades]);
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <TopNavBar />
       
       <ScrollView 
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ec4899" />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#ec4899"
+            enabled={isConnected !== false}
+          />
+        }
       >
         {isLoading ? (
           <DashboardSkeleton />
@@ -160,11 +180,13 @@ export default function StudentHomeScreen() {
 
             <AcademicHistory attempts={attempts} />
 
-            <StudentQuotaCard />
-
             <QuickActions />
 
-            <ActiveSubjectsWidget subjectsCount={analysis?.subjectsCount || 0} />
+            <ActiveSubjectsWidget 
+              subjectsCount={analysis?.subjectsCount || 0} 
+              subjects={classData?.subjects || []}
+              classId={activeClassId}
+            />
           </>
         )}
 

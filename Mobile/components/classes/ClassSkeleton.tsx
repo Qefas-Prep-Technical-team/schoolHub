@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 
 interface ClassSkeletonProps {
-  viewMode: 'list' | 'grid';
+  viewMode: 'list' | 'grid' | 'details';
 }
 
 export function ClassSkeleton({ viewMode }: ClassSkeletonProps) {

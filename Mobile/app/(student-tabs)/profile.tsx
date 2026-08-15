@@ -6,7 +6,7 @@ import { useStudentProfile, useUpdateStudentProfile, useRequestEmailUpdate, useV
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import * as ImagePicker from 'expo-image-picker';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
   const { data: profile, isLoading } = useStudentProfile();
@@ -17,6 +17,7 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -98,7 +99,7 @@ export default function ProfileScreen() {
       <View className="flex-1 bg-slate-50 dark:bg-slate-950">
         {/* HERO SECTION SKELETON */}
         <View className="h-64 bg-slate-200 dark:bg-slate-800 w-full opacity-50" />
-        
+
         {/* PROFILE OVERLAP SKELETON */}
         <View className="px-6 -mt-16 mb-8 items-center z-20">
           <View className="h-32 w-32 rounded-[2rem] bg-slate-300 dark:bg-slate-700 border-4 border-slate-50 dark:border-slate-950 opacity-50" />
@@ -138,9 +139,9 @@ export default function ProfileScreen() {
               <View className="absolute w-64 h-64 bg-primary/30 rounded-full blur-3xl opacity-50" />
             </View>
           )}
-          
+
           <View className="absolute inset-0 bg-black/20" />
-          
+
           <SafeAreaView edges={['top']} className="absolute inset-x-0 px-6 flex-row justify-between items-center z-10 pt-4">
             <Text className="text-white font-black text-xl italic tracking-widest uppercase">ID.Card</Text>
             <View className="flex-row items-center gap-3">
@@ -168,7 +169,7 @@ export default function ProfileScreen() {
               <CheckCircle2 size={16} color="white" />
             </View>
           </View>
-          
+
           <View className="items-center mt-4 space-y-1">
             <Text className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">{profile.name}</Text>
             <View className="flex-row items-center gap-2">
@@ -197,7 +198,7 @@ export default function ProfileScreen() {
               <User size={20} className="text-indigo-500" />
               <Text className="text-lg font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Personal Data</Text>
             </View>
-            
+
             <View className="mt-2">
               <InfoItem icon={<User size={18} />} label="Legal Name" value={profile.name} description="Verified registration name." />
               <InfoItem icon={<Mail size={18} />} label="Email" value={profile.email} description="Primary contact address." />
@@ -215,7 +216,7 @@ export default function ProfileScreen() {
               <School size={24} className="text-indigo-400" />
               <Text className="text-xl font-black text-white uppercase italic tracking-tight">Institution</Text>
             </View>
-            
+
             <View className="flex-row justify-between">
               <View className="space-y-1">
                 <Text className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Academy</Text>
@@ -226,9 +227,9 @@ export default function ProfileScreen() {
                 <Text className="text-lg font-black text-white italic">{profile.createdAt ? new Date(profile.createdAt).getFullYear() : 'N/A'}</Text>
               </View>
             </View>
-            
+
             <View className="h-px bg-white/10 w-full my-2" />
-            
+
             <View className="flex-row items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/10">
               <View className="h-8 w-8 rounded-full bg-emerald-500/20 items-center justify-center">
                 <CheckCircle2 size={16} color="#34d399" />
@@ -261,8 +262,8 @@ export default function ProfileScreen() {
               <X size={20} color={isDark ? '#fff' : '#000'} />
             </TouchableOpacity>
             <Text className="font-black text-lg italic uppercase text-slate-900 dark:text-white">Edit Profile</Text>
-            <TouchableOpacity 
-              onPress={handleSave} 
+            <TouchableOpacity
+              onPress={handleSave}
               disabled={updateProfile.isPending || formData.email !== profile.email || emailStep === 'verify'}
               className="h-10 px-4 items-center justify-center rounded-full bg-indigo-600 disabled:opacity-50"
             >
@@ -298,16 +299,16 @@ export default function ProfileScreen() {
             {/* Inputs */}
             <View className="flex-col gap-8 mt-4 pb-20">
               <InputGroup label="Legal Name">
-                <TextInput value={formData.name} onChangeText={t => setFormData({...formData, name: t})} className="h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white" />
+                <TextInput value={formData.name} onChangeText={t => setFormData({ ...formData, name: t })} className="h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white" />
               </InputGroup>
 
               <InputGroup label="Communication Email">
                 <View className="flex-row gap-2">
-                  <TextInput 
-                    value={formData.email} 
-                    onChangeText={t => setFormData({...formData, email: t})} 
+                  <TextInput
+                    value={formData.email}
+                    onChangeText={t => setFormData({ ...formData, email: t })}
                     editable={emailStep === 'input'}
-                    className="flex-1 h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white opacity-100 disabled:opacity-50" 
+                    className="flex-1 h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white opacity-100 disabled:opacity-50"
                   />
                   {formData.email !== profile.email && emailStep === 'input' && (
                     <TouchableOpacity onPress={handleRequestEmailChange} disabled={requestEmailUpdate.isPending} className="h-14 px-4 bg-primary items-center justify-center rounded-2xl">
@@ -321,11 +322,11 @@ export default function ProfileScreen() {
                 <View className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900">
                   <Text className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-2">Enter Verification Code</Text>
                   <View className="flex-row gap-2">
-                    <TextInput 
-                      value={verificationCode} 
-                      onChangeText={setVerificationCode} 
+                    <TextInput
+                      value={verificationCode}
+                      onChangeText={setVerificationCode}
                       keyboardType="number-pad"
-                      className="flex-1 h-14 px-4 rounded-2xl bg-white dark:bg-slate-950 font-black text-center tracking-[1em]" 
+                      className="flex-1 h-14 px-4 rounded-2xl bg-white dark:bg-slate-950 font-black text-center tracking-[1em]"
                       maxLength={6}
                     />
                     <TouchableOpacity onPress={handleVerifyEmail} disabled={verifyEmailUpdate.isPending} className="h-14 px-4 bg-indigo-600 items-center justify-center rounded-2xl">
@@ -337,19 +338,19 @@ export default function ProfileScreen() {
 
               <View className="flex-row gap-4">
                 <InputGroup label="Height (cm)" className="flex-1">
-                  <TextInput value={formData.height} onChangeText={t => setFormData({...formData, height: t})} keyboardType="number-pad" className="h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white" />
+                  <TextInput value={formData.height} onChangeText={t => setFormData({ ...formData, height: t })} keyboardType="number-pad" className="h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white" />
                 </InputGroup>
                 <InputGroup label="Weight (kg)" className="flex-1">
-                  <TextInput value={formData.weight} onChangeText={t => setFormData({...formData, weight: t})} keyboardType="number-pad" className="h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white" />
+                  <TextInput value={formData.weight} onChangeText={t => setFormData({ ...formData, weight: t })} keyboardType="number-pad" className="h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white" />
                 </InputGroup>
               </View>
 
               <InputGroup label="Club / Activities">
-                <TextInput value={formData.club} onChangeText={t => setFormData({...formData, club: t})} className="h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white" />
+                <TextInput value={formData.club} onChangeText={t => setFormData({ ...formData, club: t })} className="h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white" />
               </InputGroup>
-              
+
               <InputGroup label="Guardian Phone">
-                <TextInput value={formData.guardianPhone} onChangeText={t => setFormData({...formData, guardianPhone: t})} keyboardType="phone-pad" className="h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white" />
+                <TextInput value={formData.guardianPhone} onChangeText={t => setFormData({ ...formData, guardianPhone: t })} keyboardType="phone-pad" className="h-14 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white" />
               </InputGroup>
             </View>
             <View className="h-40" />

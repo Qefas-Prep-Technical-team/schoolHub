@@ -38,16 +38,17 @@ export default function GradesScreen() {
   const attempts = attemptsData?.attempts || attemptsData?.data || [];
   const standaloneGrades = standaloneGradesData?.grades || standaloneGradesData?.data || [];
 
-  const calculateCumulativeAvg = () => {
+  // Memoized — only recomputes when attempt/grade data actually changes.
+  // Previously ran on every render (tab switches, state updates, etc.).
+  const gpa = useMemo(() => {
     const examPercents = attempts.map((a: any) => (a.totalScore / (a.totalMarks || 1)) * 100);
     const standalonePercents = standaloneGrades.map((g: any) => (g.score / (g.maxMarks || 1)) * 100);
-    const allPercents = [...examPercents, ...standalonePercents];  
-    if (allPercents.length === 0) return "0.0"; 
+    const allPercents = [...examPercents, ...standalonePercents];
+    if (allPercents.length === 0) return '0.0';
     const avg = allPercents.reduce((acc, curr) => acc + (curr || 0), 0) / allPercents.length;
     return (avg / 25).toFixed(1); // Rough conversion to 4.0 scale
-  };
+  }, [attempts, standaloneGrades]);
 
-  const gpa = calculateCumulativeAvg();
   const progressPercent = Math.round((parseFloat(gpa) / 4.0) * 100);
 
   const formatDate = (dateStr: string) => {

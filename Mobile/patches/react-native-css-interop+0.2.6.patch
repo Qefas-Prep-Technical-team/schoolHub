@@ -13,6 +13,18 @@ index 0000000..e69de29
 diff --git a/node_modules/react-native-css-interop/.cache/windows.js b/node_modules/react-native-css-interop/.cache/windows.js
 new file mode 100644
 index 0000000..e69de29
+diff --git a/node_modules/react-native-css-interop/dist/metro/index.js b/node_modules/react-native-css-interop/dist/metro/index.js
+index 8a0c01e..2390126 100644
+--- a/node_modules/react-native-css-interop/dist/metro/index.js
++++ b/node_modules/react-native-css-interop/dist/metro/index.js
+@@ -226,6 +226,7 @@ async function startCSSProcessor(filePath, platform, isDev, { input, getCSSForPl
+     }
+ }
+ function ensureFileSystemPatched(fs) {
++    if (!fs || !fs.getSha1) return fs;
+     if (!fs.getSha1.__css_interop_patched) {
+         const original_getSha1 = fs.getSha1.bind(fs);
+         fs.getSha1 = (filename) => {
 diff --git a/node_modules/react-native-css-interop/dist/runtime/native/render-component.js b/node_modules/react-native-css-interop/dist/runtime/native/render-component.js
 index eba25ec..a781133 100644
 --- a/node_modules/react-native-css-interop/dist/runtime/native/render-component.js

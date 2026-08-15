@@ -24,7 +24,7 @@ export const Input = forwardRef<TextInput, InputProps>(
         <View className="relative justify-center">
           {Icon && (
             <View className="absolute left-4 z-10">
-              <Icon size={18} className="text-slate-400" />
+              <Icon size={18} color="#94a3b8" />
             </View>
           )}
           <TextInput
@@ -46,7 +46,7 @@ export const Input = forwardRef<TextInput, InputProps>(
               disabled={!onRightIconPress}
               className="absolute right-4 z-10 p-1"
             >
-              <RightIcon size={20} className="text-slate-400" />
+              <RightIcon size={20} color="#94a3b8" />
             </TouchableOpacity>
           )}
         </View>

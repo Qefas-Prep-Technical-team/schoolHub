@@ -156,11 +156,27 @@ export const getStudentProfileService = async (studentId: string) => {
       department: true,
       school: true,
       behaviourProfile: true,
+      attendances: true,
       classes: {
         include: {
           class: {
             include: {
               subjects: true,
+              teachers: {
+                include: {
+                  teacher: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      subject: true,
+                      department: true,
+                      bannerImage: true,
+                      gender: true,
+                    }
+                  }
+                }
+              }
             },
           },
         },

@@ -2,19 +2,20 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Bell, QrCode } from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useUnreadCount } from '@/lib/api/hooks/useNotifications';
 
 export function TopNavBar() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count || 0;
 
   return (
     <View className="flex-row items-center justify-between px-6 py-4 bg-transparent mt-2">
       {/* Left: QR Code */}
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={() => router.push('/linking-hub')}
         className="h-10 w-10 items-center justify-center"
       >
@@ -30,7 +31,7 @@ export function TopNavBar() {
 
       {/* Right: Notifications */}
       <View className="flex-row items-center gap-4">
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => router.push('/notifications')}
           className="h-10 w-10 items-center justify-center relative"
         >

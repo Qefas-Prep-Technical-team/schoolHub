@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { pickDepartment, updateStudentDepartmentByAdmin, getStudentProfile, getStudentById, updateStudentProfile, requestEmailUpdate, confirmEmailUpdate, getStudentAttendance, updateStudentAttendance, pickLevel, updateStudentLevelByAdmin, exitStudent, getStudentHistory, assignPrefectRole, removePrefectRole, acknowledgePrefectCelebration } from "./student.controller";
+import { pickDepartment, updateStudentDepartmentByAdmin, getStudentProfile, getStudentById, getStudentAssignments, updateStudentProfile, requestEmailUpdate, confirmEmailUpdate, getStudentAttendance, updateStudentAttendance, pickLevel, updateStudentLevelByAdmin, exitStudent, getStudentHistory, assignPrefectRole, removePrefectRole, acknowledgePrefectCelebration } from "./student.controller";
 import { getStudentBehaviourProfile, upsertStudentBehaviourProfile } from "./behaviourProfile.controller";
 import { authenticateToken } from "../../middleware/authMiddleware";
 
@@ -12,6 +12,7 @@ router.patch("/profile", updateStudentProfile);
 router.post("/profile/email/request", requestEmailUpdate);
 router.post("/profile/email/verify", confirmEmailUpdate);
 router.get("/:id", getStudentById);
+router.get("/:id/assignments", getStudentAssignments);
 router.get("/:id/history", getStudentHistory);
 router.get("/:id/attendance", getStudentAttendance);
 router.post("/:id/attendance", updateStudentAttendance);

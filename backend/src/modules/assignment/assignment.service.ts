@@ -598,29 +598,59 @@ export const gradeSubmissionService = async (
   assignmentId: string,
   submissionId: string,
   schoolId: string,
-  grades: Array<{ answerId: string; isCorrect: boolean; score: number; teacherComment?: string }>
+  grades: Array<{ answerId: string; isCorrect: boolean; score: number; maxScore?: number; teacherComment?: string }>
 ) => {
   // Verify assignment belongs to the school
   const assignment = await prisma.assignment.findFirst({
-    where: { id: assignmentId, schoolId }
+    where: { id: assignmentId, schoolId },
+    include: { questions: true }
   });
   if (!assignment) throw new Error("Assignment not found");
 
   // Fetch the submission and its answers
   const submission = await prisma.assignmentSubmission.findUnique({
     where: { id: submissionId },
-    include: { answers: true }
+    include: { answers: { include: { question: true } } }
   });
 
   if (!submission || submission.assignmentId !== assignmentId) {
     throw new Error("Submission not found");
   }
 
+  const answerMap = new Map(submission.answers.map(a => [a.id, a]));
+
   // Update answers within a transaction
   await prisma.$transaction(async (tx) => {
     let totalScore = 0;
+    let questionsUpdated = false;
 
     for (const grade of grades) {
+      const answer = answerMap.get(grade.answerId);
+      if (!answer) continue;
+
+      const question = answer.question;
+      let currentMaxScore = question.marks || 0;
+
+      if (grade.maxScore !== undefined && grade.maxScore !== null) {
+        currentMaxScore = grade.maxScore;
+        if (currentMaxScore !== question.marks) {
+          await tx.assignmentQuestion.update({
+            where: { id: question.id },
+            data: { marks: currentMaxScore }
+          });
+          questionsUpdated = true;
+          // Update cached question for total marks recalculation
+          const qIndex = assignment.questions.findIndex(q => q.id === question.id);
+          if (qIndex > -1) {
+            assignment.questions[qIndex].marks = currentMaxScore;
+          }
+        }
+      }
+
+      if (grade.score > currentMaxScore) {
+        throw new Error(`Score (${grade.score}) cannot exceed the question's maximum marks (${currentMaxScore})`);
+      }
+
       await tx.assignmentAnswer.update({
         where: { id: grade.answerId },
         data: {
@@ -629,6 +659,15 @@ export const gradeSubmissionService = async (
           teacherComment: grade.teacherComment
         }
       });
+    }
+
+    if (questionsUpdated) {
+      const newTotalMarks = assignment.questions.reduce((sum, q) => sum + (q.marks || 0), 0);
+      await tx.assignment.update({
+        where: { id: assignmentId },
+        data: { totalMarks: newTotalMarks }
+      });
+      assignment.totalMarks = newTotalMarks;
     }
 
     // Recalculate total score

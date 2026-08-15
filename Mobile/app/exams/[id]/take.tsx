@@ -27,7 +27,7 @@ export default function ExamTakeScreen() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [localAnswers, setLocalAnswers] = useState<Record<string, string>>({});
   const [showReadingModal, setShowReadingModal] = useState(false);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (attempt?.subjectExamAttempts) {
@@ -198,7 +198,7 @@ export default function ExamTakeScreen() {
   const allQuestions = currentPaper?.questions || [];
   const currentQuestion = allQuestions[currentQuestionIndex];
   const totalQuestions = allQuestions.length;
-  const answeredCount = allQuestions.filter(q => !!localAnswers[q.id]).length;
+  const answeredCount = allQuestions.filter((q: any) => !!localAnswers[q.id]).length;
   const unansweredCount = totalQuestions - answeredCount;
 
   return (
@@ -241,7 +241,7 @@ export default function ExamTakeScreen() {
         {papersData.length > 1 && (
           <View className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}>
-              {papersData.map((paper, idx) => {
+              {papersData.map((paper: any, idx: number) => {
                 const isSelected = idx === currentPaperIndex;
                 return (
                   <TouchableOpacity 
@@ -449,7 +449,7 @@ export default function ExamTakeScreen() {
         <View className="px-4 pb-2">
           <Text className="text-xs font-bold text-slate-500 mb-2 px-2 uppercase tracking-widest">Question Navigation</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 8, gap: 10, paddingBottom: 12 }}>
-            {allQuestions.map((q, idx) => {
+            {allQuestions.map((q: any, idx: number) => {
               const isAnswered = !!localAnswers[q.id];
               const isCurrent = idx === currentQuestionIndex;
               return (

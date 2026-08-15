@@ -52,16 +52,6 @@ export default function Home() {
                 upgradeLabel="Manage Family Plan"
              />
 
-            
-            {/* Quick Helper Card */}
-            <div className="p-8 rounded-[2rem] bg-slate-900 dark:bg-orange-600 shadow-2xl relative overflow-hidden group border border-white/10">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-3xl group-hover:scale-150 transition-transform duration-700" />
-               <h4 className="text-white text-xl font-black uppercase tracking-tight relative z-10">Need Assistance?</h4>
-               <p className="text-white/70 text-[12px] font-medium mt-2 mb-6 relative z-10 leading-relaxed">Our support team is available 24/7 to help you with any questions regarding your child&apos;s education.</p>
-               <button className="w-full py-3.5 rounded-2xl bg-white text-slate-900 font-black text-[11px] uppercase tracking-widest hover:bg-orange-50 transition-all relative z-10 shadow-xl active:scale-95">
-                 Live Support Chat
-               </button>
-            </div>
           </div>
         </div>
       </div>

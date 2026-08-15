@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { BookOpen, Target, Calendar, Star, Zap } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { showInfoToast } from '@/lib/utils/toast';
 
 export function QuickActions() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export function QuickActions() {
           icon={<Target size={24} color="#ffffff" />} 
           label="CA & Exams" 
           color="bg-rose-500" 
-          onPress={() => {}} 
+          onPress={() => router.push('/(student-tabs)/grades')} 
         />
       </View>
       <View className="flex-row gap-4">
@@ -37,7 +38,7 @@ export function QuickActions() {
           label="Assignments" 
           color="bg-slate-200" 
           textColor="text-slate-300 dark:text-slate-400"
-          onPress={() => {}} 
+          onPress={() => router.push('/(student-tabs)/assignments')} 
         />
         <ActionCard 
           icon={<Star size={24} color="#ffffff" />} 

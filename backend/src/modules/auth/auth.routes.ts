@@ -22,6 +22,7 @@ import {
   changePassword,
   getUserSessions,
   revokeUserSession,
+  getMe,
 } from "./auth.controller";
 import { validateRequest } from "../../middleware/validateRequest";
 import {
@@ -113,5 +114,8 @@ router.post("/finalize-checkout-setup", finalizeCheckoutSetup);
 
 // Account Claim
 router.post("/claim-account", claimAccount);
+
+// Current User Profile
+router.get("/me", authenticateToken, getMe);
 
 export default router;

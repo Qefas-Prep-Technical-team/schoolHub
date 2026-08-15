@@ -20,6 +20,7 @@ export interface ChildSummary {
     averageGrade: number;
     attendanceRate: number;
     totalGrades: number;
+    todayAttendance?: string;
   };
   linkStatus: string;
   relationship: string;
@@ -52,17 +53,84 @@ export interface Grade {
 export interface ChildDetails {
   id: string;
   name: string;
+  email?: string;
+  gender?: string;
+  dateOfBirth?: string;
   studentCode: string;
   profileImage?: string;
+  verified?: boolean;
+  gradeLevel?: string;
   grades: Grade[];
+  attendances?: {
+    date: string;
+    status: string;
+  }[];
   school?: {
+    name: string;
+  };
+  department?: {
     name: string;
   };
   classes?: {
     class?: {
+      id?: string;
       name: string;
+      section?: string;
+      teachers?: any[];
     }
   }[];
+}
+
+export interface DashboardNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface UpcomingExam {
+  id: string;
+  title: string;
+  startDate: string;
+  durationMinutes?: number;
+  category: string;
+  subject?: { name: string };
+}
+
+export interface DashboardChild {
+  id: string;
+  name: string;
+  studentCode: string;
+  profileImage?: string;
+  school?: { id: string; name: string; schoolCode: string };
+  currentClass?: { id: string; name: string; section?: string };
+  recentGrades: {
+    id: string;
+    subject: string;
+    score: number;
+    maxMarks: number;
+    assessmentType?: string;
+    createdAt: string;
+  }[];
+  assignments?: any[];
+}
+
+export interface ParentDashboardData {
+  child: DashboardChild | null;
+  stats: {
+    attendanceRate: number;
+    averageGrade: number;
+    attendanceBreakdown: { date: string; present: boolean }[];
+  };
+  upcomingExams: UpcomingExam[];
+  notifications: DashboardNotification[];
+  payments: {
+    totalPaid: number;
+    totalOutstanding: number;
+    totalFees: number;
+  };
 }
 
 export const parentService = {
@@ -79,6 +147,32 @@ export const parentService = {
       success: boolean;
       data: ChildDetails;
     }>(`/parents/children/${childId}`);
+    return response.data.data;
+  },
+
+  getChildAssignments: async (childId: string, page = 1, limit = 10) => {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: any;
+    }>(`/parents/children/${childId}/assignments?page=${page}&limit=${limit}`);
+    return response.data.data;
+  },
+
+  getChildAssignmentDetails: async (childId: string, assignmentId: string) => {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: any;
+    }>(`/parents/children/${childId}/assignments/${assignmentId}`);
+    return response.data.data;
+  },
+
+  getParentDashboard: async (childId?: string) => {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: ParentDashboardData;
+    }>("/parents/dashboard", {
+      params: childId ? { childId } : {},
+    });
     return response.data.data;
   },
 

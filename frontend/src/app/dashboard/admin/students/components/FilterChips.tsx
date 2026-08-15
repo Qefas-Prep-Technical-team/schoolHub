@@ -56,39 +56,7 @@ export default function FilterChips({ selectedFilters, onFilterChange }: FilterC
         <Filter size={18} />
       </div>
 
-      {/* Class Filter */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant={selectedFilters.classId ? "default" : "outline"}
-            className={`h-11 rounded-2xl px-5 flex items-center gap-2 font-bold text-xs transition-all ${
-              selectedFilters.classId ? "bg-primary shadow-lg shadow-primary/20" : "border-slate-200"
-            }`}
-          >
-            {selectedClass ? `${selectedClass.name} ${selectedClass.section || ""}` : "All Classes"}
-            <ChevronDown size={14} className={selectedFilters.classId ? "text-white/70" : "text-slate-400"} />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56 rounded-2xl p-2 shadow-2xl border-slate-100">
-          <DropdownMenuLabel className="text-[10px] uppercase tracking-widest font-black text-slate-400 py-2 px-3">Filter by Class</DropdownMenuLabel>
-          <DropdownMenuItem 
-             onClick={() => onFilterChange("classId", "")}
-             className="rounded-xl font-bold text-xs py-2.5"
-          >
-            All Classes
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {classes.map((c: any) => (
-            <DropdownMenuItem 
-              key={c.id} 
-              onClick={() => onFilterChange("classId", c.id)}
-              className="rounded-xl font-bold text-xs py-2.5"
-            >
-              {c.name} {c.section}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+
 
       {/* Gender Filter */}
       <DropdownMenu>

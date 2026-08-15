@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
+import { useQuery } from '@tanstack/react-query'
+import { studentService } from '@/lib/api/services/studentService'
 import OverviewWidgets from './components/OverviewWidgets'
 import FilterToolbar from './components/FilterToolbar'
 import AssignmentCard from './components/AssignmentCard'
@@ -12,17 +14,24 @@ import { LayoutGrid, List } from 'lucide-react'
 
 export default function ParentAssignmentsPage() {
   const { selectedChildId } = useParentStore()
-  const { data, isLoading } = useParentDashboard(selectedChildId)
+  const { data, isLoading: isDashboardLoading } = useParentDashboard(selectedChildId)
 
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 9
 
-  // Use actual assignments from the backend
-  const assignments = data?.child?.assignments ?? []
+  const { data: assignmentsData, isLoading: isAssignmentsLoading } = useQuery({
+      queryKey: ['student-assignments', selectedChildId, currentPage, itemsPerPage],
+      queryFn: () => studentService.getStudentAssignments(selectedChildId!, currentPage, itemsPerPage),
+      enabled: !!selectedChildId,
+      staleTime: 1000 * 60 * 2, // 2 mins
+  })
+
+  const assignments = assignmentsData?.assignments || []
+  const isLoading = isDashboardLoading || isAssignmentsLoading
   
-  const totalPages = Math.ceil(assignments.length / itemsPerPage)
-  const currentAssignments = assignments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  const totalPages = assignmentsData?.pages || 1
+  const currentAssignments = assignments
 
   return (
       <main className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-900 overflow-hidden relative">
@@ -76,11 +85,18 @@ export default function ParentAssignmentsPage() {
 
             {/* Dynamic Widgets */}
             <OverviewWidgets 
-              totalAssessments={assignments.length}
+              totalAssessments={assignmentsData?.total || 0}
               averageScore={data?.stats?.averageGrade ?? 0}
               highestScore={
                 assignments.length > 0
-                  ? Math.round(Math.max(...assignments.map((a: any) => a.grade ? (parseFloat(a.grade.split('/')[0]) / a.totalMarks) * 100 : 0)))
+                  ? Math.round(Math.max(0, ...assignments.map((a: any) => {
+                      if (!a.grade) return 0;
+                      const parts = a.grade.split('/');
+                      const score = parseFloat(parts[0]);
+                      const max = parts.length > 1 ? parseFloat(parts[1]) : 100;
+                      if (isNaN(score) || isNaN(max) || max === 0) return 0;
+                      return (score / max) * 100;
+                    })))
                   : 0
               }
             />
@@ -109,26 +125,30 @@ export default function ParentAssignmentsPage() {
                   No assignments found for this child yet.
                 </div>
               ) : (
-                currentAssignments.map((assignment: any, i: number) => {
-                  let cardStatus = assignment.status;
+                currentAssignments.map((assignmentObj: any, i: number) => {
+                  const rawStatus = (assignmentObj.status || 'PENDING').toLowerCase();
+                  
+                  let cardStatus = rawStatus;
                   if (cardStatus === "overdue") cardStatus = "late";
                   if (cardStatus === "submitted") cardStatus = "urgent";
+                  if (cardStatus === "scored") cardStatus = "graded";
                   if (!['late', 'urgent', 'pending', 'graded'].includes(cardStatus)) {
                     cardStatus = "pending";
                   }
 
                   const globalIndex = (currentPage - 1) * itemsPerPage + i + 1;
+                  const scoreStr = (cardStatus === "graded" && assignmentObj.grade) ? assignmentObj.grade : undefined;
 
                   return (
                     <AssignmentCard
-                      key={assignment.id}
-                      id={assignment.id}
-                      subject={assignment.subject || 'Unknown Subject'}
+                      key={assignmentObj.id}
+                      id={assignmentObj.id}
+                      subject={assignmentObj.subject || 'Unknown Subject'}
                       teacher="Course Instructor"
-                      title={assignment.title}
-                      status={cardStatus}
-                      dueDate={assignment.dueDate ? `Due ${new Date(assignment.dueDate).toLocaleDateString()}` : "No due date"}
-                      score={assignment.grade}
+                      title={assignmentObj.title}
+                      status={cardStatus as any}
+                      dueDate={assignmentObj.dueDate ? `Due ${new Date(assignmentObj.dueDate).toLocaleDateString()}` : "No due date"}
+                      score={scoreStr}
                       icon={i % 2 === 0 ? "book_2" : "science"}
                       index={globalIndex}
                       viewMode={viewMode}

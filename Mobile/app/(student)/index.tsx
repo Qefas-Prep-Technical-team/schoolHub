@@ -69,17 +69,17 @@ export default function StudentDashboard() {
   const isDark = colorScheme === 'dark';
   const router = useRouter();
 
-  const { data: profile, isLoading: loadingProfile } = useQuery({
+  const { data: profile, isLoading: loadingProfile, isError: errorProfile } = useQuery({
     queryKey: ['studentProfile'],
     queryFn: fetchProfile,
   });
 
-  const { data: attemptsData, isLoading: loadingAttempts } = useQuery({
+  const { data: attemptsData, isLoading: loadingAttempts, isError: errorAttempts } = useQuery({
     queryKey: ['studentAttempts'],
     queryFn: fetchAttempts,
   });
 
-  const { data: gradesData, isLoading: loadingGrades } = useQuery({
+  const { data: gradesData, isLoading: loadingGrades, isError: errorGrades } = useQuery({
     queryKey: ['studentGrades'],
     queryFn: fetchGrades,
   });
@@ -390,7 +390,7 @@ export default function StudentDashboard() {
               {analysis.advice ? (
                 <View className="p-5 rounded-3xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 mb-6">
                   <Text className="font-lexend-bold text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic">
-                    "{analysis.advice}"
+                    {analysis.advice}
                   </Text>
                 </View>
               ) : null}

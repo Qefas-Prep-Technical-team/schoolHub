@@ -15,11 +15,11 @@ export default function ParentTabLayout() {
         tabBarStyle: {
           position: 'absolute',
           bottom: Platform.OS === 'ios' ? 24 : 16,
-          marginHorizontal: 40,
+          marginHorizontal: 16, // Widened from 40 for better spacing
           backgroundColor: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
           borderTopWidth: 0,
-          borderRadius: 40,
-          height: 64,
+          borderRadius: 24, // Smoother pill shape
+          height: 68,
           paddingBottom: 0,
           elevation: 10,
           shadowColor: isDark ? '#000' : '#475569',
@@ -35,9 +35,9 @@ export default function ParentTabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center">
+            <View className="items-center justify-center pt-2">
               <Home size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
-              {focused && <View className="w-1.5 h-1.5 bg-primary mt-1.5 rounded-full absolute -bottom-4" />}
+              {focused && <View className="w-1.5 h-1.5 bg-orange-500 mt-1.5 rounded-full absolute -bottom-3" />}
             </View>
           ),
         }}
@@ -47,9 +47,9 @@ export default function ParentTabLayout() {
         options={{
           title: 'Children',
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center">
+            <View className="items-center justify-center pt-2">
               <Users size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
-              {focused && <View className="w-1.5 h-1.5 bg-primary mt-1.5 rounded-full absolute -bottom-4" />}
+              {focused && <View className="w-1.5 h-1.5 bg-orange-500 mt-1.5 rounded-full absolute -bottom-3" />}
             </View>
           ),
         }}
@@ -59,9 +59,9 @@ export default function ParentTabLayout() {
         options={{
           title: 'Assignments',
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center">
+            <View className="items-center justify-center pt-2">
               <ClipboardList size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
-              {focused && <View className="w-1.5 h-1.5 bg-primary mt-1.5 rounded-full absolute -bottom-4" />}
+              {focused && <View className="w-1.5 h-1.5 bg-orange-500 mt-1.5 rounded-full absolute -bottom-3" />}
             </View>
           ),
         }}
@@ -71,9 +71,9 @@ export default function ParentTabLayout() {
         options={{
           title: 'Attendance',
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center">
+            <View className="items-center justify-center pt-2">
               <CalendarCheck size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
-              {focused && <View className="w-1.5 h-1.5 bg-primary mt-1.5 rounded-full absolute -bottom-4" />}
+              {focused && <View className="w-1.5 h-1.5 bg-orange-500 mt-1.5 rounded-full absolute -bottom-3" />}
             </View>
           ),
         }}
@@ -83,9 +83,9 @@ export default function ParentTabLayout() {
         options={{
           title: 'Exams',
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center">
+            <View className="items-center justify-center pt-2">
               <FileText size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
-              {focused && <View className="w-1.5 h-1.5 bg-primary mt-1.5 rounded-full absolute -bottom-4" />}
+              {focused && <View className="w-1.5 h-1.5 bg-orange-500 mt-1.5 rounded-full absolute -bottom-3" />}
             </View>
           ),
         }}

@@ -79,7 +79,7 @@ export default function ClassTestScreen() {
       gradeStr,
       dueDateObj: end,
     };
-  }).sort((a, b) => {
+  }).sort((a: any, b: any) => {
     // Sort upcoming first, then graded
     if (a.status === 'upcoming' && b.status !== 'upcoming') return -1;
     if (a.status !== 'upcoming' && b.status === 'upcoming') return 1;

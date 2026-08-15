@@ -13,7 +13,9 @@ export const useNotifications = (options?: { limit?: number; offset?: number; is
   return useQuery({
     queryKey: notificationKeys.list(options),
     queryFn: () => notificationService.getNotifications(options),
-    refetchInterval: 30000, // Poll every 30 seconds
+    // No polling — list data is fetched on mount and on manual pull-to-refresh.
+    // Polling a full list of notifications every 30s is excessive network load.
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
 
@@ -21,7 +23,9 @@ export const useUnreadCount = () => {
   return useQuery({
     queryKey: notificationKeys.unreadCount(),
     queryFn: notificationService.getUnreadCount,
-    refetchInterval: 30000,
+    // Poll every 2 minutes for badge freshness — was 30s (4× per minute).
+    refetchInterval: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 2,
   });
 };
 

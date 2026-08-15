@@ -21,6 +21,38 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Wednesday, August 13, 2026
+- **Mobile App — Full Performance & Data Fetching Audit + 14 Fixes Applied**:
+    - [x] **Fix 1 — Student `useFocusEffect` Blocking JS Thread**: `(student-tabs)/index.tsx` was calling all 4 refetches synchronously on focus — same pattern as the admin fix (Aug 12). Wrapped in `InteractionManager.runAfterInteractions()` with cleanup cancel. Navigation animations no longer freeze.
+    - [x] **Fix 2 — Notification Hooks Over-Polling (30s → 2min)**: `useNotifications` and `useUnreadCount` polled every 30s (4× per minute). `useNotifications` list now has `staleTime: 2min` only (no polling). `useUnreadCount` badge polls every 2 minutes — from 30 seconds.
+    - [x] **Fix 3 — `useAdminTeachers` Fetching 500 Records Per Mount**: Hard-coded `limit: 500` replaced with `limit: 50` + `staleTime: 5min`. All admin hooks (`useAdminStudents`, `useAdminTeachers`, `useSchoolTeacherAttendanceTrend`) now have 5-min stale time.
+    - [x] **Fix 4 — `useParentDashboard` Refetching on Every Tab Focus**: Added `staleTime: 3min` — the most expensive endpoint (child + stats + exams + notifications + payments) was re-fetching on every single tab switch.
+    - [x] **Fix 5 — `useStudentExamAttempts` / `useExams` Double-Refetch**: Added `staleTime: 2min` to both. Prevents the double-refetch caused by `useFocusEffect` manual refetch + implicit stale query firing simultaneously. Removed `any` type from `useExams` params.
+    - [x] **Fix 6 — `useDeviceSessions` Refetching on Every Settings Mount**: Added `staleTime: 10min` — device sessions don't change frequently.
+    - [x] **Fix 7 — `useSchoolDepartments` Aggressive Retry**: Added `retry: 1` and `staleTime: 10min`. Default `retry: 3` causes 3 extra requests on network failure with exponential backoff.
+    - [x] **Fix 8 — Admin Dashboard Inline `useQuery` for `/auth/me`**: Extracted to shared `useAuth.ts` → `useAuthUser()` hook with `staleTime: Infinity`. All screens that need the auth user now share one cached response instead of firing separate `/auth/me` requests.
+    - [x] **Fix 9 — Teacher Dashboard Hardcoded Notification Badge (`5`)**: Replaced with `useUnreadCount()` hook — now shows the real count the same way parent and admin dashboards do.
+    - [x] **Fix 10 — `InsightsGrid` String-vs-Number Type Coercion Bug**: `pendingTasks` was a string compared with `> 0`. Fixed with `parseInt(pendingTasks, 10) > 0`.
+    - [x] **Fix 11 — `ExamStatus` Fetching All Exams, Slicing to 5**: Now passes `{ limit: 5 }` to `useExams()` — server returns only 5 records instead of the full list being truncated in the UI.
+    - [x] **Fix 12 — `TodayAttendanceChart` Calling `Dimensions.get()` on Every Render**: Replaced with `useWindowDimensions()` hook — subscribes to orientation/split-screen changes and avoids synchronous native bridge call per render.
+    - [x] **Fix 13 — `grades.tsx` GPA Calculation Not Memoized**: `calculateCumulativeAvg()` was called on every render. Converted to `useMemo([attempts, standaloneGrades])`.
+    - [x] **New File — `useAuth.ts`**: Created `Mobile/lib/api/hooks/useAuth.ts` with shared `useAuthUser()` hook.
+    - [x] **Best Practices Guide**: Created `mobile_best_practices.md` covering 12 rules: staleTime strategy, InteractionManager pattern, polling intervals, pagination limits, shared hooks, expo-image, useWindowDimensions, useMemo, network guards, TypeScript discipline, and precise cache invalidation.
+
+
+- **Admin Mobile Dashboard — AI Insight     - [x] **Root Cause 1 — `useMyPerformanceAnalysis` Never Fired**: Fixed (see above).
+    - [x] **Root Cause 2 — Literal String in JSX (`SchoolPerformance.tsx`)**: Fixed (see above).
+    - [x] **Root Cause 3 — ChartConfig Color Callback Crash**: Fixed (see above).
+    - [x] **Root Cause 4 — UI Freeze on Navigation (`useFocusEffect` blocking JS thread)**: The `useFocusEffect` in `(admin-tabs)/index.tsx` was calling `refetchStats()` and `refetchAnalysis()` synchronously on every screen focus — this blocked the React Native JS thread during the navigation animation, causing the screen to freeze. Fixed by wrapping the refetches in `InteractionManager.runAfterInteractions()` which defers execution until after all navigation animations have fully settled. Task is cancelled on unfocus via cleanup return.
+    - [x] **Root Cause 5 — `useMyDashboardSummary` Polling Every 30 Seconds**: `StaffInsights` used `refetchInterval: 30000`, meaning TanStack Query re-ran the fetch and re-rendered the component every 30 seconds. This amplifies any rendering cost on the scroll view. Changed to `refetchInterval: 1000 * 60 * 5` (5 minutes) since staff assignment data is not real-time.
+    - [x] **Root Cause 6 — Unoptimised Avatar Image**: The admin header used `react-native`'s `Image` component pointing at `api.dicebear.com` with no caching. Replaced with `expo-image` which provides automatic disk+memory caching, so the network request is only made once and the component no longer causes a re-fetch on every render cycle.
+600) in both components.
+- **Student Mobile Dashboard — AI Insight & Data Audit**:
+    - [x] **`(student)/index.tsx` — Advice Literal String Bug**: Line 393 had `"{analysis.advice}"` — same JSX literal-string pattern as admin. The advice text was always displayed as the raw string `"..."`. Fixed to `{analysis.advice}`.
+    - [x] **`AcademicProgressWidget.tsx` — Advice Literal String Bug**: Line 39 had `"{advice}"` — same bug. Fixed to `{advice}`.
+    - [x] **`AcademicHistory.tsx` — Null submittedAt Sort Guard**: The sort comparator `new Date(b.submittedAt).getTime()` was called on all attempts including those with `submittedAt = null`. `new Date(null)` → `Invalid Date` → `NaN` which can corrupt sort order or crash. Added a `.filter((a) => !!a.submittedAt)` before sort.
+    - [x] **Full Audit**: Reviewed all student dashboard components (`StudentHero`, `ConsoleInsights`, `PerformanceTrend`, `MasteryRadarChart`, `ActiveSubjectsWidget`, `DashboardSkeleton`, `TopNavBar`, `QuickActions`), all hooks (`useStudentProfile`, `useStudentExamAttempts`, `useGrades`, `useSingleClass`, `useClassTimetable`), and all student tabs (`grades.tsx`, `assignments.tsx`, `timetable.tsx`). No further crash-causing issues found.
+
 ### Monday, July 28, 2026
 - **Payment System Pre-Launch Audit — Full Resolution**:
     - [x] **Unified Webhook Handler**: Merged the two separate Paystack webhook handlers (`/api/v1/payment/webhook` and `/api/v1/finance/webhook`) into one unified entry point in `payment.service.ts`. The subscription webhook now delegates `SCHOOL_FEES` charges to `FinanceService.verifyPayment()` and `subaccount.update` events to `FinanceService.updateSubaccountStatusByCode()`. Added `@deprecated` notice to `finance/paystack.webhook.ts`.

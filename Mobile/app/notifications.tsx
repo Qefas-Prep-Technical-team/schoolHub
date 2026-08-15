@@ -113,7 +113,23 @@ export default function NotificationsScreen() {
 
       <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
         {isLoading ? (
-          <ActivityIndicator size="large" color="#4f46e5" className="my-10" />
+          <View>
+            {[1, 2, 3].map((i) => (
+              <View key={i} className="p-4 mb-3 rounded-2xl border bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 flex-row items-start opacity-50">
+                <View className="h-12 w-12 rounded-xl bg-slate-200 dark:bg-slate-800 mr-4 mt-1" />
+                <View className="flex-1 mr-2 mt-1">
+                  <View className="flex-row items-center justify-between mb-3">
+                    <View className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                    <View className="h-2 w-12 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                  </View>
+                  <View className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-3" />
+                  <View className="h-3 w-full bg-slate-200 dark:bg-slate-800 rounded-full mb-2" />
+                  <View className="h-3 w-5/6 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                </View>
+                <View className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800" />
+              </View>
+            ))}
+          </View>
         ) : notifications.length > 0 ? (
           notifications.map((notification) => (
             <AnimatedTouchableOpacity

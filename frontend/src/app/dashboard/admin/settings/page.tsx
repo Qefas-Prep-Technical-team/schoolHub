@@ -34,6 +34,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import DeviceSessions from '@/components/DeviceSessions';
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
+import ImageUpload from '@/components/reusable/ImageUpload';
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuthStore();
@@ -56,6 +57,7 @@ export default function SettingsPage() {
   const [personalProfile, setPersonalProfile] = useState<any>({
     name: user?.name || '',
     gender: (user as any)?.gender || '',
+    profileImage: (user as any)?.profileImage || '',
   });
 
   useEffect(() => {
@@ -63,6 +65,7 @@ export default function SettingsPage() {
       setPersonalProfile({
         name: user.name || '',
         gender: (user as any).gender || '',
+        profileImage: (user as any).profileImage || '',
       });
     }
   }, [user]);
@@ -149,7 +152,7 @@ export default function SettingsPage() {
       if (activeTab === 'Profile') {
         setIsSavingProfile(true);
         await adminService.updateProfile(personalProfile);
-        updateUser({ name: personalProfile.name, gender: personalProfile.gender } as any);
+        updateUser({ name: personalProfile.name, gender: personalProfile.gender, profileImage: personalProfile.profileImage } as any);
         toast.success('Profile updated successfully');
         setHasChanges(false);
         setIsSavingProfile(false);
@@ -579,6 +582,19 @@ export default function SettingsPage() {
                                             <option value="OTHER">Other</option>
                                         </select>
                                     </div>
+                                </div>
+
+                                <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+                                    <ImageUpload
+                                        label="Profile Picture"
+                                        description="Upload a professional profile photo. It will appear on the top navigation bar."
+                                        value={personalProfile.profileImage}
+                                        onChange={(url) => {
+                                            setPersonalProfile((p: any) => ({ ...p, profileImage: url }));
+                                            setHasChanges(true);
+                                        }}
+                                        aspectRatio="square"
+                                    />
                                 </div>
 
                                 <div className="p-6 rounded-3xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 flex gap-4">

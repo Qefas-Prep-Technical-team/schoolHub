@@ -2,11 +2,13 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import '../global.css';
 import { useColorScheme, useThemeControls } from '@/hooks/use-color-scheme';
 import { useFonts, Lexend_400Regular, Lexend_700Bold, Lexend_900Black } from '@expo-google-fonts/lexend';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { AnimatedSplashScreen } from '../components/AnimatedSplashScreen';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '../components/toast/CustomToast';
@@ -14,6 +16,13 @@ import { apiClient } from '../lib/api/client';
 import { registerForPushNotificationsAsync } from '../lib/utils/notifications';
 import { authEvents } from '../lib/auth/authEvents';
 import { clearTokens, clearUserRole } from '../lib/auth/secure-store';
+import { OfflineBanner } from '../components/ui/OfflineBanner';
+
+// Disable Reanimated strict mode to hide spammy warnings from navigation libraries
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -106,36 +115,43 @@ export default function RootLayout() {
       }}
     >
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ contentStyle: { backgroundColor: colorScheme === 'dark' ? '#000000' : '#ffffff' } }}>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="role-picker" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(student-tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(teacher-tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(parent-tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(admin-tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="linking-hub" options={{ headerShown: false, presentation: 'modal' }} />
-          <Stack.Screen name="assignments" options={{ headerShown: false }} />
-          <Stack.Screen name="exams" options={{ headerShown: false }} />
-          <Stack.Screen name="notifications" options={{ headerShown: false, presentation: 'transparentModal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-          <Stack.Screen name="admin-quick-actions" options={{ headerShown: false }} />
-          <Stack.Screen name="admin-profile" options={{ headerShown: false }} />
-          <Stack.Screen name="admin-add-student" options={{ headerShown: false }} />
-          <Stack.Screen name="admin-add-class" options={{ headerShown: false }} />
-          <Stack.Screen name="admin-subscription" options={{ headerShown: false }} />
-          <Stack.Screen name="admin-calendar" options={{ headerShown: false }} />
-          <Stack.Screen name="admin-messages" options={{ headerShown: false }} />
-          <Stack.Screen name="parent-profile" options={{ headerShown: false }} />
-          <Stack.Screen name="settings" options={{ headerShown: false }} />
-        </Stack>
-        <StatusBar style="auto" />
+        {/* Root container — OfflineBanner overlays everything via absolute positioning */}
+        <View style={{ flex: 1 }}>
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colorScheme === 'dark' ? '#000000' : '#ffffff' } }}>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="role-picker" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(student-tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(teacher-tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(parent-tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(admin-tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="linking-hub" options={{ headerShown: false, presentation: 'modal' }} />
+            <Stack.Screen name="assignments" options={{ headerShown: false }} />
+            <Stack.Screen name="exams" options={{ headerShown: false }} />
+            <Stack.Screen name="notifications" options={{ headerShown: false, presentation: 'transparentModal', animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            <Stack.Screen name="admin-quick-actions" options={{ headerShown: false }} />
+            <Stack.Screen name="admin-profile" options={{ headerShown: false }} />
+            <Stack.Screen name="admin-add-student" options={{ headerShown: false }} />
+            <Stack.Screen name="admin-add-class" options={{ headerShown: false }} />
+            <Stack.Screen name="admin-subscription" options={{ headerShown: false }} />
+            <Stack.Screen name="admin-calendar" options={{ headerShown: false }} />
+            <Stack.Screen name="admin-messages" options={{ headerShown: false }} />
+            <Stack.Screen name="parent-profile" options={{ headerShown: false }} />
+            <Stack.Screen name="settings" options={{ headerShown: false }} />
+          </Stack>
+          <StatusBar style="auto" />
 
-        {/* Render Splash Screen on top until fonts load and backend wakes up */}
-        {!splashFinished && (
-          <AnimatedSplashScreen isAppReady={isReady} onFinish={() => setSplashFinished(true)} />
-        )}
-        <Toast config={toastConfig} />
+          {/* Render Splash Screen on top until fonts load and backend wakes up */}
+          {!splashFinished && (
+            <AnimatedSplashScreen isAppReady={isReady} onFinish={() => setSplashFinished(true)} />
+          )}
+
+          {/* Global offline banner — always visible above all screens */}
+          <OfflineBanner />
+
+          <Toast config={toastConfig} />
+        </View>
       </ThemeProvider>
     </PersistQueryClientProvider>
   );

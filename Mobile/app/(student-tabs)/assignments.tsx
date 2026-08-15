@@ -1,0 +1,330 @@
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, RefreshControl, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { ArrowLeft, PenTool, ChevronRight, Clock, CheckCircle2, AlertCircle, Search, Filter } from 'lucide-react-native';
+import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
+import { CategoryStatsGrid } from '@/components/classes/CategoryStatsGrid';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+
+export default function GlobalAssignmentsScreen() {
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const { data: assignmentsData, isLoading: isAssignmentsLoading, refetch: refetchAssignments } = useStudentAssignments({ limit: 100 });
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetchAssignments?.();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchAssignments]);
+
+  const allAssignments = assignmentsData?.assignments || [];
+
+  // Search & Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const filterOptions = ['All', 'pending', 'submitted', 'graded', 'overdue'];
+
+  const filteredAssignments = allAssignments.filter((a: any) => {
+    const matchesSearch = !searchQuery || a.title?.toLowerCase().includes(searchQuery.toLowerCase()) || a.subject?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || a.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIdx = (safePage - 1) * pageSize;
+  const paginatedAssignments = filteredAssignments.slice(startIdx, startIdx + pageSize);
+
+  // Stats calculation
+  const completedAssignments = allAssignments.filter((a: any) => a.status === 'graded' || a.status === 'submitted');
+  const overdueAssignments = allAssignments.filter((a: any) => a.status === 'overdue');
+  let totalScoreSum = 0;
+  let gradedCount = 0;
+  
+  allAssignments.forEach((a: any) => {
+    if (a.status === 'graded' && a.grade) {
+      let score = 0;
+      let max = 100;
+      if (a.grade.includes('/')) {
+        const [sPart, mPart] = a.grade.split('/');
+        score = parseFloat(sPart);
+        max = parseFloat(mPart);
+      } else {
+        score = parseFloat(a.grade.replace(/[^0-9.]/g, ''));
+      }
+      if (!isNaN(score) && max > 0) {
+        totalScoreSum += (score / max) * 100;
+        gradedCount++;
+      }
+    }
+  });
+
+  const averageGrade = gradedCount > 0 ? Math.round(totalScoreSum / gradedCount) : 0;
+  const completionRate = allAssignments.length > 0 ? Math.round((completedAssignments.length / allAssignments.length) * 100) : 0;
+  
+  const statsConfig = [
+    { label: 'Completion Rate', value: completionRate, maxValue: 100, color: '#3b82f6', isPercentage: true },
+    { label: 'Late / Overdue', value: overdueAssignments.length, maxValue: Math.max(1, allAssignments.length), color: '#f43f5e', isPercentage: false },
+    { label: 'Average Grade', value: gradedCount > 0 ? averageGrade : 'N/A', maxValue: 100, color: '#10b981', isPercentage: true },
+  ];
+
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+      case 'graded':
+        return { color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900', label: 'Graded', icon: CheckCircle2 };
+      case 'submitted':
+        return { color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900', label: 'Submitted', icon: CheckCircle2 };
+      case 'overdue':
+        return { color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100 dark:bg-rose-900', label: 'Overdue', icon: AlertCircle };
+      default:
+        return { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900', label: 'Pending', icon: Clock };
+    }
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  if (isAssignmentsLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+        {/* Header Skeleton */}
+        <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 items-center justify-center opacity-50" />
+          <View className="ml-4 flex-1">
+            <View className="h-5 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full mb-1 opacity-50" />
+          </View>
+        </View>
+
+        {/* Skeleton Cards */}
+        <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
+          <View className="w-1/3 h-3 bg-slate-200 dark:bg-slate-800 rounded-full mb-6 mt-2 opacity-50" />
+          {[1, 2, 3, 4].map((item) => (
+            <View key={item} className="bg-white dark:bg-slate-900 rounded-3xl p-5 mb-4 border border-slate-100 dark:border-slate-800">
+              <View className="flex-row items-center mb-3">
+                <View className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 mr-4 opacity-50" />
+                <View className="flex-1 mr-2">
+                  <View className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-full mb-2 opacity-50" />
+                  <View className="h-3 w-1/3 bg-slate-100 dark:bg-slate-800 rounded-full opacity-50" />
+                </View>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+      {/* Header */}
+      <View className="flex-row items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-10">
+        <View className="flex-row items-center flex-1">
+          <TouchableOpacity 
+            onPress={() => router.back()} 
+            className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center"
+            activeOpacity={0.7}
+          >
+            <ArrowLeft size={20} color="#64748b" />
+          </TouchableOpacity>
+          <View className="ml-5 flex-1">
+            <Text className="text-xl font-black text-slate-900 dark:text-white" numberOfLines={1}>
+              All Assignments
+            </Text>
+            <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400" numberOfLines={1}>
+              Overview across all classes
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />}
+      >
+        <View className="px-4 pt-4">
+          <CategoryStatsGrid stats={statsConfig} gradeScore={averageGrade} />
+        </View>
+
+        {/* Search & Filter Bar */}
+        <View className="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex-row gap-2">
+          <View className="flex-1 flex-row items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-4 h-12">
+            <Search size={18} color="#94a3b8" />
+            <TextInput
+              className="flex-1 text-slate-900 dark:text-white text-base font-medium h-full ml-2"
+              placeholder="Search assignments..."
+              placeholderTextColor="#94a3b8"
+              value={searchQuery}
+              onChangeText={(t) => { setSearchQuery(t); setPage(1); }}
+              style={{ paddingVertical: 0 }}
+            />
+          </View>
+          <TouchableOpacity 
+            onPress={() => setIsFilterModalOpen(true)}
+            className={`h-12 px-4 rounded-xl items-center justify-center flex-row border ${statusFilter !== 'All' ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900 dark:border-indigo-800' : 'bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}
+          >
+            <Filter size={18} color={statusFilter !== 'All' ? '#6366f1' : '#64748b'} />
+            {statusFilter !== 'All' && (
+              <Text className="ml-2 font-bold text-indigo-600 dark:text-indigo-400 capitalize text-sm">{statusFilter}</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View className="px-4 pb-20 pt-4">
+          {filteredAssignments.length === 0 ? (
+            <View className="py-16 items-center px-4">
+              <View className="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900 items-center justify-center mb-6">
+                <PenTool size={36} color="#6366f1" />
+              </View>
+              <Text className="text-xl font-bold text-slate-800 dark:text-slate-200 text-center mb-2">
+                No Assignments Found
+              </Text>
+              <Text className="text-sm text-slate-500 dark:text-slate-400 text-center leading-relaxed">
+                Try adjusting your search or filter criteria.
+              </Text>
+            </View>
+          ) : (
+            <View className="mb-4">
+              <Text className="text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase mb-4 px-2">
+                Assignments ({filteredAssignments.length})
+              </Text>
+              
+              {paginatedAssignments.map((assignment: any, index: number) => {
+                const statusInfo = getStatusInfo(assignment.status);
+                const StatusIcon = statusInfo.icon;
+                const dueDateObj = assignment.dueDate ? new Date(assignment.dueDate) : null;
+                const assignmentNumber = startIdx + index + 1;
+                
+                return (
+                  <TouchableOpacity
+                    key={assignment.id || index}
+                    activeOpacity={0.7}
+                    onPress={() => router.push(`/assignments/${assignment.id}` as any)}
+                    className="bg-white dark:bg-slate-900 rounded-3xl p-5 mb-4 border border-slate-100 dark:border-slate-800"
+                    style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
+                  >
+                    <View className="flex-row items-center mb-3">
+                      <View className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900 items-center justify-center mr-4">
+                        <Text className="text-sm font-black text-indigo-600 dark:text-indigo-400">
+                          {assignmentNumber}
+                        </Text>
+                      </View>
+                      
+                      <View className="flex-1 mr-2">
+                        <Text className="text-base font-bold text-slate-900 dark:text-white mb-1" numberOfLines={2}>
+                          {assignment.title}
+                        </Text>
+                        <Text className="text-xs font-medium text-slate-500 mb-2" numberOfLines={1}>
+                          {assignment.subject || 'General'}
+                        </Text>
+                        <View className="flex-row items-center">
+                          <View className="mr-2">
+                            <StatusIcon size={14} color="#64748b" />
+                          </View>
+                          <Text className={`text-xs font-bold ${statusInfo.color}`}>
+                            {statusInfo.label}
+                          </Text>
+                        </View>
+                      </View>
+                      
+                      <ChevronRight size={20} color="#cbd5e1" />
+                    </View>
+
+                    <View className="flex-row items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
+                      <View>
+                        <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Due Date</Text>
+                        <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          {dueDateObj ? formatDate(dueDateObj) : 'No Due Date'}
+                        </Text>
+                      </View>
+                      
+                      <View className="items-end">
+                        <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Grade</Text>
+                        <Text className="text-xs font-black text-slate-700 dark:text-slate-300">
+                          {assignment.grade || '--'} / {assignment.totalMarks || 100}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <View className="flex-row items-center justify-between mt-4 mb-8 px-2">
+                  <TouchableOpacity
+                    onPress={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={safePage === 1}
+                    className={`px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 ${safePage === 1 ? 'opacity-50' : 'bg-white dark:bg-slate-800'}`}
+                  >
+                    <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Previous</Text>
+                  </TouchableOpacity>
+                  
+                  <Text className="text-xs font-black text-slate-500 dark:text-slate-400">
+                    Page <Text className="text-indigo-600 dark:text-indigo-400">{safePage}</Text> of {totalPages}
+                  </Text>
+
+                  <TouchableOpacity
+                    onPress={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={safePage === totalPages}
+                    className={`px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 ${safePage === totalPages ? 'opacity-50' : 'bg-white dark:bg-slate-800'}`}
+                  >
+                    <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Next</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Filter Modal */}
+      <Modal visible={isFilterModalOpen} transparent animationType="fade" onRequestClose={() => setIsFilterModalOpen(false)}>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-6">
+            <Text className="text-lg font-bold text-slate-900 dark:text-white mb-4">Filter by Status</Text>
+            
+            <View className="gap-2">
+              {filterOptions.map((opt) => (
+                <TouchableOpacity
+                  key={opt}
+                  onPress={() => {
+                    setStatusFilter(opt);
+                    setPage(1);
+                    setIsFilterModalOpen(false);
+                  }}
+                  className={`p-4 rounded-xl flex-row justify-between items-center ${statusFilter === opt ? 'bg-indigo-50 dark:bg-indigo-900/50' : 'bg-slate-50 dark:bg-slate-800'}`}
+                >
+                  <Text className={`font-bold capitalize ${statusFilter === opt ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {opt}
+                  </Text>
+                  {statusFilter === opt && <CheckCircle2 size={20} color="#6366f1" />}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setIsFilterModalOpen(false)}
+              className="mt-6 p-4 rounded-xl bg-slate-200 dark:bg-slate-800 items-center"
+            >
+              <Text className="font-bold text-slate-900 dark:text-white">Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+    </SafeAreaView>
+  );
+}

@@ -15,8 +15,10 @@ export function AcademicHistory({ attempts }: AcademicHistoryProps) {
     return null;
   }
 
-  // Sort by latest first
-  const sortedAttempts = [...attempts].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+  // Sort by latest first — guard against null/missing submittedAt
+  const sortedAttempts = [...attempts]
+    .filter((a) => !!a.submittedAt)
+    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
   const recentAttempts = sortedAttempts.slice(0, 5);
 
   return (

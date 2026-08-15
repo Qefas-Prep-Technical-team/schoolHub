@@ -1,6 +1,6 @@
 import prisma from "../../config/database";
 import { GradeStatus, NotificationStatus } from "@prisma/client";
-import { getStudentAssignmentsService, getAssignmentByIdService } from "../assignment/assignment.service";
+import { getAssignmentByIdService } from "../assignment/assignment.service";
 
 export const getChildAssignmentDetailsService = async (parentId: string, studentId: string, assignmentId: string) => {
   const childLink = await prisma.parentChildLink.findFirst({
@@ -51,6 +51,7 @@ export const getParentChildrenService = async (parentId: string) => {
           attendances: {
             select: {
               status: true,
+              date: true,
             },
           },
         },
@@ -66,10 +67,30 @@ export const getParentChildrenService = async (parentId: string) => {
     const totalMax = student.grades.reduce((sum, g) => sum + g.maxMarks, 0);
     const averageGrade = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
 
-    // Calculate Attendance Rate
-    const totalAttendance = student.attendances.length;
-    const presentCount = student.attendances.filter(a => a.status.toLowerCase() === 'present').length;
+    // Calculate Attendance Rate (Current Month Only)
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const monthlyAttendances = student.attendances.filter(a => {
+      const d = a.date instanceof Date ? a.date : new Date(a.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const totalAttendance = monthlyAttendances.length;
+    const presentCount = monthlyAttendances.filter(a => {
+      const s = a.status.toLowerCase();
+      return s === 'present' || s === 'late';
+    }).length;
     const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 0;
+
+    // Today's Attendance
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayRecord = student.attendances.find(a => {
+      const d = a.date instanceof Date ? a.date.toISOString() : (typeof a.date === 'string' ? a.date : '');
+      return d.split('T')[0] === todayStr;
+    });
+    const todayAttendance = todayRecord ? todayRecord.status : 'None';
 
     return {
       id: student.id,
@@ -78,10 +99,12 @@ export const getParentChildrenService = async (parentId: string) => {
       profileImage: student.profileImage,
       school: student.school,
       currentClass: student.classes[0]?.class || null,
+      status: "IN_PROGRESS",
       stats: {
         averageGrade,
         attendanceRate,
         totalGrades: student.grades.length,
+        todayAttendance,
       },
       linkStatus: link.status,
       relationship: link.relationship,
@@ -106,7 +129,25 @@ export const getChildDetailsService = async (parentId: string, childId: string) 
       department: true,
       classes: {
         include: {
-          class: true,
+          class: {
+            include: {
+              teachers: {
+                include: {
+                  teacher: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      subject: true,
+                      department: true,
+                      bannerImage: true,
+                      gender: true,
+                    }
+                  }
+                }
+              }
+            }
+          },
         },
       },
       grades: {
@@ -206,14 +247,31 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
   });
 
 
-  // Attendance rate for the child
+  // Attendance rate for the child (Current Month Only)
   const attendanceRecords = childLink?.student.attendances || [];
-  const totalAttendance = attendanceRecords.length;
-  const presentCount = attendanceRecords.filter(
-    (a) => a.status.toLowerCase() === "present"
-  ).length;
-  const attendanceRate =
-    totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 0;
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const monthlyAttendances = attendanceRecords.filter(a => {
+    const d = a.date instanceof Date ? a.date : new Date(a.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  });
+
+  const totalAttendance = monthlyAttendances.length;
+  const presentCount = monthlyAttendances.filter(a => {
+    const s = a.status.toLowerCase();
+    return s === 'present' || s === 'late';
+  }).length;
+  const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 0;
+
+  // Today's Attendance
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayRecord = attendanceRecords.find(a => {
+    const d = a.date instanceof Date ? a.date.toISOString() : (typeof a.date === 'string' ? a.date : '');
+    return d.split('T')[0] === todayStr;
+  });
+  const todayAttendance = todayRecord ? todayRecord.status : 'None';
 
   // Last 30 days attendance breakdown (for the bar chart) — oldest first
   const attendanceBreakdown = [...attendanceRecords].reverse().map((r) => ({
@@ -279,19 +337,10 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
 
   const student = childLink?.student;
 
-  let assignmentsData: any[] = [];
-  if (student) {
-    try {
-      const assignmentRes = await getStudentAssignmentsService({
-        studentId: student.id,
-        page: 1,
-        limit: 50,
-      });
-      assignmentsData = assignmentRes.assignments;
-    } catch (err) {
-      console.error("Failed to fetch assignments for parent dashboard:", err);
-    }
-  }
+  // NOTE: Assignments are NOT fetched here to keep the dashboard fast.
+  // The getStudentAssignmentsService runs complex fire-and-forget DB writes
+  // (grade syncs) inside a map loop which caused ERR_NETWORK on slow connections.
+  // Use a dedicated /assignments endpoint for assignment data.
 
   return {
     child: student
@@ -306,13 +355,13 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
             ...g,
             subject: g.subject || g.subjectPaper?.subject?.name || "Unknown Subject",
           })),
-          assignments: assignmentsData,
         }
       : null,
     stats: {
       attendanceRate,
       averageGrade,
       attendanceBreakdown,
+      todayAttendance,
     },
     upcomingExams,
     notifications,

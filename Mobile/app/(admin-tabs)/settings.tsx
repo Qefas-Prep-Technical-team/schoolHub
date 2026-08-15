@@ -6,6 +6,10 @@ import { useColorScheme, useThemeControls } from '@/hooks/use-color-scheme';
 import { LogoutButton } from '../../components/ui/LogoutButton';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toast';
 import { useLocalSearchParams } from 'expo-router';
+import { useUpdatePassword, useDeviceSessions, useRevokeSession } from '@/lib/api/hooks/useStudent';
+import { LogOut } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api/client';
 
 type Tab = 'general' | 'school' | 'account';
 
@@ -13,6 +17,14 @@ export default function AdminSettingsScreen() {
   const colorScheme = useColorScheme();
   const { toggleColorScheme } = useThemeControls();
   const isDark = colorScheme === 'dark';
+
+  const { data: user, isLoading: isUserLoading } = useQuery({
+    queryKey: ['authUser'],
+    queryFn: async () => {
+      const res = await apiClient.get('/auth/me');
+      return res.data.data;
+    }
+  });
 
   const params = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>((params.tab as Tab) || 'general');
@@ -30,6 +42,10 @@ export default function AdminSettingsScreen() {
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showPassword, setShowPassword] = useState(false);
 
+  const updatePassword = useUpdatePassword();
+  const { data: sessions, isLoading: isSessionsLoading } = useDeviceSessions();
+  const revokeSession = useRevokeSession();
+
   const handleUpdatePassword = () => {
     if (!passwordData.currentPassword || !passwordData.newPassword) {
       showErrorToast({ title: 'Missing Fields', message: 'Please fill in all password fields.' });
@@ -39,9 +55,16 @@ export default function AdminSettingsScreen() {
       showErrorToast({ title: 'Password Mismatch', message: 'New passwords do not match.' });
       return;
     }
-    showSuccessToast({ title: 'Password Updated', message: 'Password updated successfully!' });
-    setIsPasswordModalOpen(false);
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    
+    updatePassword.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword
+    }, {
+      onSuccess: () => {
+        setIsPasswordModalOpen(false);
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      }
+    });
   };
 
   // Colors computed from isDark to avoid complex NativeWind modifiers
@@ -52,7 +75,7 @@ export default function AdminSettingsScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
-      <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }}>
 
         {/* Header */}
         <View style={styles.header}>
@@ -181,13 +204,13 @@ export default function AdminSettingsScreen() {
               <View style={[styles.card, { backgroundColor: cardBg, borderColor, padding: 20, marginBottom: 32 }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <View style={[styles.avatar, { borderColor: isDark ? '#3730a3' : '#c7d2fe' }]}>
-                    <Image source={{ uri: 'https://api.dicebear.com/7.x/avataaars/png?seed=Admin' }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    <Image source={{ uri: user?.profileImage || 'https://api.dicebear.com/7.x/avataaars/png?seed=Admin' }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.profileName, { color: isDark ? '#fff' : '#0f172a' }]}>System Admin</Text>
-                    <Text style={[styles.rowSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>admin@schoolhub.edu</Text>
+                    <Text style={[styles.profileName, { color: isDark ? '#fff' : '#0f172a' }]}>{user?.name || 'System Admin'}</Text>
+                    <Text style={[styles.rowSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>{user?.email || 'admin@schoolhub.edu'}</Text>
                     <View style={[styles.badge, { backgroundColor: isDark ? '#1e1b4b' : '#e0e7ff', borderColor: isDark ? '#3730a3' : '#c7d2fe' }]}>
-                      <Text style={[styles.badgeText, { color: isDark ? '#818cf8' : '#4338ca' }]}>SUPER ADMIN</Text>
+                      <Text style={[styles.badgeText, { color: isDark ? '#818cf8' : '#4338ca' }]}>{(user?.role || 'SUPER ADMIN').toUpperCase()}</Text>
                     </View>
                   </View>
                 </View>
@@ -213,37 +236,58 @@ export default function AdminSettingsScreen() {
               <Text style={[styles.sectionLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Active Sessions</Text>
 
               <View style={[styles.card, { backgroundColor: cardBg, borderColor, marginBottom: 32 }]}>
-                {/* Session 1 - Current */}
-                <View style={[styles.row, { borderBottomWidth: 1, borderBottomColor: borderColor }]}>
-                  <View style={styles.rowLeft}>
-                    <View style={[styles.iconCircle, { backgroundColor: isDark ? '#1e3a5f' : '#eff6ff', borderColor: isDark ? '#1e40af' : '#bfdbfe' }]}>
-                      <Smartphone size={20} color="#3b82f6" />
-                    </View>
-                    <View>
-                      <Text style={[styles.rowTitle, { color: isDark ? '#fff' : '#0f172a' }]}>iPhone 15 Pro</Text>
-                      <Text style={[styles.rowSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>SchoolHub App • Active now</Text>
-                    </View>
+                {isSessionsLoading ? (
+                  <View style={{ padding: 20 }}>
+                    <Text style={{ color: isDark ? '#94a3b8' : '#64748b' }}>Loading sessions...</Text>
                   </View>
-                  <View style={[styles.sessionBadge, { backgroundColor: isDark ? '#052e16' : '#d1fae5', borderColor: isDark ? '#166534' : '#a7f3d0' }]}>
-                    <Text style={[styles.sessionBadgeText, { color: isDark ? '#4ade80' : '#065f46' }]}>Current</Text>
+                ) : sessions?.length === 0 ? (
+                  <View style={{ padding: 20 }}>
+                    <Text style={{ color: isDark ? '#94a3b8' : '#64748b' }}>No active sessions.</Text>
                   </View>
-                </View>
+                ) : (
+                  sessions?.map((session: any, index: number) => {
+                    const isCurrent = session.isCurrentDevice;
+                    return (
+                      <View 
+                        key={session.id} 
+                        style={[
+                          styles.row, 
+                          index < sessions.length - 1 && { borderBottomWidth: 1, borderBottomColor: borderColor }
+                        ]}
+                      >
+                        <View style={[styles.rowLeft, { flex: 1 }]}>
+                          <View style={[styles.iconCircle, { backgroundColor: isCurrent ? (isDark ? '#1e3a5f' : '#eff6ff') : (isDark ? '#1e293b' : '#f1f5f9'), borderColor: isCurrent ? (isDark ? '#1e40af' : '#bfdbfe') : (isDark ? '#334155' : '#e2e8f0') }]}>
+                            {session.deviceType === 'desktop' ? (
+                              <Monitor size={20} color={isCurrent ? '#3b82f6' : (isDark ? '#94a3b8' : '#64748b')} />
+                            ) : (
+                              <Smartphone size={20} color={isCurrent ? '#3b82f6' : (isDark ? '#94a3b8' : '#64748b')} />
+                            )}
+                          </View>
+                          <View>
+                            <Text style={[styles.rowTitle, { color: isDark ? '#fff' : '#0f172a' }]}>{session.deviceModel || 'Unknown Device'}</Text>
+                            <Text style={[styles.rowSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>{session.osVersion} • {session.ipAddress}</Text>
+                            <Text style={[styles.rowSub, { color: isDark ? '#64748b' : '#94a3b8', fontSize: 10, marginTop: 2 }]}>Active: {new Date(session.lastActiveAt).toLocaleDateString()}</Text>
+                          </View>
+                        </View>
 
-                {/* Session 2 */}
-                <View style={styles.row}>
-                  <View style={[styles.rowLeft, { flex: 1 }]}>
-                    <View style={[styles.iconCircle, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderColor: isDark ? '#334155' : '#e2e8f0' }]}>
-                      <Monitor size={20} color={isDark ? '#94a3b8' : '#64748b'} />
-                    </View>
-                    <View>
-                      <Text style={[styles.rowTitle, { color: isDark ? '#fff' : '#0f172a' }]}>MacBook Pro</Text>
-                      <Text style={[styles.rowSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>Chrome • 2 hours ago</Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity>
-                    <Text style={{ fontSize: 12, fontFamily: 'LexendBold', color: '#f43f5e' }}>Revoke</Text>
-                  </TouchableOpacity>
-                </View>
+                        {isCurrent ? (
+                          <View style={[styles.sessionBadge, { backgroundColor: isDark ? '#052e16' : '#d1fae5', borderColor: isDark ? '#166534' : '#a7f3d0' }]}>
+                            <Text style={[styles.sessionBadgeText, { color: isDark ? '#4ade80' : '#065f46' }]}>Current</Text>
+                          </View>
+                        ) : (
+                          <TouchableOpacity 
+                            onPress={() => revokeSession.mutate(session.id)}
+                            disabled={revokeSession.isPending}
+                          >
+                            <Text style={{ fontSize: 12, fontFamily: 'LexendBold', color: '#f43f5e' }}>
+                              {revokeSession.isPending && revokeSession.variables === session.id ? 'Revoking...' : 'Revoke'}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    );
+                  })
+                )}
               </View>
 
               <Text style={[styles.sectionLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Danger Zone</Text>
@@ -302,8 +346,14 @@ export default function AdminSettingsScreen() {
               <TouchableOpacity onPress={() => setIsPasswordModalOpen(false)} style={[styles.modalBtn, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
                 <Text style={[styles.modalBtnText, { color: isDark ? '#cbd5e1' : '#475569' }]}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleUpdatePassword} style={[styles.modalBtn, { backgroundColor: '#2563eb' }]}>
-                <Text style={[styles.modalBtnText, { color: '#fff' }]}>Update</Text>
+              <TouchableOpacity 
+                onPress={handleUpdatePassword} 
+                disabled={updatePassword.isPending}
+                style={[styles.modalBtn, { backgroundColor: '#2563eb', opacity: updatePassword.isPending ? 0.7 : 1 }]}
+              >
+                <Text style={[styles.modalBtnText, { color: '#fff' }]}>
+                  {updatePassword.isPending ? 'Updating...' : 'Update'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

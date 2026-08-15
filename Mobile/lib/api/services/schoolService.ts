@@ -1,4 +1,4 @@
-import { apiClient } from '../client';
+import { apiClient } from "../client";
 
 export interface SchoolStats {
   students: number;
@@ -12,5 +12,27 @@ export const schoolService = {
   getMyStats: async (): Promise<SchoolStats> => {
     const response = await apiClient.get(`/schools/my/stats`);
     return response.data.data;
+  },
+  getMyPerformanceAnalysis: async (): Promise<any> => {
+    const response = await apiClient.get(`/schools/my/performance-analysis`);
+    return response.data.data ?? null;
+  },
+  getPerformanceAnalysis: async (schoolId?: string): Promise<any> => {
+    if (!schoolId) return null;
+    const response = await apiClient.get(
+      `/schools/${schoolId}/performance-analysis`,
+    );
+    return response.data.data ?? null;
+  },
+  getMyDashboardSummary: async (): Promise<any> => {
+    const response = await apiClient.get(`/schools/my/dashboard-summary`);
+    return response.data.data ?? null;
+  },
+  getMyTodayAttendance: async (date?: string): Promise<any[]> => {
+    const params = date ? { date } : undefined;
+    const response = await apiClient.get(`/schools/my/today-attendance`, {
+      params,
+    });
+    return response.data.data || [];
   },
 };

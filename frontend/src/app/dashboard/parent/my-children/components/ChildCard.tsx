@@ -59,7 +59,7 @@ export default function ChildCard({ child }: ChildCardProps) {
   const handleViewDashboard = (e: React.MouseEvent) => {
     e.stopPropagation()
     setSelectedChildId(child.id)
-    router.push('/dashboard/parent')
+    router.push(`/dashboard/parent/child-details/${child.id}`)
   }
 
   const handleViewChildDetails = (e: React.MouseEvent) => {
@@ -142,7 +142,7 @@ export default function ChildCard({ child }: ChildCardProps) {
                 onClick={handleViewDashboard}
                 className="flex items-center gap-3 p-3 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-pointer text-orange-600 focus:bg-orange-600 focus:text-white transition-all"
               >
-                <Layout size={14} /> Enter Terminal
+                <Layout size={14} /> View Child
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -196,7 +196,7 @@ export default function ChildCard({ child }: ChildCardProps) {
           onClick={handleViewDashboard}
           className="w-full h-16 rounded-[1.5rem] bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-black text-xs uppercase tracking-widest hover:bg-orange-600 dark:hover:bg-orange-600 dark:hover:text-white transition-all shadow-xl hover:shadow-orange-600/30 active:scale-95 group/btn"
         >
-          Access Terminal
+          View Child
           <ChevronRight size={18} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
         </Button>
       </div>

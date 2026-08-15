@@ -36,7 +36,7 @@ export const AcademicProgressWidget = ({ advice, strongest, weakest, chartData }
 
       <View className="p-4 rounded-[1.5rem] bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 shadow-inner mb-4">
         <Text className="text-slate-600 dark:text-slate-300 font-LexendBold text-[11px] leading-relaxed italic">
-          "{advice}"
+          {advice}
         </Text>
       </View>
 

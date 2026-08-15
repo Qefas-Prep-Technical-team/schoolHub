@@ -12,6 +12,7 @@ import {
 import { sendEmailUpdateVerification } from "../auth/auth.service";
 import { handleError } from "../../utils/error-handler";
 import prisma from "../../config/database";
+import { getStudentAssignmentsService } from "../assignment/assignment.service";
 
 export const requestEmailUpdate = async (req: Request, res: Response) => {
   try {
@@ -177,12 +178,22 @@ export const getStudentProfile = async (req: Request, res: Response) => {
 export const getStudentById = async (req: Request, res: Response) => {
   try {
     const { id: studentId } = req.params;
-    const { userType: currentUserType } = req.user!;
+    const { userType: currentUserType, id: currentUserId } = req.user!;
 
-    if (currentUserType !== UserRole.ADMIN && currentUserType !== UserRole.TEACHER) {
+    if (currentUserType === UserRole.PARENT) {
+      const link = await prisma.parentChildLink.findFirst({
+        where: { parentId: currentUserId, studentId: studentId as string, status: "active" },
+      });
+      if (!link) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only view profiles of your own linked children",
+        });
+      }
+    } else if (currentUserType !== UserRole.ADMIN && currentUserType !== UserRole.TEACHER) {
       return res.status(403).json({
         success: false,
-        message: "Only admins and teachers can fetch student profiles by ID",
+        message: "Only admins, teachers, and linked parents can fetch student profiles by ID",
       });
     }
 
@@ -201,6 +212,28 @@ export const getStudentById = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return handleError(res, error, "student.getStudentById");
+  }
+};
+
+export const getStudentAssignments = async (req: Request, res: Response) => {
+  try {
+    const { id: studentId } = req.params;
+    const { status, page = "1", limit = "10" } = req.query;
+
+    const data = await getStudentAssignmentsService({
+      studentId: studentId as string,
+      status: status as string,
+      page: parseInt(page as string),
+      limit: parseInt(limit as string),
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Student assignments fetched successfully",
+      data,
+    });
+  } catch (error: any) {
+    return handleError(res, error, "student.getStudentAssignments");
   }
 };
 

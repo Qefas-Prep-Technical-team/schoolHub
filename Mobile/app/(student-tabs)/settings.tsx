@@ -5,7 +5,7 @@ import { useStudentProfile, useUpdateDepartment, useUpdateLevel, useSchoolDepart
 import { useColorScheme, useThemeControls } from '@/hooks/use-color-scheme';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 import { User, Mail, Fingerprint, Settings, Bell, SunMoon, Lock, ArrowLeft, Building2, GraduationCap, School, ShieldAlert, CheckCircle2, Eye, EyeOff, Smartphone, Monitor, Globe, LogOut } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { showInfoToast, showErrorToast } from '@/lib/utils/toast';
 import { clearTokens, clearUserRole } from '@/lib/auth/secure-store';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,6 +22,7 @@ export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const { toggleColorScheme } = useThemeControls();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<'general' | 'academic' | 'account'>('general');
   const [selectedDept, setSelectedDept] = useState<string>('');
@@ -31,13 +32,15 @@ export default function SettingsScreen() {
 
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
-  
+
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showPassword, setShowPassword] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     if (profile?.departmentId) setSelectedDept(profile.departmentId);
@@ -46,10 +49,12 @@ export default function SettingsScreen() {
 
   if (isLoading || !profile) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
         {/* Header Skeleton */}
-        <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 opacity-50" />
+        <View className="flex-row items-center px-4 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 relative">
+          <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 opacity-50 items-center justify-center">
+            <ArrowLeft size={20} color={isDark ? '#fff' : '#000'} />
+          </TouchableOpacity>
           <View className="ml-4 flex-1">
             <View className="h-6 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full opacity-50" />
           </View>
@@ -125,19 +130,22 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await clearTokens();
       await clearUserRole();
       queryClient.clear();
-      // Route to '/' so index.tsx re-evaluates auth state
-      router.replace('/');
+      setConfirmLogout(false);
+      router.replace('/role-picker');
     } catch (error) {
       console.error('Logout error:', error);
+      setIsLoggingOut(false);
+      setConfirmLogout(false);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       {/* HEADER */}
       <View className="flex-row items-center px-6 py-4">
         <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 bg-slate-200 dark:bg-slate-800 rounded-full items-center justify-center mr-4">
@@ -163,7 +171,7 @@ export default function SettingsScreen() {
                 <User className="text-pink-600" size={20} />
                 <Text className="text-lg font-black uppercase tracking-wider text-slate-900 dark:text-white">Personal Info</Text>
               </View>
-              
+
               <View className="flex-col gap-0">
                 <View className="py-4 px-2 border-b border-slate-100 dark:border-slate-800">
                   <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</Text>
@@ -193,15 +201,15 @@ export default function SettingsScreen() {
                 <SunMoon className="text-indigo-600" size={20} />
                 <Text className="text-lg font-black uppercase tracking-wider text-slate-900 dark:text-white">App Preferences</Text>
               </View>
-              
+
               <View className="flex-col gap-0">
                 <View className="flex-row items-center justify-between py-4 px-2">
                   <View className="flex-1">
                     <Text className="font-bold text-slate-900 dark:text-white">Dark Mode</Text>
                     <Text className="text-xs text-slate-500 font-medium mt-0.5">Toggle app visual theme</Text>
                   </View>
-                  <TouchableOpacity 
-                    onPress={toggleColorScheme} 
+                  <TouchableOpacity
+                    onPress={toggleColorScheme}
                     className={`w-14 h-8 rounded-full flex-row items-center px-1 ${isDark ? 'bg-indigo-600 justify-end' : 'bg-slate-200 justify-start'}`}
                   >
                     <View className="w-6 h-6 bg-white rounded-full items-center justify-center shadow-sm">
@@ -251,22 +259,22 @@ export default function SettingsScreen() {
               ) : (
                 <View>
                   <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Academic Field</Text>
-                  <TouchableOpacity 
-                    disabled={isLocked || isDeptsLoading} 
+                  <TouchableOpacity
+                    disabled={isLocked || isDeptsLoading}
                     onPress={() => setIsDeptModalOpen(true)}
                     className="h-14 px-4 bg-slate-50 dark:bg-slate-800 rounded-2xl flex-row items-center justify-between"
                   >
                     <Text className={`font-bold ${selectedDept || isLocked ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
-                      {isLocked 
-                        ? (profile.department?.name || 'Department Locked') 
-                        : isDeptsLoading 
-                          ? 'Loading...' 
+                      {isLocked
+                        ? (profile.department?.name || 'Department Locked')
+                        : isDeptsLoading
+                          ? 'Loading...'
                           : (departments.find((d: any) => d.id === selectedDept)?.name || 'Choose Department')}
                     </Text>
                   </TouchableOpacity>
-                  
+
                   {!isLocked && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={handleUpdateDept}
                       disabled={updateDepartment.isPending || !selectedDept}
                       className="h-14 mt-4 bg-pink-600 rounded-2xl items-center justify-center flex-row"
@@ -315,8 +323,8 @@ export default function SettingsScreen() {
               ) : (
                 <View>
                   <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Your Level</Text>
-                  <TouchableOpacity 
-                    disabled={isLevelLocked} 
+                  <TouchableOpacity
+                    disabled={isLevelLocked}
                     onPress={() => setIsLevelModalOpen(true)}
                     className="h-14 px-4 bg-slate-50 dark:bg-slate-800 rounded-2xl flex-row items-center justify-between"
                   >
@@ -324,9 +332,9 @@ export default function SettingsScreen() {
                       {selectedLevel || 'Choose Level'}
                     </Text>
                   </TouchableOpacity>
-                  
+
                   {!isLevelLocked && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={handleUpdateLevel}
                       disabled={updateLevel.isPending || !selectedLevel}
                       className="h-14 mt-4 bg-rose-600 rounded-2xl items-center justify-center flex-row"
@@ -417,7 +425,7 @@ export default function SettingsScreen() {
                         </View>
                         <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-slate-200 dark:border-slate-800/50">
                           <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active: {new Date(session.lastActiveAt).toLocaleDateString()}</Text>
-                          <TouchableOpacity 
+                          <TouchableOpacity
                             onPress={() => revokeSession.mutate(session.id)}
                             disabled={revokeSession.isPending}
                             className={`h-8 px-4 rounded-xl flex-row items-center justify-center ${session.isCurrentDevice ? 'bg-slate-200 dark:bg-slate-800' : 'bg-rose-100 dark:bg-rose-900/30'}`}
@@ -440,14 +448,14 @@ export default function SettingsScreen() {
                           Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, sessions.length)} of {sessions.length}
                         </Text>
                         <View className="flex-row gap-2">
-                          <TouchableOpacity 
+                          <TouchableOpacity
                             onPress={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
                             className={`h-8 px-3 rounded-xl items-center justify-center border border-slate-200 dark:border-slate-800 ${currentPage === 1 ? 'opacity-50' : 'bg-white dark:bg-slate-900'}`}
                           >
                             <Text className="font-bold text-[10px] uppercase tracking-widest text-slate-600 dark:text-slate-300">Prev</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity 
+                          <TouchableOpacity
                             onPress={() => setCurrentPage(p => Math.min(Math.ceil(sessions.length / itemsPerPage), p + 1))}
                             disabled={currentPage >= Math.ceil(sessions.length / itemsPerPage)}
                             className={`h-8 px-3 rounded-xl items-center justify-center border border-slate-200 dark:border-slate-800 ${currentPage >= Math.ceil(sessions.length / itemsPerPage) ? 'opacity-50' : 'bg-white dark:bg-slate-900'}`}
@@ -464,7 +472,7 @@ export default function SettingsScreen() {
 
             {/* FULL SYSTEM LOGOUT */}
             <TouchableOpacity
-              onPress={handleLogout}
+              onPress={() => setConfirmLogout(true)}
               className="mt-2 flex-row items-center justify-center py-5 bg-rose-50 dark:bg-rose-900/20 rounded-[2rem] border border-rose-200 dark:border-rose-900/50"
             >
               <LogOut size={20} color="#e11d48" className="mr-2" />
@@ -483,8 +491,8 @@ export default function SettingsScreen() {
           <Text className="text-xl font-black uppercase italic tracking-widest text-slate-900 dark:text-white mb-6">Select Department</Text>
           <ScrollView showsVerticalScrollIndicator={false}>
             {departments.map((dept: any) => (
-              <TouchableOpacity 
-                key={dept.id} 
+              <TouchableOpacity
+                key={dept.id}
                 onPress={() => { setSelectedDept(dept.id); setIsDeptModalOpen(false); }}
                 className={`p-4 rounded-2xl mb-3 border-2 ${selectedDept === dept.id ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20' : 'border-slate-100 dark:border-slate-800'}`}
               >
@@ -502,8 +510,8 @@ export default function SettingsScreen() {
           <Text className="text-xl font-black uppercase italic tracking-widest text-slate-900 dark:text-white mb-6">Select Level</Text>
           <ScrollView showsVerticalScrollIndicator={false}>
             {schoolLevels.map((lvl: string) => (
-              <TouchableOpacity 
-                key={lvl} 
+              <TouchableOpacity
+                key={lvl}
                 onPress={() => { setSelectedLevel(lvl); setIsLevelModalOpen(false); }}
                 className={`p-4 rounded-2xl mb-3 border-2 ${selectedLevel === lvl ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'border-slate-100 dark:border-slate-800'}`}
               >
@@ -522,43 +530,43 @@ export default function SettingsScreen() {
             <View>
               <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Current Password</Text>
               <View className="h-14 bg-slate-50 dark:bg-slate-900 rounded-2xl px-4 flex-row items-center">
-                <TextInput 
-                  value={passwordData.currentPassword} 
-                  onChangeText={t => setPasswordData({...passwordData, currentPassword: t})} 
-                  secureTextEntry={!showPassword} 
-                  className="flex-1 font-bold text-slate-900 dark:text-white" 
+                <TextInput
+                  value={passwordData.currentPassword}
+                  onChangeText={t => setPasswordData({ ...passwordData, currentPassword: t })}
+                  secureTextEntry={!showPassword}
+                  className="flex-1 font-bold text-slate-900 dark:text-white"
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                   {showPassword ? <EyeOff size={20} color="#94a3b8" /> : <Eye size={20} color="#94a3b8" />}
                 </TouchableOpacity>
               </View>
             </View>
-            
+
             <View>
               <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">New Password</Text>
               <View className="h-14 bg-slate-50 dark:bg-slate-900 rounded-2xl px-4 flex-row items-center">
-                <TextInput 
-                  value={passwordData.newPassword} 
-                  onChangeText={t => setPasswordData({...passwordData, newPassword: t})} 
-                  secureTextEntry={!showPassword} 
-                  className="flex-1 font-bold text-slate-900 dark:text-white" 
-                />
-              </View>
-            </View>
-            
-            <View>
-              <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Confirm New Password</Text>
-              <View className="h-14 bg-slate-50 dark:bg-slate-900 rounded-2xl px-4 flex-row items-center">
-                <TextInput 
-                  value={passwordData.confirmPassword} 
-                  onChangeText={t => setPasswordData({...passwordData, confirmPassword: t})} 
-                  secureTextEntry={!showPassword} 
-                  className="flex-1 font-bold text-slate-900 dark:text-white" 
+                <TextInput
+                  value={passwordData.newPassword}
+                  onChangeText={t => setPasswordData({ ...passwordData, newPassword: t })}
+                  secureTextEntry={!showPassword}
+                  className="flex-1 font-bold text-slate-900 dark:text-white"
                 />
               </View>
             </View>
 
-            <TouchableOpacity 
+            <View>
+              <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Confirm New Password</Text>
+              <View className="h-14 bg-slate-50 dark:bg-slate-900 rounded-2xl px-4 flex-row items-center">
+                <TextInput
+                  value={passwordData.confirmPassword}
+                  onChangeText={t => setPasswordData({ ...passwordData, confirmPassword: t })}
+                  secureTextEntry={!showPassword}
+                  className="flex-1 font-bold text-slate-900 dark:text-white"
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
               onPress={handleUpdatePassword}
               disabled={updatePassword.isPending || !passwordData.currentPassword || !passwordData.newPassword}
               className="h-14 mt-4 bg-violet-600 rounded-2xl items-center justify-center flex-row"
@@ -569,14 +577,51 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
+      {/* LOGOUT CONFIRMATION MODAL */}
+      <Modal visible={confirmLogout} transparent animationType="fade" onRequestClose={() => setConfirmLogout(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ width: '100%', maxWidth: 340, borderRadius: 24, padding: 24, alignItems: 'center', backgroundColor: isDark ? '#0f172a' : '#ffffff' }}>
+            <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(225, 29, 72, 0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <LogOut size={24} color="#e11d48" />
+            </View>
+            <Text style={{ fontSize: 18, fontFamily: 'LexendBold', color: isDark ? '#f1f5f9' : '#0f172a', marginBottom: 8, textAlign: 'center' }}>
+              Confirm Log Out
+            </Text>
+            <Text style={{ fontSize: 13, fontFamily: 'Lexend', color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 18, marginBottom: 24 }}>
+              Are you sure you want to end your active session and log out of your account?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+              <TouchableOpacity
+                style={{ flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0', alignItems: 'center' }}
+                onPress={() => setConfirmLogout(false)}
+                disabled={isLoggingOut}
+              >
+                <Text style={{ fontFamily: 'LexendBold', fontSize: 13, color: isDark ? '#94a3b8' : '#64748b' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#e11d48', alignItems: 'center', justifyContent: 'center' }}
+                onPress={handleLogout}
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={{ fontFamily: 'LexendBold', fontSize: 13, color: '#fff' }}>Log Out</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
 
 function TabButton({ title, isActive, onPress, color }: { title: string, isActive: boolean, onPress: () => void, color: string }) {
   return (
-    <TouchableOpacity 
-      onPress={onPress} 
+    <TouchableOpacity
+      onPress={onPress}
       className={`flex-1 h-12 items-center justify-center rounded-xl ${isActive ? color : 'bg-transparent'}`}
     >
       <Text className={`font-black text-[10px] uppercase tracking-widest ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>

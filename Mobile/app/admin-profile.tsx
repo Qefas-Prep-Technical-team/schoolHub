@@ -4,14 +4,24 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { User, Mail, Hash, Briefcase, Fingerprint, ShieldCheck, Phone, CheckCircle2, School, Settings, ShieldAlert, Smartphone, Lock, Eye, EyeOff, ChevronLeft, Activity } from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LogoutButton } from '../components/ui/LogoutButton';
-import { useRouter } from 'expo-router';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toast';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api/client';
+import { useRouter } from 'expo-router';
 
 export default function AdminProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  const { data: user, isLoading: isUserLoading } = useQuery({
+    queryKey: ['authUser'],
+    queryFn: async () => {
+      const res = await apiClient.get('/auth/me');
+      return res.data.data;
+    }
+  });
 
   const [activeTab, setActiveTab] = useState<'admin' | 'school'>('admin');
 
@@ -60,7 +70,7 @@ export default function AdminProfileScreen() {
         <View className="px-6 -mt-16 mb-8 items-center z-20">
           <View className="relative">
             <View className="h-32 w-32 rounded-[2rem] bg-slate-100 dark:bg-slate-800 border-4 border-slate-50 dark:border-slate-950 items-center justify-center overflow-hidden shadow-2xl p-1">
-              <Image source={{ uri: 'https://api.dicebear.com/7.x/avataaars/png?seed=Admin' }} className="w-full h-full rounded-[1.7rem]" />
+              <Image source={{ uri: user?.profileImage || 'https://api.dicebear.com/7.x/avataaars/png?seed=Admin' }} className="w-full h-full rounded-[1.7rem]" />
             </View>
             <View className="absolute -bottom-2 -right-2 h-10 w-10 bg-emerald-500 rounded-xl border-4 border-slate-50 dark:border-slate-950 items-center justify-center">
               <CheckCircle2 size={16} color="white" />
@@ -68,10 +78,10 @@ export default function AdminProfileScreen() {
           </View>
           
           <View className="items-center mt-4 space-y-1">
-            <Text className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">System Admin</Text>
+            <Text className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">{user?.name || 'System Admin'}</Text>
             <View className="flex-row items-center gap-2">
               <View className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                <Text className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Super Admin</Text>
+                <Text className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">{user?.role || 'SUPER ADMIN'}</Text>
               </View>
             </View>
             <View className="flex-row items-center gap-1.5 mt-2">
@@ -117,8 +127,8 @@ export default function AdminProfileScreen() {
                 </View>
                 
                 <View className="mt-2">
-                  <InfoItem icon={<User size={18} />} label="Legal Name" value="System Admin" description="Verified registration name." />
-                  <InfoItem icon={<Mail size={18} />} label="Email" value="admin@schoolhub.edu" description="Primary contact address." />
+                  <InfoItem icon={<User size={18} />} label="Legal Name" value={user?.name || 'System Admin'} description="Verified registration name." />
+                  <InfoItem icon={<Mail size={18} />} label="Email" value={user?.email || 'admin@schoolhub.edu'} description="Primary contact address." />
                   <InfoItem icon={<Phone size={18} />} label="Phone" value="+1 (555) 123-4567" description="Direct contact number." isLast />
                 </View>
               </View>

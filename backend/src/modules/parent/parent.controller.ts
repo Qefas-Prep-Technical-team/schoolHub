@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { getParentChildrenService, getChildDetailsService, getChildAssignmentDetailsService, getParentDashboardService, updateParentProfileService, updateChildProfileService } from "./parent.service";
+import { getStudentAssignmentsService } from "../assignment/assignment.service";
 import { handleError } from "../../utils/error-handler";
 
 export const updateProfile = async (req: Request, res: Response) => {
@@ -36,6 +37,27 @@ export const getChildDetails = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, message: "Child details fetched successfully", data: child });
   } catch (error: any) {
     return handleError(res, error, "parent.getChildDetails");
+  }
+};
+
+export const getChildAssignments = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    const childId = req.params.childId as string;
+    const { status, page = "1", limit = "10" } = req.query;
+
+    const data = await getStudentAssignmentsService({
+      studentId: childId,
+      status: status as string,
+      page: parseInt(page as string),
+      limit: parseInt(limit as string),
+    });
+
+    return res.status(200).json({ success: true, message: "Child assignments fetched successfully", data });
+  } catch (error: any) {
+    return handleError(res, error, "parent.getChildAssignments");
   }
 };
 

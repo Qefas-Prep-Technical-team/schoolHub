@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Globe, X, Link2, Search, QrCode, Shield, Copy, ArrowUpRight, Trophy, FileText, Check } from 'lucide-react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { 
-  useActiveLinks, 
-  useLinkRequests, 
-  useLinkProfile, 
-  useRespondToLinkRequest, 
+import {
+  useActiveLinks,
+  useLinkRequests,
+  useLinkProfile,
+  useRespondToLinkRequest,
   useCreateLinkRequest,
   useRevokeActiveLink,
   useCancelLinkRequest
@@ -19,7 +19,8 @@ export default function LinkingHubScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const insets = useSafeAreaInsets();
-  
+  const router = useRouter();
+
   const [mainTab, setMainTab] = useState<'network' | 'classroom'>('network');
   const [subTab, setSubTab] = useState<'active' | 'pending'>('active');
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,7 +31,7 @@ export default function LinkingHubScreen() {
   // Queries
   const { data: profileResponse } = useLinkProfile();
   const { data: activeLinksData, isLoading: isLoadingActive } = useActiveLinks({ category: mainTab });
-  const { data: requestsData, isLoading: isLoadingRequests } = useLinkRequests({ 
+  const { data: requestsData, isLoading: isLoadingRequests } = useLinkRequests({
     category: mainTab,
     status: subTab === 'pending' ? 'PENDING' : undefined
   });
@@ -50,18 +51,20 @@ export default function LinkingHubScreen() {
       Alert.alert('Error', 'Please enter a connection code');
       return;
     }
-    
+
     // For now, default to STUDENT_CLASS for classroom tab, SCHOOL_STUDENT for network
     const linkType = mainTab === 'classroom' ? 'STUDENT_CLASS' : 'SCHOOL_STUDENT';
     const formattedCode = linkType === 'STUDENT_CLASS' ? connectCode.toUpperCase() : connectCode.toLowerCase();
 
     createMutation.mutate(
       { targetCode: formattedCode, linkType, note: connectNote },
-      { onSuccess: () => {
-        setIsConnectModalOpen(false);
-        setConnectCode('');
-        setConnectNote('');
-      }}
+      {
+        onSuccess: () => {
+          setIsConnectModalOpen(false);
+          setConnectCode('');
+          setConnectNote('');
+        }
+      }
     );
   };
 
@@ -71,13 +74,13 @@ export default function LinkingHubScreen() {
     if (r.targetSchool?.name) return r.targetSchool.name;
     if (r.requesterSchool?.name) return r.requesterSchool.name;
     if (r.class?.name) return r.class.name;
-    
+
     const peerId = profile?.id;
     const participants = [
-      r.targetStudent, r.targetTeacher, r.targetParent, 
+      r.targetStudent, r.targetTeacher, r.targetParent,
       r.requesterStudent, r.requesterTeacher, r.requesterParent
     ].filter(Boolean);
-    
+
     const peer = participants.find((p: any) => p.id !== peerId);
     return peer?.name || peer?.username || "Verified Member";
   };
@@ -86,8 +89,8 @@ export default function LinkingHubScreen() {
     <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#f8fafc', paddingTop: insets.top, paddingBottom: insets.bottom }}>
       {/* Header */}
       <View className="px-6 py-4 flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800">
-        <TouchableOpacity 
-          onPress={() => router.back()} 
+        <TouchableOpacity
+          onPress={() => router.back()}
           className="h-10 w-10 bg-white dark:bg-slate-900 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800"
         >
           <X size={20} color={isDark ? '#fff' : '#000'} />
@@ -100,7 +103,7 @@ export default function LinkingHubScreen() {
         {/* ID Card */}
         <View className="bg-indigo-600 rounded-[2.5rem] p-6 mb-8 overflow-hidden relative shadow-xl shadow-indigo-500/20">
           <View className="absolute -top-20 -right-20 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
-          
+
           <View className="flex-row items-start justify-between mb-8">
             <View className="flex-1 pr-4">
               <View className="self-start px-3 py-1 bg-white/20 rounded-full mb-4 flex-row items-center">
@@ -126,8 +129,8 @@ export default function LinkingHubScreen() {
                 <Text className="text-2xl font-black tracking-[0.2em] font-mono text-white">{profile?.linkingCode || '---'}</Text>
               </View>
             </View>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               onPress={() => setIsConnectModalOpen(true)}
               className="h-14 w-14 bg-white rounded-2xl items-center justify-center"
             >
@@ -139,13 +142,13 @@ export default function LinkingHubScreen() {
         {/* Search & Tabs */}
         <View className="mb-6">
           <View className="flex-row bg-slate-200/50 dark:bg-slate-900 rounded-xl p-1 mb-4">
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setMainTab('network')}
               className={`flex-1 py-2 items-center rounded-lg ${mainTab === 'network' ? 'bg-white dark:bg-slate-800 shadow-sm' : ''}`}
             >
               <Text className={`text-xs font-black uppercase tracking-widest ${mainTab === 'network' ? 'text-pink-600' : 'text-slate-500'}`}>Network</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setMainTab('classroom')}
               className={`flex-1 py-2 items-center rounded-lg ${mainTab === 'classroom' ? 'bg-white dark:bg-slate-800 shadow-sm' : ''}`}
             >
@@ -154,13 +157,13 @@ export default function LinkingHubScreen() {
           </View>
 
           <View className="flex-row items-center gap-2 mb-6">
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setSubTab('active')}
               className={`px-4 py-2 rounded-lg ${subTab === 'active' ? (mainTab === 'classroom' ? 'bg-purple-600' : 'bg-slate-900 dark:bg-white') : 'bg-transparent'}`}
             >
               <Text className={`text-[10px] font-black uppercase tracking-widest ${subTab === 'active' ? (isDark && mainTab === 'network' ? 'text-black' : 'text-white') : 'text-slate-400'}`}>Connected</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setSubTab('pending')}
               className={`px-4 py-2 rounded-lg ${subTab === 'pending' ? 'bg-orange-500' : 'bg-transparent'}`}
             >
@@ -187,7 +190,7 @@ export default function LinkingHubScreen() {
                     </Text>
                   </View>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => revokeMutation.mutate(link.id)}
                   disabled={revokeMutation.isPending}
                   className="h-10 w-10 bg-slate-50 dark:bg-slate-800 rounded-full items-center justify-center border border-slate-200 dark:border-slate-700"
@@ -209,7 +212,7 @@ export default function LinkingHubScreen() {
                     </View>
                     <Text className="text-[8px] font-black uppercase tracking-widest text-slate-400">{new Date(req.createdAt).toLocaleDateString()}</Text>
                   </View>
-                  
+
                   <View className="flex-row items-center mb-6">
                     <View className="h-12 w-12 rounded-xl bg-orange-50 dark:bg-orange-900/30 items-center justify-center mr-4">
                       <Globe size={20} color="#f97316" />
@@ -224,7 +227,7 @@ export default function LinkingHubScreen() {
 
                   <View className="flex-row gap-3">
                     {isOutgoing ? (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         onPress={() => cancelMutation.mutate(req.id)}
                         disabled={cancelMutation.isPending}
                         className="flex-1 bg-slate-100 dark:bg-slate-800 py-3 rounded-xl items-center"
@@ -233,7 +236,7 @@ export default function LinkingHubScreen() {
                       </TouchableOpacity>
                     ) : (
                       <>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           onPress={() => respondMutation.mutate({ id: req.id, action: 'ACCEPT' })}
                           disabled={respondMutation.isPending}
                           className="flex-1 bg-orange-500 py-3 rounded-xl items-center flex-row justify-center"
@@ -241,7 +244,7 @@ export default function LinkingHubScreen() {
                           <Check size={16} color="white" style={{ marginRight: 8 }} />
                           <Text className="text-white font-bold text-xs uppercase tracking-widest">Accept</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           onPress={() => respondMutation.mutate({ id: req.id, action: 'REJECT' })}
                           disabled={respondMutation.isPending}
                           className="flex-1 bg-slate-100 dark:bg-slate-800 py-3 rounded-xl items-center"
@@ -297,7 +300,7 @@ export default function LinkingHubScreen() {
                 />
               </View>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={handleConnect}
                 disabled={createMutation.isPending}
                 className="bg-indigo-600 h-14 rounded-2xl items-center justify-center mt-4 flex-row"

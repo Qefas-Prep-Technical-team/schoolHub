@@ -559,6 +559,13 @@ export default function StudentProfilePage() {
         return { avg, highest, total, subjectData, trendData }
     }, [grades])
 
+    const attendanceStats = useMemo(() => {
+        if (!student?.attendances?.length) return { rate: 0 }
+        const total = student.attendances.length
+        const presentCount = student.attendances.filter(a => a.status.toUpperCase() === 'PRESENT').length
+        return { rate: Math.round((presentCount / total) * 100) }
+    }, [student?.attendances])
+
     // ── Loading & Errors ─────────────────────────────────────────────────────
     if (isStudentLoading) {
         return (
@@ -730,14 +737,12 @@ export default function StudentProfilePage() {
                                 value={`${performanceStats.avg}%`} 
                                 icon={Star} 
                                 themeColor={primaryColor} 
-                                trend="+4.2%" 
                             />
                             <StatBadge 
                                 label="Attendance Rate" 
-                                value="94%" 
+                                value={`${attendanceStats.rate}%`} 
                                 icon={Activity} 
                                 themeColor="#10b981" 
-                                trend="Stable" 
                             />
                         </div>
 

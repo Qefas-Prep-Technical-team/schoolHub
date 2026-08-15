@@ -60,7 +60,7 @@ export function AnimatedSplashScreen({ isAppReady, onFinish }: { isAppReady: boo
   return (
     <Animated.View style={[StyleSheet.absoluteFill, animatedContainerStyle, { backgroundColor, justifyContent: 'center', alignItems: 'center' }]}>
       <Animated.Image
-        source={require('../assets/images/icon.png')}
+        source={require('../assets/images/welcome.png')}
         style={[{ width: 120, height: 120, resizeMode: 'contain' }, animatedImageStyle]}
       />
     </Animated.View>

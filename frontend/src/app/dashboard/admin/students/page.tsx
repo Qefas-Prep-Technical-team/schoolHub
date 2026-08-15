@@ -6,6 +6,7 @@ import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
 import { useQuery } from "@tanstack/react-query";
 import { adminService } from "@/lib/api/services/adminService";
+import { apiClient } from "@/lib/api/client";
 import { 
   GraduationCap, 
   UserPlus, 
@@ -62,6 +63,17 @@ export default function StudentsPage() {
     enabled: !!schoolId,
   });
 
+  const { data: classesData = [] } = useQuery({
+    queryKey: ["school-classes", schoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/classes?schoolId=${schoolId}`);
+      return data.data || [];
+    },
+    enabled: !!schoolId,
+  });
+
+  const classFilters = [{ id: '', name: 'All Classes' }, ...classesData.map((c: any) => ({ id: c.id, name: `${c.name} ${c.section || ''}`.trim() }))];
+
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setPage(1);
@@ -82,7 +94,7 @@ export default function StudentsPage() {
     },
     { 
         label: 'Verified Students', 
-        value: studentStats?.total || 0, 
+        value: studentStats?.verifiedCount || 0, 
         icon: ShieldCheck, 
         color: '#10b981', // Emerald
         desc: 'Active Accounts'
@@ -96,7 +108,7 @@ export default function StudentsPage() {
     },
     { 
         label: 'Pending Students', 
-        value: '14', 
+        value: studentStats?.pendingCount || 0, 
         icon: Zap, 
         color: '#f59e0b', // Amber
         desc: 'Awaiting Enrollment'
@@ -229,6 +241,27 @@ export default function StudentsPage() {
                      </Button>
                 </div>
             </div>
+            
+            {/* Horizontal Class Filter Chips */}
+            <div className="flex items-center gap-3 overflow-x-auto pb-4 pt-2 scrollbar-hide">
+              {classFilters.map((cls) => (
+                <Button
+                  key={cls.id}
+                  onClick={() => handleFilterChange("classId", cls.id)}
+                  className={cn(
+                    "rounded-full whitespace-nowrap font-bold text-xs h-10 px-6 transition-all",
+                    filters.classId === cls.id 
+                      ? "text-white shadow-lg" 
+                      : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
+                  )}
+                  style={filters.classId === cls.id ? { backgroundColor: primaryColor, boxShadow: `0 4px 14px 0 ${primaryColor}40` } : {}}
+                  variant="outline"
+                >
+                  {cls.name}
+                </Button>
+              ))}
+            </div>
+
             <div className="rounded-[4rem] bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-2 shadow-2xl overflow-hidden">
                 <StudentsTable 
                   searchTerm={searchTerm} 

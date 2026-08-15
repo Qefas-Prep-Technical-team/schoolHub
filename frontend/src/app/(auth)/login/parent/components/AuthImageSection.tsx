@@ -10,12 +10,7 @@ export default function AuthImageSection() {
             />
             <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/90 via-slate-900/40 to-indigo-500/10 z-10 pointer-events-none" />
             
-            <div className="absolute top-8 left-8 z-20">
-                <div className="flex items-center gap-2 bg-rose-500/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-rose-400/20 shadow-xl shadow-rose-500/10">
-                    <div className="h-1.5 w-1.5 rounded-full bg-rose-400 animate-pulse"></div>
-                    <span className="text-[8px] font-black text-rose-300 uppercase tracking-[0.2em]">Guardian Node Active</span>
-                </div>
-            </div>
+
 
             <div className="absolute bottom-8 left-8 right-8 z-20 bg-white/5 dark:bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl shadow-2xl glass-effect">
                 <div className="flex items-center gap-4 mb-3">

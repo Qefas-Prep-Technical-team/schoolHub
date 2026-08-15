@@ -2,8 +2,9 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { User as UserIcon, Bell } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { Bell, User } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { useUnreadCount } from '@/lib/api/hooks/useNotifications';
 
 import { TeacherHero } from '../../components/teacher-dashboard/TeacherHero';
 import { TeacherInsights } from '../../components/teacher-dashboard/TeacherInsights';
@@ -12,10 +13,13 @@ import { QuickActions } from '../../components/teacher-dashboard/QuickActions';
 export default function TeacherHomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.count || 0;
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
-      <ScrollView 
+      <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16, paddingTop: 16 }}
@@ -23,7 +27,7 @@ export default function TeacherHomeScreen() {
         {/* Top Navigation */}
         <View className="flex-row items-center justify-between px-2 py-4 bg-transparent mt-2 mb-2">
           <TouchableOpacity className="h-10 w-10 items-center justify-center">
-            <UserIcon size={24} color={isDark ? '#ffffff' : '#0f172a'} strokeWidth={2.5} />
+            <User size={24} color={isDark ? '#ffffff' : '#0f172a'} strokeWidth={2.5} />
           </TouchableOpacity>
 
           <View className="items-center">
@@ -33,14 +37,16 @@ export default function TeacherHomeScreen() {
           </View>
 
           <View className="flex-row items-center gap-4">
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => router.push('/notifications')}
               className="h-10 w-10 items-center justify-center relative"
             >
               <Bell size={24} color={isDark ? '#ffffff' : '#0f172a'} strokeWidth={2.5} />
-              <View className="absolute top-1 right-1 h-4 min-w-[16px] px-1 bg-red-500 rounded-full items-center justify-center border-2 border-slate-50 dark:border-black">
-                <Text className="text-[8px] font-black text-white">5</Text>
-              </View>
+              {unreadCount > 0 && (
+                <View className="absolute top-1 right-1 h-4 min-w-[16px] px-1 bg-red-500 rounded-full items-center justify-center border-2 border-slate-50 dark:border-black">
+                  <Text className="text-[8px] font-black text-white">{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>

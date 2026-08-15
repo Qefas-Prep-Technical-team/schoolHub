@@ -30,7 +30,7 @@ export default function VerificationScreen() {
   const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setInterval>;
     if (countdown > 0) {
       timer = setInterval(() => {
         setCountdown((prev) => prev - 1);
@@ -143,7 +143,7 @@ export default function VerificationScreen() {
   if (!email) {
     return (
       <LinearGradient
-        colors={getGradientColors()}
+        colors={getGradientColors() as any}
         style={{ flex: 1 }}
       >
         <SafeAreaView className="flex-1 items-center justify-center p-6">
@@ -158,7 +158,7 @@ export default function VerificationScreen() {
 
   return (
     <LinearGradient
-      colors={getGradientColors()}
+      colors={getGradientColors() as any}
       style={{ flex: 1 }}
     >
       <SafeAreaView className="flex-1">

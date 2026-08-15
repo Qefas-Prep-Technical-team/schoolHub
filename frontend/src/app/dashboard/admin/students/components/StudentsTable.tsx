@@ -56,7 +56,7 @@ interface StudentsTableProps {
 
 export default function StudentsTable({ searchTerm, filters, page, onPageChange }: StudentsTableProps) {
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId;
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId;
   const { data: settings } = useSchoolSettings(schoolId!);
   const primaryColor = settings?.themeColor || '#2563eb';
   
@@ -66,7 +66,7 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["school-students", schoolId, searchTerm, filters, page],
-    queryFn: () => adminService.getSchoolStudents(schoolId!, page, 10, searchTerm, filters),
+    queryFn: () => adminService.getSchoolStudents(schoolId!, page, 1000, searchTerm, filters),
     enabled: !!schoolId,
   });
 
@@ -389,7 +389,7 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
       {totalItems > 0 && (
         <div className="p-8 border-t border-slate-100 dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/50 dark:bg-white/[0.01]">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-            Displaying <span className="text-slate-900 dark:text-white">{(page - 1) * 10 + 1} - {Math.min(page * 10, totalItems)}</span> of <span className="text-slate-900 dark:text-white">{totalItems}</span> students
+            Displaying <span className="text-slate-900 dark:text-white">{(page - 1) * 1000 + 1} - {Math.min(page * 1000, totalItems)}</span> of <span className="text-slate-900 dark:text-white">{totalItems}</span> students
           </p>
           
           <div className="flex items-center gap-3">

@@ -20,6 +20,7 @@ export interface ChildSummary {
     averageGrade: number;
     attendanceRate: number;
     totalGrades: number;
+    todayAttendance?: string;
   };
   linkStatus: string;
   relationship: string;

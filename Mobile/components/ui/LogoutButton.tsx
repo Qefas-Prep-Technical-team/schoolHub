@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, Text, View, ActivityIndicator } from 'react-native';
 import { LogOut } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { clearTokens, clearUserRole } from '@/lib/auth/secure-store';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ export function LogoutButton() {
   const [isLoading, setIsLoading] = useState(false);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const handleLogout = async () => {
@@ -18,8 +19,8 @@ export function LogoutButton() {
       await clearTokens();
       await clearUserRole();
       queryClient.clear();
-      // Route to '/' so index.tsx re-evaluates auth state
-      router.replace('/');
+      // Route directly to /role-picker to avoid index.tsx staleness
+      router.replace('/role-picker');
     } catch (error) {
       console.error('Logout error:', error);
       setIsLoading(false);

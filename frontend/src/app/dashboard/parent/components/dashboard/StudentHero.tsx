@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
 
 export default function StudentHero() {
@@ -67,6 +68,12 @@ export default function StudentHero() {
 
   const avg = stats?.averageGrade ?? 0
   const attendanceRate = stats?.attendanceRate ?? 0
+  
+  const todayAttendance = stats?.todayAttendance?.toLowerCase() || 'none'
+  const isPresent = todayAttendance === 'present'
+  const isLate = todayAttendance === 'late'
+  const isAbsent = todayAttendance === 'absent'
+  const isNone = todayAttendance === 'none'
 
   const quickStats = [
     { value: `${attendanceRate}%`, label: 'Attendance' },
@@ -106,9 +113,28 @@ export default function StudentHero() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-4 flex-wrap">
               <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">{child.name}</h2>
-              <div className="px-4 py-1.5 bg-orange-600/10 text-orange-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-orange-500/20 flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-orange-600 animate-pulse" />
-                {standing(avg)}
+              <div className="flex gap-2 flex-wrap">
+                <div className="px-4 py-1.5 bg-orange-600/10 text-orange-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-orange-500/20 flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 rounded-full bg-orange-600 animate-pulse" />
+                  {standing(avg)}
+                </div>
+                
+                <div className={cn(
+                  "px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border flex items-center gap-2",
+                  isPresent ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400" :
+                  isAbsent ? "bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400" :
+                  isLate ? "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400" :
+                  "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400"
+                )}>
+                  <div className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    isPresent ? "bg-emerald-500" :
+                    isAbsent ? "bg-red-500" :
+                    isLate ? "bg-amber-500" :
+                    "bg-slate-500"
+                  )} />
+                  {isNone ? 'Today: Unmarked' : `Today: ${todayAttendance}`}
+                </div>
               </div>
             </div>
             <p className="text-[14px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
@@ -131,9 +157,9 @@ export default function StudentHero() {
           {quickStats.map((stat, index) => (
             <div
               key={index}
-              className="group/stat flex flex-col items-center p-5 min-w-[120px] rounded-3xl bg-white/40 dark:bg-white/[0.02] border border-white/60 dark:border-white/5 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 hover:border-orange-500/30"
+              className="group/stat flex flex-col items-center p-3 min-w-[100px] max-w-[140px] rounded-2xl bg-white/40 dark:bg-white/[0.02] border border-white/60 dark:border-white/5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 hover:border-orange-500/30"
             >
-              <span className={`text-3xl font-black tracking-tighter ${stat.color ? 'text-orange-600' : 'text-slate-900 dark:text-white'}`}>
+              <span className={`text-xl font-black tracking-tighter truncate w-full text-center ${stat.color ? 'text-orange-600' : 'text-slate-900 dark:text-white'}`} title={stat.value}>
                 {stat.value}
               </span>
               <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-2 group-hover/stat:text-orange-500 transition-colors text-center w-full">
@@ -149,7 +175,7 @@ export default function StudentHero() {
             <span className="material-symbols-outlined text-[20px]">mail</span>
             <span>Contact Support</span>
           </Link>
-          <Link href="/dashboard/parent/my-children" className="flex-1 lg:flex-none flex items-center justify-center gap-3 bg-white/50 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:bg-orange-600 hover:text-white px-8 py-4 rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest transition-all duration-500 group/btn active:scale-[0.98]">
+          <Link href={`/dashboard/parent/child-details/${child.id}`} className="flex-1 lg:flex-none flex items-center justify-center gap-3 bg-white/50 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:bg-orange-600 hover:text-white px-8 py-4 rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest transition-all duration-500 group/btn active:scale-[0.98]">
             <span className="material-symbols-outlined text-[20px] text-orange-600 group-hover/btn:text-white">person</span>
             <span>View Child</span>
           </Link>
