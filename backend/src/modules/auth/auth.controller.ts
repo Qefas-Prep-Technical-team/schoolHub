@@ -1569,6 +1569,27 @@ export const login = async (req: Request, res: Response) => {
       console.error(
         `CRITICAL: Login failed. User NOT FOUND with role [${userType}] for email: [${normalizedEmail}]`,
       );
+
+      // Check if they exist in another portal to give a better error message
+      const [existingStudent, existingTeacher, existingAdmin, existingParent] = await Promise.all([
+        prisma.student.findFirst({ where: { email: normalizedEmail } }),
+        prisma.teacher.findFirst({ where: { email: normalizedEmail } }),
+        prisma.admin.findFirst({ where: { email: normalizedEmail } }),
+        prisma.parent.findFirst({ where: { email: normalizedEmail } }),
+      ]);
+
+      let detectedRole = "";
+      if (existingAdmin) detectedRole = "School Admin";
+      else if (existingTeacher) detectedRole = "Teacher";
+      else if (existingStudent) detectedRole = "Student";
+      else if (existingParent) detectedRole = "Parent";
+
+      if (detectedRole) {
+        return res
+          .status(403)
+          .json({ success: false, message: `This email is registered as a ${detectedRole}. Please login through the correct portal.` });
+      }
+
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
@@ -2292,7 +2313,16 @@ export const refreshToken = async (req: Request, res: Response) => {
         message: "No refresh token",
       });
 
-    const payload: any = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
+    let payload: any;
+    try {
+      payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
+    } catch (err) {
+      console.error("LOG ERROR: [refreshToken] jwt.verify failed", err);
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired refresh token",
+      });
+    }
 
     const dbToken = await prisma.refreshToken.findFirst({
       where: {

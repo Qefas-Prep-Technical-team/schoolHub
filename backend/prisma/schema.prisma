@@ -180,6 +180,7 @@ model Teacher {
   name                    String
   email                   String?             @unique
   password                String?
+  phone                   String?
   isClaimed               Boolean             @default(false)
   invitationToken         String?             @unique
   role                    UserRole

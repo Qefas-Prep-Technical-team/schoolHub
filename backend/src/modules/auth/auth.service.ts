@@ -641,12 +641,35 @@ export const googleAuthService = async (
   const existingUser = existingStudent || existingTeacher || existingAdmin || existingParent;
 
   if (existingUser) {
-    user = existingUser;
-    // Determine the actual role based on which table they were found in
-    if (existingStudent) actualRole = UserRole.STUDENT;
-    else if (existingTeacher) actualRole = UserRole.TEACHER;
-    else if (existingAdmin) actualRole = UserRole.ADMIN;
-    else if (existingParent) actualRole = UserRole.PARENT;
+    // Check if they exist in the exact role they are trying to log in as
+    let foundInRequestedRole = false;
+    
+    if (userRole === UserRole.STUDENT && existingStudent) {
+      user = existingStudent;
+      foundInRequestedRole = true;
+    } else if (userRole === UserRole.TEACHER && existingTeacher) {
+      user = existingTeacher;
+      foundInRequestedRole = true;
+    } else if (userRole === UserRole.ADMIN && existingAdmin) {
+      user = existingAdmin;
+      foundInRequestedRole = true;
+    } else if (userRole === UserRole.PARENT && existingParent) {
+      user = existingParent;
+      foundInRequestedRole = true;
+    }
+
+    if (!foundInRequestedRole) {
+      // Find what role they actually are to give a helpful error message
+      let detectedRole = "";
+      if (existingAdmin) detectedRole = "School Admin";
+      else if (existingTeacher) detectedRole = "Teacher";
+      else if (existingStudent) detectedRole = "Student";
+      else if (existingParent) detectedRole = "Parent";
+      
+      throw new Error(`This email is registered as a ${detectedRole}. Please login through the correct portal.`);
+    }
+
+    actualRole = userRole; // They are in the correct portal
 
     // Link Google ID if not already linked
     if (!user.googleId && googleId) {

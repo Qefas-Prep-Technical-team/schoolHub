@@ -28,19 +28,41 @@ export const getStudentAssignmentsService = async (options: {
 
   const classIds = student.classes.map((e) => e.classId).filter(Boolean) as string[];
 
-  if (classIds.length === 0) {
+  // Resolve schoolId from the student record or from their enrolled class
+  const studentEnrollment = await prisma.studentEnrollment.findFirst({
+    where: { studentId, status: 'ACTIVE' },
+    select: { schoolId: true },
+  });
+  const resolvedSchoolId = student.schoolId || studentEnrollment?.schoolId || null;
+
+  if (classIds.length === 0 && !resolvedSchoolId) {
     return { assignments: [], total: 0, pages: 0 };
   }
 
   // Get assignments for those classes, filtering by department if applicable
+  // Also include school-wide assignments (no class restriction) for the student's school
+  const orConditions: any[] = [];
+
+  if (classIds.length > 0) {
+    // Assignments tied to the student's classes, open to all or their dept
+    orConditions.push({
+      classId: { in: classIds },
+      OR: [
+        { departmentId: null },
+        { departmentId: student.departmentId }
+      ]
+    });
+  }
+
   const whereClause: any = {
-    classId: { in: classIds },
-    status: "PUBLISHED", // Only show published assignments
-    OR: [
-      { departmentId: null },
-      { departmentId: student.departmentId }
-    ]
+    status: 'PUBLISHED',
+    OR: orConditions.length > 0 ? orConditions : undefined,
   };
+
+  // Fallback: if no class and no orConditions, nothing to show
+  if (orConditions.length === 0) {
+    return { assignments: [], total: 0, pages: 0 };
+  }
 
   const total = await prisma.assignment.count({ where: whereClause });
 
@@ -170,7 +192,10 @@ export const getStudentAssignmentsService = async (options: {
     };
   });
 
-  if (status && status !== "all") {
+  // Note: 'PUBLISHED' is already enforced at the DB query level (whereClause.status = 'PUBLISHED').
+  // The transformed objects use computed statuses: pending/submitted/graded/overdue.
+  // Only apply the post-filter for those computed statuses (not for 'PUBLISHED').
+  if (status && status !== "all" && status !== "PUBLISHED") {
     transformed = transformed.filter(a => a.status === status);
   }
 

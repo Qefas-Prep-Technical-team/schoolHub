@@ -4,14 +4,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useNetwork } from '@/hooks/use-network';
 import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ChildCard } from '../../components/parent-children/ChildCard';
 import { AddChildCard } from '../../components/parent-children/AddChildCard';
 
 export default function ParentChildrenScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const { data: children = [], isLoading, isError, refetch } = useParentChildren();
 
   const { isConnected } = useNetwork();
+  
+  const gradientColors = isDark 
+    ? (['#431407', '#1e293b', '#0f172a'] as const)
+    : (['#ffedd5', '#fff7ed', '#ffffff'] as const);
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -46,7 +55,12 @@ export default function ParentChildrenScreen() {
   }));
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+    <LinearGradient
+      colors={gradientColors}
+      locations={[0, 0.4, 1]}
+      className="flex-1"
+    >
+      <SafeAreaView className="flex-1" edges={['top']}>
       <View className="px-6 pt-6 pb-6">
         <Text className="text-[11px] font-LexendBold text-orange-500 uppercase tracking-widest mb-1">
           Parent Dashboard
@@ -85,5 +99,6 @@ export default function ParentChildrenScreen() {
         <AddChildCard />
       </ScrollView>
     </SafeAreaView>
+    </LinearGradient>
   );
 }

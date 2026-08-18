@@ -123,48 +123,62 @@ export const getExamsService = async (filters: {
   
   // For students, we strictly enforce PUBLISHED status and multi-criteria targeting
   if (studentId) {
-    // ... student logic remains same ...
     console.log("LOG: [getExamsService] Fetching student info for filtering:", studentId);
     const student = await prisma.student.findUnique({
       where: { id: studentId },
-      include: { classes: true },
+      include: { classes: { include: { class: true } } },
     });
 
     if (!student) throw new Error("Student not found");
     
+    // If student.schoolId is null, try to infer from their enrolled class
+    const resolvedSchoolId = student.schoolId || student.classes[0]?.class?.schoolId || null;
+    
+    console.log("LOG: [getExamsService] Student data:", {
+      schoolId: student.schoolId,
+      resolvedSchoolId,
+      departmentId: student.departmentId,
+      classCount: student.classes.length,
+      classIds: student.classes.map(c => c.classId),
+    });
+    
     where.status = AssessmentStatus.PUBLISHED;
     const classIds = student.classes.map((c) => c.classId);
     
-    const orConditions: any[] = [
-      {
-        schoolId: student.schoolId,
-        classId: null,
-        departments: { none: {} },
-      }
-    ];
+    // SCHOOL-scope: visible to ALL students of that school, ignore classId
+    const orConditions: any[] = [];
+    
+    if (resolvedSchoolId) {
+      orConditions.push({
+        schoolId: resolvedSchoolId,
+        scope: "SCHOOL",
+      });
+    }
 
+    // DEPARTMENT-scope: visible to students of matching department
+    if (resolvedSchoolId && student.departmentId) {
+      orConditions.push({
+        schoolId: resolvedSchoolId,
+        scope: "DEPARTMENT",
+        departments: { some: { departmentId: student.departmentId } }
+      });
+    }
+
+    // CLASS-scope: visible to students enrolled in matching class
     if (classIds.length > 0) {
       orConditions.push({
+        scope: "CLASS",
         classId: { in: classIds },
-        departments: { none: {} },
-      });
-    }
-
-    if (student.departmentId) {
-      orConditions.push({
-        classId: null,
-        departments: { some: { departmentId: student.departmentId } } 
-      });
-    }
-
-    if (classIds.length > 0 && student.departmentId) {
-      orConditions.push({
-        classId: { in: classIds },
-        departments: { some: { departmentId: student.departmentId } } 
       });
     }
     
-    where.OR = orConditions;
+    // Fallback: if student has NO school and NO classes, return nothing
+    if (orConditions.length === 0) {
+      where.id = "none";
+    } else {
+      console.log("LOG: [getExamsService] Student OR conditions:", JSON.stringify(orConditions, null, 2));
+      where.OR = orConditions;
+    }
   } else {
     // Admin/Teacher filters
     if (filters.status) where.status = filters.status;

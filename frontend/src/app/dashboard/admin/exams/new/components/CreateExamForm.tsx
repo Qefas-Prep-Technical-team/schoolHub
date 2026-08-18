@@ -264,11 +264,27 @@ export default function CreateExamForm() {
 
   return (
     <Box sx={{ width: '100%' }} className="max-w-4xl mx-auto space-y-8 pb-20">
-      <Stepper nonLinear activeStep={activeStep} className="mb-8">
+      <Stepper 
+        nonLinear 
+        activeStep={activeStep} 
+        className="mb-8"
+        sx={{
+          '& .MuiStepIcon-root': {
+            width: 32,
+            height: 32,
+          },
+          '& .MuiStepIcon-text': {
+            fontSize: '1rem',
+            fontWeight: 'bold',
+          }
+        }}
+      >
         {steps.map((label, index) => (
           <Step key={label} completed={completed[index]}>
             <StepButton color="inherit" onClick={handleStep(index)}>
-              {label}
+              <span className="text-slate-800 dark:text-slate-200 font-LexendMedium">
+                {label}
+              </span>
             </StepButton>
           </Step>
         ))}
@@ -594,7 +610,7 @@ export default function CreateExamForm() {
               disabled={isPending || !watchedSchoolId}
               className="w-full sm:w-auto px-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-200 dark:shadow-none"
             >
-              {isPending ? "Creating..." : "Create Exam"}
+              {isPending ? "Creating..." : `Create ${typeLabel}`}
             </Button>
           )}
         </div>

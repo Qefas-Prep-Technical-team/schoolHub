@@ -15,22 +15,8 @@ import { toast } from "react-toastify";
 import SettingsModal from "./components/SettingsModal";
 import SubmissionList from "./components/SubmissionList";
 import { useState } from "react";
+import VideoPlayer from "@/components/ui/VideoPlayer";
 
-const getEmbedUrl = (url: string) => {
-  if (!url) return '';
-  try {
-    if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
-      const videoId = url.includes('youtube.com/watch') 
-        ? new URL(url).searchParams.get('v')
-        : url.split('youtu.be/')[1]?.split('?')[0];
-      
-      if (videoId) return `https://www.youtube.com/embed/${videoId}`;
-    }
-    return url;
-  } catch (e) {
-    return url;
-  }
-};
 
 export default function AssignmentDetailPage() {
   const params = useParams();
@@ -267,17 +253,8 @@ export default function AssignmentDetailPage() {
                 )}
 
                 {assignment.videoUrl && (
-                  <div className="mt-8 space-y-4">
-                    <h4 className="m-0">Video Resource</h4>
-                    <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 aspect-video w-full relative">
-                      <iframe 
-                        src={getEmbedUrl(assignment.videoUrl)} 
-                        className="w-full h-full border-0 absolute inset-0" 
-                        title="Video Resource"
-                        allowFullScreen
-                        loading="lazy"
-                      />
-                    </div>
+                  <div className="mt-8">
+                    <VideoPlayer videoUrl={assignment.videoUrl} title="Video Resource" />
                   </div>
                 )}
 

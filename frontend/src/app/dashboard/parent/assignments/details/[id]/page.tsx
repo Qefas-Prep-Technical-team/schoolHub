@@ -4,8 +4,11 @@ import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
 import { useParentAssignmentDetails } from '@/lib/api/hooks/useAssignments'
-import { ArrowLeft, BookOpen, Calendar, CheckCircle, FileText, MessageSquare, Award, HelpCircle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, BookOpen, Calendar, CheckCircle, FileText, MessageSquare, Award, HelpCircle, AlertCircle, ChevronLeft, ChevronRight, Video, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
+import VideoPlayer from '@/components/ui/VideoPlayer'
+
+
 
 export default function AssignmentDetailPage() {
     const params = useParams()
@@ -146,6 +149,11 @@ export default function AssignmentDetailPage() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Video Lesson Player */}
+                        {detailedAssignment.videoUrl && (
+                            <VideoPlayer videoUrl={detailedAssignment.videoUrl} />
+                        )}
 
                         {/* Teacher Feedback (Only show if graded) */}
                         {isGraded && submission?.feedback && (
@@ -309,6 +317,42 @@ export default function AssignmentDetailPage() {
                                 </li>
                             </ul>
                         </div>
+
+                        {/* Reference Materials */}
+                        {(detailedAssignment.videoUrl || detailedAssignment.referenceUrl) && (
+                            <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-6">
+                                <div>
+                                    <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                        <FileText className="size-4 text-slate-500" />
+                                        Reference Links
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {detailedAssignment.videoUrl && (
+                                            <a href={detailedAssignment.videoUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-100 dark:border-slate-700 transition-colors group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="size-8 rounded-xl bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                                                        <Video className="size-4" />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">Open Video in New Tab</span>
+                                                </div>
+                                                <ExternalLink className="size-4 text-slate-400" />
+                                            </a>
+                                        )}
+                                        {detailedAssignment.referenceUrl && (
+                                            <a href={detailedAssignment.referenceUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-100 dark:border-slate-700 transition-colors group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="size-8 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                                        <ExternalLink className="size-4" />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Reference Link</span>
+                                                </div>
+                                                <ExternalLink className="size-4 text-slate-400" />
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Parent Tips Card */}
                         <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-lg">

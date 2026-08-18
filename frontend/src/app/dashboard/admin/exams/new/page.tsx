@@ -1,7 +1,8 @@
 import CreateExamForm from './components/CreateExamForm';
 
-export default function CreateExamPage({ searchParams }: { searchParams: { category?: string } }) {
-    const category = searchParams.category;
+export default async function CreateExamPage(props: { searchParams: Promise<{ category?: string }> }) {
+    const searchParams = await props.searchParams;
+    const category = searchParams?.category;
     const typeLabel = category === "CA" ? "CA" : category === "QUIZ" ? "Quiz" : "Exam";
 
     return (

@@ -21,6 +21,53 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Monday, August 18, 2026 — Session 2
+
+- **Exam Papers Page Full Redesign** (`papers/page.tsx`):
+    - [x] Replaced old cluttered layout with dark gradient hero header, inline action toolbar (Publish, Settings, Grades, Delete), sticky left sidebar for Create Paper form, and rich right-side paper cards with colour-coded status stripes and score/duration stats.
+    - [x] Participants table upgraded: avatar initials, coloured status pills, progress mini-bar, score with percentage, hover-reveal delete action.
+    - [x] Fixed build error — orphaned old JSX was appended after new code; truncated file to clean 1012 lines.
+
+- **Single-Paper Exam Type UX** (`papers/page.tsx` + `[paperId]/page.tsx`):
+    - [x] Defined `SINGLE_PAPER_TYPES = ['QUIZ', 'CA', 'ASSIGNMENT']`.
+    - [x] `useEffect` auto-redirect: when papers list loads and a single paper exists (for single-paper types OR any EXAM with exactly 1 paper), `router.replace` to paper editor immediately — shows a "redirecting" shimmer in the meantime.
+    - [x] **Quick Setup screen**: when a single-paper type has 0 papers, shows a focused full-page setup card (title, duration pill-picker, instructions textarea, big CTA) — on submit calls `createSubjectPaper` then redirects to the paper editor. No multi-column noise.
+    - [x] **Smart back navigation** in `[paperId]/page.tsx`: single-paper types go back to `/dashboard/admin/exams`; multi-paper exams go back to the papers list. Breadcrumb label also updates accordingly ("All Exams" vs exam title).
+
+### Monday, August 18, 2026
+
+- **Student Visibility Fix (Frontend + Backend)**:
+    - [x] **Root Cause Found**: Ran DB queries and discovered that the test student (`850d3a2a`) had `schoolId: null`, `departmentId: null`, and zero class enrollments — making them completely invisible to exam queries.
+    - [x] **Exam Service Fix (`exam.service.ts`)**: The `getExamsService` student OR conditions previously required `schoolId: student.schoolId` in the `SCHOOL`-scope condition, which is `null` for unenrolled students. Refactored to: (a) include only conditions where data is non-null, (b) resolve `schoolId` from enrolled class if `student.schoolId` is null, (c) use `scope: "CLASS"` without coupling to `schoolId` so cross-class SCHOOL-scope exams show correctly.
+    - [x] **Assignment Service Fix (`assignment.service.ts`)**: The post-filter `a.status === status` was wiping all results when `status: 'PUBLISHED'` was passed from the frontend — because transformed objects use computed statuses (`pending`/`submitted`/`graded`), never `"PUBLISHED"`. Fixed by skipping post-filter for `"PUBLISHED"` (already enforced at DB level).
+    - [x] **Frontend Fix (`student/exams&quizzes/page.tsx`)**: (a) Stopped passing `status: 'PUBLISHED'` to `useStudentAssignments`. (b) Improved the `isAssignment` type discriminator to use `'questionCount' in item && !('category' in item)` instead of fragile `dueDate !== undefined`.
+    - [x] **Auth Middleware Finding**: Confirmed the `"has no schoolId"` warning in auth middleware is correct — the student's DB record genuinely lacks a `schoolId`. Student must be enrolled via the admin dashboard.
+
+- **Paper Editor Redesign**:
+    - [x] **`ManualAddForm.tsx` Full Redesign**: Split into a 2-column layout (editor left, formula palette right). Added a grouped, expandable formula/symbol palette covering 5 categories: Basics, Greek, Operators, Calculus & Sets, Trig (~40 symbols total). Added a 3-mode question editor (Write / Split / Preview) with synchronized live LaTeX rendering. Option rows redesigned with inline preview toggle. Type selector redesigned as pill-chips.
+    - [x] **`LaTeXRenderer.tsx` Redesign**: Block math (`$$…$$`) now renders in a styled card with background, border, and padding. Inline math has primary color tint. All standard Markdown elements (headings, blockquotes, lists, code) properly styled without Tailwind Typography conflicts.
+    - [x] **`QuestionManager.tsx` Update**: Removed inner padding from the ManualAddForm card wrappers (`p-8` → `p-0`) and widened to `max-w-5xl` to accommodate the 2-column form layout.
+
+### Monday, August 17, 2026
+
+- **Mobile Authentication & Network Stabilization**:
+    - [x] **Network Connectivity Fix**: Updated the Expo mobile app's `fallbackUrl` in `client.ts` to map to the new Wi-Fi IPv4 address (`192.168.0.171`) to restore mobile-to-backend communication, resolving the `[AxiosError: Network Error]` and "Backend wake ping failed" issues.
+
+- **Parent Mobile Dashboard Enhancements**:
+    - [x] **Attendance Page**: Built and integrated the attendance screen with `useStudentAttendance` hooks.
+    - [x] **Assignment Navigation**: Re-wired assignment "View Details" buttons to route to the correct `child-assignment-details` path.
+    - [x] **Exams Timeline Grouping**: Rebuilt the exams timeline in `(parent-tabs)/exams.tsx` to beautifully group unified exam/grade items by "Month Year" (e.g. August 2026).
+    - [x] **Exam Results Impersonation Mode**: Re-wired "View Details" to take parents directly to the `exams/[id]/review` screen instead of generic tabs. Extracted `studentId` from params and seamlessly bypassed the `STUDENT` role requirement in the `getExamAttempt` backend route.
+    - [x] **Hidden Notification Badges Fix**: Fixed a clipping issue where `<Text>` in the notification bell badge was hidden due to the container being 12px tall with a 4px border. Adjusted to 18px and centered.
+
+### Saturday, August 15, 2026
+- **Universal Assignment Video Player Component Overhaul**:
+    - [x] **New Shared Component (`VideoPlayer.tsx`)**: Built `frontend/src/components/ui/VideoPlayer.tsx` with full support for YouTube (Standard, Shorts, Embeds), Google Drive (`/file/d/`, `/open?id=`, `/uc?id=`), Vimeo, Loom, direct HTML5 video files (`.mp4`, `.webm`, `.ogg`, `.mov`, `.m4v`, Cloudinary, S3, `/uploads/`), and generic video page fallbacks. Includes a glassmorphic aspect ratio container, source badge, loading spinner state, iframe permissions (`allowFullScreen`), and external link footer.
+    - [x] **Parent Assignment Details (`parent/assignments/details/[id]`)**: Replaced broken/limited regex and unstyled hanging link with `<VideoPlayer />`.
+    - [x] **Student Assignment Details (`student/assignments/[id]`)**: Replaced standard iframe embed with `<VideoPlayer />`.
+    - [x] **Teacher Assignment Details (`teacher/assignments/[id]`)**: Replaced simplistic YouTube-only `getEmbedUrl` with `<VideoPlayer />`.
+    - [x] **Admin Assignment Details (`admin/assignments/[id]`)**: Replaced simplistic YouTube-only `getEmbedUrl` with `<VideoPlayer />`.
+
 ### Wednesday, August 13, 2026
 - **Mobile App — Full Performance & Data Fetching Audit + 14 Fixes Applied**:
     - [x] **Fix 1 — Student `useFocusEffect` Blocking JS Thread**: `(student-tabs)/index.tsx` was calling all 4 refetches synchronously on focus — same pattern as the admin fix (Aug 12). Wrapped in `InteractionManager.runAfterInteractions()` with cleanup cancel. Navigation animations no longer freeze.

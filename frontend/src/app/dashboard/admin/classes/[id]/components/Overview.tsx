@@ -7,25 +7,27 @@ import UpcomingExams from "./UpcomingExams";
 
 interface OverviewProps {
   behaviourAlerts: any[];
-  upcomingExams: any[];
+  upcomingExams?: any[];
   classData: any;
 }
 
 import { useClassAttendanceSummary, useClassStats } from "@/lib/api/hooks/useClasses";
 import { useParams } from "next/navigation";
 
-const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData }) => {
+const Overview: React.FC<OverviewProps> = ({ behaviourAlerts, classData, upcomingExams }) => {
   const params = useParams();
-  const classId = params.id as string;
+  const classId = (params.id as string) || classData?.id;
   const { data: attendanceSummary, isLoading: isAttendanceSummaryLoading } = useClassAttendanceSummary(classId);
   const { data: stats, isLoading: isStatsLoading } = useClassStats(classId);
 
   // Derived data
-  const realUpcomingExams = (classData?.exams || []).slice(0, 3).map((e: any) => ({
+  const realUpcomingExams = upcomingExams !== undefined
+    ? upcomingExams
+    : (classData?.exams || []).slice(0, 3).map((e: any) => ({
     id: e.id,
     subject: e.title.split(' ')[0], // Best effort for icon match
     date: new Date(e.createdAt).toLocaleDateString(),
-    type: e.status
+    type: e.category || 'Exam'
   }));
 
   return (

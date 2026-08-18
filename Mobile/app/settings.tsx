@@ -6,6 +6,10 @@ import { ArrowLeft, Bell, Moon, LogOut, Shield, CircleHelp, Smartphone, Monitor,
 import { useRouter } from 'expo-router';
 import { clearTokens } from '@/lib/auth/secure-store';
 import { useDeviceSessions, useRevokeSession, useUpdatePassword } from '@/lib/api/hooks/useStudent';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthUser } from '@/lib/api/hooks/useAuth';
+import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
+import { Users } from 'lucide-react-native';
 
 export default function SettingsScreen() {
   const { colorScheme, toggleColorScheme } = useThemeControls();
@@ -13,6 +17,26 @@ export default function SettingsScreen() {
   const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [childrenPage, setChildrenPage] = useState(0);
+  const CHILDREN_PER_PAGE = 3;
+
+  const { data: user } = useAuthUser();
+  const isParent = user?.role === 'PARENT';
+  const { data: children } = useParentChildren();
+  const [defaultChildId, setDefaultChildId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (isParent) {
+      AsyncStorage.getItem('defaultChildId').then(id => {
+        if (id) setDefaultChildId(id);
+      });
+    }
+  }, [isParent]);
+
+  const handleSelectDefaultChild = async (childId: string) => {
+    setDefaultChildId(childId);
+    await AsyncStorage.setItem('defaultChildId', childId);
+  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -132,6 +156,57 @@ export default function SettingsScreen() {
             />
           </View>
         </View>
+
+        {/* Default Child (Parent Only) */}
+        {isParent && children && children.length > 0 && (
+          <>
+            <Text className="text-sm font-LexendBold text-slate-900 dark:text-white uppercase tracking-wider mb-4 mt-4">
+              Default Child
+            </Text>
+            <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-sm border border-slate-100 dark:border-slate-800 mb-8">
+              {children.slice(childrenPage * CHILDREN_PER_PAGE, (childrenPage + 1) * CHILDREN_PER_PAGE).map((child, index, array) => {
+                const isSelected = child.id === defaultChildId;
+                const isLast = index === array.length - 1;
+                return (
+                  <TouchableOpacity
+                    key={child.id}
+                    onPress={() => handleSelectDefaultChild(child.id)}
+                    className={`flex-row items-center justify-between p-4 ${!isLast ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <View className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+                        <Users size={20} color="#ea580c" />
+                      </View>
+                      <Text className="text-sm font-LexendMedium text-slate-900 dark:text-white">{child.name}</Text>
+                    </View>
+                    {isSelected && <CheckCircle2 size={20} color="#10b981" />}
+                  </TouchableOpacity>
+                );
+              })}
+              {children.length > CHILDREN_PER_PAGE && (
+                <View className="flex-row items-center justify-between p-4 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
+                  <TouchableOpacity 
+                    disabled={childrenPage === 0}
+                    onPress={() => setChildrenPage(prev => Math.max(0, prev - 1))}
+                    className={`px-4 py-2 rounded-xl ${childrenPage === 0 ? 'bg-slate-100 dark:bg-slate-800 opacity-50' : 'bg-orange-50 dark:bg-orange-900/20'}`}
+                  >
+                    <Text className={`text-xs font-LexendBold ${childrenPage === 0 ? 'text-slate-400' : 'text-orange-600'}`}>Prev</Text>
+                  </TouchableOpacity>
+                  <Text className="text-xs font-LexendMedium text-slate-500 dark:text-slate-400">
+                    Page {childrenPage + 1} of {Math.ceil(children.length / CHILDREN_PER_PAGE)}
+                  </Text>
+                  <TouchableOpacity 
+                    disabled={childrenPage >= Math.ceil(children.length / CHILDREN_PER_PAGE) - 1}
+                    onPress={() => setChildrenPage(prev => Math.min(Math.ceil(children.length / CHILDREN_PER_PAGE) - 1, prev + 1))}
+                    className={`px-4 py-2 rounded-xl ${childrenPage >= Math.ceil(children.length / CHILDREN_PER_PAGE) - 1 ? 'bg-slate-100 dark:bg-slate-800 opacity-50' : 'bg-orange-50 dark:bg-orange-900/20'}`}
+                  >
+                    <Text className={`text-xs font-LexendBold ${childrenPage >= Math.ceil(children.length / CHILDREN_PER_PAGE) - 1 ? 'text-slate-400' : 'text-orange-600'}`}>Next</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </>
+        )}
 
         {/* Security */}
         <Text className="text-sm font-LexendBold text-slate-900 dark:text-white uppercase tracking-wider mb-4">

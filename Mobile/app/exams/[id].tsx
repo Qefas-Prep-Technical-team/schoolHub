@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, ImageBackground, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack, useFocusEffect } from 'expo-router';
-import { ArrowLeft, Clock, CheckCircle, Eye, FileText, PlayCircle, BarChart2, Lock } from 'lucide-react-native';
+import { ArrowLeft, Clock, CheckCircle, Eye, FileText, PlayCircle, BarChart2, Lock, ChevronDown } from 'lucide-react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useSingleExam, useExamAttempt, useStartExamAttempt } from '@/lib/api/hooks/useExams';
 import { showInfoToast, showErrorToast } from '@/lib/utils/toast';
@@ -57,12 +57,19 @@ const PaperRingChart = ({ score, totalMarks, label }: { score: number, totalMark
 
 export default function ExamDetailsScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id, studentId } = useLocalSearchParams();
   const examId = Array.isArray(id) ? id[0] : id;
+  const childId = Array.isArray(studentId) ? studentId[0] : studentId;
 
   const { data: examResponse, isLoading: isExamLoading, refetch: refetchExam, isRefetching: isExamRefetching } = useSingleExam(examId || '');
-  const { data: attemptData, isLoading: isAttemptLoading, refetch: refetchAttempt, isRefetching: isAttemptRefetching } = useExamAttempt(examId || '');
+  const { data: attemptData, isLoading: isAttemptLoading, refetch: refetchAttempt, isRefetching: isAttemptRefetching } = useExamAttempt(examId || '', childId);
   const startAttemptMutation = useStartExamAttempt();
+
+  const [expandedSubjects, setExpandedSubjects] = React.useState<Record<string, boolean>>({});
+
+  const toggleSubject = (subjectName: string) => {
+    setExpandedSubjects(prev => ({ ...prev, [subjectName]: prev[subjectName] === undefined ? false : !prev[subjectName] }));
+  };
 
   const onRefresh = useCallback(() => {
     refetchExam();
@@ -165,17 +172,17 @@ export default function ExamDetailsScreen() {
   const dueDate = exam.endDate ? new Date(exam.endDate) : null;
   
   // Calculate status
-  const isTaken = attempt?.status === 'SUBMITTED' || attempt?.status === 'SCORED' || attempt?.status === 'EXPIRED';
-  const isSubmitted = isTaken;
+  const isCompleted = attempt?.status === 'COMPLETED' || attempt?.status === 'SUBMITTED' || attempt?.status === 'SCORED';
+  const isSubmitted = isCompleted;
   const isGraded = attempt?.status === 'SCORED';
   const resultsReleased = isGraded && (
     exam.allowImmediateResult 
       ? true 
-      : exam.resultReleaseAt 
-        ? new Date() >= new Date(exam.resultReleaseAt) 
-        : false
+      : !exam.resultReleaseAt 
+        ? true 
+        : new Date() >= new Date(exam.resultReleaseAt)
   );
-  const isOverdue = !isTaken && dueDate && new Date() > dueDate;
+  const isOverdue = !isCompleted && dueDate && new Date() > dueDate;
   const isUpcoming = !isStarted;
 
   const rawPapers = exam.subjectExamPapers || exam.subjectPapers || [];
@@ -302,7 +309,7 @@ export default function ExamDetailsScreen() {
           </Text>
 
           {/* Exam Instructions */}
-          {exam.instructions && isStarted && !isTaken && (
+          {exam.instructions && isStarted && !isCompleted && (
             <View className="mb-6 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 rounded-2xl p-4">
               <Text className="text-xs font-black uppercase tracking-widest text-amber-800 dark:text-amber-500 mb-2">Important Instructions</Text>
               <LaTeXRenderer content={exam.instructions} />
@@ -338,44 +345,72 @@ export default function ExamDetailsScreen() {
           </View>
         </ImageBackground>
           
-          {safePapers.length > 0 && (
-            <View className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 px-6">
-              <Text className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Exam Structure</Text>
-              <View className="space-y-3">
-                {safePapers.map((paper: any) => {
-                  const paperAttempt = attempt?.subjectExamAttempts?.find((sa: any) => sa.subjectPaperId === paper.id);
-                    const hasScore = resultsReleased && paperAttempt?.score !== undefined;
-                    
+          {safePapers.length > 0 && (() => {
+            const groupedPapers = safePapers.reduce((acc: any, paper: any) => {
+              const subjectName = paper.subject?.name || "General";
+              if (!acc[subjectName]) acc[subjectName] = [];
+              acc[subjectName].push(paper);
+              return acc;
+            }, {});
+
+            return (
+              <View className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 px-6">
+                <Text className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Exam Structure</Text>
+                <View className="space-y-4">
+                  {Object.keys(groupedPapers).map((subjectName) => {
+                    const isExpanded = expandedSubjects[subjectName] !== false;
                     return (
-                      <View key={paper.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex-row justify-between items-center mb-3">
-                        <View className="flex-1 mr-2">
-                          <Text className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                            {paper.title || paper.subject?.name || "Unnamed Paper"}
-                          </Text>
-                          <Text className="text-xs text-slate-500 dark:text-slate-400">
-                            {formatDuration(paper.durationMinutes)}
-                          </Text>
-                        </View>
-                        <View className="flex-row items-center gap-2">
-                          {hasScore && (
-                            <View className="bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-800">
-                              <Text className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">
-                                {paperAttempt.score} / {paper.totalMarks || '--'}
-                              </Text>
-                            </View>
-                          )}
-                          <View className="bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1.5 rounded-xl">
-                            <Text className="text-[10px] font-black text-indigo-600 dark:text-indigo-400">
-                              {paper.questions?.length || 0} Qs
-                            </Text>
+                      <View key={subjectName} className="bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden">
+                        <TouchableOpacity 
+                          onPress={() => toggleSubject(subjectName)}
+                          className="p-4 flex-row items-center justify-between"
+                        >
+                          <Text className="text-sm font-bold text-slate-800 dark:text-slate-200">{subjectName}</Text>
+                          <ChevronDown size={16} color="#64748b" style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }} />
+                        </TouchableOpacity>
+                        
+                        {isExpanded && (
+                          <View className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+                            {groupedPapers[subjectName].map((paper: any) => {
+                              const paperAttempt = attempt?.subjectExamAttempts?.find((sa: any) => sa.subjectPaperId === paper.id);
+                              const hasScore = resultsReleased && paperAttempt?.score !== undefined;
+                              
+                              return (
+                                <View key={paper.id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex-row justify-between items-center mb-2 last:mb-0">
+                                  <View className="flex-1 mr-2">
+                                    <Text className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                                      {paper.title || "Unnamed Paper"}
+                                    </Text>
+                                    <Text className="text-xs text-slate-500 dark:text-slate-400">
+                                      {formatDuration(paper.durationMinutes)}
+                                    </Text>
+                                  </View>
+                                  <View className="flex-row items-center gap-2">
+                                    {hasScore && (
+                                      <View className="bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-800">
+                                        <Text className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                                          {paperAttempt.score} / {paper.totalMarks || '--'}
+                                        </Text>
+                                      </View>
+                                    )}
+                                    <View className="bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1.5 rounded-xl">
+                                      <Text className="text-[10px] font-black text-indigo-600 dark:text-indigo-400">
+                                        {paper.questions?.length || 0} Qs
+                                      </Text>
+                                    </View>
+                                  </View>
+                                </View>
+                              );
+                            })}
                           </View>
-                        </View>
+                        )}
                       </View>
                     );
                   })}
                 </View>
               </View>
-          )}
+            );
+          })()}
 
         <View className="px-6 mb-8">
           <Text className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Deadlines & Rules</Text>
@@ -466,7 +501,7 @@ export default function ExamDetailsScreen() {
             <TouchableOpacity 
               className="w-full h-14 bg-emerald-600 rounded-2xl flex-row items-center justify-center shadow-lg shadow-emerald-600/30"
               activeOpacity={0.8}
-              onPress={() => router.push(`/exams/${exam.id}/review`)}
+              onPress={() => router.push({ pathname: '/exams/[id]/review', params: { id: exam.id, studentId: childId } })}
             >
               <Eye size={20} color="white" style={{ marginRight: 8 }}  />
               <Text className="text-sm font-black uppercase tracking-widest text-white">
@@ -477,7 +512,7 @@ export default function ExamDetailsScreen() {
             <TouchableOpacity 
               className="w-full h-14 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-2xl flex-row items-center justify-center"
               activeOpacity={0.8}
-              onPress={() => router.push(`/exams/${exam.id}/review`)}
+              onPress={() => router.push({ pathname: '/exams/[id]/review', params: { id: exam.id, studentId: childId } })}
             >
               <Clock size={20} color="#6366f1" style={{ marginRight: 8 }}  />
               <Text className="text-sm font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
@@ -491,7 +526,7 @@ export default function ExamDetailsScreen() {
               Submission Closed
             </Text>
           </View>
-        ) : (
+        ) : !childId ? (
           <View className="w-full">
             <View className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200 dark:border-amber-900/50 mb-3 flex-row items-start">
                <Text className="text-[10px] font-medium text-amber-600 dark:text-amber-500 flex-1 leading-tight">
@@ -513,6 +548,12 @@ export default function ExamDetailsScreen() {
                 {attempt?.status === 'IN_PROGRESS' ? 'Resume Assessment' : (!isStarted && exam.startDate ? `Starts ${formatDate(new Date(exam.startDate))}` : 'Start Assessment')}
               </Text>
             </TouchableOpacity>
+          </View>
+        ) : (
+          <View className="w-full h-14 bg-slate-100 dark:bg-slate-900/50 rounded-2xl flex-row items-center justify-center">
+            <Text className="text-sm font-black uppercase tracking-widest text-slate-500">
+              Not Started Yet
+            </Text>
           </View>
         )}
       </View>

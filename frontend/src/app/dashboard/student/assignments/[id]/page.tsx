@@ -13,34 +13,8 @@ import { useAssignmentById, useSubmitAssignment } from '@/lib/api/hooks/useAssig
 import { toast } from 'react-toastify';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExternalLink } from 'lucide-react';
+import VideoPlayer from '@/components/ui/VideoPlayer';
 
-function getEmbedUrl(url: string | null | undefined): string {
-  if (!url) return '';
-  const cleanUrl = url.trim();
-
-  // YouTube Shorts
-  const shortsRegex = /youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/i;
-  const shortsMatch = cleanUrl.match(shortsRegex);
-  if (shortsMatch && shortsMatch[1]) {
-    return `https://www.youtube.com/embed/${shortsMatch[1]}`;
-  }
-
-  // YouTube standard watch / embed / share URLs
-  const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
-  const ytMatch = cleanUrl.match(ytRegex);
-  if (ytMatch && ytMatch[1]) {
-    return `https://www.youtube.com/embed/${ytMatch[1]}`;
-  }
-
-  // Vimeo standard / embed URLs
-  const vimeoRegex = /(?:vimeo\.com\/|player\.vimeo\.com\/video\/)([0-9]+)/i;
-  const vimeoMatch = cleanUrl.match(vimeoRegex);
-  if (vimeoMatch && vimeoMatch[1]) {
-    return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-  }
-
-  return cleanUrl;
-}
 
 const getFileExtension = (url: string) => {
   try {
@@ -226,18 +200,7 @@ export default function AssignmentDetailsPage() {
                 <InstructionsPanel instructions={assignment.instructions} />
 
                 {assignment.videoUrl && (
-                  <div className="bg-white dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
-                    <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Video Reference</h4>
-                    <div className="aspect-video w-full max-w-4xl overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
-                      <iframe
-                        src={getEmbedUrl(assignment.videoUrl)}
-                        className="w-full h-full"
-                        allowFullScreen
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        loading="lazy"
-                      ></iframe>
-                    </div>
-                  </div>
+                  <VideoPlayer videoUrl={assignment.videoUrl} title="Video Reference" />
                 )}
 
                 {assignment.referenceUrl && (

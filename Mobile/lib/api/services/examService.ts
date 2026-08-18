@@ -13,16 +13,16 @@ export const examService = {
     const { data } = await apiClient.get(`/exams/${id}`);
     return data;
   },
-  getExamAttempt: async (examId: string) => {
-    const { data } = await apiClient.get(`/exams/${examId}/attempt`);
+  getExamAttempt: async (examId: string, studentId?: string) => {
+    const { data } = await apiClient.get(`/exams/${examId}/attempt`, { params: { studentId } });
     return data;
   },
   startExamAttempt: async (examId: string, options?: { deviceId?: string }) => {
     const { data } = await apiClient.post(`/exams/${examId}/start`, options);
     return data;
   },
-  getExamReview: async (examId: string) => {
-    const { data } = await apiClient.get(`/exams/${examId}/review`);
+  getExamReview: async (examId: string, studentId?: string) => {
+    const { data } = await apiClient.get(`/exams/${examId}/review`, { params: { studentId } });
     return data?.data || data;
   },
   submitAttempt: async (examId: string) => {

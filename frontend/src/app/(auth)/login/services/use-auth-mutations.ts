@@ -116,7 +116,7 @@ export const useActualLogoutMutation = () => {
   return useMutation({
     mutationFn: authAPI.logout,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["auth"] });
+      queryClient.clear(); // Clear all cached data (admin, parent, etc)
       clearAuth();
       authToast.logoutSuccess();
       router.push("/login");
@@ -124,6 +124,7 @@ export const useActualLogoutMutation = () => {
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || "Logout failed";
       errorToast.show(errorMessage);
+      queryClient.clear();
       clearAuth();
       router.push("/login");
     },

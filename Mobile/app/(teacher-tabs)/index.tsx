@@ -43,8 +43,8 @@ export default function TeacherHomeScreen() {
             >
               <Bell size={24} color={isDark ? '#ffffff' : '#0f172a'} strokeWidth={2.5} />
               {unreadCount > 0 && (
-                <View className="absolute top-1 right-1 h-4 min-w-[16px] px-1 bg-red-500 rounded-full items-center justify-center border-2 border-slate-50 dark:border-black">
-                  <Text className="text-[8px] font-black text-white">{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                <View className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full items-center justify-center border-2 border-slate-50 dark:border-black">
+                  <Text className="text-[9px] font-black text-white leading-none">{unreadCount > 9 ? '9+' : unreadCount}</Text>
                 </View>
               )}
             </TouchableOpacity>

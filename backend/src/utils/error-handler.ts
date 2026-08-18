@@ -32,8 +32,14 @@ export const handleError = (res: Response, error: any, location: string) => {
   let errorMessage = "An unexpected error occurred. Please try again later.";
 
   if (error instanceof Error) {
-    // Pass through business logic errors (not Prisma/DB errors)
-    if (!error.name.includes("Prisma") && !error.message.toLowerCase().includes("prisma")) {
+    // Detect Prisma network/connection timeout issues
+    if (error.name.includes("Prisma") || error.message.toLowerCase().includes("prisma")) {
+      if (error.message.includes("connection pool") || error.message.includes("timed out") || error.message.includes("connect to the database")) {
+        statusCode = 503;
+        errorMessage = "Network issue: Unable to connect to the database. Please try again.";
+      }
+    } else {
+      // Pass through business logic errors (not Prisma/DB errors)
       statusCode = 400;
       errorMessage = error.message;
     }

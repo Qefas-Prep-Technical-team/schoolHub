@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Animated, StyleSheet } from 'react-native';
+import { View, Text, Animated, StyleSheet, PanResponder } from 'react-native';
 import { useNetwork } from '@/hooks/use-network';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiClient } from '@/lib/api/client';
@@ -96,8 +96,36 @@ export function OfflineBanner() {
 
   const isGreen = status === 'online';
 
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dy) > 5;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy < 0) {
+          slideAnim.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy < -20 || gestureState.vy < -0.5) {
+          // Dismiss
+          setShowBanner(false);
+        } else {
+          // Spring back
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 4,
+          }).start();
+        }
+      }
+    })
+  ).current;
+
   return (
     <Animated.View
+      {...panResponder.panHandlers}
       pointerEvents={showBanner ? 'auto' : 'none'}
       style={[
         styles.banner,

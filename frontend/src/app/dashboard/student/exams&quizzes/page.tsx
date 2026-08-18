@@ -8,6 +8,7 @@ import PerformanceChart from './components/PerformanceChart';
 import TimeFilter from './components/TimeFilter';
 import AssessmentList from './components/AssessmentList';
 import { useExams, useStudentStats } from '@/lib/api/hooks/useExams';
+import { useStudentAssignments } from '@/lib/api/hooks/useAssignments';
 import { Assessment, StatCard } from './components/types';
 import { 
     timeFilters 
@@ -23,12 +24,54 @@ export default function Home() {
 
     // Fetch student stats and published assessments
     const { data: statsData, isLoading: isStatsLoading } = useStudentStats();
-    const { data: assessments = [], isLoading: isExamsLoading, isError } = useExams({ status: 'PUBLISHED' });
+    const { data: examsData = [], isLoading: isExamsLoading, isError: isExamsError } = useExams({ status: 'PUBLISHED' });
+    const { data: assignmentsResponse, isLoading: isAssignmentsLoading, isError: isAssignmentsError } = useStudentAssignments({ limit: 100 });
+    
+    const isError = isExamsError || isAssignmentsError;
+    const isLoading = isExamsLoading || isAssignmentsLoading || isStatsLoading;
+    
+    // Normalize and combine assessments and assignments
+    const assessments = useMemo(() => {
+        const assignmentsData = assignmentsResponse?.assignments || [];
+        return [...examsData, ...assignmentsData];
+    }, [examsData, assignmentsResponse]);
 
-    // Map Backend Assessments to Frontend interface
+    // Map Backend Assessments and Assignments to Frontend interface
     const allAssessments: Assessment[] = useMemo(() => {
         const now = new Date();
         return assessments.map((item: any) => {
+            // Assignments have 'questionCount' field; exams have 'category'. Use this as the discriminator.
+            const isAssignment = 'questionCount' in item && !('category' in item);
+
+            if (isAssignment) {
+                const dueDate = item.dueDate ? new Date(item.dueDate) : null;
+                
+                let status: Assessment['status'] = 'active';
+                if (item.status === 'overdue') status = 'missed';
+                else if (item.status === 'submitted' || item.status === 'graded') status = 'taken';
+                else if (item.status === 'in_progress') status = 'ongoing';
+                else if (dueDate && now < dueDate) status = 'active';
+
+                return {
+                    id: item.id,
+                    title: item.title,
+                    subject: item.subject || 'Multiple Subjects',
+                    date: item.dueDate ? new Date(item.dueDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    }) : 'TBD',
+                    startDate: item.createdAt ? new Date(item.createdAt) : undefined,
+                    endDate: dueDate || undefined,
+                    score: item.grade || null,
+                    status,
+                    type: 'assignment',
+                    durationMinutes: 0, // Assignments typically don't have a strict timer in this context
+                    questionsCount: item.questionCount || 0,
+                };
+            }
+
+            // Otherwise, it's an Exam/Quiz/CA
             const startDate = item.startDate ? new Date(item.startDate) : null;
             const endDate = item.endDate ? new Date(item.endDate) : null;
             const attempt = item.attempts?.[0];
@@ -63,7 +106,7 @@ export default function Home() {
                     ? (attempt?.totalScore != null ? `${Math.round((attempt.totalScore / (attempt.totalMarks || 1)) * 100)}%` : null) 
                     : null,
                 status,
-                type: item.category?.toLowerCase() === 'quiz' ? 'quiz' : item.category?.toLowerCase() === 'ca' ? 'ca' : item.category?.toLowerCase() === 'assignment' ? 'assignment' : 'exam',
+                type: item.category?.toLowerCase() === 'quiz' ? 'quiz' : item.category?.toLowerCase() === 'ca' ? 'ca' : 'exam',
                 durationMinutes,
                 questionsCount,
             };

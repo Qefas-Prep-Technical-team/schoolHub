@@ -1,8 +1,13 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Calculator, Beaker, BookOpen, Globe, CalendarX, AlarmClock as Alarm, Calendar, CheckCircle, ClipboardList, BarChart2, Award } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useChildAssignments, useParentChildren } from '@/lib/api/hooks/useParentChildren';
+import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard';
 
 const iconMap = {
   calculate: Calculator,
@@ -70,10 +75,22 @@ const statusConfig = {
   },
 };
 
-const AssignmentCard = ({ assignment, index }: { assignment: any, index: number }) => {
-  const config = statusConfig[assignment.status as keyof typeof statusConfig] || statusConfig.pending;
+const AssignmentCard = ({ assignment, index, childId }: { assignment: any, index: number, childId?: string }) => {
+  const router = useRouter();
+  const statusRaw = (assignment.status || 'pending').toLowerCase();
+  
+  // Map API status to config keys
+  let mappedStatus = 'pending';
+  if (statusRaw === 'graded' || statusRaw === 'scored') mappedStatus = 'graded';
+  else if (statusRaw === 'submitted') mappedStatus = 'urgent'; // Treating submitted as 'in progress' visually, or you can map differently
+  else if (statusRaw === 'late' || statusRaw === 'overdue') mappedStatus = 'late';
+  
+  const config = statusConfig[mappedStatus as keyof typeof statusConfig] || statusConfig.pending;
   const IconComponent = iconMap[assignment.icon as keyof typeof iconMap] || BookOpen;
   const DueIcon = config.dueIcon;
+
+  const formattedDate = assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No Due Date';
+  const displayScore = assignment.grade || assignment.score;
 
   return (
     <View className={`bg-white dark:bg-slate-800 rounded-2xl border-l-4 ${config.borderColor} border-t border-b border-r border-slate-200 dark:border-slate-700 p-4 mb-4 shadow-sm flex-col`}>
@@ -87,10 +104,14 @@ const AssignmentCard = ({ assignment, index }: { assignment: any, index: number 
         <View className="flex-1">
           <View className="flex-row items-center gap-2 mb-1">
             <Text className="text-[10px] font-LexendBold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {assignment.subject}
+              {assignment.subject || assignment.department?.name || 'Subject'}
             </Text>
-            <View className="w-1 h-1 bg-slate-300 rounded-full" />
-            <Text className="text-[10px] text-slate-400">{assignment.teacher}</Text>
+            {assignment.teacher && (
+              <>
+                <View className="w-1 h-1 bg-slate-300 rounded-full" />
+                <Text className="text-[10px] text-slate-400">{assignment.teacher}</Text>
+              </>
+            )}
           </View>
           <Text className="text-sm font-LexendBold text-slate-900 dark:text-white" numberOfLines={1}>
             {assignment.title}
@@ -100,31 +121,33 @@ const AssignmentCard = ({ assignment, index }: { assignment: any, index: number 
 
       <View className="flex-row justify-between items-center mt-3 pl-10">
         <View className={`flex-row items-center gap-1.5 px-2 py-1 rounded-md ${config.dueBg}`}>
-          <DueIcon size={14} className={config.dueColor} color={assignment.status === 'graded' ? '#10b981' : assignment.status === 'late' ? '#ef4444' : '#f97316'} />
+          <DueIcon size={14} className={config.dueColor} color={mappedStatus === 'graded' ? '#10b981' : mappedStatus === 'late' ? '#ef4444' : '#f97316'} />
           <Text className={`text-xs font-LexendMedium ${config.dueColor}`}>
-            {assignment.dueDate}
+            {formattedDate}
           </Text>
         </View>
 
         <View className={`px-2 py-1 rounded-full border ${config.badge.bg} ${config.badge.border}`}>
           <Text className={`text-[10px] font-LexendBold ${config.badge.textClass}`}>
-            {config.badge.text}
+            {statusRaw === 'graded' ? 'Graded' : statusRaw === 'submitted' ? 'Submitted' : config.badge.text}
           </Text>
         </View>
       </View>
 
       <View className="flex-row items-center justify-between mt-4 pl-10 pt-3 border-t border-slate-100 dark:border-slate-700/50">
-        {assignment.score ? (
+        {displayScore ? (
           <View>
             <Text className="text-[10px] text-slate-400 font-LexendMedium uppercase">Score</Text>
-            <Text className="text-sm font-LexendBold text-emerald-600 dark:text-emerald-400">{assignment.score}</Text>
+            <Text className="text-sm font-LexendBold text-emerald-600 dark:text-emerald-400">{displayScore}</Text>
           </View>
         ) : (
           <View />
         )}
-        <TouchableOpacity className={`px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 ${config.button}`}>
+        <TouchableOpacity 
+          onPress={() => childId && router.push({ pathname: '/child-assignment-details', params: { childId, assignmentId: assignment.id } })}
+          className={`px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 ${config.button}`}>
           <Text className={`text-xs font-LexendBold ${config.buttonText}`}>
-            {assignment.status === 'graded' ? 'View Feedback' : 'View Details'}
+            View Details
           </Text>
         </TouchableOpacity>
       </View>
@@ -136,51 +159,56 @@ export default function ParentAssignmentsScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const mockAssignments = [
-    {
-      id: '1',
-      subject: 'Mathematics',
-      teacher: 'Mr. Smith',
-      title: 'Algebra Worksheet 5',
-      status: 'pending',
-      dueDate: 'Due Tomorrow',
-      icon: 'calculate'
-    },
-    {
-      id: '2',
-      subject: 'Science',
-      teacher: 'Mrs. Davis',
-      title: 'Physics Lab Report',
-      status: 'urgent',
-      dueDate: 'Due Today',
-      icon: 'science'
-    },
-    {
-      id: '3',
-      subject: 'History',
-      teacher: 'Mr. Wilson',
-      title: 'WWII Essay Draft',
-      status: 'late',
-      dueDate: 'Overdue by 2 days',
-      icon: 'public'
-    },
-    {
-      id: '4',
-      subject: 'English',
-      teacher: 'Ms. Taylor',
-      title: 'Reading Comprehension',
-      status: 'graded',
-      dueDate: 'Completed',
-      score: '92/100',
-      icon: 'book_2'
+  const gradientColors = isDark 
+    ? (['#431407', '#1e293b', '#0f172a'] as const)
+    : (['#ffedd5', '#fff7ed', '#ffffff'] as const);
+
+  const [activeChildId, setActiveChildId] = React.useState<string | undefined>();
+  const [hasLoadedDefault, setHasLoadedDefault] = React.useState(false);
+  
+  React.useEffect(() => {
+    AsyncStorage.getItem('defaultChildId').then(id => {
+      if (id) setActiveChildId(id);
+      setHasLoadedDefault(true);
+    });
+  }, []);
+
+  const { data: children } = useParentChildren();
+  
+  React.useEffect(() => {
+    if (hasLoadedDefault && children && children.length > 0 && !activeChildId) {
+      setActiveChildId(children[0].id);
     }
-  ];
+  }, [hasLoadedDefault, children, activeChildId]);
+
+  const { data: assignmentsData, isLoading, refetch: refetchAssignments, isRefetching: isRefetchingAssignments } = useChildAssignments(activeChildId || null);
+  const { data: dashboardData, refetch: refetchDashboard, isRefetching: isRefetchingDashboard } = useParentDashboard(activeChildId || undefined);
+
+  const onRefresh = React.useCallback(() => {
+    if (activeChildId) {
+      refetchAssignments();
+      refetchDashboard();
+    }
+  }, [activeChildId, refetchAssignments, refetchDashboard]);
+
+  const assignments = assignmentsData?.assignments || [];
+
+  const highestScore = assignments.length > 0
+    ? Math.round(Math.max(0, ...assignments.map((a: any) => {
+        if (!a.grade) return 0;
+        const parts = a.grade.split('/');
+        const score = parseFloat(parts[0]);
+        const max = parts.length > 1 ? parseFloat(parts[1]) : 100;
+        if (isNaN(score) || isNaN(max) || max === 0) return 0;
+        return (score / max) * 100;
+    })))
+    : 0;
 
   const widgets = [
     {
       id: 1,
-      title: 'Total Graded',
-      value: '12',
+      title: 'Total Assignments',
+      value: `${assignmentsData?.total || 0}`,
       subtitle: 'Recorded Assessments',
       icon: ClipboardList,
       color: {
@@ -193,7 +221,7 @@ export default function ParentAssignmentsScreen() {
     {
       id: 2,
       title: 'Average Score',
-      value: '84%',
+      value: `${dashboardData?.stats?.averageGrade || 0}%`,
       subtitle: 'Overall Performance',
       icon: BarChart2,
       color: {
@@ -206,7 +234,7 @@ export default function ParentAssignmentsScreen() {
     {
       id: 3,
       title: 'Highest Score',
-      value: '98%',
+      value: `${highestScore}%`,
       subtitle: 'Top Achievement',
       icon: Award,
       color: {
@@ -219,12 +247,25 @@ export default function ParentAssignmentsScreen() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
-      <ScrollView 
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100, paddingTop: 16 }}
-      >
+    <LinearGradient
+      colors={gradientColors}
+      locations={[0, 0.4, 1]}
+      className="flex-1"
+    >
+      <SafeAreaView className="flex-1" edges={['top']}>
+      {!hasLoadedDefault ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={isDark ? '#f97316' : '#ea580c'} />
+        </View>
+      ) : (
+        <ScrollView 
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100, paddingTop: 16 }}
+          refreshControl={
+            <RefreshControl refreshing={isRefetchingAssignments || isRefetchingDashboard} onRefresh={onRefresh} tintColor={isDark ? '#f97316' : '#ea580c'} />
+          }
+        >
         <View className="px-6 mb-6 mt-2">
           <Text className="text-2xl font-LexendBlack text-slate-900 dark:text-white tracking-tight">
             Assignments Overview
@@ -271,12 +312,24 @@ export default function ParentAssignmentsScreen() {
 
         {/* Assignments List */}
         <View className="px-4">
-          {mockAssignments.map((assignment, index) => (
-            <AssignmentCard key={assignment.id} assignment={assignment} index={index + 1} />
-          ))}
+          {isLoading ? (
+            <View className="py-10 items-center justify-center">
+              <Text className="text-slate-500 dark:text-slate-400 font-Lexend">Loading assignments...</Text>
+            </View>
+          ) : assignments.length === 0 ? (
+            <View className="py-10 items-center justify-center">
+              <Text className="text-slate-500 dark:text-slate-400 font-Lexend">No assignments found.</Text>
+            </View>
+          ) : (
+            assignments.map((assignment: any, index: number) => (
+              <AssignmentCard key={assignment.id || index} assignment={assignment} index={index + 1} childId={activeChildId} />
+            ))
+          )}
         </View>
 
       </ScrollView>
-    </SafeAreaView>
+      )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 }

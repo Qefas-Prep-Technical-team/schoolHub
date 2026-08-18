@@ -33,17 +33,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/lib/hooks/useToast';
 import DeviceSessions from '@/components/DeviceSessions';
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
+import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
+import { useParentStore } from '@/lib/api/hooks/useParentStore';
 
 export default function ParentSettingsPage() {
   const { user } = useAuthStore();
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateParentProfile();
   const { theme, setTheme } = useTheme();
   const toast = useToast();
+  
+  const { data: children = [] } = useParentChildren();
+  const { selectedChildId, setSelectedChildId } = useParentStore();
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -203,6 +209,28 @@ export default function ParentSettingsPage() {
                             className="h-12 pl-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:ring-orange-500"
                           />
                         </div>
+                      </div>
+
+                      {/* Default Child Selection */}
+                      <div className="space-y-2 md:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800/50 mt-4">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Default Child</Label>
+                        <Select 
+                          value={selectedChildId || ""} 
+                          onValueChange={(val) => {
+                            setSelectedChildId(val);
+                            toast.success("Default child updated");
+                          }}
+                        >
+                          <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-orange-500">
+                            <SelectValue placeholder="Select Default Child" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {children.map(child => (
+                              <SelectItem value={child.id} key={child.id}>{child.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-slate-500 mt-1">This child will be automatically selected across your dashboard.</p>
                       </div>
                     </div>
                     <div className="pt-4">

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { examService } from "../services/examService";
 
 export const useStudentExamAttempts = (params?: { page?: number; limit?: number }) => {
@@ -9,11 +9,32 @@ export const useStudentExamAttempts = (params?: { page?: number; limit?: number 
   });
 };
 
-export const useExams = (params?: Record<string, unknown>) => {
+export const useExams = (params?: Record<string, unknown>, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ["exams", params],
     queryFn: () => examService.getExams(params),
     staleTime: 1000 * 60 * 2, // 2 minutes
+    ...options,
+  });
+};
+
+export const useInfiniteExams = (params?: Record<string, unknown>, options?: { enabled?: boolean }) => {
+  return useInfiniteQuery({
+    queryKey: ["exams", "infinite", params],
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await examService.getExams({ ...params, page: pageParam, limit: 10 });
+      // Depending on API response shape, adjust here
+      return res as any; 
+    },
+    getNextPageParam: (lastPage: any, allPages: any) => {
+      if (lastPage.pagination && lastPage.pagination.page < lastPage.pagination.totalPages) {
+        return lastPage.pagination.page + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 1000 * 60 * 2,
+    enabled: options?.enabled,
   });
 };
 
@@ -25,12 +46,12 @@ export const useSingleExam = (id: string) => {
   });
 };
 
-export const useExamAttempt = (examId: string) => {
+export const useExamAttempt = (examId: string, studentId?: string) => {
   return useQuery({
-    queryKey: ["exam", examId, "attempt"],
+    queryKey: ["exam", examId, "attempt", studentId],
     queryFn: async () => {
       try {
-        const result = await examService.getExamAttempt(examId);
+        const result = await examService.getExamAttempt(examId, studentId);
         return result.data || result; // Handle both nested `{data}` and flat cases
       } catch (error: any) {
         if (error?.response?.status === 404) {
@@ -58,10 +79,10 @@ export const useStartExamAttempt = () => {
   });
 };
 
-export const useExamReview = (examId: string) => {
+export const useExamReview = (examId: string, studentId?: string) => {
   return useQuery({
-    queryKey: ["exam", examId, "review"],
-    queryFn: () => examService.getExamReview(examId),
+    queryKey: ["exam", examId, "review", studentId],
+    queryFn: () => examService.getExamReview(examId, studentId),
     enabled: !!examId,
   });
 };

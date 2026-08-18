@@ -149,7 +149,7 @@ export const teacherService = {
   updateProfile: async (data: { 
     name?: string; 
     gender?: string; 
-    dateOfBirth?: string | Date;
+    phone?: string;
     profileImage?: string;
     bannerImage?: string;
   }) => {

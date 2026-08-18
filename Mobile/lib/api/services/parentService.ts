@@ -46,6 +46,7 @@ export interface Grade {
     teacher?: {
       id: string;
       name: string;
+      phone?: string;
     };
   };
 }

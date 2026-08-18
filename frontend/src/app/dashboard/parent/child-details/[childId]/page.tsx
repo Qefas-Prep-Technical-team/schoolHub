@@ -23,6 +23,7 @@ import {
 } from 'recharts'
 import { format, addWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns'
 import { TranscriptModal } from './components/TranscriptModal'
+import { ExamDetailsModal } from './components/ExamDetailsModal'
 
 import { StudentHistoryTimeline } from '@/app/dashboard/admin/students/components/StudentHistoryTimeline'
 import AttendanceCalendar from './components/attendance/AttendanceCalendar'
@@ -251,7 +252,7 @@ function ScheduleGrid({ type, themeColor, onCellClick, currentDate }: {
 
 const TABS = [
     { id: 'overview', label: 'Overview' },
-    { id: 'academic', label: 'Academic' },
+    { id: 'academic', label: 'Results' },
     { id: 'attendance', label: 'Attendance' },
     { id: 'timetable', label: 'Time Table' },
     { id: 'behaviour', label: 'Behaviour' },
@@ -315,6 +316,8 @@ export default function StudentProfilePage() {
         }
     }, [tabParam])
     const [isTranscriptModalOpen, setIsTranscriptModalOpen] = useState(false)
+    const [selectedExamDetails, setSelectedExamDetails] = useState<any>(null)
+    const [isExamDetailsOpen, setIsExamDetailsOpen] = useState(false)
     
     const [selectedScheduleCell, setSelectedScheduleCell] = useState<{ day: string; hour: string; type: 'attendance' | 'timetable' } | null>(null)
     const [scheduleDate, setScheduleDate] = useState(new Date())
@@ -591,7 +594,7 @@ export default function StudentProfilePage() {
         return (
             <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
                 <ShieldCheck size={48} className="text-slate-200" />
-                <p className="text-sm font-bold text-red-500">Student not found.</p>
+                <p className="text-sm font-bold text-red-500">Child not found.</p>
                 <button onClick={() => router.back()} className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2">
                     <ArrowLeft size={14} /> Go Back
                 </button>
@@ -1256,7 +1259,14 @@ export default function StudentProfilePage() {
                                     <>
                                         <div className="space-y-8">
                                             {examSections.slice((examsPage - 1) * ITEMS_PER_PAGE, examsPage * ITEMS_PER_PAGE).map((section: any, idx: number) => (
-                                                <div key={idx} className="space-y-4">
+                                                <div 
+                                                    key={idx} 
+                                                    className="space-y-4 cursor-pointer group/exam hover:bg-slate-50 dark:hover:bg-white/[0.02] p-4 -mx-4 rounded-3xl transition-all border border-transparent hover:border-slate-100 dark:hover:border-white/5"
+                                                    onClick={() => {
+                                                        setSelectedExamDetails(section);
+                                                        setIsExamDetailsOpen(true);
+                                                    }}
+                                                >
                                                     <div className="flex items-end justify-between border-b-2 border-slate-100 dark:border-white/5 pb-4">
                                                         <div className="space-y-1">
                                                             <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">{section.title}</h3>
@@ -1444,6 +1454,14 @@ export default function StudentProfilePage() {
                      </SectionCard>
                 </main>
             )}
+
+            <ExamDetailsModal
+                isOpen={isExamDetailsOpen}
+                onClose={() => setIsExamDetailsOpen(false)}
+                exam={selectedExamDetails}
+                primaryColor={primaryColor}
+                studentName={name}
+            />
 
             <TranscriptModal
                 isOpen={isTranscriptModalOpen}
@@ -2010,7 +2028,7 @@ export default function StudentProfilePage() {
                                     const status = (assignment.status || 'PENDING').toUpperCase();
                                     
                                     return (
-                                        <div key={assignment.id} className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-3xl p-6 flex flex-col hover:border-primary/30 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1">
+                                        <div key={assignment.id} onClick={() => router.push(`/dashboard/parent/assignments/details/${assignment.id}`)} className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-3xl p-6 flex flex-col hover:border-primary/30 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1 cursor-pointer">
                                             <div className="flex items-start justify-between mb-4">
                                                 <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-white dark:border-slate-800 shadow-sm shrink-0">
                                                     <FileText size={20} style={{ color: primaryColor }} />

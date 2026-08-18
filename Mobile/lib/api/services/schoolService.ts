@@ -24,6 +24,12 @@ export const schoolService = {
     );
     return response.data.data ?? null;
   },
+  getSessions: async (schoolId?: string): Promise<any[]> => {
+    if (!schoolId) return [];
+    const response = await apiClient.get(`/sessions?schoolId=${schoolId}`);
+    const result = response.data?.data || response.data;
+    return Array.isArray(result) ? result : [];
+  },
   getMyDashboardSummary: async (): Promise<any> => {
     const response = await apiClient.get(`/schools/my/dashboard-summary`);
     return response.data.data ?? null;

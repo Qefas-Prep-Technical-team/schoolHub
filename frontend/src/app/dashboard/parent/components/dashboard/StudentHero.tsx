@@ -153,11 +153,11 @@ export default function StudentHero() {
         </div>
 
         {/* Middle: Quick Stats */}
-        <div className="flex items-center gap-4 sm:gap-10 overflow-x-auto pb-4 lg:pb-0 px-2">
+        <div className="flex flex-1 items-center justify-center lg:justify-start gap-3 sm:gap-6 flex-wrap pb-4 lg:pb-0 px-2">
           {quickStats.map((stat, index) => (
             <div
               key={index}
-              className="group/stat flex flex-col items-center p-3 min-w-[100px] max-w-[140px] rounded-2xl bg-white/40 dark:bg-white/[0.02] border border-white/60 dark:border-white/5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 hover:border-orange-500/30"
+              className="group/stat flex flex-col items-center p-3 flex-1 min-w-[110px] max-w-[180px] rounded-2xl bg-white/40 dark:bg-white/[0.02] border border-white/60 dark:border-white/5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 hover:border-orange-500/30"
             >
               <span className={`text-xl font-black tracking-tighter truncate w-full text-center ${stat.color ? 'text-orange-600' : 'text-slate-900 dark:text-white'}`} title={stat.value}>
                 {stat.value}

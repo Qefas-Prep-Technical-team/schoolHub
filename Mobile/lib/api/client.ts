@@ -9,9 +9,10 @@ import { authEvents } from "../auth/authEvents";
 import { networkEvents } from "./networkEvents";
 
 import { Platform } from "react-native";
+import * as Device from 'expo-device';
 
 // Set the base API URL (could be injected via environment variable EXPO_PUBLIC_API_URL)
-const fallbackUrl = 'http://192.168.93.248:5000/api';
+const fallbackUrl = 'https://api.qefashub.com/api';
 const API_URL = process.env.EXPO_PUBLIC_API_URL || fallbackUrl;
 
 export const apiClient = axios.create({
@@ -50,10 +51,8 @@ apiClient.interceptors.request.use(
 
     if (config.headers) {
       config.headers["x-device-type"] = "mobile";
-      config.headers["x-device-model"] =
-        Platform.OS === "ios" ? "iPhone" : "Android Device";
-      config.headers["x-os-version"] =
-        `${Platform.OS === "ios" ? "iOS" : "Android"} ${Platform.Version}`;
+      config.headers["x-device-model"] = Device.modelName || Device.deviceName || (Platform.OS === "ios" ? "iPhone" : "Android Device");
+      config.headers["x-os-version"] = `${Device.osName || (Platform.OS === "ios" ? "iOS" : "Android")} ${Device.osVersion || Platform.Version}`;
     }
 
     return config;
@@ -91,7 +90,7 @@ apiClient.interceptors.response.use(
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
       const errorMessage = error.response?.data?.message || "";
-      const shouldLogoutImmediately = 
+      const shouldLogoutImmediately =
         errorMessage.toLowerCase().includes("user account no longer exists") ||
         errorMessage.toLowerCase().includes("session expired") ||
         errorMessage.toLowerCase().includes("device no longer authorized") ||

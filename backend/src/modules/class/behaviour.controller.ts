@@ -12,6 +12,13 @@ export const getClassBehaviourAlerts = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { studentId } = req.query;
+
+    if (req.user?.userType === 'PARENT' && !studentId) {
+      return res.status(403).json({ 
+        success: false, 
+        error: "Access denied. Parents can only view behaviour alerts for their specific children." 
+      });
+    }
     const alerts = await getClassBehaviourAlertsService(
       id as string,
       typeof studentId === 'string' ? studentId : undefined

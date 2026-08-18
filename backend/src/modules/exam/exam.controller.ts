@@ -36,7 +36,7 @@ import { handleError } from "../../utils/error-handler";
 export const getExams = async (req: Request, res: Response) => {
   console.log("LOG: [getExams] Controller Reached", { query: req.query, user: req.user });
   try {
-    const { schoolId, sessionId, classId, departmentId, departmentIds, status, term, category, page, limit } = req.query;
+    const { schoolId, sessionId, classId, departmentId, departmentIds, status, term, category, page, limit, availableForStudentId } = req.query;
 
     const isPersonal = (schoolId as string) === req.user?.id;
     const effectiveSchoolId = isPersonal ? undefined : ((schoolId as string) || req.user?.schoolId);
@@ -65,6 +65,10 @@ export const getExams = async (req: Request, res: Response) => {
       filters.teacherId = req.user.id;
       filters.teacherClassesOnly = 'true';
       filters.currentTeacherId = req.user.id;
+    } else if (req.user?.userType === UserRole.PARENT && availableForStudentId) {
+      // Parents can fetch exams for their linked children by passing availableForStudentId.
+      // The student filter enforces class/department scoping server-side, same as student login.
+      filters.availableForStudentId = availableForStudentId as string;
     }
 
     console.log("LOG: [getExams] Calling getExamsService with filters:", filters);

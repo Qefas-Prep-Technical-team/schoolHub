@@ -1,8 +1,14 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { CheckCircle2, AlertCircle, XCircle, Clock, Calendar, ChevronRight, Phone } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useStudentAttendance } from '@/lib/api/hooks/useStudent';
+import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
+import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard';
 
 const AttendanceAlert = ({ rate }: { rate: number }) => (
   <View className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl p-4 mb-6 mx-4">
@@ -57,23 +63,73 @@ const RecentActivityItem = ({ activity }: { activity: any }) => {
 export default function ParentAttendanceScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
 
-  const mockAttendance = {
-    rate: 96,
-    present: 45,
-    late: 2,
-    absent: 1,
-    recent: [
-      { id: '1', date: 'Today, Oct 24', status: 'present', time: '8:05 AM' },
-      { id: '2', date: 'Yesterday, Oct 23', status: 'present', time: '8:02 AM' },
-      { id: '3', date: 'Tue, Oct 22', status: 'late', time: '8:25 AM' },
-      { id: '4', date: 'Mon, Oct 21', status: 'present', time: '7:55 AM' },
-      { id: '5', date: 'Fri, Oct 18', status: 'present', time: '8:00 AM' },
-    ]
-  };
+  const gradientColors = isDark 
+    ? (['#431407', '#1e293b', '#0f172a'] as const)
+    : (['#ffedd5', '#fff7ed', '#ffffff'] as const);
+
+  const [activeChildId, setActiveChildId] = React.useState<string | undefined>();
+  const [hasLoadedDefault, setHasLoadedDefault] = React.useState(false);
+
+  React.useEffect(() => {
+    AsyncStorage.getItem('defaultChildId').then(id => {
+      if (id) setActiveChildId(id);
+      setHasLoadedDefault(true);
+    });
+  }, []);
+
+  const { data: children } = useParentChildren();
+
+  React.useEffect(() => {
+    if (hasLoadedDefault && children && children.length > 0 && !activeChildId) {
+      setActiveChildId(children[0].id);
+    }
+  }, [hasLoadedDefault, children, activeChildId]);
+
+  const { data: attendanceData, isLoading } = useStudentAttendance(activeChildId || '');
+  const { data: dashboardData } = useParentDashboard(activeChildId || undefined);
+
+  let present = 0;
+  let late = 0;
+  let absent = 0;
+
+  const records = Array.isArray(attendanceData) ? attendanceData : [];
+
+  records.forEach((record: any) => {
+    const s = record.status?.toLowerCase() || '';
+    if (s === 'present') present++;
+    else if (s === 'late') late++;
+    else if (s === 'absent') absent++;
+  });
+
+  const recent = [...records]
+    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5)
+    .map((r: any) => {
+      const d = new Date(r.date);
+      return {
+          id: r.id,
+          date: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+          status: r.status?.toLowerCase() || 'present',
+          time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      };
+    });
+
+  const attendanceRate = dashboardData?.stats?.attendanceRate || 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
+    <LinearGradient
+      colors={gradientColors}
+      locations={[0, 0.4, 1]}
+      className="flex-1"
+    >
+      <SafeAreaView className="flex-1" edges={['top']}>
+      {!hasLoadedDefault ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={isDark ? '#f97316' : '#ea580c'} />
+        </View>
+      ) : (
       <ScrollView 
         className="flex-1"
         showsVerticalScrollIndicator={false}
@@ -88,12 +144,12 @@ export default function ParentAttendanceScreen() {
           </Text>
         </View>
 
-        <AttendanceAlert rate={mockAttendance.rate} />
+        <AttendanceAlert rate={attendanceRate} />
 
         <View className="px-4 flex-row gap-3 mb-8">
           <StatCard 
             title="Present" 
-            value={mockAttendance.present} 
+            value={present} 
             icon={CheckCircle2} 
             color="#10b981"
             bg="bg-white dark:bg-slate-800"
@@ -101,7 +157,7 @@ export default function ParentAttendanceScreen() {
           />
           <StatCard 
             title="Late" 
-            value={mockAttendance.late} 
+            value={late} 
             icon={Clock} 
             color="#f59e0b"
             bg="bg-white dark:bg-slate-800"
@@ -109,7 +165,7 @@ export default function ParentAttendanceScreen() {
           />
           <StatCard 
             title="Absent" 
-            value={mockAttendance.absent} 
+            value={absent} 
             icon={XCircle} 
             color="#ef4444"
             bg="bg-white dark:bg-slate-800"
@@ -122,7 +178,7 @@ export default function ParentAttendanceScreen() {
             <Text className="text-lg font-LexendBold text-slate-900 dark:text-white">
               Recent Activity
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => activeChildId && router.push({ pathname: '/child-attendance', params: { childId: activeChildId } })}>
               <Text className="text-sm font-LexendMedium text-blue-600 dark:text-blue-400">
                 View All
               </Text>
@@ -130,11 +186,21 @@ export default function ParentAttendanceScreen() {
           </View>
 
           <View className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
-            {mockAttendance.recent.map((activity, index) => (
-              <React.Fragment key={activity.id}>
-                <RecentActivityItem activity={activity} />
-              </React.Fragment>
-            ))}
+            {isLoading ? (
+               <View className="py-6 items-center justify-center">
+                 <Text className="text-slate-500 dark:text-slate-400 font-Lexend">Loading activity...</Text>
+               </View>
+            ) : recent.length === 0 ? (
+               <View className="py-6 items-center justify-center">
+                 <Text className="text-slate-500 dark:text-slate-400 font-Lexend">No recent activity.</Text>
+               </View>
+            ) : (
+              recent.map((activity, index) => (
+                <React.Fragment key={activity.id || index}>
+                  <RecentActivityItem activity={activity} />
+                </React.Fragment>
+              ))
+            )}
           </View>
         </View>
 
@@ -147,6 +213,8 @@ export default function ParentAttendanceScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 }

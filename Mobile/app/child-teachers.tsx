@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, Linking } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Users, Mail, BookOpen, Briefcase, User as UserIcon } from 'lucide-react-native';
+import { ArrowLeft, Users, Mail, BookOpen, Briefcase, User as UserIcon, Phone } from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useChildDetails } from '@/lib/api/hooks/useParentChildren';
 import { Image } from 'expo-image';
@@ -88,28 +88,41 @@ export default function ChildTeachersScreen() {
                                             </View>
                                         </View>
                                         
-                                        <View className="bg-slate-50 dark:bg-slate-950 rounded-2xl p-4 space-y-3 mb-4">
-                                            {teacher.subject && (
-                                                <View className="flex-row items-center gap-3">
-                                                    <BookOpen size={14} color={isDark ? '#94a3b8' : '#64748b'} />
-                                                    <Text className="text-sm font-medium text-slate-700 dark:text-slate-300">{teacher.subject}</Text>
-                                                </View>
-                                            )}
-                                            {teacher.department && (
-                                                <View className="flex-row items-center gap-3">
-                                                    <Briefcase size={14} color={isDark ? '#94a3b8' : '#64748b'} />
-                                                    <Text className="text-sm font-medium text-slate-700 dark:text-slate-300">{teacher.department}</Text>
-                                                </View>
-                                            )}
-                                        </View>
+                                        {(teacher.subject || teacher.department) && (
+                                            <View className="bg-slate-50 dark:bg-slate-950 rounded-2xl p-4 space-y-3 mb-4">
+                                                {teacher.subject && (
+                                                    <View className="flex-row items-center gap-3">
+                                                        <BookOpen size={14} color={isDark ? '#94a3b8' : '#64748b'} />
+                                                        <Text className="text-sm font-medium text-slate-700 dark:text-slate-300">{teacher.subject}</Text>
+                                                    </View>
+                                                )}
+                                                {teacher.department && (
+                                                    <View className="flex-row items-center gap-3">
+                                                        <Briefcase size={14} color={isDark ? '#94a3b8' : '#64748b'} />
+                                                        <Text className="text-sm font-medium text-slate-700 dark:text-slate-300">{teacher.department}</Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        )}
                                         
                                         {teacher.email && (
                                             <TouchableOpacity 
-                                                className="w-full flex-row items-center justify-center gap-2 bg-indigo-50 dark:bg-indigo-900/20 py-3 rounded-xl border border-indigo-100 dark:border-indigo-800/30"
+                                                onPress={() => Linking.openURL(`mailto:${teacher.email}`)}
+                                                className="w-full flex-row items-center justify-center gap-2 bg-indigo-50 dark:bg-indigo-900/20 py-3 rounded-xl border border-indigo-100 dark:border-indigo-800/30 mb-2"
                                             >
                                                 <Mail size={16} color="#6366f1" />
                                                 <Text className="text-indigo-600 dark:text-indigo-400 font-bold">Email Teacher</Text>
                                             </TouchableOpacity>
+                                        )}
+                                        
+                                        {teacher.phone && (
+                                            <TouchableOpacity 
+                                                onPress={() => Linking.openURL(`tel:${teacher.phone}`)}
+                                                className="w-full flex-row items-center justify-center gap-2 bg-slate-50 dark:bg-slate-900/50 py-3 rounded-xl border border-slate-200 dark:border-slate-800"
+                                            >
+                                                <Phone size={16} color={isDark ? '#cbd5e1' : '#334155'} />
+                                                <Text className="text-slate-700 dark:text-slate-300 font-bold">Call Teacher</Text>
+                                            </TouchableOpacity> 
                                         )}
                                     </View>
                                 );

@@ -295,8 +295,8 @@ export default function QuestionManager({
         )}
 
         {activeTab === "add" && (
-          <div className="max-w-3xl mx-auto">
-            <Card className="p-8 border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden rounded-2xl">
+          <div className="w-full">
+            <Card className="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden rounded-2xl p-0">
                <ManualAddForm 
                  paperId={paperId} 
                  examId={examId} 
@@ -307,8 +307,8 @@ export default function QuestionManager({
         )}
 
         {activeTab === "edit" && editingQuestion && (
-          <div className="max-w-3xl mx-auto">
-            <Card className="p-8 border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden rounded-2xl">
+          <div className="w-full">
+            <Card className="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden rounded-2xl p-0">
                <ManualAddForm 
                  paperId={paperId} 
                  examId={examId} 

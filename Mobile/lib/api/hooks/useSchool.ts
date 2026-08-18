@@ -11,6 +11,15 @@ export const useMySchoolStats = () => {
   });
 };
 
+export const useSessions = (schoolId?: string) => {
+  return useQuery({
+    queryKey: ['sessions', schoolId],
+    queryFn: () => schoolService.getSessions(schoolId),
+    enabled: !!schoolId,
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+};
+
 export const useMyPerformanceAnalysis = (statsOrSchoolId?: any) => {
   const schoolId = typeof statsOrSchoolId === 'string' ? statsOrSchoolId : statsOrSchoolId?.schoolId;
   return useQuery({

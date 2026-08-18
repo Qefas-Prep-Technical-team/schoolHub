@@ -41,16 +41,28 @@ export const startExamAttempt = async (req: Request, res: Response) => {
 
 export const getExamAttempt = async (req: Request, res: Response) => {
   try {
-    if (!req.user || req.user.userType !== UserRole.STUDENT) {
+    if (!req.user) {
       return res.status(403).json({
         success: false,
-        message: "Only students can view their exam attempt",
+        message: "Unauthorized",
+      });
+    }
+
+    const studentId =
+      req.user.userType === UserRole.STUDENT
+        ? req.user.id
+        : String(req.query.studentId || "");
+
+    if (!studentId && req.user.userType !== UserRole.STUDENT) {
+      return res.status(400).json({
+        success: false,
+        message: "studentId is required",
       });
     }
 
     const data = await getExamAttemptService({
       examId: req.params.id as string,
-      studentId: req.user.id,
+      studentId,
     });
 
     return res.status(200).json({

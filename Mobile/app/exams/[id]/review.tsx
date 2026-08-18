@@ -1,25 +1,44 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { ArrowLeft, CheckCircle2, XCircle, AlertCircle, HelpCircle, Eye, Clock } from 'lucide-react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useSingleExam, useExamReview, useExamAttempt } from '@/lib/api/hooks/useExams';
+import { useAuthUser } from '@/lib/api/hooks/useAuth';
 
 export default function ExamReviewScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id, studentId } = useLocalSearchParams();
   const examId = Array.isArray(id) ? id[0] : id;
+  const childId = Array.isArray(studentId) ? studentId[0] : studentId;
 
-  const { data: examResponse, isLoading: isLoadingExam } = useSingleExam(examId || '');
+  const { data: examResponse, isLoading: isLoadingExam, refetch: refetchExam } = useSingleExam(examId || '');
   const exam = examResponse?.data || examResponse;
   
-  const { data: attemptData, isLoading: isLoadingAttempt } = useExamAttempt(examId || '');
+  const { data: attemptData, isLoading: isLoadingAttempt, refetch: refetchAttempt } = useExamAttempt(examId || '', childId);
   const attempt = attemptData?.data || attemptData;
   
-  const { data: review, isLoading: isLoadingReview } = useExamReview(examId || '');
+  const { data: review, isLoading: isLoadingReview, refetch: refetchReview } = useExamReview(examId || '', childId);
+
+  const { data: user } = useAuthUser();
+  const returnPath = user?.role === 'PARENT' ? '/(parent-tabs)/exams' : '/(student-tabs)/grades';
 
   const [activeSubjectIndex, setActiveSubjectIndex] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchExam(),
+        refetchAttempt(),
+        refetchReview()
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchExam, refetchAttempt, refetchReview]);
 
   if (isLoadingExam || isLoadingReview || isLoadingAttempt) {
     return (
@@ -44,30 +63,37 @@ export default function ExamReviewScreen() {
           </Text>
           <TouchableOpacity 
             className="mt-8 bg-indigo-600 px-8 py-4 rounded-xl flex-row items-center shadow-sm shadow-indigo-600/30"
-            onPress={() => router.replace(`/exams/${examId}`)}
+            onPress={() => router.replace(returnPath as any)}
           >
-            <Text className="text-white font-black tracking-widest uppercase text-xs">Return to Exam Details</Text>
+            <Text className="text-white font-black tracking-widest uppercase text-xs">Return to Exams & Results</Text>
           </TouchableOpacity>
         </SafeAreaView>
       );
     }
 
     return (
-      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950 p-6 items-center justify-center">
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
         <Stack.Screen options={{ headerShown: false }} />
-        <View className="w-24 h-24 bg-indigo-100 dark:bg-indigo-900/30 rounded-full items-center justify-center mb-6">
-          <Clock size={48} color="#6366f1" />
+        <ScrollView 
+          contentContainerStyle={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#6366f1"]} tintColor="#6366f1" />
+          }
+        >
+          <View className="w-24 h-24 bg-indigo-100 dark:bg-indigo-900/30 rounded-full items-center justify-center mb-6">
+            <Clock size={48} color="#6366f1" />
         </View>
         <Text className="text-2xl font-black text-slate-900 dark:text-white text-center mb-2">Results Pending</Text>
-        <Text className="text-slate-500 text-center leading-relaxed max-w-[80%]">
-          Detailed reviews and scores will be available once the instructor officially releases the results.
-        </Text>
-        <TouchableOpacity 
-          className="mt-8 bg-indigo-600 px-8 py-4 rounded-xl flex-row items-center shadow-sm shadow-indigo-600/30"
-          onPress={() => router.replace(`/exams/${examId}`)}
-        >
-          <Text className="text-white font-black tracking-widest uppercase text-xs">Return to Exam Details</Text>
-        </TouchableOpacity>
+          <Text className="text-slate-500 text-center leading-relaxed max-w-[80%]">
+            Detailed reviews and scores will be available once the instructor officially releases the results. Pull down to refresh and check again.
+          </Text>
+          <TouchableOpacity 
+            className="mt-8 bg-indigo-600 px-8 py-4 rounded-xl flex-row items-center shadow-sm shadow-indigo-600/30"
+            onPress={() => router.replace(returnPath as any)}
+          >
+            <Text className="text-white font-black tracking-widest uppercase text-xs">Return to Exams & Results</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -100,7 +126,14 @@ export default function ExamReviewScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#6366f1"]} tintColor="#6366f1" />
+        }
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         
         {/* Subject Tabs */}
         {subjects.length > 0 && (

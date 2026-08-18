@@ -18,7 +18,8 @@ import {
     Cake,
     ShieldCheck,
     MapPin,
-    Loader2
+    Loader2,
+    Phone
 } from 'lucide-react';
 import Image from 'next/image';
 import { 
@@ -43,6 +44,7 @@ import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import ImageUpload from '@/components/reusable/ImageUpload';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function TeacherProfilePage() {
     const { data: profile, isLoading } = useTeacherProfile();
@@ -55,7 +57,7 @@ export default function TeacherProfilePage() {
         name: '',
         email: '',
         gender: '',
-        dateOfBirth: '',
+        phone: '',
         profileImage: '',
         bannerImage: ''
     });
@@ -70,7 +72,7 @@ export default function TeacherProfilePage() {
                 name: profile.name || '',
                 email: profile.email || '',
                 gender: profile.gender || '',
-                dateOfBirth: profile.dateOfBirth ? format(new Date(profile.dateOfBirth), 'yyyy-MM-dd') : '',
+                phone: profile.phone || '',
                 profileImage: profile.profileImage || '',
                 bannerImage: profile.bannerImage || ''
             });
@@ -211,7 +213,7 @@ export default function TeacherProfilePage() {
                                 <InfoItem icon={<User size={20} />} label="Legal Name" value={profile.name} description="Verified registration name." />
                                 <InfoItem icon={<Mail size={20} />} label="Email" value={profile.email} description="Primary contact address." />
                                 <InfoItem icon={<ShieldCheck size={20} />} label="Gender" value={profile.gender || 'Not Specified'} description="Biological gender." />
-                                <InfoItem icon={<Cake size={20} />} label="Birth Date" value={profile.dateOfBirth ? format(new Date(profile.dateOfBirth), 'PPP') : 'N/A'} description="Official date of birth." />
+                                <InfoItem icon={<Phone size={20} />} label="Phone Number" value={profile.phone || 'N/A'} description="Contact phone number." />
                             </div>
                         </CardContent>
                     </Card>
@@ -262,198 +264,241 @@ export default function TeacherProfilePage() {
 
             {/* Edit Drawer / Overlay */}
             {isEditing && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center md:items-end md:justify-end p-4 md:p-10 pointer-events-none">
-                    <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm pointer-events-auto" onClick={() => setIsEditing(false)} />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 pointer-events-none">
+                    <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm pointer-events-auto transition-opacity" onClick={() => setIsEditing(false)} />
                     
-                    <Card className="relative z-10 w-full max-w-5xl rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] border-slate-200/50 dark:border-slate-800/50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-3xl pointer-events-auto transform animate-in slide-in-from-bottom-10 duration-700 max-h-[92vh] overflow-y-auto scrollbar-hide">
-                        <CardHeader className="p-8 md:p-12 pb-8 flex flex-row items-center justify-between sticky top-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl z-50 border-b border-slate-100 dark:border-slate-800/50">
-                            <div className="flex items-center gap-6">
-                                <div className="h-14 w-14 md:h-16 md:w-16 rounded-[1.5rem] bg-gradient-to-tr from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/20 rotate-3 group-hover:rotate-0 transition-transform duration-500">
-                                    <Edit3 className="text-white h-7 w-7 md:h-8 md:w-8" />
+                    <Card className="relative z-10 w-full max-w-6xl rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] border-slate-200/50 dark:border-slate-800/50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-3xl pointer-events-auto transform animate-in zoom-in-95 duration-500 overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[80vh]">
+                        {/* Left Pane: Live Preview */}
+                        <div className="w-full md:w-[40%] bg-slate-950 relative flex flex-col overflow-y-auto scrollbar-hide border-r border-slate-800 hidden md:flex">
+                            {/* Live Preview Header */}
+                            <div className="h-48 w-full relative shrink-0">
+                                {formData.bannerImage ? (
+                                    <Image src={formData.bannerImage} alt="Banner" fill className="object-cover" />
+                                ) : (
+                                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-indigo-950 flex items-center justify-center">
+                                        <div className="w-32 h-32 bg-primary blur-[80px] rounded-full animate-pulse" />
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+                            </div>
+                            
+                            {/* Live Preview Avatar */}
+                            <div className="relative -mt-16 px-8 flex justify-between items-end shrink-0">
+                                <div className="h-28 w-28 rounded-[2rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-3xl font-black text-white shadow-2xl border-4 border-slate-950 overflow-hidden relative group">
+                                    {formData.profileImage ? (
+                                        <Image src={formData.profileImage} alt={formData.name} fill className="object-cover" />
+                                    ) : (
+                                        (formData.name || 'T').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                                    )}
                                 </div>
+                                <Badge className="bg-indigo-500 border-none text-white font-mono text-[10px] uppercase tracking-widest px-3 py-1 mb-2">Live Preview</Badge>
+                            </div>
+
+                            {/* Live Preview Details */}
+                            <div className="px-8 py-6 space-y-6 flex-1">
                                 <div className="space-y-1">
-                                    <CardTitle className="text-2xl md:text-4xl font-black italic tracking-tight uppercase text-slate-900 dark:text-white">
-                                        Refine Identity
-                                    </CardTitle>
-                                    <CardDescription className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Secure Profile Management</CardDescription>
+                                    <h2 className="text-3xl font-black text-white italic tracking-tight uppercase line-clamp-2">
+                                        {formData.name || "Your Name"}
+                                    </h2>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <ShieldCheck size={14} className="text-primary" /> 
+                                        {formData.gender ? formData.gender.toLowerCase() : "Unspecified"}
+                                    </p>
                                 </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Button 
-                                    type="button"
-                                    onClick={handleSave}
-                                    disabled={
-                                        updateProfile.isPending || 
-                                        (formData.email !== profile.email && emailStep !== 'input') || 
-                                        emailStep === 'verify' ||
-                                        (formData.name === profile.name && 
-                                         formData.gender === profile.gender && 
-                                         formData.dateOfBirth === (profile.dateOfBirth ? format(new Date(profile.dateOfBirth), 'yyyy-MM-dd') : '') &&
-                                         formData.profileImage === profile.profileImage &&
-                                         formData.bannerImage === profile.bannerImage &&
-                                         formData.email === profile.email)
-                                    }
-                                    className="rounded-2xl h-12 md:h-14 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-xs uppercase tracking-widest gap-3 shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:grayscale"
-                                >
-                                    {updateProfile.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Save size={18} />} 
-                                    <span className="hidden sm:inline">Save Changes</span>
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)} className="rounded-2xl h-12 w-12 md:h-14 md:w-14 hover:bg-rose-500/10 hover:text-rose-500 transition-colors">
-                                    <X size={28} />
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-8 md:p-12 pt-10 space-y-12">
-                            {/* Visual Identity Section */}
-                            <div className="space-y-8">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Visual Assets</span>
-                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent" />
-                                </div>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                    <div className="p-8 rounded-[2.5rem] bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/50 hover:border-primary/20 transition-colors group">
-                                        <ImageUpload 
-                                            label="Profile Avatar" 
-                                            value={formData.profileImage} 
-                                            onChange={(url) => setFormData({...formData, profileImage: url})} 
-                                            description="Your official digital portrait."
-                                            aspectRatio="square"
-                                            className="group-hover:scale-[1.01] transition-transform duration-500"
-                                        />
-                                    </div>
-                                    <div className="p-8 rounded-[2.5rem] bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/50 hover:border-primary/20 transition-colors group">
-                                        <ImageUpload 
-                                            label="Profile Banner" 
-                                            value={formData.bannerImage} 
-                                            onChange={(url) => setFormData({...formData, bannerImage: url})} 
-                                            description="Custom background for your header."
-                                            aspectRatio="video"
-                                            className="group-hover:scale-[1.01] transition-transform duration-500"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
 
-                            {/* Core Details Section */}
-                            <div className="space-y-8">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Identity Records</span>
-                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent" />
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-4">
-                                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500 ml-2">Full Legal Name</Label>
-                                        <div className="relative group">
-                                            <div className="absolute inset-y-0 left-0 w-16 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors border-r border-slate-100 dark:border-slate-800/50 my-3">
-                                                <User size={22} />
-                                            </div>
-                                            <Input 
-                                                value={formData.name} 
-                                                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                                className="h-16 pl-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-900/50 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold text-lg focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
-                                                placeholder="Enter full name..."
-                                            />
+                                <div className="space-y-4 pt-4 border-t border-slate-800">
+                                    <div className="flex items-center gap-3 text-slate-300">
+                                        <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-primary shrink-0">
+                                            <Mail size={18} />
                                         </div>
+                                        <p className="text-sm font-medium truncate">{formData.email || "No email provided"}</p>
                                     </div>
+                                    <div className="flex items-center gap-3 text-slate-300">
+                                        <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-primary shrink-0">
+                                            <Phone size={18} />
+                                        </div>
+                                        <p className="text-sm font-medium truncate">{formData.phone || "No phone provided"}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                                    <div className="space-y-4">
-                                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500 ml-2">Contact Email</Label>
-                                        <div className="flex flex-col sm:flex-row gap-4">
-                                            <div className="relative group flex-1">
-                                                <div className="absolute inset-y-0 left-0 w-16 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors border-r border-slate-100 dark:border-slate-800/50 my-3">
-                                                    <Mail size={22} />
+                        {/* Right Pane: Edit Form */}
+                        <div className="w-full md:w-[60%] flex flex-col h-full bg-white dark:bg-slate-950/50">
+                            <CardHeader className="p-6 md:p-8 flex flex-row items-center justify-between shrink-0 border-b border-slate-100 dark:border-slate-800/50 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md z-10">
+                                <div className="space-y-1">
+                                    <CardTitle className="text-2xl font-black italic tracking-tight uppercase text-slate-900 dark:text-white flex items-center gap-3">
+                                        <Edit3 className="text-primary h-6 w-6" /> Refine Identity
+                                    </CardTitle>
+                                    <CardDescription className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Secure Profile Management</CardDescription>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Button 
+                                        type="button"
+                                        onClick={handleSave}
+                                        disabled={
+                                            updateProfile.isPending || 
+                                            (formData.email !== profile.email && emailStep !== 'input') || 
+                                            emailStep === 'verify' ||
+                                            (formData.name === profile.name && 
+                                             formData.gender === profile.gender && 
+                                             formData.phone === (profile.phone || '') &&
+                                             formData.profileImage === profile.profileImage &&
+                                             formData.bannerImage === profile.bannerImage &&
+                                             formData.email === profile.email)
+                                        }
+                                        className="rounded-xl h-11 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-[10px] uppercase tracking-widest gap-2 shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:grayscale"
+                                    >
+                                        {updateProfile.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Save size={16} />} 
+                                        <span className="hidden sm:inline">Save</span>
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)} className="rounded-xl h-11 w-11 hover:bg-rose-500/10 hover:text-rose-500 transition-colors bg-slate-50 dark:bg-slate-900">
+                                        <X size={20} />
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            
+                            <div className="flex-1 overflow-y-auto scrollbar-hide p-6 md:p-8">
+                                <Tabs defaultValue="personal" className="w-full">
+                                    <TabsList className="w-full h-14 p-1 bg-slate-100 dark:bg-slate-900 rounded-[1.5rem] grid grid-cols-3 mb-8">
+                                        <TabsTrigger value="personal" className="rounded-2xl text-xs font-black uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">Personal</TabsTrigger>
+                                        <TabsTrigger value="visuals" className="rounded-2xl text-xs font-black uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">Visuals</TabsTrigger>
+                                        <TabsTrigger value="security" className="rounded-2xl text-xs font-black uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all">Security</TabsTrigger>
+                                    </TabsList>
+
+                                    <TabsContent value="personal" className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+                                        <div className="space-y-4">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Full Legal Name</Label>
+                                            <div className="relative group">
+                                                <div className="absolute inset-y-0 left-0 w-14 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                                                    <User size={18} />
                                                 </div>
                                                 <Input 
-                                                    value={formData.email} 
-                                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                                    disabled={emailStep !== 'input'}
-                                                    className="h-16 pl-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-900/50 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold text-lg focus:ring-4 focus:ring-primary/10 transition-all shadow-inner disabled:opacity-40"
+                                                    value={formData.name} 
+                                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                                    className="h-14 pl-14 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
+                                                    placeholder="Enter full name..."
                                                 />
                                             </div>
-                                            {formData.email !== profile.email && emailStep === 'input' && (
-                                                <Button 
-                                                    type="button"
-                                                    onClick={handleRequestEmailChange}
-                                                    disabled={requestEmailUpdate.isPending}
-                                                    className="h-16 rounded-[1.5rem] px-10 bg-indigo-600 text-white hover:bg-indigo-700 font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-500/20"
-                                                >
-                                                    {requestEmailUpdate.isPending ? <Loader2 className="animate-spin h-5 w-5" /> : "Verify Identity"}
-                                                </Button>
-                                            )}
                                         </div>
-                                    </div>
 
-                                    {emailStep === 'verify' && (
-                                        <div className="md:col-span-2 p-10 rounded-[3rem] bg-gradient-to-br from-indigo-500 to-primary text-white space-y-8 animate-in zoom-in-95 duration-500 shadow-2xl shadow-indigo-500/30">
-                                            <div className="flex items-center justify-between">
-                                                <div className="space-y-1">
-                                                    <p className="text-[11px] font-black uppercase tracking-widest text-white/70">Protocol Alpha</p>
-                                                    <h3 className="text-2xl font-black italic">Verification Required</h3>
-                                                </div>
-                                                <Button variant="ghost" onClick={() => setEmailStep('input')} className="text-white hover:bg-white/10 rounded-2xl h-12 w-12 p-0">
-                                                    <X size={24} />
-                                                </Button>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-4">
+                                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Gender Identification</Label>
+                                                <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
+                                                    <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 font-bold focus:ring-2 focus:ring-primary/20">
+                                                        <SelectValue placeholder="Select Gender" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-2xl">
+                                                        <SelectItem value="MALE" className="rounded-xl font-bold">Male</SelectItem>
+                                                        <SelectItem value="FEMALE" className="rounded-xl font-bold">Female</SelectItem>
+                                                        <SelectItem value="OTHER" className="rounded-xl font-bold">Other</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
-                                            <div className="flex flex-col md:flex-row gap-6 items-center">
-                                                <div className="relative flex-1 w-full">
+
+                                            <div className="space-y-4">
+                                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Phone Number</Label>
+                                                <div className="relative group">
+                                                    <div className="absolute inset-y-0 left-0 w-14 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                                                        <Phone size={18} />
+                                                    </div>
                                                     <Input 
-                                                        placeholder="ENTER CODE"
-                                                        value={verificationCode}
-                                                        onChange={(e) => setVerificationCode(e.target.value)}
-                                                        className="h-20 rounded-[2rem] bg-white/10 border-white/20 text-center text-3xl font-black tracking-[0.5em] focus:ring-8 focus:ring-white/5 transition-all text-white placeholder:text-white/20"
-                                                        maxLength={6}
+                                                        type="tel"
+                                                        value={formData.phone} 
+                                                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                                        placeholder="+1 (555) 000-0000"
+                                                        className="h-14 pl-14 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                                                     />
                                                 </div>
-                                                <Button 
-                                                    type="button"
-                                                    onClick={handleVerifyEmail}
-                                                    disabled={verifyEmailUpdate.isPending}
-                                                    className="h-20 w-full md:w-auto px-12 rounded-[2rem] bg-white text-indigo-600 hover:bg-white/90 font-black text-xs uppercase tracking-widest shadow-2xl"
-                                                >
-                                                    {verifyEmailUpdate.isPending ? <Loader2 className="animate-spin" /> : "Submit Code"}
-                                                </Button>
                                             </div>
-                                            <p className="text-xs font-bold text-white/60 text-center">We&apos;ve dispatched a security token to <b>{formData.email}</b></p>
                                         </div>
-                                    )}
+                                    </TabsContent>
 
-                                    <div className="space-y-4">
-                                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500 ml-2">Gender Identification</Label>
-                                        <Select 
-                                            value={formData.gender} 
-                                            onValueChange={(val) => setFormData({...formData, gender: val})}
-                                        >
-                                            <SelectTrigger className="h-16 rounded-[1.5rem] bg-slate-50 dark:bg-slate-900/50 ring-1 ring-slate-200 dark:ring-slate-800 border-none font-bold text-lg">
-                                                <SelectValue placeholder="Select Gender" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl">
-                                                <SelectItem value="MALE" className="rounded-xl font-bold">Male</SelectItem>
-                                                <SelectItem value="FEMALE" className="rounded-xl font-bold">Female</SelectItem>
-                                                <SelectItem value="OTHER" className="rounded-xl font-bold">Other</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-500 ml-2">Official Date of Birth</Label>
-                                        <div className="relative group">
-                                            <div className="absolute inset-y-0 left-0 w-16 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors border-r border-slate-100 dark:border-slate-800/50 my-3">
-                                                <Calendar size={22} />
-                                            </div>
-                                            <Input 
-                                                type="date"
-                                                value={formData.dateOfBirth} 
-                                                onChange={(e) => setFormData({...formData, dateOfBirth: e.target.value})}
-                                                className="h-16 pl-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-900/50 border-none ring-1 ring-slate-200 dark:ring-slate-800 font-bold text-lg focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                                    <TabsContent value="visuals" className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+                                        <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/50 hover:border-primary/20 transition-colors group">
+                                            <ImageUpload 
+                                                label="Profile Avatar" 
+                                                value={formData.profileImage} 
+                                                onChange={(url) => setFormData({...formData, profileImage: url})} 
+                                                description="Your official digital portrait."
+                                                aspectRatio="square"
                                             />
                                         </div>
-                                    </div>
-                                </div>
+                                        <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/50 hover:border-primary/20 transition-colors group">
+                                            <ImageUpload 
+                                                label="Profile Banner" 
+                                                value={formData.bannerImage} 
+                                                onChange={(url) => setFormData({...formData, bannerImage: url})} 
+                                                description="Custom background for your header."
+                                                aspectRatio="video"
+                                            />
+                                        </div>
+                                    </TabsContent>
+
+                                    <TabsContent value="security" className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+                                        <div className="space-y-4">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Contact Email</Label>
+                                            <div className="flex flex-col sm:flex-row gap-4">
+                                                <div className="relative group flex-1">
+                                                    <div className="absolute inset-y-0 left-0 w-14 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                                                        <Mail size={18} />
+                                                    </div>
+                                                    <Input 
+                                                        value={formData.email} 
+                                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                                        disabled={emailStep !== 'input'}
+                                                        className="h-14 pl-14 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-inner disabled:opacity-50"
+                                                    />
+                                                </div>
+                                                {formData.email !== profile.email && emailStep === 'input' && (
+                                                    <Button 
+                                                        type="button"
+                                                        onClick={handleRequestEmailChange}
+                                                        disabled={requestEmailUpdate.isPending}
+                                                        className="h-14 rounded-2xl px-8 bg-indigo-600 text-white hover:bg-indigo-700 font-black uppercase text-[10px] tracking-widest shadow-xl shadow-indigo-500/20"
+                                                    >
+                                                        {requestEmailUpdate.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Verify"}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {emailStep === 'verify' && (
+                                            <div className="p-8 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-primary text-white space-y-6 animate-in zoom-in-95 duration-500 shadow-xl shadow-indigo-500/30">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Protocol Alpha</p>
+                                                        <h3 className="text-xl font-black italic">Verification Required</h3>
+                                                    </div>
+                                                    <Button variant="ghost" onClick={() => setEmailStep('input')} className="text-white hover:bg-white/10 rounded-xl h-10 w-10 p-0">
+                                                        <X size={20} />
+                                                    </Button>
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                                                    <Input 
+                                                        placeholder="CODE"
+                                                        value={verificationCode}
+                                                        onChange={(e) => setVerificationCode(e.target.value)}
+                                                        className="h-14 rounded-2xl bg-white/10 border-white/20 text-center text-xl font-black tracking-[0.5em] focus:ring-4 focus:ring-white/10 transition-all text-white placeholder:text-white/30 flex-1"
+                                                        maxLength={6}
+                                                    />
+                                                    <Button 
+                                                        type="button"
+                                                        onClick={handleVerifyEmail}
+                                                        disabled={verifyEmailUpdate.isPending}
+                                                        className="h-14 w-full sm:w-auto px-8 rounded-2xl bg-white text-indigo-600 hover:bg-white/90 font-black text-[10px] uppercase tracking-widest shadow-xl"
+                                                    >
+                                                        {verifyEmailUpdate.isPending ? <Loader2 className="animate-spin" /> : "Submit"}
+                                                    </Button>
+                                                </div>
+                                                <p className="text-[10px] font-bold text-white/60 text-center">We&apos;ve dispatched a security token to <b>{formData.email}</b></p>
+                                            </div>
+                                        )}
+                                    </TabsContent>
+                                </Tabs>
                             </div>
-                        </CardContent>
+                        </div>
                     </Card>
                 </div>
             )}

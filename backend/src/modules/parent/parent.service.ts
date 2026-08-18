@@ -138,6 +138,7 @@ export const getChildDetailsService = async (parentId: string, childId: string) 
                       id: true,
                       name: true,
                       email: true,
+                      phone: true,
                       subject: true,
                       department: true,
                       bannerImage: true,
@@ -220,6 +221,7 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
           grades: {
             where: { status: GradeStatus.PUBLISHED },
             orderBy: { createdAt: "desc" },
+            take: 20,
             select: {
               id: true,
               subject: true,
@@ -227,6 +229,8 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
               maxMarks: true,
               assessmentType: true,
               createdAt: true,
+              examId: true,
+              exam: { select: { id: true, title: true } },
               subjectPaper: {
                 select: {
                   subject: {
@@ -285,14 +289,43 @@ export const getParentDashboardService = async (parentId: string, childId?: stri
   const totalMax = allGrades.reduce((s, g) => s + g.maxMarks, 0);
   const averageGrade = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
 
-  // Upcoming exams for the student's current class
-  const classId = childLink?.student.classes[0]?.class?.id;
-  const upcomingExams = classId
+  // Upcoming exams for the student's current class/school/department
+  const studentInfo = childLink?.student;
+  const classIds = studentInfo?.classes.map(c => c.classId) || [];
+  const departmentId = studentInfo?.departmentId;
+  const studentSchoolId = studentInfo?.school?.id;
+
+  const orConditions: any[] = [];
+  
+  if (studentSchoolId) {
+    orConditions.push({
+      schoolId: studentSchoolId,
+      scope: "SCHOOL",
+    });
+  }
+
+  if (studentSchoolId && departmentId) {
+    orConditions.push({
+      schoolId: studentSchoolId,
+      scope: "DEPARTMENT",
+      departments: { some: { departmentId } } 
+    });
+  }
+
+  if (classIds.length > 0) {
+    orConditions.push({
+      schoolId: studentSchoolId,
+      scope: "CLASS",
+      classId: { in: classIds },
+    });
+  }
+
+  const upcomingExams = studentInfo
     ? await prisma.exam.findMany({
         where: {
-          classId,
           status: "PUBLISHED",
           startDate: { gte: new Date() },
+          OR: orConditions.length > 0 ? orConditions : undefined,
         },
         orderBy: { startDate: "asc" },
         take: 5,

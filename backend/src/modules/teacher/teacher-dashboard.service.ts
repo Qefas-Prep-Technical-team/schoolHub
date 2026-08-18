@@ -1141,14 +1141,14 @@ export const getTeacherProfileService = async (teacherId: string) => {
 export const updateTeacherProfileService = async (teacherId: string, data: {
     name?: string;
     gender?: any;
-    dateOfBirth?: string | Date;
+    phone?: string;
     profileImage?: string;
     bannerImage?: string;
 }) => {
     const updateData: any = {};
     if (data.name) updateData.name = data.name;
     if (data.gender) updateData.gender = data.gender;
-    if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth);
+    if (data.phone !== undefined) updateData.phone = data.phone;
     if (data.profileImage !== undefined) updateData.profileImage = data.profileImage;
     if (data.bannerImage !== undefined) updateData.bannerImage = data.bannerImage;
 
