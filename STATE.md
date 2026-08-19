@@ -21,6 +21,12 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Wednesday, August 19, 2026
+
+- **Mobile App NativeWind v4 iOS Fix (Black Screens on Login)**:
+    - [x] **Root Cause Found**: In NativeWind v4, third-party components like `SafeAreaView` (from `react-native-safe-area-context`) and `LinearGradient` (from `expo-linear-gradient`) do not support `className` mapping automatically. The application was applying `className="flex-1"` to `SafeAreaView` on many screen layouts (like the student, teacher, and parent tabs), but the style was never forwarded. This caused the root view's height to be `0` on iOS, leaving only the underlying root stack's black background visible while the `Tabs` navigator (bottom nav) rendered fine.
+    - [x] **Global cssInterop Implementation**: Added `cssInterop(SafeAreaView, { className: 'style' })` and `cssInterop(LinearGradient, { className: 'style' })` to the top of `Mobile/app/_layout.tsx`, forcing NativeWind to securely map utility classes (like `flex-1` and `bg-slate-50`) down to the components' native `style` props, resolving the UI blackouts.
+
 ### Monday, August 18, 2026 — Session 2
 
 - **Exam Papers Page Full Redesign** (`papers/page.tsx`):

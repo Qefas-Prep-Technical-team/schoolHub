@@ -669,7 +669,7 @@ export const googleAuthService = async (
       throw new Error(`This email is registered as a ${detectedRole}. Please login through the correct portal.`);
     }
 
-    actualRole = userRole; // They are in the correct portal
+    actualRole = userRole as UserRole; // They are in the correct portal
 
     // Link Google ID if not already linked
     if (!user.googleId && googleId) {

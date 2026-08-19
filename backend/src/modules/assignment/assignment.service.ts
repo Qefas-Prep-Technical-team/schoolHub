@@ -19,7 +19,7 @@ export const getStudentAssignmentsService = async (options: {
   // Find the student and their enrollments to know their classes and department
   const student = await prisma.student.findUnique({
     where: { id: studentId },
-    select: { departmentId: true, classes: { select: { classId: true } } },
+    select: { departmentId: true, schoolId: true, classes: { select: { classId: true } } },
   });
 
   if (!student) {

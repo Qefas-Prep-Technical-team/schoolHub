@@ -80,7 +80,7 @@ export default function ClassDetails() {
   
   const classId = dashboardData?.child?.currentClass?.id;
   const { data: classData, isLoading: isClassLoading, error } = useSingleClass(classId || "");
-  const { data: realBehaviourAlerts = [] } = useClassBehaviourAlerts(classId || "", selectedChildId);
+  const { data: realBehaviourAlerts = [] } = useClassBehaviourAlerts(classId || "", selectedChildId || undefined);
   const [activeTab, setActiveTab] = useState("overview");
 
   const loading = isDashboardLoading || isClassLoading;
@@ -108,7 +108,7 @@ export default function ClassDetails() {
     status: "PUBLISHED",
   });
   
-  const upcomingExams = (studentExamsResponse?.data || []).slice(0, 3).map((e: any) => ({
+  const upcomingExams = (studentExamsResponse || []).slice(0, 3).map((e: any) => ({
     id: e.id,
     subject: e.title.split(' ')[0], // Best effort for icon match
     date: new Date(e.createdAt).toLocaleDateString(),

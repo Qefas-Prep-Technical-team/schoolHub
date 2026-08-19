@@ -1,7 +1,7 @@
 import React, { useMemo, memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
-import remarkGfm from 'remark-gfm';
+
 import rehypeKatex from 'rehype-katex';
 import { ZoomIn } from 'lucide-react';
 import Image from 'next/image';
@@ -133,7 +133,7 @@ const LaTeXRenderer = memo(({ content, className = "", onZoom }: LaTeXRendererPr
   return (
     <div className={baseClass}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath, remarkGfm]}
+        remarkPlugins={[remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={components}
       >

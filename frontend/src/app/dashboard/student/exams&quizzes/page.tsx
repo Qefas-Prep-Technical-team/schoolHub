@@ -47,7 +47,7 @@ export default function Home() {
                 const dueDate = item.dueDate ? new Date(item.dueDate) : null;
                 
                 let status: Assessment['status'] = 'active';
-                if (item.status === 'overdue') status = 'missed';
+                if (item.status === 'overdue') status = 'missing';
                 else if (item.status === 'submitted' || item.status === 'graded') status = 'taken';
                 else if (item.status === 'in_progress') status = 'ongoing';
                 else if (dueDate && now < dueDate) status = 'active';

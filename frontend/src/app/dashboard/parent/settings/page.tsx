@@ -218,7 +218,7 @@ export default function ParentSettingsPage() {
                           value={selectedChildId || ""} 
                           onValueChange={(val) => {
                             setSelectedChildId(val);
-                            toast.success("Default child updated");
+                            toast.success.show("Default child updated");
                           }}
                         >
                           <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-orange-500">

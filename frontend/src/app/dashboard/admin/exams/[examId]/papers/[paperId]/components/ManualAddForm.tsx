@@ -38,7 +38,7 @@ function QuestionEditorPane({
   onChange: (v: string) => void;
   placeholder?: string;
   label?: string;
-  textareaRef?: React.RefObject<HTMLTextAreaElement>;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
   editorMode: 'normal' | 'math';
   onEditorModeChange: (m: 'normal' | 'math') => void;
 }) {
@@ -570,7 +570,7 @@ export default function ManualAddForm({
                     textarea.setSelectionRange(start + formula.length, start + formula.length);
                   }, 0);
                 } else {
-                  setQuestion((q) => q + formula);
+                  setQuestion((q: string) => q + formula);
                 }
               }}
             />

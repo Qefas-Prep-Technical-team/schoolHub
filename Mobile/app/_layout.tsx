@@ -3,7 +3,14 @@ import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+import { cssInterop } from 'nativewind';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import '../global.css';
+
+// Enable NativeWind for third-party components
+cssInterop(SafeAreaView, { className: 'style' });
+cssInterop(LinearGradient, { className: 'style' });
 import { useColorScheme, useThemeControls } from '@/hooks/use-color-scheme';
 import { useFonts, Lexend_400Regular, Lexend_700Bold, Lexend_900Black } from '@expo-google-fonts/lexend';
 import * as SplashScreen from 'expo-splash-screen';
