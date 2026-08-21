@@ -129,3 +129,45 @@ export const useUpdateTeacher = (teacherId: string) => {
     },
   });
 };
+
+export const useAssignTeacherToClass = (teacherId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (classId: string) => adminService.assignTeacherToClass(teacherId, classId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.teacher(teacherId) });
+      toast.success("Teacher assigned to class successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to assign teacher to class");
+    },
+  });
+};
+
+export const useAssignTeacherToSubject = (teacherId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (subjectId: string) => adminService.assignTeacherToSubject(teacherId, subjectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.teacher(teacherId) });
+      toast.success("Teacher assigned to subject successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to assign teacher to subject");
+    },
+  });
+};
+
+export const useUnassignTeacherFromSubject = (teacherId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (subjectId: string) => adminService.unassignTeacherFromSubject(teacherId, subjectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.teacher(teacherId) });
+      toast.success("Teacher removed from subject successfully");
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      toast.error(error.response?.data?.message || "Failed to remove teacher from subject");
+    },
+  });
+};

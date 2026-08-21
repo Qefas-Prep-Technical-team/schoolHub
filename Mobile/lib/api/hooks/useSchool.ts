@@ -54,3 +54,21 @@ export const useMyTodayAttendance = (date?: string) => {
     staleTime: 1000 * 60 * 5,
   });
 };
+
+export const useSchoolProfile = (schoolId: string) => {
+  return useQuery({
+    queryKey: ['schoolProfile', schoolId],
+    queryFn: () => schoolService.getSchoolProfile(schoolId),
+    enabled: !!schoolId,
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+};
+
+export const useSchoolSettings = (schoolId: string) => {
+  return useQuery({
+    queryKey: ['schoolSettings', schoolId],
+    queryFn: () => schoolService.getSchoolSettings(schoolId),
+    enabled: !!schoolId,
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+};

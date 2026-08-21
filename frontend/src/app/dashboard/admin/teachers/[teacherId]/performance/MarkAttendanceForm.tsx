@@ -130,10 +130,10 @@ export default function MarkAttendanceForm({ selectedDate, isSubmitting, existin
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-primary text-white text-sm font-semibold leading-normal shadow-sm hover:bg-primary/90 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl h-11 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 active:scale-95 mt-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:translate-y-0"
                 >
                     {isSubmitting ? (
-                        <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <div className="size-4 border-2 border-current border-t-transparent rounded-full animate-spin opacity-70" />
                     ) : (
                         'Submit Attendance'
                     )}

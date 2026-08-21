@@ -31,12 +31,12 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   };
 
   const getDayColor = (day: CalendarDay) => {
-    const baseClasses = 'w-9 h-9 flex items-center justify-center rounded-full cursor-pointer transition-colors';
+    const baseClasses = 'w-9 h-9 flex items-center justify-center rounded-full cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900';
     const isToday = day.date.toDateString() === new Date().toDateString();
     const todayBorder = isToday ? ' ring-2 ring-primary ring-offset-1 dark:ring-offset-gray-900 font-bold' : '';
     
     if (day.date.toDateString() === selectedDate.toDateString()) {
-      return `${baseClasses} bg-primary text-white ring-2 ring-primary hover:bg-primary/90`;
+      return `${baseClasses} bg-primary text-primary-foreground ring-2 ring-primary hover:bg-primary/90`;
     }
     
     if (day.status === 'present') {
@@ -71,13 +71,13 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
                 onDateSelect?.(new Date(parseInt(year), parseInt(month) - 1, parseInt(day)));
               }
             }}
-            className="w-8 h-8 p-1 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-md cursor-pointer text-xs focus:ring-primary focus:border-primary text-gray-800 dark:text-gray-200"
+            className="w-8 h-8 p-1 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-md cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900 text-gray-800 dark:text-gray-200"
             title="Pick specific date"
           />
           <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
             <button
               onClick={handlePrevMonth}
-              className="px-2 py-1 hover:bg-white dark:hover:bg-gray-750 rounded-md text-gray-600 dark:text-gray-300 transition-colors font-bold text-sm"
+              className="px-2 py-1 hover:bg-white dark:hover:bg-gray-750 rounded-md text-gray-600 dark:text-gray-300 transition-colors font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 dark:focus:ring-offset-gray-800"
               title="Previous Month"
             >
               &larr;
@@ -87,7 +87,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
             </span>
             <button
               onClick={handleNextMonth}
-              className="px-2 py-1 hover:bg-white dark:hover:bg-gray-750 rounded-md text-gray-600 dark:text-gray-300 transition-colors font-bold text-sm"
+              className="px-2 py-1 hover:bg-white dark:hover:bg-gray-750 rounded-md text-gray-600 dark:text-gray-300 transition-colors font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 dark:focus:ring-offset-gray-800"
               title="Next Month"
             >
               &rarr;

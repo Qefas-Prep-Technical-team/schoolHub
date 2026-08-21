@@ -157,10 +157,10 @@ export default function PerformancePage({ teacher }: PerformancePageProps) {
                         </div>
                         <button
                             onClick={handleExportReport}
-                            className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-primary text-white text-sm font-semibold leading-normal shadow-sm hover:bg-primary/90"
+                            className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 hover:shadow-md transition-all active:scale-95"
                         >
                             <span className="material-symbols-outlined text-lg">download</span>
-                            <span className="truncate">Export Report</span>
+                            <span className="truncate uppercase tracking-widest text-[11px]">Export Report</span>
                         </button>
                     </div>
                     <AttendanceStats stats={dynamicStats} />

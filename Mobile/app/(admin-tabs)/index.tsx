@@ -95,10 +95,12 @@ export default function AdminHomeScreen() {
                   source={{
                     uri:
                       user?.profileImage ||
-                      `https://api.dicebear.com/7.x/avataaars/png?seed=${adminFirstName}`,
+                      'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Nerd%20Face.png',
                   }}
+                  placeholder={{ uri: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Nerd%20Face.png' }}
                   style={{ width: '100%', height: '100%' }}
                   contentFit="cover"
+                  transition={500}
                 />
               </View>
               <View>

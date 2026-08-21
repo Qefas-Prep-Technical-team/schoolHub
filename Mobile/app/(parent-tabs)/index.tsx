@@ -161,7 +161,7 @@ export default function ParentHomeScreen() {
               isLoading={!children} 
               onChildChange={setActiveChildId} 
             />
-            <QuickAccess />
+            <QuickAccess activeChildId={activeChildId} />
             <InsightsGrid activeChildId={activeChildId} />
             <AcademicOverview activeChildId={activeChildId} />
             <PerformanceChart activeChildId={activeChildId} />

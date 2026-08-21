@@ -1,17 +1,20 @@
 "use client"
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useTeacherDetails } from '@/lib/api/hooks/useAdmin'
+import { useTeacherDetails, useUnassignTeacherFromSubject } from '@/lib/api/hooks/useAdmin'
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store'
 import { useSchoolSettings } from '@/lib/api/hooks/useSchool'
 import SchedulePage from './schedule/SchedulePage'
 import PerformancePage from './performance/PerformancePage'
 import { EditTeacherModal } from '../components/EditTeacherModal'
+import { AssignClassModal } from '../components/AssignClassModal'
+import { AssignSubjectModal } from '../components/AssignSubjectModal'
+import Link from 'next/link'
 import {
     Loader2, ArrowLeft, Edit2, Mail, Phone, MapPin,
     BookOpen, GraduationCap, Users, Briefcase, Star,
     ShieldCheck, Clock, ChevronRight, Award, UserCheck,
-    Building2
+    Building2, Plus, X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -65,6 +68,16 @@ export default function TeacherProfilePage() {
 
     const [activeTab, setActiveTab] = useState('overview')
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [isAssignClassModalOpen, setIsAssignClassModalOpen] = useState(false)
+    const [isAssignSubjectModalOpen, setIsAssignSubjectModalOpen] = useState(false)
+
+    const unassignSubjectMutation = useUnassignTeacherFromSubject(teacherId)
+
+    const handleUnassignSubject = (subjectId: string) => {
+        if (confirm('Are you sure you want to remove this subject?')) {
+            unassignSubjectMutation.mutate(subjectId)
+        }
+    }
 
     // ── Loading ──────────────────────────────────────────────────────────────
     if (isLoading) {
@@ -131,6 +144,7 @@ export default function TeacherProfilePage() {
     const isVerified = !!teacher.verified
     const isClaimed = !!teacher.isClaimed
     const canEdit = teacher.primarySchoolId === schoolId && !isClaimed
+    const canManageAssignments = teacher.primarySchoolId === schoolId || teacher.resolvedSchoolId === schoolId || teacher.schoolId === schoolId
 
     const name = teacher.name || 'Unknown Teacher'
     const email = teacher.email || 'No email registered'
@@ -142,7 +156,7 @@ export default function TeacherProfilePage() {
     const experience = teacher.yearsOfExperience ? `${teacher.yearsOfExperience} Years` : 'Not specified'
     const teacherCode = teacher.teacherCode || 'UNASSIGNED'
     const subjects: string[] = teacher.professionalInfo?.subjects || []
-    const classes: string[] = teacher.professionalInfo?.assignedClasses || []
+    const classes: {id: string; name: string}[] = teacher.professionalInfo?.assignedClasses || []
     const avatar = teacher.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=2563eb&fontFamily=Arial&fontSize=40&fontWeight=900`
 
     return (
@@ -297,17 +311,42 @@ export default function TeacherProfilePage() {
                             <div className="space-y-6">
                                 {/* Subjects */}
                                 <div className="space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <BookOpen size={16} style={{ color: primaryColor }} />
-                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Subjects Taught</p>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <BookOpen size={16} style={{ color: primaryColor }} />
+                                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Subjects Taught</p>
+                                        </div>
+                                        {canManageAssignments && (
+                                            <button
+                                                onClick={() => setIsAssignSubjectModalOpen(true)}
+                                                className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                                style={{ color: primaryColor }}
+                                            >
+                                                <Plus size={16} strokeWidth={3} />
+                                            </button>
+                                        )}
                                     </div>
                                     {subjects.length > 0 ? (
                                         <div className="flex flex-wrap gap-2">
-                                            {subjects.map((s, i) => (
-                                                <span key={i} className="px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800">
-                                                    {s}
-                                                </span>
-                                            ))}
+                                            {subjects.map((s: any, i: number) => {
+                                                const subjectId = typeof s === 'string' ? '' : s.id;
+                                                const subjectName = typeof s === 'string' ? s : s.name;
+                                                return (
+                                                    <span key={i} className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800">
+                                                        {subjectName}
+                                                        {canManageAssignments && subjectId && (
+                                                            <button 
+                                                                onClick={() => handleUnassignSubject(subjectId)}
+                                                                disabled={unassignSubjectMutation.isPending}
+                                                                className="hover:text-red-500 hover:bg-slate-200 dark:hover:bg-slate-700 p-0.5 rounded-full transition-colors disabled:opacity-50"
+                                                                title="Remove Subject"
+                                                            >
+                                                                <X size={12} strokeWidth={3} />
+                                                            </button>
+                                                        )}
+                                                    </span>
+                                                )
+                                            })}
                                         </div>
                                     ) : (
                                         <p className="text-sm text-slate-400 italic">No subjects assigned.</p>
@@ -318,18 +357,43 @@ export default function TeacherProfilePage() {
 
                                 {/* Classes */}
                                 <div className="space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <Award size={16} style={{ color: primaryColor }} />
-                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Assigned Classes</p>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Award size={16} style={{ color: primaryColor }} />
+                                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Assigned Classes</p>
+                                        </div>
+                                        {canManageAssignments && (
+                                            <button
+                                                onClick={() => setIsAssignClassModalOpen(true)}
+                                                className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                                style={{ color: primaryColor }}
+                                            >
+                                                <Plus size={16} strokeWidth={3} />
+                                            </button>
+                                        )}
                                     </div>
                                     {classes.length > 0 ? (
                                         <div className="space-y-2">
-                                            {classes.map((c, i) => (
-                                                <div key={i} className="flex items-center justify-between p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
-                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{c}</span>
-                                                    <ChevronRight size={16} className="text-slate-300" />
-                                                </div>
-                                            ))}
+                                            {classes.map((c, i) => {
+                                                const classId = typeof c === 'string' ? '' : c.id;
+                                                const classNameStr = typeof c === 'string' ? c : c.name;
+                                                
+                                                if (classId) {
+                                                    return (
+                                                        <Link href={`/dashboard/admin/classes/${classId}`} key={i} className="flex items-center justify-between p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-100 dark:border-slate-700 transition-colors group cursor-pointer">
+                                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{classNameStr}</span>
+                                                            <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                                                        </Link>
+                                                    );
+                                                }
+                                                
+                                                return (
+                                                    <div key={i} className="flex items-center justify-between p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{classNameStr}</span>
+                                                        <ChevronRight size={16} className="text-slate-300" />
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     ) : (
                                         <p className="text-sm text-slate-400 italic">No classes assigned.</p>
@@ -347,8 +411,6 @@ export default function TeacherProfilePage() {
                             {[
                                 { label: 'Subjects', value: subjects.length, icon: BookOpen, color: primaryColor },
                                 { label: 'Classes', value: classes.length, icon: Users, color: '#10b981' },
-                                { label: 'Verified', value: isVerified ? 'Yes' : 'No', icon: ShieldCheck, color: isVerified ? '#10b981' : '#f59e0b' },
-                                { label: 'Claimed', value: isClaimed ? 'Yes' : 'No', icon: UserCheck, color: isClaimed ? '#10b981' : '#f59e0b' },
                             ].map((stat, i) => (
                                 <div key={i} className="p-4 md:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
                                     <div className="size-9 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: `${stat.color}12`, color: stat.color }}>
@@ -447,6 +509,22 @@ export default function TeacherProfilePage() {
                     gender: (teacher as any).gender,
                     department: (teacher as any).department
                 }}
+            />
+
+            <AssignClassModal
+                isOpen={isAssignClassModalOpen}
+                onClose={() => setIsAssignClassModalOpen(false)}
+                teacherId={teacher.id}
+                schoolId={teacher.resolvedSchoolId || schoolId}
+                primaryColor={primaryColor}
+            />
+
+            <AssignSubjectModal
+                isOpen={isAssignSubjectModalOpen}
+                onClose={() => setIsAssignSubjectModalOpen(false)}
+                teacherId={teacher.id}
+                schoolId={teacher.resolvedSchoolId || schoolId}
+                primaryColor={primaryColor}
             />
         </div>
     )

@@ -63,7 +63,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           width: INDICATOR_SIZE,
           height: INDICATOR_SIZE,
           borderRadius: INDICATOR_SIZE / 2,
-          backgroundColor: '#d4fb54',
+          backgroundColor: isDark ? '#064e3b' : '#dcfce7',
           left: INDICATOR_OFFSET,
           transform: [{ translateX }],
         }}
@@ -91,7 +91,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         if (route.name === 'exams') IconComponent = FileCheck2;
         if (route.name === 'settings') IconComponent = Settings;
 
-        const iconColor = isFocused ? '#0f172a' : (isDark ? '#94a3b8' : '#64748b');
+        const iconColor = isFocused 
+          ? (isDark ? '#ffffff' : '#064e3b') 
+          : (isDark ? '#94a3b8' : '#64748b');
 
         return (
           <TouchableOpacity

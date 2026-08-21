@@ -141,7 +141,7 @@ export default function SchedulePage({ teacher, teacherId, primaryColor, schoolI
     });
   }, [timetableData, teacherId]);
 
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   if (isLoading) {
     return (
@@ -423,9 +423,11 @@ export default function SchedulePage({ teacher, teacherId, primaryColor, schoolI
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         teacherId={teacherId}
-        teacherSubjects={teacher.professionalInfo?.subjectObjects || []}
+        teacherSubjects={teacher.professionalInfo?.subjects || []}
+        teacherClasses={teacher.professionalInfo?.assignedClasses || []}
         initialData={selectedPeriod}
         schoolId={schoolId}
+        termPeriodId={termPeriodId}
       />
     </div>
   )

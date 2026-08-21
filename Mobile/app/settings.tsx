@@ -4,11 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme, useThemeControls } from '@/hooks/use-color-scheme';
 import { ArrowLeft, Bell, Moon, LogOut, Shield, CircleHelp, Smartphone, Monitor, KeyRound, X, CheckCircle2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { clearTokens } from '@/lib/auth/secure-store';
+import { clearTokens, clearUserRole } from '@/lib/auth/secure-store';
 import { useDeviceSessions, useRevokeSession, useUpdatePassword } from '@/lib/api/hooks/useStudent';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthUser } from '@/lib/api/hooks/useAuth';
 import { useParentChildren } from '@/lib/api/hooks/useParentChildren';
+import { useQueryClient } from '@tanstack/react-query';
 import { Users } from 'lucide-react-native';
 
 export default function SettingsScreen() {
@@ -75,13 +76,16 @@ export default function SettingsScreen() {
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isLogoutModalVisible, setLogoutModalVisible] = useState(false);
+  const queryClient = useQueryClient();
 
   const confirmLogout = async () => {
     setIsLoggingOut(true);
     try {
       await clearTokens();
+      await clearUserRole();
+      queryClient.clear();
       setLogoutModalVisible(false);
-      router.replace('/(auth)/welcome');
+      router.replace('/');
     } catch (error) {
       console.error('Logout error:', error);
       setIsLoggingOut(false);

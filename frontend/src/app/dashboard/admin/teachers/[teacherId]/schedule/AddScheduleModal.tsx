@@ -1,5 +1,5 @@
 "use client"
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -48,8 +48,10 @@ interface AddScheduleModalProps {
   onClose: () => void
   teacherId: string
   teacherSubjects: { id: string; name: string }[]
+  teacherClasses: { id: string; name: string }[]
   initialData?: any
   schoolId: string
+  termPeriodId: string
 }
 
 export default function AddScheduleModal({
@@ -57,16 +59,21 @@ export default function AddScheduleModal({
   onClose,
   teacherId,
   teacherSubjects,
+  teacherClasses,
   initialData,
-  schoolId
+  schoolId,
+  termPeriodId
 }: AddScheduleModalProps) {
-  const { data: classesResponse, isLoading: isLoadingClasses } = useClasses(schoolId)
   const upsertMutation = useUpsertTimetablePeriod(teacherId)
   const deleteMutation = useDeleteTimetablePeriod(teacherId)
 
-  const classes = Array.isArray(classesResponse)
-    ? classesResponse
-    : classesResponse?.classes || (classesResponse as any)?.data || []
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsConfirmingDelete(false)
+    }
+  }, [isOpen])
 
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleSchema),
@@ -106,16 +113,14 @@ export default function AddScheduleModal({
   }, [initialData, form, isOpen])
 
   const onSubmit = async (values: ScheduleFormValues) => {
-    await upsertMutation.mutateAsync(values)
+    await upsertMutation.mutateAsync({ ...values, termPeriodId })
     onClose()
   }
 
   const onDelete = async () => {
     if (initialData?.id) {
-      if (confirm('Are you sure you want to delete this period?')) {
-        await deleteMutation.mutateAsync(initialData.id)
-        onClose()
-      }
+      await deleteMutation.mutateAsync(initialData.id)
+      onClose()
     }
   }
 
@@ -124,44 +129,39 @@ export default function AddScheduleModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{initialData ? 'Edit Timetable Period' : 'Add Timetable Period'}</DialogTitle>
-        </DialogHeader>
-
-        {isLoadingClasses ? (
-          <div className="space-y-6 py-4 animate-pulse">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-md"></div>
-              </div>
-              <div className="space-y-2">
-                <div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-md"></div>
-              </div>
+        {isConfirmingDelete ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-gray-600 dark:text-gray-400">
+                Are you sure you want to delete this period? This action cannot be undone.
+              </p>
             </div>
-            <div className="space-y-2">
-              <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded"></div>
-              <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-md"></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-md"></div>
-              </div>
-              <div className="space-y-2">
-                <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-md"></div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <div className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-md"></div>
-              <div className="h-10 w-32 bg-slate-200 dark:bg-slate-800 rounded-md"></div>
-            </div>
-          </div>
+            <DialogFooter className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsConfirmingDelete(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={onDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                Delete
+              </Button>
+            </DialogFooter>
+          </>
         ) : (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <>
+            <DialogHeader>
+              <DialogTitle>{initialData ? 'Edit Timetable Period' : 'Add Timetable Period'}</DialogTitle>
+            </DialogHeader>
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -176,7 +176,7 @@ export default function AddScheduleModal({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {classes.map((cls: any) => (
+                        {teacherClasses.map((cls: any) => (
                           <SelectItem key={cls.id} value={cls.id}>
                             {cls.name}
                           </SelectItem>
@@ -287,10 +287,10 @@ export default function AddScheduleModal({
                 <Button
                   type="button"
                   variant="destructive"
-                  onClick={onDelete}
+                  onClick={() => setIsConfirmingDelete(true)}
                   disabled={deleteMutation.isPending}
                 >
-                  {deleteMutation.isPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                  <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
               )}
@@ -304,8 +304,9 @@ export default function AddScheduleModal({
                 </Button>
               </div>
             </DialogFooter>
-          </form>
-        </Form>
+              </form>
+            </Form>
+          </>
         )}
       </DialogContent>
     </Dialog>

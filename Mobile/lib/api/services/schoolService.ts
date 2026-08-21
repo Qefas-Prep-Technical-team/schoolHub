@@ -30,6 +30,14 @@ export const schoolService = {
     const result = response.data?.data || response.data;
     return Array.isArray(result) ? result : [];
   },
+  getSchoolProfile: async (schoolId: string): Promise<any> => {
+    const response = await apiClient.get(`/schools/${schoolId}/profile`);
+    return response.data.data;
+  },
+  getSchoolSettings: async (schoolId: string): Promise<any> => {
+    const response = await apiClient.get(`/schools/${schoolId}/settings`);
+    return response.data.data;
+  },
   getMyDashboardSummary: async (): Promise<any> => {
     const response = await apiClient.get(`/schools/my/dashboard-summary`);
     return response.data.data ?? null;

@@ -73,6 +73,30 @@ export const adminService = {
   },
 
   /**
+   * Assign teacher to a class
+   */
+  assignTeacherToClass: async (teacherId: string, classId: string) => {
+    const response = await apiClient.post(`/admin/teachers/${teacherId}/assign-class`, { classId });
+    return response.data;
+  },
+
+  /**
+   * Assign teacher to a subject
+   */
+  assignTeacherToSubject: async (teacherId: string, subjectId: string) => {
+    const response = await apiClient.post(`/admin/teachers/${teacherId}/assign-subject`, { subjectId });
+    return response.data;
+  },
+
+  /**
+   * Unassign teacher from subject
+   */
+  unassignTeacherFromSubject: async (teacherId: string, subjectId: string) => {
+    const response = await apiClient.delete(`/admin/teachers/${teacherId}/remove-subject/${subjectId}`);
+    return response.data;
+  },
+
+  /**
    * Delete timetable period
    */
   deleteTimetablePeriod: async (teacherId: string, periodId: string) => {

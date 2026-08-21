@@ -12,7 +12,7 @@ import { Platform } from "react-native";
 import * as Device from 'expo-device';
 
 // Set the base API URL (could be injected via environment variable EXPO_PUBLIC_API_URL)
-const fallbackUrl = 'https://api.qefashub.com/api';
+const fallbackUrl = 'http://192.168.0.182:5000/api'; // Local backend IP from ipconfig
 const API_URL = process.env.EXPO_PUBLIC_API_URL || fallbackUrl;
 
 export const apiClient = axios.create({

@@ -206,6 +206,7 @@ export const requestCodeSchema = yup.object({
       .lowercase()
       .email("Invalid email format")
       .required("Email is required"),
+    userType: yup.string().optional(), // Required for new-device verification flow
   }),
 });
 
@@ -220,6 +221,7 @@ export const verifyCodeSchema = yup.object({
       .string()
       .length(6, "Code must be 6 digits")
       .required("Code is required"),
+    userType: yup.string().optional(), // Required for new-device verification flow
   }),
 });
 

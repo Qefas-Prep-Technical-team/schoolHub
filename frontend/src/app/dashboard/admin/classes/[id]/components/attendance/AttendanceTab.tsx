@@ -573,9 +573,9 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
             <button
               type="button"
               onClick={handleStartAttendance}
-              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors shadow-md shadow-primary/10"
+              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white gap-2 text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_8px_30px_rgba(37,99,235,0.3)] dark:shadow-[0_8px_30px_rgba(59,130,246,0.4)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.5)] hover:-translate-y-0.5"
             >
-              <Plus size={18} />
+              <Plus size={16} />
               <span className="truncate">Start Attendance</span>
             </button>
           </div>

@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
+import Link from 'next/link'
 
 export default function AssignmentsCard() {
   const { selectedChildId } = useParentStore()
@@ -69,9 +70,9 @@ export default function AssignmentsCard() {
         )}
       </div>
 
-      <button className="mt-5 w-full py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest text-orange-600 bg-orange-600/5 hover:bg-orange-600 hover:text-white border border-orange-500/20 transition-all duration-300 flex items-center justify-center gap-2">
+      <Link href="/dashboard/parent/assignments" className="mt-5 w-full py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest text-orange-600 bg-orange-600/5 hover:bg-orange-600 hover:text-white border border-orange-500/20 transition-all duration-300 flex items-center justify-center gap-2">
         All Grades <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-      </button>
+      </Link>
     </div>
   )
 }

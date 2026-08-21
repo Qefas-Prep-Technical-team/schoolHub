@@ -17,6 +17,8 @@ import {
 import { 
   getTeacherById, 
   assignTeacherToClass,
+  assignTeacherToSubject,
+  removeTeacherFromSubject,
   updateTeacher,
   getTeacherTimetable,
   createTimetablePeriod,
@@ -74,6 +76,8 @@ router.post("/teachers/:id/timetable", createTimetablePeriod);
 router.delete("/teachers/:id/timetable/:periodId", deleteTimetablePeriod);
 router.patch("/teachers/:id", updateTeacher);
 router.post("/teachers/:id/assign-class", assignTeacherToClass);
+router.post("/teachers/:id/assign-subject", assignTeacherToSubject);
+router.delete("/teachers/:id/remove-subject/:subjectId", removeTeacherFromSubject);
 router.post("/teachers/invite", inviteTeacher);
 router.post("/teachers/:id/resend-claim-email", resendClaimEmailLimiter, resendClaimEmail);
 router.get("/teachers/attendance/by-date", getSchoolTeacherAttendanceByDate);

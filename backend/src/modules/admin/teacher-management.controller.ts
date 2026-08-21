@@ -54,7 +54,7 @@ export const getTeacherById = async (req: Request, res: Response) => {
 
     // Format data for frontend
     const formattedData = {
-      id: teacher.id,
+      ...teacher,
       activeSchoolId: teacher.activeSchoolId,
       primarySchoolId: teacher.primarySchoolId,
       schoolId: teacher.schoolId,
@@ -77,8 +77,8 @@ export const getTeacherById = async (req: Request, res: Response) => {
       },
       professionalInfo: {
         department: teacher.department || "General",
-        subjects: teacher.teacherSubjects.map((ts: any) => ts.subject.name),
-        assignedClasses: teacher.classTeachers.map((ct: any) => ct.class.name),
+        subjects: teacher.teacherSubjects.map((ts: any) => ({ id: ts.subject.id, name: ts.subject.name })),
+        assignedClasses: teacher.classTeachers.map((ct: any) => ({ id: ct.class.id, name: ct.class.name })),
       },
       statistics: {
         classPerformance: "85%", // Placeholder
@@ -159,6 +159,149 @@ export const assignTeacherToClass = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("assignTeacherToClass error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+/**
+ * Assign a teacher to a subject
+ */
+export const assignTeacherToSubject = async (req: Request, res: Response) => {
+  try {
+    const inputId = getSingleString(
+      req.params.id as string | string[] | undefined,
+    );
+    const { subjectId } = req.body;
+
+    if (!subjectId) {
+      return res.status(400).json({
+        success: false,
+        message: "subjectId is required",
+      });
+    }
+
+    // Resolve real teacher ID if inputId is a teacherCode
+    let teacherId = inputId;
+    const teacher = await prisma.teacher.findFirst({
+      where: {
+        OR: [{ id: inputId }, { teacherCode: inputId }],
+      },
+      select: { id: true },
+    });
+
+    if (!teacher) {
+      return res.status(404).json({
+        success: false,
+        message: "Teacher not found",
+      });
+    }
+    teacherId = teacher.id;
+
+    // Verify subject exists
+    const subject = await prisma.subject.findUnique({
+      where: { id: subjectId },
+    });
+
+    if (!subject) {
+      return res.status(404).json({
+        success: false,
+        message: "Subject not found",
+      });
+    }
+
+    // Create the assignment
+    const assignment = await prisma.teacherSubject.upsert({
+      where: {
+        teacherId_subjectId_schoolId: {
+          teacherId,
+          subjectId,
+          schoolId: subject.schoolId,
+        },
+      },
+      update: {}, // If it already exists, do nothing
+      create: {
+        teacherId,
+        subjectId,
+        schoolId: subject.schoolId,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Teacher assigned to subject successfully",
+      data: assignment,
+    });
+  } catch (error: any) {
+    console.error("assignTeacherToSubject error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+/**
+ * Remove a teacher from a subject
+ */
+export const removeTeacherFromSubject = async (req: Request, res: Response) => {
+  try {
+    const teacherId = getSingleString(req.params.id as string | string[] | undefined);
+    const subjectId = getSingleString(req.params.subjectId as string | string[] | undefined);
+
+    if (!subjectId) {
+      return res.status(400).json({
+        success: false,
+        message: "subjectId is required",
+      });
+    }
+
+    const subject = await prisma.subject.findUnique({
+      where: { id: subjectId },
+    });
+
+    if (!subject) {
+      return res.status(404).json({
+        success: false,
+        message: "Subject not found",
+      });
+    }
+
+    // Resolve real teacher ID if inputId is a teacherCode
+    let realTeacherId = teacherId;
+    const teacher = await prisma.teacher.findFirst({
+      where: {
+        OR: [{ id: teacherId }, { teacherCode: teacherId }],
+      },
+      select: { id: true },
+    });
+
+    if (!teacher) {
+      return res.status(404).json({
+        success: false,
+        message: "Teacher not found",
+      });
+    }
+    realTeacherId = teacher.id;
+
+    await prisma.teacherSubject.delete({
+      where: {
+        teacherId_subjectId_schoolId: {
+          teacherId: realTeacherId,
+          subjectId,
+          schoolId: subject.schoolId,
+        },
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Teacher removed from subject successfully",
+    });
+  } catch (error: any) {
+    console.error("removeTeacherFromSubject error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Server error",

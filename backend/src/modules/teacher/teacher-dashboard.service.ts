@@ -77,7 +77,7 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
 
   if (totalClasses === 0) {
     return {
-      stats: { totalClasses: 0, classNames: [], totalStudents: 0, upcomingLessons: 0, averagePerformance: 0, attendanceRate: 100, session: currentSession },
+      stats: { totalClasses: 0, classNames: [], subjectNames: [], totalStudents: 0, upcomingLessons: 0, averagePerformance: 0, attendanceRate: 0, session: currentSession },
       performanceMetrics: { topStudents: [], distribution: { A: 0, B: 0, C: 0, D: 0, F: 0 } },
       recentExams: [],
     };
@@ -152,7 +152,7 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
   });
 
   const totalAttendance = attendanceToday._count.status;
-  const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 100;
+  const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 0;
 
   // 4. Process Performance
   let averageScore = 0;
@@ -218,10 +218,17 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
     startTime: p.startTime // For sorting on frontend
   }));
 
+  const teacherSubjects = await prisma.teacherSubject.findMany({
+    where: { teacherId },
+    include: { subject: { select: { name: true } } }
+  });
+  const subjectNames = Array.from(new Set(teacherSubjects.map(ts => ts.subject?.name).filter(Boolean))) as string[];
+
   return {
     stats: {
       totalClasses,
       classNames,
+      subjectNames,
       totalStudents: enrollmentCount,
       upcomingLessons: todaySchedule.filter(s => s.type === 'class').length,
       averagePerformance: averageScore,

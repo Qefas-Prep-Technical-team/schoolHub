@@ -4,7 +4,7 @@ import Announcements from './components/dashboard/Announcements'
 import FinancialSummaryCard from './components/dashboard/FinancialSummaryCard'
 import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 import RecentPerformanceChart from './components/dashboard/RecentPerformanceChart';
-
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -20,9 +20,9 @@ export default function Home() {
               <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Academic Insights</h2>
               <p className="text-[11px] text-orange-500 font-bold uppercase tracking-widest mt-1">Real-time performance monitoring</p>
             </div>
-            <button className="px-6 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:border-orange-500/30 hover:text-orange-600 transition-all shadow-sm">
+            <Link href="/dashboard/parent/performance" className="px-6 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:border-orange-500/30 hover:text-orange-600 transition-all shadow-sm">
                 View All Metrics
-            </button>
+            </Link>
           </div>
           <InsightsGrid />
           <RecentPerformanceChart />

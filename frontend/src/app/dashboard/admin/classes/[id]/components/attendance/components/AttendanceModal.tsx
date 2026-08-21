@@ -31,25 +31,30 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      const records = students.map(student => {
-        const existing = initialRecords.find(
-          r => r.studentId === student.id || (r as any).student?.id === student.id
-        );
-        return {
-          id: existing?.id || `${student.id}-${date}`,
-          studentId: student.id,
-          studentName: student.name,
-          studentCode: student.code,
-          classId: existing?.classId || 'class-1',
-          className: existing?.className || 'Biology 101',
-          date: date,
-          status: (existing?.status as AttendanceStatus) || 'present',
-          comment: existing?.comment || (existing as any)?.note || '',
-          submittedBy: existing?.submittedBy || 'Dr. Eleanor Vance',
-          submittedAt: existing?.submittedAt || new Date().toISOString()
-        };
+      setAttendanceRecords(prev => {
+        if (prev.length > 0) return prev;
+        
+        return students.map(student => {
+          const existing = initialRecords.find(
+            r => r.studentId === student.id || (r as any).student?.id === student.id
+          );
+          return {
+            id: existing?.id || `${student.id}-${date}`,
+            studentId: student.id,
+            studentName: student.name,
+            studentCode: student.code,
+            classId: existing?.classId || 'class-1',
+            className: existing?.className || 'Biology 101',
+            date: date,
+            status: (existing?.status as AttendanceStatus) || 'present',
+            comment: existing?.comment || (existing as any)?.note || '',
+            submittedBy: existing?.submittedBy || 'Dr. Eleanor Vance',
+            submittedAt: existing?.submittedAt || new Date().toISOString()
+          };
+        });
       });
-      setAttendanceRecords(records);
+    } else {
+      setAttendanceRecords([]);
     }
   }, [isOpen, students, date, initialRecords]);
 
@@ -81,7 +86,6 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
 
   const handleSubmit = () => {
     onSave(attendanceRecords);
-    onClose();
   };
 
   const getStatusButtonClass = (status: AttendanceStatus, isSelected: boolean) => {
@@ -223,7 +227,7 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
           <button
             onClick={handleSubmit}
             disabled={isSaving}
-            className="flex min-w-[130px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-11 px-5 bg-primary text-white text-sm font-bold leading-normal hover:bg-primary/95 transition-all shadow-lg shadow-blue-500/10 disabled:opacity-80 disabled:cursor-not-allowed gap-2"
+            className="flex min-w-[130px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-11 px-5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white text-xs font-black uppercase tracking-widest transition-all shadow-[0_8px_30px_rgba(37,99,235,0.3)] dark:shadow-[0_8px_30px_rgba(59,130,246,0.4)] disabled:opacity-80 disabled:cursor-not-allowed gap-2"
           >
             {isSaving ? (
               <>

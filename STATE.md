@@ -21,6 +21,17 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Wednesday, August 20, 2026
+
+- **Mobile Parent Dashboard Logout Fix (`settings.tsx`)**:
+    - [x] **Root Cause Found**: In `Mobile/app/settings.tsx`, the `confirmLogout` function clears both the auth tokens and the user role (`clearUserRole()`), but then attempts to route to `/(auth)/welcome`. The `welcome.tsx` screen expects a user role to be set in secure storage to determine which theme to render. Since the role was just cleared, `welcome.tsx` entered an infinite loading state (`<ActivityIndicator>`).
+    - [x] **Fix Applied**: Updated `router.replace('/(auth)/welcome')` to `router.replace('/')`. The root index screen correctly checks the auth state: if no role is found, it automatically and safely redirects the user to the `/role-picker` screen.
+
+- **New Device Verification Flow Fix (`auth.validation.ts`)**:
+    - [x] **Root Cause Found**: `requestCodeSchema` and `verifyCodeSchema` in `backend/src/modules/auth/auth.validation.ts` were both missing the `userType` field. Yup silently strips unknown keys during `validateRequest` middleware, so `userType` was always `undefined` by the time it reached the handler. `requestVerificationCode` returned 400 "Email and user type are required" — meaning no OTP email was ever sent. `verifyEmailCode` similarly failed the `UserRole` enum check with 400 "Invalid user type".
+    - [x] **Fix Applied**: Added `userType: yup.string().optional()` to both schemas. The rest of the new-device flow (backend 403 with `preAuthToken`, frontend `onError` catch → `sessionStorage`, `VerificationCard` auto-login, mobile param-based auto-login) was already correct and required no changes.
+    - [x] **Build Verified**: `npx tsc --noEmit` exits with code 0 on the backend — zero TypeScript errors.
+
 ### Wednesday, August 19, 2026
 
 - **Mobile App NativeWind v4 iOS Fix (Black Screens on Login)**:

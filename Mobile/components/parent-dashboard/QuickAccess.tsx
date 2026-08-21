@@ -1,8 +1,33 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { BookOpen, CalendarDays, ClipboardCheck, Award } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
-export const QuickAccess = () => {
+interface QuickAccessProps {
+  activeChildId?: string;
+}
+
+export const QuickAccess = ({ activeChildId }: QuickAccessProps) => {
+  const router = useRouter();
+
+  const handlePress = (id: string) => {
+    switch (id) {
+      case 'homework':
+        router.push('/(parent-tabs)/assignments');
+        break;
+      case 'timetable':
+        if (activeChildId) {
+          router.push({ pathname: '/child-timetable', params: { childId: activeChildId } });
+        }
+        break;
+      case 'attendance':
+        router.push('/(parent-tabs)/attendance');
+        break;
+      case 'result':
+        router.push('/(parent-tabs)/exams');
+        break;
+    }
+  };
   const items = [
     {
       id: 'homework',
@@ -44,6 +69,7 @@ export const QuickAccess = () => {
         {items.map((item) => (
           <TouchableOpacity 
             key={item.id}
+            onPress={() => handlePress(item.id)}
             className="bg-white dark:bg-slate-800 rounded-3xl w-[22%] aspect-square items-center justify-center shadow-sm"
           >
             <View className={`p-2.5 rounded-xl ${item.iconBg} dark:opacity-90 mb-2`}>
