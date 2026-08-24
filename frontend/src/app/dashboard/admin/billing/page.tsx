@@ -11,7 +11,8 @@ import {
     Plus,
     Landmark,
     TrendingDown,
-    X
+    X,
+    Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ export default function AdminBillingPage() {
     const schoolId = (rawSchoolId && rawSchoolId !== 'default-tenant-id') ? rawSchoolId : undefined;
 
     const [currentPage, setCurrentPage] = React.useState(1);
+    const [isNavigating, setIsNavigating] = React.useState(false);
     const ITEMS_PER_PAGE = 5;
 
     const { data: pricingData } = useFetchPricing();
@@ -129,10 +131,12 @@ export default function AdminBillingPage() {
         : subscription?.amount || 0;  // Use backend amount as fallback
 
     const isTrial = subscription?.isTrialActive === true;
+    const isBasicTier = currentPlan === 'FREE' || currentPlan === 'BASIC' || currentPlan === 'INSTITUTIONAL BASIC';
+    const computedStatus = isBasicTier ? 'INACTIVE' : (subscription?.subscriptionStatus === 'EXPIRED' ? 'EXPIRED' : (isTrial ? "TRIAL" : (subscription?.subscriptionStatus || "INACTIVE")));
 
     const subscriptionInfo = {
         plan: activePlanData?.name || (isTrial ? `${currentPlan} Plan` : null) || subscription?.plan || "Free Tier",
-        status: subscription?.subscriptionStatus === 'EXPIRED' ? 'EXPIRED' : (isTrial ? "TRIAL" : (subscription?.subscriptionStatus || "INACTIVE")),
+        status: computedStatus,
         renewalDate: subscription?.subscriptionEnd ? new Date(subscription.subscriptionEnd).toLocaleDateString() : "N/A",
         amount: dynamicAmount,
         billingCycle: cycle,
@@ -158,13 +162,21 @@ export default function AdminBillingPage() {
                 <div className="flex items-center gap-3">
                     <Button
                         variant="outline"
+                        disabled={isNavigating}
                         className="rounded-2xl font-black text-[10px] uppercase tracking-widest bg-white dark:bg-slate-900 border-2 h-14 px-8 shadow-sm"
-                        onClick={() => router.push('/dashboard/admin/billing/upgrade')}
+                        onClick={() => {
+                            setIsNavigating(true);
+                            router.push('/dashboard/admin/billing/upgrade');
+                        }}
                     >
-                        Change Plan
-                    </Button>
-                    <Button className="rounded-2xl font-black text-[10px] uppercase tracking-widest bg-primary hover:bg-primary text-primary-foreground h-14 px-8 shadow-xl shadow-primary/20">
-                        Manage Payment Methods
+                        {isNavigating ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Loading...
+                            </>
+                        ) : (
+                            "Change Plan"
+                        )}
                     </Button>
                 </div>
             </motion.div>
@@ -239,7 +251,7 @@ export default function AdminBillingPage() {
                                 <div className="space-y-2">
                                     <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Subscription Status</p>
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-3 h-3 rounded-full ${subscriptionInfo.status === 'ACTIVE' ? 'bg-green-500 animate-pulse' : subscriptionInfo.status === 'EXPIRED' ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`} />
+                                        <div className={`w-3 h-3 rounded-full ${subscriptionInfo.status === 'ACTIVE' ? 'bg-green-500 animate-pulse' : subscriptionInfo.status === 'EXPIRED' ? 'bg-red-500' : subscriptionInfo.status === 'INACTIVE' ? 'bg-red-500 animate-pulse' : 'bg-blue-500 animate-pulse'}`} />
                                         <span className={`text-xl font-bold capitalize ${subscriptionInfo.status === 'EXPIRED' ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>
                                             {subscriptionInfo.status === 'TRIAL' ? 'Free Trial' : subscriptionInfo.status === 'EXPIRED' ? 'Expired' : subscriptionInfo.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                                         </span>
@@ -249,7 +261,7 @@ export default function AdminBillingPage() {
                                     <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Next Billing Date</p>
                                     <div className="flex items-center gap-3">
                                         <Calendar className="w-5 h-5 text-slate-400" />
-                                        <span className="text-xl font-bold text-slate-900 dark:text-white">{subscriptionInfo.renewalDate}</span>
+                                        <span className="text-xl font-bold text-slate-900 dark:text-white">{isBasicTier ? '----' : subscriptionInfo.renewalDate}</span>
                                     </div>
                                 </div>
                             </div>

@@ -161,13 +161,14 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
   }
 
   // 5. Process Distribution
-  const distribution = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+  const distribution = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
   distributionStats.forEach((g) => {
     const avg = (g.score / g.maxMarks) * 100;
-    if (avg >= 90) distribution.A++;
-    else if (avg >= 80) distribution.B++;
-    else if (avg >= 70) distribution.C++;
-    else if (avg >= 60) distribution.D++;
+    if (avg >= 70) distribution.A++;
+    else if (avg >= 60) distribution.B++;
+    else if (avg >= 50) distribution.C++;
+    else if (avg >= 45) distribution.D++;
+    else if (avg >= 40) distribution.E++;
     else distribution.F++;
   });
 
@@ -224,6 +225,17 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
   });
   const subjectNames = Array.from(new Set(teacherSubjects.map(ts => ts.subject?.name).filter(Boolean))) as string[];
 
+  // Fetch recent assignments
+  const recentAssignments = await prisma.assignment.findMany({
+    where: {
+      classId: { in: assignedClassIds },
+    },
+    take: 10,
+    orderBy: { createdAt: "desc" },
+  });
+
+  const classMap = new Map(classTeachers.map(ct => [ct.classId, ct.class?.name]));
+
   return {
     stats: {
       totalClasses,
@@ -246,6 +258,16 @@ export const getTeacherDashboardStatsService = async (teacherId: string, schoolI
       subject: exam.subject?.name || "N/A",
       status: exam.status,
       date: exam.createdAt,
+      term: exam.term || "N/A",
+      category: exam.category,
+    })),
+    recentAssignments: recentAssignments.map((assignment) => ({
+      id: assignment.id,
+      title: assignment.title,
+      className: classMap.get(assignment.classId) || "N/A",
+      subject: "N/A",
+      status: assignment.status,
+      date: assignment.createdAt,
     })),
     todaySchedule
   };

@@ -11,6 +11,10 @@ export interface AuthUser {
   parentCode?: string;
   plan?: string;
   trialEndsAt?: string;
+  primarySchoolId?: string;
+  activeSchoolId?: string;
+  tenantId?: string;
+  schools?: { schoolId: string; role?: string }[];
 }
 
 /**

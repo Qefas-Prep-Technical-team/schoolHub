@@ -62,7 +62,10 @@ export default function CreateExamForm() {
   const modeParam = searchParams?.get("mode");
   const defaultMode = (modeParam === "COMBINED" ? "COMBINED" : "SINGLE_SUBJECT") as "SINGLE_SUBJECT" | "COMBINED";
 
-  const steps = [`${typeLabel} Details`, 'Scheduling & Targets', 'Result Settings'];
+  const steps = defaultMode === "SINGLE_SUBJECT" 
+    ? [`${typeLabel} Details`, 'Scheduling & Targets', 'Result Settings']
+    : [`${typeLabel} Details`, 'Scheduling & Targets'];
+    
   const [activeStep, setActiveStep] = React.useState(0);
   const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>({});
 

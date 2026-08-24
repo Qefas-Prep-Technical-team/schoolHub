@@ -874,3 +874,47 @@ export const sendPaymentFailureEmail = async (params: {
     `,
   });
 };
+
+export const sendSubscriptionExpiredEmail = async (email: string, planName: string) => {
+  const isTest = process.env.RESEND_TEST?.trim() === 'true';
+  const recipient = isTest ? process.env.TEST_EMAIL as string : email;
+
+  const dashboardUrl = `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/dashboard/billing`;
+
+  return await resend.emails.send({
+    from: process.env.MAIL_FROM as string,
+    to: recipient,
+    subject: `Subscription Expired: ${planName} Plan — Qefas Hub${isTest ? ` (Original: ${email})` : ''}`,
+    html: `
+      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 40px; border: 1px solid #fca5a5; border-radius: 32px; background: #ffffff; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.08);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 32px;">
+          <img src="${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/logo/favicon.svg" alt="Qefas Hub Logo" style="width: 48px; height: 48px; border-radius: 12px;" />
+          <div>
+            <h2 style="margin: 0; color: #0f172a; font-weight: 800; letter-spacing: -1px; font-size: 20px;">Qefas Hub</h2>
+            <p style="margin: 0; color: #ef4444; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Subscription Expired</p>
+          </div>
+        </div>
+
+        <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 20px; padding: 24px; margin-bottom: 28px; text-align: center;">
+          <h3 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #b91c1c; letter-spacing: -0.5px;">Your Subscription Has Expired</h3>
+          <p style="margin: 0; color: #dc2626; font-size: 15px; font-weight: 600;">Your <strong>${planName}</strong> premium access has ended and your account has been transitioned to the Free tier.</p>
+        </div>
+
+        <p style="color: #475569; font-size: 15px; line-height: 1.7; margin-bottom: 24px;">
+          To regain access to your premium features and limits, please renew your subscription.
+        </p>
+
+        <div style="text-align: center; margin-bottom: 32px;">
+          <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 16px 40px; border-radius: 16px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">
+            Renew Subscription →
+          </a>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0; line-height: 1.6;">
+          If you believe this is an error or need help, please contact our support team.<br/>
+          <strong style="color: #64748b;">Qefas Hub</strong> — Your Institutional Management Platform
+        </p>
+      </div>
+    `,
+  });
+};

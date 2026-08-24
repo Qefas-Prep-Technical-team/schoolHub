@@ -24,6 +24,16 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
 
+const formatDateForInput = (dateStr: string) => {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  } catch {
+    return dateStr;
+  }
+};
+
 const paperSchema = z.object({
   subjectId: z.string().optional(),
   teacherId: z.string().optional(),
@@ -32,6 +42,17 @@ const paperSchema = z.object({
   readingContent: z.string().optional(),
   durationMinutes: z.coerce.number().min(1, "Duration must be at least 1 minute"),
   creationMode: z.enum(["MANUAL", "AI", "OMR"]).default("MANUAL"),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  allowImmediateResult: z.boolean().optional(),
+  resultReleaseAt: z.string().optional(),
+  shuffleQuestions: z.boolean().optional(),
+  scope: z.enum(["SCHOOL", "CLASS", "DEPARTMENT"]).optional(),
+  classId: z.string().optional(),
+  targetDepartmentId: z.string().optional(),
+  sessionId: z.string().optional(),
+  term: z.string().optional(),
+  examDescription: z.string().optional(),
 });
 
 type PaperFormValues = z.infer<typeof paperSchema>;
@@ -40,8 +61,13 @@ interface EditPaperModalProps {
   isOpen: boolean;
   onClose: () => void;
   paper: any;
+  exam?: any;
+  isSinglePaperType?: boolean;
   subjects: any[];
   teachers: any[];
+  classes?: any[];
+  departments?: any[];
+  sessions?: any[];
   isLoadingData: boolean;
 }
 
@@ -49,8 +75,13 @@ export default function EditPaperModal({
   isOpen,
   onClose,
   paper,
+  exam,
+  isSinglePaperType,
   subjects,
   teachers,
+  classes,
+  departments,
+  sessions,
   isLoadingData
 }: EditPaperModalProps) {
   const queryClient = useQueryClient();
@@ -66,6 +97,17 @@ export default function EditPaperModal({
       readingContent: paper?.readingContent || "",
       durationMinutes: paper?.durationMinutes || 60,
       creationMode: paper?.creationMode || "MANUAL",
+      startDate: formatDateForInput(exam?.startDate) || "",
+      endDate: formatDateForInput(exam?.endDate) || "",
+      allowImmediateResult: exam?.allowImmediateResult ?? true,
+      resultReleaseAt: formatDateForInput(exam?.resultReleaseAt) || "",
+      shuffleQuestions: !!exam?.shuffleQuestions,
+      scope: exam?.scope || "SCHOOL",
+      classId: exam?.classId || "",
+      targetDepartmentId: exam?.departments?.[0]?.departmentId || exam?.departments?.[0]?.department?.id || "",
+      sessionId: exam?.sessionId || "",
+      term: exam?.term || "",
+      examDescription: exam?.description || "",
     },
   });
 
@@ -82,12 +124,50 @@ export default function EditPaperModal({
         readingContent: paper.readingContent || "",
         durationMinutes: paper.durationMinutes || 60,
         creationMode: paper.creationMode || "MANUAL",
+        startDate: formatDateForInput(exam?.startDate) || "",
+        endDate: formatDateForInput(exam?.endDate) || "",
+        allowImmediateResult: exam?.allowImmediateResult ?? true,
+        resultReleaseAt: formatDateForInput(exam?.resultReleaseAt) || "",
+        shuffleQuestions: !!exam?.shuffleQuestions,
+        scope: exam?.scope || "SCHOOL",
+        classId: exam?.classId || "",
+        targetDepartmentId: exam?.departments?.[0]?.departmentId || exam?.departments?.[0]?.department?.id || "",
+        sessionId: exam?.sessionId || "",
+        term: exam?.term || "",
+        examDescription: exam?.description || "",
       });
     }
-  }, [paper, reset, isOpen]);
+  }, [paper, exam, reset, isOpen]);
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: PaperFormValues) => examService.updateSubjectPaper(paper.id, data),
+    mutationFn: async (data: PaperFormValues) => {
+      await examService.updateSubjectPaper(paper.id, {
+        subjectId: data.subjectId,
+        teacherId: data.teacherId,
+        title: data.title,
+        instructions: data.instructions,
+        readingContent: data.readingContent,
+        durationMinutes: data.durationMinutes,
+        creationMode: data.creationMode,
+      });
+
+      if (isSinglePaperType && exam?.id) {
+        await examService.updateExam(exam.id, {
+          title: data.title,
+          description: data.examDescription,
+          startDate: data.startDate || undefined,
+          endDate: data.endDate || undefined,
+          allowImmediateResult: data.allowImmediateResult,
+          resultReleaseAt: !data.allowImmediateResult && data.resultReleaseAt ? data.resultReleaseAt : undefined,
+          shuffleQuestions: data.shuffleQuestions,
+          scope: data.scope,
+          classId: data.scope === "CLASS" ? data.classId : undefined,
+          departmentIds: data.scope === "DEPARTMENT" && data.targetDepartmentId ? [data.targetDepartmentId] : undefined,
+          sessionId: data.sessionId,
+          term: data.term,
+        });
+      }
+    },
     onSuccess: () => {
       toast.success("Subject paper updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["paper", paper.id] });
@@ -159,7 +239,7 @@ export default function EditPaperModal({
                       disabled={isLoadingData}
                       className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                     >
-                      <option value="">No Subject (Optional)</option>
+                      <option value="">{isLoadingData ? "Loading..." : "No Subject (Optional)"}</option>
                       {subjects.map((s) => (
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
@@ -189,7 +269,7 @@ export default function EditPaperModal({
                       disabled={isLoadingData}
                       className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                     >
-                      <option value="">No Teacher (Optional)</option>
+                      <option value="">{isLoadingData ? "Loading..." : "No Teacher (Optional)"}</option>
                       {teachers.map((t) => (
                         <option key={t.id} value={t.id}>{t.name}</option>
                       ))}
@@ -203,10 +283,128 @@ export default function EditPaperModal({
                     <Input type="number" {...register("durationMinutes")} className="rounded-2xl h-12 border-slate-200" />
                     {errors.durationMinutes && <p className="text-red-500 text-[10px] font-bold">{errors.durationMinutes.message}</p>}
                   </div>
+
+                  {isSinglePaperType && (
+                    <>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                          <Clock size={12} /> Start Date & Time
+                        </Label>
+                        <Input type="datetime-local" {...register("startDate")} className="rounded-2xl h-12 border-slate-200" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                          <Clock size={12} /> End Date & Time
+                        </Label>
+                        <Input type="datetime-local" {...register("endDate")} className="rounded-2xl h-12 border-slate-200" />
+                      </div>
+                      
+                      <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Assessment Scope</Label>
+                        <select
+                          {...register("scope")}
+                          className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                        >
+                          <option value="SCHOOL">Whole School</option>
+                          <option value="CLASS">Specific Class</option>
+                          <option value="DEPARTMENT">Specific Department</option>
+                        </select>
+                      </div>
+
+                      {watch("scope") === "CLASS" && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Target Class</Label>
+                          <select
+                            {...register("classId")}
+                            className="w-full h-12 rounded-2xl border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                          >
+                            <option value="">Select a class...</option>
+                            {(classes || []).map((c: any) => (
+                              <option key={c.id} value={c.id}>{`${c.name} ${c.section || ""}`.trim()}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {watch("scope") === "DEPARTMENT" && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-purple-500">Target Department</Label>
+                          <select
+                            {...register("targetDepartmentId")}
+                            className="w-full h-12 rounded-2xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                          >
+                            <option value="">Select a department...</option>
+                            {(departments || []).map((d: any) => (
+                              <option key={d.id} value={d.id}>{d.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Academic Session</Label>
+                        <select
+                          {...register("sessionId")}
+                          className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                        >
+                          <option value="">No Session (Select to link)</option>
+                          {((Array.isArray(sessions) ? sessions : (sessions as any)?.data || [])).map((s: any) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Term / Semester</Label>
+                        <select
+                          {...register("term")}
+                          className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                        >
+                          <option value="">None</option>
+                          <option value="FIRST">First Term</option>
+                          <option value="SECOND">Second Term</option>
+                          <option value="THIRD">Third Term</option>
+                        </select>
+                      </div>
+                      
+                      <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Result Visibility</Label>
+                        <select
+                          {...register("allowImmediateResult", {
+                            setValueAs: (v) => v === "true" || v === true
+                          })}
+                          className="w-full h-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                        >
+                          <option value="true">Immediate Visibility</option>
+                          <option value="false">Hidden (Delay till release date)</option>
+                        </select>
+                      </div>
+
+                      {String(watch("allowImmediateResult")) === "false" && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                            <Clock size={12} /> Result Release Date
+                          </Label>
+                          <Input type="datetime-local" {...register("resultReleaseAt")} className="rounded-2xl h-12 border-slate-200" />
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 {/* Right Column: Content */}
                 <div className="space-y-6">
+                  {isSinglePaperType && (
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Exam Description</Label>
+                      <Textarea 
+                        {...register("examDescription")} 
+                        placeholder="General exam description..." 
+                        className="rounded-2xl min-h-[80px] border-slate-200 resize-none font-medium leading-relaxed" 
+                      />
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Instructions</Label>
                     <Textarea 
@@ -268,7 +466,7 @@ export default function EditPaperModal({
             form="edit-paper-form"
             type="submit"
             disabled={isPending}
-            className="rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25 h-12 px-8 flex items-center gap-2"
+            className="rounded-2xl font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 h-12 px-8 flex items-center gap-2"
           >
             {isPending ? (
               <Loader2 className="animate-spin h-4 w-4" />

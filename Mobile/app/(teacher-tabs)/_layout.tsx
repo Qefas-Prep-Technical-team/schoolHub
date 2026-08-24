@@ -1,19 +1,21 @@
 import React, { useRef, useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { Platform, View, TouchableOpacity, Dimensions, Animated } from 'react-native';
-import { Home, BookOpen, Users, FileCheck2, Settings } from 'lucide-react-native';
+import { Home, BookOpen, Users, FileCheck2, Settings, FileText } from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const { width } = Dimensions.get('window');
 const TAB_BAR_MARGIN = 24 * 2;
 const TAB_BAR_WIDTH = width - TAB_BAR_MARGIN;
-const TAB_WIDTH = TAB_BAR_WIDTH / 5;
 const INDICATOR_SIZE = 48; // w-12 is 48px
-const INDICATOR_OFFSET = (TAB_WIDTH - INDICATOR_SIZE) / 2;
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+
+  const numTabs = state.routes.length;
+  const TAB_WIDTH = TAB_BAR_WIDTH / numTabs;
+  const INDICATOR_OFFSET = (TAB_WIDTH - INDICATOR_SIZE) / 2;
 
   const animatedValue = useRef(new Animated.Value(state.index)).current;
 
@@ -27,14 +29,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   }, [state.index]);
 
   const translateX = animatedValue.interpolate({
-    inputRange: [0, 1, 2, 3, 4],
-    outputRange: [
-      0 * TAB_WIDTH,
-      1 * TAB_WIDTH,
-      2 * TAB_WIDTH,
-      3 * TAB_WIDTH,
-      4 * TAB_WIDTH,
-    ],
+    inputRange: state.routes.map((_: any, i: number) => i),
+    outputRange: state.routes.map((_: any, i: number) => i * TAB_WIDTH),
   });
 
   return (
@@ -89,6 +85,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         if (route.name === 'classes') IconComponent = BookOpen;
         if (route.name === 'students') IconComponent = Users;
         if (route.name === 'exams') IconComponent = FileCheck2;
+        if (route.name === 'ca') IconComponent = FileText;
         if (route.name === 'settings') IconComponent = Settings;
 
         const iconColor = isFocused 

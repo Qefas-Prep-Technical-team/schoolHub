@@ -103,7 +103,8 @@ export const verifyPayment = async (req: Request, res: Response) => {
       message: "Payment verified and subscription updated",
       data,
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
+    console.error("[PaymentController] verifyPayment error detailed trace:", error?.stack || error);
     return handleError(res, error, "payment.verifyPayment");
   }
 };

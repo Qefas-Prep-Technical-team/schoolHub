@@ -58,6 +58,16 @@ export const startCronJobs = () => {
           title: 'Subscription Expired',
           message: `Your premium subscription has expired. Your account has been downgraded to the Free tier. Please renew to restore premium limits and features.`,
         });
+
+        // Send email to the school email (if exists)
+        if (school.email) {
+          try {
+            const { sendSubscriptionExpiredEmail } = require('../modules/auth/auth.service');
+            await sendSubscriptionExpiredEmail(school.email, school.plan || 'Premium');
+          } catch (e) {
+            console.error(`[CRON] Failed to send expiration email to school ${school.id}:`, e);
+          }
+        }
       }
 
       // 2. Process Expired Individual Users
@@ -102,6 +112,16 @@ export const startCronJobs = () => {
             title: 'Subscription Expired',
             message: `Your premium subscription has expired. Your account has been downgraded to the Free tier. Please renew to restore premium features.`,
           });
+
+          // Send email to the user (if exists)
+          if (user.email) {
+            try {
+              const { sendSubscriptionExpiredEmail } = require('../modules/auth/auth.service');
+              await sendSubscriptionExpiredEmail(user.email, user.plan || 'Premium');
+            } catch (e) {
+              console.error(`[CRON] Failed to send expiration email to ${model} ${user.id}:`, e);
+            }
+          }
         }
       }
 

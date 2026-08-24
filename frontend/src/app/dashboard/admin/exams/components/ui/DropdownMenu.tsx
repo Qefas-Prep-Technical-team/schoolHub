@@ -3,9 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { MoreVertical } from 'lucide-react';
 
+import Link from 'next/link';
+
 interface DropdownItem {
     label: string;
-    onClick: () => void;
+    onClick?: () => void;
+    href?: string;
     destructive?: boolean;
 }
 
@@ -43,23 +46,44 @@ export default function DropdownMenu({ items }: DropdownMenuProps) {
 
             {isOpen && (
                 <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-10">
-                    {items.map((item, index) => (
-                        <button
-                            key={index}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                item.onClick();
-                                setIsOpen(false);
-                            }}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${item.destructive
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-gray-700 dark:text-gray-300'
-                                }`}
-                        >
-                            {item.label}
-                        </button>
-                    ))}
+                    {items.map((item, index) => {
+                        const className = `block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${item.destructive
+                                ? 'text-red-600 dark:text-red-400'
+                                : 'text-gray-700 dark:text-gray-300'
+                            }`;
+                        
+                        if (item.href) {
+                            return (
+                                <Link
+                                    key={index}
+                                    href={item.href}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsOpen(false);
+                                        if (item.onClick) item.onClick();
+                                    }}
+                                    className={className}
+                                >
+                                    {item.label}
+                                </Link>
+                            );
+                        }
+
+                        return (
+                            <button
+                                key={index}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (item.onClick) item.onClick();
+                                    setIsOpen(false);
+                                }}
+                                className={className}
+                            >
+                                {item.label}
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </div>

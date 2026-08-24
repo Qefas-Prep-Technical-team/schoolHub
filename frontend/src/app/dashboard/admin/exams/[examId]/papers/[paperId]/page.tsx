@@ -17,6 +17,7 @@ import { useState } from "react";
 import { BookOpen, Eye, Settings as SettingsIcon } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { classService } from "@/lib/api/services/classService";
+import { sessionService } from "@/lib/api/services/sessionService";
 
 export default function PaperDetailPage() {
   const params = useParams();
@@ -39,9 +40,41 @@ export default function PaperDetailPage() {
 
   const queryClient = useQueryClient();
 
+  const activeSchoolId = user?.schools?.[0]?.schoolId || (exam as any)?.schoolId;
+
+  // Fetch Classes for the selector
+  const { data: classesData } = useQuery({
+    queryKey: ["school-classes", activeSchoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/classes?schoolId=${activeSchoolId}`);
+      return data.data || [];
+    },
+    enabled: !!activeSchoolId,
+  });
+
+  // Fetch Departments for the selector
+  const { data: departmentsData } = useQuery({
+    queryKey: ["school-departments", activeSchoolId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/academic/departments?schoolId=${activeSchoolId}`);
+      return data.data || [];
+    },
+    enabled: !!activeSchoolId,
+  });
+
+  // Fetch Sessions for the selector
+  const { data: sessionsData } = useQuery({
+    queryKey: ["school-sessions", activeSchoolId],
+    queryFn: () => sessionService.getSessions(),
+    enabled: !!activeSchoolId,
+  });
+
   // Single-paper types skip the papers list — back goes straight to exam list
   const SINGLE_PAPER_TYPES = ['QUIZ', 'CA', 'ASSIGNMENT'];
-  const isSinglePaperType = exam && SINGLE_PAPER_TYPES.includes((exam as any).category || (exam as any).type || '');
+  const isSinglePaperType = exam && (
+    SINGLE_PAPER_TYPES.includes((exam as any).category || (exam as any).type || '') ||
+    (exam as any).mode === 'SINGLE_SUBJECT'
+  );
   const handleBack = () => {
     if (isSinglePaperType) {
       router.push('/dashboard/admin/exams');
@@ -388,8 +421,13 @@ export default function PaperDetailPage() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         paper={paper}
+        exam={exam}
+        isSinglePaperType={isSinglePaperType}
         subjects={subjects}
         teachers={teachers}
+        classes={classesData}
+        departments={departmentsData}
+        sessions={sessionsData}
         isLoadingData={isLoadingSubjects || isLoadingTeachers}
       />
     </div>

@@ -31,8 +31,8 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
     const [isUnpublishDialogOpen, setIsUnpublishDialogOpen] = useState(false);
 
     const menuItems = [
-        { label: 'View Papers', onClick: () => router.push(`/dashboard/admin/exams/${assessment.id}/papers`) },
-        { label: 'Edit', onClick: () => router.push(`/dashboard/admin/exams/${assessment.id}/edit`) },
+        { label: 'View Papers', href: `/dashboard/admin/exams/${assessment.id}/papers` },
+        { label: 'Edit', href: `/dashboard/admin/exams/${assessment.id}/edit` },
     ];
 
     if (assessment.status === 'PUBLISHED') {
@@ -167,7 +167,6 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                     unpublishExamMutation.mutate(assessment.id, {
                         onSuccess: () => {
                             setIsUnpublishDialogOpen(false);
-                            toast.success("Exam unpublished successfully!");
                         },
                         onError: (error: any) => {
                             toast.error(error.response?.data?.message || "Failed to unpublish exam");
@@ -188,7 +187,6 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                     deleteExamMutation.mutate(assessment.id, {
                         onSuccess: () => {
                             setIsDeleteDialogOpen(false);
-                            toast.success("Exam deleted successfully!");
                         },
                         onError: (error: any) => {
                             toast.error(error.response?.data?.message || "Failed to delete exam");

@@ -104,14 +104,20 @@ export const verifyPaymentService = async (
       return { alreadyProcessed: true, reference };
     }
 
-    const response = await axios.get(
-      `https://api.paystack.co/transaction/verify/${reference}`,
-      {
-        headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        },
-      }
-    );
+    let response;
+    try {
+      response = await axios.get(
+        `https://api.paystack.co/transaction/verify/${reference}`,
+        {
+          headers: {
+            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+          },
+        }
+      );
+    } catch (axiosError: any) {
+      console.error("[PaymentService] Paystack API Error:", axiosError.response?.data || axiosError.message);
+      throw new Error(axiosError.response?.data?.message || "Failed to contact Paystack for verification. Check your API keys.");
+    }
 
     const {
         status: paystackStatus,
@@ -130,7 +136,11 @@ export const verifyPaymentService = async (
 
     // SECURITY: Extract Plan and Billing from Metadata (Source of Truth)
     // This prevents users from spoofing a different plan in the request body
-    const customFields = metadata?.custom_fields || [];
+    let metadataObj = metadata;
+    if (typeof metadataObj === 'string') {
+        try { metadataObj = JSON.parse(metadataObj); } catch(e) { console.warn("[PaymentService] Failed to parse metadata string"); }
+    }
+    const customFields = metadataObj?.custom_fields || [];
     const metadataPlan = customFields.find((f: { variable_name: string; value: string }) => f.variable_name === 'plan')?.value;
     const metadataBilling = customFields.find((f: { variable_name: string; value: string }) => f.variable_name === 'billing')?.value;
     const isUpgrade = customFields.find((f: { variable_name: string; value: string }) => f.variable_name === 'is_upgrade')?.value === 'true';
@@ -344,10 +354,11 @@ export const verifyPaymentService = async (
     }
 
     return response.data.data;
-  } catch (error: unknown) {
-    const err = error as { response?: { data?: { message?: string } }; message?: string };
+  } catch (error: any) {
     console.error("[PaymentService] Error during verification:", error);
-    throw new Error(err.response?.data?.message || err.message || "Payment verification failed");
+    // Extract Prisma errors or nested messages safely
+    const errorMessage = error?.response?.data?.message || error?.message || "Payment verification failed";
+    throw new Error(errorMessage);
   }
 };
 
@@ -590,7 +601,11 @@ export const getMetadataFromReference = async (reference: string) => {
             }
         );
 
-        const metadata = response.data.data.metadata?.custom_fields || [];
+        let metadataObj = response.data.data.metadata;
+        if (typeof metadataObj === 'string') {
+            try { metadataObj = JSON.parse(metadataObj); } catch(e) {}
+        }
+        const metadata = metadataObj?.custom_fields || [];
         const userId = metadata.find((f: { variable_name: string; value: string }) => f.variable_name === 'user_id')?.value;
         const userRole = metadata.find((f: { variable_name: string; value: string }) => f.variable_name === 'user_role')?.value;
 
