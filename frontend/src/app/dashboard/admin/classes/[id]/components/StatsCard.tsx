@@ -9,7 +9,7 @@ interface StatsCardProps {
 
 const StatsCard: React.FC<StatsCardProps> = ({ title, value, className = '', isLoading }) => {
   return (
-    <div className={`flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-[#1f2937] border border-gray-200 dark:border-gray-700 ${className}`}>
+    <div className={`flex flex-col gap-2 rounded-3xl p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm ${className}`}>
       {isLoading ? (
         <div className="animate-pulse flex flex-col gap-2">
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>

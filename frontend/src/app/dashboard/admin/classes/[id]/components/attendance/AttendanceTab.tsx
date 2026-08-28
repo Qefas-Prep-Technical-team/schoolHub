@@ -564,7 +564,7 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
             <button
               type="button"
               onClick={handleDownloadReport}
-              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition-colors"
             >
               <Download size={18} className="mr-2" />
               <span className="truncate">Download Report</span>
@@ -573,7 +573,7 @@ export default function ClassAttendancePage({ classData }: AttendanceTabProps) {
             <button
               type="button"
               onClick={handleStartAttendance}
-              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white gap-2 text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_8px_30px_rgba(37,99,235,0.3)] dark:shadow-[0_8px_30px_rgba(59,130,246,0.4)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.5)] hover:-translate-y-0.5"
+              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-5 bg-primary hover:bg-primary/90 text-white gap-2 text-sm font-semibold transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5"
             >
               <Plus size={16} />
               <span className="truncate">Start Attendance</span>

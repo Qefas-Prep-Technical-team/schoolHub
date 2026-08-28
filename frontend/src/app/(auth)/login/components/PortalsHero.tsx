@@ -36,7 +36,7 @@ const PortalsHero: React.FC = () => {
 
   if (branding.isBranded) {
     return (
-      <div className="text-center mb-16 md:mb-24">
+      <div className="text-center mt-16 md:mt-24 mb-16 md:mb-24">
         <SessionBanner />
         {branding.logo && (
           <motion.img 
@@ -67,7 +67,7 @@ const PortalsHero: React.FC = () => {
   }
 
   return (
-    <div className="text-center mb-16 md:mb-24">
+    <div className="text-center mt-16 md:mt-24 mb-16 md:mb-24">
       <SessionBanner />
       <motion.h1 
         initial={{ opacity: 0, y: 20 }}

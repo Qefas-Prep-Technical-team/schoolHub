@@ -21,37 +21,29 @@ export function LinkingHeader({ onConnectClick, onShowQRCodeClick, isLimitReache
       </div>
 
       <div className="flex gap-3">
-        {/* View QR Codes — outline, fine with Button */}
+        {/* View QR Codes — pill shaped */}
         <Button
           onClick={onShowQRCodeClick}
           variant="outline"
-          className="h-12 px-6 rounded-xl font-bold bg-white dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 shadow-sm hover:scale-[1.02] active:scale-95 transition-all text-blue-600 dark:text-blue-400 dark:hover:bg-gray-700/60"
+          className="h-11 px-6 rounded-full font-semibold bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm transition-all text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
         >
-          <QrCode className="mr-2 h-5 w-5" /> View QR Codes
+          <QrCode className="mr-2 h-4 w-4" /> View QR Codes
         </Button>
 
-        {/* Connect with Code — raw button for dark mode gradient support */}
+        {/* Connect with Code — pill shaped */}
         {isLimitReached ? (
           <button
             disabled
-            className="inline-flex items-center h-12 px-6 rounded-xl font-bold text-sm cursor-not-allowed bg-gray-200 dark:bg-gray-700/60 text-gray-400 dark:text-gray-500 shadow-none"
+            className="inline-flex items-center h-11 px-6 rounded-full font-semibold text-sm cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 shadow-none border border-slate-200 dark:border-slate-700"
           >
-            <Link2 className="mr-2 h-5 w-5" /> Limit Reached
+            <Link2 className="mr-2 h-4 w-4" /> Limit Reached
           </button>
         ) : (
           <button
             onClick={onConnectClick}
-            className={cn(
-              "inline-flex items-center h-12 px-6 rounded-xl font-bold text-sm cursor-pointer text-white transition-all duration-300",
-              "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20",
-              "dark:bg-gradient-to-r dark:from-indigo-500 dark:to-violet-600",
-              "dark:hover:from-indigo-400 dark:hover:to-violet-500",
-              "dark:shadow-[0_4px_20px_rgba(99,102,241,0.35)]",
-              "dark:hover:shadow-[0_4px_28px_rgba(99,102,241,0.55)]",
-              "hover:scale-[1.02] active:scale-95"
-            )}
+            className="inline-flex items-center justify-center overflow-hidden rounded-full h-11 px-6 bg-primary hover:bg-primary/90 text-white gap-2 text-sm font-semibold transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5"
           >
-            <Link2 className="mr-2 h-5 w-5" /> Connect with Code
+            <Link2 className="mr-2 h-4 w-4" /> Connect with Code
           </button>
         )}
       </div>

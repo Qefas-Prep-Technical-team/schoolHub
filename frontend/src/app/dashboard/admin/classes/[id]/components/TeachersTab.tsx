@@ -49,7 +49,7 @@ const TeachersTab: React.FC<TeachersTabProps> = ({ teachers = [] }) => {
 
   if (!teachers || teachers.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm mt-6">
         <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
           <User className="text-slate-400" size={32} />
         </div>
@@ -68,7 +68,7 @@ const TeachersTab: React.FC<TeachersTabProps> = ({ teachers = [] }) => {
           <div 
             key={ct.teacher.id}
             onClick={() => handleTeacherClick(ct.teacher, ct.isLead)}
-            className="group relative bg-white dark:bg-[#1f2937] p-6 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer"
+            className="group relative bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
           >
             {ct.isLead && (
               <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full border border-blue-100 dark:border-blue-800/50">

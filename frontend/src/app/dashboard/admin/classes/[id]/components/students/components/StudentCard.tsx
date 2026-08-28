@@ -11,7 +11,7 @@ interface StudentCardProps {
 const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) => {
   return (
     <div 
-      className="bg-white dark:bg-[#1C182F] rounded-xl shadow-sm p-4 flex flex-col items-center text-center transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+      className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm p-6 flex flex-col items-center text-center transition-all hover:shadow-md hover:-translate-y-1 cursor-pointer"
       onClick={() => onClick?.(student)}
     >
       {student.profileImage ? (

@@ -17,7 +17,7 @@ const FormActionBar: React.FC<FormActionBarProps> = ({
   variant = 'default'
 }) => {
   const containerClasses = variant === 'floating'
-    ? "fixed bottom-8 left-1/2 -translate-x-1/2 z-50 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-2xl flex items-center gap-4 min-w-[300px] justify-between animate-in slide-in-from-bottom-8 duration-500"
+    ? "fixed bottom-8 left-1/2 -translate-x-1/2 z-50 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-2xl shadow-lg flex items-center gap-4 min-w-[300px] justify-between animate-in slide-in-from-bottom-8 duration-500"
     : "sticky bottom-0 z-10 py-4 -mx-6 -mb-8 bg-gradient-to-t from-background-light dark:from-background-dark to-transparent";
 
   return (

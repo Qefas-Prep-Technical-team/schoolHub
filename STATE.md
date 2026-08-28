@@ -21,6 +21,24 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+### Wednesday, August 26, 2026
+
+- **Admin Dashboard Layout & Card Redesign (`/dashboard/admin/page.tsx`)**:
+    - [x] Restored the full component tree (Quick Actions, Usage Limits, Alerts, etc.) after it was initially replaced by a single block.
+    - [x] Connected the Top Hero Banner and the 4 Main Stat Cards (Students, Teachers, Classes, Subjects) to the real `stats` and `analysis` API hooks (`useSchoolStats`, `useSchoolPerformanceAnalysis`), effectively removing all static dummy numbers.
+    - [x] Converted all secondary panels (`AlertsPanel`, `QuickActions`, `RecentActivity`, `ExamStatus`, `StaffInsights`, `UsageLimitsCard`) to the unified, clean "Pandhowan" aesthetic (`bg-white dark:bg-slate-900 border border-slate-100 rounded-3xl p-6 shadow-sm`), removing the heavy dark gradients and glassmorphism.
+    - [x] Upgraded `DashboardCharts` to map the real `subjectBreakdown` averages into the Pie Chart (Academic Performance) and integrated real data checks for the Area Chart (Attendance Trends).
+
+### Tuesday, August 26, 2026
+
+- **Settings Popup Transparent Background Fix (`[examId]/papers/page.tsx`)**:
+    - [x] **Root Cause Found**: `DialogContent` had `bg-slate-50/50 dark:bg-slate-950/50` — the `/50` opacity modifier made the popup 50% transparent.
+    - [x] **Fix Applied**: Changed to `bg-slate-50 dark:bg-slate-950` (fully opaque).
+
+- **Admin Students Page — Live Attendance Rate (`students/page.tsx`)**:
+    - [x] **Root Cause Found**: The "Attendance Rate" stat card had a hardcoded `'89%'` value — purely static placeholder, never reflecting real data.
+    - [x] **Fix Applied**: Imported `useSchoolTodayAttendance`, computed real rate as `sum(present) / sum(total)` across all class attendance records. Shows `—` with "No data today" desc when no attendance has been submitted yet.
+
 ### Wednesday, August 20, 2026
 
 - **Mobile Parent Dashboard Logout Fix (`settings.tsx`)**:

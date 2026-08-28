@@ -38,72 +38,67 @@ export default function InvitationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
-      <div className="max-w-[1600px] mx-auto space-y-12">
+    <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-8">
+      <div className="max-w-[1600px] mx-auto space-y-8">
         
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
-              <div className="size-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Invitations Management</span>
-            </div>
+        <header className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider uppercase">
+            <MailPlus size={14} /> Invitations Management
+          </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
-                Invitations<span style={{ color: primaryColor }}>.</span>
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                Invitations
               </h1>
-              <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
+              <p className="text-sm text-slate-500 font-medium mt-1">
                 Invite pre-registered members to claim their accounts. Link their real email and send a verification link.
               </p>
             </div>
-          </div>
-        </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="relative group min-w-[300px]">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Search members to invite..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="w-full h-11 pl-11 pr-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-semibold text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
+                />
+              </div>
 
-        {/* Search & Action */}
-        <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-          <div className="relative group flex-1 max-w-xl">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
-            <input 
-              type="text" 
-              placeholder="Search members to invite..."
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full h-16 pl-16 pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-              style={{ '--tw-ring-color': `${primaryColor}20` } as any}
-            />
+              <Button 
+                onClick={() => activeTab === "students" ? setIsStudentDialogOpen(true) : setIsTeacherDialogOpen(true)}
+                style={{ backgroundColor: primaryColor }}
+                className="h-11 px-6 rounded-xl text-white font-semibold text-sm shadow-sm hover:opacity-90 transition-opacity flex items-center gap-2 border-none shrink-0 whitespace-nowrap"
+              >
+                <UserPlus size={18} />
+                {activeTab === "students" ? "Create Student" : "Create Teacher"}
+              </Button>
+            </div>
           </div>
-
-          <Button 
-            onClick={() => activeTab === "students" ? setIsStudentDialogOpen(true) : setIsTeacherDialogOpen(true)}
-            style={{ backgroundColor: primaryColor }}
-            className="h-16 px-8 rounded-[2rem] text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-1 transition-all flex items-center gap-3 border-none shrink-0"
-          >
-            <UserPlus size={20} />
-            {activeTab === "students" ? "Create Student" : "Create Teacher"}
-          </Button>
-        </div>
+        </header>
 
         {/* Tabs & Table */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="mb-6">
-            <TabsList className="bg-slate-50 dark:bg-slate-900 p-1.5 rounded-2xl">
-              <TabsTrigger 
-                value="students" 
-                className="rounded-xl px-6 py-2.5 text-xs font-black uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-primary data-[state=active]:shadow-md transition-all flex items-center gap-2"
-              >
-                <GraduationCap size={16} /> Students
-              </TabsTrigger>
-              <TabsTrigger 
-                value="teachers" 
-                className="rounded-xl px-6 py-2.5 text-xs font-black uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-primary data-[state=active]:shadow-md transition-all flex items-center gap-2"
-              >
-                <Users size={16} /> Teachers
-              </TabsTrigger>
-            </TabsList>
-          </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
+          <TabsList className="bg-slate-100 dark:bg-slate-800/50 p-1 rounded-full h-auto inline-flex w-fit">
+            <TabsTrigger 
+              value="students" 
+              className="rounded-full px-6 py-2 text-sm font-medium text-slate-500 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all flex items-center gap-2"
+            >
+              <GraduationCap size={16} /> Students
+            </TabsTrigger>
+            <TabsTrigger 
+              value="teachers" 
+              className="rounded-full px-6 py-2 text-sm font-medium text-slate-500 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all flex items-center gap-2"
+            >
+              <Users size={16} /> Teachers
+            </TabsTrigger>
+          </TabsList>
           
           <TabsContent value="students" className="mt-0 outline-none">
-            <div className="rounded-[4rem] bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-2 shadow-2xl overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
               <InvitationsTable 
                 searchTerm={searchTerm} 
                 page={studentPage}
@@ -113,7 +108,7 @@ export default function InvitationsPage() {
           </TabsContent>
           
           <TabsContent value="teachers" className="mt-0 outline-none">
-            <div className="rounded-[4rem] bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-2 shadow-2xl overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
               <TeacherInvitationsTable 
                 searchTerm={searchTerm} 
                 page={teacherPage}

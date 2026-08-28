@@ -9,7 +9,7 @@ import { LoginFormData, loginSchema } from "../../services/auth-schema";
 import PasswordField from "../../student/components/PasswordField";
 import Link from "next/link";
 import { ROUTES } from "@/lib/constants/routes";
-import GoogleLoginButton from "../../components/GoogleLoginButton";
+
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 
@@ -144,9 +144,7 @@ export default function TeacherLoginForm() {
                 </button>
             </div>
 
-            {globalFeatures?.googleLogin !== false && (
-                <GoogleLoginButton userType="TEACHER" />
-            )}
+
         </form>
     );
 }

@@ -173,82 +173,80 @@ export function SessionForm({
   }, [schoolId, setValue]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      <div className="space-y-3">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-            <Label htmlFor="name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Session Name</Label>
-            <Zap size={14} className="text-slate-300" />
+            <Label htmlFor="name" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Session Name</Label>
         </div>
         <Input
           id="name"
           placeholder="e.g. 2025/2026 Academic Session"
           {...register("name")}
-          className="h-14 px-6 rounded-2xl bg-slate-50/50 dark:bg-white/5 border-2 border-slate-100 dark:border-white/5 focus:border-primary transition-all font-bold text-slate-700 dark:text-slate-200"
-          style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+          className="h-10 px-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary transition-all text-sm font-medium text-slate-900 dark:text-white"
         />
-        {errors.name && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.name.message}</p>}
+        {errors.name && <p className="text-red-500 text-xs font-medium mt-1">{errors.name.message}</p>}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-3">
-          <Label htmlFor="startDate" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Session Start Date</Label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="startDate" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Session Start Date</Label>
           <div className="relative group">
-            <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
             <Input
               id="startDate"
               type="date"
               {...register("startDate")}
-              className="h-14 pl-14 pr-6 rounded-2xl bg-slate-50/50 dark:bg-white/5 border-2 border-slate-100 dark:border-white/5 focus:border-primary transition-all font-bold text-slate-700 dark:text-slate-200"
+              className="h-10 pl-9 pr-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary transition-all text-sm font-medium text-slate-900 dark:text-white"
             />
           </div>
-          {errors.startDate && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.startDate.message}</p>}
+          {errors.startDate && <p className="text-red-500 text-xs font-medium mt-1">{errors.startDate.message}</p>}
         </div>
 
-        <div className="space-y-3">
-          <Label htmlFor="endDate" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Session End Date</Label>
+        <div className="space-y-2">
+          <Label htmlFor="endDate" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Session End Date</Label>
           <div className="relative group">
-            <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
             <Input
               id="endDate"
               type="date"
               {...register("endDate")}
-              className="h-14 pl-14 pr-6 rounded-2xl bg-slate-50/50 dark:bg-white/5 border-2 border-slate-100 dark:border-white/5 focus:border-primary transition-all font-bold text-slate-700 dark:text-slate-200"
+              className="h-10 pl-9 pr-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary transition-all text-sm font-medium text-slate-900 dark:text-white"
             />
           </div>
-          {errors.endDate && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{errors.endDate.message}</p>}
+          {errors.endDate && <p className="text-red-500 text-xs font-medium mt-1">{errors.endDate.message}</p>}
         </div>
       </div>
 
       {/* Term Tracking Section */}
-      <div className="space-y-6 pt-4 border-t border-slate-100 dark:border-white/5">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Term Schedule</h3>
+      <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Term Schedule</h3>
         
         {["FIRST", "SECOND", "THIRD"].map((term, index) => (
-          <div key={term} className="space-y-4 p-4 rounded-2xl bg-slate-50/30 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-            <p className="text-[10px] font-black text-primary uppercase tracking-widest">{term} TERM</p>
+          <div key={term} className="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{term.charAt(0) + term.slice(1).toLowerCase()} Term</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Start Date</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-500">Start Date</Label>
                 <Input
                   type="date"
                   {...register(`termDates.${index}.startDate` as any)}
-                  className="h-10 px-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 text-xs font-bold"
+                  className="h-9 px-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-medium"
                 />
                 {(errors.termDates as any)?.[index]?.startDate && (
-                  <p className="text-red-500 text-[9px] font-black uppercase tracking-tight">
+                  <p className="text-red-500 text-[10px] font-medium mt-1">
                     {(errors.termDates as any)[index].startDate.message}
                   </p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">End Date</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-500">End Date</Label>
                 <Input
                   type="date"
                   {...register(`termDates.${index}.endDate` as any)}
-                  className="h-10 px-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 text-xs font-bold"
+                  className="h-9 px-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-medium"
                 />
                 {(errors.termDates as any)?.[index]?.endDate && (
-                  <p className="text-red-500 text-[9px] font-black uppercase tracking-tight">
+                  <p className="text-red-500 text-[10px] font-medium mt-1">
                     {(errors.termDates as any)[index].endDate.message}
                   </p>
                 )}
@@ -258,22 +256,21 @@ export function SessionForm({
         ))}
       </div>
 
-      <div className="pt-4 flex flex-col gap-4">
+      <div className="pt-2 flex flex-col gap-3">
           <Button
             type="submit"
             disabled={isPending}
-            style={{ backgroundColor: primaryColor }}
-            className="w-full h-16 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 shadow-2xl hover:scale-[1.02] active:scale-95 transition-all border-none"
+            className="w-full h-10 rounded-xl text-white font-medium gap-2 shadow-sm bg-primary hover:bg-primary/90 dark:bg-blue-600 dark:hover:bg-blue-700 transition-all border-none"
           >
             {isPending ? (
-              <span className="flex items-center gap-3">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                {isEditing ? 'SAVING...' : 'CREATING SESSION...'}
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {isEditing ? 'Saving...' : 'Creating Session...'}
               </span>
             ) : (
-              <span className="flex items-center gap-3">
-                {isEditing ? <Save size={20} strokeWidth={3} /> : <Plus size={20} strokeWidth={3} />}
-                {isEditing ? 'SAVE CHANGES' : 'CREATE SESSION'}
+              <span className="flex items-center gap-2">
+                {isEditing ? <Save size={16} /> : <Plus size={16} />}
+                {isEditing ? 'Save Changes' : 'Create Session'}
               </span>
             )}
           </Button>
@@ -283,15 +280,15 @@ export function SessionForm({
               type="button"
               variant="ghost"
               onClick={onCancel}
-              className="w-full h-12 rounded-2xl text-slate-400 font-bold uppercase tracking-widest gap-2 hover:bg-slate-100 dark:hover:bg-white/5"
+              className="w-full h-10 rounded-xl text-slate-500 font-medium gap-2 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              <X size={16} />
+              <X size={14} />
               Cancel Edit
             </Button>
           )}
       </div>
       
-      <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-center italic">
+      <p className="text-xs text-slate-400 text-center">
         * Only administrators can {isEditing ? 'modify' : 'create'} sessions
       </p>
     </form>

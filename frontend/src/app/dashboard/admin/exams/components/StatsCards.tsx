@@ -19,61 +19,71 @@ export default function StatsCards({ examsCount = 0, quizzesCount = 0, casCount 
             label: 'Total Exams', 
             value: totalExams.toString(),
             icon: LayoutDashboard,
-            gradient: "from-blue-500/20 to-indigo-500/5",
-            textColor: "text-blue-600 dark:text-blue-400",
-            iconBg: "bg-blue-100 dark:bg-blue-900/40"
+            bg: "bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20",
+            border: "border-blue-500/20 hover:border-blue-500/50",
+            accent: "bg-blue-600",
+            iconBg: "bg-blue-600 text-white shadow-blue-600/30",
+            textHighlight: "group-hover:text-blue-600 dark:group-hover:text-blue-400"
         },
         { 
             label: 'Total Quizzes', 
             value: totalQuizzes.toString(),
             icon: PenTool,
-            gradient: "from-amber-500/20 to-orange-500/5",
-            textColor: "text-amber-600 dark:text-amber-400",
-            iconBg: "bg-amber-100 dark:bg-amber-900/40"
+            bg: "bg-gradient-to-br from-white to-amber-50 dark:from-slate-900 dark:to-amber-950/20",
+            border: "border-amber-500/20 hover:border-amber-500/50",
+            accent: "bg-amber-500",
+            iconBg: "bg-amber-500 text-white shadow-amber-500/30",
+            textHighlight: "group-hover:text-amber-600 dark:group-hover:text-amber-400"
         },
         { 
             label: 'Continuous Assessments', 
             value: totalCAs.toString(),
             icon: BookOpen,
-            gradient: "from-green-500/20 to-emerald-500/5",
-            textColor: "text-green-600 dark:text-green-400",
-            iconBg: "bg-green-100 dark:bg-green-900/40"
+            bg: "bg-gradient-to-br from-white to-emerald-50 dark:from-slate-900 dark:to-emerald-950/20",
+            border: "border-emerald-500/20 hover:border-emerald-500/50",
+            accent: "bg-emerald-500",
+            iconBg: "bg-emerald-500 text-white shadow-emerald-500/30",
+            textHighlight: "group-hover:text-emerald-600 dark:group-hover:text-emerald-400"
         },
         { 
             label: 'Subject Papers', 
             value: totalPapers.toString(),
             icon: FileText,
-            gradient: "from-purple-500/20 to-pink-500/5",
-            textColor: "text-purple-600 dark:text-purple-400",
-            iconBg: "bg-purple-100 dark:bg-purple-900/40"
+            bg: "bg-gradient-to-br from-white to-purple-50 dark:from-slate-900 dark:to-purple-950/20",
+            border: "border-purple-500/20 hover:border-purple-500/50",
+            accent: "bg-purple-600",
+            iconBg: "bg-purple-600 text-white shadow-purple-600/30",
+            textHighlight: "group-hover:text-purple-600 dark:group-hover:text-purple-400"
         },
     ];
 
     return (
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
             {stats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
                     <div
                         key={index}
-                        className={`relative overflow-hidden flex flex-col gap-3 rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-white/5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group`}
+                        className={`group relative overflow-hidden rounded-3xl border ${stat.border} ${stat.bg} p-6 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-500 cursor-default flex flex-col justify-between`}
                     >
-                        {/* Background gradient blob */}
-                        <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full bg-gradient-to-br ${stat.gradient} blur-2xl group-hover:scale-150 transition-transform duration-500`} />
+                        <div className={`absolute top-0 left-0 w-full h-1.5 ${stat.accent}`} />
+                        <Icon className={`absolute -right-4 -bottom-4 w-32 h-32 opacity-[0.03] text-slate-900 dark:text-white transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12`} />
                         
-                        <div className="flex justify-between items-start relative z-10">
-                            <div className={`p-3 rounded-xl ${stat.iconBg} ${stat.textColor} transition-colors`}>
-                                <Icon className="w-5 h-5" strokeWidth={2.5} />
+                        <div className="relative z-10 flex flex-col h-full gap-8">
+                            <div className="flex justify-between items-start">
+                                <div className={`p-3.5 rounded-2xl shadow-lg transition-transform duration-500 group-hover:-rotate-6 ${stat.iconBg}`}>
+                                    <Icon className="w-6 h-6" strokeWidth={2.5} />
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="relative z-10 mt-2">
-                            <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                                {stat.value}
-                            </p>
-                            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">
-                                {stat.label}
-                            </p>
+                            <div>
+                                <p className={`text-4xl font-black text-slate-900 dark:text-white tracking-tighter transition-colors duration-300 ${stat.textHighlight}`}>
+                                    {stat.value}
+                                </p>
+                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2">
+                                    {stat.label}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 );

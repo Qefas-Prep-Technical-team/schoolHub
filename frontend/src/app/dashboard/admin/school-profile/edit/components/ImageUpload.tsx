@@ -63,7 +63,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
           {label}
         </label>
         {description && (
@@ -73,7 +73,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       <div className="flex flex-wrap items-center gap-6">
         <div 
-          className={`relative overflow-hidden rounded-[2rem] bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800 flex items-center justify-center transition-all group hover:border-primary/50 ${aspectClasses[aspectRatio]}`}
+          className={`relative overflow-hidden rounded-2xl bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center transition-all group hover:border-primary/50 ${aspectClasses[aspectRatio]}`}
         >
           {value ? (
             <>

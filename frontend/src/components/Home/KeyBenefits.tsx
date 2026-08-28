@@ -83,11 +83,11 @@ const PhoneMockup = () => (
 );
 
 const partners = [
-  { Icon: History, name: 'ACADEMY' },
-  { Icon: Landmark, name: 'POLYTECH' },
-  { Icon: Droplets, name: 'EDUFLOW' },
-  { Icon: Eye, name: 'LENSCO' },
-  { Icon: TrendingUp, name: 'STRIVE' },
+  { Icon: History, name: 'PRIMARY SCHOOL' },
+  { Icon: Landmark, name: 'NURSERY' },
+  { Icon: Droplets, name: 'KG' },
+  { Icon: Eye, name: 'JUNIOR SECONDARY' },
+  { Icon: TrendingUp, name: 'SENIOR SECONDARY' },
 ];
 
 const featureCards = [

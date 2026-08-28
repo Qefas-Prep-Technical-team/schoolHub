@@ -23,11 +23,11 @@ const FormInput: React.FC<FormInputProps> = ({
   rows = 3,
   className = ''
 }) => {
-  const commonClasses = "w-full px-5 text-sm font-bold leading-normal transition-all bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-700 outline-none";
+  const commonClasses = "w-full px-4 text-sm font-semibold leading-normal transition-all bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none";
 
   return (
     <label className={`flex flex-col w-full gap-2 ${className}`}>
-      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
         {label} {required && <span className="text-rose-500">*</span>}
       </span>
       

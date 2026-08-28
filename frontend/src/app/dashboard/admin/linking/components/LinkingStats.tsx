@@ -25,7 +25,7 @@ export function LinkingStats({ activeCount, pendingCount, totalCount, usage, lim
   const usagePercentage = studentLimit > 0 ? Math.min(100, (studentUsage / studentLimit) * 100) : 0;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-      <Card className="rounded-3xl border-none shadow-sm bg-blue-500/5 dark:bg-blue-500/10 border-blue-100 dark:border-blue-900/20">
+      <Card className="rounded-3xl shadow-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-2 text-blue-600 dark:text-blue-400">
             <ShieldCheck size={20} />
@@ -36,7 +36,7 @@ export function LinkingStats({ activeCount, pendingCount, totalCount, usage, lim
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl border-none shadow-sm bg-primary/5 dark:bg-primary/10 border-primary/10 dark:border-primary/15/20">
+      <Card className="rounded-3xl shadow-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-2 text-primary dark:text-orange-400">
             <Clock size={20} />
@@ -47,7 +47,7 @@ export function LinkingStats({ activeCount, pendingCount, totalCount, usage, lim
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl border-none shadow-sm bg-purple-500/5 dark:bg-purple-500/10 border-purple-100 dark:border-purple-900/20">
+      <Card className="rounded-3xl shadow-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-2 text-purple-600 dark:text-purple-400">
             <Mail size={20} />

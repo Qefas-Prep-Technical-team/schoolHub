@@ -68,17 +68,15 @@ function NavBar() {
 
     return (
         shouldShow && (
-            <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
-                <div className="max-w-[1440px] mx-auto">
-                    <Toolbar className="justify-between flex min-h-[72px] px-4 md:px-8" disableGutters>
+            <div className="fixed top-4 left-0 w-full z-50 px-4 md:px-8 flex justify-center pointer-events-none">
+                <header className="pointer-events-auto w-full max-w-[1440px] bg-white/40 dark:bg-[#0a0f1e]/40 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-2xl transition-all duration-300 supports-[backdrop-filter]:bg-white/20">
+                    <Toolbar className="justify-between flex min-h-[64px] px-4 md:px-6" disableGutters>
                         <BigNavBar pages={pages} />
-                        <MiniNav
-                            pages={pages}
-                        />
+                        <MiniNav pages={pages} />
                     </Toolbar>
-                </div>
-                <NextTopLoader showSpinner={false} color="#2563eb" height={3} />
-            </header>
+                    <NextTopLoader showSpinner={false} color="#2563eb" height={3} />
+                </header>
+            </div>
         )
     );
 }

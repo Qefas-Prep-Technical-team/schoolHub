@@ -8,7 +8,7 @@ import { LoginFormData, loginSchema } from "../../services/auth-schema";
 import PasswordField from "../../student/components/PasswordField";
 import Link from "next/link";
 import { ROUTES } from "@/lib/constants/routes";
-import GoogleLoginButton from "../../components/GoogleLoginButton";
+
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 // import { adminRoleOptions } from "@/lib/constants/adminOptions"; // Commented out
@@ -162,9 +162,7 @@ export default function LoginForm() {
         </button>
       </div>
 
-      {globalFeatures?.googleLogin !== false && (
-        <GoogleLoginButton userType="ADMIN" />
-      )}
+
     </form>
   );
 }

@@ -567,7 +567,7 @@ export default function TimetablePage({ classData, onNavigateToAttendance }: Tim
   return (
     <div className="w-full mt-6">
       {/* Header Section */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <header className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h2 className="text-gray-900 dark:text-white text-xl font-bold">
             Class Timetable
@@ -607,7 +607,7 @@ export default function TimetablePage({ classData, onNavigateToAttendance }: Tim
       {/* Timetable Grid */}
       <div className="w-full">
         {isTimetableLoading ? (
-          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-[#364563] bg-white dark:bg-[#1b2232] animate-pulse">
+          <div className="overflow-x-auto rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-4 animate-pulse">
             <div className="grid" style={{ 
               gridTemplateColumns: `minmax(120px, 1fr) repeat(${days.length}, minmax(200px, 1fr))` 
             }}>

@@ -9,39 +9,15 @@ import { adminService } from "@/lib/api/services/adminService";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  User, 
-  ShieldCheck, 
-  Mail, 
-  Hash, 
-  BookOpen, 
-  MoreVertical, 
-  Eye, 
-  Edit, 
-  ChevronLeft, 
+import {
+  User,
+  ShieldCheck,
+  MoreHorizontal,
+  ChevronLeft,
   ChevronRight,
-  ExternalLink,
-  ShieldAlert,
-  GraduationCap
+  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface StatusChipProps {
-  status: boolean;
-  themeColor: string;
-}
-
-const StatusChip = ({ status, themeColor }: StatusChipProps) => {
-  const isActive = status;
-  return (
-    <div className="flex items-center gap-2">
-      <div className={cn("size-2 rounded-full", isActive ? 'bg-green-500' : 'bg-primary')} />
-      <span className={cn("text-[10px] font-black uppercase tracking-widest", isActive ? 'text-green-600' : 'text-primary')}>
-        {isActive ? 'Verified' : 'Pending'}
-      </span>
-    </div>
-  );
-};
 
 interface StudentsTableProps {
   searchTerm: string;
@@ -54,20 +30,65 @@ interface StudentsTableProps {
   onPageChange: (page: number) => void;
 }
 
-export default function StudentsTable({ searchTerm, filters, page, onPageChange }: StudentsTableProps) {
+const GenderBadge = ({ gender }: { gender?: string }) => {
+  if (!gender) return <span className="text-xs text-gray-400">—</span>;
+  const isMale = gender.toUpperCase() === "MALE";
+  const isOther = gender.toUpperCase() === "OTHER";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
+        isMale
+          ? "bg-blue-50 text-blue-600"
+          : isOther
+          ? "bg-purple-50 text-purple-600"
+          : "bg-pink-50 text-pink-500"
+      )}
+    >
+      <span className="text-[10px]">{isMale ? "♂" : isOther ? "⚧" : "♀"}</span>
+      {gender.charAt(0) + gender.slice(1).toLowerCase()}
+    </span>
+  );
+};
+
+const StatusDot = ({ verified }: { verified: boolean }) => (
+  <span
+    className={cn(
+      "inline-flex items-center gap-1.5 text-xs font-medium",
+      verified ? "text-emerald-600" : "text-amber-500"
+    )}
+  >
+    <span
+      className={cn(
+        "size-1.5 rounded-full",
+        verified ? "bg-emerald-500" : "bg-amber-400"
+      )}
+    />
+    {verified ? "Active" : "Pending"}
+  </span>
+);
+
+export default function StudentsTable({
+  searchTerm,
+  filters,
+  page,
+  onPageChange,
+}: StudentsTableProps) {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId;
   const { data: settings } = useSchoolSettings(schoolId!);
-  const primaryColor = settings?.themeColor || '#2563eb';
-  
+  const primaryColor = settings?.themeColor || "#6366f1";
+
   const [selectAll, setSelectAll] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["school-students", schoolId, searchTerm, filters, page],
-    queryFn: () => adminService.getSchoolStudents(schoolId!, page, 1000, searchTerm, filters),
+    queryFn: () =>
+      adminService.getSchoolStudents(schoolId!, page, 10, searchTerm, filters),
     enabled: !!schoolId,
+    staleTime: 1000 * 60 * 2,
   });
 
   const totalPages = data?.totalPages || 1;
@@ -82,8 +103,10 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
       toast.success("Student successfully authorized!", { theme: "colored" });
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to authorize student.");
-    }
+      toast.error(
+        error?.response?.data?.message || "Failed to authorize student."
+      );
+    },
   });
 
   const handleVerify = (e: React.MouseEvent, studentId: string) => {
@@ -95,7 +118,9 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
   const toggleSelect = (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
     e.stopPropagation();
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((existingId) => existingId !== id) : [...prev, id]
+      prev.includes(id)
+        ? prev.filter((existingId) => existingId !== id)
+        : [...prev, id]
     );
   };
 
@@ -108,170 +133,196 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
     setSelectAll(!selectAll);
   };
 
+  // ── Loading skeleton ──────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="p-8 space-y-8 bg-slate-950/40 rounded-[3.5rem] backdrop-blur-3xl border border-white/5">
-        <div className="flex items-center justify-between mb-8 px-10">
-          {[1, 2, 3, 4, 5].map(i => (
-            <Skeleton key={i} className="h-3 w-24 rounded-full bg-white/5" />
-          ))}
+      <div className="divide-y divide-gray-100 dark:divide-white/5">
+        <div className="flex items-center gap-4 px-4 py-3 bg-gray-50 dark:bg-slate-800/50">
+          {["w-4", "w-6", "w-32", "w-20", "w-16", "w-16", "w-24", "w-16", "w-16"].map(
+            (w, i) => (
+              <Skeleton key={i} className={`h-3 ${w} rounded`} />
+            )
+          )}
         </div>
-        {[1, 2, 3, 4, 5, 6].map(i => (
-          <div key={i} className="flex items-center gap-8 p-8 rounded-[2.5rem] bg-white/[0.02] border border-white/5 relative overflow-hidden group">
-            <div 
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent -translate-x-full animate-[shimmer_2s_infinite]" 
-              style={{ backgroundSize: '200% 100%' }}
-            />
-            <Skeleton className="size-6 rounded-lg bg-white/5" />
-            <div className="flex items-center gap-6 flex-1">
-              <Skeleton className="size-16 rounded-2xl bg-white/10" />
-              <div className="space-y-3">
-                <Skeleton className="h-5 w-48 rounded-lg bg-white/10" />
-                <Skeleton className="h-3 w-32 rounded-full bg-white/5" />
-              </div>
-            </div>
-            <Skeleton className="h-4 w-28 rounded-full bg-white/5" />
-            <Skeleton className="h-4 w-36 rounded-full bg-white/5" />
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-12 w-28 rounded-2xl bg-white/10" />
-              <Skeleton className="size-12 rounded-2xl bg-white/5" />
-            </div>
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="flex items-center gap-4 px-4 py-3">
+            <Skeleton className="size-4 rounded" />
+            <Skeleton className="size-4 rounded" />
+            <Skeleton className="size-8 rounded-full" />
+            <Skeleton className="h-3 w-36 rounded" />
+            <Skeleton className="h-3 w-20 rounded" />
+            <Skeleton className="h-3 w-14 rounded" />
+            <Skeleton className="h-3 w-14 rounded" />
+            <Skeleton className="h-3 w-24 rounded" />
+            <Skeleton className="h-5 w-14 rounded-full" />
+            <Skeleton className="size-6 rounded" />
           </div>
         ))}
       </div>
     );
   }
 
+  // ── Error ─────────────────────────────────────────────────────────────────
   if (isError) {
     return (
-      <div className="p-20 text-center rounded-[3.5rem] bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 font-black uppercase tracking-widest text-xs">
-        Failed to synchronize student registry. Re-initializing connection...
+      <div className="p-12 text-center text-sm text-red-500 font-medium">
+        Failed to load students. Please refresh and try again.
       </div>
     );
   }
 
+  // ── Smart page numbers ────────────────────────────────────────────────────
+  const getPageNumbers = () => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages: (number | "…")[] = [1];
+    if (page > 3) pages.push("…");
+    for (let p = Math.max(2, page - 1); p <= Math.min(totalPages - 1, page + 1); p++) {
+      pages.push(p);
+    }
+    if (page < totalPages - 2) pages.push("…");
+    pages.push(totalPages);
+    return pages;
+  };
+
   return (
-    <div className="rounded-[3.5rem] bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 overflow-hidden shadow-3xl">
-      {/* Desktop Table View */}
-      <div className="hidden md:block overflow-x-auto custom-scrollbar">
-        <table className="w-full border-collapse">
+    <div className="flex flex-col">
+      {/* ── Desktop table ─────────────────────────────────────────────────── */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="border-b border-slate-100 dark:border-white/5">
-              <th className="p-8 w-10">
+            <tr className="border-b border-gray-100 dark:border-white/5 bg-gray-50/60 dark:bg-slate-800/30">
+              <th className="px-4 py-3 w-8">
                 <input
                   type="checkbox"
-                  className="size-5 rounded-lg border-2 border-slate-200 dark:border-white/10 transition-all cursor-pointer"
-                  style={{ accentColor: primaryColor }}
+                  className="size-4 rounded border-gray-300 dark:border-white/20 cursor-pointer accent-indigo-600"
                   checked={selectAll}
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Name</th>
-              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Code</th>
-              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned Class</th>
-              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Auth Status</th>
-              <th className="p-8 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-10">
+                #
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-40">
+                Student Code
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Full Name
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Class
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Gender
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Guardian
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">
+                Status
+              </th>
+
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {students.map((student: any) => {
+          <tbody className="divide-y divide-gray-50 dark:divide-white/[0.03]">
+            {students.map((student: any, index: number) => {
               const isSelected = selectedIds.includes(student.id);
               const studentClass = student.classes?.[0]?.class;
-              
+              const rowNumber = (page - 1) * 10 + index + 1;
+              const studentCode = student.studentCode
+                ? String(student.studentCode).padStart(8, "0")
+                : "—";
+
               return (
                 <tr
                   key={student.id}
                   className={cn(
-                    "group hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-all cursor-pointer",
-                    isSelected && "bg-opacity-10"
+                    "group hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors",
+                    isSelected && "bg-indigo-50/50 dark:bg-indigo-500/5"
                   )}
-                  style={isSelected ? { backgroundColor: `${primaryColor}10` } : {}}
                 >
-                  <td className="p-8">
+                  {/* Checkbox */}
+                  <td className="px-4 py-3">
                     <input
                       type="checkbox"
-                      className="size-5 rounded-lg border-2 border-slate-200 dark:border-white/10 transition-all cursor-pointer"
-                      style={{ accentColor: primaryColor }}
+                      className="size-4 rounded border-gray-300 dark:border-white/20 cursor-pointer accent-indigo-600"
                       checked={isSelected}
                       onChange={(e) => toggleSelect(e, student.id)}
                     />
                   </td>
-                  <td className="p-8">
-                    <Link href={`/dashboard/admin/students/${student.id}`} className="flex items-center gap-5">
-                      <div className="relative">
-                        <div className="size-14 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-lg relative group-hover:scale-105 transition-transform duration-500">
-                          {student.profileImage ? (
-                            <img src={student.profileImage} alt={student.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
-                               <User size={24} />
-                            </div>
-                          )}
-                        </div>
-                        {student.verified && (
-                          <div className="absolute -bottom-1 -right-1 size-5 bg-blue-500 rounded-lg border-2 border-white dark:border-slate-900 shadow-md flex items-center justify-center text-white">
-                             <ShieldCheck size={10} />
-                          </div>
+
+                  {/* # sequential */}
+                  <td className="px-3 py-3">
+                    <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 tabular-nums">
+                      {rowNumber}
+                    </span>
+                  </td>
+
+                  {/* Student code */}
+                  <td className="px-4 py-3">
+                    <span className="text-xs text-gray-700 dark:text-gray-300 tabular-nums font-medium tracking-wide">
+                      {studentCode}
+                    </span>
+                  </td>
+
+                  {/* Full Name + avatar */}
+                  <td className="px-3 py-3">
+                    <Link
+                      href={`/dashboard/admin/students/${student.id}`}
+                      className="flex items-center gap-2.5 group/link"
+                    >
+                      <div className="size-8 rounded-full overflow-hidden border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-white/5 flex items-center justify-center shrink-0">
+                        {student.profileImage ? (
+                          <img
+                            src={student.profileImage}
+                            alt={student.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User size={14} className="text-gray-400" />
                         )}
                       </div>
-                      <div>
-                        <p 
-                          className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-lg transition-colors"
-                          style={{ color: 'inherit' }}
-                        >
-                          <span className="group-hover:text-primary" style={{ '--primary': primaryColor } as any}>{student.name}</span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 dark:text-white truncate group-hover/link:text-indigo-600 transition-colors">
+                          {student.name}
                         </p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{student.email}</p>
+                        <p className="text-[11px] text-gray-400 truncate">{student.email}</p>
                       </div>
+                      {student.verified && (
+                        <ShieldCheck size={13} className="text-blue-500 shrink-0" />
+                      )}
                     </Link>
                   </td>
-                  <td className="p-8">
-                    <code className="text-[10px] font-black text-slate-400 bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-lg uppercase tracking-widest">
-                      {student.studentCode || 'UNASSIGNED'}
-                    </code>
+
+                  {/* Grade / Class */}
+                  <td className="px-3 py-3">
+                    {studentClass ? (
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {studentClass.name}
+                        {studentClass.section ? `-${studentClass.section}` : ""}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
                   </td>
-                  <td className="p-8">
-                    <div className="flex flex-col gap-1">
-                      {studentClass ? (
-                        <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
-                          <BookOpen size={14} />
-                          {studentClass.name} {studentClass.section}
-                        </div>
-                      ) : (
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-50">No Class Path</span>
-                      )}
-                      {student.department && (
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                          {student.department.name}
-                        </p>
-                      )}
-                    </div>
+
+                  {/* Gender */}
+                  <td className="px-3 py-3">
+                    <GenderBadge gender={student.gender} />
                   </td>
-                  <td className="p-8">
-                    <StatusChip status={student.verified} themeColor={primaryColor} />
+
+                  {/* Guardian */}
+                  <td className="px-3 py-3">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      {student.parentName || student.guardianName || "—"}
+                    </span>
                   </td>
-                  <td className="p-8 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {!student.verified && (
-                        <Button 
-                          onClick={(e) => handleVerify(e, student.id)}
-                          disabled={verifyMutation.isPending}
-                          style={{ backgroundColor: primaryColor }}
-                          className="h-10 px-4 rounded-xl text-white font-black text-[10px] uppercase tracking-widest shadow-lg hover:brightness-110 active:scale-95 transition-all border-none"
-                        >
-                          {verifyMutation.isPending && verifyMutation.variables === student.id ? "Syncing..." : "Authorize"}
-                        </Button>
-                      )}
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="size-12 rounded-2xl hover:bg-opacity-10 transition-all"
-                        style={{ color: primaryColor }}
-                      >
-                        <MoreVertical size={20} />
-                      </Button>
-                    </div>
+
+                  {/* Status */}
+                  <td className="px-3 py-3">
+                    <StatusDot verified={student.verified} />
                   </td>
+
+
                 </tr>
               );
             })}
@@ -279,162 +330,120 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
         </table>
       </div>
 
-      {/* Mobile List View */}
-      <div className="md:hidden flex flex-col space-y-4 p-4">
-        {students.map((student: any) => {
+      {/* ── Mobile cards ──────────────────────────────────────────────────── */}
+      <div className="md:hidden flex flex-col divide-y divide-gray-100 dark:divide-white/5">
+        {students.map((student: any, index: number) => {
           const isSelected = selectedIds.includes(student.id);
           const studentClass = student.classes?.[0]?.class;
-          
+
           return (
-            <div 
-              key={student.id} 
+            <div
+              key={student.id}
               className={cn(
-                "bg-white dark:bg-slate-900/60 p-5 rounded-3xl border shadow-sm flex flex-col gap-4 relative transition-all",
-                isSelected ? "border-primary" : "border-slate-200 dark:border-slate-800"
+                "flex items-start gap-3 p-4 transition-colors",
+                isSelected && "bg-indigo-50/40 dark:bg-indigo-500/5"
               )}
-              style={isSelected ? { backgroundColor: `${primaryColor}05`, borderColor: primaryColor } : {}}
             >
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <input
-                    type="checkbox"
-                    className="size-5 shrink-0 rounded-lg border-2 border-slate-200 dark:border-white/10 transition-all cursor-pointer"
-                    style={{ accentColor: primaryColor }}
-                    checked={isSelected}
-                    onChange={(e) => toggleSelect(e, student.id)}
-                  />
-                  <div className="relative shrink-0">
-                    <div className="size-10 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-md">
-                      {student.profileImage ? (
-                        <img src={student.profileImage} alt={student.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
-                           <User size={18} />
-                        </div>
-                      )}
-                    </div>
-                    {student.verified && (
-                      <div className="absolute -bottom-1 -right-1 size-3.5 bg-blue-500 rounded-lg border-2 border-white dark:border-slate-900 shadow-md flex items-center justify-center text-white">
-                         <ShieldCheck size={7} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 pr-2">
-                    <Link href={`/dashboard/admin/students/${student.id}`}>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">{student.name}</h4>
-                    </Link>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{student.email}</p>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1.5 shrink-0">
-                  <StatusChip status={student.verified} themeColor={primaryColor} />
-                  <code className="text-[8px] font-black text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded flex items-center gap-1 uppercase tracking-widest max-w-[80px] truncate">
-                    {student.studentCode || 'UNASSIGNED'}
-                  </code>
+              <input
+                type="checkbox"
+                className="mt-1 size-4 rounded border-gray-300 cursor-pointer accent-indigo-600"
+                checked={isSelected}
+                onChange={(e) => toggleSelect(e, student.id)}
+              />
+              <div className="size-9 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center shrink-0">
+                {student.profileImage ? (
+                  <img src={student.profileImage} alt={student.name} className="w-full h-full object-cover" />
+                ) : (
+                  <User size={15} className="text-gray-400" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <Link href={`/dashboard/admin/students/${student.id}`}>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-white truncate">{student.name}</p>
+                </Link>
+                <p className="text-[11px] text-gray-400 truncate">{student.email}</p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  {studentClass && (
+                    <span className="text-[11px] text-gray-500 font-medium">
+                      {studentClass.name}{studentClass.section ? `-${studentClass.section}` : ""}
+                    </span>
+                  )}
+                  <GenderBadge gender={student.gender} />
+                  <StatusDot verified={student.verified} />
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-2 mt-2 pt-4 border-t border-slate-100 dark:border-slate-800/50">
-                <div>
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Class</span>
-                  {studentClass ? (
-                    <div className="flex items-center gap-1.5 text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
-                      <BookOpen size={12} />
-                      {studentClass.name} {studentClass.section}
-                    </div>
-                  ) : (
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-50">None</span>
-                  )}
-                </div>
-                <div className="flex items-center justify-end gap-2">
-                  {!student.verified && (
-                    <Button 
-                      onClick={(e) => handleVerify(e, student.id)}
-                      disabled={verifyMutation.isPending}
-                      style={{ backgroundColor: primaryColor }}
-                      className="h-8 px-3 rounded-lg text-white font-black text-[9px] uppercase tracking-widest shadow-md"
-                    >
-                      {verifyMutation.isPending && verifyMutation.variables === student.id ? "Syncing..." : "Authorize"}
-                    </Button>
-                  )}
-                  <Link href={`/dashboard/admin/students/${student.id}`}>
-                    <Button 
-                      variant="outline"
-                      className="h-8 px-3 rounded-lg font-black text-[9px] uppercase tracking-widest"
-                      style={{ color: primaryColor, borderColor: `${primaryColor}30` }}
-                    >
-                      View
-                    </Button>
-                  </Link>
-                </div>
-              </div>
+              <Button variant="ghost" size="icon" className="size-7 rounded-lg text-gray-400 shrink-0">
+                <MoreHorizontal size={15} />
+              </Button>
             </div>
           );
         })}
       </div>
 
+      {/* ── Empty state ───────────────────────────────────────────────────── */}
       {students.length === 0 && (
-        <div className="p-20 text-center space-y-6">
-          <div className="size-20 bg-slate-100 dark:bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto text-slate-400">
-            <GraduationCap size={40} />
+        <div className="py-16 text-center flex flex-col items-center gap-3">
+          <div className="size-14 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-400">
+            <GraduationCap size={28} />
           </div>
-          <div className="space-y-2">
-            <p className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">No Students Found</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">Distribute your institutional code to initiate secure links.</p>
-          </div>
+          <p className="text-sm font-semibold text-gray-700 dark:text-white">No Students Found</p>
+          <p className="text-xs text-gray-400">Try adjusting your search or filter criteria.</p>
         </div>
       )}
 
-      {/* Pagination Terminal */}
+      {/* ── Pagination ────────────────────────────────────────────────────── */}
       {totalItems > 0 && (
-        <div className="p-8 border-t border-slate-100 dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/50 dark:bg-white/[0.01]">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-            Displaying <span className="text-slate-900 dark:text-white">{(page - 1) * 1000 + 1} - {Math.min(page * 1000, totalItems)}</span> of <span className="text-slate-900 dark:text-white">{totalItems}</span> students
-          </p>
-          
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-100 dark:border-white/5 bg-gray-50/40 dark:bg-slate-800/20 text-xs text-gray-500">
+          <span>
+            Showing{" "}
+            <span className="font-semibold text-gray-700 dark:text-gray-200">
+              {(page - 1) * 10 + 1}–{Math.min(page * 10, totalItems)}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold text-gray-700 dark:text-gray-200">
+              {totalItems}
+            </span>
+          </span>
+
+          <div className="flex items-center gap-1">
+            <span className="mr-2 text-gray-400">Rows per page: 10</span>
             <Button
               variant="outline"
               size="icon"
-              className="size-12 rounded-2xl border-2 border-slate-200 dark:border-white/10 transition-all bg-white dark:bg-slate-900"
-              style={{ borderColor: page === 1 ? undefined : `${primaryColor}30` }}
+              className="size-7 rounded-lg border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-100 disabled:opacity-40"
               onClick={() => onPageChange(Math.max(1, page - 1))}
               disabled={page === 1}
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={14} />
             </Button>
-            
-            <div className="flex items-center gap-2">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const p = i + 1;
-                return (
-                  <Button
-                    key={p}
-                    variant={p === page ? "default" : "ghost"}
-                    className={cn(
-                      "size-12 rounded-2xl font-black text-xs transition-all",
-                      p === page 
-                        ? "shadow-xl text-white" 
-                        : "text-slate-400 hover:bg-opacity-10"
-                    )}
-                    style={p === page ? { backgroundColor: primaryColor } : { color: 'inherit' }}
-                    onClick={() => onPageChange(p)}
-                  >
-                    {p}
-                  </Button>
-                );
-              })}
-            </div>
+
+            {getPageNumbers().map((p, i) =>
+              p === "…" ? (
+                <span key={`ellipsis-${i}`} className="px-1 text-gray-400">…</span>
+              ) : (
+                <Button
+                  key={p}
+                  variant={p === page ? "default" : "ghost"}
+                  className={cn(
+                    "size-7 rounded-lg text-xs font-medium p-0",
+                    p === page ? "text-white shadow-sm" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
+                  )}
+                  style={p === page ? { backgroundColor: primaryColor } : {}}
+                  onClick={() => onPageChange(p as number)}
+                >
+                  {p}
+                </Button>
+              )
+            )}
 
             <Button
               variant="outline"
               size="icon"
-              className="size-12 rounded-2xl border-2 border-slate-200 dark:border-white/10 transition-all bg-white dark:bg-slate-900"
-              style={{ borderColor: page === totalPages ? undefined : `${primaryColor}30` }}
+              className="size-7 rounded-lg border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-100 disabled:opacity-40"
               onClick={() => onPageChange(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={14} />
             </Button>
           </div>
         </div>
@@ -442,5 +451,3 @@ export default function StudentsTable({ searchTerm, filters, page, onPageChange 
     </div>
   );
 }
-
-

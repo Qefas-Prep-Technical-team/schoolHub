@@ -9,7 +9,8 @@ import {
   Clock,
   ChevronRight,
   Loader2,
-  User
+  User,
+  Monitor
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,246 +65,190 @@ export function ConnectionCard({
   // ── ACTIVE CONNECTION CARD ────────────────────────────────────────────────
   if (type === 'active') {
     return (
-      <Card className={cn(
-        "rounded-[2rem] overflow-hidden border-none bg-white dark:bg-gray-800/80 shadow-lg hover:shadow-2xl transition-all group relative border-l-4",
-        cfg.border,
-        cfg.shadow
-      )}>
-        {/* Coloured top-right corner accent */}
-        <div className={cn("absolute top-0 right-0 w-24 h-24 rounded-bl-[3rem] opacity-5 pointer-events-none", cfg.avatar)} />
-
-        <CardHeader className="p-6 flex flex-row items-center justify-between space-y-0">
-          <div className="flex items-center gap-4">
-            <div
-              className="relative cursor-pointer group/avatar"
-              onClick={() => onViewProfile?.(item, details)}
-            >
-              <div className={cn(
-                "absolute -inset-1 rounded-2xl blur-md opacity-0 group-hover/avatar:opacity-40 transition-opacity",
-                cfg.avatarGlow
-              )} />
-              <Avatar className="h-14 w-14 rounded-2xl border-2 border-white dark:border-gray-700 shadow-sm transition-transform group-hover/avatar:scale-105">
-                <AvatarImage src={details.image} alt={details.name} className="object-cover" />
-                <AvatarFallback className={cn("rounded-2xl text-white font-black text-xl", cfg.avatar)}>
-                  {details.name?.charAt(0).toUpperCase() || <User size={20} />}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <div
-              className="cursor-pointer"
-              onClick={() => onViewProfile?.(item, details)}
-            >
-              <CardTitle className={cn(
-                "text-xl font-black truncate max-w-[180px] text-slate-900 dark:text-white transition-colors",
-                cfg.hover
-              )}>
-                {details.name}
-              </CardTitle>
-              {/* Human-readable link type label with coloured dot */}
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className={cn("w-2 h-2 rounded-full shrink-0", cfg.avatar)} />
-                <CardDescription className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  {cfg.label}
-                </CardDescription>
-              </div>
-            </div>
-          </div>
+      <Card className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-6 pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)]">
+        
+        {/* Options Menu */}
+        <div className="absolute top-4 right-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
-                <MoreVertical size={18} />
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                <MoreVertical size={16} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-xl p-2 border-none shadow-2xl">
-              <DropdownMenuItem
-                className="p-3 font-semibold rounded-lg focus:bg-slate-100 dark:focus:bg-slate-800 cursor-pointer"
-                onClick={() => onViewProfile?.(item, details)}
-              >
+              <DropdownMenuItem className="p-3 font-medium rounded-lg cursor-pointer" onClick={() => onViewProfile?.(item, details)}>
                 <Info className="mr-3 h-4 w-4" /> View Details
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="p-3 font-semibold rounded-lg text-red-500 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer"
-                onClick={() => !isLoading && onRevoke?.(item.id)}
-                disabled={isLoading}
-              >
+              <DropdownMenuItem className="p-3 font-medium rounded-lg text-red-500 focus:bg-red-50 cursor-pointer" onClick={() => !isLoading && onRevoke?.(item.id)} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-3 h-4 w-4 animate-spin" /> : <X className="mr-3 h-4 w-4" />} Disconnect
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </CardHeader>
+        </div>
 
-        <CardContent className="px-6 pb-6 pt-0 space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">Identifier</span>
-              <span className="font-bold text-sm text-slate-900 dark:text-white truncate block">{details.email}</span>
-            </div>
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">Linked Date</span>
-              <span className="font-bold text-sm text-slate-900 dark:text-white block">{new Date(item.createdAt).toLocaleDateString()}</span>
-            </div>
-            {/* Added school or class details if they exist */}
-            {details.schoolName && (
-              <div className="space-y-1 col-span-2">
-                <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">School</span>
-                <span className="font-bold text-sm text-slate-900 dark:text-white truncate block">{details.schoolName}</span>
-              </div>
-            )}
-            {details.className && (
-              <div className="space-y-1 col-span-2">
-                <span className="text-[10px] font-black uppercase text-slate-400 block tracking-tight">Class</span>
-                <span className="font-bold text-sm text-slate-900 dark:text-white truncate block">{details.className}</span>
-              </div>
-            )}
-          </div>
+        {/* Avatar Area */}
+        <div className="relative mb-4 mt-2 cursor-pointer group" onClick={() => onViewProfile?.(item, details)}>
+          {/* Avatar Ring */}
+          <div className={cn("absolute -inset-[6px] rounded-full border-[1.5px] border-slate-200/50 dark:border-slate-700 transition-colors group-hover:border-slate-300", cfg.border)}></div>
+          
+          <Avatar className="h-16 w-16 rounded-full border border-white dark:border-slate-800 shadow-sm transition-transform group-hover:scale-105">
+            <AvatarImage src={details.image} alt={details.name} className="object-cover" />
+            <AvatarFallback className={cn("rounded-full text-white font-bold text-xl", cfg.avatar)}>
+              {details.name?.charAt(0).toUpperCase() || <User size={20} />}
+            </AvatarFallback>
+          </Avatar>
 
-          {/* Code box — colour-coded per type */}
-          <div className={cn(
-            "flex items-center justify-between p-4 rounded-xl border h-14",
-            cfg.codeBox
-          )}>
-            <div className="flex flex-col">
-              <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider mb-0.5">Entity Code</span>
-              <span className={cn("font-black tracking-widest text-sm", cfg.code)}>{details.code}</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-slate-700"
-              onClick={() => onCopy?.(details.code)}
-            >
-              <Copy size={14} className="text-slate-400" />
-            </Button>
-          </div>
+          {/* Status Dot */}
+          <div className={cn("absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900", cfg.avatar)}></div>
+        </div>
 
-          <Button
-            variant="outline"
-            onClick={() => onViewProfile?.(item, details)}
-            className="w-full justify-between h-12 rounded-xl border-slate-100 dark:border-slate-700 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all group/btn"
-          >
-            <span>View Full Profile</span>
-            <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-          </Button>
-        </CardContent>
+        {/* Name and Email */}
+        <div className="text-center mb-6 cursor-pointer" onClick={() => onViewProfile?.(item, details)}>
+          <h3 className="font-bold text-[#1e293b] dark:text-white text-[15px] mb-1 truncate max-w-[200px] tracking-tight">
+            {details.name}
+          </h3>
+          <p className="text-[11px] text-[#94a3b8] font-medium truncate max-w-[200px]">
+            {details.email}
+          </p>
+        </div>
+
+        {/* Animated Connection Row */}
+        <div className="w-full flex items-center justify-between gap-3 mb-6 px-1 relative">
+           {/* Left Icon (Source) */}
+           <div className="w-7 h-7 rounded-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0 z-10">
+             <User size={12} className="text-slate-400" />
+           </div>
+           
+           {/* Connecting Line with Animated Dots */}
+           <div className="flex-1 h-6 relative flex items-center justify-center overflow-hidden">
+             {/* Static dotted track */}
+             <div className="absolute w-full border-t-[3px] border-dotted border-slate-200 dark:border-slate-700 opacity-70"></div>
+             
+             {/* Inline animation styles */}
+             <style dangerouslySetInnerHTML={{__html: `
+               @keyframes travel-pulse {
+                 0% { left: 0%; opacity: 0; transform: scale(0.5); }
+                 15% { opacity: 1; transform: scale(1); }
+                 85% { opacity: 1; transform: scale(1); }
+                 100% { left: 100%; opacity: 0; transform: scale(0.5); }
+               }
+               .animate-travel-pulse {
+                 position: absolute;
+                 animation: travel-pulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+               }
+             `}} />
+             
+             {/* The moving, glowing connection dot */}
+             <div className={cn("animate-travel-pulse h-[6px] w-[6px] rounded-full", cfg.progressBar)}></div>
+
+             {/* Center Desktop Icon */}
+             <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center z-10 border border-slate-100 dark:border-slate-800 shadow-sm">
+               <Monitor size={10} className="text-slate-400" />
+             </div>
+           </div>
+
+           {/* Right Icon (Destination/Role) */}
+           <div className="w-7 h-7 rounded-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0 z-10">
+             <Link2 size={12} className={cn(cfg.code.split(' ')[0])} />
+           </div>
+        </div>
+
+        {/* Divider */}
+        <div className="w-full h-px bg-slate-100 dark:bg-slate-800 mb-4"></div>
+
+        {/* Bottom Role */}
+        <div className="text-center w-full pb-1">
+          <span className="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">
+            {cfg.label}
+          </span>
+        </div>
+
       </Card>
     );
   }
 
-
   // ── PENDING REQUEST CARD ──────────────────────────────────────────────────
   return (
-    <Card className={cn(
-      "rounded-[2rem] overflow-hidden border-none bg-white dark:bg-gray-800/80 shadow-lg transition-all hover:shadow-2xl relative group",
-      cfg.shadow
-    )}>
-      {/* Coloured top bar */}
-      <div className={cn(
-        "h-1.5 w-full absolute top-0 z-20",
-        isOutgoing ? "bg-slate-300 dark:bg-slate-600" : cfg.topBar
-      )} />
-
-      {/* Type badge + direction badge */}
-      <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5 z-10">
-        <Badge className={cn(
-          "border-none px-3 py-1 font-black uppercase text-[8px] tracking-widest rounded-lg",
-          isOutgoing ? "bg-slate-400 dark:bg-slate-600 text-white" : cfg.badge
-        )}>
-          {cfg.label}
-        </Badge>
-        <span className="px-2 py-1 rounded-md bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-[8px] font-black tracking-widest border border-slate-100 dark:border-slate-800 shadow-sm text-slate-500">
-          {isOutgoing ? 'SENT' : 'INCOMING'}
+    <Card className="rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-50 dark:border-slate-800 relative flex flex-col items-center p-6 pt-8 transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)]">
+      
+      {/* Status Badge */}
+      <div className="absolute top-4 left-4">
+        <span className="px-2 py-1 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-[8px] font-bold tracking-widest text-[#94a3b8] uppercase">
+          {isOutgoing ? 'Sent' : 'Incoming'}
         </span>
       </div>
 
-      <CardHeader className="p-6 pb-2 mt-2">
-        <div className="flex items-center gap-4 mb-5">
-          <div
-            className="relative cursor-pointer group/avatar"
-            onClick={() => onViewProfile?.(item, details)}
+      {/* Avatar Area */}
+      <div className="relative mb-4 mt-2 cursor-pointer group" onClick={() => onViewProfile?.(item, details)}>
+        {/* Avatar Ring */}
+        <div className={cn(
+          "absolute -inset-[6px] rounded-full border-[1.5px] border-dashed border-slate-200 dark:border-slate-700 transition-colors", 
+          !isOutgoing && cfg.border
+        )}></div>
+        
+        <Avatar className="h-16 w-16 rounded-full border border-white dark:border-slate-800 shadow-sm transition-transform group-hover:scale-105 opacity-90">
+          <AvatarImage src={details.image} alt={details.name} className="object-cover" />
+          <AvatarFallback className={cn("rounded-full text-white font-bold text-xl", isOutgoing ? "bg-slate-300 dark:bg-slate-700" : cfg.avatar)}>
+            {details.name?.charAt(0).toUpperCase() || <User size={20} />}
+          </AvatarFallback>
+        </Avatar>
+      </div>
+
+      {/* Name and Email */}
+      <div className="text-center mb-6 cursor-pointer" onClick={() => onViewProfile?.(item, details)}>
+        <h3 className="font-bold text-[#1e293b] dark:text-white text-[15px] mb-1 truncate max-w-[200px] tracking-tight">
+          {details.name}
+        </h3>
+        <p className="text-[11px] text-[#94a3b8] font-medium truncate max-w-[200px]">
+          {details.email}
+        </p>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="w-full flex gap-2 mb-6 px-1">
+      {!isOutgoing ? (
+        <>
+          <button
+            onClick={() => onRespond?.(item.id, 'ACCEPT')}
+            disabled={isLoading}
+            className={cn(
+              "flex-1 h-9 rounded-full font-bold text-[9px] uppercase tracking-widest shadow-sm transition-all hover:scale-[1.02] active:scale-95 text-white disabled:opacity-60 disabled:pointer-events-none inline-flex items-center justify-center gap-1",
+              cfg.acceptBtn
+            )}
           >
-            <div className={cn(
-              "absolute -inset-1 rounded-2xl blur-md opacity-0 group-hover/avatar:opacity-40 transition-opacity",
-              isOutgoing ? "bg-slate-400" : cfg.avatarGlow
-            )} />
-            <Avatar className="h-14 w-14 rounded-2xl shadow-sm transition-transform group-hover/avatar:scale-105 border-2 border-white dark:border-gray-700">
-              <AvatarImage src={details.image} alt={details.name} className="object-cover" />
-              <AvatarFallback className={cn(
-                "rounded-2xl font-black text-xl text-white",
-                isOutgoing ? "bg-slate-400 dark:bg-slate-600" : cfg.avatar
-              )}>
-                {details.name?.charAt(0).toUpperCase() || <Clock size={20} />}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[11px] text-slate-400 font-black tracking-wider uppercase">
-              {new Date(item.createdAt).toLocaleDateString()}
-            </span>
-            <CardTitle
-              className={cn(
-                "text-xl font-black truncate max-w-[150px] text-slate-900 dark:text-white leading-tight cursor-pointer transition-colors",
-                cfg.hover
-              )}
-              onClick={() => onViewProfile?.(item, details)}
-            >
-              {details.name}
-            </CardTitle>
-          </div>
-        </div>
-
-        <CardDescription className="text-xs font-bold text-slate-400 truncate mt-1">
-          {details.email} {details.className ? `• ${details.className}` : ''}
-        </CardDescription>
-
-        {item.note && (
-          <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 relative overflow-hidden group/note">
-            <div className={cn("absolute top-0 left-0 w-1 h-full opacity-50 transition-opacity group-hover/note:opacity-100", cfg.noteBar)} />
-            <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 italic line-clamp-2 leading-relaxed">"{item.note}"</p>
-          </div>
-        )}
-
-        <div className="mt-5 flex items-center gap-2">
-          <Badge variant="secondary" className="bg-slate-50 dark:bg-slate-900 text-[9px] font-black tracking-widest text-slate-500 border border-slate-100 dark:border-slate-800 px-3 py-1 rounded-lg">
-            CODE: {isOutgoing ? item.targetCode : item.requesterCode}
-          </Badge>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-6 pt-6 gap-3">
-        {!isOutgoing ? (
-          <div className="flex gap-2">
-            <button
-              onClick={() => onRespond?.(item.id, 'ACCEPT')}
-              disabled={isLoading}
-              className={cn(
-                "flex-[3] h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-60 disabled:pointer-events-none inline-flex items-center justify-center gap-2",
-                cfg.acceptBtn
-              )}
-            >
-              {isLoading ? <Loader2 className="animate-spin" size={14} /> : null}
-              {isLoading ? "Processing..." : "Accept Request"}
-            </button>
-            <Button
-              onClick={() => onRespond?.(item.id, 'REJECT')}
-              disabled={isLoading}
-              variant="outline"
-              className="flex-1 h-12 rounded-xl border-slate-100 text-red-500 font-extrabold text-[10px] uppercase tracking-widest hover:bg-red-50 dark:border-slate-700 dark:hover:bg-red-950/20 px-0 transition-colors"
-            >
-              {isLoading ? <Loader2 className="animate-spin" size={14} /> : "Decline"}
-            </Button>
-          </div>
-        ) : (
+            {isLoading ? <Loader2 className="animate-spin" size={12} /> : "Accept"}
+          </button>
           <Button
-            onClick={() => onCancel?.(item.id)}
+            onClick={() => onRespond?.(item.id, 'REJECT')}
             disabled={isLoading}
             variant="outline"
-            className="w-full h-12 rounded-xl border-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 hover:text-red-600 hover:border-red-100 dark:border-slate-700 dark:hover:bg-slate-900 transition-all shadow-sm"
+            className="flex-1 h-9 rounded-full border-slate-200 text-slate-500 font-bold text-[9px] uppercase tracking-widest hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-colors px-0"
           >
-            {isLoading ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
-            {isLoading ? "Cancelling..." : "Cancel My Request"}
+            Decline
           </Button>
-        )}
-      </CardContent>
+        </>
+      ) : (
+        <Button
+          onClick={() => onCancel?.(item.id)}
+          disabled={isLoading}
+          variant="outline"
+          className="w-full h-9 rounded-full border-slate-200 text-slate-500 font-bold text-[9px] uppercase tracking-widest hover:bg-slate-50 hover:text-red-600 hover:border-red-100 transition-all shadow-sm"
+        >
+          {isLoading ? <Loader2 className="animate-spin mr-2" size={12} /> : "Cancel Request"}
+        </Button>
+      )}
+      </div>
+
+      {/* Divider */}
+      <div className="w-full h-px bg-slate-100 dark:bg-slate-800 mb-4"></div>
+
+      {/* Bottom Role */}
+      <div className="text-center w-full pb-1">
+        <span className="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">
+          {cfg.label}
+        </span>
+      </div>
+
     </Card>
   );
 }

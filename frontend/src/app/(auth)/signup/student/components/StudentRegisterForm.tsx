@@ -12,7 +12,7 @@ import { useStudentRegistration } from '../../services/useRegistrationMutations'
 import { StudentFormData, studentSchema } from '../../services/regSchema';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
 import { useMemo } from 'react';
-import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
+
 import RedirectOverlay from '@/components/ui/RedirectOverlay';
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
@@ -462,9 +462,7 @@ export default function StudentRegisterForm() {
               </div>
             </button>
 
-            {globalFeatures?.googleLogin !== false && (
-                <GoogleLoginButton userType={UserRole.STUDENT} />
-            )}
+
           </form>
 
           <p className="text-center text-sm text-[#4c809a] dark:text-gray-400">

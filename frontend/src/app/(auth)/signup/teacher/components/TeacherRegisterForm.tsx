@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTeacherRegistration } from '../../services/useRegistrationMutations';
 import { TeacherFormData, teacherSchema } from '../../services/regSchema';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
-import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
+
 import RedirectOverlay from '@/components/ui/RedirectOverlay';
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
@@ -449,9 +449,7 @@ export default function TeacherRegisterForm() {
           </div>
         </button>
 
-        {globalFeatures?.googleLogin !== false && (
-            <GoogleLoginButton userType={UserRole.TEACHER} />
-        )}
+
 
         <p className="text-center text-sm text-[#4c809a] dark:text-gray-400">
           Already have an account?{" "}

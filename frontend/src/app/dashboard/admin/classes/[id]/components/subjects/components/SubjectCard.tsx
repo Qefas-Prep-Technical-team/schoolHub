@@ -11,7 +11,7 @@ interface SubjectCardProps {
 const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) => {
   return (
     <div 
-      className="flex flex-col gap-4 rounded-xl bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-gray-200 dark:border-white/10 p-5 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+      className="flex flex-col gap-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-1 cursor-pointer"
       onClick={() => onClick?.(subject)}
     >
       <div className="flex items-center gap-3">

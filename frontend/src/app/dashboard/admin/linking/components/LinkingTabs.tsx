@@ -29,12 +29,12 @@ export function LinkingTabs({
     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
         {/* Main Categories */}
-        <div className="flex p-1 bg-slate-200/50 dark:bg-slate-800 rounded-xl w-full sm:w-auto border border-gray-100 dark:border-gray-700">
+        <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-full w-full sm:w-auto border border-slate-200 dark:border-slate-700 shadow-inner">
           <button
             onClick={() => setMainTab('network')}
             className={cn(
-              "px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
-              mainTab === 'network' ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-gray-500 hover:text-gray-700"
+              "px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all cursor-pointer",
+              mainTab === 'network' ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
             )}
           >
             Network
@@ -42,8 +42,8 @@ export function LinkingTabs({
           <button
             onClick={() => setMainTab('classroom')}
             className={cn(
-              "px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
-              mainTab === 'classroom' ? "bg-white dark:bg-slate-700 shadow-sm text-purple-600" : "text-gray-500 hover:text-gray-700"
+              "px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all cursor-pointer",
+              mainTab === 'classroom' ? "bg-white dark:bg-slate-700 shadow-sm text-purple-600" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
             )}
           >
             Classroom
@@ -51,41 +51,51 @@ export function LinkingTabs({
         </div>
 
         {/* Sub Tabs */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 bg-slate-50 dark:bg-slate-800 p-1 rounded-full border border-slate-100 dark:border-slate-700 shadow-sm">
           <Button 
-            variant={subTab === 'active' ? 'default' : 'ghost'} 
+            variant="ghost" 
             size="sm"
             onClick={() => setSubTab('active')}
             className={cn(
-              "h-9 rounded-xl text-[10px] font-black uppercase tracking-widest px-4",
-              subTab === 'active' ? (mainTab === 'classroom' ? "bg-purple-600 text-white shadow-lg shadow-purple-200" : "bg-slate-900 text-white shadow-lg") : "text-gray-400"
+              "h-9 rounded-full text-[10px] font-bold uppercase tracking-widest px-4 transition-all",
+              subTab === 'active' 
+                ? (mainTab === 'classroom' 
+                    ? "bg-purple-600 text-white shadow-sm hover:bg-purple-700 hover:text-white focus:bg-purple-600 focus:text-white focus:ring-0" 
+                    : "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm hover:bg-slate-800 dark:hover:bg-slate-200 hover:text-white dark:hover:text-slate-900 focus:bg-slate-900 dark:focus:bg-slate-100 focus:text-white dark:focus:text-slate-900 focus:ring-0") 
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:bg-slate-100 dark:focus:bg-slate-800/50"
             )}
           >
             Connected
           </Button>
           <Button 
-            variant={subTab === 'pending' ? 'default' : 'ghost'} 
+            variant="ghost" 
             size="sm"
             onClick={() => setSubTab('pending')}
             className={cn(
-              "h-9 rounded-xl text-[10px] font-black uppercase tracking-widest relative px-4",
-              subTab === 'pending' ? (mainTab === 'classroom' ? "bg-purple-600 text-white shadow-lg shadow-purple-200" : "bg-primary text-white shadow-lg shadow-primary/30") : "text-gray-400"
+              "h-9 rounded-full text-[10px] font-bold uppercase tracking-widest relative px-4 transition-all",
+              subTab === 'pending' 
+                ? (mainTab === 'classroom' 
+                    ? "bg-purple-600 text-white shadow-sm hover:bg-purple-700 hover:text-white focus:bg-purple-600 focus:text-white focus:ring-0" 
+                    : "bg-primary text-white shadow-sm hover:bg-primary/90 hover:text-white focus:bg-primary focus:text-white focus:ring-0") 
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:bg-slate-100 dark:focus:bg-slate-800/50"
             )}
           >
             Pending
             {(mainTab === 'network' ? networkPendingCount : classroomPendingCount) > 0 && (
-              <span className="ml-2 px-1.5 py-0.5 rounded-md bg-white text-primary text-[8px] font-black">
+              <span className={cn("ml-2 px-1.5 py-0.5 rounded-full text-[8px] font-black", subTab === 'pending' ? "bg-white text-primary" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300")}>
                 {mainTab === 'network' ? networkPendingCount : classroomPendingCount}
               </span>
             )}
           </Button>
           <Button 
-            variant={subTab === 'history' ? 'default' : 'ghost'} 
+            variant="ghost" 
             size="sm"
             onClick={() => setSubTab('history')}
             className={cn(
-              "h-9 rounded-xl text-[10px] font-black uppercase tracking-widest px-4",
-              subTab === 'history' ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "text-gray-400"
+              "h-9 rounded-full text-[10px] font-bold uppercase tracking-widest px-4 transition-all",
+              subTab === 'history' 
+                ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700 hover:text-white focus:bg-blue-600 focus:text-white focus:ring-0" 
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:bg-slate-100 dark:focus:bg-slate-800/50"
             )}
           >
             History
@@ -97,7 +107,7 @@ export function LinkingTabs({
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
         <Input 
           placeholder={`Search ${mainTab}...`}
-          className="pl-12 h-12 rounded-2xl border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm font-medium focus:ring-primary/20 transition-all"
+          className="pl-12 h-12 rounded-full border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm font-medium focus:ring-primary/20 transition-all"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />

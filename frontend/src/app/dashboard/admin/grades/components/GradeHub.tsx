@@ -423,304 +423,205 @@ export default function GradeHub({ grades, isLoading, schoolId, primaryColor = '
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {paginatedGrades.map((grade: any) => {
             const percent = Math.round((grade.score / grade.maxMarks) * 100);
+            
+            const isPassed = percent >= 50;
+            const theme = isPassed ? {
+                border: 'border-emerald-500/20 hover:border-emerald-500/50',
+                bg: 'bg-gradient-to-br from-white to-emerald-50 dark:from-slate-900 dark:to-emerald-950/20',
+                textHighlight: 'text-emerald-600 dark:text-emerald-400',
+                iconBg: 'bg-emerald-500 text-white shadow-emerald-500/30',
+                progress: 'bg-emerald-500',
+                accentColor: 'bg-emerald-500'
+            } : {
+                border: 'border-amber-500/20 hover:border-amber-500/50',
+                bg: 'bg-gradient-to-br from-white to-amber-50 dark:from-slate-900 dark:to-amber-950/20',
+                textHighlight: 'text-amber-600 dark:text-amber-400',
+                iconBg: 'bg-amber-500 text-white shadow-amber-500/30',
+                progress: 'bg-amber-500',
+                accentColor: 'bg-amber-500'
+            };
+
             return (
               <div 
                 key={grade.id} 
                 onClick={() => handleGradeClick(grade)}
-                className="group relative overflow-hidden bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[2rem] p-8 shadow-xl transition-all duration-500 hover:-translate-y-1.5 flex flex-col justify-between min-h-[260px] cursor-pointer"
+                className={`group relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1.5 cursor-pointer rounded-3xl border ${theme.border} ${theme.bg} min-h-[260px] flex flex-col justify-between`}
               >
-                <div className="space-y-5">
-                  {/* Top Row: Student Avatar & Status */}
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:bg-slate-100 dark:group-hover:bg-white/10 transition-all duration-300">
-                        <User size={18} />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{grade.student?.name}</h4>
-                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
-                          Lvl {grade.student?.gradeLevel} • {grade.class?.name || 'Class'}{grade.class?.section || ''}
-                        </p>
-                      </div>
-                    </div>
+                <div className={`absolute top-0 left-0 w-full h-1.5 ${theme.accentColor}`} />
+                <div className="p-7 relative z-10 flex flex-col h-full justify-between">
                     <div>
-                      {(grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId) ? (
-                        <span className="px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-950/20">
-                          Published
-                        </span>
-                      ) : (
-                        <span className="px-2.5 py-1 rounded-md bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[8px] font-black uppercase tracking-widest border border-slate-100 dark:border-slate-800">
-                          Draft
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                        <div className="flex justify-between items-start mb-6">
+                            <div className={`p-3.5 rounded-2xl shadow-lg transition-transform duration-500 group-hover:-rotate-6 ${theme.iconBg}`}>
+                                <FileText className="h-6 w-6" strokeWidth={2.5} />
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                                {(grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId) ? (
+                                    <span className="px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                        Published
+                                    </span>
+                                ) : (
+                                    <span className="px-3 py-1 text-[11px] font-black uppercase tracking-widest rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                        Draft
+                                    </span>
+                                )}
+                            </div>
+                        </div>
 
-                  {/* Middle Row: Subject & Details */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-200">
-                      <FileText size={13} style={{ color: primaryColor }} />
-                      <span className="truncate">{grade.subject}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        {grade.category || grade.assessmentType || 'Assessment'}
-                      </span>
-                      <span className="h-1 w-1 rounded-full bg-slate-300" />
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                        W:{grade.weight?.toFixed(1) || '1.0'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                        <div>
+                            <h3 className={`font-black text-2xl mb-1 text-slate-900 dark:text-white line-clamp-1 transition-colors group-hover:${theme.textHighlight}`}>
+                                {grade.student?.name}
+                            </h3>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-4">
+                                Lvl {grade.student?.gradeLevel} • {grade.class?.name || 'Class'}{grade.class?.section || ''}
+                            </p>
+                        </div>
 
-                {/* Bottom Row: Score dial progress & actions */}
-                <div className="flex items-center justify-between pt-5 border-t border-slate-100 dark:border-white/5 mt-5">
-                  <div className="space-y-1">
-                    <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter leading-none flex items-baseline">
-                      {grade.score}<span className="text-[10px] text-slate-400 ml-0.5">/{grade.maxMarks}</span>
-                    </span>
-                    <div className="w-20 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full rounded-full" 
-                        style={{ width: `${percent}%`, backgroundColor: primaryColor }} 
-                      />
+                        <div className="grid grid-cols-2 gap-y-4 mt-2">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Subject</span>
+                                <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                                    <span className="truncate">{grade.subject}</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Type</span>
+                                <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                                    <span className="truncate">{grade.category || grade.assessmentType || 'Assessment'}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400" onClick={(e) => e.stopPropagation()}>
-                          <MoreVertical size={16} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl">
-                        <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
-                          <Edit size={14} /> Edit Grade
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); }}>
-                          <Eye size={14} /> View Details
-                        </DropdownMenuItem>
-                        {grade.status !== 'PUBLISHED' && !grade.examAttemptId && !grade.subjectExamAttemptId && (
-                          <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 gap-2" onClick={(e) => handlePublish(grade, e)}>
-                            <Send size={14} /> Publish Now
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-rose-600 gap-2" onClick={(e) => handleDeleteClick(grade, e)}>
-                          <Trash2 size={14} /> Delete Record
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+
+                    <div className="flex items-center justify-between pt-5 border-t border-slate-200 dark:border-white/10 mt-6">
+                        <div className="space-y-1.5 flex-1 pr-4">
+                            <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none flex items-baseline">
+                                {grade.score}<span className="text-xs text-slate-400 ml-1">/{grade.maxMarks}</span>
+                            </span>
+                            <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div 
+                                    className={`h-full rounded-full ${theme.progress}`} 
+                                    style={{ width: `${percent}%` }} 
+                                />
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-10 w-10 p-0 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary transition-all" onClick={(e) => e.stopPropagation()}>
+                                  <MoreVertical size={18} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl">
+                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
+                                  <Edit size={14} /> Edit Grade
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); }}>
+                                  <Eye size={14} /> View Details
+                                </DropdownMenuItem>
+                                {grade.status !== 'PUBLISHED' && !grade.examAttemptId && !grade.subjectExamAttemptId && (
+                                  <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 gap-2" onClick={(e) => handlePublish(grade, e)}>
+                                    <Send size={14} /> Publish Now
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-rose-600 gap-2" onClick={(e) => handleDeleteClick(grade, e)}>
+                                  <Trash2 size={14} /> Delete Record
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
                 </div>
               </div>
             );
           })}
         </div>
       ) : (
-        /* Original Table / List Layout Mode */
-        <>
-          {/* Desktop Table View */}
-          <div className="hidden md:block bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/40 dark:shadow-none relative">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Assessment Detail</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Score</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right pr-12">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {paginatedGrades.map((grade: any) => (
-                  <tr 
-                    key={grade.id} 
-                    onClick={() => handleGradeClick(grade)}
-                    className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 cursor-pointer"
-                  >
-                    <td className="px-8 py-7">
-                      <div className="flex items-center gap-4">
-                          <div 
-                            className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 shadow-inner group-hover:text-white transition-all duration-300"
-                            style={{ '--hover-bg': primaryColor } as any}
-                          >
-                              <User size={24} />
-                          </div>
-                          <div>
-                              <p className="text-sm font-black text-slate-800 dark:text-slate-100">{grade.student?.name}</p>
-                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Lvl {grade.student?.gradeLevel} • {grade.class?.name || 'Class'}{grade.class?.section || ''}</p>
-                          </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-7">
-                      <div className="space-y-1">
-                          <p className="text-sm font-black text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                             <FileText size={14} style={{ color: primaryColor }} /> {grade.subject}
-                          </p>
-                          <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-3">
-                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{grade.category || grade.assessmentType}</span>
-                                  <span className="h-1 w-1 rounded-full bg-slate-300" />
-                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">W:{grade.weight?.toFixed(1) || '1.0'}</span>
-                              </div>
-                              {(grade.exam || grade.subjectPaper) && (
-                                <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-50 dark:border-slate-800/50 mt-1">
-                                  {grade.exam && (
-                                    <span 
-                                      className="text-[9px] font-black uppercase tracking-tight px-2 py-0.5 rounded-md"
-                                      style={{ color: primaryColor, backgroundColor: `${primaryColor}10` }}
-                                    >
-                                      {grade.exam.title}
-                                    </span>
-                                  )}
-                                  {grade.subjectPaper && (
-                                    <span className="text-[9px] font-black text-emerald-500/80 uppercase tracking-tight bg-emerald-50/50 dark:bg-emerald-500/5 px-2 py-0.5 rounded-md">
-                                      {grade.subjectPaper.title}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                          </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-7 text-center">
-                        <div className="inline-flex flex-col items-center">
-                          <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">
-                            {grade.score}<span className="text-[10px] text-slate-400 ml-0.5">/{grade.maxMarks}</span>
-                          </span>
-                          <div className="w-16 h-1 rounded-full bg-slate-100 dark:bg-slate-800 mt-2 overflow-hidden">
-                             <div 
-                                className="h-full rounded-full" 
-                                style={{ width: `${(grade.score / grade.maxMarks) * 100}%`, backgroundColor: primaryColor }} 
-                             />
-                          </div>
-                        </div>
-                    </td>
-                    <td className="px-8 py-7">
-                        {(grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId) ? (
-                          <span className="px-4 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-[0.1em] border border-emerald-100 dark:border-emerald-900/30">
-                            Published
-                          </span>
-                        ) : (
-                          <span className="px-4 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[0.1em] border border-slate-100 dark:border-slate-800">
-                            Draft
-                          </span>
-                        )}
-                    </td>
-                    <td className="px-8 py-7 text-right pr-12">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-10 w-10 p-0 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400" onClick={(e) => e.stopPropagation()}>
-                              <MoreVertical size={20} />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl">
-                            <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
-                              <Edit size={14} /> Edit Grade
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => handleGradeClick(grade, e)}>
-                              <Eye size={14} /> View Details
-                            </DropdownMenuItem>
-                            {grade.status !== 'PUBLISHED' && !grade.examAttemptId && !grade.subjectExamAttemptId && (
-                              <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 gap-2" onClick={(e) => handlePublish(grade, e)}>
-                                <Send size={14} /> Publish Now
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-rose-600 gap-2" onClick={(e) => handleDeleteClick(grade, e)}>
-                              <Trash2 size={14} /> Delete Record
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Mobile List View */}
-          <div className="md:hidden flex flex-col space-y-4">
-            {paginatedGrades.map((grade: any) => (
-              <div 
-                key={grade.id} 
-                onClick={() => handleGradeClick(grade)}
-                className="bg-white dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-4 relative cursor-pointer active:scale-[0.98] transition-all"
-              >
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="h-10 w-10 shrink-0 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 shadow-inner"
-                    >
-                      <User size={20} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-black text-slate-800 dark:text-slate-100 line-clamp-1">{grade.student?.name}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Lvl {grade.student?.gradeLevel} • {grade.class?.name || 'Class'}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end shrink-0">
-                    <span className="text-lg font-black text-slate-900 dark:text-white leading-none">
-                      {grade.score}<span className="text-[10px] text-slate-400">/{grade.maxMarks}</span>
-                    </span>
-                    <div className="w-12 h-1 rounded-full bg-slate-100 dark:bg-slate-800 mt-2 overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${(grade.score / grade.maxMarks) * 100}%`, backgroundColor: primaryColor }} />
-                    </div>
-                  </div>
-                </div>
+        /* Unified List View (matches SubjectPapersView) */
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] overflow-hidden shadow-sm divide-y divide-slate-200 dark:divide-slate-800">
+            {paginatedGrades.map((grade: any, index: number) => {
+                const percent = Math.round((grade.score / grade.maxMarks) * 100);
                 
-                <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-800/60 pt-4">
-                  <div className="space-y-1">
-                    <p className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                      <FileText size={14} style={{ color: primaryColor }} /> <span className="line-clamp-1">{grade.subject}</span>
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      {grade.category || grade.assessmentType} <span className="h-1 w-1 bg-slate-300 rounded-full"></span> W:{grade.weight?.toFixed(1) || '1.0'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {(grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId) ? (
-                      <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-[0.1em] border border-emerald-100 dark:border-emerald-900/30">
-                        Published
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-[0.1em] border border-slate-100 dark:border-slate-800">
-                        Draft
-                      </span>
-                    )}
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
-                            <MoreVertical size={18} />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl">
-                          <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
-                            <Edit size={14} /> Edit Grade
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => handleGradeClick(grade, e)}>
-                            <Eye size={14} /> View Details
-                          </DropdownMenuItem>
-                          {grade.status !== 'PUBLISHED' && !grade.examAttemptId && !grade.subjectExamAttemptId && (
-                            <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 gap-2" onClick={(e) => handlePublish(grade, e)}>
-                              <Send size={14} /> Publish Now
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-rose-600 gap-2" onClick={(e) => handleDeleteClick(grade, e)}>
-                            <Trash2 size={14} /> Delete Record
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                return (
+                    <div 
+                        key={grade.id}
+                        onClick={() => handleGradeClick(grade)}
+                        className="group relative overflow-hidden transition-all duration-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 p-4 lg:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 lg:gap-8 hover:border-primary/30"
+                    >
+                        <div className="flex items-center gap-4 lg:gap-6 w-full sm:w-auto">
+                            <div className="text-sm font-bold text-slate-400 w-6 text-center shrink-0 hidden sm:block">
+                                {index + 1 + (currentPage - 1) * itemsPerPage}.
+                            </div>
+                            <div className="h-12 w-12 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shrink-0">
+                                <User size={20} strokeWidth={2.5} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-base font-semibold text-slate-900 dark:text-white truncate flex items-center gap-2">
+                                    {grade.student?.name}
+                                    <span className="sm:hidden text-xs text-slate-400 font-bold">#{index + 1 + (currentPage - 1) * itemsPerPage}</span>
+                                </h3>
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                    <span className="text-xs text-slate-500 font-medium">Lvl {grade.student?.gradeLevel} • {grade.class?.name || 'Class'}</span>
+                                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                                    <span className="text-xs text-slate-500 font-medium truncate flex items-center gap-1"><FileText size={12} /> {grade.subject}</span>
+                                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                                    <span className="text-xs text-slate-500 font-medium">{grade.category || grade.assessmentType}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pl-16 sm:pl-0">
+                            <div className="flex flex-col sm:items-end">
+                                <span className="text-lg font-black text-slate-900 dark:text-white leading-none">
+                                    {grade.score}<span className="text-[10px] text-slate-400">/{grade.maxMarks}</span>
+                                </span>
+                                <div className="w-16 h-1 rounded-full bg-slate-100 dark:bg-slate-800 mt-1.5 overflow-hidden">
+                                    <div className="h-full rounded-full" style={{ width: `${percent}%`, backgroundColor: primaryColor }} />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                {(grade.status === 'PUBLISHED' || grade.examAttemptId || grade.subjectExamAttemptId) ? (
+                                    <span className="hidden sm:inline-block px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30">
+                                        Published
+                                    </span>
+                                ) : (
+                                    <span className="hidden sm:inline-block px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                        Draft
+                                    </span>
+                                )}
+
+                                <div onClick={(e) => e.stopPropagation()}>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 p-0 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-primary transition-all duration-300 shrink-0">
+                                                <MoreVertical size={16} />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="rounded-2xl border-slate-200 dark:border-slate-800 w-48 p-2 shadow-2xl">
+                                            <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); setSelectedGrade(grade); setIsEditModalOpen(true); }}>
+                                                <Edit size={14} /> Edit Grade
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer gap-2" onClick={(e) => handleGradeClick(grade, e)}>
+                                                <Eye size={14} /> View Details
+                                            </DropdownMenuItem>
+                                            {grade.status !== 'PUBLISHED' && !grade.examAttemptId && !grade.subjectExamAttemptId && (
+                                                <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 gap-2" onClick={(e) => handlePublish(grade, e)}>
+                                                    <Send size={14} /> Publish Now
+                                                </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-rose-600 gap-2" onClick={(e) => handleDeleteClick(grade, e)}>
+                                                <Trash2 size={14} /> Delete Record
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+                );
+            })}
           </div>
-        </>
       )}
 
       {/* Sliding Pagination Control */}

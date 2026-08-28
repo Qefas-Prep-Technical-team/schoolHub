@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -71,6 +72,19 @@ export default function ClassCard({
 
   const status = statusConfig[classData.timetableStatus] || statusConfig.pending;
 
+  const [activeTeacherIndex, setActiveTeacherIndex] = useState(0);
+
+  useEffect(() => {
+    if (!classData.teachers || classData.teachers.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveTeacherIndex(prev => (prev + 1) % classData.teachers!.length);
+    }, 3000); // 3 seconds per slide
+    return () => clearInterval(interval);
+  }, [classData.teachers]);
+
+  const activeTeacher = classData.teachers?.[activeTeacherIndex]?.teacher || classData.teacher;
+  const isLead = classData.teachers?.[activeTeacherIndex]?.isLead;
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -78,32 +92,24 @@ export default function ClassCard({
       className="group relative h-full"
     >
       <div 
-        className="h-full rounded-[3.5rem] bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col"
+        className="h-full rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col"
         onClick={() => router.push(`/dashboard/admin/classes/${classData.id}`)}
       >
-        {/* Dynamic Background Glow */}
-        <div 
-          className="absolute -right-10 -top-10 w-48 h-48 rounded-full blur-[80px] opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-700 pointer-events-none" 
-          style={{ backgroundColor: primaryColor }}
-        />
 
-        <div className="flex justify-between items-start mb-10 relative z-10">
-          <div className="flex items-center gap-5">
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex items-center gap-4">
             <div 
-                className="size-16 rounded-[1.5rem] bg-slate-50 dark:bg-white/5 flex items-center justify-center p-4 text-slate-400 group-hover:scale-110 transition-all duration-500 border border-slate-100 dark:border-white/5 shadow-inner"
+                className="size-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 border border-slate-100 dark:border-slate-700 transition-colors group-hover:border-primary/20"
                 style={{ color: primaryColor }}
             >
-              <Layers className="size-full" strokeWidth={2.5} />
+              <Layers size={20} />
             </div>
             <div className="space-y-1">
                 <div className={cn(
-                    "inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                    "inline-flex px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border",
                     status.bgColor, status.color, status.borderColor
                 )}>
                     {status.label}
-                </div>
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                     ACADEMIC UNIT
                 </div>
             </div>
           </div>
@@ -113,91 +119,120 @@ export default function ClassCard({
                 onClick={() => onEdit?.(classData.id)}
                 variant="ghost" 
                 size="icon" 
-                className="size-12 rounded-2xl bg-slate-50/50 dark:bg-white/5 border border-transparent hover:border-slate-100 dark:hover:border-white/10 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
+                className="size-8 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
               >
-                <Edit2 size={18} />
+                <Edit2 size={14} />
               </Button>
               <Button 
                 onClick={() => onDelete?.(classData.id)}
                 variant="ghost" 
                 size="icon" 
-                className="size-12 rounded-2xl bg-slate-50/50 dark:bg-white/5 border border-transparent hover:border-rose-100 hover:text-rose-600 transition-all shadow-sm"
+                className="size-8 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
               >
-                <Trash2 size={18} />
+                <Trash2 size={14} />
               </Button>
           </div>
         </div>
 
-        <div className="flex-1 relative z-10">
+        <div className="flex-1">
           <h3 
-            className="text-2xl font-black text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors leading-[1.1] uppercase tracking-tighter"
+            className="text-xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-primary transition-colors"
             style={{ '--primary': primaryColor } as any}
           >
             {classData.name}
           </h3>
-          <p className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-6">
             {classData.section} SECTION
           </p>
 
-          <div className="flex items-center gap-4 p-4 rounded-3xl bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 mb-8">
-            <div className="size-12 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-md">
-                {classData.teacher?.avatarUrl ? (
-                  <img src={classData.teacher?.avatarUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400">
-                    <User size={20} />
-                  </div>
-                )}
-            </div>
-            <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Class Teacher</p>
-                <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate max-w-[150px]">
-                  {classData.teacher?.name || "No Teacher Assigned"}
-                </p>
-            </div>
+          <div className="flex items-center gap-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 mb-6 relative overflow-hidden h-[76px]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTeacherIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-3 absolute inset-0 p-3"
+              >
+                <div className="size-10 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">
+                    {activeTeacher?.avatarUrl ? (
+                      <img src={activeTeacher.avatarUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400">
+                        <User size={16} />
+                      </div>
+                    )}
+                </div>
+                <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5 truncate">
+                        {classData.teachers?.length ? (isLead ? "Lead Teacher" : "Co-Teacher") : "Class Teacher"}
+                    </p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                      {activeTeacher?.name || "No Teacher Assigned"}
+                    </p>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+            
+            {/* Pagination dots if multiple teachers */}
+            {classData.teachers && classData.teachers.length > 1 && (
+                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
+                    {classData.teachers.map((_, i) => (
+                        <div 
+                            key={i}
+                            className={cn(
+                                "h-1 rounded-full transition-all",
+                                i === activeTeacherIndex ? "w-3 bg-primary" : "w-1 bg-slate-300 dark:bg-slate-600"
+                            )}
+                            style={{ backgroundColor: i === activeTeacherIndex ? primaryColor : undefined }}
+                        />
+                    ))}
+                </div>
+            )}
           </div>
         </div>
 
-        <div className="space-y-6 pt-8 border-t border-slate-50 dark:border-white/5 relative z-10">
-          <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Student Count</span>
-                  <div className="flex items-center gap-2">
-                       <Users size={14} className="text-primary" />
-                       <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter uppercase">
-                          {classData.studentCount} Students
-                       </span>
+        <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center size-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                      <Users size={14} />
+                  </div>
+                  <div>
+                      <span className="text-sm font-bold text-slate-900 dark:text-white block leading-none">{classData.studentCount}</span>
+                      <span className="text-[10px] font-semibold text-slate-500 uppercase">Students</span>
                   </div>
               </div>
-              <div className="space-y-1">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Curriculum</span>
-                  <div className="flex items-center gap-2">
-                       <Target size={14} className="text-emerald-500" />
-                       <span className="text-lg font-black text-slate-900 dark:text-white tracking-tighter uppercase">
-                          {classData.subjectCount} Subjects
-                       </span>
+              <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center size-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      <Target size={14} />
+                  </div>
+                  <div>
+                      <span className="text-sm font-bold text-slate-900 dark:text-white block leading-none">{classData.subjectCount}</span>
+                      <span className="text-[10px] font-semibold text-slate-500 uppercase">Subjects</span>
                   </div>
               </div>
           </div>
 
           <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                   {classData.isLive ? (
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest animate-pulse border border-emerald-100">
-                        <div className="size-1.5 rounded-full bg-emerald-500" /> In Session
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                        <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> In Session
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest border border-slate-100">
-                        <Activity size={10} /> Inactive
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-50 dark:bg-slate-800 text-slate-500 text-xs font-semibold">
+                        <Activity size={12} /> Inactive
                     </div>
                   )}
               </div>
               <div 
-                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] group-hover:gap-4 transition-all"
+                className="flex items-center gap-1 text-xs font-semibold group-hover:gap-2 transition-all"
                 style={{ color: primaryColor }}
               >
                   <span>Manage</span>
-                  <ArrowRight size={14} strokeWidth={3} />
+                  <ArrowRight size={14} />
               </div>
           </div>
         </div>

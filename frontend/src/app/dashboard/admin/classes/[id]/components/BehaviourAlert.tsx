@@ -37,7 +37,7 @@ const BehaviourAlert: React.FC<BehaviourAlertProps> = ({ alerts }) => {
 
   if (!alerts || alerts.length === 0) {
     return (
-      <div className="bg-white dark:bg-[#1f2937] p-6 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center py-10">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center justify-center text-center py-10">
         <div className="w-12 h-12 rounded-full bg-green-50 dark:bg-green-950/20 flex items-center justify-center text-green-500 mb-3 border border-green-200 dark:border-green-800">
           <AlertCircle size={24} className="text-green-500" />
         </div>
@@ -50,7 +50,7 @@ const BehaviourAlert: React.FC<BehaviourAlertProps> = ({ alerts }) => {
   }
 
   return (
-    <div className="bg-white dark:bg-[#1f2937] p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         Behaviour Alerts
       </h3>

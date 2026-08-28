@@ -37,7 +37,7 @@ export default function InviteTeacherDialog({
 
   const [email, setEmail] = useState("");
   const [isSending, setIsSending] = useState(false);
-
+  
   const handleSendInvite = async () => {
     if (!email || !email.includes("@")) {
       toast.error.show("Please enter a valid email address.");
@@ -46,12 +46,12 @@ export default function InviteTeacherDialog({
 
     setIsSending(true);
     try {
-      const res = await adminService.resendTeacherClaimEmail(teacher.id, email);
+      const res = await adminService.inviteTeacher(teacher.id, email);
       
       if (res.success) {
         toast.success.show(`Invitation sent successfully to ${email}`);
         queryClient.invalidateQueries({ queryKey: ["school-teachers-invitations"] });
-        queryClient.invalidateQueries({ queryKey: ["teachers"] });
+        queryClient.invalidateQueries({ queryKey: ["school-teachers"] });
         onOpenChange(false);
         setEmail(""); // Reset
       } else {
@@ -72,26 +72,26 @@ export default function InviteTeacherDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] rounded-[2rem] border border-slate-100 dark:border-white/10 p-0 overflow-hidden bg-white dark:bg-slate-950">
-        <div className="p-8 pb-6">
+      <DialogContent className="sm:max-w-[425px] rounded-3xl border border-slate-100 dark:border-slate-800 p-0 overflow-hidden bg-white dark:bg-slate-900 shadow-xl">
+        <div className="p-6">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-slate-900 dark:text-white">
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
               Invite Teacher
             </DialogTitle>
           </DialogHeader>
 
           <div className="mt-6 space-y-6">
-            <div className="space-y-2">
-              <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-slate-500">
                 Teacher
               </p>
-              <p className="text-lg font-black text-slate-900 dark:text-white uppercase">
+              <p className="text-base font-semibold text-slate-900 dark:text-white">
                 {teacher?.name}
               </p>
             </div>
 
-            <div className="space-y-4">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block">
                 Real Email Address
               </label>
               <div className="relative group">
@@ -104,23 +104,23 @@ export default function InviteTeacherDialog({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter teacher's personal email..."
-                  className="h-14 pl-12 pr-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl focus:ring-2 transition-all font-bold text-slate-700 dark:text-slate-200"
-                  style={{ "--tw-ring-color": `${primaryColor}50` } as any}
+                  className="h-11 pl-11 pr-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 transition-all font-semibold text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 placeholder:font-medium"
+                  style={{ "--tw-ring-color": `${primaryColor}30` } as any}
                 />
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 font-medium">
                 A verification link will be sent to this email. The teacher will use it to set their password and claim their account.
               </p>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-white/5">
+        <DialogFooter className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
           <div className="flex w-full gap-3">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1 h-14 rounded-2xl border-2 border-slate-200 dark:border-white/10 font-black uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+              className="flex-1 h-11 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-200"
             >
               Cancel
             </Button>
@@ -128,11 +128,11 @@ export default function InviteTeacherDialog({
               onClick={handleSendInvite}
               disabled={isSending}
               style={{ backgroundColor: primaryColor }}
-              className="flex-1 h-14 rounded-2xl text-white font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+              className="flex-1 h-11 rounded-xl text-white font-semibold shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50 border-none"
             >
               {isSending ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Sending...
                 </>
               ) : (

@@ -9,7 +9,7 @@ import { useLoginMutation } from "../../services/use-auth-mutations";
 import { LoginFormData, loginSchema } from "../../services/auth-schema";
 import Link from "next/link";
 import { ROUTES } from "@/lib/constants/routes";
-import GoogleLoginButton from "../../components/GoogleLoginButton";
+
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
 export default function LoginForm() {
@@ -118,9 +118,7 @@ export default function LoginForm() {
                     <LoginButton disabled={isSubmitDisabled} />
                 </div>
 
-                {globalFeatures?.googleLogin !== false && (
-                    <GoogleLoginButton userType="PARENT" />
-                )}
+
 
                 <div className="flex justify-end mt-2">
                     <Link 

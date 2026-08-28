@@ -24,12 +24,7 @@ export default function Navbar() {
 
     return (
         <nav
-            className="w-full shadow-md px-6 py-4 flex items-center justify-between"
-            style={{
-                backgroundColor:
-                    theme === 'dark' ? colors.backgroundDark : colors.primary,
-                color: theme === 'dark' ? 'white' : 'white',
-            }}
+            className="sticky top-0 z-50 w-full shadow-sm px-6 py-4 flex items-center justify-between bg-white/70 dark:bg-[#111827]/70 backdrop-blur-lg border-b border-slate-200 dark:border-white/10 text-slate-900 dark:text-white transition-colors duration-300"
         >
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">

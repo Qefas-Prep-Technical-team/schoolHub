@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Mail, Phone, MapPin, School, Globe, Facebook, Twitter, Instagram, Linkedin, Youtube, Image as ImageIcon } from 'lucide-react';
 import { SchoolEditData, PreviewMode } from './types';
 
@@ -9,43 +9,10 @@ interface PreviewPanelProps {
 }
 
 const PreviewPanel: React.FC<PreviewPanelProps> = ({ schoolData }) => {
-  const [previewMode, setPreviewMode] = useState<PreviewMode['id']>('dashboard');
-
-  const previewModes: PreviewMode[] = [
-    { id: 'dashboard', label: 'Admin' },
-    { id: 'portal', label: 'Portal' }
-  ];
-
   return (
     <div className="sticky top-8 space-y-6">
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 p-8 shadow-xl overflow-hidden">
-        <div className="flex items-center justify-between mb-8">
-           <div>
-              <h3 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">
-                Live Preview
-              </h3>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                Institutional Rendering
-              </p>
-           </div>
-           <div className="flex gap-1 p-1 rounded-xl bg-slate-50 dark:bg-slate-800">
-            {previewModes.map((mode) => (
-              <button
-                key={mode.id}
-                type="button"
-                onClick={() => setPreviewMode(mode.id)}
-                className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-lg ${
-                  previewMode === mode.id
-                    ? 'text-white bg-slate-900 dark:bg-white dark:text-slate-900 shadow-lg'
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        
+
         {/* The Actual Preview Card */}
         <div className="rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 shadow-inner">
           

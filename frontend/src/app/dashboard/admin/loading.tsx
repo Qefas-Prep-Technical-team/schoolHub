@@ -3,85 +3,108 @@ import { Loader2 } from "lucide-react";
 
 export default function AdminLoading() {
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
-      <div className="max-w-[1600px] mx-auto space-y-12">
-        {/* Header Skeleton */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-48 rounded-full bg-slate-100 dark:bg-white/5" />
-            <Skeleton className="h-16 w-[280px] lg:w-[450px] rounded-2xl bg-slate-200 dark:bg-white/10" />
-            <Skeleton className="h-6 w-full max-w-xl rounded-lg bg-slate-100 dark:bg-white/5 mt-4" />
-          </div>
-          <div className="hidden lg:block">
-            <Skeleton className="h-16 w-56 rounded-[2rem] bg-slate-200 dark:bg-white/10" />
-          </div>
+    <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-8">
+      <div className="max-w-[1400px] mx-auto space-y-6">
+
+        {/* Header Section */}
+        <div>
+            <Skeleton className="h-3 w-32 rounded-md mb-2 bg-slate-200 dark:bg-slate-800" />
+            <Skeleton className="h-8 w-64 rounded-lg bg-slate-200 dark:bg-slate-800" />
         </div>
 
-        {/* Analytics Hub Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl relative overflow-hidden space-y-6">
-              <div 
-                  className="absolute -right-6 -bottom-6 size-40 rounded-full blur-3xl opacity-[0.03] pointer-events-none bg-slate-500" 
-              />
-              <div className="flex justify-between items-center relative z-10">
-                <Skeleton className="size-14 rounded-2xl bg-slate-100 dark:bg-white/5" />
-                <Skeleton className="h-6 w-16 rounded-full bg-slate-100 dark:bg-white/5" />
-              </div>
-              <div className="space-y-4 relative z-10">
-                <Skeleton className="h-4 w-28 rounded-lg bg-slate-100 dark:bg-white/5" />
-                <Skeleton className="h-12 w-32 rounded-xl bg-slate-200 dark:bg-white/10" />
-                <Skeleton className="h-4 w-40 rounded-lg bg-slate-100 dark:bg-white/5 mt-2" />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Search & Filter Skeleton */}
-        <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-            <Skeleton className="h-16 w-full flex-1 max-w-xl rounded-[2rem] bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5" />
-            <div className="flex items-center gap-4">
-               <Skeleton className="h-16 w-48 rounded-[2rem] hidden sm:block bg-slate-100 dark:bg-white/5" />
-               <Skeleton className="h-16 w-24 rounded-[2rem] hidden sm:block bg-slate-100 dark:bg-white/5" />
-            </div>
-        </div>
-
-        {/* Main Content Area Skeleton */}
-        <div className="rounded-[4rem] bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-4 lg:p-8 shadow-2xl space-y-2">
-            {/* Table Header */}
-            <div className="hidden md:flex items-center justify-between px-8 py-6 border-b border-slate-100 dark:border-white/5">
-                {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className="h-3 w-28 rounded-full bg-slate-100 dark:bg-white/5" />
-                ))}
-            </div>
+        {/* Top Hero & Glance Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* Table Rows */}
-            {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 rounded-3xl bg-slate-50/50 dark:bg-white/[0.01] border border-slate-100/50 dark:border-white/[0.02] mb-4 gap-6 md:gap-0">
-                    <div className="flex items-center gap-6">
-                        <Skeleton className="size-14 shrink-0 rounded-2xl bg-slate-200 dark:bg-white/10" />
-                        <div className="space-y-3">
-                            <Skeleton className="h-5 w-48 rounded-lg bg-slate-200 dark:bg-white/10" />
-                            <Skeleton className="h-3 w-32 rounded-full bg-slate-100 dark:bg-white/5" />
-                        </div>
+            {/* Hero Banner */}
+            <div className="lg:col-span-2 relative overflow-hidden rounded-[2rem] bg-slate-100 dark:bg-slate-800/50 min-h-[280px]">
+                <div className="absolute z-10 p-8 h-full flex flex-col justify-end w-full">
+                    <Skeleton className="h-6 w-32 rounded-full mb-4 bg-slate-200 dark:bg-slate-700" />
+                    <Skeleton className="h-8 w-2/3 rounded-lg mb-2 bg-slate-200 dark:bg-slate-700" />
+                    <Skeleton className="h-4 w-1/2 rounded-lg mb-6 bg-slate-200 dark:bg-slate-700" />
+                    
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-36 rounded-full bg-slate-200 dark:bg-slate-700" />
+                        <Skeleton className="h-10 w-28 rounded-full bg-slate-200 dark:bg-slate-700" />
                     </div>
-                    <Skeleton className="h-8 w-24 rounded-lg hidden md:block bg-slate-100 dark:bg-white/5" />
-                    <Skeleton className="h-6 w-32 rounded-lg hidden lg:block bg-slate-100 dark:bg-white/5" />
-                    <div className="flex items-center gap-4 justify-end">
-                        <Skeleton className="h-10 w-24 rounded-xl bg-slate-200 dark:bg-white/10" />
-                        <Skeleton className="size-10 rounded-xl bg-slate-100 dark:bg-white/5 hidden md:block" />
+                </div>
+            </div>
+
+            {/* Today at a Glance */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm flex flex-col justify-center">
+                <div className="mb-6">
+                    <Skeleton className="h-5 w-40 rounded-md mb-2 bg-slate-200 dark:bg-slate-800" />
+                    <Skeleton className="h-3 w-28 rounded-md bg-slate-100 dark:bg-slate-800/50" />
+                </div>
+                
+                <div className="space-y-5">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Skeleton className="w-4 h-4 rounded bg-slate-200 dark:bg-slate-800" />
+                                <Skeleton className="h-4 w-24 rounded bg-slate-100 dark:bg-slate-800/50" />
+                            </div>
+                            <Skeleton className="h-4 w-10 rounded bg-slate-200 dark:bg-slate-800" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+
+        {/* 4 Stat Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between min-h-[140px]">
+                    <div className="flex justify-between items-start mb-4">
+                        <Skeleton className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+                        <Skeleton className="size-8 rounded-full bg-slate-100 dark:bg-slate-800/50" />
+                    </div>
+                    <div>
+                        <Skeleton className="h-8 w-20 rounded-lg mb-3 bg-slate-200 dark:bg-slate-700" />
+                        <div className="flex items-center gap-2">
+                            <Skeleton className="h-4 w-12 rounded-md bg-slate-100 dark:bg-slate-800/50" />
+                            <Skeleton className="h-3 w-24 rounded bg-slate-100 dark:bg-slate-800/50" />
+                        </div>
                     </div>
                 </div>
             ))}
+        </div>
+
+        {/* Dashboard Charts / Sections */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm p-6 min-h-[400px]">
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <Skeleton className="h-5 w-40 rounded-md mb-2 bg-slate-200 dark:bg-slate-800" />
+                        <Skeleton className="h-3 w-64 rounded-md bg-slate-100 dark:bg-slate-800/50" />
+                    </div>
+                    <Skeleton className="h-8 w-24 rounded-full bg-slate-100 dark:bg-slate-800/50" />
+                </div>
+                <div className="flex items-end justify-between h-64 gap-4 px-2">
+                    {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                        <Skeleton key={i} className={`w-full rounded-t-lg bg-slate-200 dark:bg-slate-800 ${i % 2 === 0 ? 'h-32' : 'h-48'}`} />
+                    ))}
+                </div>
+            </div>
             
-            {/* Footer Loader */}
-            <div className="flex justify-center pt-12 pb-6">
-                 <div className="flex items-center gap-3 text-slate-400 bg-slate-50 dark:bg-white/5 px-6 py-3 rounded-full border border-slate-100 dark:border-white/5">
-                    <Loader2 className="animate-spin text-primary" size={16} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Preparing Dashboard...</span>
-                 </div>
+            <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm p-6 min-h-[400px]">
+                <div className="mb-8">
+                    <Skeleton className="h-5 w-40 rounded-md mb-2 bg-slate-200 dark:bg-slate-800" />
+                    <Skeleton className="h-3 w-32 rounded-md bg-slate-100 dark:bg-slate-800/50" />
+                </div>
+                <div className="space-y-6">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="flex gap-4">
+                            <Skeleton className="size-10 rounded-full shrink-0 bg-slate-200 dark:bg-slate-800" />
+                            <div className="space-y-2 flex-1">
+                                <Skeleton className="h-4 w-3/4 rounded bg-slate-200 dark:bg-slate-800" />
+                                <Skeleton className="h-3 w-1/2 rounded bg-slate-100 dark:bg-slate-800/50" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
+
       </div>
     </div>
   );

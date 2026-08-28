@@ -113,7 +113,7 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
         <div className="flex items-center gap-3">
           <button
             onClick={handleImportQuestions}
-            className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm font-bold border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center justify-center gap-2 rounded-xl h-10 px-5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition-colors"
           >
             <Upload size={18} />
             <span className="truncate">Import</span>
@@ -121,7 +121,7 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
           
           <button
             onClick={handleCreateExam}
-            className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary/90 transition-opacity"
+            className="flex items-center justify-center gap-2 rounded-full h-10 px-5 bg-primary text-white text-sm font-semibold shadow-sm hover:bg-primary/90 transition-opacity"
           >
             <PlusCircle size={18} />
             <span className="truncate">Create New</span>
@@ -165,19 +165,19 @@ export default function ClassExamsPage({ exams = [], classData }: ClassExamsPage
       </div>
 
       {filteredExams.length === 0 && (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
-          <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-            <PlusCircle className="text-gray-400" size={24} />
+        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+          <div className="w-16 h-16 mx-auto bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+            <PlusCircle className="text-slate-400" size={24} />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             No exams found
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6 font-medium">
+          <p className="text-slate-500 dark:text-slate-400 mb-6 font-medium">
             This class doesn't have any exams or quizzes scheduled yet.
           </p>
           <button
             onClick={handleCreateExam}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 font-bold"
+            className="px-5 py-2.5 bg-primary text-white rounded-full hover:bg-primary/90 font-semibold shadow-sm"
           >
             Create First Exam
           </button>

@@ -344,69 +344,71 @@ export default function DepartmentsPage() {
 
         {/* Department & School Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-10 rounded-[3rem] bg-slate-900 text-white border border-slate-800 shadow-2xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                    <Building2 size={120} />
-                </div>
-                <div className="relative z-10 space-y-6">
-                    <div className="size-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary shadow-inner text-[#38bdf8]">
-                        <Layers size={24} strokeWidth={2.5} />
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Active Departments</p>
-                        <h3 className="text-4xl font-black tracking-tighter uppercase">{departments.length}</h3>
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
+                <div className="flex justify-between items-start">
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Active Departments</p>
+                    <div className="size-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                        <Layers size={20} strokeWidth={2.5} />
                     </div>
                 </div>
-            </div>
-
-            <div className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl relative overflow-hidden group">
-                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] dark:opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                    <Users size={120} />
-                </div>
-                <div className="relative z-10 space-y-6">
-                    <div className="size-14 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-primary">
-                        <Users size={24} strokeWidth={2.5} />
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Teachers</p>
-                        <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
-                            {schoolStats?.teachers ?? 0}
-                        </h3>
-                    </div>
+                <div>
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
+                        {departments.length}
+                    </h3>
+                    <p className="text-xs font-medium text-emerald-500 mt-1 flex items-center gap-1">
+                        <span>All operational</span>
+                    </p>
                 </div>
             </div>
 
-            <div className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl relative overflow-hidden group">
-                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] dark:opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                    <GraduationCap size={120} />
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
+                <div className="flex justify-between items-start">
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Teachers</p>
+                    <div className="size-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                        <Users size={20} strokeWidth={2.5} />
+                    </div>
                 </div>
-                <div className="relative z-10 space-y-6">
-                    <div className="size-14 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-emerald-600">
-                        <Zap size={24} strokeWidth={2.5} />
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Subjects</p>
-                        <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
-                            {schoolStats?.subjects ?? 0}
-                        </h3>
-                    </div>
+                <div>
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
+                        {schoolStats?.teachers ?? 0}
+                    </h3>
+                    <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
+                        <span>Across school</span>
+                    </p>
                 </div>
             </div>
 
-            <div className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl relative overflow-hidden group">
-                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] dark:opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                    <Building2 size={120} />
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
+                <div className="flex justify-between items-start">
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Subjects</p>
+                    <div className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                        <Zap size={20} strokeWidth={2.5} />
+                    </div>
                 </div>
-                <div className="relative z-10 space-y-6">
-                    <div className="size-14 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-[#ec4899]">
-                        <Building2 size={24} strokeWidth={2.5} />
+                <div>
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
+                        {schoolStats?.subjects ?? 0}
+                    </h3>
+                    <p className="text-xs font-medium text-emerald-500 mt-1 flex items-center gap-1">
+                        <span>Active curriculum</span>
+                    </p>
+                </div>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
+                <div className="flex justify-between items-start">
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Students</p>
+                    <div className="size-10 rounded-xl bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 flex items-center justify-center">
+                        <GraduationCap size={20} strokeWidth={2.5} />
                     </div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Students</p>
-                        <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
-                            {schoolStats?.students ?? 0}
-                        </h3>
-                    </div>
+                </div>
+                <div>
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
+                        {schoolStats?.students ?? 0}
+                    </h3>
+                    <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
+                        <span>Enrolled</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -457,215 +459,225 @@ export default function DepartmentsPage() {
             </div>
         </div>
 
-        {/* Departments List Table */}
+        {/* Departments List / Grid */}
         <AnimatePresence mode="wait">
-            {viewMode === 'list' ? (
-                <motion.div 
-                    key="list"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[4rem] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.08)]"
-                >
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
-                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Department Name</th>
-                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Code</th>
-                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Subjects</th>
-                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Classes</th>
-                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Students</th>
-                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Description</th>
-                                    <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={7} className="px-10 py-40 text-center">
-                                            <div className="flex flex-col items-center gap-6">
-                                                <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 border-t-primary animate-spin" style={{ borderTopColor: primaryColor }} />
-                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading departments...</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : filteredDepartments.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className="px-10 py-40 text-center">
-                                            <div className="flex flex-col items-center gap-6 opacity-30">
-                                                <Layers size={80} strokeWidth={1} />
-                                                <span className="text-[10px] font-black uppercase tracking-[0.3em]">No departments found</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    paginatedDepartments.map((dept, index) => (
-                                        <motion.tr 
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: index * 0.05 }}
-                                            key={dept.code} 
-                                            className="group hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-all duration-300"
-                                        >
-                                            <td className="px-10 py-8">
-                                                <div className="flex items-center gap-6">
-                                                    <div className="size-16 rounded-3xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-all duration-500 border border-slate-100 dark:border-white/5" style={{ color: primaryColor }}>
-                                                        <Building2 size={24} />
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter group-hover:text-primary transition-colors" style={{ '--primary': primaryColor } as any}>
-                                                            {dept.name}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-10 py-8">
-                                                <div className="inline-flex px-4 py-1.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 font-mono text-xs font-black text-slate-500">
-                                                    {dept.code}
-                                                </div>
-                                            </td>
-                                            <td className="px-10 py-8">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="size-8 rounded-lg bg-indigo-500/10 text-indigo-600 flex items-center justify-center dark:bg-indigo-500/20 dark:text-indigo-400">
-                                                        <Zap size={14} />
-                                                    </div>
-                                                    <span className="text-lg font-black text-slate-900 dark:text-white">
-                                                        {dept.subjects?.length || 0}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-10 py-8">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center dark:bg-emerald-500/20 dark:text-emerald-400">
-                                                        <Layers size={14} />
-                                                    </div>
-                                                    <span className="text-lg font-black text-slate-900 dark:text-white">
-                                                        {dept._count?.classes || 0}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-10 py-8">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="size-8 rounded-lg bg-rose-500/10 text-rose-600 flex items-center justify-center dark:bg-rose-500/20 dark:text-rose-400">
-                                                        <Users size={14} />
-                                                    </div>
-                                                    <span className="text-lg font-black text-slate-900 dark:text-white">
-                                                        {dept._count?.students || 0}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-10 py-8">
-                                                <p className="max-w-[240px] truncate text-sm font-medium text-slate-500 leading-relaxed italic">
-                                                    "{dept.description || "No description provided."}"
-                                                </p>
-                                            </td>
-                                            <td className="px-10 py-8 text-right">
-                                                <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                                                    <Button 
-                                                        onClick={() => {
-                                                            setSelectedDepartment(dept);
-                                                            setIsModalOpen(true);
-                                                        }}
-                                                        variant="ghost" 
-                                                        size="icon" 
-                                                        className="size-12 rounded-2xl hover:bg-white dark:hover:bg-slate-900 shadow-sm border border-transparent hover:border-slate-100 transition-all"
-                                                    >
-                                                        <Edit2 size={18} className="text-slate-400" />
-                                                    </Button>
-                                                    <Button 
-                                                        onClick={() => handleArchive(dept.code)}
-                                                        variant="ghost" 
-                                                        size="icon" 
-                                                        className="size-12 rounded-2xl hover:bg-rose-500 hover:text-white shadow-sm border border-transparent transition-all"
-                                                    >
-                                                        <Archive size={18} />
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </motion.tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+            <motion.div
+              key="view"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="pt-4"
+            >
+              {viewMode === 'list' && (
+                  <div className="hidden md:grid grid-cols-[2.5fr_1fr_1fr_1fr_1fr_auto] gap-4 px-6 py-4 border-b border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-t-2xl">
+                      <div>Department Details</div>
+                      <div>Code</div>
+                      <div className="text-center">Subjects</div>
+                      <div className="text-center">Classes</div>
+                      <div className="text-center">Students</div>
+                      <div className="text-right">Actions</div>
+                  </div>
+              )}
+
+              <div className={viewMode === 'grid' 
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+                  : "flex flex-col bg-white dark:bg-slate-900 rounded-b-2xl border border-t-0 border-slate-200 dark:border-slate-800 shadow-sm"
+              }>
+                {loading ? (
+                    viewMode === 'grid' 
+                        ? [1,2,3,4,5,6].map(i => <div key={i} className="h-64 rounded-2xl bg-slate-50 dark:bg-slate-800/50 animate-pulse border border-slate-100 dark:border-white/5" />)
+                        : [1,2,3,4,5,6].map(i => <div key={i} className="h-20 bg-slate-50 dark:bg-slate-800/50 animate-pulse border-b border-slate-100 dark:border-white/5" />)
+                ) : filteredDepartments.length === 0 ? (
+                    <div className="p-20 text-center flex flex-col items-center justify-center col-span-full">
+                        <Layers size={48} className="text-slate-300 dark:text-slate-700 mb-4" />
+                        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">No departments found</p>
                     </div>
-                </motion.div>
-            ) : (
-                <motion.div 
-                    key="grid"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                >
-                    {loading ? (
-                         [1,2,3,4,5,6].map(i => <div key={i} className="h-64 rounded-[3.5rem] bg-white dark:bg-white/[0.02] animate-pulse border border-slate-100 dark:border-white/5" />)
-                    ) : paginatedDepartments.map((dept, index) => (
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.05 }}
-                            key={dept.code} 
-                            onClick={() => {
-                                setSelectedDepartment(dept);
-                                setIsModalOpen(true);
-                            }}
-                            className="group relative overflow-hidden bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3.5rem] p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-2 transition-all duration-500 cursor-pointer"
-                        >
-                             <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[80px] -mt-10 -mr-10 transition-colors duration-700" style={{ backgroundColor: `${primaryColor}10` }} />
-                             
-                             <div className="relative z-10 space-y-8">
-                                <div className="flex justify-between items-start">
-                                    <div className="size-16 rounded-[1.5rem] bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-all duration-500 border border-slate-100 dark:border-white/5" style={{ color: primaryColor }}>
-                                        <Building2 size={28} strokeWidth={2.5} />
+                ) : (
+                    paginatedDepartments.map((dept, index) => {
+                        if (viewMode === 'grid') {
+                            return (
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: index * 0.05 }}
+                                    key={dept.code} 
+                                    onClick={() => {
+                                        setSelectedDepartment(dept);
+                                        setIsModalOpen(true);
+                                    }}
+                                    whileHover={{ y: -4, boxShadow: '0 12px 40px -12px rgba(0,0,0,0.1)' }}
+                                    className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 transition-all duration-300 cursor-pointer flex flex-col min-h-[200px] shadow-sm"
+                                >
+                                    {/* Top Header: Icon & Actions */}
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div 
+                                            className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105"
+                                            style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                                        >
+                                            <Building2 size={20} strokeWidth={2.5} />
+                                        </div>
+                                        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <Button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedDepartment(dept);
+                                                    setIsModalOpen(true);
+                                                }}
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                                            >
+                                                <Edit2 size={14} />
+                                            </Button>
+                                            <Button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleArchive(dept.code);
+                                                }}
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 transition-colors"
+                                            >
+                                                <Archive size={14} />
+                                            </Button>
+                                        </div>
                                     </div>
-                                    <div className="px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-500">
+
+                                    {/* Title & Description */}
+                                    <div className="flex-1 mb-6">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                                                {dept.name}
+                                            </h3>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-md">
+                                                {dept.code}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                                            {dept.description || "No description provided."}
+                                        </p>
+                                    </div>
+
+                                    {/* Footer Metrics */}
+                                    <div className="mt-auto pt-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                        <div className="flex items-center gap-6">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                                    <Zap size={12} />
+                                                    Subjects
+                                                </span>
+                                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                    {dept.subjects?.length || 0}
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                                    <Users size={12} />
+                                                    Students
+                                                </span>
+                                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                    {dept._count?.students || 0}
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col gap-1 hidden sm:flex">
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                                    <Layers size={12} />
+                                                    Classes
+                                                </span>
+                                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                    {dept._count?.classes || 0}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        }
+
+                        // LIST VIEW RENDER
+                        return (
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                key={dept.code}
+                                onClick={() => {
+                                    setSelectedDepartment(dept);
+                                    setIsModalOpen(true);
+                                }}
+                                className="group relative grid grid-cols-1 md:grid-cols-[2.5fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center px-6 py-4 border-b border-slate-100 dark:border-slate-800/50 last:border-0 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
+                            >
+                                {/* Absolute overlay for smooth hover background without breaking structure */}
+                                <div className="absolute inset-0 bg-slate-50 dark:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-none first:rounded-t-none last:rounded-b-2xl" />
+
+                                <div className="relative z-10 flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
+                                        <Building2 size={18} strokeWidth={2.5} />
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                            {dept.name}
+                                        </span>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                            {dept.description || "No description provided"}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="relative z-10 hidden md:block">
+                                    <span className="font-mono text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-md">
                                         {dept.code}
-                                    </div>
+                                    </span>
                                 </div>
 
-                                <div>
-                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors leading-[1.1] uppercase tracking-tighter mb-3" style={{ '--primary': primaryColor } as any}>
-                                        {dept.name}
-                                    </h3>
-                                    <p className="text-sm font-medium text-slate-500 line-clamp-2 italic">
-                                        "{dept.description || "No description provided."}"
-                                    </p>
+                                <div className="relative z-10 hidden md:block text-center">
+                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                        {dept.subjects?.length || 0}
+                                    </span>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4 py-6 border-t border-b border-slate-50 dark:border-white/5">
-                                    <div className="space-y-1 bg-slate-50/50 dark:bg-white/[0.02] p-4 rounded-2xl border border-slate-100/50 dark:border-white/5">
-                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Subjects</span>
-                                        <span className="text-lg font-black text-slate-900 dark:text-white">{dept.subjects?.length || 0}</span>
-                                    </div>
-                                    <div className="space-y-1 bg-slate-50/50 dark:bg-white/[0.02] p-4 rounded-2xl border border-slate-100/50 dark:border-white/5">
-                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Classes</span>
-                                        <span className="text-lg font-black text-slate-900 dark:text-white">{dept._count?.classes || 0}</span>
-                                    </div>
-                                    <div className="space-y-1 bg-slate-50/50 dark:bg-white/[0.02] p-4 rounded-2xl border border-slate-100/50 dark:border-white/5">
-                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Students</span>
-                                        <span className="text-lg font-black text-slate-900 dark:text-white">{dept._count?.students || 0}</span>
-                                    </div>
-                                    <div className="space-y-1 bg-slate-50/50 dark:bg-white/[0.02] p-4 rounded-2xl border border-slate-100/50 dark:border-white/5">
-                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Exams</span>
-                                        <span className="text-lg font-black text-slate-900 dark:text-white">{dept._count?.exams || 0}</span>
-                                    </div>
+                                <div className="relative z-10 hidden md:block text-center">
+                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                        {dept._count?.classes || 0}
+                                    </span>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-2">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Click to Edit Department</span>
-                                    <div 
-                                        className="size-12 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center group-hover:text-white text-slate-400 transition-all duration-500 shadow-sm group-hover:bg-[var(--hover-bg)]" 
-                                        style={{ '--hover-bg': primaryColor } as any}
+                                <div className="relative z-10 hidden md:block text-center">
+                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                        {dept._count?.students || 0}
+                                    </span>
+                                </div>
+
+                                <div className="relative z-10 flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <Button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedDepartment(dept);
+                                            setIsModalOpen(true);
+                                        }}
+                                        variant="ghost" 
+                                        size="icon"
+                                        className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                                     >
-                                        <ArrowRight size={20} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
-                                    </div>
+                                        <Edit2 size={14} />
+                                    </Button>
+                                    <Button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleArchive(dept.code);
+                                        }}
+                                        variant="ghost" 
+                                        size="icon"
+                                        className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-500/5 hover:bg-red-100 dark:hover:bg-red-500/10 text-red-500 transition-colors"
+                                    >
+                                        <Archive size={14} />
+                                    </Button>
                                 </div>
-                             </div>
-                        </motion.div>
-                    ))}
-                </motion.div>
-            )}
+                            </motion.div>
+                        );
+                    })
+                )}
+              </div>
+            </motion.div>
         </AnimatePresence>
 
         {/* Dynamic Pagination */}

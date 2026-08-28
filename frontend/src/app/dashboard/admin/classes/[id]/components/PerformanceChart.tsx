@@ -27,7 +27,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-[#1f2937] p-6 rounded-xl border border-gray-200 dark:border-gray-700 h-[382px] flex flex-col items-center justify-center">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm h-[382px] flex flex-col items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
         <p className="text-gray-500 dark:text-gray-400 font-medium">Crunching analytics...</p>
       </div>
@@ -38,7 +38,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
   const hasData = chartData && chartData.length > 0;
 
   return (
-    <div className="bg-white dark:bg-[#1f2937] p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div className="flex flex-col gap-1">
           <h3 className="text-xl font-black text-gray-900 dark:text-white capitalize tracking-tight">

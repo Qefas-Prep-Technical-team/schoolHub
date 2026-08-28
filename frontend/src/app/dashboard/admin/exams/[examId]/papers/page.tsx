@@ -620,7 +620,7 @@ export default function ExamPapersPage() {
                   <Settings2 size={15} /> Settings
                 </button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-5xl w-[95vw] rounded-[2.5rem] p-0 overflow-hidden border border-slate-100 dark:border-slate-800 shadow-2xl shadow-indigo-500/10 focus:outline-none bg-slate-50/50 dark:bg-slate-950/50">
+              <DialogContent className="sm:max-w-5xl w-[95vw] rounded-[2.5rem] p-0 overflow-hidden border border-slate-100 dark:border-slate-800 shadow-2xl shadow-indigo-500/10 focus:outline-none bg-slate-50 dark:bg-slate-950">
                 <div className="bg-white dark:bg-slate-900 p-8 pb-6 border-b border-slate-100 dark:border-slate-800 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
                   <DialogHeader>

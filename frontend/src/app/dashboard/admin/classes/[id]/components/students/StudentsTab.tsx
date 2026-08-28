@@ -127,7 +127,7 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
         />
         <button
           onClick={() => setIsPromoteOpen(true)}
-          className="px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
+          className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-full hover:bg-primary/90 transition-colors shadow-sm"
         >
           Promote Students
         </button>
@@ -144,7 +144,7 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
       </div>
 
       {filteredStudents.length === 0 && (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
           <div className="text-gray-400 dark:text-gray-500 text-lg mb-2">
             No students found
           </div>

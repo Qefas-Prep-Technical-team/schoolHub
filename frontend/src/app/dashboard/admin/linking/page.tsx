@@ -186,7 +186,7 @@ function LinkingHub() {
   const isLimitReached = studentLimit > 0 && studentUsage >= studentLimit;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 bg-gray-50/30 dark:bg-transparent min-h-screen">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-[calc(100vh-4rem)]">
       <LinkingHeader 
         onConnectClick={() => setIsConnectModalOpen(true)} 
         onShowQRCodeClick={() => setIsQRCodeModalOpen(true)}
@@ -241,9 +241,9 @@ function LinkingHub() {
         />
 
         {isLoadingActive || isLoadingRequests ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border-2 border-dashed border-gray-100 dark:border-gray-700">
+          <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
             <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-            <p className="text-gray-500 font-medium">Fetching {subTab} {mainTab} connections...</p>
+            <p className="text-slate-500 font-medium">Fetching {subTab} {mainTab} connections...</p>
           </div>
         ) : subTab === 'active' ? (
           <ActiveLinksGrid 
@@ -270,13 +270,13 @@ function LinkingHub() {
             cancellingId={cancelMutation.isPending ? (cancelMutation.variables as string) : null}
           />
         ) : (
-          <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-100 dark:border-gray-700 rounded-[2.5rem] overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
             <div className="p-20 text-center flex flex-col items-center">
-              <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center mb-4">
-                <Clock className="text-blue-500" size={28} />
+              <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                <Clock className="text-slate-400" size={28} />
               </div>
-              <h3 className="text-xl font-black mb-2">Activity History</h3>
-              <p className="text-gray-500 max-w-xs font-medium">Link activity history for {mainTab} will appear here soon.</p>
+              <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">Activity History</h3>
+              <p className="text-slate-500 max-w-xs font-medium">Link activity history for {mainTab} will appear here soon.</p>
             </div>
           </div>
         )}

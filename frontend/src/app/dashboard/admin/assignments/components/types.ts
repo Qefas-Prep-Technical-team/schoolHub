@@ -24,6 +24,7 @@ export interface AssignmentCardProps {
   onGrade?: (id: string) => void;
   onDelete?: (id: string) => void;
   onViewDetails?: (id: string) => void;
+  viewMode?: 'grid' | 'list';
 }
 
 export interface PaginationProps {

@@ -26,7 +26,7 @@ export default function AssignmentsPage() {
     const { user } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({ status: '', subject: '' });
-    const [view, setView] = useState<'list' | 'grid'>('grid');
+    const [view, setView] = useState<'list' | 'grid'>('list');
     const [currentPage, setCurrentPage] = useState(1);
     const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
     const itemsPerPage = 8;
@@ -214,34 +214,47 @@ export default function AssignmentsPage() {
                                 initial={{ opacity: 0, scale: 0.98 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.98 }}
-                                className={`grid gap-8 pt-4 ${view === 'grid'
-                                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                                    : 'grid-cols-1'
-                                    }`}
+                                className="pt-4"
                             >
-                                {paginatedAssignments.map((assignment: any) => {
-                                    const totalStudents = typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (typeof assignment.class === 'object' && assignment.class?._count?.enrollments ? assignment.class._count.enrollments : 0);
-                                    const submitted = assignment._count?.submissions || 0;
-                                    const progress = totalStudents > 0 ? Math.round((submitted / totalStudents) * 100) : 0;
-                                    return (
-                                        <AssignmentCard
-                                            key={assignment.id}
-                                            assignment={{
-                                                ...assignment,
-                                                subject: typeof assignment.subject === 'string' ? assignment.subject : (assignment.subject?.name || "General"),
-                                                className: typeof assignment.class === 'string' ? assignment.class : (assignment.class?.name || "All Classes"),
-                                                dueDate: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline",
-                                                submitted,
-                                                totalStudents,
-                                                progress
-                                            }}
-                                            onEdit={() => router.push(`/dashboard/admin/assignments/${assignment.id}?edit=true`)}
-                                            onGrade={() => router.push(`/dashboard/admin/assignments/${assignment.id}`)}
-                                            onDelete={() => setAssignmentToDelete(assignment.id)}
-                                            onViewDetails={() => router.push(`/dashboard/admin/assignments/${assignment.id}`)}
-                                        />
-                                    );
-                                })}
+                                {view === 'list' && (
+                                    <div className="hidden md:grid grid-cols-[2.5fr_1.5fr_1.5fr_1.5fr_1fr_auto] gap-4 px-6 py-4 border-b border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-t-2xl">
+                                        <div>Assignment Details</div>
+                                        <div>Class</div>
+                                        <div>Deadline</div>
+                                        <div>Progress</div>
+                                        <div>Status</div>
+                                        <div className="text-right">Actions</div>
+                                    </div>
+                                )}
+                                <div className={view === 'grid' 
+                                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+                                    : "flex flex-col bg-white dark:bg-slate-900 rounded-b-2xl border border-t-0 border-slate-200 dark:border-slate-800 shadow-sm"
+                                }>
+                                    {paginatedAssignments.map((assignment: any) => {
+                                        const totalStudents = typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (typeof assignment.class === 'object' && assignment.class?._count?.enrollments ? assignment.class._count.enrollments : 0);
+                                        const submitted = assignment._count?.submissions || 0;
+                                        const progress = totalStudents > 0 ? Math.round((submitted / totalStudents) * 100) : 0;
+                                        return (
+                                            <AssignmentCard
+                                                key={assignment.id}
+                                                assignment={{
+                                                    ...assignment,
+                                                    subject: typeof assignment.subject === 'string' ? assignment.subject : (assignment.subject?.name || "General"),
+                                                    className: typeof assignment.class === 'string' ? assignment.class : (assignment.class?.name || "All Classes"),
+                                                    dueDate: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline",
+                                                    submitted,
+                                                    totalStudents,
+                                                    progress
+                                                }}
+                                                viewMode={view}
+                                                onEdit={() => router.push(`/dashboard/admin/assignments/${assignment.id}?edit=true`)}
+                                                onGrade={() => router.push(`/dashboard/admin/assignments/${assignment.id}`)}
+                                                onDelete={() => setAssignmentToDelete(assignment.id)}
+                                                onViewDetails={() => router.push(`/dashboard/admin/assignments/${assignment.id}`)}
+                                            />
+                                        );
+                                    })}
+                                </div>
                             </motion.div>
                         ) : (
                             <motion.div

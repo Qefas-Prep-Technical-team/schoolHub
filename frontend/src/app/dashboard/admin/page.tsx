@@ -4,138 +4,214 @@ import { useState } from 'react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useSchoolStats, useSchoolPerformanceAnalysis, useSchoolSettings } from '@/lib/api/hooks/useSchool';
 import { useFeatureAccess } from '@/lib/api/hooks/useFeatureAccess';
-import { Sparkles, Building2, ShieldCheck, GraduationCap, Lock } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Users, GraduationCap, CheckCircle2, CreditCard, ClipboardList } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import AdminLoading from './loading';
 
-import { motion, AnimatePresence } from 'framer-motion';
-
-// Existing Dashboard Components
-import DashboardLayout from './components/dashboard/DashboardLayout';
-import AcademicChart from './components/dashboard/AcademicChart';
-import AttendanceChart from './components/dashboard/AttendanceChart';
-import TodayAttendanceChart from './components/dashboard/TodayAttendanceChart';
+// Existing Dashboard Components (to be restyled)
 import ExamStatus from './components/dashboard/ExamStatus';
 import StaffInsights from './components/dashboard/StaffInsights';
-import DateControls from './components/dashboard/DateControls';
 import AlertsPanel from './components/dashboard/AlertsPanel';
 import RecentActivity from './components/dashboard/RecentActivity';
 import QuickActions from './components/dashboard/QuickActions';
 import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 
-// New Console Components
-import AdminHero from './components/dashboard/AdminHero';
-import AdminInsights from './components/dashboard/AdminInsights';
-import SchoolPerformance from './components/dashboard/SchoolPerformance';
+// Charts
+import DashboardCharts from './components/dashboard/DashboardCharts';
 
 export default function AdminDashboard() {
-  const [session, setSession] = useState('2023/2024');
-  const [term, setTerm] = useState('Second Term');
-
   const { user } = useAuthStore();
-
-  // Canonical school identification
-  // Prioritize the linked school UUID, fallback to tenantId for newly registered organizations
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
-  const schoolName = user?.schools?.[0]?.name || user?.name || 'School Management System';
+  const schoolName = user?.schools?.[0]?.name || user?.name || 'Future Academy';
+  const userName = user?.name || 'Admin';
 
   const { data: stats, isLoading: statsLoading } = useSchoolStats(schoolId);
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#2563eb'; // Default to blue-600 if not set
+  const primaryColor = settings?.themeColor || '#2563eb';
 
-  // Subscription Feature Check
   const aiInsightsFeatureKey = process.env.NEXT_PUBLIC_FEATURE_KEY_AI_INSIGHTS || 'aiInsights';
   const { data: hasPerformanceAccess, isLoading: checkingAccess } = useFeatureAccess(aiInsightsFeatureKey, schoolId);
-  // console.log("has performance access", hasPerformanceAccess)
-
   const { data: analysis, isLoading: analysisLoading } = useSchoolPerformanceAnalysis(schoolId, stats, { enabled: !!hasPerformanceAccess });
 
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
+  const currentTerm = 'Term 1'; // In a real app, fetch from school settings
+  const currentSession = '2025-26';
+
+  if (statsLoading || checkingAccess) {
+      return <AdminLoading />;
+  }
+
   return (
-    <div className="min-h-screen bg-transparent">
-      <main className="max-w-[1600px] mx-auto space-y-6 md:space-y-8 lg:space-y-10">
+    <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-8">
+      <div className="max-w-[1400px] mx-auto space-y-6">
 
-        {/* School Banner */}
-        <AdminHero schoolName={schoolName} primaryColor={primaryColor} />
+        {/* Header Section */}
+        <div>
+            <p className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">{today}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                Good morning, {userName} <span className="text-xl">👋</span>
+            </h1>
+        </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-6 md:space-y-8 lg:space-y-10"
-          >
-            {/* School Stats Overview */}
-            <AdminInsights stats={stats} isLoading={statsLoading} primaryColor={primaryColor} />
-
-            {/* Main Operational Bento Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8">
-
-              {/* Primary Content Area (Left, 7/8 Cols) */}
-              <div className="lg:col-span-7 xl:col-span-8 space-y-6 xl:space-y-8">
-                {/* Performance Chart */}
-                <div className="relative">
-                  {checkingAccess ? (
-                    <Skeleton className="w-full h-64 rounded-3xl" />
-                  ) : hasPerformanceAccess ? (
-                    <SchoolPerformance analysis={analysis} isLoading={analysisLoading} primaryColor={primaryColor} />
-                  ) : (
-                    <div className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 flex flex-col items-center justify-center text-center space-y-4 shadow-sm h-64">
-                      <div className="w-16 h-16 bg-white dark:bg-slate-950 rounded-full flex items-center justify-center shadow-md mb-2">
-                        <Lock className="w-8 h-8 text-slate-400 dark:text-slate-500" />
-                      </div>
-                      <h3 className="text-xl font-bold text-slate-800 dark:text-white">AI Performance Insights </h3>
-                      <p className="text-sm text-slate-500 max-w-md">Upgrade your subscription plan to unlock deep AI-driven analytics and performance trends for your institution.</p>
-                      <button className="mt-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-full transition-colors">
-                        Upgrade Plan
-                      </button>
+        {/* Top Hero & Glance Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Hero Banner */}
+            <div className="lg:col-span-2 relative overflow-hidden rounded-[2rem] bg-slate-900 shadow-sm">
+                <div 
+                    className="absolute inset-0 bg-cover bg-center opacity-60 mix-blend-overlay"
+                    style={{ backgroundImage: "url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')" }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
+                
+                <div className="relative z-10 p-8 h-full flex flex-col justify-end min-h-[280px]">
+                    <div className="inline-flex items-center bg-white/20 backdrop-blur-md rounded-full px-3 py-1 mb-4 w-fit">
+                        <span className="text-xs font-semibold text-white tracking-wide">{currentTerm} • {currentSession}</span>
                     </div>
-                  )}
-                </div>
-
-                {/* Sub-Metric Panels */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:gap-8">
-                  <TodayAttendanceChart primaryColor={primaryColor} />
-                  <ExamStatus primaryColor={primaryColor} />
-                </div>
-
-                {/* Academic / Exam Performance Chart */}
-                <AttendanceChart primaryColor={primaryColor} />
-
-                {/* Staff Information */}
-                <StaffInsights primaryColor={primaryColor} />
-              </div>
-
-              {/* Sidebar Context Layer (Right, 5/4 Cols) */}
-              <div className="lg:col-span-5 xl:col-span-4 space-y-6 xl:space-y-8 flex flex-col">
-                {/* Usage Matrix Panel */}
-                <UsageLimitsCard primaryColor={primaryColor} />
-
-                {/* Quick Access Context */}
-                <div className="bg-slate-900 dark:bg-slate-950 rounded-[2rem] md:rounded-[3rem] p-6 lg:p-8 xl:p-10 text-white shadow-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 dark:bg-white/5 rounded-full blur-3xl -translate-y-20 translate-x-10 group-hover:scale-150 transition-transform duration-700" />
-                  <div className="relative z-10 space-y-8">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-2xl font-black uppercase tracking-tighter italic">Dashboard <span style={{ color: primaryColor }}>Activity</span></h3>
-                      <Sparkles size={24} style={{ color: primaryColor, fill: primaryColor }} />
+                    
+                    <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Welcome back to {schoolName}</h2>
+                    <p className="text-slate-200 text-sm max-w-xl mb-6 leading-relaxed">
+                        {analysis?.insight || "System running smoothly. All services are fully operational."}
+                    </p>
+                    
+                    <div className="flex items-center gap-3">
+                        <button className="bg-white text-slate-900 hover:bg-slate-50 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm transition-all">
+                            View weekly report
+                        </button>
+                        <button className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 px-5 py-2.5 rounded-full text-sm font-semibold transition-all">
+                            Announce
+                        </button>
                     </div>
-                    <QuickActions primaryColor={primaryColor} />
-                  </div>
                 </div>
-
-                {/* System Alerts & Telemetry */}
-                <div className="space-y-6 flex-1">
-                  <AlertsPanel primaryColor={primaryColor} />
-                  <RecentActivity primaryColor={primaryColor} />
-                </div>
-              </div>
-
             </div>
-          </motion.div>
-        </AnimatePresence>
-      </main>
+
+            {/* Today at a Glance */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm flex flex-col justify-center">
+                <div className="mb-6">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Today at a glance</h3>
+                    <p className="text-xs text-slate-500">Live operations summary</p>
+                </div>
+                
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                            <CheckCircle2 size={16} className="text-emerald-500" />
+                            <span>Total Students</span>
+                        </div>
+                        <span className="font-semibold text-slate-900 dark:text-white">{stats?.students?.toLocaleString() || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                            <GraduationCap size={16} className="text-blue-500" />
+                            <span>Total Teachers</span>
+                        </div>
+                        <span className="font-semibold text-slate-900 dark:text-white">{stats?.teachers?.toLocaleString() || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                            <div className="w-4 h-4 rounded bg-amber-100 text-amber-600 flex items-center justify-center text-[10px]">🏢</div>
+                            <span>Total Classes</span>
+                        </div>
+                        <span className="font-semibold text-slate-900 dark:text-white">{stats?.classes?.toLocaleString() || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                            <CreditCard size={16} className="text-purple-500" />
+                            <span>Total Subjects</span>
+                        </div>
+                        <span className="font-semibold text-slate-900 dark:text-white">{stats?.subjects?.toLocaleString() || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                            <ClipboardList size={16} className="text-slate-500" />
+                            <span>Active Exams</span>
+                        </div>
+                        <span className="font-semibold text-slate-900 dark:text-white">{stats?.exams?.toLocaleString() || 0}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* 4 Stat Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="flex justify-between items-start mb-4">
+                    <span className="text-xs text-slate-500 font-medium">Total Students</span>
+                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600"><Users size={14} /></div>
+                </div>
+                <div>
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{stats?.students?.toLocaleString() || 0}</h3>
+                    <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-600">Active</span>
+                        <span>enrolled accounts</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="flex justify-between items-start mb-4">
+                    <span className="text-xs text-slate-500 font-medium">Total Teachers</span>
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600"><GraduationCap size={14} /></div>
+                </div>
+                <div>
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{stats?.teachers?.toLocaleString() || 0}</h3>
+                    <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-600">Verified</span>
+                        <span>faculty staff</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="flex justify-between items-start mb-4">
+                    <span className="text-xs text-slate-500 font-medium">Total Classes</span>
+                    <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600"><CheckCircle2 size={14} /></div>
+                </div>
+                <div>
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{stats?.classes?.toLocaleString() || 0}</h3>
+                    <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-600">Active</span>
+                        <span>classrooms</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="flex justify-between items-start mb-4">
+                    <span className="text-xs text-slate-500 font-medium">Total Subjects</span>
+                    <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600"><CreditCard size={14} /></div>
+                </div>
+                <div>
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{stats?.subjects?.toLocaleString() || 0}</h3>
+                    <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-600">Curriculum</span>
+                        <span>registered subjects</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* Charts Section */}
+        <DashboardCharts stats={stats} analysis={analysis} hasPerformanceAccess={hasPerformanceAccess} primaryColor={primaryColor} />
+
+        {/* Remaining Old Features Integration */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-4">
+             {/* Left Column (Main Features) */}
+             <div className="lg:col-span-8 space-y-6">
+                <ExamStatus primaryColor={primaryColor} />
+                <StaffInsights primaryColor={primaryColor} />
+                <RecentActivity primaryColor={primaryColor} />
+             </div>
+             
+             {/* Right Column (Sidebar Features) */}
+             <div className="lg:col-span-4 space-y-6">
+                <UsageLimitsCard primaryColor={primaryColor} />
+                <QuickActions primaryColor={primaryColor} />
+                <AlertsPanel primaryColor={primaryColor} />
+             </div>
+        </div>
+
+      </div>
     </div>
   );
 }
-

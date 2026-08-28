@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useSchoolRegistration } from '../../services/useRegistrationMutations';
 import { SchoolFormData, schoolSchema } from '../../services/regSchema';
 import { UserRole } from '@/lib/types/user.types';
-import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
+
 
 // Password strength checker (same as others)
 export const getPasswordStrength = (password: string) => {
@@ -165,8 +165,8 @@ export default function SchoolCard() {
   return (
     <>
       <RedirectOverlay isVisible={showOverlay} />
-      <div className="w-[95vw] lg:w-[80vw] mx-auto bg-white dark:bg-gray-900 md:rounded-[2.5rem] rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-gray-100 dark:border-gray-800 overflow-hidden">
-      <div className="flex flex-col lg:flex-row min-h-[700px]">
+      <div className="w-full bg-white dark:bg-gray-900 md:rounded-[2rem] rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-gray-100 dark:border-gray-800 overflow-hidden">
+      <div className="flex flex-col lg:flex-row min-h-[450px]">
         {/* Left Form */}
         <div className="flex-1 flex flex-col justify-center p-6 sm:p-10 lg:p-12 xl:p-16">
           <SchoolHeader />
@@ -413,9 +413,7 @@ export default function SchoolCard() {
               </div>
             </button>
 
-            {globalFeatures?.googleLogin !== false && (
-                <GoogleLoginButton userType={UserRole.ADMIN} />
-            )}
+
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               Already have a school account?{' '}
               <a

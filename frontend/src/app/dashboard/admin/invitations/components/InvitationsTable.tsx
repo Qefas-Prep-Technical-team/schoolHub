@@ -44,9 +44,9 @@ export default function InvitationsTable({ searchTerm, page, onPageChange }: Inv
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-8 bg-slate-950/40 rounded-[3.5rem] backdrop-blur-3xl border border-white/5">
+      <div className="p-8 space-y-6">
         {[1, 2, 3, 4, 5].map(i => (
-          <Skeleton key={i} className="h-16 w-full rounded-2xl bg-white/5" />
+          <Skeleton key={i} className="h-16 w-full rounded-2xl" />
         ))}
       </div>
     );
@@ -54,69 +54,71 @@ export default function InvitationsTable({ searchTerm, page, onPageChange }: Inv
 
   if (isError) {
     return (
-      <div className="p-20 text-center rounded-[3.5rem] bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 font-black uppercase tracking-widest text-xs">
+      <div className="p-12 text-center text-sm font-semibold text-rose-500 bg-rose-50 dark:bg-rose-500/10">
         Failed to fetch invitations list.
       </div>
     );
   }
 
   return (
-    <div className="rounded-[3.5rem] bg-white dark:bg-slate-900/50 backdrop-blur-3xl border border-slate-100 dark:border-white/5 overflow-hidden shadow-3xl">
-      <div className="overflow-x-auto custom-scrollbar">
+    <div className="w-full">
+      <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-slate-100 dark:border-white/5">
-              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Name</th>
-              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">System Email</th>
-              <th className="p-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned Class</th>
-              <th className="p-8 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+            <tr className="border-b border-slate-100 dark:border-slate-800">
+              <th className="p-5 w-16 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">#</th>
+              <th className="p-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Student Name</th>
+              <th className="p-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">System Email</th>
+              <th className="p-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Assigned Class</th>
+              <th className="p-5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {students.map((student: any) => {
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {students.map((student: any, index: number) => {
               const studentClass = student.classes?.[0]?.class;
               
               return (
                 <tr
                   key={student.id}
-                  className="group hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-all"
+                  className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                 >
-                  <td className="p-8">
-                    <div className="flex items-center gap-5">
-                      <div className="relative">
-                        <div className="size-14 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-lg relative flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
-                           <User size={24} />
-                        </div>
+                  <td className="p-5 text-center text-sm font-semibold text-slate-400">
+                    {(page - 1) * 10 + index + 1}
+                  </td>
+                  <td className="p-5">
+                    <div className="flex items-center gap-4">
+                      <div className="size-10 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
+                         <User size={20} />
                       </div>
                       <div>
-                        <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-lg">{student.name}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{student.studentCode || 'UNASSIGNED'}</p>
+                        <p className="font-semibold text-sm text-slate-900 dark:text-white truncate max-w-[200px]">{student.name}</p>
+                        <p className="text-xs font-medium text-slate-500 mt-0.5">{student.studentCode || 'UNASSIGNED'}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="p-8">
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      <Mail size={14} />
+                  <td className="p-5">
+                    <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                      <Mail size={16} className="text-slate-400" />
                       {student.email}
                     </div>
                   </td>
-                  <td className="p-8">
+                  <td className="p-5">
                     <div className="flex flex-col gap-1">
                       {studentClass ? (
-                        <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
-                          <BookOpen size={14} />
+                        <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400">
+                          <BookOpen size={16} />
                           {studentClass.name} {studentClass.section}
                         </div>
                       ) : (
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-50">No Class</span>
+                        <span className="text-sm font-medium text-slate-400 italic">No Class</span>
                       )}
                     </div>
                   </td>
-                  <td className="p-8 text-right">
+                  <td className="p-5 text-right">
                     <Button 
                       onClick={() => handleOpenInviteDialog(student)}
                       style={{ backgroundColor: primaryColor }}
-                      className="h-10 px-6 rounded-xl text-white font-black text-[10px] uppercase tracking-widest shadow-lg hover:brightness-110 active:scale-95 transition-all border-none"
+                      className="h-9 px-5 rounded-xl text-white font-semibold text-xs hover:opacity-90 transition-opacity border-none shadow-sm flex items-center whitespace-nowrap shrink-0"
                     >
                       <Send size={14} className="mr-2" /> Invite
                     </Button>
@@ -129,43 +131,43 @@ export default function InvitationsTable({ searchTerm, page, onPageChange }: Inv
       </div>
 
       {students.length === 0 && (
-        <div className="p-20 text-center space-y-6">
-          <div className="size-20 bg-slate-100 dark:bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto text-slate-400">
-            <GraduationCap size={40} />
+        <div className="p-16 text-center space-y-4">
+          <div className="size-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-400">
+            <GraduationCap size={32} />
           </div>
-          <div className="space-y-2">
-            <p className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">No Pending Invitations</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">All students have claimed their accounts.</p>
+          <div className="space-y-1">
+            <p className="text-base font-semibold text-slate-900 dark:text-white">No Pending Invitations</p>
+            <p className="text-sm text-slate-500 font-medium">All students have claimed their accounts.</p>
           </div>
         </div>
       )}
 
       {/* Pagination */}
       {totalItems > 0 && (
-        <div className="p-8 border-t border-slate-100 dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/50 dark:bg-white/[0.01]">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+        <div className="p-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-900/50">
+          <p className="text-xs font-semibold text-slate-500">
             Displaying <span className="text-slate-900 dark:text-white">{(page - 1) * 10 + 1} - {Math.min(page * 10, totalItems)}</span> of <span className="text-slate-900 dark:text-white">{totalItems}</span> students
           </p>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon"
-              className="size-12 rounded-2xl border-2 border-slate-200 dark:border-white/10 transition-all bg-white dark:bg-slate-900"
+              className="size-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
               onClick={() => onPageChange(Math.max(1, page - 1))}
               disabled={page === 1}
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={16} />
             </Button>
             
             <Button
               variant="outline"
               size="icon"
-              className="size-12 rounded-2xl border-2 border-slate-200 dark:border-white/10 transition-all bg-white dark:bg-slate-900"
+              className="size-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
               onClick={() => onPageChange(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={16} />
             </Button>
           </div>
         </div>

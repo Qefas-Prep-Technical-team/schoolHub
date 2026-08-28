@@ -3,65 +3,67 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
-import { useSchoolSettings } from "@/lib/api/hooks/useSchool";
+import { useSchoolSettings, useSchoolTodayAttendance } from "@/lib/api/hooks/useSchool";
 import { useQuery } from "@tanstack/react-query";
 import { adminService } from "@/lib/api/services/adminService";
 import { apiClient } from "@/lib/api/client";
-import { 
-  GraduationCap, 
-  UserPlus, 
-  Search, 
-  Filter, 
+import {
+  GraduationCap,
+  UserPlus,
+  Search,
   Download,
-  Users,
   ShieldCheck,
   Activity,
   Zap,
-  ArrowRight,
-  TrendingUp,
-  Globe,
-  Cpu,
-  LayoutGrid,
-  List,
-  Target
+  ChevronDown,
+  X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import StudentsTable from "./components/StudentsTable";
 import AddStudentDialog from "./components/AddStudentDialog";
-import FilterChips from "./components/FilterChips";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 export default function StudentsPage() {
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
-  
+  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
+
   const { data: settings } = useSchoolSettings(schoolId);
-  const primaryColor = settings?.themeColor || '#2563eb';
+  const primaryColor = settings?.themeColor || "#6366f1";
 
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState({
-    classId: "",
-    gender: "",
-    status: "",
-  });
+  const [filters, setFilters] = useState({ classId: "", gender: "", status: "" });
 
   useEffect(() => {
-    if (searchParams.get('showAdd') === 'true') {
-      setOpen(true);
-    }
+    if (searchParams.get("showAdd") === "true") setOpen(true);
   }, [searchParams]);
 
   const { data: studentStats } = useQuery({
     queryKey: ["school-students-stats", schoolId],
     queryFn: () => adminService.getSchoolStudents(schoolId!, 1, 1),
     enabled: !!schoolId,
+    staleTime: 1000 * 60 * 5,
   });
+
+  const { data: todayAttendance = [] } = useSchoolTodayAttendance(schoolId);
+
+  const attendanceRate = useMemo(() => {
+    if (!todayAttendance.length) return null;
+    const totalPresent = todayAttendance.reduce((sum, c) => sum + (c.present ?? 0), 0);
+    const totalStudents = todayAttendance.reduce((sum, c) => sum + (c.total ?? 0), 0);
+    if (totalStudents === 0) return null;
+    return Math.round((totalPresent / totalStudents) * 100);
+  }, [todayAttendance]);
 
   const { data: classesData = [] } = useQuery({
     queryKey: ["school-classes", schoolId],
@@ -70,12 +72,28 @@ export default function StudentsPage() {
       return data.data || [];
     },
     enabled: !!schoolId,
+    staleTime: 1000 * 60 * 10,
   });
 
-  const classFilters = [{ id: '', name: 'All Classes' }, ...classesData.map((c: any) => ({ id: c.id, name: `${c.name} ${c.section || ''}`.trim() }))];
+  const classFilters = [
+    { id: "", name: "All Classes" },
+    ...classesData.map((c: any) => ({
+      id: c.id,
+      name: `${c.name} ${c.section || ""}`.trim(),
+    })),
+  ];
+
+  const genderOptions = ["MALE", "FEMALE", "OTHER"];
+  const statusOptions = ["Verified", "Pending"];
+  const hasFilters = Object.values(filters).some((v) => v !== "");
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({ classId: "", gender: "", status: "" });
     setPage(1);
   };
 
@@ -85,194 +103,235 @@ export default function StudentsPage() {
   };
 
   const stats = [
-    { 
-        label: 'Total Students', 
-        value: studentStats?.total || 0, 
-        icon: GraduationCap, 
-        color: primaryColor,
-        desc: 'Registered Students'
+    {
+      label: "Total Students",
+      value: studentStats?.total ?? 0,
+      icon: GraduationCap,
+      iconBg: "#ede9fe",
+      iconColor: "#7c3aed",
+      note: "vs last year",
     },
-    { 
-        label: 'Verified Students', 
-        value: studentStats?.verifiedCount || 0, 
-        icon: ShieldCheck, 
-        color: '#10b981', // Emerald
-        desc: 'Active Accounts'
+    {
+      label: "Active Students",
+      value: studentStats?.verifiedCount ?? 0,
+      icon: ShieldCheck,
+      iconBg: "#d1fae5",
+      iconColor: "#059669",
+      note: "vs last semester",
     },
-    { 
-        label: 'Attendance Rate', 
-        value: '89%', 
-        icon: Activity, 
-        color: '#2563eb', // Indigo
-        desc: 'Average Attendance'
+    {
+      label: "On Leave",
+      value: studentStats?.pendingCount ?? 0,
+      icon: Zap,
+      iconBg: "#fef3c7",
+      iconColor: "#d97706",
+      note: "This Semester",
     },
-    { 
-        label: 'Pending Students', 
-        value: studentStats?.pendingCount || 0, 
-        icon: Zap, 
-        color: '#f59e0b', // Amber
-        desc: 'Awaiting Enrollment'
+    {
+      label: "Avg Attendance",
+      value: `${attendanceRate ?? 0}%`,
+      icon: Activity,
+      iconBg: "#dbeafe",
+      iconColor: "#2563eb",
+      note: "This Semester",
     },
-  ]
+  ];
+
+  const handleExport = async () => {
+    try {
+      const result = await adminService.getSchoolStudents(schoolId!, 1, 10000, searchTerm, filters);
+      const rows = result?.data || [];
+      if (!rows.length) return;
+      const headers = ["#", "Name", "Email", "Code", "Class", "Department", "Status"];
+      const csv = [
+        headers.join(","),
+        ...rows.map((s: any, i: number) =>
+          [
+            i + 1,
+            `"${s.name || ""}"`,
+            `"${s.email || ""}"`,
+            `"${s.studentCode || "UNASSIGNED"}"`,
+            `"${s.classes?.[0]?.class?.name || ""} ${s.classes?.[0]?.class?.section || ""}"`,
+            `"${s.department?.name || ""}"`,
+            `"${s.verified ? "Verified" : "Pending"}"`,
+          ].join(",")
+        ),
+      ].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `students_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch {
+      /* silent */
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
-      <div className="max-w-[1600px] mx-auto space-y-12">
-        
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
-              <div className="size-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Student Management</span>
-            </div>
-            <div>
-              <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
-                Students<span style={{ color: primaryColor }}>.</span>
-              </h1>
-              <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
-                Manage your school students, track their academic progress, and verify new enrollments.
-              </p>
-            </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 lg:p-8 transition-colors duration-300">
+      <div className="max-w-[1400px] mx-auto space-y-5">
+
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Student Overview</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage and monitor students</p>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <Button 
-              style={{ backgroundColor: primaryColor }}
-              className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 shadow-2xl hover:scale-105 active:scale-95 transition-all"
-              onClick={() => setOpen(true)}
+        </div>
+
+        {/* Stat Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat, i) => (
+            <div
+              key={i}
+              className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 shadow-sm"
             >
-              <UserPlus size={20} strokeWidth={3} />
-              Add New Student
-            </Button>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{stat.label}</span>
+                <div
+                  className="size-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: stat.iconBg, color: stat.iconColor }}
+                >
+                  <stat.icon size={15} />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</div>
+              <p className="text-[11px] text-gray-400 mt-1">{stat.note}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Filter Bar */}
+        <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 p-3">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[180px] max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+              <input
+                type="text"
+                placeholder="Search Students"
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full h-9 pl-8 pr-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+              />
+            </div>
+
+            {/* Class filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "h-9 px-3 rounded-lg text-sm font-medium gap-1.5 border-gray-200 dark:border-white/10 hover:bg-gray-50",
+                    filters.classId ? "border-indigo-300 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" : "text-gray-600 dark:text-gray-400"
+                  )}
+                >
+                  {filters.classId ? classFilters.find((c) => c.id === filters.classId)?.name || "Class" : "Class"}
+                  <ChevronDown size={13} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48 rounded-xl shadow-lg">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Filter by Class</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {classFilters.map((cls) => (
+                  <DropdownMenuItem key={cls.id} onClick={() => handleFilterChange("classId", cls.id)} className={cn("text-sm rounded-lg", filters.classId === cls.id && "font-semibold")}>
+                    {cls.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Gender filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "h-9 px-3 rounded-lg text-sm font-medium gap-1.5 border-gray-200 dark:border-white/10 hover:bg-gray-50",
+                    filters.gender ? "border-indigo-300 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" : "text-gray-600 dark:text-gray-400"
+                  )}
+                >
+                  {filters.gender ? filters.gender.charAt(0) + filters.gender.slice(1).toLowerCase() : "Gender"}
+                  <ChevronDown size={13} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-40 rounded-xl shadow-lg">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Filter by Gender</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleFilterChange("gender", "")} className="text-sm rounded-lg">All</DropdownMenuItem>
+                {genderOptions.map((opt) => (
+                  <DropdownMenuItem key={opt} onClick={() => handleFilterChange("gender", opt)} className={cn("text-sm rounded-lg", filters.gender === opt && "font-semibold")}>
+                    {opt.charAt(0) + opt.slice(1).toLowerCase()}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Status filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "h-9 px-3 rounded-lg text-sm font-medium gap-1.5 border-gray-200 dark:border-white/10 hover:bg-gray-50",
+                    filters.status ? "border-indigo-300 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" : "text-gray-600 dark:text-gray-400"
+                  )}
+                >
+                  {filters.status || "Status"}
+                  <ChevronDown size={13} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-40 rounded-xl shadow-lg">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Filter by Status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleFilterChange("status", "")} className="text-sm rounded-lg">All</DropdownMenuItem>
+                {statusOptions.map((opt) => (
+                  <DropdownMenuItem key={opt} onClick={() => handleFilterChange("status", opt)} className={cn("text-sm rounded-lg", filters.status === opt && "font-semibold")}>
+                    {opt}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {hasFilters && (
+              <Button variant="ghost" onClick={clearFilters} className="h-9 px-3 rounded-lg text-sm text-gray-500 hover:text-red-500 gap-1.5">
+                <X size={13} />
+                Reset Filters
+              </Button>
+            )}
+
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="outline" onClick={handleExport} className="h-9 px-4 rounded-lg text-sm font-medium gap-2 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50">
+                <Download size={14} />
+                Export
+              </Button>
+              <Button
+                onClick={() => setOpen(true)}
+                className="h-9 px-4 rounded-lg text-sm font-semibold text-white gap-2 shadow-sm"
+                style={{ backgroundColor: primaryColor }}
+              >
+                <UserPlus size={14} />
+                Add Student
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Analytics Hub */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-                <div 
-                    key={index}
-                    className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl relative overflow-hidden group"
-                >
-                    <div 
-                        className="absolute -right-6 -bottom-6 size-40 rounded-full blur-3xl opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none" 
-                        style={{ backgroundColor: stat.color }}
-                    />
-                    <div className="relative z-10 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <div 
-                                className="size-14 rounded-2xl flex items-center justify-center border shadow-inner transition-transform duration-500 group-hover:scale-110"
-                                style={{ 
-                                    backgroundColor: `${stat.color}10`,
-                                    borderColor: `${stat.color}20`,
-                                    color: stat.color
-                                }}
-                            >
-                                <stat.icon size={24} strokeWidth={2.5} />
-                            </div>
-                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                <TrendingUp size={10} /> Live
-                            </div>
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{stat.label}</p>
-                            <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">{stat.value}</h3>
-                            <p className="text-[10px] font-bold text-slate-500 mt-4 uppercase tracking-widest flex items-center gap-2">
-                                <Target size={12} className="text-slate-300" /> {stat.desc}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            ))}
+        {/* Table */}
+        <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm overflow-hidden">
+          <StudentsTable
+            searchTerm={searchTerm}
+            filters={filters}
+            page={page}
+            onPageChange={setPage}
+          />
         </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-                <div className="relative group flex-1 max-w-xl">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
-                    <input 
-                        type="text" 
-                        placeholder="Search students..."
-                        value={searchTerm}
-                        onChange={(e) => handleSearchChange(e.target.value)}
-                        className="w-full h-16 pl-16 pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                        style={{ '--tw-ring-color': `${primaryColor}20` } as any}
-                    />
-                </div>
-                
-                <div className="flex items-center gap-4">
-                     <FilterChips selectedFilters={filters} onFilterChange={handleFilterChange} />
-                     <Button 
-                       onClick={async () => {
-                         try {
-                           const result = await adminService.getSchoolStudents(schoolId!, 1, 10000, searchTerm, filters);
-                           const studentsToDownload = result?.data || [];
-                           if (studentsToDownload.length === 0) return;
-                           
-                           const headers = ["Student Name", "Email", "Student Code", "Class", "Department", "Verification Status"];
-                           const csvContent = [
-                             headers.join(","),
-                             ...studentsToDownload.map((student: any) => [
-                               `"${student.name || ''}"`,
-                               `"${student.email || ''}"`,
-                               `"${student.studentCode || 'UNASSIGNED'}"`,
-                               `"${student.classes?.[0]?.class?.name || ''} ${student.classes?.[0]?.class?.section || ''}"`,
-                               `"${student.department?.name || ''}"`,
-                               `"${student.verified ? 'Verified' : 'Pending'}"`
-                             ].join(","))
-                           ].join("\n");
-                           
-                           const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                           const url = URL.createObjectURL(blob);
-                           const link = document.createElement("a");
-                           link.setAttribute("href", url);
-                           link.setAttribute("download", `students_export_${new Date().toISOString().split('T')[0]}.csv`);
-                           document.body.appendChild(link);
-                           link.click();
-                           document.body.removeChild(link);
-                         } catch (error) {
-                           console.error("Failed to download students:", error);
-                         }
-                       }}
-                       variant="outline" 
-                       className="h-16 px-6 sm:px-8 rounded-[2rem] border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-3 flex hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
-                     >
-                        <Download size={22} strokeWidth={3} className="text-slate-400" />
-                     </Button>
-                </div>
-            </div>
-            
-            {/* Horizontal Class Filter Chips */}
-            <div className="flex items-center gap-3 overflow-x-auto pb-4 pt-2 scrollbar-hide">
-              {classFilters.map((cls) => (
-                <Button
-                  key={cls.id}
-                  onClick={() => handleFilterChange("classId", cls.id)}
-                  className={cn(
-                    "rounded-full whitespace-nowrap font-bold text-xs h-10 px-6 transition-all",
-                    filters.classId === cls.id 
-                      ? "text-white shadow-lg" 
-                      : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
-                  )}
-                  style={filters.classId === cls.id ? { backgroundColor: primaryColor, boxShadow: `0 4px 14px 0 ${primaryColor}40` } : {}}
-                  variant="outline"
-                >
-                  {cls.name}
-                </Button>
-              ))}
-            </div>
-
-            <div className="rounded-[4rem] bg-white dark:bg-slate-900/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 p-2 shadow-2xl overflow-hidden">
-                <StudentsTable 
-                  searchTerm={searchTerm} 
-                  filters={filters} 
-                  page={page}
-                  onPageChange={setPage}
-                />
-            </div>
-
-        <AddStudentDialog open={open} onOpenChange={setOpen} />
       </div>
+
+      <AddStudentDialog open={open} onOpenChange={setOpen} />
     </div>
   );
 }

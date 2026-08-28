@@ -1,4 +1,5 @@
 'use client';
+import { useRouter } from 'next/navigation';
 
 import { useState, useMemo, useEffect } from 'react';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
@@ -37,9 +38,43 @@ import Pagination from '@/components/ui/Pagination';
 import { ClassData } from './components/types';
 import { cn } from '@/lib/utils';
 
+const TeacherListSlider = ({ teachers, defaultTeacher }: { teachers?: ClassData['teachers'], defaultTeacher?: ClassData['teacher'] }) => {
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    useEffect(() => {
+        if (!teachers || teachers.length <= 1) return;
+        const interval = setInterval(() => {
+            setActiveIndex(prev => (prev + 1) % teachers.length);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [teachers]);
+
+    const activeTeacher = teachers?.[activeIndex]?.teacher || defaultTeacher;
+
+    return (
+        <div className="flex items-center gap-3 relative h-[32px] w-[200px]">
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={activeIndex}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center gap-3 absolute inset-0"
+                >
+                    <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">
+                        {activeTeacher?.avatarUrl ? <img src={activeTeacher.avatarUrl} alt="" className="size-full object-cover" /> : <Users size={14} className="text-slate-400" />}
+                    </div>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{activeTeacher?.name || "No Teacher Assigned"}</span>
+                </motion.div>
+            </AnimatePresence>
+        </div>
+    );
+};
+
 export default function ClassesOverviewPage() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingClass, setEditingClass] = useState<Class | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
@@ -50,6 +85,7 @@ export default function ClassesOverviewPage() {
         setCurrentPage(1);
     }, [searchQuery]);
 
+    const router = useRouter();
     const { user } = useAuthStore();
     const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
 
@@ -158,113 +194,101 @@ export default function ClassesOverviewPage() {
     };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-500">
-            <div className="max-w-[1600px] mx-auto space-y-12">
+        <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-8 space-y-6">
+            <div className="max-w-[1400px] mx-auto space-y-6">
 
                 {/* Header */}
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-                    <div className="space-y-4">
-                        <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
-                            <div className="size-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Classes & Timetable</span>
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            <Layers size={16} style={{ color: primaryColor }} /> Classes & Timetable
                         </div>
-                        <div>
-                            <h1 className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
-                                Classes<span style={{ color: primaryColor }}>.</span>
-                            </h1>
-                            <p className="mt-4 text-lg font-medium text-slate-500 max-w-xl">
-                                Manage school classes, sections, assigned teachers, and student enrollment in real-time.
-                            </p>
-                        </div>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                            Classes
+                        </h1>
+                        <p className="text-sm font-medium text-slate-500 max-w-xl">
+                            Manage school classes, sections, assigned teachers, and student enrollment in real-time.
+                        </p>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <Button
-                            onClick={() => {
-                                setEditingClass(null);
-                                setIsModalOpen(true);
-                            }}
-                            style={{ backgroundColor: primaryColor }}
-                            className="h-16 px-10 rounded-[2rem] text-white font-black uppercase tracking-widest gap-3 shadow-2xl hover:scale-105 active:scale-95 transition-all"
-                        >
-                            <Plus size={20} strokeWidth={3} />
-                            Add New Class
-                        </Button>
-                    </div>
+                    <Button
+                        onClick={() => {
+                            setEditingClass(null);
+                            setIsModalOpen(true);
+                        }}
+                        style={{ backgroundColor: primaryColor }}
+                        className="h-10 px-6 rounded-xl text-white font-semibold flex items-center gap-2 shadow-sm transition-all"
+                    >
+                        <Plus size={16} />
+                        Add New Class
+                    </Button>
                 </div>
 
                 {/* Analytics Hub */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
                     {stats.map((stat, index) => (
                         <div
                             key={index}
-                            className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl relative overflow-hidden group"
+                            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden"
                         >
-                            <div
-                                className="absolute -right-6 -bottom-6 size-40 rounded-full blur-3xl opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none"
-                                style={{ backgroundColor: stat.color }}
-                            />
-                            <div className="relative z-10 space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <div
-                                        className="size-14 rounded-2xl flex items-center justify-center border shadow-inner transition-transform duration-500 group-hover:scale-110"
-                                        style={{
-                                            backgroundColor: `${stat.color}10`,
-                                            borderColor: `${stat.color}20`,
-                                            color: stat.color
-                                        }}
-                                    >
-                                        <stat.icon size={24} strokeWidth={2.5} />
-                                    </div>
-                                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                        <TrendingUp size={10} /> Live
-                                    </div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div
+                                    className="size-12 rounded-2xl flex items-center justify-center border shadow-sm"
+                                    style={{
+                                        backgroundColor: `${stat.color}10`,
+                                        borderColor: `${stat.color}20`,
+                                        color: stat.color
+                                    }}
+                                >
+                                    <stat.icon size={20} />
                                 </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{stat.label}</p>
-                                    <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">{stat.value}</h3>
-                                    <p className="text-[10px] font-bold text-slate-500 mt-4 uppercase tracking-widest flex items-center gap-2">
-                                        <Zap size={12} className="text-slate-300" /> {stat.desc}
-                                    </p>
-                                </div>
+                                {stat.label === 'Active Now' && (
+                                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                         <TrendingUp size={10} /> Live
+                                     </div>
+                                )}
+                            </div>
+                            <div>
+                                <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{stat.value}</h3>
+                                <p className="text-sm font-medium text-slate-500 mt-1">{stat.label}</p>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {/* Controls */}
-                <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-[3rem] bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-                    <div className="relative group flex-1 max-w-xl">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 dark:group-focus-within:text-white transition-colors" size={22} />
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-4 shadow-sm mb-6">
+                    <div className="relative flex-1 w-full max-w-md">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
                             type="text"
                             placeholder="Search classes..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full h-16 pl-16 pr-6 bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[2rem] focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 dark:text-slate-200"
-                            style={{ '--tw-ring-color': `${primaryColor}20` } as any}
+                            className="w-full h-10 pl-11 pr-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl focus:outline-none focus:border-primary text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors"
                         />
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <div className="flex bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-2xl p-1.5 shadow-sm">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl">
                             <button
                                 onClick={() => setViewMode('grid')}
-                                className={cn("size-12 rounded-xl flex items-center justify-center transition-all", viewMode === 'grid' ? "bg-slate-50 dark:bg-white/10 shadow-inner" : "text-slate-400 hover:text-slate-600")}
+                                className={cn("px-3 py-1.5 rounded-lg flex items-center justify-center transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white" : "text-slate-500 hover:text-slate-700")}
                                 style={{ color: viewMode === 'grid' ? primaryColor : undefined }}
                             >
-                                <LayoutGrid size={20} strokeWidth={3} />
+                                <LayoutGrid size={16} />
                             </button>
                             <button
                                 onClick={() => setViewMode('list')}
-                                className={cn("size-12 rounded-xl flex items-center justify-center transition-all", viewMode === 'list' ? "bg-slate-50 dark:bg-white/10 shadow-inner" : "text-slate-400 hover:text-slate-600")}
+                                className={cn("px-3 py-1.5 rounded-lg flex items-center justify-center transition-all", viewMode === 'list' ? "bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white" : "text-slate-500 hover:text-slate-700")}
                                 style={{ color: viewMode === 'list' ? primaryColor : undefined }}
                             >
-                                <List size={20} strokeWidth={3} />
+                                <List size={16} />
                             </button>
                         </div>
-                        <Button variant="outline" className="h-16 px-8 rounded-[2rem] border-2 border-slate-100 dark:border-white/5 font-black uppercase tracking-widest gap-3 hidden sm:flex hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
-                            <Download size={22} strokeWidth={3} className="text-slate-400" />
+                        <Button variant="outline" className="h-10 px-4 rounded-xl text-sm font-semibold text-slate-600 hidden sm:flex">
+                            <Download size={16} className="mr-2" />
+                            Export
                         </Button>
                     </div>
                 </div>
@@ -292,101 +316,99 @@ export default function ClassesOverviewPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/5 rounded-[4rem] overflow-hidden shadow-2xl"
+                            className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm"
                         >
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
-                                            <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Class Name</th>
-                                            <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Teacher</th>
-                                            <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Details</th>
-                                            <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                                            <th className="px-10 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                                        <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Class Name</th>
+                                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Teacher</th>
+                                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Details</th>
+                                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+                                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap text-right">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50 dark:divide-white/5">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                         {loading ? (
                                             <tr>
-                                                <td colSpan={5} className="px-10 py-40 text-center">
-                                                    <div className="flex flex-col items-center gap-6">
-                                                        <div className="size-16 rounded-full border-4 border-slate-100 dark:border-white/5 border-t-primary animate-spin" style={{ borderTopColor: primaryColor }} />
-                                                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading Classes...</span>
+                                                <td colSpan={5} className="px-6 py-12 text-center">
+                                                    <div className="flex flex-col items-center gap-4">
+                                                        <div className="size-8 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-primary animate-spin" style={{ borderTopColor: primaryColor }} />
+                                                        <span className="text-sm font-medium text-slate-500">Loading Classes...</span>
                                                     </div>
                                                 </td>
                                             </tr>
                                         ) : filteredClasses.length === 0 ? (
                                             <tr>
-                                                <td colSpan={5} className="px-10 py-40 text-center text-slate-300">
-                                                    <div className="flex flex-col items-center gap-6 opacity-30">
-                                                        <Layers size={80} strokeWidth={1} />
-                                                        <span className="text-[10px] font-black uppercase tracking-[0.3em]">No Classes Found</span>
+                                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                                                    <div className="flex flex-col items-center gap-3 opacity-50">
+                                                        <Layers size={40} strokeWidth={1.5} />
+                                                        <span className="text-sm font-medium">No Classes Found</span>
                                                     </div>
                                                 </td>
                                             </tr>
                                         ) : (
                                             paginatedClasses.map((cls, index) => (
-                                                <tr key={cls.id || index} className="group hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-all">
-                                                    <td className="px-10 py-8">
-                                                        <div className="flex items-center gap-6">
-                                                            <div className="size-16 rounded-3xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-all border border-slate-100 dark:border-white/5" style={{ color: primaryColor }}>
-                                                                <Layers size={24} />
+                                                <tr 
+                                                    key={cls.id || index} 
+                                                    onClick={() => router.push(`/dashboard/admin/classes/${cls.id}`)}
+                                                    className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                                                >
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 border border-slate-200 dark:border-slate-700" style={{ color: primaryColor }}>
+                                                                <Layers size={18} />
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter group-hover:text-primary transition-colors" style={{ '--primary': primaryColor } as any}>
+                                                                <div className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors" style={{ '--primary': primaryColor } as any}>
                                                                     {cls.name}
                                                                 </div>
-                                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                                                                    {cls.section} SECTION • ID: {cls.id.slice(0, 8)}
+                                                                <span className="text-xs font-medium text-slate-500 uppercase">
+                                                                    {cls.section} SECTION
                                                                 </span>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-10 py-8">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="size-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center overflow-hidden">
-                                                                {cls.teacher?.avatarUrl ? <img src={cls.teacher.avatarUrl} alt="" className="size-full object-cover" /> : <Users size={16} className="text-slate-400" />}
-                                                            </div>
-                                                            <span className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">{cls.teacher?.name || "No Teacher Assigned"}</span>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <TeacherListSlider teachers={cls.teachers} defaultTeacher={cls.teacher} />
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-semibold text-slate-900 dark:text-white">{cls.studentCount} Students</span>
+                                                            <span className="text-xs font-medium text-slate-500">{cls.subjectCount} Subjects</span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-10 py-8">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="flex flex-col">
-                                                                <span className="text-xl font-black text-slate-900 dark:text-white">{cls.studentCount}</span>
-                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Enrolled</span>
-                                                            </div>
-                                                            <div className="w-px h-8 bg-slate-100 dark:bg-white/5" />
-                                                            <div className="flex flex-col">
-                                                                <span className="text-xl font-black text-slate-900 dark:text-white">{cls.subjectCount}</span>
-                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Subjects</span>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-10 py-8">
+                                                    <td className="px-6 py-4 whitespace-nowrap">
                                                         {cls.isLive ? (
-                                                            <span className="px-4 py-1.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-500/20">In Session</span>
+                                                            <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold border border-emerald-200 dark:border-emerald-500/20">In Session</span>
                                                         ) : (
-                                                            <span className="px-4 py-1.5 rounded-xl bg-slate-50 dark:bg-white/5 text-slate-400 text-[9px] font-black uppercase tracking-widest border border-slate-100 dark:border-white/10 text-opacity-50">Inactive</span>
+                                                            <span className="px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-500 text-xs font-semibold border border-slate-200 dark:border-slate-700">Inactive</span>
                                                         )}
                                                     </td>
-                                                    <td className="px-10 py-8 text-right">
-                                                        <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                        <div className="flex items-center justify-end gap-2">
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="size-12 rounded-2xl hover:bg-white dark:hover:bg-slate-900 shadow-sm border border-transparent hover:border-slate-100"
-                                                                onClick={() => handleEditClass(cls.id)}
+                                                                className="size-8 rounded-lg hover:bg-white dark:hover:bg-slate-900 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleEditClass(cls.id);
+                                                                }}
                                                             >
-                                                                <Edit2 size={18} className="text-slate-400" />
+                                                                <Edit2 size={16} />
                                                             </Button>
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="size-12 rounded-2xl hover:bg-rose-500 hover:text-white shadow-sm border border-transparent"
-                                                                onClick={() => handleDeleteClass(cls.id)}
+                                                                className="size-8 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 dark:hover:bg-rose-500/10"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDeleteClass(cls.id);
+                                                                }}
                                                             >
-                                                                <Trash2 size={18} />
+                                                                <Trash2 size={16} />
                                                             </Button>
                                                         </div>
                                                     </td>
@@ -412,9 +434,9 @@ export default function ClassesOverviewPage() {
                 )}
 
                 {/* Global Security Footer */}
-                <div className="flex justify-center pt-12">
-                    <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
-                        <ShieldCheck size={16} className="text-emerald-500" strokeWidth={3} /> Verified Classes
+                <div className="flex justify-center pt-8">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500">
+                        <ShieldCheck size={14} className="text-emerald-500" /> Verified Classes
                     </div>
                 </div>
             </div>

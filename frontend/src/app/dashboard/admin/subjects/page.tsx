@@ -55,7 +55,7 @@ const SubjectsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([]);
 
   // States for custom Delete Modal
@@ -412,57 +412,57 @@ const SubjectsPage = () => {
 
         {/* Metrics Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div 
-                className="p-8 rounded-[3rem] bg-slate-900 text-white border border-slate-800 relative overflow-hidden group transition-all"
-                style={{ boxShadow: `0 25px 50px -12px ${primaryColor}4D` }}
-            >
-                 <div className="absolute top-0 right-0 p-8 opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                    <BookMarked size={120} />
-                </div>
-                <div className="relative z-10 flex items-center gap-8">
-                    <div className="size-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-primary">
-                        <BookOpen size={32} strokeWidth={2.5} />
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Total Subjects</p>
-                        <h3 className="text-5xl font-black tracking-tighter uppercase">{subjects.length} {subjects.length === 1 ? "Subject" : "Subjects"}</h3>
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
+                <div className="flex justify-between items-start">
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Subjects</p>
+                    <div 
+                        className="size-10 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                    >
+                        <BookOpen size={20} strokeWidth={2.5} />
                     </div>
                 </div>
-            </div>
-
-            <div 
-                className="p-8 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 relative overflow-hidden group transition-all"
-                style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
-            >
-                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] dark:opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                    <Layers size={120} />
-                </div>
-                <div className="relative z-10 flex items-center gap-8">
-                    <div className="size-20 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-primary">
-                        <Layers size={32} strokeWidth={2.5} />
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Active Departments</p>
-                        <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">{departments.length} {departments.length === 1 ? "Department" : "Departments"}</h3>
-                    </div>
+                <div>
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
+                        {subjects.length}
+                    </h3>
+                    <p className="text-xs font-medium text-emerald-500 mt-1 flex items-center gap-1">
+                        <span>Active curriculum</span>
+                    </p>
                 </div>
             </div>
 
-            <div 
-                className="p-8 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 relative overflow-hidden group transition-all"
-                style={{ boxShadow: `0 25px 50px -12px ${primaryColor}15` }}
-            >
-                 <div className="absolute top-0 right-0 p-8 opacity-[0.02] dark:opacity-[0.05] pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                    <Globe size={120} />
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
+                <div className="flex justify-between items-start">
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Active Departments</p>
+                    <div className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                        <Layers size={20} strokeWidth={2.5} />
+                    </div>
                 </div>
-                <div className="relative z-10 flex items-center gap-8">
-                    <div className="size-20 rounded-3xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center text-emerald-600">
-                        <ShieldCheck size={32} strokeWidth={2.5} />
+                <div>
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
+                        {departments.length}
+                    </h3>
+                    <p className="text-xs font-medium text-emerald-500 mt-1 flex items-center gap-1">
+                        <span>All operational</span>
+                    </p>
+                </div>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm">
+                <div className="flex justify-between items-start">
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">System Status</p>
+                    <div className="size-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <ShieldCheck size={20} strokeWidth={2.5} />
                     </div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">System Status</p>
-                        <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Active</h3>
-                    </div>
+                </div>
+                <div>
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
+                        Active
+                    </h3>
+                    <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
+                        <span>Last sync: just now</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -590,14 +590,35 @@ const SubjectsPage = () => {
                {[1,2,3,4,5,6].map(i => <div key={i} className="h-80 rounded-[4rem] bg-white dark:bg-white/[0.02] animate-pulse border border-slate-100 dark:border-white/5" />)}
             </div>
           ) : filteredSubjects.length > 0 ? (
-            viewMode === "grid" ? (
-              <motion.div 
-                key="grid"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-              >
+            <motion.div
+              key="view"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="pt-4"
+            >
+              {viewMode === 'list' && (
+                  <div className="hidden md:grid grid-cols-[auto_2.5fr_1.5fr_1.5fr_1fr_1fr_auto] gap-4 px-6 py-4 border-b border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-t-2xl">
+                      <div className="flex justify-center items-center">
+                          <input
+                              type="checkbox"
+                              checked={selectedSubjectIds.length === filteredSubjects.length && filteredSubjects.length > 0}
+                              onChange={handleSelectAll}
+                              className="size-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
+                          />
+                      </div>
+                      <div>Subject Details</div>
+                      <div>Code</div>
+                      <div>Departments</div>
+                      <div className="text-center">Assigned</div>
+                      <div className="text-center">Scope</div>
+                      <div className="text-right">Actions</div>
+                  </div>
+              )}
+              <div className={viewMode === 'grid' 
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+                  : "flex flex-col bg-white dark:bg-slate-900 rounded-b-2xl border border-t-0 border-slate-200 dark:border-slate-800 shadow-sm"
+              }>
                 {paginatedSubjects.map((subject) => (
                   <SubjectCard 
                     key={subject.id} 
@@ -607,128 +628,11 @@ const SubjectsPage = () => {
                     selected={selectedSubjectIds.includes(subject.id)}
                     onSelect={handleSelectSubject}
                     onDelete={handleDeleteSubject}
+                    viewMode={viewMode}
                   />
                 ))}
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="list"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="overflow-x-auto rounded-[3rem] border border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900/40 backdrop-blur-3xl p-6 shadow-2xl"
-              >
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-100 dark:border-white/5 pb-4">
-                      <th className="p-5 text-left w-12">
-                        <input
-                          type="checkbox"
-                          checked={selectedSubjectIds.length === filteredSubjects.length}
-                          onChange={handleSelectAll}
-                          className="size-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
-                        />
-                      </th>
-                      <th className="p-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Subject Details</th>
-                      <th className="p-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Code</th>
-                      <th className="p-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Departments</th>
-                      <th className="p-5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Assigned</th>
-                      <th className="p-5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Scope</th>
-                      <th className="p-5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                    {paginatedSubjects.map((subject) => {
-                      const isSelected = selectedSubjectIds.includes(subject.id);
-                      return (
-                        <tr 
-                          key={subject.id} 
-                          className={cn(
-                            "group hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer",
-                            isSelected && "bg-blue-500/5 dark:bg-blue-500/10"
-                          )}
-                          onClick={() => handleView(subject)}
-                        >
-                          <td className="p-5" onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => handleSelectSubject(subject.id)}
-                              className="size-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
-                            />
-                          </td>
-                          <td className="p-5">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                {subject.name}
-                              </span>
-                              <span className="text-xs text-slate-400 line-clamp-1 italic max-w-md">
-                                {subject.description || "No description provided."}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="p-5">
-                            <span className="font-mono text-xs font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-lg">
-                              {subject.code}
-                            </span>
-                          </td>
-                          <td className="p-5">
-                            <div className="flex flex-wrap gap-2">
-                              {subject.departments && subject.departments.length > 0 ? (
-                                subject.departments.map(d => (
-                                  <span key={d.departmentId} className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-50 dark:bg-white/5 text-slate-500 border border-slate-100 dark:border-white/10">
-                                    {d.department?.name}
-                                  </span>
-                                ))
-                              ) : (
-                                <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-red-50/50 dark:bg-red-500/5 text-red-400 border border-transparent">
-                                  Unassigned
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-5 text-center">
-                            <span className="text-sm font-black text-slate-700 dark:text-slate-300">
-                              {subject.teachersCount || 0} {subject.teachersCount === 1 ? "Teacher" : "Teachers"}
-                            </span>
-                          </td>
-                          <td className="p-5 text-center">
-                            <span className={cn(
-                              "inline-flex items-center gap-1.5 text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest border",
-                              subject.scope === "SCHOOL"
-                                ? "bg-emerald-50/50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
-                                : "bg-amber-50/50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
-                            )}>
-                              {subject.scope === "SCHOOL" ? "School-wide" : "Private"}
-                            </span>
-                          </td>
-                          <td className="p-5 text-right" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex justify-end gap-2">
-                              <Button 
-                                onClick={() => handleEdit(subject)}
-                                variant="ghost" 
-                                size="icon"
-                                className="size-10 rounded-xl bg-slate-50 dark:bg-white/5 border border-transparent hover:border-slate-100 dark:hover:border-white/10 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
-                              >
-                                <Edit2 size={16} />
-                              </Button>
-                              <Button 
-                                onClick={() => handleDeleteSubject(subject.id)}
-                                variant="ghost" 
-                                size="icon"
-                                className="size-10 rounded-xl bg-red-50/50 hover:bg-red-50 dark:bg-red-500/5 hover:dark:bg-red-500/10 border border-transparent hover:border-red-100 dark:hover:border-red-500/20 flex items-center justify-center text-red-500 transition-all shadow-sm"
-                              >
-                                <Trash2 size={16} />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </motion.div>
-            )
+              </div>
+            </motion.div>
           ) : (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}

@@ -17,6 +17,8 @@ import Breadcrumbs from './components/students/components/Breadcrumbs';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useSingleClass, useClassBehaviourAlerts } from '@/lib/api/hooks/useClasses';
+import { useSessions } from '@/lib/api/hooks/useSessions';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
 const TabSkeleton = ({ tabId }: { tabId: string }) => {
   if (tabId === "tab1") {
@@ -170,6 +172,11 @@ export default function ClassDetailsPage() {
   
   const { data: classData, isLoading: loading, error } = useSingleClass(id);
   const { data: realBehaviourAlerts = [] } = useClassBehaviourAlerts(id);
+  const { user } = useAuthStore();
+  const activeSchoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+  const { data: sessionsData } = useSessions(activeSchoolId);
+  const sessions = Array.isArray(sessionsData?.data) ? sessionsData.data : (Array.isArray(sessionsData) ? sessionsData : []);
+
   const [activeTab, setActiveTab] = React.useState("tab1");
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -209,20 +216,23 @@ export default function ClassDetailsPage() {
     reportedBy: alert.reporter?.name || "System",
   }));
 
-   const upcomingExams = [
-     {
-       id: '1',
-       subject: 'Biology',
-       date: '25 Oct 2024',
-       type: 'Mid-term',
-     },
-     {
-       id: '2',
-       subject: 'Mathematics',
-       date: '28 Oct 2024',
-       type: 'Quiz',
-     },
-   ];
+  const upcomingExams = React.useMemo(() => {
+    if (!classData?.exams || !Array.isArray(classData.exams)) return [];
+    
+    return classData.exams
+      .filter((e: any) => e.status !== 'ARCHIVED' && e.status !== 'DRAFT')
+      .map((e: any) => ({
+        id: e.id,
+        subject: e.subject?.name || e.title || 'General',
+        date: e.startDate 
+          ? new Date(e.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) 
+          : (e.createdAt 
+              ? new Date(e.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) 
+              : 'TBA'),
+        type: e.type || e.scope || 'Exam',
+      }))
+      .slice(0, 3);
+  }, [classData]);
 
   const breadcrumbItems = [
     { label: 'Dashboard', href: '/' },
@@ -343,7 +353,7 @@ export default function ClassDetailsPage() {
                       <>
                         <span>|</span>
                         <span>
-                          Session: <span className="text-gray-900 dark:text-white font-bold">{classData.session}</span>
+                          Session: <span className="text-gray-900 dark:text-white font-bold">{sessions.find(s => s.id === classData.session)?.name || classData.session}</span>
                         </span>
                       </>
                     )}
@@ -390,7 +400,7 @@ export default function ClassDetailsPage() {
             <div className="flex flex-wrap gap-3">
               <button 
                 onClick={() => setIsQRModalOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-sm font-bold border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all active:scale-95 shadow-sm"
+                className="flex items-center justify-center gap-2 rounded-xl h-10 px-5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
               >
                 <QrCode size={18} />
                 <span>QR Access</span>
@@ -398,7 +408,7 @@ export default function ClassDetailsPage() {
               
               <button 
                 onClick={() => setIsManageModalOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-indigo-600 dark:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/20 dark:shadow-none hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all active:scale-95 border border-transparent dark:border-indigo-400"
+                className="flex items-center justify-center gap-2 rounded-xl h-10 px-5 bg-primary text-white text-sm font-semibold shadow-sm hover:bg-primary/90 transition-all active:scale-95"
               >
                 <UserCog size={18} />
                 <span>Manage Class</span>
@@ -407,7 +417,7 @@ export default function ClassDetailsPage() {
           </div>
 
           {/* Tabs */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-2 overflow-hidden mb-8">
+          <div className="mb-8 overflow-hidden">
             <CustomTabs
               tabs={tabs}
               activeTab={activeTab}

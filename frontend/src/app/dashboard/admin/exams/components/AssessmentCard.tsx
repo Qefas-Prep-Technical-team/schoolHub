@@ -21,9 +21,11 @@ import { toast } from 'react-toastify';
 
 interface AssessmentCardProps {
     assessment: Exam;
+    viewMode?: 'grid' | 'list';
+    index?: number;
 }
 
-export default function AssessmentCard({ assessment }: AssessmentCardProps) {
+export default function AssessmentCard({ assessment, viewMode = 'grid', index = 0 }: AssessmentCardProps) {
     const router = useRouter();
     const deleteExamMutation = useDeleteExam();
     const unpublishExamMutation = useUnpublishExam();
@@ -79,6 +81,109 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
     };
 
     const Icon = theme.icon;
+
+    const renderModals = () => (
+        <>
+            <ConfirmationModal
+                isOpen={isUnpublishDialogOpen}
+                onClose={() => setIsUnpublishDialogOpen(false)}
+                onConfirm={() => {
+                    unpublishExamMutation.mutate(assessment.id, {
+                        onSuccess: () => {
+                            setIsUnpublishDialogOpen(false);
+                        },
+                        onError: (error: any) => {
+                            toast.error(error.response?.data?.message || "Failed to unpublish exam");
+                        }
+                    });
+                }}
+                title="Unpublish Exam"
+                description={`Are you sure you want to unpublish "${assessment.title}"? Student access will be restricted immediately.`}
+                confirmText="Unpublish"
+                variant="warning"
+                isLoading={unpublishExamMutation.isPending}
+            />
+
+            <ConfirmationModal
+                isOpen={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={() => {
+                    deleteExamMutation.mutate(assessment.id, {
+                        onSuccess: () => {
+                            setIsDeleteDialogOpen(false);
+                        },
+                        onError: (error: any) => {
+                            toast.error(error.response?.data?.message || "Failed to delete exam");
+                        }
+                    });
+                }}
+                title="Delete Exam"
+                description={`Are you sure you want to delete "${assessment.title}"? This cannot be undone.`}
+                confirmText="Delete"
+                variant="danger"
+                isLoading={deleteExamMutation.isPending}
+            />
+        </>
+    );
+
+    if (viewMode === 'list') {
+        return (
+            <div className={`group relative transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 lg:gap-8 border-l-4 border-transparent hover:${theme.border.split(' ')[0]}`}>
+                <Link href={`/dashboard/admin/exams/${assessment.id}/papers`} className="absolute inset-0 z-0" />
+                
+                <div className="flex items-center gap-6 w-full sm:w-auto relative z-10 pointer-events-none">
+                    <div className="text-sm font-black text-slate-400 w-8 text-center shrink-0 hidden sm:block">
+                        #{index + 1}
+                    </div>
+                    
+                    <div className={`h-12 w-12 rounded-2xl ${theme.iconBg} flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-300`}>
+                        <Icon size={20} strokeWidth={2.5} />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                        <h3 className={`text-lg font-black text-slate-900 dark:text-white truncate flex items-center gap-2 transition-colors group-hover:${theme.textHighlight}`}>
+                            {assessment.title}
+                            <span className="sm:hidden text-xs text-slate-400 font-bold">#{index + 1}</span>
+                        </h3>
+                        
+                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                                <School size={12} className={theme.textHighlight} />
+                                {assessment.scope?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                            <span className="text-slate-300 dark:text-slate-700">•</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                                <Laptop size={12} className={theme.textHighlight} />
+                                {assessment.mode?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pl-20 sm:pl-0 relative z-10">
+                    <div className="flex flex-col sm:items-end hidden md:flex">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Created</span>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {format(new Date(assessment.createdAt), 'MMM d, yyyy')}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <span className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl ${theme.statusBg} shadow-sm`}>
+                            {assessment.status}
+                        </span>
+
+                        <div className="pointer-events-auto">
+                            <DropdownMenu items={menuItems} />
+                        </div>
+                    </div>
+                </div>
+                
+                {renderModals()}
+            </div>
+        );
+    }
 
     return (
         <div className={`relative rounded-3xl border ${theme.border} ${theme.bg} overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1.5 group`}>
@@ -160,45 +265,7 @@ export default function AssessmentCard({ assessment }: AssessmentCardProps) {
                 </div>
             </div>
 
-            <ConfirmationModal
-                isOpen={isUnpublishDialogOpen}
-                onClose={() => setIsUnpublishDialogOpen(false)}
-                onConfirm={() => {
-                    unpublishExamMutation.mutate(assessment.id, {
-                        onSuccess: () => {
-                            setIsUnpublishDialogOpen(false);
-                        },
-                        onError: (error: any) => {
-                            toast.error(error.response?.data?.message || "Failed to unpublish exam");
-                        }
-                    });
-                }}
-                title="Unpublish Exam"
-                description={`Are you sure you want to unpublish "${assessment.title}"? Student access will be restricted immediately.`}
-                confirmText="Unpublish"
-                variant="warning"
-                isLoading={unpublishExamMutation.isPending}
-            />
-
-            <ConfirmationModal
-                isOpen={isDeleteDialogOpen}
-                onClose={() => setIsDeleteDialogOpen(false)}
-                onConfirm={() => {
-                    deleteExamMutation.mutate(assessment.id, {
-                        onSuccess: () => {
-                            setIsDeleteDialogOpen(false);
-                        },
-                        onError: (error: any) => {
-                            toast.error(error.response?.data?.message || "Failed to delete exam");
-                        }
-                    });
-                }}
-                title="Delete Exam"
-                description={`Are you sure you want to delete "${assessment.title}"? This cannot be undone.`}
-                confirmText="Delete"
-                variant="danger"
-                isLoading={deleteExamMutation.isPending}
-            />
+            {renderModals()}
         </div>
     );
 }

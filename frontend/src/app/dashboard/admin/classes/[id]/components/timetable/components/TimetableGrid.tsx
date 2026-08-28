@@ -62,12 +62,12 @@ const TimetableGrid: React.FC<TimetableGridProps> = ({
   };
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-[#364563] bg-white dark:bg-[#1b2232]">
+    <div className="overflow-x-auto rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
       <div className="grid" style={{ 
         gridTemplateColumns: `minmax(120px, 1fr) repeat(${days.length}, minmax(200px, 1fr))` 
       }}>
         {/* Headers */}
-        <div className="p-4 text-left text-gray-600 dark:text-white text-sm font-medium leading-normal border-b border-r border-gray-200 dark:border-[#364563]">
+        <div className="p-4 text-left text-gray-600 dark:text-white text-sm font-medium leading-normal border-b border-r border-slate-100 dark:border-slate-800">
           Period
         </div>
         {days.map((day) => {
@@ -75,7 +75,7 @@ const TimetableGrid: React.FC<TimetableGridProps> = ({
           return (
             <div 
               key={day}
-              className={`p-4 text-left text-sm font-medium leading-normal border-b border-r border-gray-200 dark:border-[#364563] last:border-r-0 flex items-center justify-between ${
+              className={`p-4 text-left text-sm font-medium leading-normal border-b border-r border-slate-100 dark:border-slate-800 last:border-r-0 flex items-center justify-between ${
                 isToday ? 'text-primary font-bold bg-blue-50/20 dark:bg-blue-950/10' : 'text-gray-600 dark:text-white'
               }`}
             >
@@ -90,7 +90,7 @@ const TimetableGrid: React.FC<TimetableGridProps> = ({
         {/* Time Slots & Cards */}
         {periods.map((period) => (
           <React.Fragment key={period.id}>
-            <div className="p-4 flex items-center justify-center text-gray-500 dark:text-[#95a5c6] text-xs font-bold border-b border-r border-gray-200 dark:border-[#364563] bg-slate-50/50 dark:bg-slate-900/10 text-center">
+            <div className="p-4 flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs font-bold border-b border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10 text-center">
               {formatSlotTo12Hour(period.timeSlot)}
             </div>
             

@@ -9,7 +9,7 @@ import { ParentFormData, parentSchema } from '../../services/regSchema';
 import { useParentRegistration } from '../../services/useRegistrationMutations';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getPasswordStrength } from '../../school/components/SchoolCard';
-import GoogleLoginButton from '../../../login/components/GoogleLoginButton';
+
 import RedirectOverlay from '@/components/ui/RedirectOverlay';
 import { useGlobalFeatures } from "@/lib/api/hooks/useGlobalFeatures";
 
@@ -342,9 +342,7 @@ export default function ParentRegistrationForm() {
             </div>
           </button>
 
-          {globalFeatures?.googleLogin !== false && (
-              <GoogleLoginButton userType={UserRole.PARENT} />
-          )}
+
 
           <p className="text-center text-sm text-[#4c809a] dark:text-gray-400">
             Already have an account?{" "}

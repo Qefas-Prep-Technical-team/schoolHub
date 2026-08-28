@@ -28,7 +28,7 @@ const UpcomingExams: React.FC<UpcomingExamsProps> = ({ exams }) => {
 
   if (!exams || exams.length === 0) {
     return (
-      <div className="bg-white dark:bg-[#1f2937] p-6 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center py-10">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center justify-center text-center py-10">
         <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/20 flex items-center justify-center text-blue-500 mb-3 border border-blue-200 dark:border-blue-800">
           <Calendar size={24} className="text-blue-500" />
         </div>
@@ -41,7 +41,7 @@ const UpcomingExams: React.FC<UpcomingExamsProps> = ({ exams }) => {
   }
 
   return (
-    <div className="bg-white dark:bg-[#1f2937] p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         Upcoming Exams
       </h3>

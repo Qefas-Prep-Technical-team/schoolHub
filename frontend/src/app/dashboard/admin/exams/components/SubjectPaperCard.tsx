@@ -16,9 +16,11 @@ interface SubjectPaperCardProps {
     _count?: { questions: number }
   };
   examId?: string;
+  viewMode?: 'grid' | 'list';
+  index?: number;
 }
 
-export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectPaperCardProps) {
+export default function SubjectPaperCard({ paper, examId: propExamId, viewMode = 'grid', index = 0 }: SubjectPaperCardProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const effectiveExamId = propExamId || paper.examId || 'none';
@@ -58,6 +60,88 @@ export default function SubjectPaperCard({ paper, examId: propExamId }: SubjectP
   const detailUrl = effectiveExamId !== 'none'
     ? `/dashboard/admin/exams/${effectiveExamId}/papers/${paper.id}`
     : `/dashboard/admin/exams/papers/${paper.id}`;
+
+  if (viewMode === 'list') {
+    return (
+      <>
+        <div className="group relative transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 lg:gap-8 border-l-4 border-transparent hover:border-purple-500/50">
+          <Link href={detailUrl} className="absolute inset-0 z-0" />
+          
+          <div className="flex items-center gap-6 w-full sm:w-auto relative z-10 pointer-events-none">
+            <div className="text-sm font-black text-slate-400 w-8 text-center shrink-0 hidden sm:block">
+                #{index + 1}
+            </div>
+            
+            <div className="h-12 w-12 rounded-2xl bg-purple-600 text-white shadow-purple-600/30 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-300">
+                <Layers size={20} strokeWidth={2.5} />
+            </div>
+            
+            <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white truncate flex items-center gap-2 transition-colors group-hover:text-purple-600 dark:group-hover:text-purple-400">
+                    {paper.title || `${paper.subject?.name} Paper`}
+                    <span className="sm:hidden text-xs text-slate-400 font-bold">#{index + 1}</span>
+                </h3>
+                
+                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                        <BookOpen size={12} className="text-purple-600 dark:text-purple-400" />
+                        {paper.subject?.name || 'Unknown'}
+                    </span>
+                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                        <User size={12} className="text-purple-600 dark:text-purple-400" />
+                        {paper.teacher?.name || 'Unassigned'}
+                    </span>
+                </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pl-20 sm:pl-0 relative z-10">
+            <div className="flex gap-6 hidden md:flex">
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Time</span>
+                    <div className="flex items-center gap-1 text-sm font-black text-slate-700 dark:text-slate-300">
+                        {paper.durationMinutes || 0}<span className="text-xs font-medium text-slate-400">m</span>
+                    </div>
+                </div>
+                <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 my-auto" />
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</span>
+                    <div className="flex items-center gap-1 text-sm font-black text-slate-700 dark:text-slate-300">
+                        {paper.totalMarks || 0}<span className="text-xs font-medium text-slate-400">pts</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+                <span className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl ${statusStyle} shadow-sm`}>
+                    {paper.status}
+                </span>
+
+                <button 
+                    onClick={handleDeleteClick}
+                    className="p-2 z-20 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative pointer-events-auto"
+                    aria-label="Delete paper"
+                >
+                    <Trash2 className="h-4 w-4" />
+                </button>
+            </div>
+          </div>
+        </div>
+
+        <ConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={() => deleteMutation.mutate()}
+          title="Delete Subject Paper"
+          description={`Are you sure you want to delete "${paper.title}"? This will also permanently delete all associated questions.`}
+          variant="danger"
+          confirmText="Delete Paper"
+          isLoading={deleteMutation.isPending}
+        />
+      </>
+    );
+  }
 
   return (
     <>

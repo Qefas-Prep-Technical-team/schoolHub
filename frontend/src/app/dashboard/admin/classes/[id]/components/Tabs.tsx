@@ -14,7 +14,7 @@ interface CustomTabsProps {
 
 const CustomTabs: React.FC<CustomTabsProps> = ({ tabs, activeTab, onTabChange }) => {
   return (
-    <div className="flex border-b border-gray-150 dark:border-gray-700 gap-8 overflow-x-auto scrollbar-none px-4">
+    <div className="flex gap-2 overflow-x-auto scrollbar-none pb-2 sm:pb-0 px-2 sm:px-0">
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
@@ -23,11 +23,10 @@ const CustomTabs: React.FC<CustomTabsProps> = ({ tabs, activeTab, onTabChange })
             type="button"
             onClick={() => onTabChange(tab.id)}
             className={`
-              py-3.5 px-2 text-sm font-bold tracking-[0.015em] transition-all duration-200
-              border-b-2 whitespace-nowrap focus:outline-none
+              px-5 py-2.5 text-sm font-semibold tracking-wide transition-all duration-200 rounded-full whitespace-nowrap focus:outline-none
               ${isActive 
-                ? 'border-primary text-primary dark:text-primary font-black' 
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                ? 'bg-primary text-white shadow-sm font-bold' 
+                : 'bg-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
               }
             `}
           >

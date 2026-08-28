@@ -24,7 +24,7 @@ export default function AssignmentFilters({
     availableSubjects = []
 }: AssignmentFiltersProps) {
     const [filters, setFilters] = useState({ status: '', subject: '' });
-    const [view, setView] = useState<'list' | 'grid'>('grid');
+    const [view, setView] = useState<'list' | 'grid'>('list');
 
     const statusOptions: FilterOption[] = [
         { value: '', label: 'All Status' },
