@@ -58,7 +58,7 @@ export function AssignSubjectModal({ isOpen, onClose, teacherId, schoolId, prima
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value)}
                 className="w-full h-12 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all"
-                style={{ focusRingColor: primaryColor }}
+                style={{ "--tw-ring-color": primaryColor } as any}
                 required
               >
                 <option value="" disabled>Choose a subject...</option>
@@ -72,7 +72,7 @@ export function AssignSubjectModal({ isOpen, onClose, teacherId, schoolId, prima
           <div className="flex items-center justify-end gap-3 pt-4">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={onClose}
               disabled={assignMutation.isPending}
             >

@@ -27716,4 +27716,102 @@ Please make sure your database server is running at `aws-1-eu-west-1.pooler.supa
     at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
     at async Promise.all (index 2)
     at getSchoolBillingService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:743:7)
-    at getSchoolBilling (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.controller.ts:373:18)
+    at getSchoolBilling (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.controller.ts:373:18)PrismaClientKnownRequestError: 
+Invalid `prisma.subject.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:243:22
+
+  240 // D. Base Counts
+  241 prisma.class.count({ where: { schoolId: resolvedId } }),
+  242 prisma.exam.count({ where: { schoolId: resolvedId } }),
+→ 243 prisma.subject.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 5)
+    at getSchoolStatsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:208:5)
+    at async Promise.all (index 0)
+    at getSchoolBillingService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:743:7)
+    at getSchoolBilling (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.controller.ts:373:18)PrismaClientKnownRequestError: 
+Invalid `prisma.class.count()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:241:20
+
+  238   },
+  239 }),
+  240 // D. Base Counts
+→ 241 prisma.class.count(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 3)
+    at getSchoolStatsService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:208:5)
+    at getMyProfile (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\link\link.controller.ts:827:23)PrismaClientKnownRequestError: 
+Invalid `prisma.school.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:365:30
+
+  362 const resolvedId = await resolveSchoolId(schoolId);
+  363 if (!resolvedId) return null;
+  364 
+→ 365 return await prisma.school.findUnique(
+Timed out fetching a new connection from the connection pool. More info: http://pris.ly/d/connection-pool (Current connection pool timeout: 10, connection limit: 10)
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolProfileService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:365:10)
+    at getSchoolProfile (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.controller.ts:212:18)PrismaClientKnownRequestError: 
+Invalid `prisma.school.findUnique()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:837:38
+
+  834 export const getSchoolLandingPageBySubdomainService = async (
+  835   subdomain: string,
+  836 ) => {
+→ 837   const school = await prisma.school.findUnique(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getSchoolLandingPageBySubdomainService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:837:18)
+    at getSchoolLandingPageBySubdomain (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.controller.ts:412:18)PrismaClientKnownRequestError: 
+Invalid `prisma.transaction.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:745:24
+
+  742   pendingDowngrade,
+  743 ] = await Promise.all([
+  744   getSchoolStatsService(resolvedId),
+→ 745   prisma.transaction.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async Promise.all (index 1)
+    at getSchoolBillingService (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.service.ts:743:7)
+    at getSchoolBilling (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\school\school.controller.ts:373:18)PrismaClientKnownRequestError: 
+Invalid `prisma.platformFeature.findMany()` invocation in
+C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:55
+
+  952     return res.status(400).json({ message: "Invalid role" });
+  953 }
+  954 
+→ 955 const features = await prisma.platformFeature.findMany(
+Can't reach database server at `aws-1-eu-west-1.pooler.supabase.com:5432`
+
+Please make sure your database server is running at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+    at ei.handleRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at a (C:\Users\Student\Documents\GitHub\schoolHub\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at getPublicRoleFeatures (C:\Users\Student\Documents\GitHub\schoolHub\backend\src\modules\platform\support\support.controller.ts:955:26)

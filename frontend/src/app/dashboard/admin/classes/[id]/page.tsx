@@ -353,7 +353,7 @@ export default function ClassDetailsPage() {
                       <>
                         <span>|</span>
                         <span>
-                          Session: <span className="text-gray-900 dark:text-white font-bold">{sessions.find(s => s.id === classData.session)?.name || classData.session}</span>
+                          Session: <span className="text-gray-900 dark:text-white font-bold">{sessions.find((s: any) => s.id === classData.session)?.name || classData.session}</span>
                         </span>
                       </>
                     )}

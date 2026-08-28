@@ -169,6 +169,14 @@ export const adminService = {
   },
 
   /**
+   * Invite a teacher via email
+   */
+  inviteTeacher: async (teacherId: string, email: string) => {
+    const response = await apiClient.post(`/admin/teachers/invite`, { teacherId, email });
+    return response.data;
+  },
+
+  /**
    * Resend teacher claim email (acts as invite)
    */
   resendTeacherClaimEmail: async (teacherId: string, email: string) => {

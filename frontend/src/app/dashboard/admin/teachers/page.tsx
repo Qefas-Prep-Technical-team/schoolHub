@@ -61,6 +61,7 @@ export default function ManageTeachersPage() {
         return teachersData.map((t: any) => ({
             id: t.id,
             teacherCode: t.teacherCode,
+            code: t.teacherCode,
             name: t.name,
             email: t.email || 'No Email Registered',
             subjects: t.teacherSubjects?.map((ts: any) => ts.subject.name) || [],

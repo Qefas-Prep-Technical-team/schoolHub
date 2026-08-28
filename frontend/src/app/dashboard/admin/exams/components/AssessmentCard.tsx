@@ -32,7 +32,7 @@ export default function AssessmentCard({ assessment, viewMode = 'grid', index = 
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isUnpublishDialogOpen, setIsUnpublishDialogOpen] = useState(false);
 
-    const menuItems = [
+    const menuItems: any[] = [
         { label: 'View Papers', href: `/dashboard/admin/exams/${assessment.id}/papers` },
         { label: 'Edit', href: `/dashboard/admin/exams/${assessment.id}/edit` },
     ];

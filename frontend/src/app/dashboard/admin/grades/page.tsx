@@ -1224,7 +1224,6 @@ function DetailedStudentResult({ examId, studentId, onBack, school, primaryColor
                                 sublabel="Mastery"
                                 className="drop-shadow-2xl"
                                 primaryColor={primaryColor}
-                                textColor="white"
                             />
                             <div className="absolute inset-x-0 bottom-[30%] flex flex-col items-center pointer-events-none">
                                <div className="px-5 py-2 bg-white rounded-2xl shadow-2xl border border-slate-200">

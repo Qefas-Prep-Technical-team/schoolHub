@@ -57,8 +57,8 @@ export function AssignClassModal({ isOpen, onClose, teacherId, schoolId, primary
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all"
-                style={{ focusRingColor: primaryColor }}
+                className="w-full h-12 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-opacity-50 transition-all outline-none"
+                style={{ "--tw-ring-color": primaryColor } as any}
                 required
               >
                 <option value="" disabled>Choose a class...</option>
@@ -72,7 +72,7 @@ export function AssignClassModal({ isOpen, onClose, teacherId, schoolId, primary
           <div className="flex items-center justify-end gap-3 pt-4">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={onClose}
               disabled={assignMutation.isPending}
             >
