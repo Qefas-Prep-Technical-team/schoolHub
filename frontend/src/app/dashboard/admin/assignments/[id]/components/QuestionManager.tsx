@@ -47,10 +47,12 @@ interface Question {
 
 export default function QuestionManager({ 
   assignmentId,
-  assignment 
+  assignment,
+  isReadOnly = false,
 }: { 
   assignmentId: string;
   assignment: any;
+  isReadOnly?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState(() => {
@@ -175,12 +177,12 @@ export default function QuestionManager({
         </div>
         
         <div className="flex items-center gap-2">
-           {assignment?.status === 'PUBLISHED' && (
+           {!isReadOnly && assignment?.status === 'PUBLISHED' && (
              <div className="bg-amber-50 text-amber-600 border border-amber-200 px-4 py-2 rounded-xl text-xs font-bold mr-2 hidden md:block flex items-center">
                Assignment is Published. Unpublish to edit.
              </div>
            )}
-           {selectedIds.length > 0 && assignment?.status !== 'PUBLISHED' && (
+           {!isReadOnly && selectedIds.length > 0 && assignment?.status !== 'PUBLISHED' && (
              <Button
                onClick={() => setBulkDeleteType("selected")}
                variant="destructive"
@@ -189,7 +191,7 @@ export default function QuestionManager({
                <Trash2 size={16} /> Delete Selected ({selectedIds.length})
              </Button>
            )}
-           {questions.length > 0 && assignment?.status !== 'PUBLISHED' && (
+           {!isReadOnly && questions.length > 0 && assignment?.status !== 'PUBLISHED' && (
              <Button
                onClick={() => setBulkDeleteType("all")}
                variant="outline"
@@ -201,7 +203,7 @@ export default function QuestionManager({
            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-full md:w-auto overflow-x-auto scroller-none">
               {[
                 { id: 'list', label: 'List', icon: FileText },
-                ...(assignment?.status !== 'PUBLISHED' ? [
+                ...(!isReadOnly && assignment?.status !== 'PUBLISHED' ? [
                   { id: 'add', label: 'Add', icon: Plus },
                   { id: 'ai', label: 'AI Tools', icon: Sparkles, color: 'text-primary' },
                 ] : []),
@@ -237,19 +239,21 @@ export default function QuestionManager({
                 </div>
                 <h3 className="text-lg font-bold">No questions yet</h3>
                 <p className="text-gray-500 text-sm max-w-xs mx-auto mb-6">
-                  Get started by adding questions manually or use our AI tools to generate them in seconds.
+                  {isReadOnly ? 'This assignment has no questions.' : 'Get started by adding questions manually or use our AI tools to generate them in seconds.'}
                 </p>
-                {assignment?.status !== 'PUBLISHED' ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <Button onClick={() => setActiveTab("add")} variant="outline" className="rounded-xl">
-                      Add Manually
-                    </Button>
-                    <Button onClick={() => setActiveTab("ai")} className="rounded-xl gap-2 shadow-lg shadow-primary/20">
-                      <Sparkles size={16} /> Use AI Tools
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="text-amber-600 font-bold text-sm">Unpublish the assignment to add questions.</p>
+                {!isReadOnly && (
+                  assignment?.status !== 'PUBLISHED' ? (
+                    <div className="flex items-center justify-center gap-3">
+                      <Button onClick={() => setActiveTab("add")} variant="outline" className="rounded-xl">
+                        Add Manually
+                      </Button>
+                      <Button onClick={() => setActiveTab("ai")} className="rounded-xl gap-2 shadow-lg shadow-primary/20">
+                        <Sparkles size={16} /> Use AI Tools
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-amber-600 font-bold text-sm">Unpublish the assignment to add questions.</p>
+                  )
                 )}
               </div>
             ) : (
@@ -260,18 +264,22 @@ export default function QuestionManager({
                   onDragEnd={handleDragEnd}
                 >
                   <div className="flex items-center justify-between mb-2 px-2">
-                    <label className={cn("flex items-center gap-2 text-sm font-bold text-gray-500 cursor-pointer", assignment?.status === 'PUBLISHED' && "hidden")}>
+                    <label className={cn("flex items-center gap-2 text-sm font-bold text-gray-500 cursor-pointer", (assignment?.status === 'PUBLISHED' || isReadOnly) && "hidden")}>
                       <input 
                         type="checkbox" 
                         checked={selectedIds.length === questions.length && questions.length > 0}
                         onChange={selectAll}
-                        disabled={assignment?.status === 'PUBLISHED'}
+                        disabled={assignment?.status === 'PUBLISHED' || isReadOnly}
                         className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary disabled:opacity-50"
                       />
                       Select All
                     </label>
-                    <span className="text-xs text-amber-500 md:hidden ml-auto font-bold">{assignment?.status === 'PUBLISHED' ? "Unpublish to edit" : "Reorder dragging via the handle grip"}</span>
-                    <span className="text-xs text-gray-400 font-medium hidden md:block">{assignment?.status === 'PUBLISHED' ? "Read-only: Unpublish to reorder or edit" : "Reorder dragging via the handle grip"}</span>
+                    {!isReadOnly && (
+                      <>
+                        <span className="text-xs text-amber-500 md:hidden ml-auto font-bold">{assignment?.status === 'PUBLISHED' ? "Unpublish to edit" : "Reorder dragging via the handle grip"}</span>
+                        <span className="text-xs text-gray-400 font-medium hidden md:block">{assignment?.status === 'PUBLISHED' ? "Read-only: Unpublish to reorder or edit" : "Reorder dragging via the handle grip"}</span>
+                      </>
+                    )}
                   </div>
                   <SortableContext 
                     items={localQuestions.map(q => q.id)}
@@ -287,7 +295,8 @@ export default function QuestionManager({
                         isSelected={selectedIds.includes(q.id)}
                         onToggleSelect={() => toggleSelection(q.id)}
                         isDeleting={deleteQuestionMutation.isPending || isBulkDeleting}
-                        isPublished={assignment?.status === 'PUBLISHED'}
+                        isPublished={assignment?.status === 'PUBLISHED' || isReadOnly}
+                        isReadOnly={isReadOnly}
                       />
                     ))}
                   </SortableContext>
@@ -298,19 +307,19 @@ export default function QuestionManager({
         )}
 
         {activeTab === "add" && (
-          <div className="max-w-3xl mx-auto">
-            <Card className="p-8 border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden rounded-2xl">
+          <div className="max-w-5xl mx-auto">
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
                <ManualAddForm 
                  assignmentId={assignmentId} 
                  onCancel={() => setActiveTab("list")} 
                />
-            </Card>
+            </div>
           </div>
         )}
 
         {activeTab === "edit" && editingQuestion && (
-          <div className="max-w-3xl mx-auto">
-            <Card className="p-8 border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden rounded-2xl">
+          <div className="max-w-5xl mx-auto">
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
                <ManualAddForm 
                  assignmentId={assignmentId} 
                  initialData={editingQuestion}
@@ -319,7 +328,7 @@ export default function QuestionManager({
                    setEditingQuestion(null);
                  }} 
                />
-            </Card>
+            </div>
           </div>
         )}
 
@@ -355,7 +364,7 @@ export default function QuestionManager({
   );
 }
 
-function SortableQuestionCard({ q, idx, onEdit, onDelete, isSelected, onToggleSelect, isDeleting, isPublished }: any) {
+function SortableQuestionCard({ q, idx, onEdit, onDelete, isSelected, onToggleSelect, isDeleting, isPublished, isReadOnly = false }: any) {
   const {
     attributes,
     listeners,
@@ -363,7 +372,7 @@ function SortableQuestionCard({ q, idx, onEdit, onDelete, isSelected, onToggleSe
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: q.id, disabled: isPublished });
+  } = useSortable({ id: q.id, disabled: isPublished || isReadOnly });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -380,27 +389,31 @@ function SortableQuestionCard({ q, idx, onEdit, onDelete, isSelected, onToggleSe
           isDragging ? 'border-primary shadow-xl ring-2 ring-primary/20 scale-[1.02]' : 'hover:shadow-md cursor-default',
           isSelected ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/30' : ''
       )}>
-        <div className="absolute top-4 left-4 z-10">
-          <input 
-            type="checkbox" 
-            checked={isSelected}
-            onChange={onToggleSelect}
-            disabled={isPublished}
-            className={cn("w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary mt-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed", isPublished && "hidden")}
-          />
-        </div>
-        <div className={cn("flex gap-4", !isPublished && "pl-8")}>
+        {!isReadOnly && (
+          <div className="absolute top-4 left-4 z-10">
+            <input 
+              type="checkbox" 
+              checked={isSelected}
+              onChange={onToggleSelect}
+              disabled={isPublished}
+              className={cn("w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary mt-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed", isPublished && "hidden")}
+            />
+          </div>
+        )}
+        <div className={cn("flex gap-4", !isReadOnly && !isPublished && "pl-8")}>
           <div className="flex flex-col items-center gap-2 mt-1">
             <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold border border-primary/20">
               {idx + 1}
             </span>
-            <div 
-              {...attributes} 
-              {...listeners} 
-              className={`cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${isPublished ? 'hidden' : ''}`}
-            >
-              <GripVertical className="text-gray-300 group-hover:text-gray-400 transition-colors" size={16} />
-            </div>
+            {!isReadOnly && !isPublished && (
+              <div 
+                {...attributes} 
+                {...listeners} 
+                className={`cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${isPublished ? 'hidden' : ''}`}
+              >
+                <GripVertical className="text-gray-300 group-hover:text-gray-400 transition-colors" size={16} />
+              </div>
+            )}
           </div>
           
           <div className="flex-1">
@@ -408,25 +421,27 @@ function SortableQuestionCard({ q, idx, onEdit, onDelete, isSelected, onToggleSe
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-primary bg-primary/5 px-2 py-0.5 rounded">
                 {q.type.replace('_', ' ')}
               </span>
-              <div className="flex items-center gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button 
-                  onClick={() => onEdit(q)}
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-gray-400 hover:text-primary rounded-full"
-                >
-                  <Edit2 size={14} />
-                </Button>
-                <Button 
-                  onClick={() => onDelete(q.id)}
-                  disabled={isDeleting}
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-gray-400 hover:text-red-500 rounded-full"
-                >
-                  <Trash2 size={14} />
-                </Button>
-              </div>
+              {!isReadOnly && (
+                <div className="flex items-center gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button 
+                    onClick={() => onEdit(q)}
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-gray-400 hover:text-primary rounded-full"
+                  >
+                    <Edit2 size={14} />
+                  </Button>
+                  <Button 
+                    onClick={() => onDelete(q.id)}
+                    disabled={isDeleting}
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-gray-400 hover:text-red-500 rounded-full"
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+              )}
             </div>
             
             <div className="text-gray-900 dark:text-gray-100 font-semibold mb-3 leading-relaxed">

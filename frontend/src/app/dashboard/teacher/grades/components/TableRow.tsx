@@ -53,8 +53,12 @@ const TableRow: React.FC<TableRowProps> = ({
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-primary/80 to-primary/40 text-white text-xs font-bold shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform duration-500">
-            {initials}
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary text-xs font-bold shadow-sm group-hover:scale-110 transition-transform duration-500 overflow-hidden">
+            {grade.profilePicture ? (
+              <img src={grade.profilePicture} alt={grade.name} className="w-full h-full object-cover" />
+            ) : (
+              initials
+            )}
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-sm font-black text-slate-900 dark:text-slate-100 truncate">{grade.name}</span>
@@ -85,11 +89,11 @@ const TableRow: React.FC<TableRowProps> = ({
 
       <td className="px-6 py-4 text-center">
         <div className={cn(
-          "inline-flex h-9 w-9 items-center justify-center rounded-xl text-lg font-black shadow-xl",
-          grade.grade.startsWith('A') ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-emerald-500/30" :
-          grade.grade.startsWith('B') ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-500/30" :
-          grade.grade.startsWith('C') ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-amber-500/30" :
-          "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-red-500/30"
+          "inline-flex h-9 w-9 items-center justify-center rounded-xl text-lg font-black shadow-sm",
+          grade.grade.startsWith('A') ? "bg-emerald-500 text-white" :
+          grade.grade.startsWith('B') ? "bg-blue-500 text-white" :
+          grade.grade.startsWith('C') ? "bg-amber-500 text-white" :
+          "bg-red-500 text-white"
         )}>
           {grade.grade}
         </div>

@@ -63,17 +63,17 @@ export default function PerformanceAnalytics() {
   };
 
   return (
-    <div className="p-8 bg-white dark:bg-slate-900/50 rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 shadow-2xl shadow-slate-200/40 dark:shadow-none hover:border-emerald-500/20 transition-all duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+    <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 h-full flex flex-col">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-emerald-500/10 rounded-2xl">
-            <Activity className="w-6 h-6 text-emerald-600" />
+          <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700">
+            <Activity className="w-5 h-5 text-slate-500" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-              Academic <span className="text-emerald-600">Velocity</span>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              Academic Velocity
             </h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mt-1">Growth & Trends</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Growth & Trends</p>
           </div>
         </div>
         
@@ -94,7 +94,7 @@ export default function PerformanceAnalytics() {
         </div>
       </div>
 
-      <div className={`h-[280px] w-full transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
+      <div className={`flex-1 min-h-[280px] w-full transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
@@ -148,7 +148,7 @@ export default function PerformanceAnalytics() {
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
+      <div className="mt-auto pt-6 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
         <div className="flex gap-8">
           <div>
             <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Current Avg</p>
@@ -184,11 +184,11 @@ export default function PerformanceAnalytics() {
           <p className="text-[10px] font-bold text-gray-400 mb-2">SCORE DISTRIBUTION</p>
           <div className="flex gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(54,112,226,0.5)]" />
+              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
               <span className="text-[10px] font-bold text-gray-500">Class Average</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+              <div className="w-2 h-2 rounded-full bg-emerald-700 shadow-[0_0_8px_rgba(5,150,105,0.5)]" />
               <span className="text-[10px] font-bold text-gray-500">Top Quartile</span>
             </div>
           </div>

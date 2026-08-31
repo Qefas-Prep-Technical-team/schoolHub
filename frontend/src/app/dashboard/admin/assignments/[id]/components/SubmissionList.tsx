@@ -9,9 +9,10 @@ import SubmissionReviewModal from "./SubmissionReviewModal";
 interface Props {
   assignment: any;
   schoolId: string;
+  readOnly?: boolean;
 }
 
-export default function SubmissionList({ assignment, schoolId }: Props) {
+export default function SubmissionList({ assignment, schoolId, readOnly = false }: Props) {
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
 
   const submissions = assignment.submissions || [];
@@ -86,15 +87,17 @@ export default function SubmissionList({ assignment, schoolId }: Props) {
                   </div>
                 </td>
                 <td className="py-4 text-right">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="h-8 rounded-lg text-xs font-semibold"
-                    onClick={() => setSelectedSubmission(sub)}
-                  >
-                    <Eye className="w-4 h-4 mr-1.5" />
-                    Review
-                  </Button>
+                  {!readOnly && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="h-8 rounded-lg text-xs font-semibold"
+                      onClick={() => setSelectedSubmission(sub)}
+                    >
+                      <Eye className="w-4 h-4 mr-1.5" />
+                      Review
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}

@@ -21,6 +21,10 @@
 
 - Swap Paystack test keys to live keys in deployment environments.
 
+- **Infinite Render Loop Fix (`useProtectedRoute.ts`)**:
+    - [x] **Root Cause Found**: `useProtectedRoute` was destructured with a default parameter `userTypes = []`. Because arrays are objects in JS, a new array reference was created on every render of the `AuthLayout`. This unstable reference was passed into the dependency array of a `useEffect` that calls state setters (`setIsChecking`), causing an infinite React render loop (resulting in a frozen "loading" screen on login pages).
+    - [x] **Fix Applied**: Extracted the dependency serialization `userTypes.join(',')` to ensure primitive comparison, stabilizing the `useEffect` and resolving the infinite layout re-renders.
+
 ### Wednesday, August 26, 2026
 
 - **Admin Dashboard Layout & Card Redesign (`/dashboard/admin/page.tsx`)**:

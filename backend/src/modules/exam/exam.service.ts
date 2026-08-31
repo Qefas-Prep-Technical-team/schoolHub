@@ -441,50 +441,19 @@ export const getSubjectPapersService = async (filters: {
 }) => {
   const where: any = {};
   
-  // 1. Filter by teacher (creator) or their assigned context
+  // 1. Filter by teacher (creator or assigned teacher)
   if (filters.teacherId) {
-    const assignedSubjects = await prisma.teacherSubject.findMany({
-      where: { 
-        teacherId: filters.teacherId,
-        schoolId: filters.isPersonal ? null : filters.schoolId || undefined
-      },
-      select: { subjectId: true }
-    });
-    const subjectIds = assignedSubjects.map(s => s.subjectId);
+    where.teacherId = filters.teacherId;
 
-    const teacherOrConditions: any[] = [];
-
-    // They can see their own papers
-    teacherOrConditions.push({ teacherId: filters.teacherId });
-
-    // They can see papers for their assigned subjects
-    if (subjectIds.length > 0) {
-      teacherOrConditions.push({ subjectId: { in: subjectIds } });
-    }
-
-    // Check if they are assigned to any classes
+    // We still need classIds for the teacherClassesOnly filter
     const assignedClasses = await prisma.classTeacher.findMany({
       where: { teacherId: filters.teacherId },
       select: { classId: true }
     });
     const classIds = assignedClasses.map(c => c.classId);
 
-    if (classIds.length > 0) {
-      // They can see papers linked to exams that are assigned to their classes
-      teacherOrConditions.push({ exams: { some: { exam: { classId: { in: classIds } } } } });
-    }
-
-    if (filters.isPersonal) {
-      where.teacherId = filters.teacherId;
-    } else {
-      if (teacherOrConditions.length > 0) {
-        where.AND = [{ OR: teacherOrConditions }];
-      } else {
-        where.AND = [{ id: "none" }];
-      }
-
-      // Implement teacherClassesOnly scoping
-      const isTeacherClassesOnly = filters.teacherClassesOnly === 'true';
+    // Implement teacherClassesOnly scoping
+    const isTeacherClassesOnly = filters.teacherClassesOnly === 'true';
       if (isTeacherClassesOnly) {
         if (filters.classId) {
           if (!classIds.includes(filters.classId)) {
@@ -508,7 +477,6 @@ export const getSubjectPapersService = async (filters: {
         }
       }
     }
-  }
 
   // 3. Filter by school or personal context
   if (filters.isPersonal) {

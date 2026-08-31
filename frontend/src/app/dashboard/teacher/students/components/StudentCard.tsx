@@ -24,7 +24,7 @@ const StudentCard: React.FC<StudentCardProps> = ({ student }) => {
     .slice(0, 2);
 
   return (
-    <div className="group relative flex flex-col gap-6 rounded-[2.5rem] border border-slate-200 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/80 backdrop-blur-2xl p-6 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10 hover:border-emerald-500/20 dark:hover:border-emerald-500/30 hover:-translate-y-1">
+    <div className="group relative flex flex-col gap-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-all duration-300 hover:border-emerald-500/30 hover:shadow-md">
       {/* Identity Header */}
       <div className="flex items-center gap-4">
         <div className="relative w-16 h-16 shrink-0 group-hover:scale-110 transition-transform duration-500">

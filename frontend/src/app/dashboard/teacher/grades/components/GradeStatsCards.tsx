@@ -87,10 +87,10 @@ const GradeStatsCards: React.FC<GradeStatsCardsProps> = ({ grades }) => {
         <motion.div
           key={idx}
           variants={item}
-          className="relative group overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl p-5 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1"
+          className="relative group overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-md"
         >
           {/* Background Decoration */}
-          <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full bg-${stat.color}-500/5 blur-2xl group-hover:bg-${stat.color}-500/10 transition-colors`} />
+          <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full bg-${stat.color}-500/5 group-hover:bg-${stat.color}-500/10 transition-colors`} />
           
           <div className="flex items-start justify-between">
             <div className={`p-2.5 rounded-xl bg-${stat.color}-100 dark:bg-${stat.color}-900/30 text-${stat.color}-600 dark:text-${stat.color}-400`}>

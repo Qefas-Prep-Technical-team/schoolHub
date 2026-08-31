@@ -113,10 +113,10 @@ function FilterPill({ label, value, options, icon: Icon, isOpen, onToggle, onCha
             <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={onToggle}
-                className={`flex h-12 items-center justify-between gap-3 rounded-2xl px-5 border transition-all duration-300 ${
+                className={`flex h-10 items-center justify-between gap-3 rounded-lg px-4 border transition-all duration-300 ${
                     value 
-                    ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' 
-                    : 'bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl border-slate-200/60 dark:border-slate-800/60 text-slate-600 dark:text-slate-300 hover:border-primary/50'
+                    ? 'bg-primary text-white border-primary shadow-sm' 
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-primary/50'
                 }`}
             >
                 <div className="flex items-center gap-2">

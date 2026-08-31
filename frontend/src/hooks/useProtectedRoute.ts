@@ -72,7 +72,7 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
     router,
     redirectTo,
     pathname,
-    userTypes,
+    userTypes.join(','),
     user,
   ]);
 

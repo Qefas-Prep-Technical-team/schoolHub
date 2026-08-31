@@ -423,16 +423,28 @@ export const getTeacherAssignmentsService = async (options: {
 
   const whereClause: any = { schoolId };
   if (teacherId) {
-    const classTeachers = await prisma.classTeacher.findMany({
-      where: { teacherId },
-      select: { classId: true }
-    });
+    const [classTeachers, subjectTeachers] = await Promise.all([
+      prisma.classTeacher.findMany({
+        where: { teacherId },
+        select: { classId: true }
+      }),
+      prisma.teacherSubject.findMany({
+        where: { teacherId, schoolId: schoolId || undefined },
+        select: { subjectId: true }
+      })
+    ]);
+    
     const assignedClassIds = classTeachers.map(ct => ct.classId);
+    const assignedSubjectIds = subjectTeachers.map(st => st.subjectId);
     
     whereClause.OR = [
       { classId: { in: assignedClassIds } },
       { teacherId }
     ];
+    
+    if (assignedSubjectIds.length > 0) {
+      whereClause.OR.push({ subjectId: { in: assignedSubjectIds } });
+    }
   }
   if (status && status !== "all") {
     whereClause.status = status.toUpperCase();

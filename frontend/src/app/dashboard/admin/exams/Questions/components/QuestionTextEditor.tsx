@@ -35,7 +35,7 @@ const QuestionTextEditor: React.FC<QuestionTextEditorProps> = ({
     placeholder = "Type here... e.g., 'Solve for $x$: $x^2 + 2x + 1 = 0$'"
 }) => {
     const [isUploading, setIsUploading] = useState(false);
-    const [showPreview, setShowPreview] = useState(false);
+    const [showEditor, setShowEditor] = useState(false); // raw editor hidden by default — preview is the default view
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const handleInsert = (formula: string) => {
@@ -102,15 +102,15 @@ const QuestionTextEditor: React.FC<QuestionTextEditorProps> = ({
                 </p>
                 <button
                     type="button"
-                    onClick={() => setShowPreview(!showPreview)}
+                    onClick={() => setShowEditor(!showEditor)}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                        showPreview 
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" 
+                        showEditor 
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" 
                         : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200"
                     }`}
                 >
-                    {showPreview ? <EyeOff size={14} /> : <Eye size={14} />}
-                    {showPreview ? "Hide Preview" : "Show LaTeX Preview"}
+                    {showEditor ? <EyeOff size={14} /> : <Eye size={14} />}
+                    {showEditor ? "Back to Preview" : "Edit Raw LaTeX"}
                 </button>
             </div>
 
@@ -195,21 +195,38 @@ const QuestionTextEditor: React.FC<QuestionTextEditorProps> = ({
                         ))}
                     </div>
 
-                {showPreview && (questionText || images.length > 0) && (
-                    <div className="p-5 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="text-[10px] uppercase font-black tracking-widest text-blue-500 mb-3 ml-1">
-                            Live Render Preview
-                        </div>
-                        <div className="p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                            {images.length > 0 && (
-                                <div className="grid grid-cols-2 gap-2">
-                                    {images.map((url, i) => (
-                                        <img key={i} src={url} className="rounded-lg w-full" alt="" />
-                                    ))}
+                {/* Live preview — always shown when there's content, togglable raw editor */}
+                {(questionText || images.length > 0) && (
+                    <div className="border-t border-slate-100 dark:border-slate-800">
+                        {/* Rendered live preview — default view */}
+                        {!showEditor && (
+                            <div className="p-5 bg-white dark:bg-slate-950 animate-in fade-in duration-200">
+                                <div className="text-[9px] uppercase font-black tracking-widest text-blue-500 mb-3 ml-1 flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse inline-block"></span>
+                                    Live Render
                                 </div>
-                            )}
-                            <LaTeXRenderer content={questionText} />
-                        </div>
+                                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-3">
+                                    {images.length > 0 && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {images.map((url, i) => (
+                                                <img key={i} src={url} className="rounded-lg w-full" alt="" />
+                                            ))}
+                                        </div>
+                                    )}
+                                    <LaTeXRenderer content={questionText} />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Raw editor — toggled on demand */}
+                        {showEditor && (
+                            <div className="p-5 bg-amber-50/40 dark:bg-amber-900/5 border-t border-amber-100 dark:border-amber-900/30 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="text-[9px] uppercase font-black tracking-widest text-amber-600 mb-3 ml-1">Raw LaTeX Source</div>
+                                <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 text-xs font-mono text-slate-600 dark:text-slate-400 whitespace-pre-wrap break-all">
+                                    {questionText || <span className="italic text-slate-300">Nothing typed yet…</span>}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

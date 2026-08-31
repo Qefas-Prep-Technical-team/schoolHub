@@ -12,8 +12,7 @@ export default function PageHeader({ title, onCreateNew, onAddPaper, activeTab }
   const isSubjectPaperTab = activeTab === 'subject-papers';
   const isAssignmentTab = activeTab === 'assignment';
   const isCaTab = activeTab === 'ca';
-  
-  const buttonStyle = "flex items-center cursor-pointer justify-center gap-3 rounded-2xl h-14 px-8 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 dark:from-indigo-600 dark:to-violet-700 dark:hover:from-indigo-500 dark:hover:to-violet-600 text-white text-sm font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 dark:shadow-[0_8px_25px_rgba(99,102,241,0.3)] hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 border border-transparent dark:border-indigo-500/30";
+  const buttonStyle = "flex items-center cursor-pointer justify-center gap-2 rounded-xl h-10 px-4 bg-primary hover:bg-primary/90 text-white text-xs font-semibold shadow-sm transition-all duration-300";
 
   let createLink = "/dashboard/teacher/exams&quizzes/create";
   let createLabel = "Create New Exam/Quiz";
@@ -26,8 +25,8 @@ export default function PageHeader({ title, onCreateNew, onAddPaper, activeTab }
   }
 
   return (
-    <div className="flex flex-wrap justify-between items-center gap-4 mb-10">
-      <h1 className="text-slate-900 dark:text-white text-3xl md:text-5xl font-black leading-tight tracking-tight">
+    <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+      <h1 className="text-slate-900 dark:text-white text-2xl md:text-3xl font-black leading-tight tracking-tight">
         {title}
       </h1>
       

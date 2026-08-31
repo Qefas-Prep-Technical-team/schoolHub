@@ -7,7 +7,7 @@ import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, FileText, Check, Globe, Settings as SettingsIcon, Trash2, Users, LayoutList, Eye, EyeOff, Loader2, ExternalLink } from "lucide-react";
+import { ChevronLeft, FileText, Check, Globe, Settings as SettingsIcon, Trash2, Users, LayoutList, Eye, EyeOff, Loader2, ExternalLink, Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import QuestionManager from "../../../admin/assignments/[id]/components/QuestionManager";
 import { useUpdateAssignmentStatus, useDeleteAssignment } from "@/lib/api/hooks/useAssignments";
@@ -119,6 +119,8 @@ export default function AssignmentDetailPage() {
   }
 
   const assignment = assignmentData;
+  // Preview mode: either ?preview=true in URL, or the assignment belongs to another teacher
+  const isPreviewMode = searchParams.get('preview') === 'true' || (assignment?.teacherId && assignment.teacherId !== user?.id);
 
   return (
     <div className="min-h-screen bg-gray-50/30 dark:bg-gray-950/30">
@@ -145,6 +147,7 @@ export default function AssignmentDetailPage() {
           </div>
           
           <div className="flex items-center gap-2">
+            {/* Status badge - always shown */}
             <div className="flex items-center gap-2">
               <div className={`hidden md:flex px-3 py-1 rounded-full text-[10px] font-bold border items-center gap-1.5 shadow-sm ${
                 assignment.status === "PUBLISHED" 
@@ -156,54 +159,59 @@ export default function AssignmentDetailPage() {
               </div>
             </div>
             
-            <Button 
-              variant="outline" 
-              size="sm" 
-              disabled={isUpdatingStatus}
-              onClick={() => {
-                const newStatus = assignment.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
-                updateStatus({ assignmentId, status: newStatus }, {
-                  onSuccess: () => toast.success(`Assignment ${newStatus.toLowerCase()} successfully`),
-                  onError: (error: any) => toast.error(error?.response?.data?.error || "Failed to update status")
-                });
-              }}
-              className={`h-8 rounded-lg text-xs px-3 font-semibold flex items-center gap-1.5 ${
-                assignment.status === "PUBLISHED"
-                  ? "text-amber-600 border-amber-200 hover:bg-amber-50"
-                  : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-              }`}
-            >
-              {isUpdatingStatus ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : assignment.status === "PUBLISHED" ? (
-                <EyeOff size={14} />
-              ) : (
-                <Eye size={14} />
-              )}
-              {isUpdatingStatus 
-                ? (assignment.status === "PUBLISHED" ? "Unpublishing..." : "Publishing...")
-                : (assignment.status === "PUBLISHED" ? "Unpublish" : "Publish")}
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              disabled={isDeleting}
-              onClick={handleDelete}
-              className="h-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50 text-xs px-3 font-semibold flex items-center gap-1.5"
-            >
-              {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-              Delete
-            </Button>
+            {/* Edit actions — only for owner */}
+            {!isPreviewMode && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={isUpdatingStatus}
+                  onClick={() => {
+                    const newStatus = assignment.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+                    updateStatus({ assignmentId, status: newStatus }, {
+                      onSuccess: () => toast.success(`Assignment ${newStatus.toLowerCase()} successfully`),
+                      onError: (error: any) => toast.error(error?.response?.data?.error || "Failed to update status")
+                    });
+                  }}
+                  className={`h-8 rounded-lg text-xs px-3 font-semibold flex items-center gap-1.5 ${
+                    assignment.status === "PUBLISHED"
+                      ? "text-amber-600 border-amber-200 hover:bg-amber-50"
+                      : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                  }`}
+                >
+                  {isUpdatingStatus ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : assignment.status === "PUBLISHED" ? (
+                    <EyeOff size={14} />
+                  ) : (
+                    <Eye size={14} />
+                  )}
+                  {isUpdatingStatus 
+                    ? (assignment.status === "PUBLISHED" ? "Unpublishing..." : "Publishing...")
+                    : (assignment.status === "PUBLISHED" ? "Unpublish" : "Publish")}
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={isDeleting}
+                  onClick={handleDelete}
+                  className="h-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50 text-xs px-3 font-semibold flex items-center gap-1.5"
+                >
+                  {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                  Delete
+                </Button>
 
-            <Button 
-                variant="default" 
-                size="sm" 
-                onClick={() => setIsSettingsOpen(true)}
-                className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 font-semibold flex items-center gap-1.5 shadow-sm"
-            >
-                <SettingsIcon size={14} /> Settings
-            </Button>
+                <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 font-semibold flex items-center gap-1.5 shadow-sm"
+                >
+                    <SettingsIcon size={14} /> Settings
+                </Button>
+              </>
+            )}
             
             <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-800 hidden sm:block mx-1"></div>
             <div className="flex flex-col items-end">
@@ -217,6 +225,18 @@ export default function AssignmentDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Preview Mode Banner */}
+      {isPreviewMode && (
+        <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold">
+              <Lock size={12} />
+              Preview Mode — This is another teacher's assignment. You can view it but cannot make any changes.
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="questions" className="w-full">
@@ -236,7 +256,8 @@ export default function AssignmentDetailPage() {
              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm">
                 <QuestionManager 
                   assignmentId={assignmentId} 
-                  assignment={assignment} 
+                  assignment={assignment}
+                  isReadOnly={!!isPreviewMode}
                 />
              </div>
           </TabsContent>
@@ -244,7 +265,8 @@ export default function AssignmentDetailPage() {
           <TabsContent value="submissions">
              <SubmissionList 
                assignment={assignment} 
-               schoolId={effectiveSchoolId} 
+               schoolId={effectiveSchoolId}
+               readOnly={!!isPreviewMode}
              />
           </TabsContent>
 

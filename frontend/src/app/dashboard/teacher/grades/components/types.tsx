@@ -15,6 +15,7 @@ export interface StudentGrade {
   grade: GradeLetter;
   status: GradeStatus;
   remarks?: string;
+  profilePicture?: string;
 }
 
 export interface FilterOption {

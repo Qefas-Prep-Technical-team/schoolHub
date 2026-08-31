@@ -1,29 +1,53 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Header from './Header';
 import ControlsBar from './ControlsBar';
 import StudentGrid from './StudentGrid';
+import StudentList from './StudentList';
 import Pagination from './Pagination';
 import QuickAttendanceModal from './QuickAttendanceModal';
+import { ViewType } from './ViewToggle';
 import { useToast } from "@/lib/hooks/useToast";
 import { teacherService } from "@/lib/api/services/teacherService";
 import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 
-
 const StudentPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [viewType, setViewType] = useState<ViewType>('List View');
   const [totalItems, setTotalItems] = useState<number>(0);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const itemsPerPage = 8;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
 
-  const { loading, error, success } = useToast();
+  const { loading, error: toastError, success } = useToast();
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['teacher-students', selectedSchoolId, searchQuery, selectedClassId, currentPage, itemsPerPage],
+    queryFn: async () => {
+      const isPersonal = selectedSchoolName === "Personal Dashboard" || selectedSchoolId === user?.id;
+      const filterId = isPersonal ? undefined : selectedSchoolId;
+      const result = await teacherService.getStudents({
+        schoolId: filterId || undefined,
+        search: searchQuery || undefined,
+        classId: selectedClassId || undefined,
+        page: currentPage,
+        limit: itemsPerPage,
+      });
+      if (result?.total !== undefined) {
+        setTotalItems(result.total);
+      }
+      return result;
+    },
+  });
+
+  const students = data?.students || [];
 
   const handleExport = async () => {
     let toastId;
@@ -36,7 +60,7 @@ const StudentPage: React.FC = () => {
         schoolId: filterId || undefined,
         search: searchQuery || undefined,
         classId: selectedClassId || undefined,
-        limit: 1000, // fetch up to 1000 for export
+        limit: 1000, 
       });
 
       if (!result?.students || result.students.length === 0) {
@@ -44,7 +68,6 @@ const StudentPage: React.FC = () => {
         return;
       }
 
-      // Convert to CSV
       const headers = ["ID", "Name", "Student Code", "Email", "Gender", "Status", "Grade", "Performance", "Attendance", "Last Exam"];
       const csvData = result.students.map((s: any) => [
         s.id,
@@ -76,12 +99,11 @@ const StudentPage: React.FC = () => {
       if (toastId) {
         loading.update(toastId, "Failed to export students", "error");
       } else {
-        error.show("Failed to export students");
+        toastError.show("Failed to export students");
       }
     }
   };
 
-  // Reset to first page on search
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
@@ -93,33 +115,48 @@ const StudentPage: React.FC = () => {
   };
 
   return (
-    <div className="font-display bg-background-light dark:bg-background-dark">
+    <div className="font-display bg-slate-50/50 dark:bg-slate-950">
       <div className="relative flex min-h-screen w-full flex-row">
-        
-        <main className="flex-1 p-8">
-          <div className="mx-auto max-w-7xl">
+        <main className="flex-1 p-6 md:p-8">
+          <div className="mx-auto max-w-7xl space-y-6">
             <Header onQuickAttendance={() => setIsAttendanceModalOpen(true)} onExport={handleExport} />
             <ControlsBar 
               searchQuery={searchQuery}
               onSearchChange={handleSearchChange}
               selectedClassId={selectedClassId}
               onClassChange={handleClassChange}
-            />
-            <StudentGrid 
-              page={currentPage}
-              searchQuery={searchQuery}
-              selectedClassId={selectedClassId}
-              limit={itemsPerPage}
-              onDataLoaded={(total: number) => setTotalItems(total)}
+              viewType={viewType}
+              onViewChange={setViewType}
             />
             
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              itemsPerPage={itemsPerPage}
-              totalItems={totalItems}
-              onPageChange={setCurrentPage}
-            />
+            {viewType === 'List View' ? (
+              <StudentList 
+                students={students}
+                isLoading={isLoading}
+                error={error}
+                searchQuery={searchQuery}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+              />
+            ) : (
+              <StudentGrid 
+                students={students}
+                isLoading={isLoading}
+                error={error}
+                searchQuery={searchQuery}
+                limit={itemsPerPage}
+              />
+            )}
+            
+            {!isLoading && !error && students.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                onPageChange={setCurrentPage}
+              />
+            )}
           </div>
         </main>
       </div>
@@ -127,14 +164,11 @@ const StudentPage: React.FC = () => {
       {isAttendanceModalOpen && (
         <QuickAttendanceModal 
           onClose={() => setIsAttendanceModalOpen(false)} 
-          onSuccess={() => {
-            // Optionally refresh the student grid if needed to show updated attendance percentages
-          }}
+          onSuccess={() => {}}
         />
       )}
     </div>
   );
 };
-
 
 export default StudentPage;

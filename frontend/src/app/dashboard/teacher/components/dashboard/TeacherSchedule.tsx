@@ -34,9 +34,20 @@ const TeacherSchedule: React.FC<TeacherScheduleProps> = ({ schedule = [] }) => {
       status = 'past';
     }
 
+    let formattedTime = item.time;
+    if (formattedTime) {
+      formattedTime = formattedTime.split('-').map((t: string) => {
+        const [h, m] = t.trim().split(':').map(Number);
+        if (isNaN(h)) return t.trim();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+      }).join(' - ');
+    }
+
     return {
       id: item.id,
-      time: item.time,
+      time: formattedTime,
       subject: item.title.split(' - ')[0] || item.title,
       className: item.type === 'class' ? (item.title.split(' - ')[1] || '') : 'Break',
       room: item.room,

@@ -44,7 +44,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <Button 
               onClick={onOCRClick}
               variant="outline" 
-              className="relative rounded-2xl h-12 w-12 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-200 flex items-center justify-center group cursor-pointer"
+              className="relative rounded-xl h-12 w-12 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-200 flex items-center justify-center group cursor-pointer"
               title={hasOCRAccess ? 'AI Vision Grade Scanner' : 'Upgrade to unlock AI Vision Scanner'}
             >
               {hasOCRAccess ? (
@@ -70,7 +70,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <Button 
               onClick={onUploadClick}
               variant="outline" 
-              className="relative rounded-2xl h-12 w-12 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-200 flex items-center justify-center group cursor-pointer"
+              className="relative rounded-xl h-12 w-12 p-0 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-200 flex items-center justify-center group cursor-pointer"
               title={hasCSVAccess ? 'Batch Upload' : 'Upgrade to unlock Batch Upload'}
             >
               {hasCSVAccess ? (
@@ -94,11 +94,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             whileTap={{ scale: 0.98 }}
           >
             <Button 
-              className="h-12 px-6 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 dark:from-indigo-500 dark:to-violet-600 dark:hover:from-indigo-400 dark:hover:to-violet-500 text-white shadow-lg shadow-indigo-500/20 dark:shadow-indigo-500/30 border border-indigo-400/20 hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98] font-black uppercase tracking-widest text-xs transition-all duration-300"
+              className="h-12 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-sm transition-all duration-300 font-semibold text-sm"
               onClick={onAddGrade}
             >
               <Plus className="mr-2 h-5 w-5" />
-              Record New Grade
+              Record Grade
             </Button>
           </motion.div>
         </div>

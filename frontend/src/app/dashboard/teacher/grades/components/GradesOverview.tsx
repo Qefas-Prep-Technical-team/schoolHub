@@ -204,7 +204,7 @@ const GradesOverview: React.FC = () => {
       id?: string | number;
       score?: number;
       maxMarks?: number;
-      student?: { name?: string; studentCode?: string };
+      student?: { name?: string; studentCode?: string; profilePicture?: string; avatar?: string };
       name?: string;
       studentId?: string;
       subjectPaper?: { title?: string };
@@ -230,7 +230,8 @@ const GradesOverview: React.FC = () => {
         totalScore: `${percentage.toFixed(1)}%`,
         grade: calculateGrade(score, maxMarks, gradingScale) as GradeLetter,
         status: (item.status || 'Graded') as GradeStatus,
-        remarks: item.remarks || ''
+        remarks: item.remarks || '',
+        profilePicture: item.student?.profilePicture || item.student?.avatar || ''
       };
     });
   }, [rawData, gradingScale]);
@@ -285,9 +286,9 @@ const GradesOverview: React.FC = () => {
   };
 
   return (
-    <div className="relative flex h-auto min-h-screen w-full flex-col bg-slate-50/50 dark:bg-black/5">
-      <main className="px-4 sm:px-6 lg:px-8 py-8">
-        <div className="layout-content-container flex flex-col max-w-7xl mx-auto flex-1">
+    <div className="relative flex h-auto min-h-screen w-full flex-col bg-slate-50/50 dark:bg-slate-950/50">
+      <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+        <div className="flex flex-col flex-1">
           
           {/* Header Section */}
           <motion.div 

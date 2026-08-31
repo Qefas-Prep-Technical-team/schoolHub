@@ -337,14 +337,20 @@ export const getTeacherPerformanceTrendsService = async (teacherId: string, scho
 
   const assignedClassIds = classTeachers.map((ct) => ct.classId);
 
-  // 2. Fetch grades for the last 6 months
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  // 2. Determine date range and grouping
+  let startDate = new Date();
+  if (range === 'week') {
+    startDate.setDate(startDate.getDate() - 7);
+  } else if (range === 'month') {
+    startDate.setMonth(startDate.getMonth() - 1);
+  } else {
+    startDate.setMonth(startDate.getMonth() - 6);
+  }
 
   const grades = await prisma.grade.findMany({
     where: {
       classId: { in: assignedClassIds },
-      createdAt: { gte: sixMonthsAgo },
+      createdAt: { gte: startDate },
     },
     select: {
       score: true,
@@ -354,19 +360,27 @@ export const getTeacherPerformanceTrendsService = async (teacherId: string, scho
     orderBy: { createdAt: "asc" },
   });
 
-  // 3. Group by month (simplified aggregation)
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // 3. Group by the appropriate time bucket
   const trendsMap = new Map<string, { total: number; count: number; top: number; low: number }>();
 
   grades.forEach((g) => {
     const date = new Date(g.createdAt);
-    const monthName = months[date.getMonth()];
+    let label = '';
+    if (range === 'week') {
+      label = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
+    } else if (range === 'month') {
+      const weekNum = Math.ceil(date.getDate() / 7);
+      label = `Wk ${weekNum}`;
+    } else {
+      label = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()];
+    }
+
     const percentage = (g.score / g.maxMarks) * 100;
 
-    if (!trendsMap.has(monthName)) {
-      trendsMap.set(monthName, { total: percentage, count: 1, top: percentage, low: percentage });
+    if (!trendsMap.has(label)) {
+      trendsMap.set(label, { total: percentage, count: 1, top: percentage, low: percentage });
     } else {
-      const current = trendsMap.get(monthName)!;
+      const current = trendsMap.get(label)!;
       current.total += percentage;
       current.count += 1;
       current.top = Math.max(current.top, percentage);
@@ -384,8 +398,12 @@ export const getTeacherPerformanceTrendsService = async (teacherId: string, scho
 
   // Ensure we have at least some data points for the chart if empty
   if (trends.length === 0) {
-    const currentMonth = months[new Date().getMonth()];
-    trends.push({ month: currentMonth, average: 0, top: 0, low: 0 });
+    let defaultLabel = 'Current';
+    if (range === 'week') defaultLabel = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()];
+    else if (range === 'month') defaultLabel = `Wk ${Math.ceil(new Date().getDate() / 7)}`;
+    else defaultLabel = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][new Date().getMonth()];
+    
+    trends.push({ month: defaultLabel, average: 0, top: 0, low: 0 });
   }
 
   return {
@@ -632,7 +650,23 @@ export const getTeacherClassesService = async (teacherId: string, schoolId?: str
                     _count: {
                         select: {
                             enrollments: true,
-                            exams: true,
+                            exams: {
+                                where: {
+                                    status: 'PUBLISHED',
+                                    OR: [
+                                        { startDate: null },
+                                        { startDate: { lte: new Date() } }
+                                    ],
+                                    AND: [
+                                        {
+                                            OR: [
+                                                { endDate: null },
+                                                { endDate: { gte: new Date() } }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
                         }
                     },
                     // Fetch all grades for stats
@@ -654,6 +688,24 @@ export const getTeacherClassesService = async (teacherId: string, schoolId?: str
     });
 
     console.log(`LOG: [getTeacherClassesService] Found ${classTeachers.length} classes`);
+
+    // Fetch active assignments count per class since there is no direct relation to use _count
+    const classIds = classTeachers.map(ct => ct.classId);
+    const activeAssignments = await prisma.assignment.groupBy({
+        by: ['classId'],
+        where: {
+            classId: { in: classIds },
+            status: 'PUBLISHED',
+            OR: [
+                { dueDate: null },
+                { dueDate: { gte: new Date() } }
+            ]
+        },
+        _count: {
+            _all: true
+        }
+    });
+    const assignmentCounts = new Map(activeAssignments.map(a => [a.classId, a._count._all]));
 
     // 3. Map to final format with aggregated stats
     return classTeachers.map(ct => {
@@ -682,7 +734,7 @@ export const getTeacherClassesService = async (teacherId: string, schoolId?: str
             studentCount: c._count.enrollments,
             schedule: ["Mon 10:00 AM", "Wed 11:00 AM"], // TODO: Implement timetable fetching if needed
             image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAL0zLD-Zw46tNNL9EF1qqlpRbHgO1uuHKCc1UzyBWbcMscRxmReR48BycWbICZ1XucCngOmFuhIQypaoYOkrb_tyfO-EqXeyW0xp5nbQG3aN2C3YPS1PYFCsYngX4jGiAFreP25p26O9Qapvyl2IEgHYHbUWMbbGX3rQ89Gwk8FKCS9y7U3WBVV2lItx5X1EK1WgBsz1FlCTK_8BVi3B8LOqjtmgTT1H-323TgrkkE_t1syWBrbat_SnihV4WOPjvz-Tkg1US2yvY",
-            assignments: 0, // Simplified for now
+            assignments: assignmentCounts.get(c.id) || 0,
             exams: c._count.exams,
             attendance: attendanceRate,
             averageGrade: averageGrade,

@@ -37,12 +37,8 @@ export default function AssignmentCard({
     return (
         <motion.div
             whileHover={{ y: -5, scale: 1.01 }}
-            className="group relative flex flex-col p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl shadow-xl hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden"
+            className="group relative flex flex-col p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
         >
-            {/* Background Glow for Overdue */}
-            {isOverdue && (
-                <div className="absolute -top-20 -right-20 w-40 h-40 bg-rose-500/10 blur-3xl rounded-full"></div>
-            )}
 
             <div className="flex justify-between items-start mb-6">
                 <div className="space-y-1 max-w-[70%]">
@@ -59,7 +55,7 @@ export default function AssignmentCard({
                         </span>
                     </div>
                 </div>
-                <div className={`px-3 py-1 rounded-xl border text-xs font-semibold ${getStatusStyles(assignment.status)}`}>
+                <div className={`px-3 py-1 rounded-lg border text-xs font-semibold ${getStatusStyles(assignment.status)}`}>
                     {getStatusLabel(assignment.status)}
                 </div>
             </div>

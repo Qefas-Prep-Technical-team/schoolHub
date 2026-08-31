@@ -61,28 +61,26 @@ export default function PageHeader({ title, description, isPersonal }: PageHeade
             
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
-                    <button className="group relative flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-emerald-500 text-white rounded-2xl hover:shadow-lg hover:shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all duration-300 font-black text-xs uppercase tracking-widest overflow-hidden">
-                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                        <Plus className="w-4 h-4 relative z-10" />
-                        <span className="relative z-10">{actionText}</span>
+                    <button className="flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold text-sm">
+                        <Plus className="w-4 h-4" />
+                        <span>{actionText}</span>
                     </button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md rounded-[2rem] p-0 overflow-hidden border-0">
-                    <div className="bg-gradient-to-br from-primary via-emerald-600 to-teal-700 p-8 text-white relative overflow-hidden">
-                        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
-                        <DialogHeader className="relative z-10">
-                            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-4 shadow-inner ring-1 ring-white/30">
-                                <GraduationCap size={24} className="text-white drop-shadow-md" />
-                            </div>
-                            <DialogTitle className="text-2xl font-black tracking-tight">{actionText}</DialogTitle>
-                            <DialogDescription className="text-emerald-50/80 font-medium mt-2">
+                <DialogContent className="sm:max-w-md rounded-2xl p-0 overflow-hidden border border-slate-200 dark:border-slate-800">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-6 border-b border-slate-200 dark:border-slate-800">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <GraduationCap className="text-primary w-5 h-5" />
+                                {actionText}
+                            </DialogTitle>
+                            <DialogDescription className="text-slate-500 mt-2">
                                 {isPersonal 
                                     ? "Create a new academic class module globally for your personal teaching registry."
                                     : "Link your teaching profile to an existing class module within this school's directory."}
                             </DialogDescription>
                         </DialogHeader>
                     </div>
-                    <div className="p-8 bg-white dark:bg-slate-900 space-y-6">
+                    <div className="p-6 bg-white dark:bg-slate-900 space-y-6">
                         {isPersonal ? (
                             <div className="space-y-4">
                                 <div className="space-y-2">

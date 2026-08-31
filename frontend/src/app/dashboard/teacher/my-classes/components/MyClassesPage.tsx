@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,8 +8,9 @@ import { Class } from './type';
 import PageHeader from './PageHeader';
 import FilterChips from './FilterChips';
 import ClassGrid from './ClassGrid';
+import ClassList from './ClassList';
 import EmptyState from './EmptyState';
-import { useMemo } from 'react';
+import ViewToggle, { ViewType } from './ViewToggle';
 import { teacherService } from '@/lib/api/services/teacherService';
 import { useDashboardStore } from '@/lib/api/hooks/useDashboardStore';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
@@ -20,6 +21,7 @@ export default function MyClassesPage() {
     const router = useRouter();
     const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
     const { user } = useAuthStore();
+    const [viewType, setViewType] = useState<ViewType>('List View');
     const [filters, setFilters] = useState({
         academicYear: '',
         term: '',
@@ -100,8 +102,8 @@ export default function MyClassesPage() {
     const pendingItems = filteredClasses.reduce((sum, cls) => sum + (cls.assignments || 0) + (cls.exams || 0), 0);
 
     return (
-        <main className="min-h-screen bg-transparent p-6 md:p-10 lg:p-14">
-            <div className="max-w-screen-xl mx-auto space-y-14">
+        <main className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 md:p-8 lg:p-10">
+            <div className="max-w-7xl mx-auto space-y-8">
                 <PageHeader
                     title="Academic Registry"
                     description={isPersonal 
@@ -110,8 +112,7 @@ export default function MyClassesPage() {
                     isPersonal={isPersonal}
                 />
 
-                {/* High-Impact Stat Wall (Promoted to top) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 py-4 border-b border-slate-200/50 dark:border-slate-800/50 pb-14">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard 
                         label="Active Modules" 
                         value={filteredClasses.length} 
@@ -142,25 +143,24 @@ export default function MyClassesPage() {
                     />
                 </div>
 
-                {/* Filter Section (Now at top with stats) */}
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-10 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[3rem] border border-slate-200/60 dark:border-slate-800/60 shadow-2xl mb-14"
+                    className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
                 >
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-10">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
                         <div className="flex items-center gap-4">
-                            <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-lg shadow-primary/5">
-                                <GraduationCap size={28} strokeWidth={2.5} />
+                            <div className="p-3 bg-primary/10 rounded-xl text-primary">
+                                <GraduationCap size={24} strokeWidth={2.5} />
                             </div>
                             <div>
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 italic tracking-tight underline decoration-primary/20">Class Intelligence</h3>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Filter & Manage Academic Modules</p>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Class Intelligence</h3>
+                                <p className="text-xs font-medium text-slate-500 mt-1">Filter & Manage Academic Modules</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2.5 text-primary font-black uppercase tracking-[0.2em] text-[10px] bg-primary/5 px-6 py-3 rounded-2xl border border-primary/20 shadow-xl shadow-primary/5">
-                            <Sparkles size={14} className="animate-pulse" />
-                            {isPersonal ? "Global Academic Scope" : "Local School Instance"}
+                        <div className="flex items-center gap-4">
+
+                            <ViewToggle viewType={viewType} onViewChange={setViewType} />
                         </div>
                     </div>
 
@@ -172,7 +172,6 @@ export default function MyClassesPage() {
                     />
                 </motion.div>
 
-                {/* Results Grid with staggered transition */}
                 <div className="relative min-h-[400px]">
                     <AnimatePresence mode="wait">
                         {isLoading ? (
@@ -191,10 +190,11 @@ export default function MyClassesPage() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -20 }}
                             >
-                                <ClassGrid
-                                    classes={filteredClasses}
-                                    onClassClick={handleClassClick}
-                                />
+                                {viewType === 'List View' ? (
+                                    <ClassList classes={filteredClasses} onClassClick={handleClassClick} />
+                                ) : (
+                                    <ClassGrid classes={filteredClasses} onClassClick={handleClassClick} />
+                                )}
                             </motion.div>
                         ) : (
                             <motion.div
@@ -207,10 +207,6 @@ export default function MyClassesPage() {
                         )}
                     </AnimatePresence>
                 </div>
-
-
-
-
             </div>
         </main>
     );
@@ -219,16 +215,16 @@ export default function MyClassesPage() {
 function StatCard({ label, value, icon: Icon, color, bgColor }: { label: string, value: string | number, icon: React.ElementType, color: string, bgColor: string }) {
     return (
         <motion.div 
-            whileHover={{ y: -8, scale: 1.02 }}
-            className="p-8 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 shadow-xl hover:shadow-2xl hover:shadow-primary/5 transition-all group"
+            whileHover={{ y: -4, scale: 1.01 }}
+            className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
         >
-            <div className="flex items-center gap-5">
-                <div className={`p-5 rounded-2xl ${bgColor} ${color} transition-transform group-hover:scale-110 shadow-inner`}>
-                    <Icon size={28} strokeWidth={2.5} />
+            <div className="flex items-center gap-4">
+                <div className={`p-4 rounded-xl ${bgColor} ${color} transition-transform group-hover:scale-110`}>
+                    <Icon size={24} strokeWidth={2.5} />
                 </div>
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-primary transition-colors">{label}</p>
-                    <p className="text-3xl font-black text-slate-900 dark:text-slate-100 mt-1.5 leading-none tracking-tight">{value}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-primary transition-colors">{label}</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{value}</p>
                 </div>
             </div>
         </motion.div>

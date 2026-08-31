@@ -8,6 +8,7 @@ import PageHeader from './components/PageHeader';
 import Button from './components/ui/Button';
 import AssignmentFilters from './components/AssignmentFilters';
 import AssignmentCard from './components/AssignmentCard';
+import AssignmentList from './components/AssignmentList';
 import Pagination from './components/Pagination';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -46,7 +47,7 @@ export default function AssignmentsPage() {
     const { user } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({ status: '', subject: '', classId: '' });
-    const [view, setView] = useState<'list' | 'grid'>('grid');
+    const [view, setView] = useState<'list' | 'grid'>('list');
     const [currentPage, setCurrentPage] = useState(1);
     const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
     const itemsPerPage = 8;
@@ -147,8 +148,8 @@ export default function AssignmentsPage() {
     };
 
     return (
-        <main className="min-h-screen bg-transparent p-4 md:p-8 lg:p-12">
-            <div className="max-w-7xl mx-auto space-y-10">
+        <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto bg-slate-50/50 dark:bg-slate-950/50">
+            <div className="space-y-6">
                 {/* Page Header Modernized */}
                 <PageHeader
                     title="Assignments"
@@ -158,35 +159,31 @@ export default function AssignmentsPage() {
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl shadow-md hover:bg-primary/90 transition-all duration-200 dark:bg-gradient-to-r dark:from-indigo-500 dark:to-violet-600 dark:hover:from-indigo-600 dark:hover:to-violet-700 dark:shadow-lg dark:shadow-indigo-500/20 border border-primary/20 dark:border-indigo-400/20"
+                                className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-primary/90 transition-all duration-200"
                             >
                                 <PlusCircle size={18} strokeWidth={2} />
-                                Create New Assignment
+                                Create New
                             </motion.button>
                         </Link>
                     }
                 />
 
-                {/* Filters with Glow */}
+                {/* Filters */}
                 <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-8 bg-white/70 dark:bg-slate-900/40 backdrop-blur-2xl rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 shadow-2xl"
+                    className="p-4 md:p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
                 >
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
                          <div className="flex items-center gap-3">
-                            <div className="p-3 bg-primary/10 rounded-2xl text-primary">
-                                <BookOpen size={24} strokeWidth={2} />
+                            <div className="p-3 bg-primary/10 rounded-xl text-primary">
+                                <BookOpen size={24} strokeWidth={2.5} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 italic tracking-tight underline architecture-none decoration-primary/30">Assignments</h3>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Manage Assignments & Deadlines</p>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Assignments</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">Manage & Grade Modules</p>
                             </div>
                          </div>
-                        <div className="flex items-center gap-2 text-primary font-semibold text-xs bg-primary/5 px-4 py-2 rounded-xl border border-primary/10">
-                            <Sparkles size={14} className="animate-pulse" />
-                            {isPersonal ? "Global View" : "Local School View"}
-                        </div>
                     </div>
 
                     <AssignmentFilters
@@ -212,20 +209,16 @@ export default function AssignmentsPage() {
                                 <AssignmentsSkeleton />
                             </motion.div>
                         ) : filteredAssignments.length > 0 ? (
-                            <motion.div
-                                key="grid"
-                                initial={{ opacity: 0, scale: 0.98 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.98 }}
-                                className={`grid gap-8 pt-4 ${view === 'grid'
-                                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                                    : 'grid-cols-1'
-                                    }`}
-                            >
-                                {paginatedAssignments.map((assignment: any) => (
-                                    <AssignmentCard
-                                        key={assignment.id}
-                                        assignment={{
+                            view === 'list' ? (
+                                <motion.div
+                                    key="list"
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.98 }}
+                                    className="pt-4"
+                                >
+                                    <AssignmentList 
+                                        assignments={paginatedAssignments.map((assignment: any) => ({
                                             ...assignment,
                                             status: getNormalizedStatus(assignment),
                                             subject: assignment.subject?.name || "General",
@@ -236,14 +229,44 @@ export default function AssignmentsPage() {
                                             progress: (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0)) > 0 
                                                 ? Math.round(((assignment._count?.submissions || 0) / (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0))) * 100) 
                                                 : 0
-                                        }}
-                                        onEdit={() => router.push(`/dashboard/teacher/assignments/${assignment.id}?edit=true`)}
-                                        onGrade={() => router.push(`/dashboard/teacher/assignments/${assignment.id}`)}
-                                        onDelete={() => setAssignmentToDelete(assignment.id)}
-                                        onViewDetails={() => router.push(`/dashboard/teacher/assignments/${assignment.id}`)}
+                                        }))}
+                                        onEdit={(id) => router.push(`/dashboard/teacher/assignments/${id}?edit=true`)}
+                                        onGrade={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
+                                        onDelete={(id) => setAssignmentToDelete(id)}
+                                        onViewDetails={(id) => router.push(`/dashboard/teacher/assignments/${id}`)}
                                     />
-                                ))}
-                            </motion.div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="grid"
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.98 }}
+                                    className="grid gap-6 pt-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                                >
+                                    {paginatedAssignments.map((assignment: any) => (
+                                        <AssignmentCard
+                                            key={assignment.id}
+                                            assignment={{
+                                                ...assignment,
+                                                status: getNormalizedStatus(assignment),
+                                                subject: assignment.subject?.name || "General",
+                                                className: assignment.class?.name || "All Classes",
+                                                dueDate: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No Deadline",
+                                                submitted: assignment._count?.submissions || 0,
+                                                totalStudents: typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0),
+                                                progress: (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0)) > 0 
+                                                    ? Math.round(((assignment._count?.submissions || 0) / (typeof assignment.totalTargetedStudents === 'number' ? assignment.totalTargetedStudents : (assignment.class?._count?.enrollments || 0))) * 100) 
+                                                    : 0
+                                            }}
+                                            onEdit={() => router.push(`/dashboard/teacher/assignments/${assignment.id}?edit=true`)}
+                                            onGrade={() => router.push(`/dashboard/teacher/assignments/${assignment.id}`)}
+                                            onDelete={() => setAssignmentToDelete(assignment.id)}
+                                            onViewDetails={() => router.push(`/dashboard/teacher/assignments/${assignment.id}`)}
+                                        />
+                                    ))}
+                                </motion.div>
+                            )
                         ) : (
                             <motion.div
                                 key="empty"

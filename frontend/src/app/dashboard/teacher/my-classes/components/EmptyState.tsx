@@ -10,19 +10,15 @@ export default function EmptyState({ onResetFilters }: EmptyStateProps) {
         <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center py-20 px-6 text-center"
+            className="flex flex-col items-center justify-center py-16 px-6 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/10"
         >
-            <div className="relative mb-8">
-                <div className="w-24 h-24 rounded-[2rem] bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative z-10">
-                    <GraduationCap className="w-12 h-12 text-slate-400 dark:text-slate-600" />
+            <div className="relative mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative z-10">
+                    <GraduationCap className="w-8 h-8 text-slate-400 dark:text-slate-600" />
                 </div>
-                <div className="absolute top-0 right-0 -mr-2 -mt-2 w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center border-4 border-background-light dark:border-background-dark z-20">
-                    <FilterX className="w-3 h-3 text-white" />
-                </div>
-                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 transform -z-10 animate-pulse"></div>
             </div>
 
-            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight mb-3">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                 No Academic Classes Found
             </h3>
 

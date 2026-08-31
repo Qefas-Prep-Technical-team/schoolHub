@@ -44,19 +44,19 @@ export default function StudentPerformanceWidget({ performanceMetrics }: Student
   };
 
   return (
-    <div className="flex flex-col rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50 p-8 shadow-2xl shadow-slate-200/40 dark:shadow-none h-full transition-all duration-500 hover:border-emerald-500/20">
-      <div className="flex items-center justify-between mb-10">
+    <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm h-full transition-all duration-300">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-            Academic <span className="text-emerald-600">Pulse</span>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+            Academic Pulse
           </h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-2">
-            <span className="size-1.5 rounded-full bg-emerald-500" />
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             Top Performer Tracking
           </p>
         </div>
-        <div className="p-3 bg-emerald-500/10 rounded-2xl">
-          <BarChart3 className="w-6 h-6 text-emerald-600" />
+        <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700">
+          <BarChart3 className="w-5 h-5 text-slate-500" />
         </div>
       </div>
 

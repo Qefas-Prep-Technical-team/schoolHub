@@ -159,7 +159,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-transparent">
-      <main className="p-4 md:p-6 lg:p-10">
+      <main className="p-6 md:p-8">
         <div className="max-w-[1600px] mx-auto">
           {/* Header Section */}
           <TeacherHero 

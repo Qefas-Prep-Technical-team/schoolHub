@@ -26,7 +26,7 @@ export default function AssignmentFilters({
     classOptions
 }: AssignmentFiltersProps) {
     const [filters, setFilters] = useState({ status: '', subject: '', classId: '' });
-    const [view, setView] = useState<'list' | 'grid'>('grid');
+    const [view, setView] = useState<'list' | 'grid'>('list');
 
     const statusOptions: FilterOption[] = [
         { value: '', label: 'All Status' },
@@ -69,7 +69,7 @@ export default function AssignmentFilters({
                     <select
                         value={filters.status}
                         onChange={(e) => handleFilterChange('status', e.target.value)}
-                        className="w-full h-12 pl-4 pr-10 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20 transition-all outline-none group-hover:bg-white dark:group-hover:bg-slate-800"
+                        className="w-full h-10 pl-4 pr-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 appearance-none cursor-pointer focus:border-primary/50 transition-all outline-none"
                     >
                         {statusOptions.map((option) => (
                             <option key={option.value} value={option.value} className="bg-white dark:bg-slate-900">
@@ -84,7 +84,7 @@ export default function AssignmentFilters({
                     <select
                         value={filters.subject}
                         onChange={(e) => handleFilterChange('subject', e.target.value)}
-                        className="w-full h-12 pl-4 pr-10 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20 transition-all outline-none group-hover:bg-white dark:group-hover:bg-slate-800"
+                        className="w-full h-10 pl-4 pr-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 appearance-none cursor-pointer focus:border-primary/50 transition-all outline-none"
                     >
                         {currentSubjectOptions.map((option) => (
                             <option key={option.value} value={option.value} className="bg-white dark:bg-slate-900">
@@ -100,7 +100,7 @@ export default function AssignmentFilters({
                         <select
                             value={filters.classId}
                             onChange={(e) => handleFilterChange('classId', e.target.value)}
-                            className="w-full h-12 pl-4 pr-10 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20 transition-all outline-none group-hover:bg-white dark:group-hover:bg-slate-800"
+                            className="w-full h-10 pl-4 pr-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 appearance-none cursor-pointer focus:border-primary/50 transition-all outline-none"
                         >
                             {classOptions.map((option) => (
                                 <option key={option.value} value={option.value} className="bg-white dark:bg-slate-900">
@@ -113,7 +113,7 @@ export default function AssignmentFilters({
                 )}
 
                 {/* View Toggle Controls */}
-                <div className="flex p-1 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-xl gap-1">
+                <div className="flex items-center gap-2">
                     <ViewButton 
                         active={view === 'list'} 
                         onClick={() => handleViewChange('list')} 
@@ -136,21 +136,14 @@ function ViewButton({ active, onClick, icon: Icon, label }: { active: boolean, o
     return (
         <button
             onClick={onClick}
-            className={`relative flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${
                 active 
-                    ? 'text-primary' 
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                    ? 'bg-primary border-primary text-white' 
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-primary/50'
             }`}
         >
-            <Icon size={16} className="relative z-10" strokeWidth={active ? 2 : 1.5} />
-            <span className="text-xs font-semibold relative z-10 hidden sm:inline">{label}</span>
-            {active && (
-                <motion.div
-                    layoutId="view-toggle-bg"
-                    className="absolute inset-0 bg-white dark:bg-slate-700 shadow-sm rounded-lg"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-            )}
+            <Icon size={16} strokeWidth={2.5} className={active ? 'text-white' : 'text-primary'} />
+            <span className="hidden sm:inline">{label}</span>
         </button>
     );
 }
